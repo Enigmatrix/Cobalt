@@ -15,6 +15,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cobalt.Common.UI", "Cobalt.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cobalt.TaskbarNotifier", "Cobalt.TaskbarNotifier\Cobalt.TaskbarNotifier.csproj", "{6FD1F225-839B-4B1F-9A97-70966A39B6B2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cobalt.Common.Util", "Cobalt.Common.Util\Cobalt.Common.Util.csproj", "{0CED98A9-89FE-4B5F-95E8-1FC895B96281}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cobalt.Tests", "Cobalt.Tests\Cobalt.Tests.csproj", "{230B7616-F3D6-4FFB-8A71-792B4153FEB3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,6 +49,14 @@ Global
 		{6FD1F225-839B-4B1F-9A97-70966A39B6B2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6FD1F225-839B-4B1F-9A97-70966A39B6B2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6FD1F225-839B-4B1F-9A97-70966A39B6B2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0CED98A9-89FE-4B5F-95E8-1FC895B96281}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0CED98A9-89FE-4B5F-95E8-1FC895B96281}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0CED98A9-89FE-4B5F-95E8-1FC895B96281}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0CED98A9-89FE-4B5F-95E8-1FC895B96281}.Release|Any CPU.Build.0 = Release|Any CPU
+		{230B7616-F3D6-4FFB-8A71-792B4153FEB3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{230B7616-F3D6-4FFB-8A71-792B4153FEB3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{230B7616-F3D6-4FFB-8A71-792B4153FEB3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{230B7616-F3D6-4FFB-8A71-792B4153FEB3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
