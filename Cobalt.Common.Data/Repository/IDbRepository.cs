@@ -5,11 +5,13 @@ namespace Cobalt.Common.Data.Repository
 {
     public interface IDbRepository
     {
+        //connection
+        DbConnection Connection { get; set; }
         //add
         void AddAppUsage(AppUsage appUsage);
         void AddApp(App app);
         void AddTag(Tag tag);
-        
+
         //remove/add tag
         void AddTagToApp(Tag tag, App app);
         void RemoveTagFromApp(Tag tag, App app);
@@ -35,8 +37,5 @@ namespace Cobalt.Common.Data.Repository
 
         //find
         long? FindAppIdByPath(string appPath);
-
-        //connection
-        DbConnection Connection { get; set; }
     }
 }

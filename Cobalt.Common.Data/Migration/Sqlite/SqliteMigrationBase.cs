@@ -1,22 +1,32 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data;
+﻿using System.Data;
 using System.Data.SQLite;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Cobalt.Common.Util;
 
 namespace Cobalt.Common.Data.Migration.Sqlite
 {
     public abstract class SqliteMigrationBase : MigrationBase
     {
-        public SQLiteConnection Connection { get; set; }
-
         protected SqliteMigrationBase(IDbConnection connection) : base(connection)
         {
             Connection = connection as SQLiteConnection;
-            if(connection == null) Throw.InvalidOperation("Connection must be of type SQLiteConnection for this Migration");
+            if (connection == null)
+                Throw.InvalidOperation("Connection must be of type SQLiteConnection for this Migration");
+        }
+
+        public SQLiteConnection Connection { get; set; }
+
+        #region CRUD
+
+        public string Insert(string table, params string[] values)
+        {
+            return $"insert into {table} values ({string.Join(",", values)});";
+        }
+
+        #endregion
+
+        public void ExecuteSql(params string[] sql)
+        {
+            new SQLiteCommand(string.Join("\n", sql), Connection).ExecuteNonQuery();
         }
 
         #region Tables, Fields, and Index creations
@@ -35,7 +45,7 @@ namespace Cobalt.Common.Data.Migration.Sqlite
 
         public string Table(string name, params string[] data)
         {
-            return $"create table {name}({ string.Join(",", data) });";
+            return $"create table {name}({string.Join(",", data)});";
         }
 
         public string Index(string name, string on)
@@ -58,21 +68,5 @@ namespace Cobalt.Common.Data.Migration.Sqlite
         public string Integer() => "Integer";
 
         #endregion
-
-        #region CRUD
-
-        public string Insert(string table, params string[] values)
-        {
-            return $"insert into {table} values ({string.Join(",", values)});";
-        }
-
-        #endregion
-
-
-        public void ExecuteSql(params string[] sql)
-        {
-            new SQLiteCommand(string.Join("\n", sql), Connection).ExecuteNonQuery();
-        }
-
     }
 }

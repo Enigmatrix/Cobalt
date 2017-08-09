@@ -1,13 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Data;
 using System.Data.SQLite;
-using System.Linq;
 using System.Reactive.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Cobalt.Common.Data.Migration;
-using Cobalt.Common.Data.Migration.Sqlite;
 using Cobalt.Common.Util;
 
 namespace Cobalt.Common.Data.Repository
@@ -19,7 +14,7 @@ namespace Cobalt.Common.Data.Repository
         public SqliteRepository(IDbConnection conn, Migrator migrator)
         {
             _connection = conn as SQLiteConnection;
-            if(_connection == null)
+            if (_connection == null)
                 Throw.InvalidOperation("Connection provided to SqliteRepository must be of type SQLiteConnection");
             migrator.Migrate();
         }
@@ -57,12 +52,12 @@ namespace Cobalt.Common.Data.Repository
                             var appUsage = new AppUsage
                             {
                                 Id = reader.GetInt64(0),
-                                App = new App { Id = reader.GetInt64(1) },
-                                UsageType = (AppUsageType)reader.GetInt32(2),
+                                App = new App {Id = reader.GetInt64(1)},
+                                UsageType = (AppUsageType) reader.GetInt32(2),
                                 StartTimestamp = new DateTime(reader.GetInt64(3)),
                                 EndTimestamp = new DateTime(reader.GetInt64(4)),
-                                UsageStartReason = (AppUsageStartReason)reader.GetInt32(5),
-                                UsageEndReason = (AppUsageEndReason)reader.GetInt32(6)
+                                UsageStartReason = (AppUsageStartReason) reader.GetInt32(5),
+                                UsageEndReason = (AppUsageEndReason) reader.GetInt32(6)
                             };
                             obs.OnNext(appUsage);
                         }
@@ -163,7 +158,7 @@ namespace Cobalt.Common.Data.Repository
         {
             return (start?.Ticks ?? DateTime.MinValue.Ticks, end?.Ticks ?? DateTime.MaxValue.Ticks);
         }
-        
+
         #endregion
     }
 }
