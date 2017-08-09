@@ -25,6 +25,10 @@ namespace Cobalt.Common.Data.Migration.Sqlite
             {
                 return 0;
             }
+            finally
+            {
+                cmd.Dispose();
+            }
         }
     }
 }

@@ -26,7 +26,9 @@ namespace Cobalt.Common.Data.Migration.Sqlite
 
         public void ExecuteSql(params string[] sql)
         {
-            new SQLiteCommand(string.Join("\n", sql), Connection).ExecuteNonQuery();
+            var s = new SQLiteCommand(string.Join("\n", sql), Connection);
+            s.ExecuteNonQuery();
+            s.Dispose();
         }
 
         #region Tables, Fields, and Index creations

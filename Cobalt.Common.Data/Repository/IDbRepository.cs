@@ -6,7 +6,7 @@ namespace Cobalt.Common.Data.Repository
     public interface IDbRepository
     {
         //connection
-        DbConnection Connection { get; set; }
+        DbConnection Connection { get; }
         //add
         void AddAppUsage(AppUsage appUsage);
         void AddApp(App app);
