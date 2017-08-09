@@ -14,7 +14,13 @@ namespace Cobalt.Common.Data.Repository
 
         public long? FindAppIdByPath(string appPath)
         {
-            throw new NotImplementedException();
+            var (cmd, reader) = ExecuteReader("select Id from App where Path = ?", appPath);
+            var result = reader.Read()
+                    ? (long?)reader.GetInt64(0)
+                    : null;
+            reader.Dispose();
+            cmd.Dispose();
+            return result;
         }
 
         #endregion
@@ -81,6 +87,7 @@ namespace Cobalt.Common.Data.Repository
 
         public void RemoveTagFromApp(Tag tag, App app)
         {
+            Delete("AppTag", "AppId = ? and TagId = ?", app.Id, tag.Id);
         }
 
         #endregion
@@ -162,6 +169,11 @@ namespace Cobalt.Common.Data.Repository
         private void Delete(string table, string condition, params object[] param)
         {
             ExecuteNonQuery($"delete from {table} where {condition}", param);
+        }
+
+        private void Update(string table, string update, long id, params object[] param)
+        {
+            ExecuteNonQuery($"update {table} set {update} where Id = {id}", param);
         }
 
         private void ExecuteNonQuery(string cmdStr, params object[] param)
@@ -290,12 +302,12 @@ namespace Cobalt.Common.Data.Repository
 
         public void UpdateApp(App app)
         {
-            throw new NotImplementedException();
+            Update("App", "Name = ?, Path = ?", app.Id, app.Name, app.Path);
         }
 
         public void UpdateTag(Tag tag)
         {
-            throw new NotImplementedException();
+            Update("Tag", "Name = ?", tag.Id, tag.Name);
         }
 
         #endregion
