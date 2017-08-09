@@ -10,8 +10,16 @@ namespace Cobalt.Common.Data.Repository
 {
     public class SqliteRepository : IDbRepository
     {
-        #region Lifecycle
+        #region Find
 
+        public long? FindAppIdByPath(string appPath)
+        {
+            throw new NotImplementedException();
+        }
+
+        #endregion
+
+        #region Lifecycle
 
         public DbConnection Connection => _connection;
         private readonly SQLiteConnection _connection;
@@ -73,7 +81,6 @@ namespace Cobalt.Common.Data.Repository
 
         public void RemoveTagFromApp(Tag tag, App app)
         {
-            
         }
 
         #endregion
@@ -148,12 +155,22 @@ namespace Cobalt.Common.Data.Repository
 
         private long Insert(string stmt, params object[] param)
         {
-            using (var cmd = new SQLiteCommand(stmt, _connection))
+            ExecuteNonQuery(stmt, param);
+            return _connection.LastInsertRowId;
+        }
+
+        private void Delete(string table, string condition, params object[] param)
+        {
+            ExecuteNonQuery($"delete from {table} where {condition}", param);
+        }
+
+        private void ExecuteNonQuery(string cmdStr, params object[] param)
+        {
+            using (var cmd = new SQLiteCommand(cmdStr, _connection))
             {
                 foreach (var p in param)
                     cmd.Parameters.AddWithValue(null, p);
                 cmd.ExecuteNonQuery();
-                return _connection.LastInsertRowId;
             }
         }
 
@@ -296,15 +313,5 @@ namespace Cobalt.Common.Data.Repository
         }
 
         #endregion
-
-        #region Find
-
-        public long? FindAppIdByPath(string appPath)
-        {
-            throw new NotImplementedException();
-        }
-
-        #endregion
-
     }
 }

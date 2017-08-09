@@ -1,5 +1,6 @@
 ﻿using System.Data;
 using System.Data.SQLite;
+using System.Linq;
 using Cobalt.Common.Util;
 
 namespace Cobalt.Common.Data.Migration.Sqlite
@@ -40,9 +41,9 @@ namespace Cobalt.Common.Data.Migration.Sqlite
 
         public string Key(string key) => $"primary key ({key})";
 
-        public string ForeignKey(string name, string refer)
+        public string ForeignKey(string name, string refer, params string[] p)
         {
-            return $"foreign key({name}) references {refer}";
+            return $"foreign key({name}) references {refer} {string.Join(" ", p.Select(f => "on "+f))}";
         }
 
         public string Table(string name, params string[] data)
