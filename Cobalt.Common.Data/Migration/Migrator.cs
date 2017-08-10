@@ -18,7 +18,8 @@ namespace Cobalt.Common.Data.Migration
         public List<MigrationBase> GetMigrations()
         {
             return Assembly.GetExecutingAssembly().GetTypes()
-                .Where(t => t.IsSubclassOf(typeof(MigrationBase)) && !t.IsAbstract && t.Namespace == GetType().Namespace)
+                .Where(t => t.IsSubclassOf(typeof(MigrationBase)) && !t.IsAbstract &&
+                            t.Namespace == GetType().Namespace)
                 .Select(t => (MigrationBase) Activator.CreateInstance(t, Connection))
                 .OrderBy(m => m.Order)
                 .ToList();

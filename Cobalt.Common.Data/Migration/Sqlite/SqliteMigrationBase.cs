@@ -39,11 +39,14 @@ namespace Cobalt.Common.Data.Migration.Sqlite
             return $"`{name}` {type} {extra}";
         }
 
-        public string Key(string key) => $"primary key ({key})";
+        public string Key(string key)
+        {
+            return $"primary key ({key})";
+        }
 
         public string ForeignKey(string name, string refer, params string[] p)
         {
-            return $"foreign key({name}) references {refer} {string.Join(" ", p.Select(f => "on "+f))}";
+            return $"foreign key({name}) references {refer} {string.Join(" ", p.Select(f => "on " + f))}";
         }
 
         public string Table(string name, params string[] data)
@@ -60,15 +63,29 @@ namespace Cobalt.Common.Data.Migration.Sqlite
 
         #region Field extras
 
-        public string PkAutoInc() => "primary key autoincrement";
-        public string NotNullUnique() => "not null unique";
+        public string PkAutoInc()
+        {
+            return "primary key autoincrement";
+        }
+
+        public string NotNullUnique()
+        {
+            return "not null unique";
+        }
 
         #endregion
 
         #region Types
 
-        public string Text() => "text";
-        public string Integer() => "Integer";
+        public string Text()
+        {
+            return "text";
+        }
+
+        public string Integer()
+        {
+            return "Integer";
+        }
 
         #endregion
     }

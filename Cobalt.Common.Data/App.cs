@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+﻿using System;
 
 namespace Cobalt.Common.Data
 {
@@ -6,6 +6,6 @@ namespace Cobalt.Common.Data
     {
         public string Name { get; set; }
         public string Path { get; set; }
-        public List<Tag> Tags { get; set; }
+        public IObservable<Tag> Tags { get; set; }
     }
 }

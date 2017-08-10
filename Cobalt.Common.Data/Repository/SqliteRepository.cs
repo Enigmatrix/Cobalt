@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Data.SQLite;
+using System.Linq;
 using System.Reactive.Linq;
 using Cobalt.Common.Data.Migration;
 using Cobalt.Common.Util;
@@ -16,8 +18,8 @@ namespace Cobalt.Common.Data.Repository
         {
             var (cmd, reader) = ExecuteReader("select Id from App where Path = ?", appPath);
             var result = reader.Read()
-                    ? (long?)reader.GetInt64(0)
-                    : null;
+                ? (long?) reader.GetInt64(0)
+                : null;
             reader.Dispose();
             cmd.Dispose();
             return result;
@@ -96,42 +98,46 @@ namespace Cobalt.Common.Data.Repository
 
         public IObservable<App> GetApps()
         {
-            return GetApps(@"select * from App");
+            return Get(@"select a.Id, a.Name, a.Path from App a", r => AppMapper(r))
+                .Do(app => app.Tags = GetTags(app));
         }
 
         public IObservable<Tag> GetTags()
         {
-            return GetTags(@"select * from Tags");
+            return Get(@"select * from Tags", r => TagMapper(r));
         }
 
 
         public IObservable<App> GetAppsWithTag(Tag tag)
         {
-            return GetApps(@"select * from App
+            throw new NotImplementedException();
+            return Get(@"select * from App
                             	where Id = (select AppId from AppTag
 		                            where TagId = (select Id from Tag 
-                                        where Name = ?))", tag.Name);
+                                        where Name = ?))", r => AppMapper(r), tag.Name);
         }
 
-        public IObservable<AppUsage> GetAppUsages(DateTime? start, DateTime? end)
+        public IObservable<AppUsage> GetAppUsages(DateTime? start, DateTime? end, bool includeApps = false)
         {
+            throw new NotImplementedException();
             var (startTicks, endTicks) = ToTickRange(start, end);
-            return GetAppUsages(@"select * from AppUsage
-                                    where StartTimestamp >= ? and EndTimestamp <= ?",
+            return Get(@"select * from AppUsage
+                                    where StartTimestamp >= ? and EndTimestamp <= ?", r => AppUsageMapper(r),
                 startTicks, endTicks);
         }
 
         public IObservable<AppUsage> GetAppUsagesForApp(App app, DateTime? start = null, DateTime? end = null)
         {
             var (startTicks, endTicks) = ToTickRange(start, end);
-            return GetAppUsages(@"select * from AppUsage
+            return Get(@"select * from AppUsage
                                     where StartTimestamp >= ? and EndTimestamp <= ?
-                                        and AppId = ?",
+                                        and AppId = ?", r => AppUsageMapper(r),
                 startTicks, endTicks, app.Id);
         }
 
         public IObservable<(App App, TimeSpan Duration)> GetAppDurations(DateTime? start = null, DateTime? end = null)
         {
+            throw new NotImplementedException();
             var (startTicks, endTicks) = ToTickRange(start, end);
             return GetAppDurations(@"select AppId, a.Name, a.Path, sum(
                                             (case when EndTimestamp > ? then ? else EndTimestamp end)
@@ -151,6 +157,12 @@ namespace Cobalt.Common.Data.Repository
                                         from AppUsage, App a, AppTag at, Tag t
                                         where StartTimestamp >= ? and EndTimestamp <= ? and a.Id = AppId and a.Id = at.AppId and t.Id = at.TagId
                                         group by t.Id", startTicks, endTicks);
+        }
+
+        private IObservable<Tag> GetTags(App app)
+        {
+            return Get("select * from Tag where Id in (select TagId from AppTag where AppId = ?)", r => TagMapper(r),
+                app.Id);
         }
 
         #endregion
@@ -191,75 +203,61 @@ namespace Cobalt.Common.Data.Repository
             return (cmd, cmd.ExecuteReader());
         }
 
-        private IObservable<AppUsage> GetAppUsages(string cmdStr, params object[] param)
+
+        private IObservable<T> Get<T>(string cmdStr, Func<SQLiteDataReader, T> mapper, params object[] param)
         {
-            return Observable.Create<AppUsage>(obs =>
+            return Observable.Create<T>(obs =>
             {
                 var (cmd, reader) = ExecuteReader(cmdStr, param);
-                while (reader.Read())
+
+                using (cmd)
+                using (reader)
                 {
-                    var appUsage = new AppUsage
-                    {
-                        Id = reader.GetInt64(0),
-                        App = new App {Id = reader.GetInt64(1)},
-                        UsageType = (AppUsageType) reader.GetInt32(2),
-                        StartTimestamp = new DateTime(reader.GetInt64(3)),
-                        EndTimestamp = new DateTime(reader.GetInt64(4)),
-                        UsageStartReason = (AppUsageStartReason) reader.GetInt32(5),
-                        UsageEndReason = (AppUsageEndReason) reader.GetInt32(6)
-                    };
-                    obs.OnNext(appUsage);
+                    while (reader.Read())
+                        obs.OnNext(mapper(reader));
+                    obs.OnCompleted();
                 }
-                obs.OnCompleted();
-                reader.Dispose();
-                cmd.Dispose();
+
                 return () => { };
             });
         }
 
-        private IObservable<App> GetApps(string cmdStr, params object[] param)
+        private App AppMapper(SQLiteDataReader reader, int offset = 0)
         {
-            return Observable.Create<App>(obs =>
+            return new App
             {
-                var (cmd, reader) = ExecuteReader(cmdStr, param);
-                while (reader.Read())
-                {
-                    var appId = reader.GetInt64(0);
-                    var app = new App
-                    {
-                        Id = appId,
-                        Name = reader.IsDBNull(1) ? null : reader.GetString(1),
-                        Path = reader.GetString(2)
-                    };
-                    obs.OnNext(app);
-                }
-                obs.OnCompleted();
-                reader.Dispose();
-                cmd.Dispose();
-                return () => { };
-            });
+                Id = reader.GetInt64(offset + 0),
+                Name = reader.IsDBNull(1) ? null : reader.GetString(offset + 1),
+                Path = reader.GetString(offset + 2)
+            };
         }
 
-        private IObservable<Tag> GetTags(string cmdStr, params object[] param)
+        private Tag TagMapper(SQLiteDataReader reader, int offset = 0)
         {
-            return Observable.Create<Tag>(obs =>
+            return new Tag
             {
-                var (cmd, reader) = ExecuteReader(cmdStr, param);
-                while (reader.Read())
-                {
-                    var tagId = reader.GetInt64(0);
-                    var tag = new Tag
-                    {
-                        Id = tagId,
-                        Name = reader.IsDBNull(1) ? null : reader.GetString(1),
-                    };
-                    obs.OnNext(tag);
-                }
-                obs.OnCompleted();
-                reader.Dispose();
-                cmd.Dispose();
-                return () => { };
-            });
+                Id = reader.GetInt64(offset + 0),
+                Name = reader.IsDBNull(1) ? null : reader.GetString(offset + 1)
+            };
+        }
+
+        private AppUsage AppUsageMapper(SQLiteDataReader reader, int offset = 0)
+        {
+            return new AppUsage
+            {
+                Id = reader.GetInt64(offset + 0),
+                App = new App {Id = reader.GetInt64(offset + 1)},
+                UsageType = (AppUsageType) reader.GetInt32(offset + 2),
+                StartTimestamp = new DateTime(reader.GetInt64(offset + 3)),
+                EndTimestamp = new DateTime(reader.GetInt64(offset + 4)),
+                UsageStartReason = (AppUsageStartReason) reader.GetInt32(offset + 5),
+                UsageEndReason = (AppUsageEndReason) reader.GetInt32(offset + 6)
+            };
+        }
+
+        private List<long> IdsMapper(SQLiteDataReader reader, int offset = 0)
+        {
+            return reader.GetString(offset).Split(',').Select(long.Parse).ToList();
         }
 
         private IObservable<(App, TimeSpan)> GetAppDurations(string cmdStr, params object[] param)
@@ -327,20 +325,6 @@ namespace Cobalt.Common.Data.Repository
         public void UpdateTag(Tag tag)
         {
             Update("Tag", "Name = ?", tag.Id, tag.Name);
-        }
-
-        #endregion
-
-        #region Hydrate
-
-        public IObservable<App> HydrateWithTags(IObservable<App> apps)
-        {
-            throw new NotImplementedException();
-        }
-
-        public IObservable<AppUsage> HydrateWithApps(IObservable<AppUsage> appUsages)
-        {
-            throw new NotImplementedException();
         }
 
         #endregion
