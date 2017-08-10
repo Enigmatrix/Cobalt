@@ -1,6 +1,6 @@
 ﻿namespace Cobalt.Engine
 {
-    partial class InvisibleForm
+    partial class InvisibleMessageWindow
     {
         /// <summary>
         /// Required designer variable.
