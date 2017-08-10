@@ -5,8 +5,6 @@ VisualStudioVersion = 15.0.26430.16
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cobalt", "Cobalt\Cobalt.csproj", "{82D04B56-C425-4003-BBFC-7BEBDFAD2364}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cobalt.Engine", "Cobalt.Engine\Cobalt.Engine.csproj", "{4A649173-F4D0-4210-AA25-9C48C8D05200}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cobalt.Common.Data", "Cobalt.Common.Data\Cobalt.Common.Data.csproj", "{1367640D-5813-4E0F-A9FC-85A4CAB3BD0B}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cobalt.Common.Transmission", "Cobalt.Common.Transmission\Cobalt.Common.Transmission.csproj", "{D6EF1899-D2B4-4A35-8441-046D26E14E62}"
@@ -19,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cobalt.Common.Util", "Cobal
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cobalt.Tests", "Cobalt.Tests\Cobalt.Tests.csproj", "{230B7616-F3D6-4FFB-8A71-792B4153FEB3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cobalt.Engine", "Cobalt.Engine\Cobalt.Engine.csproj", "{8156205A-77C4-4159-8400-9217DD8FA3D2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -29,10 +29,6 @@ Global
 		{82D04B56-C425-4003-BBFC-7BEBDFAD2364}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{82D04B56-C425-4003-BBFC-7BEBDFAD2364}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{82D04B56-C425-4003-BBFC-7BEBDFAD2364}.Release|Any CPU.Build.0 = Release|Any CPU
-		{4A649173-F4D0-4210-AA25-9C48C8D05200}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{4A649173-F4D0-4210-AA25-9C48C8D05200}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{4A649173-F4D0-4210-AA25-9C48C8D05200}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{4A649173-F4D0-4210-AA25-9C48C8D05200}.Release|Any CPU.Build.0 = Release|Any CPU
 		{1367640D-5813-4E0F-A9FC-85A4CAB3BD0B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{1367640D-5813-4E0F-A9FC-85A4CAB3BD0B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1367640D-5813-4E0F-A9FC-85A4CAB3BD0B}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -57,6 +53,10 @@ Global
 		{230B7616-F3D6-4FFB-8A71-792B4153FEB3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{230B7616-F3D6-4FFB-8A71-792B4153FEB3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{230B7616-F3D6-4FFB-8A71-792B4153FEB3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8156205A-77C4-4159-8400-9217DD8FA3D2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8156205A-77C4-4159-8400-9217DD8FA3D2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8156205A-77C4-4159-8400-9217DD8FA3D2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8156205A-77C4-4159-8400-9217DD8FA3D2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
