@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Data.SQLite;
-using System.Linq;
 using System.Reactive.Linq;
 using Cobalt.Common.Data.Migration;
 using Cobalt.Common.Util;
@@ -24,6 +22,13 @@ namespace Cobalt.Common.Data.Repository
             cmd.Dispose();
             return result;
         }
+
+        #endregion
+
+        #region Offsets
+
+        private const int AppOffset = 3;
+        private const int TagOffset = 2;
 
         #endregion
 
@@ -110,53 +115,67 @@ namespace Cobalt.Common.Data.Repository
 
         public IObservable<App> GetAppsWithTag(Tag tag)
         {
-            throw new NotImplementedException();
             return Get(@"select * from App
                             	where Id = (select AppId from AppTag
 		                            where TagId = (select Id from Tag 
-                                        where Name = ?))", r => AppMapper(r), tag.Name);
+                                        where Name = ?))", r => AppMapper(r), tag.Name)
+                .Do(app => app.Tags = GetTags(app));
         }
 
-        public IObservable<AppUsage> GetAppUsages(DateTime? start, DateTime? end, bool includeApps = false)
+        public IObservable<AppUsage> GetAppUsages(DateTime? start, DateTime? end)
         {
-            throw new NotImplementedException();
+            //TODO might cause high memory usage, implement cache
             var (startTicks, endTicks) = ToTickRange(start, end);
-            return Get(@"select * from AppUsage
-                                    where StartTimestamp >= ? and EndTimestamp <= ?", r => AppUsageMapper(r),
-                startTicks, endTicks);
+            return Get(@"select a.Id, a.Name, a.Path, 
+                                au.Id, au.AppId, au.UsageType, 
+                                au.StartTimestamp, au.EndTimestamp, 
+                                au.UsageStartReason, au.UsageEndReason  
+                            from AppUsage au, App a
+                            where StartTimestamp >= ? and EndTimestamp <= ? and au.AppId = a.Id",
+                    r => AppUsageMapper(r, AppOffset, AppMapper(r)),
+                    startTicks, endTicks)
+                .Do(appUsage => appUsage.App.Tags = GetTags(appUsage.App));
         }
 
         public IObservable<AppUsage> GetAppUsagesForApp(App app, DateTime? start = null, DateTime? end = null)
         {
             var (startTicks, endTicks) = ToTickRange(start, end);
-            return Get(@"select * from AppUsage
-                                    where StartTimestamp >= ? and EndTimestamp <= ?
-                                        and AppId = ?", r => AppUsageMapper(r),
-                startTicks, endTicks, app.Id);
+            return Get(@"select a.Id, a.Name, a.Path, 
+                                au.Id, au.AppId, au.UsageType, 
+                                au.StartTimestamp, au.EndTimestamp, 
+                                au.UsageStartReason, au.UsageEndReason  
+                            from AppUsage
+                            where StartTimestamp >= ? and EndTimestamp <= ? where au.AppId = a.Id and a.Id = ?",
+                    r => AppUsageMapper(r, AppOffset, AppMapper(r)),
+                    startTicks, endTicks, app.Id)
+                .Do(appUsage => appUsage.App.Tags = GetTags(appUsage.App));
         }
 
         public IObservable<(App App, TimeSpan Duration)> GetAppDurations(DateTime? start = null, DateTime? end = null)
         {
-            throw new NotImplementedException();
             var (startTicks, endTicks) = ToTickRange(start, end);
-            return GetAppDurations(@"select AppId, a.Name, a.Path, sum(
+            return Get(@"select AppId, a.Name, a.Path, sum(
                                             (case when EndTimestamp > ? then ? else EndTimestamp end)
                                         -   (case when StartTimestamp < ? then ? else StartTimestamp end)) Duration
                                         from AppUsage, App a
                                         where StartTimestamp >= ? and EndTimestamp <= ? and a.Id = AppId
-                                        group by AppId", endTicks, endTicks, startTicks, startTicks, startTicks,
-                endTicks);
+                                        group by AppId",
+                    r => (AppMapper(r), TimeSpan.FromTicks(r.GetInt64(AppOffset))),
+                    endTicks, endTicks, startTicks, startTicks, startTicks, endTicks)
+                .Do(appDur => appDur.Item1.Tags = GetTags(appDur.Item1));
         }
 
         public IObservable<(Tag Tag, TimeSpan Duration)> GetTagDurations(DateTime? start = null, DateTime? end = null)
         {
             var (startTicks, endTicks) = ToTickRange(start, end);
-            return GetTagDurations(@"select t.Id, t.Name, sum(
+            return Get(@"select t.Id, t.Name, sum(
                                             (case when EndTimestamp > ? then ? else EndTimestamp end)
                                         -   (case when StartTimestamp < ? then ? else StartTimestamp end)) Duration
                                         from AppUsage, App a, AppTag at, Tag t
                                         where StartTimestamp >= ? and EndTimestamp <= ? and a.Id = AppId and a.Id = at.AppId and t.Id = at.TagId
-                                        group by t.Id", startTicks, endTicks);
+                                        group by t.Id",
+                r => (TagMapper(r), TimeSpan.FromTicks(r.GetInt64(TagOffset))),
+                endTicks, endTicks, startTicks, startTicks, startTicks, endTicks);
         }
 
         private IObservable<Tag> GetTags(App app)
@@ -241,70 +260,18 @@ namespace Cobalt.Common.Data.Repository
             };
         }
 
-        private AppUsage AppUsageMapper(SQLiteDataReader reader, int offset = 0)
+        private AppUsage AppUsageMapper(SQLiteDataReader reader, int offset = 0, App app = null)
         {
             return new AppUsage
             {
                 Id = reader.GetInt64(offset + 0),
-                App = new App {Id = reader.GetInt64(offset + 1)},
+                App = app ?? new App {Id = reader.GetInt64(offset + 1)},
                 UsageType = (AppUsageType) reader.GetInt32(offset + 2),
                 StartTimestamp = new DateTime(reader.GetInt64(offset + 3)),
                 EndTimestamp = new DateTime(reader.GetInt64(offset + 4)),
                 UsageStartReason = (AppUsageStartReason) reader.GetInt32(offset + 5),
                 UsageEndReason = (AppUsageEndReason) reader.GetInt32(offset + 6)
             };
-        }
-
-        private List<long> IdsMapper(SQLiteDataReader reader, int offset = 0)
-        {
-            return reader.GetString(offset).Split(',').Select(long.Parse).ToList();
-        }
-
-        private IObservable<(App, TimeSpan)> GetAppDurations(string cmdStr, params object[] param)
-        {
-            return Observable.Create<(App, TimeSpan)>(obs =>
-            {
-                var (cmd, reader) = ExecuteReader(cmdStr, param);
-                while (reader.Read())
-                {
-                    var appId = reader.GetInt64(0);
-                    var app = new App
-                    {
-                        Id = appId,
-                        Name = reader.IsDBNull(1) ? null : reader.GetString(1),
-                        Path = reader.GetString(2)
-                    };
-                    var duration = TimeSpan.FromTicks(reader.GetInt64(3));
-                    obs.OnNext((app, duration));
-                }
-                obs.OnCompleted();
-                reader.Dispose();
-                cmd.Dispose();
-                return () => { };
-            });
-        }
-
-        private IObservable<(Tag, TimeSpan)> GetTagDurations(string cmdStr, params object[] param)
-        {
-            return Observable.Create<(Tag, TimeSpan)>(obs =>
-            {
-                var (cmd, reader) = ExecuteReader(cmdStr, param);
-                while (reader.Read())
-                {
-                    var tagId = reader.GetInt64(0);
-                    var tag = new Tag
-                    {
-                        Id = tagId,
-                        Name = reader.IsDBNull(1) ? null : reader.GetString(1)
-                    };
-                    var duration = TimeSpan.FromTicks(reader.GetInt64(2));
-                    obs.OnNext((tag, duration));
-                }
-                obs.OnCompleted();
-                reader.Dispose();
-                cmd.Dispose();
-                return () => { };
-            });
         }
 
         //returns a (start, end)
