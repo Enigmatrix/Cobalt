@@ -99,7 +99,13 @@ namespace Cobalt.Common.Data.Repository
             return GetApps(@"select * from App");
         }
 
-        public IObservable<App> GetAppWithTag(Tag tag)
+        public IObservable<Tag> GetTags()
+        {
+            return GetTags(@"select * from Tags");
+        }
+
+
+        public IObservable<App> GetAppsWithTag(Tag tag)
         {
             return GetApps(@"select * from App
                             	where Id = (select AppId from AppTag
@@ -115,17 +121,7 @@ namespace Cobalt.Common.Data.Repository
                 startTicks, endTicks);
         }
 
-        public IObservable<Tag> GetTags()
-        {
-            throw new NotImplementedException();
-        }
-
-        public IObservable<App> GetAppsWithTag(Tag tag)
-        {
-            throw new NotImplementedException();
-        }
-
-        public IObservable<AppUsage> GetAppUsages(DateTime? start, DateTime? end, App app)
+        public IObservable<AppUsage> GetAppUsagesForApp(App app, DateTime? start = null, DateTime? end = null)
         {
             var (startTicks, endTicks) = ToTickRange(start, end);
             return GetAppUsages(@"select * from AppUsage
@@ -134,12 +130,7 @@ namespace Cobalt.Common.Data.Repository
                 startTicks, endTicks, app.Id);
         }
 
-        public IObservable<AppUsage> GetAppUsagesForApp(App app, DateTime? start = null, DateTime? end = null)
-        {
-            throw new NotImplementedException();
-        }
-
-        public IObservable<(App App, TimeSpan Duration)> GetAppDurations(DateTime? start, DateTime? end)
+        public IObservable<(App App, TimeSpan Duration)> GetAppDurations(DateTime? start = null, DateTime? end = null)
         {
             var (startTicks, endTicks) = ToTickRange(start, end);
             return GetAppDurations(@"select AppId, a.Name, a.Path, sum(
@@ -153,7 +144,13 @@ namespace Cobalt.Common.Data.Repository
 
         public IObservable<(Tag Tag, TimeSpan Duration)> GetTagDurations(DateTime? start = null, DateTime? end = null)
         {
-            throw new NotImplementedException();
+            var (startTicks, endTicks) = ToTickRange(start, end);
+            return GetTagDurations(@"select t.Id, t.Name, sum(
+                                            (case when EndTimestamp > ? then ? else EndTimestamp end)
+                                        -   (case when StartTimestamp < ? then ? else StartTimestamp end)) Duration
+                                        from AppUsage, App a, AppTag at, Tag t
+                                        where StartTimestamp >= ? and EndTimestamp <= ? and a.Id = AppId and a.Id = at.AppId and t.Id = at.TagId
+                                        group by t.Id", startTicks, endTicks);
         }
 
         #endregion
@@ -235,6 +232,28 @@ namespace Cobalt.Common.Data.Repository
                         Path = reader.GetString(2)
                     };
                     obs.OnNext(app);
+                }
+                obs.OnCompleted();
+                reader.Dispose();
+                cmd.Dispose();
+                return () => { };
+            });
+        }
+
+        private IObservable<Tag> GetTags(string cmdStr, params object[] param)
+        {
+            return Observable.Create<Tag>(obs =>
+            {
+                var (cmd, reader) = ExecuteReader(cmdStr, param);
+                while (reader.Read())
+                {
+                    var tagId = reader.GetInt64(0);
+                    var tag = new Tag
+                    {
+                        Id = tagId,
+                        Name = reader.IsDBNull(1) ? null : reader.GetString(1),
+                    };
+                    obs.OnNext(tag);
                 }
                 obs.OnCompleted();
                 reader.Dispose();
