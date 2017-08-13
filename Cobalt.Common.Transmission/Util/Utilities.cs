@@ -11,12 +11,14 @@ namespace Cobalt.Common.Transmission.Util
         public static readonly string LocalComputer = ".";
         public static readonly string PipeName = "CobaltNamedPipeXD";
         public static readonly int PipeConnectionTimeout = 2000;
+        public static readonly int ReadWriteSize = 1024;
 
         public static JsonSerializer CreateSerializer()
         {
             return JsonSerializer.Create(new JsonSerializerSettings
             {
                 TypeNameHandling = TypeNameHandling.Objects,
+                //avoid Remote Code Execution by only whitelisting the types we are using
                 SerializationBinder = new WhitelistSerializationBinder(
                     TypesInNamespaces(
                         typeof(Entity).Namespace,
