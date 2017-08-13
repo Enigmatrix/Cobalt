@@ -33,6 +33,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.10.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data.SQLite, Version=1.0.103.0, Culture=neutral, PublicKeyToken=db937bc2d44ff139, processorArchitecture=MSIL">
@@ -63,6 +66,7 @@
   <ItemGroup>
     <Compile Include="Common\Data\MigrationTests.cs" />
     <Compile Include="Common\Data\QueryTests.cs" />
+    <Compile Include="Common\Transmission\WhitelistTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -75,6 +79,10 @@
     <ProjectReference Include="..\Cobalt.Common.Data\Cobalt.Common.Data.csproj">
       <Project>{1367640D-5813-4E0F-A9FC-85A4CAB3BD0B}</Project>
       <Name>Cobalt.Common.Data</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Cobalt.Common.Transmission\Cobalt.Common.Transmission.csproj">
+      <Project>{D6EF1899-D2B4-4A35-8441-046D26E14E62}</Project>
+      <Name>Cobalt.Common.Transmission</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
