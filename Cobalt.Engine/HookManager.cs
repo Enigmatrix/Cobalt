@@ -14,7 +14,7 @@ namespace Cobalt.Engine
             //keep getting messages
             while (true)
             {
-                if (Win32.GetMessage(out Win32.MSG msg, IntPtr.Zero, 0, 0) == 0) break;
+                if (Win32.GetMessage(out var msg, IntPtr.Zero, 0, 0) == 0) break;
 
                 //even ms docs say that you dont need to understand these
                 Win32.TranslateMessage(ref msg);
@@ -30,8 +30,8 @@ namespace Cobalt.Engine
         public void HookRange(Win32.WinEvent min, Win32.WinEvent max, Win32.WinEventProc callback)
         {
             var windowEventHook = Win32.SetWinEventHook(
-                (int)min, // eventMin
-                (int)max, // eventMax
+                (int) min, // eventMin
+                (int) max, // eventMax
                 IntPtr.Zero, // hmodWinEventProc
                 callback, // lpfnWinEventProc
                 0, // idProcess 

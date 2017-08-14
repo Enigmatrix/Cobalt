@@ -15,9 +15,9 @@ namespace Cobalt.Common.Transmission
 
     public class TransmissionClient : ITransmissionClient
     {
+        private readonly Thread _listeningThread;
         private readonly NamedPipeClientStream _pipe;
         private bool _keepAlive;
-        private readonly Thread _listeningThread;
 
         public TransmissionClient()
         {

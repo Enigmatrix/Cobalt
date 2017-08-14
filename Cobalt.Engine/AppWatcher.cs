@@ -5,12 +5,11 @@ namespace Cobalt.Engine
 {
     public class AppWatcher
     {
+        private readonly object _appUsageLock = new object();
         private readonly Win32.WinEventProc _foregroundWindowChangedCallback;
         private readonly HookManager _hookMgr;
 
         private readonly PathResolver _pathResolver;
-
-        private readonly object _appUsageLock = new object();
         private AppUsageEndReason _endReason;
         private AppUsage _prev;
         private DateTime _prevFgChangeTime;
@@ -45,7 +44,7 @@ namespace Cobalt.Engine
             //TODO make sure
             if (!_recording) return;
             _prev = ForegroundAppUsage(_prevFgChangeTime, endTime, _prevPath);
-            ForegroundAppUsageObtained(this, new ForegroundAppSwitchEventArgs(_prev, new App { Path = path }));
+            ForegroundAppUsageObtained(this, new ForegroundAppSwitchEventArgs(_prev, new App {Path = path}));
             _prevFgChangeTime = endTime;
             _prevPath = path;
 
@@ -105,7 +104,7 @@ namespace Cobalt.Engine
             {
                 StartTimestamp = start,
                 EndTimestamp = end,
-                App = new App { Path = appPath },
+                App = new App {Path = appPath},
                 UsageType = AppUsageType.Foreground,
                 UsageStartReason = _startReason,
                 UsageEndReason = _endReason
@@ -121,7 +120,7 @@ namespace Cobalt.Engine
             NewApp = newApp;
         }
 
-        public AppUsage PreviousAppUsage { get; private set; }
-        public App NewApp { get; private set; }
+        public AppUsage PreviousAppUsage { get; }
+        public App NewApp { get; }
     }
 }

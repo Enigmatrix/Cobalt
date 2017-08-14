@@ -13,16 +13,6 @@ namespace Cobalt.Tests.Common.Data
     public class QueryTests
     {
         [Fact]
-        public void TestGetAppsIncludingTags()
-        {
-            var conn = new SQLiteConnection("Data Source=dat2.db").OpenAndReturn();
-            var repo = new SqliteRepository(conn, new SqliteMigrator(conn));
-            var o = repo.GetApps();
-            var appList = new List<List<Tag>>(o.Select(x => new List<Tag>(x.Tags.ToEnumerable())).ToEnumerable());
-            Assert.Equal(3, appList.Max(t => t.Count));
-        }
-
-        [Fact]
         public void GetappDurations()
         {
             var conn = new SQLiteConnection("Data Source=dat2.db").OpenAndReturn();
@@ -30,6 +20,16 @@ namespace Cobalt.Tests.Common.Data
             var o = repo.GetAppDurations();
             var durs = new List<(App, TimeSpan)>(o.ToEnumerable().OrderByDescending(x => x.Duration));
             Assert.Contains("chrome", durs.First().Item1.Path);
+        }
+
+        [Fact]
+        public void TestGetAppsIncludingTags()
+        {
+            var conn = new SQLiteConnection("Data Source=dat2.db").OpenAndReturn();
+            var repo = new SqliteRepository(conn, new SqliteMigrator(conn));
+            var o = repo.GetApps();
+            var appList = new List<List<Tag>>(o.Select(x => new List<Tag>(x.Tags.ToEnumerable())).ToEnumerable());
+            Assert.Equal(3, appList.Max(t => t.Count));
         }
     }
 }

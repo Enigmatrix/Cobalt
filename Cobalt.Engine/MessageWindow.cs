@@ -23,7 +23,7 @@ namespace Cobalt.Engine
             handlers = new Dictionary<Win32.WindowMessages, Action<IntPtr, Win32.WindowMessages, IntPtr, IntPtr>>();
             var wnd = new Win32.WNDCLASSEX
             {
-                cbSize = (uint)Marshal.SizeOf<Win32.WNDCLASSEX>(),
+                cbSize = (uint) Marshal.SizeOf<Win32.WNDCLASSEX>(),
                 hInstance = Process.GetCurrentProcess().Handle,
                 lpszClassName = WndClass,
                 lpfnWndProc = _wndProc
@@ -31,7 +31,8 @@ namespace Cobalt.Engine
             Win32.RegisterClassEx(ref wnd);
 
             WindowHandle = Win32.CreateWindowEx(Win32.WindowStylesEx.WS_EX_LEFT, WndClass, WndClass,
-                Win32.WindowStyles.WS_OVERLAPPED, 0, 0, 0, 0, Win32.HWND_MESSAGE, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero);
+                Win32.WindowStyles.WS_OVERLAPPED, 0, 0, 0, 0, Win32.HWND_MESSAGE, IntPtr.Zero, IntPtr.Zero,
+                IntPtr.Zero);
         }
 
         public IntPtr WindowHandle { get; }

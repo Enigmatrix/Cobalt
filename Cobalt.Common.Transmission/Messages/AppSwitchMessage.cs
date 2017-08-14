@@ -9,9 +9,11 @@ namespace Cobalt.Common.Transmission.Messages
             PreviousAppUsage = prev;
             NewApp = newApp;
         }
+
         public AppSwitchMessage()
         {
         }
+
         public AppUsage PreviousAppUsage { get; set; }
         public App NewApp { get; set; }
     }

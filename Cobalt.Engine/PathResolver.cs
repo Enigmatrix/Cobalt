@@ -53,7 +53,7 @@ namespace Cobalt.Engine
             {
                 using (var results = searcher.Get())
                 {
-                    return (string)results.Cast<ManagementBaseObject>().First()["ExecutablePath"];
+                    return (string) results.Cast<ManagementBaseObject>().First()["ExecutablePath"];
                 }
             }
         }

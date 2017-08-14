@@ -12,8 +12,8 @@ namespace Cobalt.Common.Transmission
 {
     public class TransmissionServer
     {
-        private readonly List<NamedPipeServerStream> _broadcastingPipes;
         private readonly List<JsonTextWriter> _broadcasters;
+        private readonly List<NamedPipeServerStream> _broadcastingPipes;
         private readonly JsonSerializer _serializer;
         private NamedPipeServerStream _waitingPipe;
 
@@ -28,15 +28,15 @@ namespace Cobalt.Common.Transmission
         private void SetupPipeForConnection()
         {
             _waitingPipe = new NamedPipeServerStream(
-                Utilities.PipeName, 
-                PipeDirection.Out, 
-                NamedPipeServerStream.MaxAllowedServerInstances, 
-                PipeTransmissionMode.Byte, 
-                PipeOptions.Asynchronous, 
-                Utilities.ReadWriteSize, 
-                Utilities.ReadWriteSize, 
-                CreateSecuritySettings(), 
-                HandleInheritability.None, 
+                Utilities.PipeName,
+                PipeDirection.Out,
+                NamedPipeServerStream.MaxAllowedServerInstances,
+                PipeTransmissionMode.Byte,
+                PipeOptions.Asynchronous,
+                Utilities.ReadWriteSize,
+                Utilities.ReadWriteSize,
+                CreateSecuritySettings(),
+                HandleInheritability.None,
                 PipeAccessRights.ChangePermissions);
 
             _waitingPipe.BeginWaitForConnection(ConnectionCallback, null);
@@ -79,9 +79,13 @@ namespace Cobalt.Common.Transmission
         {
             var currentUserSid = $@"{Environment.UserDomainName}\{Environment.UserName}";
             var pipeAccess = new PipeSecurity();
-            pipeAccess.AddAccessRule(new PipeAccessRule(currentUserSid, PipeAccessRights.FullControl, AccessControlType.Allow));
-            pipeAccess.AddAccessRule(new PipeAccessRule(new SecurityIdentifier(WellKnownSidType.NetworkSid, null), PipeAccessRights.FullControl, AccessControlType.Deny));
-            pipeAccess.AddAccessRule(new PipeAccessRule(new SecurityIdentifier(WellKnownSidType.NetworkServiceSid, null), PipeAccessRights.FullControl, AccessControlType.Deny));
+            pipeAccess.AddAccessRule(new PipeAccessRule(currentUserSid, PipeAccessRights.FullControl,
+                AccessControlType.Allow));
+            pipeAccess.AddAccessRule(new PipeAccessRule(new SecurityIdentifier(WellKnownSidType.NetworkSid, null),
+                PipeAccessRights.FullControl, AccessControlType.Deny));
+            pipeAccess.AddAccessRule(new PipeAccessRule(
+                new SecurityIdentifier(WellKnownSidType.NetworkServiceSid, null), PipeAccessRights.FullControl,
+                AccessControlType.Deny));
             return pipeAccess;
         }
     }
