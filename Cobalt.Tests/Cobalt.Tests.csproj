@@ -67,6 +67,7 @@
   <ItemGroup>
     <Compile Include="Common\Data\MigrationTests.cs" />
     <Compile Include="Common\Data\QueryTests.cs" />
+    <Compile Include="Common\Transmission\ClientTransmissionTest.cs" />
     <Compile Include="Common\Transmission\WhitelistTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

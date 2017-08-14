@@ -31,7 +31,7 @@ namespace Cobalt.Common.Transmission
                 Utilities.PipeName, 
                 PipeDirection.Out, 
                 NamedPipeServerStream.MaxAllowedServerInstances, 
-                PipeTransmissionMode.Message, 
+                PipeTransmissionMode.Byte, 
                 PipeOptions.Asynchronous, 
                 Utilities.ReadWriteSize, 
                 Utilities.ReadWriteSize, 

@@ -25,8 +25,9 @@ namespace Cobalt.Common.Transmission
                 Utilities.LocalComputer,
                 Utilities.PipeName,
                 PipeDirection.In,
-                PipeOptions.Asynchronous) {ReadMode = PipeTransmissionMode.Message};
+                PipeOptions.Asynchronous);
             _pipe.Connect(Utilities.PipeConnectionTimeout);
+            //_pipe.ReadMode = PipeTransmissionMode.Message;
             _keepAlive = true;
 
             var reader = new JsonTextReader(new StreamReader(_pipe)) {SupportMultipleContent = true};
