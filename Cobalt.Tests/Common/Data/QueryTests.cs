@@ -12,7 +12,6 @@ namespace Cobalt.Tests.Common.Data
 {
     public class QueryTests
     {
-        [Fact]
         public void GetappDurations()
         {
             var conn = new SQLiteConnection("Data Source=dat2.db").OpenAndReturn();
@@ -22,7 +21,6 @@ namespace Cobalt.Tests.Common.Data
             Assert.Contains("chrome", durs.First().Item1.Path);
         }
 
-        [Fact]
         public void TestGetAppsIncludingTags()
         {
             var conn = new SQLiteConnection("Data Source=dat2.db").OpenAndReturn();
