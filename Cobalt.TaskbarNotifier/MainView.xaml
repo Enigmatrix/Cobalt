@@ -12,7 +12,7 @@
     <tb:TaskbarIcon>
         <tb:TaskbarIcon.TrayPopup>
             <Grid>
-                <local:PopupContent/>
+                <local:PopupContent />
             </Grid>
         </tb:TaskbarIcon.TrayPopup>
     </tb:TaskbarIcon>

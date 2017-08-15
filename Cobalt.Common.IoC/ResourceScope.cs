@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Autofac;
 
 namespace Cobalt.Common.IoC
@@ -17,6 +13,11 @@ namespace Cobalt.Common.IoC
             _scope = scope;
         }
 
+        public void Dispose()
+        {
+            _scope.Dispose();
+        }
+
         public IResourceScope Subscope()
         {
             return new ResourceScope(_scope.BeginLifetimeScope());
@@ -25,11 +26,6 @@ namespace Cobalt.Common.IoC
         public T Resolve<T>()
         {
             return _scope.Resolve<T>();
-        }
-
-        public void Dispose()
-        {
-            _scope.Dispose();
         }
 
         public void Manage(IDisposable dis)
