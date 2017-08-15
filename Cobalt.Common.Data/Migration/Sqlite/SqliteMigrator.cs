@@ -13,7 +13,8 @@ namespace Cobalt.Common.Data.Migration.Sqlite
         protected override int CurrentMigration()
         {
             var conn = Connection as SQLiteConnection;
-            if (conn == null) Throw.InvalidOperation("Connection must be type of SQLiteConnection for this MigratorBase");
+            if (conn == null)
+                Throw.InvalidOperation("Connection must be type of SQLiteConnection for this MigratorBase");
 
             var cmd = new SQLiteCommand("select LatestMigration from Migrations", conn);
             try

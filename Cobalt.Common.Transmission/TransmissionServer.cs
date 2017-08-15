@@ -30,6 +30,26 @@ namespace Cobalt.Common.Transmission
             SetupPipeForConnection();
         }
 
+        public void Send(MessageBase message)
+        {
+            for (var i = 0; i < _broadcasters.Count; i++)
+            {
+                var writer = _broadcasters[i];
+                try
+                {
+                    _serializer.Serialize(writer, message);
+                    writer.Flush();
+                }
+                catch (Exception)
+                {
+                    _broadcastingPipes[i].Dispose();
+                    _broadcastingPipes.RemoveAt(i);
+                    _broadcasters.RemoveAt(i);
+                    i--;
+                }
+            }
+        }
+
         private void SetupPipeForConnection()
         {
             _waitingPipe = new NamedPipeServerStream(
@@ -58,26 +78,6 @@ namespace Cobalt.Common.Transmission
             _broadcastingPipes.Add(connectedPipe);
 
             SetupPipeForConnection();
-        }
-
-        public void Send(MessageBase message)
-        {
-            for (var i = 0; i < _broadcasters.Count; i++)
-            {
-                var writer = _broadcasters[i];
-                try
-                {
-                    _serializer.Serialize(writer, message);
-                    writer.Flush();
-                }
-                catch (Exception)
-                {
-                    _broadcastingPipes[i].Dispose();
-                    _broadcastingPipes.RemoveAt(i);
-                    _broadcasters.RemoveAt(i);
-                    i--;
-                }
-            }
         }
 
         private PipeSecurity CreateSecuritySettings()

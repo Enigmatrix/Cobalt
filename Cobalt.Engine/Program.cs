@@ -1,6 +1,4 @@
-﻿using System.Data.SQLite;
-using Cobalt.Common.Data;
-using Cobalt.Common.Data.Migration.Sqlite;
+﻿using Cobalt.Common.Data;
 using Cobalt.Common.Data.Repository;
 using Cobalt.Common.IoC;
 using Cobalt.Common.Transmission;

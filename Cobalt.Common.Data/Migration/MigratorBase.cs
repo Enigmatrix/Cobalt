@@ -25,8 +25,6 @@ namespace Cobalt.Common.Data.Migration
                 .ToList();
         }
 
-        protected abstract int CurrentMigration();
-
         public void Migrate()
         {
             var migrations = GetMigrations();
@@ -35,5 +33,7 @@ namespace Cobalt.Common.Data.Migration
             for (var i = index + 1; i < migrations.Count; i++)
                 migrations[i].ExecuteMigration();
         }
+
+        protected abstract int CurrentMigration();
     }
 }
