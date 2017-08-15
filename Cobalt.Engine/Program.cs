@@ -2,6 +2,7 @@
 using Cobalt.Common.Data;
 using Cobalt.Common.Data.Migration.Sqlite;
 using Cobalt.Common.Data.Repository;
+using Cobalt.Common.IoC;
 using Cobalt.Common.Transmission;
 using Cobalt.Common.Transmission.Messages;
 using Cobalt.Engine.Util;
@@ -18,10 +19,8 @@ namespace Cobalt.Engine
                 .CreateLogger();
             Log.Information("NEW SESSION");
 
-            var conn = new SQLiteConnection("Data Source=dat.db").OpenAndReturn();
-            var migrator = new SqliteMigrator(conn);
-            var repository = new SqliteRepository(conn, migrator);
-            var transmitter = new TransmissionServer();
+            var repository = IoCService.Instance.Resolve<IDbRepository>();
+            var transmitter = IoCService.Instance.Resolve<ITransmissionServer>();
             var appWatcher = new AppWatcher();
             var sysWatcher = new SystemWatcher(MessageWindow.Instance);
 

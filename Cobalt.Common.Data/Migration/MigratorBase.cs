@@ -6,9 +6,9 @@ using System.Reflection;
 
 namespace Cobalt.Common.Data.Migration
 {
-    public abstract class Migrator
+    public abstract class MigratorBase : IDbMigrator
     {
-        protected Migrator(IDbConnection connection)
+        protected MigratorBase(IDbConnection connection)
         {
             Connection = connection;
         }

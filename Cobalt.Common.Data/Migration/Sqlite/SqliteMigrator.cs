@@ -4,7 +4,7 @@ using Cobalt.Common.Util;
 
 namespace Cobalt.Common.Data.Migration.Sqlite
 {
-    public class SqliteMigrator : Migrator
+    public class SqliteMigrator : MigratorBase
     {
         public SqliteMigrator(IDbConnection repo) : base(repo)
         {
@@ -13,7 +13,7 @@ namespace Cobalt.Common.Data.Migration.Sqlite
         protected override int CurrentMigration()
         {
             var conn = Connection as SQLiteConnection;
-            if (conn == null) Throw.InvalidOperation("Connection must be type of SQLiteConnection for this Migrator");
+            if (conn == null) Throw.InvalidOperation("Connection must be type of SQLiteConnection for this MigratorBase");
 
             var cmd = new SQLiteCommand("select LatestMigration from Migrations", conn);
             try

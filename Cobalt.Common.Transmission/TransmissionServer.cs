@@ -10,7 +10,12 @@ using Newtonsoft.Json;
 
 namespace Cobalt.Common.Transmission
 {
-    public class TransmissionServer
+    public interface ITransmissionServer
+    {
+        void Send(MessageBase message);
+    }
+
+    public class TransmissionServer : ITransmissionServer
     {
         private readonly List<JsonTextWriter> _broadcasters;
         private readonly List<NamedPipeServerStream> _broadcastingPipes;

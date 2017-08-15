@@ -37,7 +37,7 @@ namespace Cobalt.Common.Data.Repository
         public DbConnection Connection => _connection;
         private readonly SQLiteConnection _connection;
 
-        public SqliteRepository(IDbConnection conn, Migrator migrator)
+        public SqliteRepository(IDbConnection conn, IDbMigrator migrator)
         {
             _connection = conn as SQLiteConnection;
             if (_connection == null)

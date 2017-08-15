@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Data;
 using System.Data.SQLite;
 using Autofac;
 using Cobalt.Common.Data.Repository;
@@ -33,7 +34,7 @@ namespace Cobalt.Common.IoC
         public static void RegisterDependencies(ContainerBuilder builder)
         {
             builder.RegisterAssemblyTypes(AppDomain.CurrentDomain.GetAssemblies())
-                .Where(type => type.Name.StartsWith("Cobalt"))
+                .Where(type => !string.IsNullOrWhiteSpace(type.Namespace) && type.Namespace.StartsWith("Cobalt"))
                 .PreserveExistingDefaults()
                 .AsSelf()
                 //but we also make interfaces to be implemented
@@ -41,8 +42,8 @@ namespace Cobalt.Common.IoC
                 .InstancePerDependency();
 
             builder
-                .Register(c => new SQLiteConnection("Data Source=dat.db"))
-                .As<SQLiteConnection>()
+                .Register(c => new SQLiteConnection("Data Source=dat.db").OpenAndReturn())
+                .As<IDbConnection>()
                 .InstancePerLifetimeScope();
 
             builder
@@ -51,8 +52,14 @@ namespace Cobalt.Common.IoC
                 .InstancePerLifetimeScope();
 
             //register single instance transmission client
-            builder.RegisterInstance(new TransmissionClient())
-                .As<ITransmissionClient>();
+            builder.RegisterType<TransmissionClient>()
+                .As<ITransmissionClient>()
+                .SingleInstance();
+        }
+
+        public T Resolve<T>()
+        {
+            return Container.Resolve<T>();
         }
     }
 }

@@ -63,8 +63,9 @@
     <Compile Include="AppUsageStartReason.cs" />
     <Compile Include="AppUsageType.cs" />
     <Compile Include="Entity.cs" />
+    <Compile Include="Migration\IDbMigrator.cs" />
     <Compile Include="Migration\MigrationBase.cs" />
-    <Compile Include="Migration\Migrator.cs" />
+    <Compile Include="Migration\MigratorBase.cs" />
     <Compile Include="Migration\Sqlite\SqliteMigrationBase.cs" />
     <Compile Include="Migration\Sqlite\SqliteMigrationV1.cs" />
     <Compile Include="Migration\Sqlite\SqliteMigrator.cs" />
