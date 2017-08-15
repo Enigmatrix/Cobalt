@@ -8,8 +8,9 @@ namespace Cobalt.TaskbarNotifier
     /// </summary>
     public partial class App
     {
-        public class AppBoostrapper : Bootstrapper<MainView>
-        {
-        }
+    }
+
+    public class AppBoostrapper : Bootstrapper<MainViewModel>
+    {
     }
 }
