@@ -4,7 +4,16 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Cobalt.TaskbarNotifier"
-        mc:Ignorable="d"
-        Title="MainView" Height="350" Width="525">
-    <Grid />
+        xmlns:tb="http://www.hardcodet.net/taskbar"
+        xmlns:cal="http://www.caliburnproject.org"
+        AllowsTransparency="True" ShowInTaskbar="False"
+        mc:Ignorable="d" Visibility="Hidden" ShowActivated="False" WindowStyle="None"
+        Title="HostWindow" Height="0" Width="0">
+    <tb:TaskbarIcon>
+        <tb:TaskbarIcon.TrayPopup>
+            <Grid>
+                <local:PopupContent/>
+            </Grid>
+        </tb:TaskbarIcon.TrayPopup>
+    </tb:TaskbarIcon>
 </Window>

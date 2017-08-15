@@ -55,7 +55,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="IoCService.cs" />
+    <Compile Include="IResourceScope.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ResourceScope.cs" />
+    <Compile Include="ResourceScopeEx.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
