@@ -4,9 +4,15 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:Cobalt.TaskbarNotifier"
-             mc:Ignorable="d"
+             xmlns:lv="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
+             xmlns:converters="clr-namespace:Cobalt.Common.UI.Converters;assembly=Cobalt.Common.UI"
+             mc:Ignorable="d" Background="White" Height="400" Width="400"
              d:DesignHeight="300" d:DesignWidth="300">
     <Grid>
-        <TextBlock Text="gsndkfbjdg kj vksdfj vd" />
+        <Grid.Resources>
+            <converters:AppDurationSeriesConverter x:Key="AppDurationSeriesConverter"/>
+        </Grid.Resources>
+        <lv:PieChart DisableAnimations="True"
+                     Series="{Binding AppDurations, Converter={StaticResource AppDurationSeriesConverter}}" />
     </Grid>
 </UserControl>

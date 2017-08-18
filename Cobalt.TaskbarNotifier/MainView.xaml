@@ -9,10 +9,10 @@
         AllowsTransparency="True" ShowInTaskbar="False"
         mc:Ignorable="d" Visibility="Hidden" ShowActivated="False" WindowStyle="None"
         Title="HostWindow" Height="0" Width="0">
-    <tb:TaskbarIcon>
+    <tb:TaskbarIcon x:Name="Tray">
         <tb:TaskbarIcon.TrayPopup>
             <Grid>
-                <local:PopupContent />
+                <local:PopupContent cal:Message.Attach="[Event Loaded] = [Action PopupOpened()]; [Event Unloaded] = [Action PopupClosed()]" />
             </Grid>
         </tb:TaskbarIcon.TrayPopup>
     </tb:TaskbarIcon>

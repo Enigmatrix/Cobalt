@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Data;
 using System.Data.SQLite;
+using System.Linq;
+using System.Reflection;
 using Autofac;
 using Cobalt.Common.Data.Repository;
 using Cobalt.Common.Transmission;
@@ -31,9 +33,16 @@ namespace Cobalt.Common.IoC
             set => _instance = value;
         }
 
+        public static Assembly[] AllAssemblies()
+        {
+            var a = Assembly.GetEntryAssembly().GetReferencedAssemblies().Select(Assembly.Load).ToList();
+            a.Add(Assembly.GetEntryAssembly());
+            return a.ToArray();
+        }
+
         public static void RegisterDependencies(ContainerBuilder builder)
         {
-            builder.RegisterAssemblyTypes(AppDomain.CurrentDomain.GetAssemblies())
+            builder.RegisterAssemblyTypes(AllAssemblies())
                 .Where(type => !string.IsNullOrWhiteSpace(type.Namespace) && type.Namespace.StartsWith("Cobalt"))
                 .PreserveExistingDefaults()
                 .AsSelf()

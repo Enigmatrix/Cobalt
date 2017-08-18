@@ -35,7 +35,7 @@ namespace Cobalt.Common.Transmission
 
             _listeningThread = new Thread(() =>
             {
-                while (_keepAlive)
+                while (reader.Read() && _keepAlive)
                     MessageReceived?.Invoke(this,
                         new MessageReceivedArgs(serializer.Deserialize<MessageBase>(reader)));
             });
