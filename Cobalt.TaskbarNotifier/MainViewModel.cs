@@ -109,7 +109,6 @@ namespace Cobalt.TaskbarNotifier
 
         public void PopupClosed()
         {
-            
             AppDurations.Clear();
             TagDurations.Clear();
             Current.Dispose();

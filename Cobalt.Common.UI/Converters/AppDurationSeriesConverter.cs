@@ -45,10 +45,10 @@ namespace Cobalt.Common.UI.Converters
                     foreach (var appDur in e.NewItems)
                         Add((AppDurationViewModel) appDur);
                 else if (e.Action == NotifyCollectionChangedAction.Reset)
-                {
                     series.Clear();
-                }
-            };
+            }
+
+            ;
 
             foreach (var appDur in coll)
                 Add(appDur);
