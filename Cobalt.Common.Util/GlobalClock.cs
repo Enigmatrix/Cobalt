@@ -28,6 +28,16 @@ namespace Cobalt.Common.Util
             Start();
         }
 
+        public void OnTick(Action<TimeSpan> tick)
+        {
+            Callback += tick;
+        }
+
+        public void ReleaseTick(Action<TimeSpan> tick)
+        {
+            Callback -= tick;
+        }
+
         public virtual void Dispose()
         {
             Stop();
@@ -50,13 +60,13 @@ namespace Cobalt.Common.Util
         public void UpdateTimeInterval(TimeSpan interval)
         {
             Stop();
-            this._interval = interval;
+            _interval = interval;
             Start();
         }
 
         private void StartUnmanagedTimer()
         {
-            _timerId = timeSetEvent((uint)_interval.TotalMilliseconds, 0, _callbackFunction, 0, 1);
+            _timerId = timeSetEvent((uint) _interval.TotalMilliseconds, 0, _callbackFunction, 0, 1);
         }
 
         private void StopUnmanagedTimer()
@@ -89,15 +99,5 @@ namespace Cobalt.Common.Util
         private delegate void MMTimerProc(uint timerid, uint msg, IntPtr user, uint dw1, uint dw2);
 
         #endregion
-
-        public void OnTick(Action<TimeSpan> tick)
-        {
-            Callback += tick;
-        }
-
-        public void ReleaseTick(Action<TimeSpan> tick)
-        {
-            Callback -= tick;
-        }
     }
 }

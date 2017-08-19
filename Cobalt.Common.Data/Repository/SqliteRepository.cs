@@ -116,9 +116,9 @@ namespace Cobalt.Common.Data.Repository
         public IObservable<App> GetAppsWithTag(Tag tag)
         {
             return Get(@"select * from App
-                            	where Id = (select AppId from AppTag
-		                            where TagId = (select Id from Tag 
-                                        where Name = ?))", r => AppMapper(r), tag.Name)
+								where Id = (select AppId from AppTag
+									where TagId = (select Id from Tag 
+										where Name = ?))", r => AppMapper(r), tag.Name)
                 .Do(app => app.Tags = GetTags(app));
         }
 
@@ -127,11 +127,11 @@ namespace Cobalt.Common.Data.Repository
             //TODO might cause high memory usage, implement cache
             var (startTicks, endTicks) = ToTickRange(start, end);
             return Get(@"select a.Id, a.Name, a.Path, 
-                                au.Id, au.AppId, au.UsageType, 
-                                au.StartTimestamp, au.EndTimestamp, 
-                                au.UsageStartReason, au.UsageEndReason  
-                            from AppUsage au, App a
-                            where StartTimestamp >= ? and EndTimestamp <= ? and au.AppId = a.Id",
+								au.Id, au.AppId, au.UsageType, 
+								au.StartTimestamp, au.EndTimestamp, 
+								au.UsageStartReason, au.UsageEndReason  
+							from AppUsage au, App a
+							where StartTimestamp >= ? and EndTimestamp <= ? and au.AppId = a.Id",
                     r => AppUsageMapper(r, AppOffset, AppMapper(r)),
                     startTicks, endTicks)
                 .Do(appUsage => appUsage.App.Tags = GetTags(appUsage.App));
@@ -141,11 +141,11 @@ namespace Cobalt.Common.Data.Repository
         {
             var (startTicks, endTicks) = ToTickRange(start, end);
             return Get(@"select a.Id, a.Name, a.Path, 
-                                au.Id, au.AppId, au.UsageType, 
-                                au.StartTimestamp, au.EndTimestamp, 
-                                au.UsageStartReason, au.UsageEndReason  
-                            from AppUsage
-                            where StartTimestamp >= ? and EndTimestamp <= ? where au.AppId = a.Id and a.Id = ?",
+								au.Id, au.AppId, au.UsageType, 
+								au.StartTimestamp, au.EndTimestamp, 
+								au.UsageStartReason, au.UsageEndReason  
+							from AppUsage
+							where StartTimestamp >= ? and EndTimestamp <= ? where au.AppId = a.Id and a.Id = ?",
                     r => AppUsageMapper(r, AppOffset, AppMapper(r)),
                     startTicks, endTicks, app.Id)
                 .Do(appUsage => appUsage.App.Tags = GetTags(appUsage.App));
@@ -155,11 +155,11 @@ namespace Cobalt.Common.Data.Repository
         {
             var (startTicks, endTicks) = ToTickRange(start, end);
             return Get(@"select AppId, a.Name, a.Path, sum(
-                                            (case when EndTimestamp > ? then ? else EndTimestamp end)
-                                        -   (case when StartTimestamp < ? then ? else StartTimestamp end)) Duration
-                                        from AppUsage, App a
-                                        where StartTimestamp >= ? and EndTimestamp <= ? and a.Id = AppId
-                                        group by AppId",
+											(case when EndTimestamp > ? then ? else EndTimestamp end)
+										-   (case when StartTimestamp < ? then ? else StartTimestamp end)) Duration
+										from AppUsage, App a
+										where StartTimestamp >= ? and EndTimestamp <= ? and a.Id = AppId
+										group by AppId",
                     r => (AppMapper(r), TimeSpan.FromTicks(r.GetInt64(AppOffset))),
                     endTicks, endTicks, startTicks, startTicks, startTicks, endTicks)
                 .Do(appDur => appDur.Item1.Tags = GetTags(appDur.Item1));
@@ -169,16 +169,16 @@ namespace Cobalt.Common.Data.Repository
         {
             var (startTicks, endTicks) = ToTickRange(start, end);
             return Get(@"select t.Id, t.Name, sum(
-                                            (case when EndTimestamp > ? then ? else EndTimestamp end)
-                                        -   (case when StartTimestamp < ? then ? else StartTimestamp end)) Duration
-                                        from AppUsage, App a, AppTag at, Tag t
-                                        where StartTimestamp >= ? and EndTimestamp <= ? and a.Id = AppId and a.Id = at.AppId and t.Id = at.TagId
-                                        group by t.Id",
+											(case when EndTimestamp > ? then ? else EndTimestamp end)
+										-   (case when StartTimestamp < ? then ? else StartTimestamp end)) Duration
+										from AppUsage, App a, AppTag at, Tag t
+										where StartTimestamp >= ? and EndTimestamp <= ? and a.Id = AppId and a.Id = at.AppId and t.Id = at.TagId
+										group by t.Id",
                 r => (TagMapper(r), TimeSpan.FromTicks(r.GetInt64(TagOffset))),
                 endTicks, endTicks, startTicks, startTicks, startTicks, endTicks);
         }
 
-        private IObservable<Tag> GetTags(App app)
+        public IObservable<Tag> GetTags(App app)
         {
             return Get("select * from Tag where Id in (select TagId from AppTag where AppId = ?)", r => TagMapper(r),
                 app.Id);

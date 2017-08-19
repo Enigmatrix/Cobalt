@@ -1,9 +1,4 @@
-﻿using System.Data;
-using System.Reflection;
-using Cobalt.Common.IoC;
-using Xunit;
-
-namespace Cobalt.Tests.Common.IoC
+﻿namespace Cobalt.Tests.Common.IoC
 {
     public class IoCTests
     {

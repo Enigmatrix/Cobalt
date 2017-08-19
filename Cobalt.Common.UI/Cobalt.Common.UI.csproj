@@ -97,6 +97,8 @@
     <Compile Include="Util\DurationIncrementor.cs" />
     <Compile Include="ViewModelBase.cs" />
     <Compile Include="ViewModels\AppDurationViewModel.cs" />
+    <Compile Include="ViewModels\IHasDuration.cs" />
+    <Compile Include="ViewModels\TagDurationViewModel.cs" />
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>

@@ -7,11 +7,12 @@ namespace Cobalt.Common.UI.Util
     public interface IDurationIncrementor : IDisposable
     {
         void Release();
-        void Increment(IAppDurationViewModel appDur);
+        void Increment(IHasDuration appDur);
     }
 
     public class DurationIncrementor : IDurationIncrementor
     {
+        private readonly object _sync = new object();
         private TimeSpan _ticked;
 
         public DurationIncrementor(IGlobalClock clock)
@@ -21,15 +22,13 @@ namespace Cobalt.Common.UI.Util
         }
 
         private IGlobalClock Clock { get; }
-        private IAppDurationViewModel AppDuration { get; set; }
+        private IHasDuration DurationHolder { get; set; }
 
-        private readonly object _sync = new object();
-
-        public void Increment(IAppDurationViewModel appDur)
+        public void Increment(IHasDuration appDur)
         {
             lock (_sync)
             {
-                AppDuration = appDur;
+                DurationHolder = appDur;
             }
         }
 
@@ -38,26 +37,26 @@ namespace Cobalt.Common.UI.Util
         {
             lock (_sync)
             {
-                if(AppDuration == null) return;
-                AppDuration.Duration -= _ticked;
+                if (DurationHolder == null) return;
+                DurationHolder.Duration -= _ticked;
                 _ticked = TimeSpan.Zero;
-                AppDuration = null;
-            }
-        }
-
-        private void Tick(TimeSpan t)
-        {
-            lock (_sync)
-            {
-                if(AppDuration == null) return;
-                _ticked += t;
-                AppDuration.Duration += t;
+                DurationHolder = null;
             }
         }
 
         public void Dispose()
         {
             Clock.ReleaseTick(Tick);
+        }
+
+        private void Tick(TimeSpan t)
+        {
+            lock (_sync)
+            {
+                if (DurationHolder == null) return;
+                _ticked += t;
+                DurationHolder.Duration += t;
+            }
         }
     }
 }

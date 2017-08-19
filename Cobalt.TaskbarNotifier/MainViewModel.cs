@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Data;
 using System.Reactive.Linq;
 using Caliburn.Micro;
 using Cobalt.Common.Analysis;
@@ -13,6 +12,7 @@ namespace Cobalt.TaskbarNotifier
     public interface IMainViewModel : IViewModel
     {
         BindableCollection<AppDurationViewModel> AppDurations { get; }
+        BindableCollection<TagDurationViewModel> TagDurations { get; }
     }
 
     public class MainViewModel : ViewModelBase, IMainViewModel
@@ -20,12 +20,15 @@ namespace Cobalt.TaskbarNotifier
         private BindableCollection<AppDurationViewModel> _appDurations
             = new BindableCollection<AppDurationViewModel>();
 
+        private BindableCollection<TagDurationViewModel> _tagDurations
+            = new BindableCollection<TagDurationViewModel>();
+
         public MainViewModel(IResourceScope res)
         {
             Global = res;
         }
 
-        private IResourceScope Global { get; set; }
+        private IResourceScope Global { get; }
         private IResourceScope Current { get; set; }
 
         public BindableCollection<AppDurationViewModel> AppDurations
@@ -34,22 +37,18 @@ namespace Cobalt.TaskbarNotifier
             set => Set(ref _appDurations, value);
         }
 
+        public BindableCollection<TagDurationViewModel> TagDurations
+        {
+            get => _tagDurations;
+            set => Set(ref _tagDurations, value);
+        }
+
         public void PopupOpened()
         {
             Current = Global.Subscope();
             var stats = Current.Resolve<IAppStatsStreamService>();
-            var incrementor = Current.Resolve<IDurationIncrementor>();
-
-            /*
-             * var globalClock = resolve(clock)
-             * 
-             * when app.Duration += d,
-             * check if d == Timespan.Zero, if it is then
-             * add clock.tick to appdur
-             * 
-             * clock.tick increments current appdur every <period>
-             * when diff appdur has d==timespan.zero, remove tick from appDur, and add prev thingy
-             */
+            var appIncrementor = Current.Resolve<IDurationIncrementor>();
+            var tagIncrementor = Current.Resolve<IDurationIncrementor>();
 
             stats.GetAppDurations(DateTime.Today)
                 .Select(x =>
@@ -62,12 +61,12 @@ namespace Cobalt.TaskbarNotifier
                             if (d is null)
                             {
                                 //handle new app started here
-                                incrementor.Increment(appDur);
+                                appIncrementor.Increment(appDur);
                                 appDur.Duration += TimeSpan.Zero;
                             }
                             else
                             {
-                                incrementor.Release();
+                                appIncrementor.Release();
                                 appDur.Duration += d.Value;
                             }
                         })
@@ -77,6 +76,34 @@ namespace Cobalt.TaskbarNotifier
                 })
                 .Subscribe(x => AppDurations.Add(x))
                 .ManageUsing(Current);
+
+            stats.GetTagDurations(DateTime.Today)
+                .Select(x =>
+                {
+                    var tagDur = new TagDurationViewModel(x.Tag);
+
+                    x.Duration
+                        .Subscribe(d =>
+                        {
+                            if (d is null)
+                            {
+                                //handle new app started here
+                                tagIncrementor.Increment(tagDur);
+                                tagDur.Duration += TimeSpan.Zero;
+                            }
+                            else
+                            {
+                                tagIncrementor.Release();
+                                tagDur.Duration += d.Value;
+                            }
+                        })
+                        .ManageUsing(Current);
+
+                    return tagDur;
+                })
+                //TODO after converter and views are made
+                /*.Subscribe(x => TagDurations.Add(x))
+                .ManageUsing(Current)*/;
         }
 
         public void PopupClosed()
