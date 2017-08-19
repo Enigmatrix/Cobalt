@@ -1,10 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Data;
 using Caliburn.Micro;
 using Cobalt.Common.UI.ViewModels;
@@ -39,19 +35,13 @@ namespace Cobalt.Common.UI.Converters
             }
 
             foreach (var appDur in coll)
-            {
                 Add(appDur);
-            }
             coll.CollectionChanged += (_, e) =>
             {
                 //check for Action.Clear too
                 if (e.Action == NotifyCollectionChangedAction.Add)
-                {
                     foreach (var appDur in e.NewItems)
-                    {
-                        Add((AppDurationViewModel)appDur);
-                    }
-                }
+                        Add((AppDurationViewModel) appDur);
             };
 
             return series;

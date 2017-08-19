@@ -1,5 +1,4 @@
-﻿using System;
-using System.Data;
+﻿using System.Data;
 using System.Data.SQLite;
 using System.Linq;
 using System.Reflection;
@@ -35,7 +34,8 @@ namespace Cobalt.Common.IoC
 
         public static Assembly[] AllAssemblies()
         {
-            var a = Assembly.GetEntryAssembly().GetReferencedAssemblies().Select(Assembly.Load).ToList();
+            var a = Assembly.GetEntryAssembly().GetReferencedAssemblies()
+                .Where(x => x.Name.Contains("Cobalt")).Select(Assembly.Load).ToList();
             a.Add(Assembly.GetEntryAssembly());
             return a.ToArray();
         }

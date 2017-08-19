@@ -12,7 +12,8 @@
     <tb:TaskbarIcon x:Name="Tray">
         <tb:TaskbarIcon.TrayPopup>
             <Grid>
-                <local:PopupContent cal:Message.Attach="[Event Loaded] = [Action PopupOpened()]; [Event Unloaded] = [Action PopupClosed()]" />
+                <local:PopupContent
+                    cal:Message.Attach="[Event Loaded] = [Action PopupOpened()]; [Event Unloaded] = [Action PopupClosed()]" />
             </Grid>
         </tb:TaskbarIcon.TrayPopup>
     </tb:TaskbarIcon>

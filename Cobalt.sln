@@ -25,6 +25,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cobalt.Common.Analysis", "C
 EndProject
 Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "Cobalt.Setup", "Cobalt.Setup\Cobalt.Setup.wixproj", "{9F7C0BA1-B18F-42F8-82CC-2356EBEE1B5E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "clnt", "clnt\clnt.csproj", "{8FA1C65D-F5DB-4AD6-AA09-5305256003F0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -119,6 +121,14 @@ Global
 		{9F7C0BA1-B18F-42F8-82CC-2356EBEE1B5E}.Release|Any CPU.ActiveCfg = Release|x86
 		{9F7C0BA1-B18F-42F8-82CC-2356EBEE1B5E}.Release|x86.ActiveCfg = Release|x86
 		{9F7C0BA1-B18F-42F8-82CC-2356EBEE1B5E}.Release|x86.Build.0 = Release|x86
+		{8FA1C65D-F5DB-4AD6-AA09-5305256003F0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8FA1C65D-F5DB-4AD6-AA09-5305256003F0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8FA1C65D-F5DB-4AD6-AA09-5305256003F0}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{8FA1C65D-F5DB-4AD6-AA09-5305256003F0}.Debug|x86.Build.0 = Debug|Any CPU
+		{8FA1C65D-F5DB-4AD6-AA09-5305256003F0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8FA1C65D-F5DB-4AD6-AA09-5305256003F0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8FA1C65D-F5DB-4AD6-AA09-5305256003F0}.Release|x86.ActiveCfg = Release|Any CPU
+		{8FA1C65D-F5DB-4AD6-AA09-5305256003F0}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

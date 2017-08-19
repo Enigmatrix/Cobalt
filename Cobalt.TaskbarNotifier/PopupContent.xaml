@@ -10,7 +10,7 @@
              d:DesignHeight="300" d:DesignWidth="300">
     <Grid>
         <Grid.Resources>
-            <converters:AppDurationSeriesConverter x:Key="AppDurationSeriesConverter"/>
+            <converters:AppDurationSeriesConverter x:Key="AppDurationSeriesConverter" />
         </Grid.Resources>
         <lv:PieChart DisableAnimations="True"
                      Series="{Binding AppDurations, Converter={StaticResource AppDurationSeriesConverter}}" />

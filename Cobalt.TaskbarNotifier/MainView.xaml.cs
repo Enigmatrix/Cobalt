@@ -10,10 +10,7 @@ namespace Cobalt.TaskbarNotifier
         public MainView()
         {
             InitializeComponent();
-            Tray.TrayPopupOpen += (_, e) =>
-            {
-                Tray.TrayPopupResolved.StaysOpen = true;
-            };
+            Tray.TrayPopupOpen += (_, e) => { Tray.TrayPopupResolved.StaysOpen = true; };
         }
 
         private void TrayKeepToggle(object sender, RoutedEventArgs e)

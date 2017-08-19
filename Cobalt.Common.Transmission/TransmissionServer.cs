@@ -38,7 +38,7 @@ namespace Cobalt.Common.Transmission
                 try
                 {
                     _serializer.Serialize(writer, message);
-                    writer.Flush();
+                    //writer.Flush();
                 }
                 catch (Exception)
                 {

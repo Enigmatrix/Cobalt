@@ -11,7 +11,7 @@ namespace Cobalt.TaskbarNotifier
 {
     public class MainViewModel : ViewModelBase
     {
-        private BindableCollection<AppDurationViewModel> _appDurations 
+        private BindableCollection<AppDurationViewModel> _appDurations
             = new BindableCollection<AppDurationViewModel>();
 
         public MainViewModel(IResourceScope res)
@@ -47,7 +47,7 @@ namespace Cobalt.TaskbarNotifier
             stats.GetAppDurations(DateTime.Today)
                 .Select(x =>
                 {
-                    var appDur =  new AppDurationViewModel(x.App);
+                    var appDur = new AppDurationViewModel(x.App);
 
                     x.Duration
                         .Subscribe(d => appDur.Duration += d)
@@ -64,6 +64,5 @@ namespace Cobalt.TaskbarNotifier
             AppDurations.Clear();
             Current.Dispose();
         }
-
     }
 }

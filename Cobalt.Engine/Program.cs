@@ -44,10 +44,10 @@ namespace Cobalt.Engine
                 else
                     newApp.Id = newappId.Value;
 
-                //then store the app usage
-                repository.AddAppUsage(prevAppUsage);
                 //broadcast foreground app switch to all clients
                 transmitter.Send(new AppSwitchMessage(prevAppUsage, newApp));
+                //then store the app usage
+                repository.AddAppUsage(prevAppUsage);
 
                 LogAppSwitch(prevAppUsage, newApp);
             };
