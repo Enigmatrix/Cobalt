@@ -21,7 +21,8 @@
             Source="pack://application:,,,/MaterialDesignColors;component/Themes/Recommended/Accent/MaterialDesignColor.Orange.xaml" />
 
         <!--our own-->
-        <ResourceDictionary Source="pack://application:,,,/Cobalt.Common.UI;component/Resources/DataRepresentations.xaml"/>
+        <ResourceDictionary
+            Source="pack://application:,,,/Cobalt.Common.UI;component/Resources/DataRepresentations.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
 

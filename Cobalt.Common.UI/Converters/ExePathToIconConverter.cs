@@ -56,9 +56,7 @@ namespace Cobalt.Common.UI.Converters
                 BitmapSizeOptions.FromEmptyOptions());
 
             if (!DeleteObject(hBitmap))
-            {
                 throw new Win32Exception();
-            }
 
             return wpfBitmap;
         }

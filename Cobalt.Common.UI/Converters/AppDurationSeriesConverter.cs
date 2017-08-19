@@ -30,7 +30,7 @@ namespace Cobalt.Common.UI.Converters
                     Title = newAppDur.App.Path,
                     DataLabels = true,
                     LabelPoint = LabelPoint,
-                    DataLabelsTemplate = (DataTemplate)Application.Current.Resources["AppPieRepresentation"],
+                    DataLabelsTemplate = (DataTemplate) Application.Current.Resources["AppPieRepresentation"],
                     Values = new ChartValues<AppDurationViewModel>
                     {
                         newAppDur
@@ -51,15 +51,15 @@ namespace Cobalt.Common.UI.Converters
             return series;
         }
 
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+
         private string LabelPoint(ChartPoint c)
         {
             var duration = (c.Instance as IAppDurationViewModel)?.Duration;
             return duration?.ToString(@"hh\:mm\:ss\.fff") ?? "";
-        }
-
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            throw new NotImplementedException();
         }
     }
 }
