@@ -1,10 +1,12 @@
-﻿using System.Data;
+﻿using System;
+using System.Data;
 using System.Data.SQLite;
 using System.Linq;
 using System.Reflection;
 using Autofac;
 using Cobalt.Common.Data.Repository;
 using Cobalt.Common.Transmission;
+using Cobalt.Common.Util;
 
 namespace Cobalt.Common.IoC
 {
@@ -64,6 +66,11 @@ namespace Cobalt.Common.IoC
             builder.RegisterType<TransmissionClient>()
                 .As<ITransmissionClient>()
                 .SingleInstance();
+
+            builder
+                .Register(c => new GlobalClock(TimeSpan.FromMilliseconds(35)))
+                .As<IGlobalClock>()
+                .InstancePerLifetimeScope();
         }
 
         public T Resolve<T>()

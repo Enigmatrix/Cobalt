@@ -11,7 +11,7 @@ namespace Cobalt.Common.Analysis
 {
     public interface IAppStatsStreamService
     {
-        IObservable<(App App, IObservable<TimeSpan> Duration)> GetAppDurations(DateTime start, DateTime? end = null);
+        IObservable<(App App, IObservable<TimeSpan?> Duration)> GetAppDurations(DateTime start, DateTime? end = null);
     }
 
     public class AppStatsStreamService : IAppStatsStreamService
@@ -28,19 +28,21 @@ namespace Cobalt.Common.Analysis
         private static IEqualityComparer<App> PathEquality { get; }
             = new SelectorEqualityComparer<App, string>(a => a.Path);
 
-        public IObservable<(App App, IObservable<TimeSpan> Duration)> GetAppDurations(DateTime start,
+        public IObservable<(App App, IObservable<TimeSpan?> Duration)> GetAppDurations(DateTime start,
             DateTime? end = null)
         {
+            //a bit untidy but meh
             if (end != null)
                 return Repository.GetAppDurations(start, end)
-                    .Select(x => (x.App, Observable.Return(x.Duration)));
+                    .Select(x => (x.App, Observable.Return<TimeSpan?>(x.Duration)));
             return Repository.GetAppDurations(start)
+                .Select(x => ((App App, TimeSpan? Duration))(x.App, (TimeSpan?)x.Duration))
                 .Concat(ReceivedAppDurations())
                 .GroupBy(x => x.App, PathEquality)
                 .Select(x => (x.Key, x.Select(y => y.Duration)));
         }
 
-        public IObservable<(App App, TimeSpan Duration)> ReceivedAppDurations()
+        public IObservable<(App App, TimeSpan? Duration)> ReceivedAppDurations()
         {
             return Observable.FromEventPattern<MessageReceivedArgs>(
                     e => Receiver.MessageReceived += e,
@@ -50,9 +52,9 @@ namespace Cobalt.Common.Analysis
                 .SelectMany(message => new[]
                 {
                     //old app usage
-                    (message.PreviousAppUsage.App, message.PreviousAppUsage.Duration),
+                    (message.PreviousAppUsage.App, (TimeSpan?)message.PreviousAppUsage.Duration),
                     //new app
-                    (message.NewApp, TimeSpan.Zero)
+                    (message.NewApp, null)
                 });
         }
     }

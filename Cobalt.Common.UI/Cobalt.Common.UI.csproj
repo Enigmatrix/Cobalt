@@ -94,6 +94,7 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
+    <Compile Include="Util\DurationIncrementor.cs" />
     <Compile Include="ViewModelBase.cs" />
     <Compile Include="ViewModels\AppDurationViewModel.cs" />
     <EmbeddedResource Include="Properties\Resources.resx">
@@ -115,6 +116,10 @@
     <ProjectReference Include="..\Cobalt.Common.IoC\Cobalt.Common.IoC.csproj">
       <Project>{D3409738-6594-4B95-9068-49ED79F9521B}</Project>
       <Name>Cobalt.Common.IoC</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Cobalt.Common.Util\Cobalt.Common.Util.csproj">
+      <Project>{0CED98A9-89FE-4B5F-95E8-1FC895B96281}</Project>
+      <Name>Cobalt.Common.Util</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

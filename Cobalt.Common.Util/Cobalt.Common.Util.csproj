@@ -47,6 +47,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="GlobalClock.cs" />
     <Compile Include="SelectorEqualityComparer.cs" />
     <Compile Include="Throw.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
