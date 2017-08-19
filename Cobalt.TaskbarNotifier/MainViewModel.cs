@@ -17,11 +17,9 @@ namespace Cobalt.TaskbarNotifier
 
     public class MainViewModel : ViewModelBase, IMainViewModel
     {
-        private BindableCollection<AppDurationViewModel> _appDurations
-            = new BindableCollection<AppDurationViewModel>();
+        private BindableCollection<AppDurationViewModel> _appDurations = new BindableCollection<AppDurationViewModel>();
 
-        private BindableCollection<TagDurationViewModel> _tagDurations
-            = new BindableCollection<TagDurationViewModel>();
+        private BindableCollection<TagDurationViewModel> _tagDurations = new BindableCollection<TagDurationViewModel>();
 
         public MainViewModel(IResourceScope res)
         {
@@ -48,7 +46,12 @@ namespace Cobalt.TaskbarNotifier
             Current = Global.Subscope();
             var stats = Current.Resolve<IAppStatsStreamService>();
             var appIncrementor = Current.Resolve<IDurationIncrementor>();
-            var tagIncrementor = Current.Resolve<IDurationIncrementor>();
+            //var tagIncrementor = Current.Resolve<IDurationIncrementor>();
+
+            /*
+            AppDurations = new BindableCollection<AppDurationViewModel>();
+            TagDurations = new BindableCollection<TagDurationViewModel>();
+            */
 
             stats.GetAppDurations(DateTime.Today)
                 .Select(x =>
@@ -62,7 +65,6 @@ namespace Cobalt.TaskbarNotifier
                             {
                                 //handle new app started here
                                 appIncrementor.Increment(appDur);
-                                appDur.Duration += TimeSpan.Zero;
                             }
                             else
                             {
@@ -88,12 +90,11 @@ namespace Cobalt.TaskbarNotifier
                             if (d is null)
                             {
                                 //handle new tag started here
-                                tagIncrementor.Increment(tagDur);
-                                tagDur.Duration += TimeSpan.Zero;
+                                //tagIncrementor.Increment(tagDur);
                             }
                             else
                             {
-                                tagIncrementor.Release();
+                                //tagIncrementor.Release();
                                 tagDur.Duration += d.Value;
                             }
                         })
@@ -108,7 +109,9 @@ namespace Cobalt.TaskbarNotifier
 
         public void PopupClosed()
         {
+            
             AppDurations.Clear();
+            TagDurations.Clear();
             Current.Dispose();
         }
     }

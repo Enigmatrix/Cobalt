@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace Cobalt.Common.Util
 {
-    public interface IGlobalClock
+    public interface IGlobalClock : IDisposable
     {
         void OnTick(Action<TimeSpan> tick);
         void ReleaseTick(Action<TimeSpan> tick);

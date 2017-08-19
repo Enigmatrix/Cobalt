@@ -38,15 +38,23 @@ namespace Cobalt.Common.UI.Converters
                 });
             }
 
-            foreach (var appDur in coll)
-                Add(appDur);
-            coll.CollectionChanged += (_, e) =>
+            void Notify(object o, NotifyCollectionChangedEventArgs e)
             {
                 //check for Action.Clear too
                 if (e.Action == NotifyCollectionChangedAction.Add)
                     foreach (var appDur in e.NewItems)
                         Add((AppDurationViewModel) appDur);
+                else if (e.Action == NotifyCollectionChangedAction.Reset)
+                {
+                    series.Clear();
+                }
             };
+
+            foreach (var appDur in coll)
+                Add(appDur);
+
+            coll.CollectionChanged += Notify;
+
 
             return series;
         }
