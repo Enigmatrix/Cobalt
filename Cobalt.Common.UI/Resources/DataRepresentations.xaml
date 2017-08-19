@@ -1,0 +1,11 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:liveCharts="clr-namespace:LiveCharts;assembly=LiveCharts"
+                    xmlns:converters="clr-namespace:Cobalt.Common.UI.Converters">
+    <converters:ExePathToIconConverter x:Key="ExePathToIconConverter"/>
+
+    <DataTemplate x:Key="AppPieRepresentation" DataType="liveCharts:DataLabelViewModel">
+        <Image Source="{Binding Point.Instance.App.Path, Converter={StaticResource ExePathToIconConverter}}" 
+               Stretch="Fill" Height="25" Width="25"/>
+    </DataTemplate>
+</ResourceDictionary>

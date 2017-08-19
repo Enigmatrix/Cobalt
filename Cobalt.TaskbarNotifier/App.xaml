@@ -6,6 +6,8 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
 
+                <ResourceDictionary Source="pack://application:,,,/Cobalt.Common.UI;component/Resources/Common.xaml" />
+
                 <ResourceDictionary>
                     <local:AppBoostrapper x:Key="bootstrapper" />
                 </ResourceDictionary>

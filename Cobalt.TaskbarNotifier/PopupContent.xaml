@@ -6,13 +6,13 @@
              xmlns:local="clr-namespace:Cobalt.TaskbarNotifier"
              xmlns:lv="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
              xmlns:converters="clr-namespace:Cobalt.Common.UI.Converters;assembly=Cobalt.Common.UI"
-             mc:Ignorable="d" Background="White" Height="400" Width="400"
+             mc:Ignorable="d" Background="{DynamicResource MaterialDesignPaper}" Height="400" Width="400"
              d:DesignHeight="300" d:DesignWidth="300">
     <Grid>
         <Grid.Resources>
             <converters:AppDurationSeriesConverter x:Key="AppDurationSeriesConverter" />
         </Grid.Resources>
-        <lv:PieChart DisableAnimations="True"
+        <lv:PieChart DisableAnimations="True" Margin="10"
                      Series="{Binding AppDurations, Converter={StaticResource AppDurationSeriesConverter}}" />
     </Grid>
 </UserControl>

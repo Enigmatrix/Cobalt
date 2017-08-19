@@ -87,7 +87,7 @@ namespace Cobalt.TaskbarNotifier
                         {
                             if (d is null)
                             {
-                                //handle new app started here
+                                //handle new tag started here
                                 tagIncrementor.Increment(tagDur);
                                 tagDur.Duration += TimeSpan.Zero;
                             }
