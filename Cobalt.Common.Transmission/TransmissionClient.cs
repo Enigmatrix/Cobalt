@@ -30,14 +30,18 @@ namespace Cobalt.Common.Transmission
             //_pipe.ReadMode = PipeTransmissionMode.Message;
             _keepAlive = true;
 
-            var reader = new JsonTextReader(new StreamReader(_pipe)) {SupportMultipleContent = true};
+            //TODO wtf this is bugging out, causing inconsitent reads (out of order/delayed), creating another json reader is a workaround
+            //var reader = new JsonTextReader(new StreamReader(_pipe)) {SupportMultipleContent = true};
             var serializer = Utilities.CreateSerializer();
 
             _listeningThread = new Thread(() =>
             {
-                while (reader.Read() && _keepAlive)
+                while (_keepAlive)
+                {
+                    var reader = new JsonTextReader(new StreamReader(_pipe));
                     MessageReceived?.Invoke(this,
                         new MessageReceivedArgs(serializer.Deserialize<MessageBase>(reader)));
+                }
             });
             _listeningThread.Start();
         }

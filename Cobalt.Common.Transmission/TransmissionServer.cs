@@ -38,7 +38,7 @@ namespace Cobalt.Common.Transmission
                 try
                 {
                     _serializer.Serialize(writer, message);
-                    //writer.Flush();
+                    writer.Flush();
                 }
                 catch (Exception)
                 {
@@ -84,6 +84,8 @@ namespace Cobalt.Common.Transmission
         {
             var currentUserSid = $@"{Environment.UserDomainName}\{Environment.UserName}";
             var pipeAccess = new PipeSecurity();
+            /*pipeAccess.AddAccessRule(new PipeAccessRule(new SecurityIdentifier(WellKnownSidType.WorldSid, null), PipeAccessRights.FullControl,
+                AccessControlType.Allow));*/
             pipeAccess.AddAccessRule(new PipeAccessRule(currentUserSid, PipeAccessRights.FullControl,
                 AccessControlType.Allow));
             pipeAccess.AddAccessRule(new PipeAccessRule(new SecurityIdentifier(WellKnownSidType.NetworkSid, null),
