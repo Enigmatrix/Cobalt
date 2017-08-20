@@ -48,30 +48,13 @@ namespace Cobalt.TaskbarNotifier
             var appIncrementor = Current.Resolve<IDurationIncrementor>();
             //var tagIncrementor = Current.Resolve<IDurationIncrementor>();
 
-            /*
-            AppDurations = new BindableCollection<AppDurationViewModel>();
-            TagDurations = new BindableCollection<TagDurationViewModel>();
-            */
-
             stats.GetAppDurations(DateTime.Today)
                 .Select(x =>
                 {
                     var appDur = new AppDurationViewModel(x.App);
 
                     x.Duration
-                        .Subscribe(d =>
-                        {
-                            if (d is null)
-                            {
-                                //handle new app started here
-                                appIncrementor.Increment(appDur);
-                            }
-                            else
-                            {
-                                appIncrementor.Release();
-                                appDur.Duration += d.Value;
-                            }
-                        })
+                        .Subscribe(d => HandleDuration(d, appIncrementor, appDur))
                         .ManageUsing(Current);
 
                     return appDur;
@@ -79,6 +62,7 @@ namespace Cobalt.TaskbarNotifier
                 .Subscribe(x =>
                     AppDurations.Add(x))
                 .ManageUsing(Current);
+
             /*
             stats.GetTagDurations(DateTime.Today)
                 .Select(x =>
@@ -86,26 +70,16 @@ namespace Cobalt.TaskbarNotifier
                     var tagDur = new TagDurationViewModel(x.Tag);
 
                     x.Duration
-                        .Subscribe(d =>
-                        {
-                            if (d is null)
-                            {
-                                //handle new tag started here
-                                //tagIncrementor.Increment(tagDur);
-                            }
-                            else
-                            {
-                                //tagIncrementor.Release();
-                                tagDur.Duration += d.Value;
-                            }
-                        })
+                        .Subscribe(d => HandleDuration(d, tagIncrementor, tagDur))
                         .ManageUsing(Current);
 
                     return tagDur;
                 })
+                
                 //TODO after converter and views are made
                 .Subscribe(x => TagDurations.Add(x))
-                .ManageUsing(Current)*/
+                .ManageUsing(Current)
+                */
             ;
         }
 
@@ -114,6 +88,20 @@ namespace Cobalt.TaskbarNotifier
             Current.Dispose();
             AppDurations.Clear();
             TagDurations.Clear();
+        }
+
+        private static void HandleDuration(TimeSpan? d, IDurationIncrementor incrementor, IHasDuration hasDur)
+        {
+            if (d is null)
+            {
+                //handle new app/tag started here
+                incrementor.Increment(hasDur);
+            }
+            else
+            {
+                incrementor.Release();
+                hasDur.Duration += d.Value;
+            }
         }
     }
 }
