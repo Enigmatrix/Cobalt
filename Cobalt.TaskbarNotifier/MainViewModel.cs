@@ -76,9 +76,10 @@ namespace Cobalt.TaskbarNotifier
 
                     return appDur;
                 })
-                .Subscribe(x => AppDurations.Add(x))
+                .Subscribe(x =>
+                    AppDurations.Add(x))
                 .ManageUsing(Current);
-
+            /*
             stats.GetTagDurations(DateTime.Today)
                 .Select(x =>
                 {
@@ -103,15 +104,16 @@ namespace Cobalt.TaskbarNotifier
                     return tagDur;
                 })
                 //TODO after converter and views are made
-                /*.Subscribe(x => TagDurations.Add(x))
-                .ManageUsing(Current)*/;
+                .Subscribe(x => TagDurations.Add(x))
+                .ManageUsing(Current)*/
+            ;
         }
 
         public void PopupClosed()
         {
+            Current.Dispose();
             AppDurations.Clear();
             TagDurations.Clear();
-            Current.Dispose();
         }
     }
 }

@@ -6,13 +6,28 @@
              xmlns:local="clr-namespace:Cobalt.TaskbarNotifier"
              xmlns:lv="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
              xmlns:converters="clr-namespace:Cobalt.Common.UI.Converters;assembly=Cobalt.Common.UI"
-             mc:Ignorable="d" Background="{DynamicResource MaterialDesignPaper}" Height="400" Width="400"
+             xmlns:viewModels="clr-namespace:Cobalt.Common.UI.ViewModels;assembly=Cobalt.Common.UI"
+             mc:Ignorable="d" Background="{DynamicResource MaterialDesignPaper}" Height="800" Width="400"
              d:DesignHeight="300" d:DesignWidth="300">
     <Grid>
         <Grid.Resources>
             <converters:AppDurationSeriesConverter x:Key="AppDurationSeriesConverter" />
         </Grid.Resources>
+        <!--<Grid.RowDefinitions>
+            <RowDefinition/>
+            <RowDefinition/>
+        </Grid.RowDefinitions>-->
         <lv:PieChart DisableAnimations="True" Margin="10"
                      Series="{Binding AppDurations, Converter={StaticResource AppDurationSeriesConverter}}" />
+        <!--<ListBox Grid.Row="1" ItemsSource="{Binding AppDurations}">
+            <ListBox.ItemTemplate>
+                <DataTemplate DataType="viewModels:IAppDurationViewModel">
+                    <Grid HorizontalAlignment="Stretch">
+                        <TextBlock Text="{Binding App.Path}" HorizontalAlignment="Left"/>
+                        <TextBlock Text="{Binding Duration}" HorizontalAlignment="Right"/>
+                    </Grid>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>-->
     </Grid>
 </UserControl>

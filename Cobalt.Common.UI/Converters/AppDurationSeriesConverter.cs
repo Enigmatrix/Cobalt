@@ -48,8 +48,6 @@ namespace Cobalt.Common.UI.Converters
                     series.Clear();
             }
 
-            ;
-
             foreach (var appDur in coll)
                 Add(appDur);
 

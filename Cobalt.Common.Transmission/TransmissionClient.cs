@@ -37,19 +37,23 @@ namespace Cobalt.Common.Transmission
             _listeningThread = new Thread(() =>
             {
                 while (_keepAlive)
-                {
-                    var reader = new JsonTextReader(new StreamReader(_pipe));
-                    MessageReceived?.Invoke(this,
-                        new MessageReceivedArgs(serializer.Deserialize<MessageBase>(reader)));
-                }
+                    lock (_pipe)
+                    {
+                        var reader = new JsonTextReader(new StreamReader(_pipe));
+                        MessageReceived?.Invoke(this,
+                            new MessageReceivedArgs(serializer.Deserialize<MessageBase>(reader)));
+                    }
             });
             _listeningThread.Start();
         }
 
         public void Dispose()
         {
-            _keepAlive = false;
-            _pipe.Dispose();
+            lock (_pipe)
+            {
+                _keepAlive = false;
+                _pipe.Dispose();
+            }
         }
 
         public event EventHandler<MessageReceivedArgs> MessageReceived;
