@@ -13,6 +13,8 @@ namespace Cobalt.TaskbarNotifier
     {
         BindableCollection<IAppDurationViewModel> AppDurations { get; }
         BindableCollection<ITagDurationViewModel> TagDurations { get; }
+        void PopupOpened();
+        void PopupClosed();
     }
 
     public class MainViewModel : ViewModelBase, IMainViewModel

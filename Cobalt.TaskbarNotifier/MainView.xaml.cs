@@ -31,7 +31,7 @@ namespace Cobalt.TaskbarNotifier
         {
             if (_set) return;
             _set = true;
-            Tray.TrayPopupResolved.Closed += (r, t) => { (DataContext as MainViewModel).PopupClosed(); };
+            Tray.TrayPopupResolved.Closed += (r, t) => ((IMainViewModel) DataContext).PopupClosed();
         }
     }
 }
