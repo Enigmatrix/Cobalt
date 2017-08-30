@@ -20,7 +20,7 @@ namespace Cobalt.Common.UI.Converters
                 .Value(x => x.Duration.Ticks);
 
             var series = new SeriesCollection(mapper);
-            var coll = value as BindableCollection<AppDurationViewModel>;
+            var coll = value as BindableCollection<IAppDurationViewModel>;
             if (coll == null) return null;
 
             void Add(AppDurationViewModel newAppDur)
@@ -49,7 +49,7 @@ namespace Cobalt.Common.UI.Converters
             }
 
             foreach (var appDur in coll)
-                Add(appDur);
+                Add((AppDurationViewModel)appDur);
 
             coll.CollectionChanged += Notify;
 
