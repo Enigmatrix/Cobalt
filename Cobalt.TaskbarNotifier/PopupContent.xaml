@@ -7,7 +7,7 @@
              xmlns:lv="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
              xmlns:converters="clr-namespace:Cobalt.Common.UI.Converters;assembly=Cobalt.Common.UI"
              xmlns:viewModels="clr-namespace:Cobalt.Common.UI.ViewModels;assembly=Cobalt.Common.UI"
-             mc:Ignorable="d" Background="{DynamicResource MaterialDesignPaper}" Height="800" Width="400"
+             mc:Ignorable="d" Background="{DynamicResource MaterialDesignPaper}" Height="400" Width="400"
              d:DesignHeight="300" d:DesignWidth="300">
     <Grid>
         <Grid.Resources>

@@ -1,4 +1,7 @@
-﻿using System.Windows;
+﻿using System.Threading;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Input;
 
 namespace Cobalt.TaskbarNotifier
 {
@@ -24,5 +27,18 @@ namespace Cobalt.TaskbarNotifier
                 Tray.TrayPopupResolved.StaysOpen = true;
             }
         }
+
+        private bool _set = false;
+
+        private void SetPopupClose(object sender, RoutedEventArgs e)
+        {
+            if(_set) return;
+            _set = true;
+            Tray.TrayPopupResolved.Closed += (r, t) =>
+            {
+                (DataContext as MainViewModel).PopupClosed();
+            };
+        }
+
     }
 }

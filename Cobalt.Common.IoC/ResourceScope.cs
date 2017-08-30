@@ -7,6 +7,7 @@ namespace Cobalt.Common.IoC
     public class ResourceScope : IDisposable, IResourceScope
     {
         private readonly ILifetimeScope _scope;
+        private bool _disposed = false;
 
         public ResourceScope(ILifetimeScope scope)
         {
@@ -15,6 +16,7 @@ namespace Cobalt.Common.IoC
 
         public void Dispose()
         {
+            _disposed = true;
             _scope.Dispose();
         }
 
@@ -30,7 +32,8 @@ namespace Cobalt.Common.IoC
 
         public void Manage(IDisposable dis)
         {
-            _scope.Disposer.AddInstanceForDisposal(dis);
+            if (_disposed) return;
+            _scope?.Disposer.AddInstanceForDisposal(dis);
         }
     }
 }

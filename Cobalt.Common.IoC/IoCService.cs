@@ -62,7 +62,6 @@ namespace Cobalt.Common.IoC
                 .As<IDbRepository>()
                 .InstancePerLifetimeScope();
 
-            //register single instance transmission client
             builder.RegisterType<TransmissionClient>()
                 .As<ITransmissionClient>()
                 .SingleInstance();

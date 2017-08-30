@@ -32,20 +32,23 @@ namespace Cobalt.Common.Transmission
 
         public void Send(MessageBase message)
         {
-            for (var i = 0; i < _broadcasters.Count; i++)
+            lock (_broadcasters)
             {
-                var writer = _broadcasters[i];
-                try
+                for (var i = 0; i < _broadcasters.Count; i++)
                 {
-                    _serializer.Serialize(writer, message);
-                    writer.Flush();
-                }
-                catch (Exception)
-                {
-                    _broadcastingPipes[i].Dispose();
-                    _broadcastingPipes.RemoveAt(i);
-                    _broadcasters.RemoveAt(i);
-                    i--;
+                    var writer = _broadcasters[i];
+                    try
+                    {
+                        _serializer.Serialize(writer, message);
+                        writer.Flush();
+                    }
+                    catch (Exception)
+                    {
+                        _broadcastingPipes[i].Dispose();
+                        _broadcastingPipes.RemoveAt(i);
+                        _broadcasters.RemoveAt(i);
+                        i--;
+                    }
                 }
             }
         }
@@ -70,12 +73,15 @@ namespace Cobalt.Common.Transmission
         //implicit threading
         private void ConnectionCallback(IAsyncResult ar)
         {
-            var connectedPipe = _waitingPipe;
-            connectedPipe.EndWaitForConnection(ar);
+            lock (_broadcasters)
+            {
+                var connectedPipe = _waitingPipe;
+                connectedPipe.EndWaitForConnection(ar);
 
-            var writer = new JsonTextWriter(new StreamWriter(connectedPipe));
-            _broadcasters.Add(writer);
-            _broadcastingPipes.Add(connectedPipe);
+                var writer = new JsonTextWriter(new StreamWriter(connectedPipe));
+                _broadcasters.Add(writer);
+                _broadcastingPipes.Add(connectedPipe);
+            }
 
             SetupPipeForConnection();
         }

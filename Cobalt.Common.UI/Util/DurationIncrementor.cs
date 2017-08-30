@@ -46,6 +46,7 @@ namespace Cobalt.Common.UI.Util
 
         public void Dispose()
         {
+            Release();
             Clock.ReleaseTick(Tick);
         }
 
