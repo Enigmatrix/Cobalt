@@ -1,7 +1,4 @@
-﻿using System.Threading;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Input;
+﻿using System.Windows;
 
 namespace Cobalt.TaskbarNotifier
 {
@@ -10,6 +7,8 @@ namespace Cobalt.TaskbarNotifier
     /// </summary>
     public partial class MainView
     {
+        private bool _set;
+
         public MainView()
         {
             InitializeComponent();
@@ -28,17 +27,11 @@ namespace Cobalt.TaskbarNotifier
             }
         }
 
-        private bool _set = false;
-
         private void SetPopupClose(object sender, RoutedEventArgs e)
         {
-            if(_set) return;
+            if (_set) return;
             _set = true;
-            Tray.TrayPopupResolved.Closed += (r, t) =>
-            {
-                (DataContext as MainViewModel).PopupClosed();
-            };
+            Tray.TrayPopupResolved.Closed += (r, t) => { (DataContext as MainViewModel).PopupClosed(); };
         }
-
     }
 }

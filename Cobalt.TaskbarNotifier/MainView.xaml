@@ -6,37 +6,29 @@
         xmlns:local="clr-namespace:Cobalt.TaskbarNotifier"
         xmlns:tb="http://www.hardcodet.net/taskbar"
         xmlns:cal="http://www.caliburnproject.org"
-        xmlns:converters="clr-namespace:Cobalt.Common.UI.Converters;assembly=Cobalt.Common.UI"
-        xmlns:wpf="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
-        xmlns:viewModels="clr-namespace:Cobalt.Common.UI.ViewModels;assembly=Cobalt.Common.UI"
         AllowsTransparency="True" ShowInTaskbar="False"
         mc:Ignorable="d" Visibility="Hidden" ShowActivated="False" WindowStyle="None"
         Title="HostWindow" Height="0" Width="0">
     <tb:TaskbarIcon x:Name="Tray" cal:Message.Attach="[Event PreviewTrayPopupOpen] = [Action PopupOpened()]"
-                    TrayPopupOpen="SetPopupClose" PopupActivation="LeftOrDoubleClick" IconSource="/Cobalt.Common.UI;component/Assets/icon.ico">
+                    TrayPopupOpen="SetPopupClose" PopupActivation="LeftOrDoubleClick"
+                    IconSource="/Cobalt.Common.UI;component/Assets/icon.ico">
         <tb:TaskbarIcon.TrayPopup>
             <Grid>
-                <local:PopupContent x:Name="Box"/>
-                <Button HorizontalAlignment="Left" x:Name="PinOrClose" VerticalAlignment="Top" Content="X" Click="TrayKeepToggle">
-                <Button.Style>
-                    <Style TargetType="Button" BasedOn="{StaticResource MaterialDesignFloatingActionButton}">
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding TrayPopupResolved.StaysOpen,ElementName=Tray}" Value="True">
-                                <Setter Property="Content" Value="P"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </Button.Style>
+                <local:PopupContent x:Name="Box" />
+                <Button HorizontalAlignment="Left" x:Name="PinOrClose" VerticalAlignment="Top" Content="X"
+                        Click="TrayKeepToggle">
+                    <Button.Style>
+                        <Style TargetType="Button" BasedOn="{StaticResource MaterialDesignFloatingActionButton}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding TrayPopupResolved.StaysOpen,ElementName=Tray}"
+                                             Value="True">
+                                    <Setter Property="Content" Value="P" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
                 </Button>
             </Grid>
         </tb:TaskbarIcon.TrayPopup>
     </tb:TaskbarIcon>
-    <!--<tb:TaskbarIcon x:Name="Tray" cal:Message.Attach="[Event TrayLeftMouseDown] = [Action PopupOpened()]">
-        <tb:TaskbarIcon.TrayPopup>
-            <Grid>
-                <local:PopupContent
-                    cal:Message.Attach="[Event Unloaded] = [Action PopupClosed()]" />
-            </Grid>
-        </tb:TaskbarIcon.TrayPopup>
-    </tb:TaskbarIcon>-->
 </Window>

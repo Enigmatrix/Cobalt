@@ -7,7 +7,7 @@ namespace Cobalt.Common.IoC
     public class ResourceScope : IDisposable, IResourceScope
     {
         private readonly ILifetimeScope _scope;
-        private bool _disposed = false;
+        private bool _disposed;
 
         public ResourceScope(ILifetimeScope scope)
         {

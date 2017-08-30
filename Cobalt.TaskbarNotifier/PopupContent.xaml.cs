@@ -1,6 +1,4 @@
-﻿using System.Windows.Controls;
-
-namespace Cobalt.TaskbarNotifier
+﻿namespace Cobalt.TaskbarNotifier
 {
     /// <summary>
     ///     Interaction logic for PopupContent.xaml

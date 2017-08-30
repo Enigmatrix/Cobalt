@@ -19,9 +19,11 @@ namespace Cobalt.TaskbarNotifier
     {
         private BindableCollection<IAppDurationViewModel> _appDurations =
             new BindableCollection<IAppDurationViewModel>();
+
+        private bool _isPopupOpen;
+
         private BindableCollection<ITagDurationViewModel> _tagDurations =
             new BindableCollection<ITagDurationViewModel>();
-        private bool _isPopupOpen;
 
 
         public MainViewModel(IResourceScope res)

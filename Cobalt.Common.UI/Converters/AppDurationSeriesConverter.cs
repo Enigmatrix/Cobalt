@@ -49,7 +49,7 @@ namespace Cobalt.Common.UI.Converters
             }
 
             foreach (var appDur in coll)
-                Add((AppDurationViewModel)appDur);
+                Add((AppDurationViewModel) appDur);
 
             coll.CollectionChanged += Notify;
 
