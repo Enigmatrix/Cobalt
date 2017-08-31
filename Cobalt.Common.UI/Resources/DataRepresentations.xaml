@@ -2,7 +2,11 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:liveCharts="clr-namespace:LiveCharts;assembly=LiveCharts"
                     xmlns:converters="clr-namespace:Cobalt.Common.UI.Converters">
+
+
     <converters:ExePathToIconConverter x:Key="ExePathToIconConverter" />
+    <converters:HumanReadableTimeSpanConverter x:Key="HumanReadableTimeSpanConverter" />
+    <converters:AppToExeNameConverter x:Key="AppToExeNameConverter" />
 
     <DataTemplate x:Key="AppPieRepresentation" DataType="liveCharts:DataLabelViewModel">
         <Image Source="{Binding Point.Instance.App.Path, Converter={StaticResource ExePathToIconConverter}}"

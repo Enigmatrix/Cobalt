@@ -91,7 +91,9 @@
   <ItemGroup>
     <Compile Include="Bootstrapper.cs" />
     <Compile Include="Converters\AppDurationSeriesConverter.cs" />
+    <Compile Include="Converters\AppToExeNameConverter.cs" />
     <Compile Include="Converters\ExePathToIconConverter.cs" />
+    <Compile Include="Converters\HumanReadableTimeSpanConverter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
