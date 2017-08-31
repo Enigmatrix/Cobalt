@@ -1,8 +1,8 @@
 ﻿<UserControl x:Class="Cobalt.TaskbarNotifier.AppDurationTooltip"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:wpf="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              mc:Ignorable="d" Background="Transparent"
@@ -15,21 +15,25 @@
                 <DataTemplate DataType="{x:Type wpf:DataPointViewModel}">
                     <Grid Margin="4">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="Auto" SharedSizeGroup="Title"/>
-                            <ColumnDefinition Width="Auto" SharedSizeGroup="Duration"/>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="Title" />
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="Duration" />
                         </Grid.ColumnDefinitions>
                         <Border Background="DimGray">
-                            <Image Width="16" Height="16" Source="{Binding ChartPoint.Instance.App.Path, Converter={StaticResource ExePathToIconConverter}}"/>
+                            <Image Width="16" Height="16"
+                                   Source="{Binding ChartPoint.Instance.App.Path, Converter={StaticResource ExePathToIconConverter}}" />
                         </Border>
-                        <TextBlock Grid.Column="1" Text="{Binding ChartPoint.Instance.App, Converter={StaticResource AppToExeNameConverter}}"
-                               Margin="10 0 0 0" VerticalAlignment="Center" Foreground="{DynamicResource BlackBrush}"/>
-                        <TextBlock Grid.Column="2" Text="{Binding ChartPoint.Instance.Duration, Converter={StaticResource HumanReadableTimeSpanConverter}}"
-                               Margin="5 0 0 0" VerticalAlignment="Center" Foreground="{DynamicResource PrimaryHueDarkBrush}"/>
+                        <TextBlock Grid.Column="1"
+                                   Text="{Binding ChartPoint.Instance.App, Converter={StaticResource AppToExeNameConverter}}"
+                                   Margin="10 0 0 0" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource BlackBrush}" />
+                        <TextBlock Grid.Column="2"
+                                   Text="{Binding ChartPoint.Instance.Duration, Converter={StaticResource HumanReadableTimeSpanConverter}}"
+                                   Margin="5 0 0 0" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource PrimaryHueDarkBrush}" />
                     </Grid>
                 </DataTemplate>
             </ItemsControl.ItemTemplate>
         </ItemsControl>
     </materialDesign:Card>
 </UserControl>
-

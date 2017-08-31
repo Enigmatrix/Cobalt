@@ -8,7 +8,7 @@ using LiveCharts.Wpf;
 namespace Cobalt.TaskbarNotifier
 {
     /// <summary>
-    /// Interaction logic for AppDurationTooltip.xaml
+    ///     Interaction logic for AppDurationTooltip.xaml
     /// </summary>
     public partial class AppDurationTooltip : IChartTooltip
     {
@@ -19,6 +19,16 @@ namespace Cobalt.TaskbarNotifier
         {
             InitializeComponent();
             DataContext = this;
+        }
+
+        public List<DataPointViewModel> SortedPoints
+        {
+            get => _sortedPoints;
+            set
+            {
+                _sortedPoints = value;
+                OnPropertyChanged();
+            }
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -34,15 +44,9 @@ namespace Cobalt.TaskbarNotifier
             }
         }
 
-        public List<DataPointViewModel> SortedPoints
-        {
-            get => _sortedPoints;
-            set { _sortedPoints = value; OnPropertyChanged(); }
-        }
-
         public TooltipSelectionMode? SelectionMode { get; set; }
 
-        protected virtual void OnPropertyChanged([CallerMemberName]string propertyName = null)
+        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }

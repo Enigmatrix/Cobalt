@@ -12,7 +12,7 @@ namespace Cobalt.Common.UI.Converters
         {
             try
             {
-                var app = (App)value;
+                var app = (App) value;
                 if (app is null) throw new NullReferenceException(nameof(App));
                 return app?.Name ?? FileVersionInfo.GetVersionInfo(app.Path).FileDescription;
             }

@@ -3,7 +3,6 @@ using System.Linq;
 using Cobalt.Common.Data;
 using Cobalt.Common.Transmission.Messages;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 
 namespace Cobalt.Common.Transmission.Util
 {

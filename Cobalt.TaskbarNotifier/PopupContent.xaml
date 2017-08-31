@@ -18,12 +18,12 @@
             <RowDefinition/>
         </Grid.RowDefinitions>-->
         <lv:PieChart DisableAnimations="True" Margin="10"
-                     Series="{Binding AppDurations, Converter={StaticResource AppDurationSeriesConverter}}" >
+                     Series="{Binding AppDurations, Converter={StaticResource AppDurationSeriesConverter}}">
             <lv:PieChart.DataTooltip>
-                <local:AppDurationTooltip/>
+                <local:AppDurationTooltip />
             </lv:PieChart.DataTooltip>
         </lv:PieChart>
-            <!--<ListBox Grid.Row="1" ItemsSource="{Binding AppDurations}">
+        <!--<ListBox Grid.Row="1" ItemsSource="{Binding AppDurations}">
             <ListBox.ItemTemplate>
                 <DataTemplate DataType="viewModels:IAppDurationViewModel">
                     <Grid HorizontalAlignment="Stretch">
