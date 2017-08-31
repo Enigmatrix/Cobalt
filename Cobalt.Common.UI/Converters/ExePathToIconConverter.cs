@@ -4,12 +4,14 @@ using System.ComponentModel;
 using System.Drawing;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Xml.Linq;
 
 namespace Cobalt.Common.UI.Converters
 {
@@ -23,7 +25,49 @@ namespace Cobalt.Common.UI.Converters
             {
                 try
                 {
-                    return path == null ? null : ToImageSource(Icon.ExtractAssociatedIcon(path));
+                    //if normal windows desktop app
+                    if (!path.Contains(@"Program Files\WindowsApps"))
+                        return ToImageSource(Icon.ExtractAssociatedIcon(path));
+
+                    //if uwp app
+                    var directory = Path.GetDirectoryName(path);
+                    var exeName = Path.GetFileName(path);
+                    string imagePath = null;
+                    using (var fs = File.OpenRead(Path.Combine(directory ?? throw new InvalidOperationException(),
+                        "AppxManifest.xml")))
+                    {
+                        var manifest = XDocument.Load(fs);
+
+                        var applicationNodes = manifest.Root?.Descendants()
+                            .Where(x => x.Name.LocalName == "Application");
+
+                        var applicationNode = applicationNodes?
+                            .Single(app => app.Attribute(XName.Get("Executable"))?.Value == exeName);
+
+                        var visualElements = applicationNode?.Elements()
+                            .FirstOrDefault(x => x.Name.LocalName == "VisualElements");
+
+                        var imageRelPath =
+                            //get the 44x44 (its usually the default)
+                            visualElements?.Attribute(XName.Get("Square44x44Logo"))?.Value ??
+                            //last is usually the smallest
+                            visualElements?.Attributes().LastOrDefault(x => x.Name.LocalName.Contains("Logo"))
+                                ?.Value;
+
+                        if (imageRelPath == null)
+                            return null;
+
+                        foreach (var logoFile in Directory.GetFiles(
+                            Path.Combine(directory,
+                                Path.GetDirectoryName(imageRelPath) ?? throw new InvalidOperationException()),
+                            //usually the file also comes with a scale e.g. Logo.scale-100.jpg. We just get the first one
+                            Path.GetFileNameWithoutExtension(imageRelPath) + "*" + Path.GetExtension(imageRelPath)))
+                        {
+                            imagePath = logoFile;
+                            break;
+                        }
+                    }
+                    return new BitmapImage(new Uri($@"file:/{imagePath}"));
                 }
                 catch (FileNotFoundException)
                 {
@@ -33,7 +77,8 @@ namespace Cobalt.Common.UI.Converters
 
             var pathStr = value as string;
             if (pathStr is null) return null;
-            return _iconMapper.ContainsKey(pathStr) ? _iconMapper[pathStr] : _iconMapper[pathStr] = Get(pathStr);
+            if (!_iconMapper.ContainsKey(pathStr)) _iconMapper[pathStr] = Get(pathStr);
+            return _iconMapper[pathStr];
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

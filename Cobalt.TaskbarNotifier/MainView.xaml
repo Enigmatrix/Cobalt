@@ -6,6 +6,7 @@
         xmlns:local="clr-namespace:Cobalt.TaskbarNotifier"
         xmlns:tb="http://www.hardcodet.net/taskbar"
         xmlns:cal="http://www.caliburnproject.org"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         AllowsTransparency="True" ShowInTaskbar="False"
         mc:Ignorable="d" Visibility="Hidden" ShowActivated="False" WindowStyle="None"
         Title="HostWindow" Height="0" Width="0">
@@ -15,19 +16,30 @@
         <tb:TaskbarIcon.TrayPopup>
             <Grid>
                 <local:PopupContent x:Name="Box" />
-                <Button HorizontalAlignment="Left" x:Name="PinOrClose" VerticalAlignment="Top" Content="X"
-                        Click="TrayKeepToggle">
-                    <Button.Style>
-                        <Style TargetType="Button" BasedOn="{StaticResource MaterialDesignFloatingActionButton}">
+                <ToggleButton Click="TrayKeepToggle" x:Name="Toggle"
+                              VerticalAlignment="Top" HorizontalAlignment="Right" Margin="0,15,15,0">
+                    <ToggleButton.Style>
+                        <Style TargetType="ToggleButton" BasedOn="{StaticResource MaterialDesignFlatToggleButton}">
                             <Style.Triggers>
-                                <DataTrigger Binding="{Binding TrayPopupResolved.StaysOpen,ElementName=Tray}"
-                                             Value="True">
-                                    <Setter Property="Content" Value="P" />
-                                </DataTrigger>
+                                <Trigger Property="IsChecked" Value="True">
+                                    <Setter Property="Content">
+                                        <Setter.Value>
+                                            <materialDesign:PackIcon Kind="Close" Height="24" Width="24" />
+                                        </Setter.Value>
+                                    </Setter>
+                                </Trigger>
+                                <Trigger Property="IsChecked" Value="False">
+                                    <Setter Property="Content">
+                                        <Setter.Value>
+                                            <materialDesign:PackIcon Kind="Pin" Height="24" Width="24" />
+                                        </Setter.Value>
+                                    </Setter>
+                                </Trigger>
                             </Style.Triggers>
+
                         </Style>
-                    </Button.Style>
-                </Button>
+                    </ToggleButton.Style>
+                </ToggleButton>
             </Grid>
         </tb:TaskbarIcon.TrayPopup>
     </tb:TaskbarIcon>
