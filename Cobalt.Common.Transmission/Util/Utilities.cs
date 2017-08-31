@@ -3,6 +3,7 @@ using System.Linq;
 using Cobalt.Common.Data;
 using Cobalt.Common.Transmission.Messages;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 
 namespace Cobalt.Common.Transmission.Util
 {
@@ -22,7 +23,10 @@ namespace Cobalt.Common.Transmission.Util
                 SerializationBinder = new WhitelistSerializationBinder(
                     TypesInNamespaces(
                         typeof(Entity).Namespace,
-                        typeof(MessageBase).Namespace))
+                        typeof(MessageBase).Namespace)),
+#if DEBUG
+                TraceWriter = new DebugTraceWriter(),
+#endif
             });
         }
 
