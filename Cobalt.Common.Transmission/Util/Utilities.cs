@@ -11,7 +11,7 @@ namespace Cobalt.Common.Transmission.Util
         public static readonly string LocalComputer = ".";
         public static readonly string PipeName = "CobaltNamedPipeXD";
         public static readonly int PipeConnectionTimeout = 2000;
-        public static readonly int ReadWriteSize = 1024;
+        public static readonly int ReadWriteSize = 0;
 
         public static JsonSerializer CreateSerializer()
         {
