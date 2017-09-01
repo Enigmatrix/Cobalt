@@ -1,30 +1,33 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-	<Product Id="*" Name="Cobalt.Setup" Language="1033" Version="1.0.0.0" Manufacturer="" UpgradeCode="d0073666-175c-405e-a717-2701a7b5aa1b">
-		<Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+	<Product Id="*" Name="Cobalt.Setup" Language="1033" Version="1.0.0.0" Manufacturer="Enigmatrix" UpgradeCode="d0073666-175c-405e-a717-2701a7b5aa1b">
+		<Package InstallerVersion="200" Compressed="yes" InstallPrivileges="elevated" InstallScope="perMachine" />
 
 		<MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
-		<MediaTemplate />
+		<MediaTemplate EmbedCab="yes"/>
 
 		<Feature Id="ProductFeature" Title="Cobalt.Setup" Level="1">
-			<ComponentGroupRef Id="ProductComponents" />
+			<ComponentGroupRef Id="CobaltEngineComponents"/>
+			<ComponentGroupRef Id="CobaltTaskbarNotifierComponents"/>
 		</Feature>
+
+		<Binary Id="CobaltSetupTasks" SourceFile="$(var.Cobalt.Setup.TaskScheduler.TargetDir)\Cobalt.Setup.TaskScheduler.CA.dll" />
+		<CustomAction BinaryKey="CobaltSetupTasks" DllEntry="InstallCobaltEngineToTaskScheduler" Id="InstallCobaltEngineToTaskScheduler" Return="check" Execute='deferred' Impersonate='no'/>
+		<CustomAction Id='SetEnv' Property="InstallCobaltEngineToTaskScheduler" Value="INSTALLFOLDER=[INSTALLFOLDER]"/>
+
+		<InstallExecuteSequence>
+			<Custom Action="SetEnv" After="InstallFiles"/>
+			<Custom Action="InstallCobaltEngineToTaskScheduler" After="SetEnv"/>
+		</InstallExecuteSequence>
+
 	</Product>
 
 	<Fragment>
 		<Directory Id="TARGETDIR" Name="SourceDir">
 			<Directory Id="ProgramFilesFolder">
-				<Directory Id="INSTALLFOLDER" Name="Cobalt.Setup" />
+				<Directory Id="INSTALLFOLDER" Name="Cobalt" />
 			</Directory>
 		</Directory>
 	</Fragment>
 
-	<Fragment>
-		<ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
-			<!-- TODO: Remove the comments around this Component element and the ComponentRef below in order to add resources to this installer. -->
-			<!-- <Component Id="ProductComponent"> -->
-				<!-- TODO: Insert files, registry keys, and other resources here. -->
-			<!-- </Component> -->
-		</ComponentGroup>
-	</Fragment>
 </Wix>

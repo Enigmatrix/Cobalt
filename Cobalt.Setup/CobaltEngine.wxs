@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Fragment>
+        <DirectoryRef Id="INSTALLFOLDER">
+            <Directory Id="dir43FCCFA109FBF584D9155DCE31E452EB" Name="x64" />
+            <Directory Id="dir97F42FF68945B97AAE670945C4FDAE93" Name="x86" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <ComponentGroup Id="CobaltEngineComponents">
+            <Component Id="cmpD339AB18193D634C8BEE2784A8F3D153" Directory="INSTALLFOLDER" Guid="1FA7EC52-9243-40E4-A92F-9CC99041C7EC" KeyPath="no">
+                <File Id="fil327EB8437D571CE2533316B73F0ACDE2" KeyPath="yes" Source="$(var.Cobalt.Engine.TargetDir)\Cobalt.Engine.exe" />
+            </Component>
+            <Component Id="cmp65A796F5E96BF4CF4CF4D3E5A53619B8" Directory="INSTALLFOLDER" Guid="DDDBC84E-7CD2-467C-902F-1FA4BAF37CA5" KeyPath="no">
+                <File Id="fil2C9257C03774BF3C18C9DEE858FE332D" KeyPath="yes" Source="$(var.Cobalt.Engine.TargetDir)\Cobalt.Engine.exe.config" />
+            </Component>
+        </ComponentGroup>
+    </Fragment>
+</Wix>
