@@ -227,9 +227,6 @@
             <Component Id="Cobalt.TaskbarNotifier.pdb" Directory="INSTALLFOLDER" Guid="F180FF3C-DC1A-4432-AB8A-E982E666C87D">
                 <File Id="Cobalt.TaskbarNotifier.pdb" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\Cobalt.TaskbarNotifier.pdb" />
             </Component>
-            <Component Id="dat.db" Directory="INSTALLFOLDER" Guid="CF4E1361-7A23-4B39-B77B-63FD3E99BD36">
-                <File Id="dat.db" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\dat.db" />
-            </Component>
             <Component Id="Hardcodet.Wpf.TaskbarNotification.dll" Directory="INSTALLFOLDER" Guid="40BDF75D-EC1F-4000-B46A-9184BB85D6B0">
                 <File Id="Hardcodet.Wpf.TaskbarNotification.dll" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\Hardcodet.Wpf.TaskbarNotification.dll" />
             </Component>
