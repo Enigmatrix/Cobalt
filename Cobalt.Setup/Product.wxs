@@ -17,6 +17,7 @@
 
 		<InstallExecuteSequence>
 			<Custom Action="SetEnv" After="InstallFiles"/>
+
 			<Custom Action="InstallCobaltEngineToTaskScheduler" After="SetEnv"/>
 		</InstallExecuteSequence>
 
