@@ -5,5 +5,8 @@ branches:
 image: Visual Studio 2017
 before_build:
 - cmd: nuget restore
+artifacts:
+  - path: Cobalt.Setup\bin\Debug\Cobalt.Setup.msi
+    name: Cobalt.Setup
 build:
   verbosity: minimal
