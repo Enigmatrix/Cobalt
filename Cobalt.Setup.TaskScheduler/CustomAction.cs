@@ -22,6 +22,7 @@ namespace Cobalt.Setup.TaskScheduler
 
                 task.Principal.LogonType = TaskLogonType.InteractiveToken;
                 task.Principal.RunLevel = TaskRunLevel.Highest;
+                task.Principal.UserId = $@"{Environment.UserDomainName}\{Environment.UserName}";
 
                 task.Settings.MultipleInstances =TaskInstancesPolicy.IgnoreNew;
                 task.Settings.DisallowStartIfOnBatteries = false;
@@ -44,7 +45,7 @@ namespace Cobalt.Setup.TaskScheduler
                 {
                     ts.RootFolder.RegisterTaskDefinition("Cobalt.Engine", task);
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     //File.AppendAllText(@"C:\Users\enigm\wixlog.txt", $"Register Failure: {e}\n Message:{e.Message}\n \nStacktrace:{e.StackTrace}\n");
                     return ActionResult.Failure;
