@@ -7,7 +7,7 @@ before_build:
 - cmd: nuget restore
 configuration: Release
 artifacts:
-  - path: Cobalt.Setup\bin\Debug\Cobalt.Setup.msi
+  - path: Cobalt.Setup\bin\Release\Cobalt.Setup.msi
     name: Cobalt.Setup
 build:
   verbosity: minimal
