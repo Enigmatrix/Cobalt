@@ -25,6 +25,8 @@ namespace Cobalt.Setup.TaskScheduler
                     task.Triggers.Add(new LogonTrigger());
                     task.Actions.Add(
                         new ExecAction($"{installLocation}Cobalt.Engine.exe", "", installLocation));
+                    task.Actions.Add(
+                        new ExecAction($"{installLocation}Cobalt.TaskbarNotifier.exe", "", installLocation));
 
                     task.Principal.RunLevel = TaskRunLevel.Highest;
                     task.Principal.LogonType = TaskLogonType.InteractiveToken;
@@ -46,7 +48,7 @@ namespace Cobalt.Setup.TaskScheduler
                     task.Settings.WakeToRun = false;
                     task.Settings.Priority = ProcessPriorityClass.Normal;
 
-                    ts.RootFolder.RegisterTaskDefinition("Cobalt.Engine", task);
+                    ts.RootFolder.RegisterTaskDefinition("Cobalt", task);
                 }
                 /*
                 Process.Start(new ProcessStartInfo
