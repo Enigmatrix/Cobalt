@@ -1,4 +1,6 @@
-﻿using Cobalt.Common.UI;
+﻿using System.Windows.Threading;
+using Cobalt.Common.UI;
+using Serilog;
 
 namespace Cobalt.TaskbarNotifier
 {
@@ -12,5 +14,17 @@ namespace Cobalt.TaskbarNotifier
 
     public class AppBoostrapper : Bootstrapper<IMainViewModel>
     {
+        protected override void PrepareApplication()
+        {
+            Log.Logger = new LoggerConfiguration()
+                .WriteTo.File("./tn-log.txt")
+                .CreateLogger();
+            Log.Information("NEW SESSION");
+        }
+
+        protected override void OnUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
+        {
+            Log.Information($"Exception raised in TaskbarNotifier: {e}");
+        }
     }
 }
