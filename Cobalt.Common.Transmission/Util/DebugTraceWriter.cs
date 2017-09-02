@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using Newtonsoft.Json.Serialization;
+using Serilog;
 
 namespace Cobalt.Common.Transmission.Util
 {
@@ -8,7 +9,7 @@ namespace Cobalt.Common.Transmission.Util
     {
         public void Trace(TraceLevel level, string message, Exception ex)
         {
-            Debug.Write(message);
+            Log.Information(message);
         }
 
         public TraceLevel LevelFilter { get; } = TraceLevel.Verbose;

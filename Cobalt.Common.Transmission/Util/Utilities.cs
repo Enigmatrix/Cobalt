@@ -23,9 +23,7 @@ namespace Cobalt.Common.Transmission.Util
                     TypesInNamespaces(
                         typeof(Entity).Namespace,
                         typeof(MessageBase).Namespace)),
-#if DEBUG
                 TraceWriter = new DebugTraceWriter(),
-#endif
             });
         }
 

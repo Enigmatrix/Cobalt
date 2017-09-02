@@ -20,6 +20,7 @@ namespace Cobalt.TaskbarNotifier
                 .WriteTo.File("./tn-log.txt")
                 .CreateLogger();
             Log.Information("NEW SESSION");
+            base.PrepareApplication();
         }
 
         protected override void OnUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
