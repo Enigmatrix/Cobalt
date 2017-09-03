@@ -1,7 +1,5 @@
 <h1 align="center">
-  <img src="https://raw.githubusercontent.com/Enigmatrix/Cobalt/master/images/icon_512.png" height="128" width="128" alt="Logo" />
-  <br />
-  Cobalt
+  <img src="https://raw.githubusercontent.com/Enigmatrix/Cobalt/master/images/icon_512.png" height="128" width="128" alt="Logo" /><br />Cobalt
 </h1>
 
 <h3 align="center">An app usage viewer, made using C# and XAML</h3>
