@@ -1,4 +1,5 @@
-﻿using Cobalt.Common.Data;
+﻿using System;
+using Cobalt.Common.Data;
 using Cobalt.Common.Data.Repository;
 using Cobalt.Common.IoC;
 using Cobalt.Common.Transmission;
@@ -11,6 +12,18 @@ namespace Cobalt.Engine
     public class Program
     {
         public static void Main(string[] args)
+        {
+            try
+            {
+                Run();
+            }
+            catch (Exception e)
+            {
+                Log.Information($"Error, exception raised: {e}");
+            }
+        }
+
+        public static void Run()
         {
             Log.Logger = new LoggerConfiguration()
                 .WriteTo.File("./log.txt")
