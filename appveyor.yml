@@ -7,17 +7,17 @@ before_build:
 - cmd: nuget restore
 configuration: Release
 artifacts:
-  - path: Cobalt.Setup\bin\Release\Cobalt.Setup.msi
+  - path: Cobalt.Setup\bin\$(configuration)\Cobalt.Setup.msi
     name: Cobalt.Setup
 build:
   verbosity: minimal
 deploy:
-  tag: Cobalt-v$(appveyor_build_version)
+  release: Cobalt-v$(APPVEYOR_REPO_TAG_NAME)
   description: 'Prelease of Cobalt. Includes working implementation of Cobalt.Engine and Cobalt.TaskbarNotifier'
   provider: GitHub
   auth_token:
     secure: KPqbxET+Zf8VS04w1f49Aick7IiASzolYqDNHij5pln0e690/t7IuvSq1W0OhTHf
-  artifact: Cobalt.Setup\bin\Release\Cobalt.Setup.msi
+  artifact: Cobalt.Setup\bin\$(configuration)\Cobalt.Setup.msi
   draft: true
   prerelease: true
   on:
