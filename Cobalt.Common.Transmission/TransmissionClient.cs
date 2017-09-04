@@ -40,9 +40,9 @@ namespace Cobalt.Common.Transmission
                 while (_keepAlive)
                     lock (_pipe)
                     {
-                        var reader = new JsonTextReader(streamReader){CloseInput = false};
-                        MessageReceived?.Invoke(this,
-                            new MessageReceivedArgs(serializer.Deserialize<MessageBase>(reader)));
+                        using (var reader = new JsonTextReader(streamReader) { CloseInput = false })
+                            MessageReceived?.Invoke(this,
+                                new MessageReceivedArgs(serializer.Deserialize<MessageBase>(reader)));
                     }
             });
             _listeningThread.Start();
