@@ -33,13 +33,14 @@ namespace Cobalt.Common.Transmission
             //TODO wtf this is bugging out, causing inconsitent reads (out of order/delayed), creating another json reader is a workaround
             //var reader = new JsonTextReader(new StreamReader(_pipe)) {SupportMultipleContent = true};
             var serializer = Utilities.CreateSerializer();
+            var streamReader = new StreamReader(_pipe);
 
             _listeningThread = new Thread(() =>
             {
                 while (_keepAlive)
                     lock (_pipe)
                     {
-                        var reader = new JsonTextReader(new StreamReader(_pipe));
+                        var reader = new JsonTextReader(streamReader){CloseInput = false};
                         MessageReceived?.Invoke(this,
                             new MessageReceivedArgs(serializer.Deserialize<MessageBase>(reader)));
                     }
