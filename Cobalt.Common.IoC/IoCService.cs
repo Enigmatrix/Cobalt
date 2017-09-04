@@ -57,17 +57,17 @@ namespace Cobalt.Common.IoC
             builder
                 .Register(c => new SQLiteConnection("Data Source=dat.db").OpenAndReturn())
                 .As<IDbConnection>()
-                .InstancePerLifetimeScope();
+                .SingleInstance();
 
             builder
                 .RegisterType<SqliteMigrator>()
                 .As<IDbMigrator>()
-                .InstancePerLifetimeScope();
+                .SingleInstance();
 
             builder
                 .RegisterType<SqliteRepository>()
                 .As<IDbRepository>()
-                .InstancePerLifetimeScope();
+                .SingleInstance();
 
             builder.RegisterType<TransmissionClient>()
                 .As<ITransmissionClient>()
