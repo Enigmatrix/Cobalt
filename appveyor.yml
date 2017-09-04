@@ -12,7 +12,7 @@ artifacts:
 build:
   verbosity: minimal
 deploy:
-  release: Cobalt-v$(appveyor_build_version)
+  tag: Cobalt-v$(appveyor_build_version)
   description: 'Prelease of Cobalt. Includes working implementation of Cobalt.Engine and Cobalt.TaskbarNotifier'
   provider: GitHub
   auth_token:
