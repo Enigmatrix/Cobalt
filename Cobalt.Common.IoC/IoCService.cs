@@ -4,6 +4,8 @@ using System.Data.SQLite;
 using System.Linq;
 using System.Reflection;
 using Autofac;
+using Cobalt.Common.Data.Migration;
+using Cobalt.Common.Data.Migration.Sqlite;
 using Cobalt.Common.Data.Repository;
 using Cobalt.Common.Transmission;
 using Cobalt.Common.Util;
@@ -55,6 +57,11 @@ namespace Cobalt.Common.IoC
             builder
                 .Register(c => new SQLiteConnection("Data Source=dat.db").OpenAndReturn())
                 .As<IDbConnection>()
+                .InstancePerLifetimeScope();
+
+            builder
+                .RegisterType<SqliteMigrator>()
+                .As<IDbMigrator>()
                 .InstancePerLifetimeScope();
 
             builder
