@@ -11,3 +11,15 @@ artifacts:
     name: Cobalt.Setup
 build:
   verbosity: minimal
+deploy:
+  release: Cobalt-v$(appveyor_build_version)
+  description: 'Prelease of Cobalt. Includes working implementation of Cobalt.Engine and Cobalt.TaskbarNotifier'
+  provider: GitHub
+  auth_token:
+    secure: KPqbxET+Zf8VS04w1f49Aick7IiASzolYqDNHij5pln0e690/t7IuvSq1W0OhTHf
+  artifact: Cobalt.Setup\bin\Release\Cobalt.Setup.msi
+  draft: true
+  prerelease: true
+  on:
+    branch: master
+    appveyor_repo_tag: true
