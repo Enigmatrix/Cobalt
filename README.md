@@ -1,5 +1,5 @@
 <h1 align="center">
-  <img src="https://raw.githubusercontent.com/Enigmatrix/Cobalt/master/images/icon_512.png" height="128" width="128" alt="Logo" /><br />Cobalt
+  <img src="./images/icon_512.png" height="128" width="128" alt="Logo" /><br />Cobalt
 </h1>
 
 <h3 align="center">An app usage viewer, made using C# and XAML</h3>
@@ -15,7 +15,11 @@
 Tracks how long an app is on the screen, and displays useful statistics in a interactive, useful manner.
 
 ## Screenshots
-//todo
+
+![Cobalt.TaskbarNotifier](./images/cobalt_taskbarnotifier.png "Cobalt.TaskbarNotifier")
+
+//TODO Cobalt
+
 ## Mechanism
 - [Cobalt.Engine](/Cobalt.Engine) and [Cobalt.TaskbarNotifier](/Cobalt.TaskbarNotifier) are started at system
 user login.
