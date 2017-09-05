@@ -5,8 +5,27 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:wpf="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-             mc:Ignorable="d" Background="Transparent"
+             xmlns:converters="clr-namespace:Cobalt.Common.UI.Converters;assembly=Cobalt.Common.UI"
+             mc:Ignorable="d" Background="Transparent" x:Name="Popup"
              d:DesignHeight="300" d:DesignWidth="300">
+    <UserControl.Resources>
+        <converters:IsEqualToConverter x:Key="IsEqualToConverter" />
+        <Style TargetType="TextBlock" x:Key="BoldWhenSelectedStyle">
+            <Style.Triggers>
+                <DataTrigger Value="True">
+                    <DataTrigger.Binding>
+                        <MultiBinding Converter="{StaticResource IsEqualToConverter}">
+                            <Binding Path="ChartPoint.Instance.App.Path" />
+                            <Binding Path="SelectedPath" ElementName="Popup" />
+                        </MultiBinding>
+                    </DataTrigger.Binding>
+                    <DataTrigger.Setters>
+                        <Setter Property="FontWeight" Value="Bold" />
+                    </DataTrigger.Setters>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
     <materialDesign:Card Background="{DynamicResource MaterialDesignPaper}" Margin="4">
         <ItemsControl ItemsSource="{Binding SortedPoints}" Grid.IsSharedSizeScope="True">
             <ItemsControl.Resources>
@@ -26,11 +45,13 @@
                         <TextBlock Grid.Column="1"
                                    Text="{Binding ChartPoint.Instance.App, Converter={StaticResource AppToExeNameConverter}}"
                                    Margin="10 0 0 0" VerticalAlignment="Center"
-                                   Foreground="{DynamicResource BlackBrush}" />
+                                   Foreground="{DynamicResource BlackBrush}"
+                                   Style="{DynamicResource BoldWhenSelectedStyle}" />
                         <TextBlock Grid.Column="2"
                                    Text="{Binding ChartPoint.Instance.Duration, Converter={StaticResource HumanReadableTimeSpanConverter}}"
                                    Margin="5 0 0 0" VerticalAlignment="Center"
-                                   Foreground="{DynamicResource PrimaryHueDarkBrush}" />
+                                   Foreground="{DynamicResource PrimaryHueDarkBrush}"
+                                   Style="{DynamicResource BoldWhenSelectedStyle}" />
                     </Grid>
                 </DataTemplate>
             </ItemsControl.ItemTemplate>

@@ -95,6 +95,7 @@
     <Compile Include="Converters\AppToExeNameConverter.cs" />
     <Compile Include="Converters\ExePathToIconConverter.cs" />
     <Compile Include="Converters\HumanReadableTimeSpanConverter.cs" />
+    <Compile Include="Converters\IsEqualToConverter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
