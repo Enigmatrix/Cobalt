@@ -19,7 +19,7 @@
                             <ColumnDefinition Width="Auto" SharedSizeGroup="Title" />
                             <ColumnDefinition Width="Auto" SharedSizeGroup="Duration" />
                         </Grid.ColumnDefinitions>
-                        <Border Background="DimGray">
+                        <Border Background="{DynamicResource AccentColorBrush3}">
                             <Image Width="16" Height="16"
                                    Source="{Binding ChartPoint.Instance.App.Path, Converter={StaticResource ExePathToIconConverter}}" />
                         </Border>
