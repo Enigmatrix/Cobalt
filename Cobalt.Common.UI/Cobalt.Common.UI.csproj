@@ -91,6 +91,7 @@
   <ItemGroup>
     <Compile Include="Bootstrapper.cs" />
     <Compile Include="Converters\AppDurationSeriesConverter.cs" />
+    <Compile Include="Converters\AppIconSizeConverter.cs" />
     <Compile Include="Converters\AppToExeNameConverter.cs" />
     <Compile Include="Converters\ExePathToIconConverter.cs" />
     <Compile Include="Converters\HumanReadableTimeSpanConverter.cs" />
