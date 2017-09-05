@@ -42,9 +42,8 @@ but only shows a taskbar icon instead of a full window, but still includes some 
 - Is there any encryption/data protection scheme?
   - There is protection against [JSON Serialization Vulnerabilities](https://www.blackhat.com/docs/us-17/thursday/us-17-Munoz-Friday-The-13th-Json-Attacks.pdf), but no encryption scheme as of yet.
 ## Release Process
-Update appveyor.yml and change the deploy description
-```
-git tag <tag> # e.g. git tag 1.0
-git push origin --tags
-```
+- ```git tag <tag> # e.g. git tag 1.0```
+- ```git push origin --tags```
+- Edit the drafted release
+- Delete the previous 'release' (e.g. delete 1.0 and keep Cobalt-v1.0)
 

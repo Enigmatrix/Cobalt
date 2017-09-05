@@ -13,7 +13,7 @@ build:
   verbosity: minimal
 deploy:
   release: Cobalt-v$(APPVEYOR_REPO_TAG_NAME)
-  description: 'Prelease of Cobalt. Includes working implementation of Cobalt.Engine and Cobalt.TaskbarNotifier'
+  description: 'Release Description'
   provider: GitHub
   auth_token:
     secure: KPqbxET+Zf8VS04w1f49Aick7IiASzolYqDNHij5pln0e690/t7IuvSq1W0OhTHf
