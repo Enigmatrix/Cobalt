@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Cobalt.Common.Analysis;
 using Cobalt.Common.UI;
 
 namespace Cobalt.ViewModels
@@ -13,17 +14,17 @@ namespace Cobalt.ViewModels
     }
     public class MainViewModel : ViewModelBase, IMainViewModel
     {
-        private string _booty;
+        private IAppStatsStreamService Stats { get; }
 
-        public MainViewModel()
+        public MainViewModel(IAppStatsStreamService stats)
         {
-            Booty = "SMELLS NICE";
+            Stats = stats;
         }
 
-        public string Booty
+        protected override void OnActivate()
         {
-            get => _booty;
-            set => Set(ref _booty, value);
+            Stats.GetAppUsages(DateTime.Today)
+                .Subscribe();
         }
     }
 }

@@ -72,6 +72,12 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Reactive, Version=4.0.0.0, Culture=neutral, PublicKeyToken=94bc3704cddfc263, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Reactive.4.0.0-preview00001\lib\net45\System.Reactive.dll</HintPath>
+    </Reference>
+    <Reference Include="System.ValueTuple, Version=4.0.1.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.ValueTuple.4.3.0\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
+    </Reference>
     <Reference Include="System.Windows.Interactivity, Version=4.5.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Caliburn.Micro.3.1.0\lib\net45\System.Windows.Interactivity.dll</HintPath>
       <Private>True</Private>
@@ -136,6 +142,14 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Cobalt.Common.Analysis\Cobalt.Common.Analysis.csproj">
+      <Project>{1b7b20b5-0240-402f-ab98-7a7770d920b5}</Project>
+      <Name>Cobalt.Common.Analysis</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Cobalt.Common.Data\Cobalt.Common.Data.csproj">
+      <Project>{1367640d-5813-4e0f-a9fc-85a4cab3bd0b}</Project>
+      <Name>Cobalt.Common.Data</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Cobalt.Common.UI\Cobalt.Common.UI.csproj">
       <Project>{888CA17F-6DB6-4286-BA06-1087F99F2259}</Project>
       <Name>Cobalt.Common.UI</Name>

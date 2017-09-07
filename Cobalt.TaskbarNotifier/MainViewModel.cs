@@ -2,6 +2,7 @@
 using System.Reactive.Linq;
 using Caliburn.Micro;
 using Cobalt.Common.Analysis;
+using Cobalt.Common.Analysis.OutputTypes;
 using Cobalt.Common.IoC;
 using Cobalt.Common.UI;
 using Cobalt.Common.UI.Util;
@@ -117,9 +118,9 @@ namespace Cobalt.TaskbarNotifier
             TagDurations.Clear();
         }
 
-        private void HandleDuration(TimeSpan? d, IDurationIncrementor incrementor, IHasDuration hasDur)
+        private void HandleDuration(Usage<TimeSpan> d, IDurationIncrementor incrementor, IHasDuration hasDur)
         {
-            if (d is null)
+            if (d.JustStarted)
             {
                 //handle new app/tag started here
                 incrementor.Increment(hasDur);
