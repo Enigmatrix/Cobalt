@@ -5,21 +5,42 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Cobalt"
         xmlns:viewModels="clr-namespace:Cobalt.Common.UI.ViewModels;assembly=Cobalt.Common.UI"
+        xmlns:deleteMe="clr-namespace:Cobalt.Views.DeleteMe"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         mc:Ignorable="d"
         Title="Cobalt" Height="350" Width="525">
     <Grid>
-        <ScrollViewer>
-            <ListBox ItemsSource="{Binding AppUsages}">
-                <ListBox.ItemTemplate>
-                    <DataTemplate DataType="viewModels:IAppUsageViewModel">
-                        <StackPanel Orientation="Horizontal">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="50"/>
+            <RowDefinition/>
+        </Grid.RowDefinitions>
+        <materialDesign:Card materialDesign:ShadowAssist.ShadowDepth="Depth1">
+            <Grid>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
+                    <TextBlock Text="Total Number of Switches: "/>
+                    <TextBlock Text="{Binding AppUsageCount}"/>
+                </StackPanel>
+                
+                <TextBlock Text="{Binding CurrentAppUsage.App.Path}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+            </Grid>
+        </materialDesign:Card>
+        <ListView Grid.Row="1" ItemsSource="{Binding AppUsages}">
+            <ListView.ItemTemplate>
+                <DataTemplate DataType="viewModels:IAppUsageViewModel">
+                    <ListViewItem deleteMe:TimeslotPanel.Start="{Binding StartTimestamp}" deleteMe:TimeslotPanel.End="{Binding EndTimestamp}">
+                        <StackPanel Orientation="Horizontal" Background="Red">
                             <TextBlock Text="{Binding App.Path}"/>
                             <Grid Width="30"/>
                             <TextBlock Text="{Binding Duration}"/>
                         </StackPanel>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
-        </ScrollViewer>
+                    </ListViewItem>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+            <ListView.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <deleteMe:TimeslotPanel/>
+                </ItemsPanelTemplate>
+            </ListView.ItemsPanel>
+        </ListView>
     </Grid>
 </Window>

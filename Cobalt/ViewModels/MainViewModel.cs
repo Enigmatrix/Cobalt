@@ -83,5 +83,10 @@ namespace Cobalt.ViewModels
                     }
                 }).ManageUsing(Resources);
         }
+
+        protected override void OnDeactivate(bool close)
+        {
+            Resources.Dispose();
+        }
     }
 }
