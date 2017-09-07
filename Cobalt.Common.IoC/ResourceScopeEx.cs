@@ -8,5 +8,11 @@ namespace Cobalt.Common.IoC
         {
             scope.Manage(dis);
         }
+
+        public static T ManagedBy<T>(this T dis, IResourceScope scope) where T : IDisposable
+        {
+            dis.ManageUsing(scope);
+            return dis;
+        }
     }
 }

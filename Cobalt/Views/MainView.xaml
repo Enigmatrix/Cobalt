@@ -4,7 +4,22 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Cobalt"
+        xmlns:viewModels="clr-namespace:Cobalt.Common.UI.ViewModels;assembly=Cobalt.Common.UI"
         mc:Ignorable="d"
         Title="Cobalt" Height="350" Width="525">
-    <Grid />
+    <Grid>
+        <ScrollViewer>
+            <ListBox ItemsSource="{Binding AppUsages}">
+                <ListBox.ItemTemplate>
+                    <DataTemplate DataType="viewModels:IAppUsageViewModel">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{Binding App.Path}"/>
+                            <Grid Width="30"/>
+                            <TextBlock Text="{Binding Duration}"/>
+                        </StackPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </ScrollViewer>
+    </Grid>
 </Window>

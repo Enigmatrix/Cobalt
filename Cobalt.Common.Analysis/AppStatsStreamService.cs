@@ -123,7 +123,7 @@ namespace Cobalt.Common.Analysis
                 .SelectMany(message => new []
                 {
                     new Usage<AppUsage>(message.PreviousAppUsage),
-                    new Usage<AppUsage>(justStarted:true), 
+                    new Usage<AppUsage>(new AppUsage{App = message.NewApp},justStarted:true), 
                 });
         }
     }

@@ -128,7 +128,7 @@ namespace Cobalt.Common.Data.Repository
 			var (startTicks, endTicks) = ToTickRange(start, end);
 			return Get(@"select a.Id, a.Name, a.Path, 
 								au.Id, au.AppId, au.UsageType, 
-								(case when au.StartTimestamp < ? then ? else au.StartTimestamp), (case when au.EndTimestamp > ? then ? else au.EndTimestamp), 
+								(case when au.StartTimestamp < ? then ? else au.StartTimestamp end), (case when au.EndTimestamp > ? then ? else au.EndTimestamp end), 
 								au.UsageStartReason, au.UsageEndReason  
 							from AppUsage au, App a
 							where StartTimestamp <= ? and EndTimestamp >= ? and au.AppId = a.Id",
@@ -143,7 +143,7 @@ namespace Cobalt.Common.Data.Repository
 			var (startTicks, endTicks) = ToTickRange(start, end);
 			return Get(@"select a.Id, a.Name, a.Path, 
 								au.Id, au.AppId, au.UsageType, 
-								(case when au.StartTimestamp < ? then ? else au.StartTimestamp), (case when au.EndTimestamp > ? then ? else au.EndTimestamp), 
+								(case when au.StartTimestamp < ? then ? else au.StartTimestamp end), (case when au.EndTimestamp > ? then ? else au.EndTimestamp end), 
 								au.UsageStartReason, au.UsageEndReason  
 							from AppUsage au, App a
 							where StartTimestamp <= ? and EndTimestamp >= ? where au.AppId = a.Id and a.Id = ?",
