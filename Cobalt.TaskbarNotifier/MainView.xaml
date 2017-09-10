@@ -14,10 +14,10 @@
                     TrayPopupOpen="SetPopupClose" PopupActivation="LeftOrDoubleClick"
                     IconSource="/Cobalt.Common.UI;component/Assets/icon.ico">
         <tb:TaskbarIcon.TrayPopup>
-            <Grid>
-                <local:PopupContent x:Name="Box" />
+            <Grid Margin="4">
+                <local:PopupContent x:Name="Box"/>
                 <ToggleButton Click="TrayKeepToggle" x:Name="Toggle"
-                              VerticalAlignment="Top" HorizontalAlignment="Right" Margin="0,15,15,0">
+                              VerticalAlignment="Top" HorizontalAlignment="Right" Margin="0,10,10,0">
                     <ToggleButton.Style>
                         <Style TargetType="ToggleButton" BasedOn="{StaticResource MaterialDesignFlatToggleButton}">
                             <Style.Triggers>

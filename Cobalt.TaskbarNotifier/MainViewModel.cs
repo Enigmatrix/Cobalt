@@ -14,6 +14,7 @@ namespace Cobalt.TaskbarNotifier
     {
         BindableCollection<IAppDurationViewModel> AppDurations { get; }
         BindableCollection<ITagDurationViewModel> TagDurations { get; }
+        TimeSpan TotalDuration { get; set; }
         void PopupOpened();
         void PopupClosed();
     }
@@ -24,6 +25,7 @@ namespace Cobalt.TaskbarNotifier
             new BindableCollection<IAppDurationViewModel>();
 
         private bool _isPopupOpen;
+        private TimeSpan _totalDuration;
 
         private BindableCollection<ITagDurationViewModel> _tagDurations =
             new BindableCollection<ITagDurationViewModel>();
@@ -55,6 +57,12 @@ namespace Cobalt.TaskbarNotifier
             set => Set(ref _tagDurations, value);
         }
 
+        public TimeSpan TotalDuration
+        {
+            get => _totalDuration;
+            set => Set(ref _totalDuration, value);
+        }
+
         public void PopupOpened()
         {
             IsPopupOpen = true;
@@ -62,25 +70,26 @@ namespace Cobalt.TaskbarNotifier
             //TODO http://www.introtorx.com/content/v1.0.10621.0/14_HotAndColdObservables.html#HotAndCold try this later
             Current = Global.Subscope();
             var stats = Current.Resolve<IAppStatsStreamService>();
-            var appIncrementor = Current.Resolve<IDurationIncrementor>();
-            //var tagIncrementor = Current.Resolve<IDurationIncrementor>();
-            //TODO ARGh if tray is clicked is repeatedly clicked, no appswitches are detected initially
-            //TODO this is since the transition is from taskbarICON of THIS APP -> POPUP of THIS APP (not winexplorer->this app)
-            //TODO but this is a rare enough scenario (what kind of user presses the same thing twice amirite....shit), just screw it
 
-            stats.GetAppDurations(DateTime.Today)
+            var appUsageStream = stats.GetAppDurations(DateTime.Today).Publish();
+
+            var hasTotalDur = HasDuration.From(
+                () => TotalDuration, x => TotalDuration = x);
+
+            var appIncrementor = Current.Resolve<IDurationIncrementor>();
+            var totalDurationIncrementor = Current.Resolve<IDurationIncrementor>();
+            //var tagIncrementor = Current.Resolve<IDurationIncrementor>();
+
+            appUsageStream
                 .Select(x =>
                 {
                     //random bug - this is called even though the popup is closed and this has been disposed
-                    //so this is a workaroudn
-                    if (!IsPopupOpen) return new AppDurationViewModel(x.App);
-
                     var appDur = new AppDurationViewModel(x.App);
+                    if (!IsPopupOpen) return appDur;
 
                     x.Duration
                         .Subscribe(d =>
                         {
-                            //lock (Current)
                             if (!IsPopupOpen) return;
                             HandleDuration(d, appIncrementor, appDur);
                         })
@@ -90,8 +99,17 @@ namespace Cobalt.TaskbarNotifier
                 })
                 .ObserveOnDispatcher()
                 .Subscribe(x =>
-                    AppDurations.Add(x))
-                .ManageUsing(Current);
+                    AppDurations.Add(x));
+
+            appUsageStream
+                .Select(x => x.Duration)
+                .Merge()
+                .Subscribe(x =>
+                {
+                    if(!IsPopupOpen) return;
+                    HandleDuration(x, totalDurationIncrementor, hasTotalDur);
+                });
+
             /*
             stats.GetTagDurations(DateTime.Today)
                 .Select(x =>
@@ -109,12 +127,16 @@ namespace Cobalt.TaskbarNotifier
                 .Subscribe(x => TagDurations.Add(x))
                 .ManageUsing(Current)
                 */
+
+                appUsageStream.Connect()
+                    .ManageUsing(Current);
         }
 
         public void PopupClosed()
         {
             IsPopupOpen = false;
             Current.Dispose();
+            TotalDuration = TimeSpan.Zero;
             AppDurations.Clear();
             TagDurations.Clear();
         }

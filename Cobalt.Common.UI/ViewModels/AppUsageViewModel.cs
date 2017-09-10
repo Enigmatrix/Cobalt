@@ -23,7 +23,6 @@ namespace Cobalt.Common.UI.ViewModels
         private AppUsageEndReason _usageEndReason;
         private AppUsageStartReason _usageStartReason;
         private DateTime _startTimestamp;
-        private TimeSpan _duration;
         private DateTime _endTimestamp;
 
         public AppUsageViewModel(AppUsage au)

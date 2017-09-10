@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="Cobalt.TaskbarNotifier.PopupContent"
+﻿<materialDesign:Card x:Class="Cobalt.TaskbarNotifier.PopupContent"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -8,46 +8,44 @@
              xmlns:converters="clr-namespace:Cobalt.Common.UI.Converters;assembly=Cobalt.Common.UI"
              xmlns:viewModels="clr-namespace:Cobalt.Common.UI.ViewModels;assembly=Cobalt.Common.UI"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-             mc:Ignorable="d" Background="{DynamicResource MaterialDesignPaper}" Height="400" Width="400"
+             mc:Ignorable="d" Background="{DynamicResource MaterialDesignPaper}" Height="450" Width="400"
              d:DesignHeight="300" d:DesignWidth="300">
     <Grid>
         <Grid.Resources>
             <converters:AppDurationSeriesConverter x:Key="AppDurationSeriesConverter" />
         </Grid.Resources>
         <Grid.RowDefinitions>
-            <RowDefinition/>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="60" />
+            <RowDefinition />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        <lv:PieChart DisableAnimations="True"
+        <materialDesign:Card HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="{DynamicResource MaterialDesignPaper}">
+            <StackPanel Orientation="Horizontal"  VerticalAlignment="Center" HorizontalAlignment="Center">
+                <TextBlock Text="Total: " Style="{DynamicResource MaterialDesignTitleTextBlock}" />
+                <TextBlock Text="{Binding TotalDuration, Converter={StaticResource HumanReadableTimeSpanConverter}}"
+                           FontSize="20" Style="{DynamicResource MaterialDesignTitleTextBlock}"/>
+            </StackPanel>
+        </materialDesign:Card>
+        <lv:PieChart DisableAnimations="True" Grid.Row="1"
                      Series="{Binding AppDurations, Converter={StaticResource AppDurationSeriesConverter}}">
             <lv:PieChart.DataTooltip>
                 <local:AppDurationTooltip />
             </lv:PieChart.DataTooltip>
         </lv:PieChart>
-        <Grid Grid.Row="1" Margin="5">
+        <Grid Grid.Row="2" Margin="5">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition/>
-                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition />
+                <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <Button Margin="5">
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <materialDesign:PackIcon Kind="OpenInNew" VerticalAlignment="Center" Margin="10,0"/>
-                    <TextBlock Text="OPEN COBALT (COMING SOON!)" VerticalAlignment="Center"/>
+                    <materialDesign:PackIcon Kind="OpenInNew" VerticalAlignment="Center" Margin="10,0" />
+                    <TextBlock Text="OPEN COBALT (COMING SOON!)" VerticalAlignment="Center" />
                 </StackPanel>
             </Button>
             <!--<Button Margin="5" Grid.Column="1" Style="{DynamicResource MaterialDesignFloatingActionMiniButton}">
                 <materialDesign:PackIcon Kind="Record"/>
             </Button>-->
         </Grid>
-        <!--<ListBox Grid.Row="1" ItemsSource="{Binding AppDurations}">
-            <ListBox.ItemTemplate>
-                <DataTemplate DataType="viewModels:IAppDurationViewModel">
-                    <Grid HorizontalAlignment="Stretch">
-                        <TextBlock Text="{Binding App.Path}" HorizontalAlignment="Left"/>
-                        <TextBlock Text="{Binding Duration}" HorizontalAlignment="Right"/>
-                    </Grid>
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>-->
     </Grid>
-</UserControl>
+</materialDesign:Card>
