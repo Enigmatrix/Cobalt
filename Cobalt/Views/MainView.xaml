@@ -8,7 +8,7 @@
         xmlns:deleteMe="clr-namespace:Cobalt.Views.DeleteMe"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         mc:Ignorable="d"
-        Title="Cobalt" Height="350" Width="525">
+        Title="Cobalt" Height="1500" Width="725">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="50"/>
@@ -24,23 +24,34 @@
                 <TextBlock Text="{Binding CurrentAppUsage.App.Path}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
             </Grid>
         </materialDesign:Card>
-        <ListView Grid.Row="1" ItemsSource="{Binding AppUsages}">
-            <ListView.ItemTemplate>
-                <DataTemplate DataType="viewModels:IAppUsageViewModel">
-                    <ListViewItem deleteMe:TimeslotPanel.Start="{Binding StartTimestamp}" deleteMe:TimeslotPanel.End="{Binding EndTimestamp}">
-                        <StackPanel Orientation="Horizontal" Background="Red">
-                            <TextBlock Text="{Binding App.Path}"/>
-                            <Grid Width="30"/>
-                            <TextBlock Text="{Binding Duration}"/>
-                        </StackPanel>
-                    </ListViewItem>
-                </DataTemplate>
-            </ListView.ItemTemplate>
-            <ListView.ItemsPanel>
+        <ListBox Grid.Row="1" ItemsSource="{Binding AppUsages, IsAsync=True}">
+        <ListBox.ItemContainerStyle>
+                <Style TargetType="ListBoxItem">
+                    <Setter Property="Background" Value="Red"/>
+                    <Setter Property="BorderThickness" Value="0"/>
+                    <Setter Property="HorizontalContentAlignment" Value="{Binding HorizontalContentAlignment, RelativeSource={RelativeSource AncestorType={x:Type ItemsControl}}}"/>
+                    <Setter Property="VerticalContentAlignment" Value="{Binding VerticalContentAlignment, RelativeSource={RelativeSource AncestorType={x:Type ItemsControl}}}"/>
+
+                    <Setter Property="SnapsToDevicePixels" Value="True"/>
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                                <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            Margin="{TemplateBinding Margin}"
+                            ClipToBounds="{TemplateBinding ClipToBounds}">
+                                </Border>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+        </ListBox.ItemContainerStyle>
+            <ListBox.ItemsPanel>
                 <ItemsPanelTemplate>
                     <deleteMe:TimeslotPanel/>
                 </ItemsPanelTemplate>
-            </ListView.ItemsPanel>
-        </ListView>
+            </ListBox.ItemsPanel>
+        </ListBox>
     </Grid>
 </Window>

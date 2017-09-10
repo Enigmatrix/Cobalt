@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Net;
+using System.Linq;
 using System.Reactive.Linq;
 using Caliburn.Micro;
 using Cobalt.Common.Analysis;
@@ -13,7 +13,7 @@ namespace Cobalt.ViewModels
 {
     public interface IMainViewModel : IViewModel
     {
-        BindableCollection<IAppUsageViewModel> AppUsages { get; }
+        NextLevelBindableCollection<IAppUsageViewModel> AppUsages { get; }
         IAppUsageViewModel CurrentAppUsage { get; set; }
         long AppUsageCount { get; set; }
     }
@@ -27,7 +27,7 @@ namespace Cobalt.ViewModels
         {
             Stats = stats;
             Resources = scope;
-            AppUsages = new BindableCollection<IAppUsageViewModel>();
+            AppUsages = new NextLevelBindableCollection<IAppUsageViewModel>();
         }
 
         private IResourceScope Resources { get; }
@@ -36,7 +36,7 @@ namespace Cobalt.ViewModels
 
         //view should display all AppUsages and CurrentAppUsage
 
-        public BindableCollection<IAppUsageViewModel> AppUsages { get; }
+        public NextLevelBindableCollection<IAppUsageViewModel> AppUsages { get; }
 
         public IAppUsageViewModel CurrentAppUsage
         {
@@ -52,36 +52,41 @@ namespace Cobalt.ViewModels
 
         protected override void OnActivate()
         {
-            var appUsages = Stats.GetAppUsages(DateTime.Today);
+            var appUsagesStream = Stats.GetAppUsages(DateTime.Today.AddDays(-2), DateTime.Today.AddDays(-1)).Publish();
             var appUsageIncremetor = Resources.Resolve<IDurationIncrementor>();
 
             var lastAppUsageTime = DateTime.Now;
-            appUsages
+            appUsagesStream
+                .Where(x => !x.JustStarted)
+                .Select(x => (IAppUsageViewModel)new AppUsageViewModel(x.Value))
+                .Buffer(TimeSpan.FromMilliseconds(20))
                 .Subscribe(x =>
                 {
-                    if (x.JustStarted)
+                    AppUsages.AddRange(x);
+                });
+            /*
+            appUsagesStream.Where(x => !x.JustStarted)
+                .LongCount()
+                .ObserveOnDispatcher()
+                .Subscribe(x => AppUsageCount++);
+
+            appUsagesStream.Where(x => x.JustStarted)
+                .Subscribe(x =>
+                {
+                    if (CurrentAppUsage == null) AppUsageCount++;
+
+                    appUsageIncremetor.Release();
+                    CurrentAppUsage = new AppUsageViewModel(new AppUsage
                     {
-                        //first time for new app
-                        if (CurrentAppUsage == null) AppUsageCount++;
+                        App = x.Value.App,
+                        StartTimestamp = lastAppUsageTime,
+                        EndTimestamp = lastAppUsageTime
+                    });
+                    appUsageIncremetor.Increment(CurrentAppUsage);
+                });*/
 
-                        appUsageIncremetor.Release();
-                        CurrentAppUsage = new AppUsageViewModel(new AppUsage
-                        {
-                            App = x.Value.App,
-                            StartTimestamp = lastAppUsageTime,
-                            EndTimestamp = lastAppUsageTime
-                        });
-                        appUsageIncremetor.Increment(CurrentAppUsage);
 
-                    }
-                    else
-                    {
-                        lastAppUsageTime = x.Value.EndTimestamp;
-                        AppUsages.Add(new AppUsageViewModel(x.Value));
-
-                        AppUsageCount++;
-                    }
-                }).ManageUsing(Resources);
+            appUsagesStream.Connect().ManageUsing(Resources);
         }
 
         protected override void OnDeactivate(bool close)

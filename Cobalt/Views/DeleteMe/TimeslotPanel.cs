@@ -51,21 +51,21 @@ namespace Cobalt.Views.DeleteMe
             var arrangeHeight = 0.0;
             foreach (UIElement element in InternalChildren)
             {
-                var e = (ListViewItem) element;
+                var e = (ListBoxItem) element;
                 var g = ((IAppUsageViewModel) e.Content);
                 start = DateTimeDayScale(g.StartTimestamp, height);
                 arrangeHeight = DateTimeDayScale(g.EndTimestamp, height) - DateTimeDayScale(g.StartTimestamp, height);
                 start = Math.Max(0, start);
                 arrangeHeight = Math.Max(0, arrangeHeight);
                 element.Arrange(new Rect(0,start,width,arrangeHeight));
-                e.Background = new SolidColorBrush(Colors.Blue);
+
             }
             return finalSize;
         }
 
         private double DateTimeDayScale(DateTime time, double height)
         {
-            return ((double)(time-DateTime.Today).Ticks/TimeSpan.TicksPerDay)*height;
+            return ((double)(time-DateTime.Today.AddDays(-2)).Ticks/TimeSpan.TicksPerDay)*height;
         }
     }
 }
