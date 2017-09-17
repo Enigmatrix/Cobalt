@@ -102,6 +102,7 @@ namespace Cobalt.Common.Analysis
                     //new app
                     (message.NewApp,
                         new Usage<TimeSpan>(justStarted:true)),
+                //make sure the NewApp is not null
                 }.Where(x => x.Item1 != null));
         }
 
@@ -113,10 +114,12 @@ namespace Cobalt.Common.Analysis
                         //tagdurs for previous
                         Repository.GetTags(message.PreviousAppUsage.App)
                             .Select(t => (t, new Usage<TimeSpan>(message.PreviousAppUsage.Duration))), 
-                        message.NewApp == null ? Observable.Empty<(Tag, Usage<TimeSpan>)>() :
-                        //tagdurs for new
-                        Repository.GetTags(message.NewApp)
-                            .Select(t => (t, new Usage<TimeSpan>(justStarted:true)))));
+                        message.NewApp == null ? 
+                            //empty
+                            Observable.Empty<(Tag, Usage<TimeSpan>)>() :
+                            //tagdurs for new
+                            Repository.GetTags(message.NewApp)
+                                .Select(t => (t, new Usage<TimeSpan>(justStarted:true)))));
         }
 
         private IObservable<Usage<AppUsage>> ReceivedAppUsages()
