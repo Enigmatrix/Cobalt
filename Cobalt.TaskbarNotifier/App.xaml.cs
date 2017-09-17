@@ -25,7 +25,7 @@ namespace Cobalt.TaskbarNotifier
 
         protected override void OnUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
         {
-            Log.Information($"Exception raised in TaskbarNotifier: {e}");
+            Log.Information($"Exception raised in TaskbarNotifier: {e.Exception}");
         }
     }
 }

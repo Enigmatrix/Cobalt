@@ -44,7 +44,7 @@ namespace Cobalt.Engine
             //TODO make sure
             if (!_recording) return;
             _prev = ForegroundAppUsage(_prevFgChangeTime, endTime, _prevPath);
-            ForegroundAppUsageObtained(this, new ForegroundAppSwitchEventArgs(_prev, new App {Path = path}));
+            ForegroundAppUsageObtained(this, new ForegroundAppSwitchEventArgs(_prev, path == null ? null : new App {Path = path}));
             _prevFgChangeTime = endTime;
             _prevPath = path;
 

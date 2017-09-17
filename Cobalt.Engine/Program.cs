@@ -37,32 +37,42 @@ namespace Cobalt.Engine
 
             appWatcher.ForegroundAppUsageObtained += (_, e) =>
             {
-                var prevAppUsage = e.PreviousAppUsage;
-                var newApp = e.NewApp;
+                try
+                {
+                    var prevAppUsage = e.PreviousAppUsage;
+                    var newApp = e.NewApp;
 
-                //check if the app path is already stored in the database
-                var appId = repository.FindAppIdByPath(prevAppUsage.App.Path);
-                if (appId == null)
-                    //if not, add a new app with that path
-                    repository.AddApp(prevAppUsage.App);
-                else
-                    //else use the previously existing app's identity
-                    prevAppUsage.App.Id = appId.Value;
+                    //check if the app path is already stored in the database
+                    var appId = repository.FindAppIdByPath(prevAppUsage.App.Path);
+                    if (appId == null)
+                        //if not, add a new app with that path
+                        repository.AddApp(prevAppUsage.App);
+                    else
+                        //else use the previously existing app's identity
+                        prevAppUsage.App.Id = appId.Value;
 
-                //store the incoming app's path too - leads to the Exists check of the previous statements to be redundant
-                //but hey i prefer consistency over perf sometimes
-                var newappId = repository.FindAppIdByPath(newApp.Path);
-                if (newappId == null)
-                    repository.AddApp(newApp);
-                else
-                    newApp.Id = newappId.Value;
+                    //store the incoming app's path too - leads to the Exists check of the previous statements to be redundant
+                    //but hey i prefer consistency over perf sometimes
+                    if (newApp != null)
+                    {
+                        var newappId = repository.FindAppIdByPath(newApp.Path);
+                        if (newappId == null)
+                            repository.AddApp(newApp);
+                        else
+                            newApp.Id = newappId.Value;
+                    }
 
-                //broadcast foreground app switch to all clients
-                transmitter.Send(new AppSwitchMessage(prevAppUsage, newApp));
-                //then store the app usage
-                repository.AddAppUsage(prevAppUsage);
+                    //broadcast foreground app switch to all clients
+                    transmitter.Send(new AppSwitchMessage(prevAppUsage, newApp));
+                    //then store the app usage
+                    repository.AddAppUsage(prevAppUsage);
 
-                LogAppSwitch(prevAppUsage, newApp);
+                    LogAppSwitch(prevAppUsage, newApp);
+                }
+                catch (Exception ex)
+                {
+                    Log.Information($"Error, exception raised inside AppWatcher: {ex}");
+                }
             };
 
             sysWatcher.SystemMainStateChanged += (_, e) =>

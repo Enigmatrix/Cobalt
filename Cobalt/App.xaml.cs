@@ -26,7 +26,7 @@ namespace Cobalt
 
         protected override void OnUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
         {
-            Log.Information($"Exception raised in Cobalt: {e}");
+            Log.Information($"Exception raised in Cobalt: {e.Exception}");
         }
     }
 }

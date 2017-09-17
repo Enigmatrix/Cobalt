@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reactive.Linq;
 using Cobalt.Common.Analysis.OutputTypes;
 using Cobalt.Common.Data;
@@ -101,7 +102,7 @@ namespace Cobalt.Common.Analysis
                     //new app
                     (message.NewApp,
                         new Usage<TimeSpan>(justStarted:true)),
-                });
+                }.Where(x => x.Item1 != null));
         }
 
         private IObservable<(Tag Tag, Usage<TimeSpan> Duration)> ReceivedTagDurations()
@@ -112,6 +113,7 @@ namespace Cobalt.Common.Analysis
                         //tagdurs for previous
                         Repository.GetTags(message.PreviousAppUsage.App)
                             .Select(t => (t, new Usage<TimeSpan>(message.PreviousAppUsage.Duration))), 
+                        message.NewApp == null ? Observable.Empty<(Tag, Usage<TimeSpan>)>() :
                         //tagdurs for new
                         Repository.GetTags(message.NewApp)
                             .Select(t => (t, new Usage<TimeSpan>(justStarted:true)))));
