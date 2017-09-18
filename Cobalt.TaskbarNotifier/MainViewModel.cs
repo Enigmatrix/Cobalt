@@ -65,6 +65,9 @@ namespace Cobalt.TaskbarNotifier
 
         public void PopupOpened()
         {
+            if(IsPopupOpen)
+                PopupClosed();
+
             IsPopupOpen = true;
 
             //TODO http://www.introtorx.com/content/v1.0.10621.0/14_HotAndColdObservables.html#HotAndCold try this later
