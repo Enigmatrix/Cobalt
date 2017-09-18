@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace Cobalt.Engine
@@ -22,12 +23,12 @@ namespace Cobalt.Engine
             }
         }
 
-        public void Hook(Win32.WinEvent @event, Win32.WinEventProc callback)
+        public void WinEventHook(Win32.WinEvent @event, Win32.WinEventProc callback)
         {
-            HookRange(@event, @event, callback);
+            WinEventHookRange(@event, @event, callback);
         }
 
-        public void HookRange(Win32.WinEvent min, Win32.WinEvent max, Win32.WinEventProc callback)
+        public void WinEventHookRange(Win32.WinEvent min, Win32.WinEvent max, Win32.WinEventProc callback)
         {
             var windowEventHook = Win32.SetWinEventHook(
                 (int) min, // eventMin
@@ -41,6 +42,13 @@ namespace Cobalt.Engine
 
             if (windowEventHook == IntPtr.Zero)
                 throw new Win32Exception(Marshal.GetLastWin32Error());
+        }
+
+        public void WindowsHook(Win32.HookType type, Win32.HookProc hook)
+        {
+            var hMod = Win32.GetModuleHandle(
+                Process.GetCurrentProcess().MainModule.ModuleName);
+            Win32.SetWindowsHookEx(type, hook, hMod, 0);
         }
     }
 }

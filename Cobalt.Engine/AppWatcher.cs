@@ -17,17 +17,17 @@ namespace Cobalt.Engine
         private bool _recording;
         private AppUsageStartReason _startReason = AppUsageStartReason.Start;
 
-        public AppWatcher()
+        public AppWatcher(HookManager hookMgr)
         {
             _pathResolver = new PathResolver();
-            _hookMgr = new HookManager();
+            _hookMgr = hookMgr;
             _foregroundWindowChangedCallback = ForegroundWindowChangedCallback;
 
             _prevPath = GetForegroundWindowPath();
             _prevFgChangeTime = DateTime.Now;
             _recording = true;
 
-            _hookMgr.Hook(Win32.WinEvent.EVENT_SYSTEM_FOREGROUND, _foregroundWindowChangedCallback);
+            _hookMgr.WinEventHook(Win32.WinEvent.EVENT_SYSTEM_FOREGROUND, _foregroundWindowChangedCallback);
         }
 
         //TODO better naming

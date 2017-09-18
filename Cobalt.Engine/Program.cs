@@ -32,7 +32,9 @@ namespace Cobalt.Engine
 
             var repository = IoCService.Instance.Resolve<IDbRepository>();
             var transmitter = IoCService.Instance.Resolve<ITransmissionServer>();
-            var appWatcher = new AppWatcher();
+            var hookMgr = new HookManager();
+            var appWatcher = new AppWatcher(hookMgr);
+            var idleWatcher = new IdleWatcher(hookMgr);
             var sysWatcher = new SystemWatcher(MessageWindow.Instance);
 
             appWatcher.ForegroundAppUsageObtained += (_, e) =>
@@ -75,6 +77,11 @@ namespace Cobalt.Engine
                 }
             };
 
+            idleWatcher.IdleObtained += (_, e) =>
+            {
+                
+            };
+
             sysWatcher.SystemMainStateChanged += (_, e) =>
             {
                 if (e.ChangedToState.IsStartRecordingEvent())
@@ -95,7 +102,7 @@ namespace Cobalt.Engine
                 prevAppUsage.UsageStartReason,
                 prevAppUsage.UsageEndReason,
                 prevAppUsage.App.Path,
-                newApp.Path);
+                newApp?.Path);
         }
     }
 }
