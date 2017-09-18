@@ -13,6 +13,7 @@ namespace Cobalt.Common.Data.Repository
 
         void AddApp(App app);
         void AddTag(Tag tag);
+        void AddInteraction(Interaction interaction);
 
         //remove/add tag
         void AddTagToApp(Tag tag, App app);
@@ -31,6 +32,7 @@ namespace Cobalt.Common.Data.Repository
 
         IObservable<(App App, TimeSpan Duration)> GetAppDurations(DateTime? start = null, DateTime? end = null);
         IObservable<(Tag Tag, TimeSpan Duration)> GetTagDurations(DateTime? start = null, DateTime? end = null);
+        IObservable<(DateTime Start, DateTime End)> GetIdleDurations(TimeSpan minDuration, DateTime? start = null, DateTime? end = null);
 
         //update
         void UpdateApp(App app);

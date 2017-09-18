@@ -63,6 +63,7 @@
     <Compile Include="AppUsageStartReason.cs" />
     <Compile Include="AppUsageType.cs" />
     <Compile Include="Entity.cs" />
+    <Compile Include="Interaction.cs" />
     <Compile Include="Migration\IDbMigrator.cs" />
     <Compile Include="Migration\MigrationBase.cs" />
     <Compile Include="Migration\MigratorBase.cs" />

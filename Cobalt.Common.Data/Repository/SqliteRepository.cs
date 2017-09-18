@@ -86,6 +86,11 @@ namespace Cobalt.Common.Data.Repository
 				null, tag.Name);
 		}
 
+	    public void AddInteraction(Interaction interaction)
+	    {
+	        Insert("insert into Interaction(Id) values (?)", interaction.Id);
+	    }
+
 		public void AddTagToApp(Tag tag, App app)
 		{
 			Insert("insert into AppTag(AppId, TagId) values (?,?)", app.Id, tag.Id);
@@ -185,6 +190,13 @@ namespace Cobalt.Common.Data.Repository
 				app.Id);
 		}
 
+	    public IObservable<(DateTime Start, DateTime End)> GetIdleDurations(TimeSpan minDuration, DateTime? start = null,DateTime? end=null)
+	    {
+			var (startTicks, endTicks) = ToTickRange(start, end);
+	        return Get(@"select a1.Id, (case when a2.Id > ? then ? else a2.Id end) from Interaction a1, Interaction a2 
+                            where a1.Id >= ? and a1.Id < ? and a2.rowid=a1.rowid+1 and (a2.Id-a1.Id)>=?", r => IdleMapper(r), endTicks, endTicks, startTicks, endTicks, minDuration.Ticks);
+	    }
+
 		#endregion
 
 		#region Util
@@ -223,7 +235,6 @@ namespace Cobalt.Common.Data.Repository
 			return (cmd, cmd.ExecuteReader());
 		}
 
-
 		private IObservable<T> Get<T>(string cmdStr, Func<SQLiteDataReader, T> mapper, params object[] param)
 		{
 			return Observable.Create<T>(obs =>
@@ -241,6 +252,19 @@ namespace Cobalt.Common.Data.Repository
 				return () => { };
 			});
 		}
+
+	    private Interaction InteractionMapper(SQLiteDataReader reader, int offset = 0)
+	    {
+	        return new Interaction
+	        {
+	            Timestamp = new DateTime(reader.GetInt64(offset))
+	        };
+	    }
+
+	    private (DateTime Start, DateTime End) IdleMapper(SQLiteDataReader reader, int offset = 0)
+	    {
+	        return (new DateTime(reader.GetInt64(offset)), new DateTime(reader.GetInt64(offset + 1)));
+	    }
 
 		private App AppMapper(SQLiteDataReader reader, int offset = 0)
 		{

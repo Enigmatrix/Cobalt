@@ -20,6 +20,8 @@ namespace Cobalt.Common.Data.Migration.Sqlite
                     Field("Id", Integer(), PkAutoInc()),
                     Field("Name", Text()),
                     Field("Path", Text(), NotNullUnique())),
+                Table("Interaction",
+                    Field("Id", Integer())),
                 Table("Tag",
                     Field("Id", Integer(), PkAutoInc()),
                     Field("Name", Text(), NotNullUnique())),
@@ -39,6 +41,7 @@ namespace Cobalt.Common.Data.Migration.Sqlite
                     Field("UsageEndReason", Integer()),
                     ForeignKey("AppId", "App(Id)")),
                 Index("AppPathIdx", "App(Path)"),
+                Index("InteractionIdx", "Interaction(Id)"),
                 Index("StartTimestampIdx", "AppUsage(StartTimestamp, EndTimestamp)"),
                 Index("EndTimestampIdx", "AppUsage(EndTimestamp, StartTimestamp)"));
         }

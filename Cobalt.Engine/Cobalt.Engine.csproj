@@ -61,7 +61,7 @@
   <ItemGroup>
     <Compile Include="AppWatcher.cs" />
     <Compile Include="HookManager.cs" />
-    <Compile Include="IdleWatcher.cs" />
+    <Compile Include="InteractionWatcher.cs" />
     <Compile Include="MessageWindow.cs" />
     <Compile Include="PathResolver.cs" />
     <Compile Include="Program.cs" />
