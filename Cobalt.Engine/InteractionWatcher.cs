@@ -10,7 +10,6 @@ namespace Cobalt.Engine
         private Win32.HookProc _keyboardCallback, _mouseCallback;
         private Timer _timer;
         private bool _interaction;
-        private DateTime _lastTime;
 
         public InteractionWatcher(HookManager hookMgr)
         {
@@ -25,39 +24,30 @@ namespace Cobalt.Engine
 
         private void TimerCallback(object state)
         {
-            lock (_timer)
-            {
-                if (_interaction)
-                {
-                    _interaction = false;
-                    if(IdleObtained != null)
-                        IdleObtained(this, new InteractionEventArgs(new Interaction{Timestamp = _lastTime}));
-                }
-            }
+            if (!_interaction) return;
+            _interaction = false;
+            if(IdleObtained != null)
+                IdleObtained(this, new InteractionEventArgs(new Interaction{Timestamp = DateTime.Now.AddSeconds(-1)}));
         }
 
         private IntPtr MouseCallback(int code, IntPtr wparam, IntPtr lparam)
         {
-            if (code < 0) goto ret;
-            IdleCallback(DateTime.Now);
-            ret: return Win32.CallNextHookEx((int)Win32.HookType.WH_MOUSE_LL, code, wparam, lparam);
+            if (code >= 0)
+                IdleCallback();
+            return Win32.CallNextHookEx((int)Win32.HookType.WH_MOUSE_LL, code, wparam, lparam);
         }
 
         private IntPtr KeyboardCallback(int code, IntPtr wparam, IntPtr lparam)
         {
-            if (code < 0) goto ret;
-            IdleCallback(DateTime.Now);
-            ret: return Win32.CallNextHookEx((int)Win32.HookType.WH_KEYBOARD_LL, code, wparam, lparam);
+            if (code >= 0)
+                IdleCallback();
+            return Win32.CallNextHookEx((int)Win32.HookType.WH_KEYBOARD_LL, code, wparam, lparam);
         }
 
 
-        private void IdleCallback(DateTime eventTime)
+        private void IdleCallback()
         {
-            lock (_timer)
-            {
-                _lastTime = eventTime;
-                _interaction = true;
-            }
+            _interaction = true;
         }
 
         public event EventHandler<InteractionEventArgs> IdleObtained;
