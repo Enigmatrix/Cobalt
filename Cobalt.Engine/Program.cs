@@ -34,7 +34,7 @@ namespace Cobalt.Engine
             var transmitter = IoCService.Instance.Resolve<ITransmissionServer>();
             var hookMgr = new HookManager();
             var appWatcher = new AppWatcher(hookMgr);
-            var idleWatcher = new InteractionWatcher(hookMgr);
+            //var idleWatcher = new InteractionWatcher(hookMgr);
             var sysWatcher = new SystemWatcher(MessageWindow.Instance);
 
             appWatcher.ForegroundAppUsageObtained += (_, e) =>
@@ -78,10 +78,10 @@ namespace Cobalt.Engine
             };
 
             
-            idleWatcher.IdleObtained += (_, e) =>
+            /*idleWatcher.IdleObtained += (_, e) =>
             {
                 repository.AddInteraction(e.Interaction);
-            };
+            };*/
 
             sysWatcher.SystemMainStateChanged += (_, e) =>
             {

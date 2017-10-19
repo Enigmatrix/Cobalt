@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Management;
@@ -26,7 +27,6 @@ namespace Cobalt.Engine
             if (!string.Equals(fileName, ApplicationFrameHost, StringComparison.OrdinalIgnoreCase))
                 return fileName;
 
-            Log.Information("Detected Win10/UWP App");
             fileName = GetMainModuleFilePath(GetModernAppProcessId(hwnd, pid));
 
             return fileName;
@@ -38,10 +38,8 @@ namespace Cobalt.Engine
             var ret = QueryFullProcessImageNameStrategy(pid);
             //check if this strategy works, else use another
             if (IsValidWindowFilePath(ret)) return ret;
-            Log.Information("QFPIN Strategy failed, using WMI");
             ret = WmiStrategy(pid);
             if (IsValidWindowFilePath(ret)) return ret;
-            Log.Information("Unable to ascertain window path, {pid}", pid);
             return null;
         }
 
@@ -49,12 +47,15 @@ namespace Cobalt.Engine
         {
             //TODO CACHE IMPLEMENTATION
             var wmiQueryString = $"SELECT ProcessId, ExecutablePath FROM Win32_Process WHERE ProcessId = {pid}";
+            var timer = Stopwatch.StartNew();
+            timer.Start();
             using (var searcher = new ManagementObjectSearcher(wmiQueryString))
+            using (var results = searcher.Get())
             {
-                using (var results = searcher.Get())
-                {
-                    return (string) results.Cast<ManagementBaseObject>().First()["ExecutablePath"];
-                }
+                var ret =  (string)results.Cast<ManagementBaseObject>().First()["ExecutablePath"];
+                timer.Stop();
+                Log.Information($"WEW: WMI: {timer.Elapsed}");
+                return ret;
             }
         }
 
@@ -117,8 +118,7 @@ namespace Cobalt.Engine
         private static bool EnumChildWindow(IntPtr handle, IntPtr pointer)
         {
             var gch = GCHandle.FromIntPtr(pointer);
-            var list = gch.Target as List<IntPtr>;
-            if (list == null)
+            if (!(gch.Target is List<IntPtr> list))
                 throw new InvalidCastException("GCHandle Target could not be cast as List<IntPtr>");
             list.Add(handle);
 
