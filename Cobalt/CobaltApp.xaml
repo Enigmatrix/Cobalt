@@ -1,4 +1,4 @@
-﻿<Application x:Class="Cobalt.App"
+﻿<Application x:Class="Cobalt.CobaltApp"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:Cobalt">

@@ -80,7 +80,8 @@ namespace Cobalt.Common.Analysis
             return (x.Item1, new Usage<TimeSpan>(x.Item2));
         }
 
-        private static Usage<AppUsage> ToUsageAppUsage(AppUsage au) => new Usage<AppUsage>(au);
+        private static Usage<AppUsage> ToUsageAppUsage(AppUsage au) => 
+            new Usage<AppUsage>(au);
 
         private IObservable<AppSwitchMessage> ReceivedAppSwitches()
         {

@@ -101,7 +101,7 @@
     <Reference Include="PresentationFramework" />
   </ItemGroup>
   <ItemGroup>
-    <ApplicationDefinition Include="App.xaml">
+    <ApplicationDefinition Include="CobaltApp.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
@@ -110,12 +110,11 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Compile Include="App.xaml.cs">
-      <DependentUpon>App.xaml</DependentUpon>
+    <Compile Include="CobaltApp.xaml.cs">
+      <DependentUpon>CobaltApp.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="ViewModels\NextLevelBindableCollection.cs" />
-    <Compile Include="Views\DeleteMe\TimeslotPanel.cs" />
+    <Compile Include="Views\Converters\HourlyUsageConverter.cs" />
     <Compile Include="Views\MainView.xaml.cs">
       <DependentUpon>MainView.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -164,6 +163,10 @@
     <ProjectReference Include="..\Cobalt.Common.UI\Cobalt.Common.UI.csproj">
       <Project>{888CA17F-6DB6-4286-BA06-1087F99F2259}</Project>
       <Name>Cobalt.Common.UI</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Cobalt.Common.Util\Cobalt.Common.Util.csproj">
+      <Project>{0CED98A9-89FE-4B5F-95E8-1FC895B96281}</Project>
+      <Name>Cobalt.Common.Util</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

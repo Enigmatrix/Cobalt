@@ -1,92 +1,70 @@
 ﻿using System;
-using System.Linq;
+using System.Collections.Generic;
 using System.Reactive.Linq;
-using Caliburn.Micro;
 using Cobalt.Common.Analysis;
+using Cobalt.Common.Analysis.OutputTypes;
 using Cobalt.Common.Data;
 using Cobalt.Common.IoC;
 using Cobalt.Common.UI;
-using Cobalt.Common.UI.Util;
-using Cobalt.Common.UI.ViewModels;
+using Cobalt.Common.Util;
 
 namespace Cobalt.ViewModels
 {
     public interface IMainViewModel : IViewModel
     {
-        NextLevelBindableCollection<IAppUsageViewModel> AppUsages { get; }
-        IAppUsageViewModel CurrentAppUsage { get; set; }
-        long AppUsageCount { get; set; }
+        IObservable<(App App, DateTime StartHour, TimeSpan Duration)> HourlyChunks { get; set; }
     }
 
     public class MainViewModel : ViewModelBase, IMainViewModel
     {
-        private long _appUsageCount;
-        private IAppUsageViewModel _currentAppUsage;
+        private IObservable<(App App, DateTime StartHour, TimeSpan Duration)> _hourlyChunks;
 
         public MainViewModel(IResourceScope scope, IAppStatsStreamService stats)
         {
-            Stats = stats;
             Resources = scope;
-            AppUsages = new NextLevelBindableCollection<IAppUsageViewModel>();
+            Stats = stats;
         }
 
         private IResourceScope Resources { get; }
 
         private IAppStatsStreamService Stats { get; }
 
-        //view should display all AppUsages and CurrentAppUsage
+        private static IEqualityComparer<App> PathEquality { get; }
+            = new SelectorEqualityComparer<App, string>(a => a.Path);
 
-        public NextLevelBindableCollection<IAppUsageViewModel> AppUsages { get; }
-
-        public IAppUsageViewModel CurrentAppUsage
+        public IObservable<(App App, DateTime StartHour, TimeSpan Duration)> HourlyChunks
         {
-            get => _currentAppUsage;
-            set => Set(ref _currentAppUsage, value);
-        }
-
-        public long AppUsageCount
-        {
-            get => _appUsageCount;
-            set => Set(ref _appUsageCount, value);
+            get => _hourlyChunks;
+            set => Set(ref _hourlyChunks, value);
         }
 
         protected override void OnActivate()
         {
-            var appUsagesStream = Stats.GetAppUsages(DateTime.Today.AddDays(-2), DateTime.Today.AddDays(-1)).Publish();
-            var appUsageIncremetor = Resources.Resolve<IDurationIncrementor>();
+            var appUsagesStream = Stats.GetAppUsages(DateTime.Today, DateTime.Now);//.Publish();
 
-            var lastAppUsageTime = DateTime.Now;
-            appUsagesStream
-                .Where(x => !x.JustStarted)
-                .Select(x => (IAppUsageViewModel)new AppUsageViewModel(x.Value))
-                .Buffer(TimeSpan.FromMilliseconds(20))
-                .Subscribe(x =>
-                {
-                    AppUsages.AddRange(x);
-                });
-            /*
-            appUsagesStream.Where(x => !x.JustStarted)
-                .LongCount()
-                .ObserveOnDispatcher()
-                .Subscribe(x => AppUsageCount++);
+            HourlyChunks = appUsagesStream
+                .SelectMany(SplitUsageIntoHourChunks);
 
-            appUsagesStream.Where(x => x.JustStarted)
-                .Subscribe(x =>
-                {
-                    if (CurrentAppUsage == null) AppUsageCount++;
+            //appUsagesStream.Connect().ManageUsing(Resources);
+        }
 
-                    appUsageIncremetor.Release();
-                    CurrentAppUsage = new AppUsageViewModel(new AppUsage
-                    {
-                        App = x.Value.App,
-                        StartTimestamp = lastAppUsageTime,
-                        EndTimestamp = lastAppUsageTime
-                    });
-                    appUsageIncremetor.Increment(CurrentAppUsage);
-                });*/
+        private IEnumerable<(App App, DateTime StartHour, TimeSpan Duration)> SplitUsageIntoHourChunks(Usage<AppUsage> usage)
+        {
+            var appUsage = usage.Value;
+            var start = appUsage.StartTimestamp;
+            var end = appUsage.EndTimestamp;
+            while (start < end)
+            {
+                var startHr = start.Subtract(new TimeSpan(0, 0, start.Minute, start.Second, start.Millisecond));
+                var endHr = Min(startHr.AddHours(1), end);
+                yield return (appUsage.App, startHr, endHr - start);
+                start = endHr;
+            }
+        }
 
-
-            appUsagesStream.Connect().ManageUsing(Resources);
+        public T Min<T>(T a, T b) where T : IComparable<T>
+        {
+            return a.CompareTo(b) < 0 ? a : b;
         }
 
         protected override void OnDeactivate(bool close)
