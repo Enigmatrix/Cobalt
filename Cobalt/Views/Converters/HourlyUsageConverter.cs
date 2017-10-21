@@ -26,17 +26,11 @@ namespace Cobalt.Views.Converters
 
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            var mapper = Mappers.Xy<TimeSpan>()
-                .Y(x => x.Ticks);
+            var mapper = Mappers
+                .Xy<AppDurationViewModel>()
+                .Y(x => x.Duration.Ticks);
             var series = new SeriesCollection(mapper);
             if (!(value is IObservable<(App App, DateTime StartHour, TimeSpan Duration)> coll)) return null;
-
-            void Add((App App, DateTime StartHour, TimeSpan Duration) appDur)
-            {
-                series.Add(new PieSeries
-                {
-                });
-            }
 
             var appMap = new Dictionary<App, StackedColumnSeries>(PathEquality);
 
@@ -46,14 +40,14 @@ namespace Cobalt.Views.Converters
                 {
                     var stack = new StackedColumnSeries
                     {
-                        Values = new TimeSpan[24].AsChartValues(),
+                        Values = new AppDurationViewModel[24].Select(_ => new AppDurationViewModel(x.App)).AsChartValues(),
                         LabelPoint = cp => x.App.Path
                     };
                     appMap[x.App] = stack;
                     series.Add(stack);
                 }
-                ((ChartValues<TimeSpan>)appMap[x.App].Values)[x.StartHour.Hour] += x.Duration;
-                
+                ((ChartValues<AppDurationViewModel>) appMap[x.App].Values)[x.StartHour.Hour].Duration += x.Duration;
+
             });
 
 

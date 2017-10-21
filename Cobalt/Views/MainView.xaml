@@ -8,12 +8,31 @@
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         xmlns:wpf="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
         xmlns:converters="clr-namespace:Cobalt.Views.Converters"
+        xmlns:views="clr-namespace:Cobalt.Views"
         mc:Ignorable="d"
         Title="Cobalt" Height="750" Width="1205">
     <Grid>
         <Grid.Resources>
             <converters:HourlyUsageConverter x:Key="HourlyUsageConverter"></converters:HourlyUsageConverter>
         </Grid.Resources>
-        <wpf:CartesianChart Series="{Binding HourlyChunks, Converter={StaticResource HourlyUsageConverter}}"></wpf:CartesianChart>
+        <wpf:CartesianChart Series="{Binding HourlyChunks, Converter={StaticResource HourlyUsageConverter}}" DisableAnimations="True">
+            <wpf:CartesianChart.AxisY>
+                <wpf:Axis LabelFormatter="{Binding HourFormatter}" MaxValue="36000000000" IsMerged="True">
+                    <wpf:Axis.Separator>
+                        <wpf:Separator Step="6000000000"/>
+                    </wpf:Axis.Separator>
+                </wpf:Axis>
+            </wpf:CartesianChart.AxisY>
+            <wpf:CartesianChart.AxisX>
+                <wpf:Axis LabelFormatter="{Binding DayHourFormatter}">
+                    <wpf:Axis.Separator>
+                        <wpf:Separator Step="1"/>
+                    </wpf:Axis.Separator>
+                </wpf:Axis>
+            </wpf:CartesianChart.AxisX>
+            <wpf:CartesianChart.DataTooltip>
+                <views:HourlyAppDurationTooltip/>
+            </wpf:CartesianChart.DataTooltip>
+        </wpf:CartesianChart>
     </Grid>
 </Window>

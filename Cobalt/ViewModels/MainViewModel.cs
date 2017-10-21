@@ -7,6 +7,7 @@ using Cobalt.Common.Data;
 using Cobalt.Common.IoC;
 using Cobalt.Common.UI;
 using Cobalt.Common.Util;
+using LiveCharts;
 
 namespace Cobalt.ViewModels
 {
@@ -24,6 +25,9 @@ namespace Cobalt.ViewModels
             Resources = scope;
             Stats = stats;
         }
+
+        public Func<double, string> HourFormatter => x => x / 600000000 + "min";
+        public Func<double, string> DayHourFormatter => x => (x % 12 == 0? 12: x%12) + (x >= 12 ? "pm" : "am");
 
         private IResourceScope Resources { get; }
 

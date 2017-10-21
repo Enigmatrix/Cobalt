@@ -106,6 +106,10 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="ViewModels\MainViewModel.cs" />
+    <Page Include="Views\HourlyAppDurationTooltip.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Views\MainView.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -115,6 +119,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Views\Converters\HourlyUsageConverter.cs" />
+    <Compile Include="Views\HourlyAppDurationTooltip.xaml.cs">
+      <DependentUpon>HourlyAppDurationTooltip.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\MainView.xaml.cs">
       <DependentUpon>MainView.xaml</DependentUpon>
       <SubType>Code</SubType>
