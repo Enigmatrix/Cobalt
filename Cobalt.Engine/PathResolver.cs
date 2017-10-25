@@ -17,7 +17,7 @@ namespace Cobalt.Engine
         {
             if (!IsWindowVisible(hwnd))
             {
-                Log.Information("Invisible Window, {hwnd}", hwnd);
+                //Log.Information("Invisible Window, {hwnd}", hwnd);
                 return null;
             }
 
