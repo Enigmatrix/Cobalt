@@ -69,7 +69,7 @@ namespace Cobalt.Engine
                     //then store the app usage
                     repository.AddAppUsage(prevAppUsage);
 
-                    LogAppSwitch(prevAppUsage, newApp);
+                    //LogAppSwitch(prevAppUsage, newApp);
                 }
                 catch (Exception ex)
                 {

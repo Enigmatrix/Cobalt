@@ -9,12 +9,29 @@
         xmlns:wpf="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
         xmlns:converters="clr-namespace:Cobalt.Views.Converters"
         xmlns:views="clr-namespace:Cobalt.Views"
+        xmlns:converters1="clr-namespace:Cobalt.Common.UI.Converters;assembly=Cobalt.Common.UI"
         mc:Ignorable="d"
         Title="Cobalt" Height="750" Width="1205">
     <Grid>
         <Grid.Resources>
             <converters:HourlyUsageConverter x:Key="HourlyUsageConverter"></converters:HourlyUsageConverter>
+            <converters1:AppDurationSeriesConverter x:Key="AppDurationSeriesConverter"></converters1:AppDurationSeriesConverter>
+            <Style TargetType="materialDesign:Card">
+                <Setter Property="VerticalAlignment" Value="Stretch"/>
+                <Setter Property="Margin" Value="10"/>
+                <Setter Property="Padding" Value="5"/>
+
+            </Style>
         </Grid.Resources>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition/>
+            <ColumnDefinition/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition/>
+            <RowDefinition/>
+        </Grid.RowDefinitions>
+        <materialDesign:Card Grid.Row="0" Grid.ColumnSpan="2">
         <wpf:CartesianChart Series="{Binding HourlyChunks, Converter={StaticResource HourlyUsageConverter}}" DisableAnimations="True">
             <wpf:CartesianChart.AxisY>
                 <wpf:Axis LabelFormatter="{Binding HourFormatter}" MaxValue="36000000000" IsMerged="True">
@@ -34,5 +51,14 @@
                 <views:HourlyAppDurationTooltip/>
             </wpf:CartesianChart.DataTooltip>
         </wpf:CartesianChart>
+            </materialDesign:Card>
+        <materialDesign:Card Grid.Row="1" Grid.Column="1">
+        <wpf:PieChart DisableAnimations="True" 
+                     Series="{Binding AppDurations, Converter={StaticResource AppDurationSeriesConverter}}">
+            <wpf:PieChart.DataTooltip>
+                <views:HourlyAppDurationTooltip />
+            </wpf:PieChart.DataTooltip>
+        </wpf:PieChart>
+        </materialDesign:Card>
     </Grid>
 </Window>
