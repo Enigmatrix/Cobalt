@@ -91,7 +91,7 @@ namespace Cobalt.Engine
 
         private string GetForegroundWindowPath()
         {
-            var hwnd = Win32.GetForegroundWindow();
+            var hwnd = Win32.GetTopWindow(IntPtr.Zero);
             string path;
             while ((path = _pathResolver.ResolveWindowPath(hwnd)) == null)
                 hwnd = Win32.GetWindow(hwnd, Win32.GW_HWNDNEXT);
