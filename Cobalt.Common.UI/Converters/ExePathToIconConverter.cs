@@ -54,8 +54,7 @@ namespace Cobalt.Common.UI.Converters
 
             if (!Directory.Exists(directory)) return null;
 
-            using (var fs = File.OpenRead(Path.Combine(directory ?? throw new InvalidOperationException(),
-                "AppxManifest.xml")))
+            using (var fs = File.OpenRead(Path.Combine(directory, "AppxManifest.xml")))
             {
                 var manifest = XDocument.Load(fs);
 
