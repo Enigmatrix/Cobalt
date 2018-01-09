@@ -46,9 +46,14 @@ namespace Cobalt.Common.UI.Converters
 
         private static ImageSource GetModernAppIcon(string path)
         {
+            //TODO cleanup all these IO reads with exception handling?
+            //TODO better XML handling
             var directory = Path.GetDirectoryName(path);
             var exeName = Path.GetFileName(path);
             string imagePath = null;
+
+            if (Directory.Exists(directory)) return null;
+
             using (var fs = File.OpenRead(Path.Combine(directory ?? throw new InvalidOperationException(),
                 "AppxManifest.xml")))
             {
