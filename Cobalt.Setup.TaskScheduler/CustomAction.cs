@@ -65,7 +65,7 @@ namespace Cobalt.Setup.TaskScheduler
 
         private static void Log(string msg)
         {
-            File.AppendAllText(@"C:\Users\enigm\wixlog.txt", msg + "\r\n");
+            File.AppendAllText($@"C:\Users\{Environment.UserName}\cobalt_wixlog.txt", msg + "\r\n");
         }
     }
 }
