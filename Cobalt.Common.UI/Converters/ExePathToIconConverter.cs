@@ -83,7 +83,7 @@ namespace Cobalt.Common.UI.Converters
                     break;
                 }
             }
-            return new BitmapImage(new Uri($@"file:/{imagePath}"));
+            return File.Exists(imagePath) ? new BitmapImage(new Uri($@"file:/{imagePath}")) : null;
         }
 
         private static ImageSource GetNormalAppIcon(string path)

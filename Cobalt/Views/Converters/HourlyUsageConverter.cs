@@ -9,7 +9,10 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Data;
 using Caliburn.Micro;
+using Cobalt.Common.Analysis.OutputTypes;
 using Cobalt.Common.Data;
+using Cobalt.Common.IoC;
+using Cobalt.Common.UI.Util;
 using Cobalt.Common.UI.ViewModels;
 using Cobalt.Common.Util;
 using LiveCharts;
@@ -30,12 +33,17 @@ namespace Cobalt.Views.Converters
                 .Xy<AppDurationViewModel>()
                 .Y(x => x.Duration.Ticks);
             var series = new SeriesCollection(mapper);
-            if (!(value is IObservable<(App App, DateTime StartHour, TimeSpan Duration)> coll)) return null;
+            if (!(value is IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> coll)) return null;
 
             var appMap = new Dictionary<App, StackedColumnSeries>(PathEquality);
 
-            coll.ObserveOnDispatcher().Subscribe(x =>
+            //TODO RESOLVE DURATIONTIMER
+            IDurationIncrementor incrementor = IoCService.Instance.Resolve<IDurationIncrementor>();
+
+            coll.ObserveOnDispatcher().Subscribe(ux =>
             {
+                var x = ux.Value;
+                var justStarted = ux.JustStarted;
                 if (!appMap.ContainsKey(x.App))
                 {
                     var stack = new StackedColumnSeries
@@ -46,12 +54,31 @@ namespace Cobalt.Views.Converters
                     appMap[x.App] = stack;
                     series.Add(stack);
                 }
-                ((ChartValues<AppDurationViewModel>) appMap[x.App].Values)[x.StartHour.Hour].Duration += x.Duration;
+                
+                var chunk = ((ChartValues<AppDurationViewModel>) appMap[x.App].Values)[x.StartHour.Hour];
+                HandleDuration(new Usage<TimeSpan>(justStarted:justStarted, value: x.Duration), incrementor, chunk);
+
 
             });
 
 
+
+
+
             return series;
+        }
+         void HandleDuration(Usage<TimeSpan> d, IDurationIncrementor incrementor, IHasDuration hasDur)
+        {
+            if (d.JustStarted)
+            {
+                //handle new app/tag started here
+                incrementor.Increment(hasDur);
+            }
+            else
+            {
+                incrementor.Release();
+                hasDur.Duration += d.Value;
+            }
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

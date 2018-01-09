@@ -16,12 +16,12 @@ namespace Cobalt.ViewModels
 {
     public interface IMainViewModel : IViewModel
     {
-        IObservable<(App App, DateTime StartHour, TimeSpan Duration)> HourlyChunks { get; set; }
+        IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> HourlyChunks { get; set; }
     }
 
     public class MainViewModel : ViewModelBase, IMainViewModel
     {
-        private IObservable<(App App, DateTime StartHour, TimeSpan Duration)> _hourlyChunks;
+        private IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> _hourlyChunks;
         private BindableCollection<IAppDurationViewModel> _appDurations = new BindableCollection<IAppDurationViewModel>();
 
         public MainViewModel(IResourceScope scope, IAppStatsStreamService stats)
@@ -45,7 +45,7 @@ namespace Cobalt.ViewModels
         private static IEqualityComparer<App> PathEquality { get; }
             = new SelectorEqualityComparer<App, string>(a => a.Path);
 
-        public IObservable<(App App, DateTime StartHour, TimeSpan Duration)> HourlyChunks
+        public IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> HourlyChunks
         {
             get => _hourlyChunks;
             set => Set(ref _hourlyChunks, value);
@@ -95,7 +95,7 @@ namespace Cobalt.ViewModels
             }
         }
 
-        private IEnumerable<(App App, DateTime StartHour, TimeSpan Duration)> SplitUsageIntoHourChunks(Usage<AppUsage> usage)
+        private IEnumerable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> SplitUsageIntoHourChunks(Usage<AppUsage> usage)
         {
             var appUsage = usage.Value;
             var start = appUsage.StartTimestamp;
@@ -104,7 +104,10 @@ namespace Cobalt.ViewModels
             {
                 var startHr = start.Subtract(new TimeSpan(0, 0, start.Minute, start.Second, start.Millisecond));
                 var endHr = Min(startHr.AddHours(1), end);
-                yield return (appUsage.App, startHr, endHr - start);
+                if(!(endHr < end) && usage.JustStarted)
+                    yield return new Usage<(App,DateTime,TimeSpan)>(justStarted:true, value: (appUsage.App, startHr, TimeSpan.Zero));
+                else
+                    yield return new Usage<(App,DateTime,TimeSpan)>((appUsage.App, startHr, endHr - start));    
                 start = endHr;
             }
         }
