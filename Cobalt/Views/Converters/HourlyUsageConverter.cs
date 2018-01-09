@@ -37,13 +37,13 @@ namespace Cobalt.Views.Converters
 
             var appMap = new Dictionary<App, StackedColumnSeries>(PathEquality);
 
-            //TODO RESOLVE DURATIONTIMER
-            IDurationIncrementor incrementor = IoCService.Instance.Resolve<IDurationIncrementor>();
+            //TODO RESOLVE DURATIONTIMER in a better way
+            //var incrementor = IoCService.Instance.Resolve<IDurationIncrementor>();
 
             coll.ObserveOnDispatcher().Subscribe(ux =>
             {
                 var x = ux.Value;
-                var justStarted = ux.JustStarted;
+                //var justStarted = ux.JustStarted;
                 if (!appMap.ContainsKey(x.App))
                 {
                     var stack = new StackedColumnSeries
@@ -56,7 +56,8 @@ namespace Cobalt.Views.Converters
                 }
                 
                 var chunk = ((ChartValues<AppDurationViewModel>) appMap[x.App].Values)[x.StartHour.Hour];
-                chunk.DurationIncrement(new Usage<TimeSpan>(justStarted:justStarted, value: x.Duration), incrementor);
+                chunk.Duration += x.Duration;
+                //chunk.DurationIncrement(new Usage<TimeSpan>(justStarted:justStarted, value: x.Duration), incrementor);
 
 
             });
