@@ -52,7 +52,7 @@ namespace Cobalt.Common.UI.Converters
             var exeName = Path.GetFileName(path);
             string imagePath = null;
 
-            if (Directory.Exists(directory)) return null;
+            if (!Directory.Exists(directory)) return null;
 
             using (var fs = File.OpenRead(Path.Combine(directory ?? throw new InvalidOperationException(),
                 "AppxManifest.xml")))
