@@ -112,7 +112,7 @@ namespace Cobalt.TaskbarNotifier
                         .Subscribe(d =>
                         {
                             if (!IsPopupOpen) return;
-                            HandleDuration(d, appIncrementor, appDur);
+                            appDur.DurationIncrement(d, appIncrementor);
                         })
                         .ManageUsing(Current);
 
@@ -128,7 +128,7 @@ namespace Cobalt.TaskbarNotifier
                 .Subscribe(x =>
                 {
                     if(!IsPopupOpen) return;
-                    HandleDuration(x, totalDurationIncrementor, hasTotalDur);
+                    hasTotalDur.DurationIncrement(x, totalDurationIncrementor);
                 });
 
             /*
@@ -138,7 +138,7 @@ namespace Cobalt.TaskbarNotifier
                     var tagDur = new TagDurationViewModel(x.Tag);
 
                     x.Duration
-                        .Subscribe(d => HandleDuration(d, tagIncrementor, tagDur))
+                        .Subscribe(d => DurationIncrement(d, tagIncrementor, tagDur))
                         .ManageUsing(Current);
 
                     return tagDur;
@@ -160,20 +160,6 @@ namespace Cobalt.TaskbarNotifier
             TotalDuration = TimeSpan.Zero;
             AppDurations.Clear();
             TagDurations.Clear();
-        }
-
-        private void HandleDuration(Usage<TimeSpan> d, IDurationIncrementor incrementor, IHasDuration hasDur)
-        {
-            if (d.JustStarted)
-            {
-                //handle new app/tag started here
-                incrementor.Increment(hasDur);
-            }
-            else
-            {
-                incrementor.Release();
-                hasDur.Duration += d.Value;
-            }
         }
     }
 }

@@ -127,6 +127,10 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Cobalt.Common.Analysis\Cobalt.Common.Analysis.csproj">
+      <Project>{1B7B20B5-0240-402F-AB98-7A7770D920B5}</Project>
+      <Name>Cobalt.Common.Analysis</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Cobalt.Common.Data\Cobalt.Common.Data.csproj">
       <Project>{1367640D-5813-4E0F-A9FC-85A4CAB3BD0B}</Project>
       <Name>Cobalt.Common.Data</Name>

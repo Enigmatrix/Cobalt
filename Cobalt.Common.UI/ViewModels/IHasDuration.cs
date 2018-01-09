@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Drawing;
+using Cobalt.Common.Analysis.OutputTypes;
+using Cobalt.Common.UI.Util;
 
 namespace Cobalt.Common.UI.ViewModels
 {
@@ -26,6 +28,22 @@ namespace Cobalt.Common.UI.ViewModels
                 _getDur = get,
                 _setDur = set
             };
+        }
+    }
+
+    public static class HasDurationEx
+    {
+        public static void DurationIncrement(this IHasDuration hasDur, Usage<TimeSpan> d, IDurationIncrementor incrementor)
+        {
+            if (d.JustStarted)
+            {
+                incrementor.Increment(hasDur);
+            }
+            else
+            {
+                incrementor.Release();
+                hasDur.Duration += d.Value;
+            }
         }
     }
 }

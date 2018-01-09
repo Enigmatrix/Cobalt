@@ -56,7 +56,7 @@ namespace Cobalt.Views.Converters
                 }
                 
                 var chunk = ((ChartValues<AppDurationViewModel>) appMap[x.App].Values)[x.StartHour.Hour];
-                HandleDuration(new Usage<TimeSpan>(justStarted:justStarted, value: x.Duration), incrementor, chunk);
+                chunk.DurationIncrement(new Usage<TimeSpan>(justStarted:justStarted, value: x.Duration), incrementor);
 
 
             });
@@ -67,6 +67,7 @@ namespace Cobalt.Views.Converters
 
             return series;
         }
+        //TODO refactor this common componenent
          void HandleDuration(Usage<TimeSpan> d, IDurationIncrementor incrementor, IHasDuration hasDur)
         {
             if (d.JustStarted)

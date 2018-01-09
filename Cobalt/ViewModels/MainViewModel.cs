@@ -67,11 +67,9 @@ namespace Cobalt.ViewModels
                     var appDur = new AppDurationViewModel(x.App);
 
                     x.Duration
-                        .Subscribe(d =>
-                        {
-                            HandleDuration(d, appIncrementor, appDur);
-                        })
+                        .Subscribe(d => { appDur.DurationIncrement(d, appIncrementor); })
                         .ManageUsing(Resources);
+
                     return appDur;
                 })
                 .ObserveOnDispatcher()
@@ -79,20 +77,6 @@ namespace Cobalt.ViewModels
                     AppDurations.Add(x));
 
             //appUsagesStream.Connect().ManageUsing(Resources);
-        }
-
-        private void HandleDuration(Usage<TimeSpan> d, IDurationIncrementor incrementor, IHasDuration hasDur)
-        {
-            if (d.JustStarted)
-            {
-                //handle new app/tag started here
-                incrementor.Increment(hasDur);
-            }
-            else
-            {
-                incrementor.Release();
-                hasDur.Duration += d.Value;
-            }
         }
 
         private IEnumerable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> SplitUsageIntoHourChunks(Usage<AppUsage> usage)
