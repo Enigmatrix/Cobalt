@@ -8,7 +8,6 @@
             <Component Id="cmp65A796F5E96BF4CF4CF4D3E5A53619B9" Directory="INSTALLFOLDER" Guid="C98B1F91-3B69-4B89-ACBA-F91CF139A407" KeyPath="no">
                 <File Id="fil2C9257C03774BF3C18C9DEE858FE332E" KeyPath="yes" Source="$(var.Cobalt.TargetDir)\Cobalt.exe.config" />
             </Component>
-          <util:RemoveFolderEx Property="INSTALLFOLDER" On="uninstall"/>
         </ComponentGroup>
     </Fragment>
 </Wix>
