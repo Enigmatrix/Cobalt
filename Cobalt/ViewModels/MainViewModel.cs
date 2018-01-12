@@ -79,6 +79,8 @@ namespace Cobalt.ViewModels
             //appUsagesStream.Connect().ManageUsing(Resources);
         }
 
+        //TODO move this to common
+
         private IEnumerable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> SplitUsageIntoHourChunks(Usage<AppUsage> usage)
         {
             var appUsage = usage.Value;

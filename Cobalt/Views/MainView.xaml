@@ -1,28 +1,36 @@
-﻿<Window x:Class="Cobalt.Views.MainView"
+﻿<metro:MetroWindow x:Class="Cobalt.Views.MainView"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Cobalt"
+        xmlns:metro="http://metro.mahapps.com/winfx/xaml/controls"
         xmlns:viewModels="clr-namespace:Cobalt.Common.UI.ViewModels;assembly=Cobalt.Common.UI"
-        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
         xmlns:wpf="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
         xmlns:converters="clr-namespace:Cobalt.Views.Converters"
         xmlns:views="clr-namespace:Cobalt.Views"
         xmlns:converters1="clr-namespace:Cobalt.Common.UI.Converters;assembly=Cobalt.Common.UI"
-        mc:Ignorable="d"
+        mc:Ignorable="d" ShowTitleBar="False"
         Title="Cobalt" Height="750" Width="1205">
+
+    <Grid>
+        
+    </Grid>
+
+    <!--
     <Grid>
         <Grid.Resources>
             <converters:HourlyUsageConverter x:Key="HourlyUsageConverter"></converters:HourlyUsageConverter>
             <converters1:AppDurationSeriesConverter x:Key="AppDurationSeriesConverter"></converters1:AppDurationSeriesConverter>
-            <Style TargetType="materialDesign:Card">
+            <Style TargetType="md:Card">
                 <Setter Property="VerticalAlignment" Value="Stretch"/>
                 <Setter Property="Margin" Value="10"/>
                 <Setter Property="Padding" Value="5"/>
 
             </Style>
         </Grid.Resources>
+        
         <Grid.ColumnDefinitions>
             <ColumnDefinition/>
             <ColumnDefinition/>
@@ -32,33 +40,33 @@
             <RowDefinition/>
         </Grid.RowDefinitions>
         <materialDesign:Card Grid.Row="0" Grid.ColumnSpan="2">
-        <wpf:CartesianChart Series="{Binding HourlyChunks, Converter={StaticResource HourlyUsageConverter}}" DisableAnimations="True">
-            <wpf:CartesianChart.AxisY>
-                <wpf:Axis LabelFormatter="{Binding HourFormatter}" MaxValue="36000000000" IsMerged="True">
-                    <wpf:Axis.Separator>
-                        <wpf:Separator Step="6000000000"/>
-                    </wpf:Axis.Separator>
-                </wpf:Axis>
-            </wpf:CartesianChart.AxisY>
-            <wpf:CartesianChart.AxisX>
-                <wpf:Axis LabelFormatter="{Binding DayHourFormatter}">
-                    <wpf:Axis.Separator>
-                        <wpf:Separator Step="1"/>
-                    </wpf:Axis.Separator>
-                </wpf:Axis>
-            </wpf:CartesianChart.AxisX>
-            <wpf:CartesianChart.DataTooltip>
-                <views:HourlyAppDurationTooltip/>
-            </wpf:CartesianChart.DataTooltip>
-        </wpf:CartesianChart>
-            </materialDesign:Card>
-        <materialDesign:Card Grid.Row="1" Grid.Column="1">
-        <wpf:PieChart DisableAnimations="True" 
-                     Series="{Binding AppDurations, Converter={StaticResource AppDurationSeriesConverter}}">
-            <wpf:PieChart.DataTooltip>
-                <views:HourlyAppDurationTooltip />
-            </wpf:PieChart.DataTooltip>
-        </wpf:PieChart>
+            <wpf:CartesianChart Series="{Binding HourlyChunks, Converter={StaticResource HourlyUsageConverter}}" DisableAnimations="True">
+                <wpf:CartesianChart.AxisY>
+                    <wpf:Axis LabelFormatter="{Binding HourFormatter}" MaxValue="36000000000" IsMerged="True">
+                        <wpf:Axis.Separator>
+                            <wpf:Separator Step="6000000000"/>
+                        </wpf:Axis.Separator>
+                    </wpf:Axis>
+                </wpf:CartesianChart.AxisY>
+                <wpf:CartesianChart.AxisX>
+                    <wpf:Axis LabelFormatter="{Binding DayHourFormatter}">
+                        <wpf:Axis.Separator>
+                            <wpf:Separator Step="1"/>
+                        </wpf:Axis.Separator>
+                    </wpf:Axis>
+                </wpf:CartesianChart.AxisX>
+                <wpf:CartesianChart.DataTooltip>
+                    <views:HourlyAppDurationTooltip/>
+                </wpf:CartesianChart.DataTooltip>
+            </wpf:CartesianChart>
         </materialDesign:Card>
-    </Grid>
-</Window>
+        <materialDesign:Card Grid.Row="1" Grid.Column="1">
+            <wpf:PieChart DisableAnimations="True" 
+                     Series="{Binding AppDurations, Converter={StaticResource AppDurationSeriesConverter}}">
+                <wpf:PieChart.DataTooltip>
+                    <views:HourlyAppDurationTooltip />
+                </wpf:PieChart.DataTooltip>
+            </wpf:PieChart>
+        </materialDesign:Card>
+    </Grid> -->
+</metro:MetroWindow>
