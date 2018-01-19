@@ -21,15 +21,18 @@
 		</Feature>
 
     <!--Custom code declaration-->
-		<Binary Id="CobaltSetupTasks" SourceFile="$(var.Cobalt.Setup.CustomActions.TargetDir)\Cobalt.Setup.CustomActions.CA.dll" />
-		<CustomAction BinaryKey="CobaltSetupTasks" DllEntry="InstallTasks" Id="InstallTasks" Return="check" Execute='deferred' Impersonate='no'/>
-		<CustomAction Id='SetEnv' Property="InstallTasks" Value="INSTALLFOLDER=[INSTALLFOLDER]"/>
+		<Binary Id="CobaltCustomActions" SourceFile="$(var.Cobalt.Setup.CustomActions.TargetDir)\Cobalt.Setup.CustomActions.CA.dll" />
+		<CustomAction BinaryKey="CobaltCustomActions" DllEntry="InstallTasks" Id="InstallTasks" Return="check" Execute='deferred' Impersonate='no'/>
+		<CustomAction BinaryKey="CobaltCustomActions" DllEntry="DeleteTasks" Id="DeleteTasks" Return="check" Execute='deferred' Impersonate='no'/>
+		<CustomAction BinaryKey="CobaltCustomActions" DllEntry="LaunchTasks" Id="LaunchTasks" Return="check" Execute='deferred' Impersonate='no'/>
+		<CustomAction Id='SetEnv' Property="INSTALLFOLDER" Value="[INSTALLFOLDER]"/>
 
     <!--Installation sequence-->
 		<InstallExecuteSequence>
-			<Custom Action="SetEnv" After="InstallFiles"/>
-			<Custom Action="InstallTasks" After="SetEnv"/>
+			<Custom Action="SetEnv" Before="CostFinalize"/>
+			<Custom Action="InstallTasks" After="InstallFiles"/>
 		</InstallExecuteSequence>
+    
 
 	</Product>
 
