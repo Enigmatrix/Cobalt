@@ -42,8 +42,6 @@
       <!---during install and repair-->
       <Custom Action="LaunchTasks" Before="InstallFinalize">NOT REMOVE</Custom>
 		</InstallExecuteSequence>
-    
-
 	</Product>
 
   <!--Directory Structure-->
