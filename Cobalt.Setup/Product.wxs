@@ -10,7 +10,7 @@
 	  <PropertyRef Id="IMPORT_UI_PROPERTIES" />
 
     <!--Upgrade Settings-->
-    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." Schedule="afterInstallExecute" />
 
     <!--Install files-->
 		<MediaTemplate EmbedCab="yes"/>
@@ -33,6 +33,7 @@
 
     <!--Installation sequence-->
 		<InstallExecuteSequence>
+
 			<Custom Action="SetEnvInstallTasks" After="InstallFiles"/>
 			<Custom Action="SetEnvDeleteTasks" After="InstallFiles"/>
 			<Custom Action="SetEnvLaunchTasks" After="InstallFiles"/>

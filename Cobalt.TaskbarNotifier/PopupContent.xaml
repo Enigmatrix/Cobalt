@@ -21,7 +21,7 @@
         </Grid.RowDefinitions>
         <materialDesign:Card HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="{DynamicResource MaterialDesignPaper}">
             <StackPanel Orientation="Horizontal"  VerticalAlignment="Center" HorizontalAlignment="Center">
-                <TextBlock Text="Total Time: " Style="{DynamicResource MaterialDesignTitleTextBlock}" />
+                <TextBlock Text="Total: " Style="{DynamicResource MaterialDesignTitleTextBlock}" />
                 <TextBlock Text="{Binding TotalDuration, Converter={StaticResource HumanReadableTimeSpanConverter}}"
                            FontSize="20" Style="{DynamicResource MaterialDesignTitleTextBlock}"/>
             </StackPanel>

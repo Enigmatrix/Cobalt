@@ -16,7 +16,7 @@
         mc:Ignorable="d" ShowTitleBar="False"
         Title="Cobalt" Height="500" Width="800">
 
-    <ctrls:AppLayout>
+    <!--<ctrls:AppLayout>
         <ctrls:AppLayout.MenuItems>
             <ctrls:AppMenuItemCollection>
                 <ctrls:AppMenuItem Icon="Home" Description="Home"/>
@@ -30,7 +30,11 @@
                 <ctrls:AppMenuItem Icon="Settings" Description="Settings"/>
             </ctrls:AppMenuItemCollection>
         </ctrls:AppLayout.OptionItems>
-    </ctrls:AppLayout>
+    </ctrls:AppLayout>-->
+
+    <Grid>
+        <TextBlock VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="48">Hi! This is Cobalt ... In Progress</TextBlock>
+    </Grid>
 
     <!--
     <Grid>
