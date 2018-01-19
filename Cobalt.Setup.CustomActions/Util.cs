@@ -1,4 +1,5 @@
-﻿using Microsoft.Deployment.WindowsInstaller;
+﻿using System;
+using Microsoft.Deployment.WindowsInstaller;
 
 namespace Cobalt.Setup.CustomActions
 {
@@ -6,7 +7,14 @@ namespace Cobalt.Setup.CustomActions
     {
         public static string GetInstallFolder(Session session)
         {
-            return session.CustomActionData["INSTALLFOLDER"];
+            try
+            {
+                return session.CustomActionData["INSTALLFOLDER"];
+            }
+            catch (Exception)
+            {
+                return session["INSTALLFOLDER"];
+            }
         }
     }
 }

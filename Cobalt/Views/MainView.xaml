@@ -13,7 +13,7 @@
                    xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
          
         xmlns:converters1="clr-namespace:Cobalt.Common.UI.Converters;assembly=Cobalt.Common.UI"
-        mc:Ignorable="d" ShowTitleBar="False"
+        mc:Ignorable="d" ShowTitleBar="False" BorderBrush="{DynamicResource AccentColorBrush}" BorderThickness="1"
         Title="Cobalt" Height="500" Width="800">
 
     <!--<ctrls:AppLayout>
@@ -32,9 +32,10 @@
         </ctrls:AppLayout.OptionItems>
     </ctrls:AppLayout>-->
 
-    <Grid>
-        <TextBlock VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="48">Hi! This is Cobalt ... In Progress</TextBlock>
-    </Grid>
+    <StackPanel Orientation="Vertical" VerticalAlignment="Center" HorizontalAlignment="Center">
+        <TextBlock FontSize="48" HorizontalAlignment="Center">Cobalt</TextBlock>
+        <TextBlock FontSize="32" HorizontalAlignment="Center">In Progress</TextBlock>
+    </StackPanel>
 
     <!--
     <Grid>

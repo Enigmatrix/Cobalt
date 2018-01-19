@@ -1,5 +1,7 @@
 using System;
 using System.Diagnostics;
+using System.IO;
+using System.Security.Principal;
 using Microsoft.Deployment.WindowsInstaller;
 using Microsoft.Win32.TaskScheduler;
 
@@ -65,7 +67,14 @@ namespace Cobalt.Setup.CustomActions
         private static void DeleteTask(string installLocation, string taskName, TaskService ts)
         {
             ts.FindTask(taskName)?.Stop();
-            ts.RootFolder.DeleteTask(taskName, exceptionOnNotExists:false);
+            System.Diagnostics.Process process = new System.Diagnostics.Process();
+            System.Diagnostics.ProcessStartInfo startInfo = new System.Diagnostics.ProcessStartInfo();
+            startInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
+            startInfo.FileName = "cmd.exe";
+            startInfo.Arguments = $"/C schtasks /delete {taskName}";
+            startInfo.Verb = "runas";
+            process.StartInfo = startInfo;
+            process.Start();
         }
 
         private static void LaunchTask(string installLocation, string taskName, TaskService ts)
