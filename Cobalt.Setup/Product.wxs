@@ -17,7 +17,6 @@
 		<CustomAction Id='SetEnv' Property="InstallCobaltEngineToTaskScheduler" Value="INSTALLFOLDER=[INSTALLFOLDER]"/>
 
 		<InstallExecuteSequence>
-      <RemoveExistingProducts After="InstallFiles"/>
 			<Custom Action="SetEnv" After="InstallFiles"/>
 			<Custom Action="InstallCobaltEngineToTaskScheduler" After="SetEnv"/>
 		</InstallExecuteSequence>
