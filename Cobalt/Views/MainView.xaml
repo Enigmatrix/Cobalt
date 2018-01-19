@@ -9,14 +9,28 @@
         xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
         xmlns:wpf="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
         xmlns:converters="clr-namespace:Cobalt.Views.Converters"
-        xmlns:views="clr-namespace:Cobalt.Views"
+        xmlns:ctrls="clr-namespace:Cobalt.Views.Controls"
+                   xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+         
         xmlns:converters1="clr-namespace:Cobalt.Common.UI.Converters;assembly=Cobalt.Common.UI"
         mc:Ignorable="d" ShowTitleBar="False"
-        Title="Cobalt" Height="750" Width="1205">
+        Title="Cobalt" Height="500" Width="800">
 
-    <Grid>
-        
-    </Grid>
+    <ctrls:AppLayout>
+        <ctrls:AppLayout.MenuItems>
+            <ctrls:AppMenuItemCollection>
+                <ctrls:AppMenuItem Icon="Home" Description="Home"/>
+                <ctrls:AppMenuItem Icon="Apps" Description="Apps"/>
+                <ctrls:AppMenuItem Icon="Tag" Description="Tags"/>
+                <ctrls:AppMenuItem Icon="Home" Description="History"/>
+            </ctrls:AppMenuItemCollection>
+        </ctrls:AppLayout.MenuItems>
+        <ctrls:AppLayout.OptionItems>
+            <ctrls:AppMenuItemCollection>
+                <ctrls:AppMenuItem Icon="Settings" Description="Settings"/>
+            </ctrls:AppMenuItemCollection>
+        </ctrls:AppLayout.OptionItems>
+    </ctrls:AppLayout>
 
     <!--
     <Grid>
@@ -39,7 +53,7 @@
             <RowDefinition/>
             <RowDefinition/>
         </Grid.RowDefinitions>
-        <materialDesign:Card Grid.Row="0" Grid.ColumnSpan="2">
+        <md:Card Grid.Row="0" Grid.ColumnSpan="2">
             <wpf:CartesianChart Series="{Binding HourlyChunks, Converter={StaticResource HourlyUsageConverter}}" DisableAnimations="True">
                 <wpf:CartesianChart.AxisY>
                     <wpf:Axis LabelFormatter="{Binding HourFormatter}" MaxValue="36000000000" IsMerged="True">
@@ -59,14 +73,14 @@
                     <views:HourlyAppDurationTooltip/>
                 </wpf:CartesianChart.DataTooltip>
             </wpf:CartesianChart>
-        </materialDesign:Card>
-        <materialDesign:Card Grid.Row="1" Grid.Column="1">
+        </md:Card>
+        <md:Card Grid.Row="1" Grid.Column="1">
             <wpf:PieChart DisableAnimations="True" 
                      Series="{Binding AppDurations, Converter={StaticResource AppDurationSeriesConverter}}">
                 <wpf:PieChart.DataTooltip>
                     <views:HourlyAppDurationTooltip />
                 </wpf:PieChart.DataTooltip>
             </wpf:PieChart>
-        </materialDesign:Card>
+        </md:Card>
     </Grid> -->
 </metro:MetroWindow>

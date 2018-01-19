@@ -16,6 +16,7 @@ namespace Cobalt.Common.Analysis
         IObservable<(App App, IObservable<Usage<TimeSpan>> Duration)> GetAppDurations(DateTime start, DateTime? end = null);
         IObservable<(Tag Tag, IObservable<Usage<TimeSpan>> Duration)> GetTagDurations(DateTime start, DateTime? end = null);
         IObservable<Usage<AppUsage>> GetAppUsages(DateTime start, DateTime? end = null);
+        //IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> HourlyChunks();
     }
 
     public class AppStatsStreamService : IAppStatsStreamService
