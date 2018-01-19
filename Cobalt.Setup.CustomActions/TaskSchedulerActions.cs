@@ -18,7 +18,6 @@ namespace Cobalt.Setup.CustomActions
 
         private static ActionResult RunOnTaskNames(Session session, Action<string, string, TaskService> func)
         {
-
             var installLocation = GetInstallLocation(session);
 
             using (var ts = new TaskService())
@@ -33,7 +32,7 @@ namespace Cobalt.Setup.CustomActions
 
         private static string GetInstallLocation(Session session)
         {
-           return session["INSTALLFOLDER"];
+            return session.CustomActionData["INSTALLFOLDER"];
         }
 
         private static void InstallTask(string installLocation, string prog, TaskService ts)
