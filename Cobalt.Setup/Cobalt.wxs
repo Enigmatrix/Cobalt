@@ -2,10 +2,10 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi" xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
     <Fragment>
         <ComponentGroup Id="CobaltComponents">
-            <Component Id="Cobalt.exe" Directory="INSTALLFOLDER" Guid="19261AD0-7277-41F7-A468-5290F88A0AB8">
+            <Component Id="Cobalt.exe" Directory="INSTALLFOLDER" Guid="F49FCF34-1D64-44F8-83BE-6FAC1FE11406">
                 <File Id="Cobalt.exe" KeyPath="yes" Source="$(var.Cobalt.TargetDir)\Cobalt.exe" />
             </Component>
-            <Component Id="Cobalt.exe.config" Directory="INSTALLFOLDER" Guid="C98B1F91-3B69-4B89-ACBA-F91CF139A407">
+            <Component Id="Cobalt.exe.config" Directory="INSTALLFOLDER" Guid="AC204A6F-70D4-432A-8576-E5A84B32C34A">
                 <File Id="Cobalt.exe.config" KeyPath="yes" Source="$(var.Cobalt.TargetDir)\Cobalt.exe.config" />
             </Component>
         </ComponentGroup>

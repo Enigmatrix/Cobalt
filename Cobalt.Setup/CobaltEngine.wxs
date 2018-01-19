@@ -5,10 +5,10 @@
     </Fragment>
     <Fragment>
         <ComponentGroup Id="CobaltEngineComponents">
-            <Component Id="Cobalt.Engine.exe" Directory="INSTALLFOLDER" Guid="1FA7EC52-9243-40E4-A92F-9CC99041C7EC">
+            <Component Id="Cobalt.Engine.exe" Directory="INSTALLFOLDER" Guid="680AA57C-9B4E-4395-8B1B-3585D856C3CD">
                 <File Id="Cobalt.Engine.exe" KeyPath="yes" Source="$(var.Cobalt.Engine.TargetDir)\Cobalt.Engine.exe" />
             </Component>
-            <Component Id="Cobalt.Engine.exe.config" Directory="INSTALLFOLDER" Guid="DDDBC84E-7CD2-467C-902F-1FA4BAF37CA5">
+            <Component Id="Cobalt.Engine.exe.config" Directory="INSTALLFOLDER" Guid="CFEDF12F-C256-40BE-8983-8A675BFDB767">
                 <File Id="Cobalt.Engine.exe.config" KeyPath="yes" Source="$(var.Cobalt.Engine.TargetDir)\Cobalt.Engine.exe.config" />
             </Component>
         </ComponentGroup>
