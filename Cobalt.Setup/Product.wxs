@@ -35,8 +35,12 @@
 			<Custom Action="SetEnvDeleteTasks" After="InstallFiles"/>
 			<Custom Action="SetEnvLaunchTasks" After="InstallFiles"/>
 
-			<Custom Action="InstallTasks" After="SetEnvInstallTasks"/>
-			<Custom Action="LaunchTasks" Before="InstallFinalize"/>
+      <!---RUN ALWAYS-->
+      <Custom Action="DeleteTasks" After="SetEnvDeleteTasks"/>
+      <!---during install and repair-->
+      <Custom Action="InstallTasks" After="DeleteTasks">NOT REMOVE</Custom>
+      <!---during install and repair-->
+      <Custom Action="LaunchTasks" Before="InstallFinalize">NOT REMOVE</Custom>
 		</InstallExecuteSequence>
     
 
