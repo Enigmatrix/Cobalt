@@ -11,6 +11,8 @@ namespace Cobalt.ViewModels
 {
     public class MainViewModel : ViewModelBase
     {
-        private INavigationService _navSvc;
+        public MainViewModel(INavigationService navSvc)
+        {
+        }
     }
 }

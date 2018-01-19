@@ -9,8 +9,8 @@
 	  <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
 
 		<MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
-		<MediaTemplate EmbedCab="yes"/>
 
+		<MediaTemplate EmbedCab="yes"/>
 		<Feature Id="ProductFeature" Title="Cobalt.Setup" Level="1">
 			<ComponentGroupRef Id="CobaltComponents"/>
 			<ComponentGroupRef Id="CobaltEngineComponents"/>
@@ -20,7 +20,6 @@
 		<Binary Id="CobaltSetupTasks" SourceFile="$(var.Cobalt.Setup.CustomActions.TargetDir)\Cobalt.Setup.CustomActions.CA.dll" />
 		<CustomAction BinaryKey="CobaltSetupTasks" DllEntry="InstallCobaltEngineToTaskScheduler" Id="InstallCobaltEngineToTaskScheduler" Return="check" Execute='deferred' Impersonate='no'/>
 		<CustomAction Id='SetEnv' Property="InstallCobaltEngineToTaskScheduler" Value="INSTALLFOLDER=[INSTALLFOLDER]"/>
-
 		<InstallExecuteSequence>
 			<Custom Action="SetEnv" After="InstallFiles"/>
 			<Custom Action="InstallCobaltEngineToTaskScheduler" After="SetEnv"/>
