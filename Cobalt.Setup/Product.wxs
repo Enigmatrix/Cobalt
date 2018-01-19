@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-	<Product Id="*" Name="Cobalt.Setup" Language="1033" Version="1.0.1.0" Manufacturer="Enigmatrix" UpgradeCode="F5B3B32D-CFF5-49DC-BAFC-71D0F84187DF">
+	<Product Id="*" Name="Cobalt.Setup" Language="1033" Version="1.0.2.0" Manufacturer="Enigmatrix" UpgradeCode="1387CFB7-85E2-4F77-B695-A0A0CF4A6A76">
 		<Package InstallerVersion="200" Compressed="yes" InstallPrivileges="elevated" InstallScope="perMachine" />
   
     <!--UI Settings-->
