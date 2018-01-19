@@ -31,7 +31,6 @@ namespace Cobalt.TaskbarNotifier
         private BindableCollection<ITagDurationViewModel> _tagDurations =
             new BindableCollection<ITagDurationViewModel>();
 
-        private TimeSpan _idleTime;
 
 
         public MainViewModel(IResourceScope res)
@@ -46,12 +45,6 @@ namespace Cobalt.TaskbarNotifier
         {
             get => _isPopupOpen;
             set => Set(ref _isPopupOpen, value);
-        }
-
-        public TimeSpan IdleTime
-        {
-            get => _idleTime;
-            set => Set(ref _idleTime, value);
         }
 
         public BindableCollection<IAppDurationViewModel> AppDurations
@@ -92,14 +85,14 @@ namespace Cobalt.TaskbarNotifier
             var totalDurationIncrementor = Current.Resolve<IDurationIncrementor>();
             //var tagIncrementor = Current.Resolve<IDurationIncrementor>();
 
-            var repo = Current.Resolve<IDbRepository>();
+            /*var repo = Current.Resolve<IDbRepository>();
 
             repo.GetIdleDurations(TimeSpan.FromMinutes(1), DateTime.Today)
                 .Sum(t => (t.End - t.Start).Ticks)
                 .Select(TimeSpan.FromTicks)
                 .ObserveOnDispatcher()
                 .Subscribe(x => IdleTime = x)
-                .ManageUsing(Current);
+                .ManageUsing(Current);*/
 
             appUsageStream
                 .Select(x =>

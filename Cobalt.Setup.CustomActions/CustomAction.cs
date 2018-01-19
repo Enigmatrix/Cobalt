@@ -1,32 +1,20 @@
-using System;
 using System.Diagnostics;
-using System.IO;
 using Microsoft.Deployment.WindowsInstaller;
 using Microsoft.Win32.TaskScheduler;
 
-namespace Cobalt.Setup.TaskScheduler
+namespace Cobalt.Setup.CustomActions
 {
     public class CustomActions
     {
         [CustomAction]
         public static ActionResult InstallCobaltEngineToTaskScheduler(Session session)
         {
-            Log("start");
+            var installLocation = session.CustomActionData["INSTALLFOLDER"];
 
-            try
+            using (var ts = new TaskService())
             {
-                var installLocation = session.CustomActionData["INSTALLFOLDER"];
-
-                using (var ts = new TaskService())
-                {
-                    Setup(installLocation, "Cobalt.Engine", ts);
-                    Setup(installLocation, "Cobalt.TaskbarNotifier", ts);
-                }
-            }
-            catch (Exception e)
-            {
-                Log($"Register Failure: {e}\n Message:{e.Message}\n \nStacktrace:{e.StackTrace}\n");
-                return ActionResult.Failure;
+                Setup(installLocation, "Cobalt.Engine", ts);
+                Setup(installLocation, "Cobalt.TaskbarNotifier", ts);
             }
 
             return ActionResult.Success;
@@ -61,11 +49,6 @@ namespace Cobalt.Setup.TaskScheduler
             task.Settings.Priority = ProcessPriorityClass.Normal;
 
             ts.RootFolder.RegisterTaskDefinition(prog, task);
-        }
-
-        private static void Log(string msg)
-        {
-            File.AppendAllText($@"C:\cobalt_wixlog.txt", msg + "\r\n");
         }
     }
 }

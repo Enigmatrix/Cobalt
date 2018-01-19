@@ -13,6 +13,7 @@
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
     <DefineConstants>Debug</DefineConstants>
+    <LinkerAdditionalOptions>-ext WixUIExtension -ext WixUtilExtension</LinkerAdditionalOptions>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <OutputPath>bin\$(Configuration)\</OutputPath>
@@ -33,8 +34,8 @@
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
       <RefTargetDir>INSTALLFOLDER</RefTargetDir>
     </ProjectReference>
-    <ProjectReference Include="..\Cobalt.Setup.TaskScheduler\Cobalt.Setup.TaskScheduler.csproj">
-      <Name>Cobalt.Setup.TaskScheduler</Name>
+    <ProjectReference Include="..\Cobalt.Setup.CustomActions\Cobalt.Setup.CustomActions.csproj">
+      <Name>Cobalt.Setup.CustomActions</Name>
       <Project>{d6df7c94-ea17-4237-8410-90dfddd576fc}</Project>
       <Private>True</Private>
       <DoNotHarvest>True</DoNotHarvest>
