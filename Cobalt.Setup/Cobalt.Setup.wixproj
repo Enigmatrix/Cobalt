@@ -27,6 +27,7 @@
     <Compile Include="CobaltEngine.wxs" />
     <Compile Include="CobaltTaskbarNotifier.wxs" />
     <Compile Include="Product.wxs" />
+    <Compile Include="UI.wxs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Cobalt.Engine\Cobalt.Engine.csproj">

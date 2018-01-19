@@ -3,13 +3,16 @@
 	<Product Id="*" Name="Cobalt.Setup" Language="1033" Version="1.0.1.0" Manufacturer="Enigmatrix" UpgradeCode="F5B3B32D-CFF5-49DC-BAFC-71D0F84187DF">
 		<Package InstallerVersion="200" Compressed="yes" InstallPrivileges="elevated" InstallScope="perMachine" />
   
+    <!--UI Settings-->
 	  <UI>
 	    <UIRef Id="WixUI_Minimal" />
 	  </UI>
-	  <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
+	  <PropertyRef Id="IMPORT_UI_PROPERTIES" />
 
-		<MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+    <!--Upgrade Settings-->
+    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
 
+    <!--Install files-->
 		<MediaTemplate EmbedCab="yes"/>
 		<Feature Id="ProductFeature" Title="Cobalt.Setup" Level="1">
 			<ComponentGroupRef Id="CobaltComponents"/>
@@ -17,16 +20,20 @@
 			<ComponentGroupRef Id="CobaltTaskbarNotifierComponents"/>
 		</Feature>
 
+    <!--Custom code declaration-->
 		<Binary Id="CobaltSetupTasks" SourceFile="$(var.Cobalt.Setup.CustomActions.TargetDir)\Cobalt.Setup.CustomActions.CA.dll" />
-		<CustomAction BinaryKey="CobaltSetupTasks" DllEntry="InstallCobaltEngineToTaskScheduler" Id="InstallCobaltEngineToTaskScheduler" Return="check" Execute='deferred' Impersonate='no'/>
-		<CustomAction Id='SetEnv' Property="InstallCobaltEngineToTaskScheduler" Value="INSTALLFOLDER=[INSTALLFOLDER]"/>
+		<CustomAction BinaryKey="CobaltSetupTasks" DllEntry="InstallTasks" Id="InstallTasks" Return="check" Execute='deferred' Impersonate='no'/>
+		<CustomAction Id='SetEnv' Property="InstallTasks" Value="INSTALLFOLDER=[INSTALLFOLDER]"/>
+
+    <!--Installation sequence-->
 		<InstallExecuteSequence>
 			<Custom Action="SetEnv" After="InstallFiles"/>
-			<Custom Action="InstallCobaltEngineToTaskScheduler" After="SetEnv"/>
+			<Custom Action="InstallTasks" After="SetEnv"/>
 		</InstallExecuteSequence>
 
 	</Product>
 
+  <!--Directory Structure-->
 	<Fragment>
 		<Directory Id="TARGETDIR" Name="SourceDir">
 			<Directory Id="ProgramFilesFolder">

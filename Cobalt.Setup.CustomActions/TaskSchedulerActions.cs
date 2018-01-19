@@ -1,3 +1,4 @@
+using System;
 using System.Diagnostics;
 using Microsoft.Deployment.WindowsInstaller;
 using Microsoft.Win32.TaskScheduler;
@@ -6,21 +7,35 @@ namespace Cobalt.Setup.CustomActions
 {
     public class CustomActions
     {
+        private static readonly string[] TaskNames = { "Cobalt.Engine", "Cobalt.TaskbarNotifier" };
+
         [CustomAction]
-        public static ActionResult InstallCobaltEngineToTaskScheduler(Session session)
+        public static ActionResult InstallTasks(Session session) => RunOnTaskNames(session, InstallTask);
+        [CustomAction]
+        public static ActionResult LaunchTasks(Session session) => RunOnTaskNames(session, LaunchTask);
+        [CustomAction]
+        public static ActionResult DeleteTasks(Session session) => RunOnTaskNames(session, DeleteTask);
+
+        private static ActionResult RunOnTaskNames(Session session, Action<string, string, TaskService> func)
         {
-            var installLocation = session.CustomActionData["INSTALLFOLDER"];
+            var installLocation = GetInstallLocation(session);
 
             using (var ts = new TaskService())
             {
-                Setup(installLocation, "Cobalt.Engine", ts);
-                Setup(installLocation, "Cobalt.TaskbarNotifier", ts);
+                foreach (var taskName in TaskNames)
+                {
+                    func(installLocation, taskName, ts);
+                }
             }
-
             return ActionResult.Success;
         }
 
-        private static void Setup(string installLocation, string prog, TaskService ts)
+        private static string GetInstallLocation(Session session)
+        {
+           return session.CustomActionData["INSTALLFOLDER"];
+        }
+
+        private static void InstallTask(string installLocation, string prog, TaskService ts)
         {
             var task = ts.NewTask();
 
@@ -49,6 +64,16 @@ namespace Cobalt.Setup.CustomActions
             task.Settings.Priority = ProcessPriorityClass.Normal;
 
             ts.RootFolder.RegisterTaskDefinition(prog, task);
+        }
+
+        private static void DeleteTask(string installLocation, string taskName, TaskService ts)
+        {
+
+        }
+
+        private static void LaunchTask(string installLocation, string taskName, TaskService ts)
+        {
+
         }
     }
 }
