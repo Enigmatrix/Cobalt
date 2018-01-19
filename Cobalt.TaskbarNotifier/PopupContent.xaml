@@ -24,9 +24,6 @@
                 <TextBlock Text="Total: " Style="{DynamicResource MaterialDesignTitleTextBlock}" />
                 <TextBlock Text="{Binding TotalDuration, Converter={StaticResource HumanReadableTimeSpanConverter}}"
                            FontSize="20" Style="{DynamicResource MaterialDesignTitleTextBlock}"/>
-                <TextBlock Text=", Idle: " Style="{DynamicResource MaterialDesignTitleTextBlock}" />
-                <TextBlock Text="{Binding IdleTime, Converter={StaticResource HumanReadableTimeSpanConverter}}"
-                           FontSize="20" Style="{DynamicResource MaterialDesignTitleTextBlock}"/>
             </StackPanel>
         </materialDesign:Card>
         <lv:PieChart DisableAnimations="True" Grid.Row="1"

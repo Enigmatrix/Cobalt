@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-	<Product Id="*" Name="Cobalt.Setup" Language="1033" Version="1.0.0.0" Manufacturer="Enigmatrix" UpgradeCode="d0073666-175c-405e-a717-2701a7b5aa1b">
+	<Product Id="*" Name="Cobalt.Setup" Language="1033" Version="1.0.1.0" Manufacturer="Enigmatrix" UpgradeCode="F5B3B32D-CFF5-49DC-BAFC-71D0F84187DF">
 		<Package InstallerVersion="200" Compressed="yes" InstallPrivileges="elevated" InstallScope="perMachine" />
 
 		<MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
@@ -17,8 +17,8 @@
 		<CustomAction Id='SetEnv' Property="InstallCobaltEngineToTaskScheduler" Value="INSTALLFOLDER=[INSTALLFOLDER]"/>
 
 		<InstallExecuteSequence>
+      <RemoveExistingProducts After="InstallFiles"/>
 			<Custom Action="SetEnv" After="InstallFiles"/>
-
 			<Custom Action="InstallCobaltEngineToTaskScheduler" After="SetEnv"/>
 		</InstallExecuteSequence>
 
