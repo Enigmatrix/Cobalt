@@ -2,22 +2,19 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
     <Fragment>
         <DirectoryRef Id="INSTALLFOLDER">
-            <Directory Id="x634" Name="x64" />
+            <Directory Id="x64cpy" Name="x64" />
             <Directory Id="x86" Name="x86" />
         </DirectoryRef>
     </Fragment>
     <Fragment>
         <ComponentGroup Id="CobaltTaskbarNotifierComponents">
-            <Component Id="Autofac.dll" Directory="INSTALLFOLDER" Guid="906A0AF9-76A3-4543-9D7C-68167D2F3D06">
+            <Component Id="Autofac.dll" Directory="INSTALLFOLDER" Guid="39A3DA13-7069-46DB-BDEF-F36D77148052">
                 <File Id="Autofac.dll" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\Autofac.dll" />
             </Component>
-            <Component Id="Autofac.xml" Directory="INSTALLFOLDER" Guid="9017691B-EF42-4DC5-87FF-95DE816E10A1">
-                <File Id="Autofac.xml" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\Autofac.xml" />
-            </Component>
-            <Component Id="Caliburn.Micro.Autofac.dll" Directory="INSTALLFOLDER" Guid="F76DFAD3-1E88-457C-A758-53FAE6AB188A">
+            <Component Id="Caliburn.Micro.Autofac.dll" Directory="INSTALLFOLDER" Guid="40767709-817F-45DB-9BFB-431B26760B2E">
                 <File Id="Caliburn.Micro.Autofac.dll" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\Caliburn.Micro.Autofac.dll" />
             </Component>
-            <Component Id="Caliburn.Micro.dll" Directory="INSTALLFOLDER" Guid="58437B56-BFAC-4A46-A0E8-55C251AC010F">
+            <Component Id="Caliburn.Micro.dll" Directory="INSTALLFOLDER" Guid="D7F99F8B-2246-4EF0-B9D2-B980524F95FD">
                 <Class Id="{199FD1C3-22DB-339D-BDAE-9E09B32D5DC2}" Context="InprocServer32" Description="Caliburn.Micro.ActivationEventArgs" ThreadingModel="both" ForeignServer="mscoree.dll">
                     <ProgId Id="Caliburn.Micro.ActivationEventArgs" Description="Caliburn.Micro.ActivationEventArgs" />
                 </Class>
@@ -164,124 +161,64 @@
                 <RegistryValue Root="HKCR" Key="CLSID\{C2BA713C-D12F-34BE-9609-22341AEDA3C1}\InprocServer32" Name="RuntimeVersion" Value="v4.0.30319" Type="string" Action="write" />
                 <RegistryValue Root="HKCR" Key="CLSID\{C2BA713C-D12F-34BE-9609-22341AEDA3C1}\InprocServer32" Name="CodeBase" Value="file:///[#Caliburn.Micro.dll]" Type="string" Action="write" />
             </Component>
-            <Component Id="Caliburn.Micro.Platform.Core.dll" Directory="INSTALLFOLDER" Guid="125DD66D-F3DF-40D8-AF9E-2694D5A1FEA2">
+            <Component Id="Caliburn.Micro.Platform.Core.dll" Directory="INSTALLFOLDER" Guid="1B55FFBB-8BCA-458F-AEC3-6C540816CBF5">
                 <File Id="Caliburn.Micro.Platform.Core.dll" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\Caliburn.Micro.Platform.Core.dll" />
             </Component>
-            <Component Id="Caliburn.Micro.Platform.Core.xml" Directory="INSTALLFOLDER" Guid="1F0C9D14-E612-478E-9D2D-C8CA84475D0F">
-                <File Id="Caliburn.Micro.Platform.Core.xml" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\Caliburn.Micro.Platform.Core.xml" />
-            </Component>
-            <Component Id="Caliburn.Micro.Platform.dll" Directory="INSTALLFOLDER" Guid="B498C627-AC7E-465C-A23E-D05B6AEECA49">
+            <Component Id="Caliburn.Micro.Platform.dll" Directory="INSTALLFOLDER" Guid="88D217B6-2F57-426F-94C6-E3AAE979F408">
                 <File Id="Caliburn.Micro.Platform.dll" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\Caliburn.Micro.Platform.dll" />
             </Component>
-            <Component Id="Caliburn.Micro.Platform.xml" Directory="INSTALLFOLDER" Guid="1FCF734A-43E6-40C1-A8D0-DEF7E0EDC4AD">
-                <File Id="Caliburn.Micro.Platform.xml" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\Caliburn.Micro.Platform.xml" />
-            </Component>
-            <Component Id="Caliburn.Micro.xml" Directory="INSTALLFOLDER" Guid="39A20F41-8232-4455-8093-9BFCEAF2FF37">
-                <File Id="Caliburn.Micro.xml" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\Caliburn.Micro.xml" />
-            </Component>
-            <Component Id="Cobalt.Common.Analysis.dll" Directory="INSTALLFOLDER" Guid="5F216738-3C23-4E6C-9B26-F8C1590D8EB0">
+            <Component Id="Cobalt.Common.Analysis.dll" Directory="INSTALLFOLDER" Guid="F4F20FFA-3EC0-4D6B-805E-7D4C6AFBD150">
                 <File Id="Cobalt.Common.Analysis.dll" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\Cobalt.Common.Analysis.dll" />
             </Component>
-            <Component Id="Cobalt.Common.Analysis.pdb" Directory="INSTALLFOLDER" Guid="E53BEC64-5840-48A9-89CA-8B3A2CEB3966">
-                <File Id="Cobalt.Common.Analysis.pdb" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\Cobalt.Common.Analysis.pdb" />
-            </Component>
-            <Component Id="Cobalt.Common.Data.dll" Directory="INSTALLFOLDER" Guid="AD7AA7DC-E8AB-4EEC-A767-FA868308A50E">
+            <Component Id="Cobalt.Common.Data.dll" Directory="INSTALLFOLDER" Guid="A3CC5358-64D8-4B6B-AA11-1ECCD91D2E1C">
                 <File Id="Cobalt.Common.Data.dll" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\Cobalt.Common.Data.dll" />
             </Component>
-            <Component Id="Cobalt.Common.Data.pdb" Directory="INSTALLFOLDER" Guid="70AFF109-ED8D-4022-898D-AC8F04C65917">
-                <File Id="Cobalt.Common.Data.pdb" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\Cobalt.Common.Data.pdb" />
-            </Component>
-            <Component Id="Cobalt.Common.IoC.dll" Directory="INSTALLFOLDER" Guid="689B7B72-6EB0-4A05-9817-CB891330F1F2">
+            <Component Id="Cobalt.Common.IoC.dll" Directory="INSTALLFOLDER" Guid="843D0BF6-3433-4163-8AA0-15276344A4EC">
                 <File Id="Cobalt.Common.IoC.dll" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\Cobalt.Common.IoC.dll" />
             </Component>
-            <Component Id="Cobalt.Common.IoC.pdb" Directory="INSTALLFOLDER" Guid="DEA45EF0-C213-47CD-9349-1A2BA85B5634">
-                <File Id="Cobalt.Common.IoC.pdb" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\Cobalt.Common.IoC.pdb" />
-            </Component>
-            <Component Id="Cobalt.Common.Transmission.dll" Directory="INSTALLFOLDER" Guid="9EEDDA1D-FFA9-4D6B-AF52-517D1B2E27CF">
+            <Component Id="Cobalt.Common.Transmission.dll" Directory="INSTALLFOLDER" Guid="13E02ED2-05E8-42E0-92A4-B50CAFC28078">
                 <File Id="Cobalt.Common.Transmission.dll" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\Cobalt.Common.Transmission.dll" />
             </Component>
-            <Component Id="Cobalt.Common.Transmission.pdb" Directory="INSTALLFOLDER" Guid="DF40FF38-DE7C-49B2-BB49-44E60A57E043">
-                <File Id="Cobalt.Common.Transmission.pdb" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\Cobalt.Common.Transmission.pdb" />
-            </Component>
-            <Component Id="Cobalt.Common.UI.dll" Directory="INSTALLFOLDER" Guid="32C6B7AC-4272-45A5-9049-4E278FCBDCB2">
+            <Component Id="Cobalt.Common.UI.dll" Directory="INSTALLFOLDER" Guid="A4F39CD3-7DF7-4972-81B4-7D019A2F1F32">
                 <File Id="Cobalt.Common.UI.dll" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\Cobalt.Common.UI.dll" />
             </Component>
-            <Component Id="Cobalt.Common.UI.dll.config" Directory="INSTALLFOLDER" Guid="99BB139E-A0B1-47F4-AD7C-F5596FEF13EF">
+            <Component Id="Cobalt.Common.UI.dll.config" Directory="INSTALLFOLDER" Guid="94009288-796D-4839-AA95-91CB4FE47F4C">
                 <File Id="Cobalt.Common.UI.dll.config" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\Cobalt.Common.UI.dll.config" />
             </Component>
-            <Component Id="Cobalt.Common.UI.pdb" Directory="INSTALLFOLDER" Guid="B32D350C-BC4A-40A8-8551-1F1BF9394CB1">
-                <File Id="Cobalt.Common.UI.pdb" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\Cobalt.Common.UI.pdb" />
-            </Component>
-            <Component Id="Cobalt.Common.Util.dll" Directory="INSTALLFOLDER" Guid="BCBCA50B-AB38-414C-AE98-F7274D90B77E">
+            <Component Id="Cobalt.Common.Util.dll" Directory="INSTALLFOLDER" Guid="A32A0722-02E8-4D76-9B0A-5EE287411553">
                 <File Id="Cobalt.Common.Util.dll" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\Cobalt.Common.Util.dll" />
             </Component>
-            <Component Id="Cobalt.Common.Util.pdb" Directory="INSTALLFOLDER" Guid="CCD997E6-747F-4EE8-A4D9-5541D825346C">
-                <File Id="Cobalt.Common.Util.pdb" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\Cobalt.Common.Util.pdb" />
-            </Component>
-            <Component Id="Cobalt.TaskbarNotifier.exe" Directory="INSTALLFOLDER" Guid="22EDAF06-73B1-405B-9F19-066B0F17D0E6">
+            <Component Id="Cobalt.TaskbarNotifier.exe" Directory="INSTALLFOLDER" Guid="8803161F-2335-4C06-B012-0E51A02B26B5">
                 <File Id="Cobalt.TaskbarNotifier.exe" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\Cobalt.TaskbarNotifier.exe" />
             </Component>
-            <Component Id="Cobalt.TaskbarNotifier.exe.config" Directory="INSTALLFOLDER" Guid="79D38363-589D-4A48-B89E-ECA9605EEBB4">
+            <Component Id="Cobalt.TaskbarNotifier.exe.config" Directory="INSTALLFOLDER" Guid="DCA64CA7-CF2B-4D44-AE4A-30FF318949F5">
                 <File Id="Cobalt.TaskbarNotifier.exe.config" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\Cobalt.TaskbarNotifier.exe.config" />
             </Component>
-            <Component Id="Cobalt.TaskbarNotifier.pdb" Directory="INSTALLFOLDER" Guid="F180FF3C-DC1A-4432-AB8A-E982E666C87D">
-                <File Id="Cobalt.TaskbarNotifier.pdb" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\Cobalt.TaskbarNotifier.pdb" />
+            <Component Id="ControlzEx.dll" Directory="INSTALLFOLDER" Guid="90CAB5AB-C134-4FC8-BC89-8D0210134738">
+                <File Id="ControlzEx.dll" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\ControlzEx.dll" />
             </Component>
-            <Component Id="Hardcodet.Wpf.TaskbarNotification.dll" Directory="INSTALLFOLDER" Guid="40BDF75D-EC1F-4000-B46A-9184BB85D6B0">
+            <Component Id="Hardcodet.Wpf.TaskbarNotification.dll" Directory="INSTALLFOLDER" Guid="41D89DCB-4317-483A-B6A5-7251FBF1308B">
                 <File Id="Hardcodet.Wpf.TaskbarNotification.dll" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\Hardcodet.Wpf.TaskbarNotification.dll" />
             </Component>
-            <Component Id="Hardcodet.Wpf.TaskbarNotification.pdb" Directory="INSTALLFOLDER" Guid="FF02471F-2510-45A4-8AB4-69608283E288">
-                <File Id="Hardcodet.Wpf.TaskbarNotification.pdb" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\Hardcodet.Wpf.TaskbarNotification.pdb" />
-            </Component>
-            <Component Id="Hardcodet.Wpf.TaskbarNotification.xml" Directory="INSTALLFOLDER" Guid="8D8EDA6D-5FC9-4A03-87C2-19E8A45B0577">
-                <File Id="Hardcodet.Wpf.TaskbarNotification.xml" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\Hardcodet.Wpf.TaskbarNotification.xml" />
-            </Component>
-            <Component Id="LiveCharts.dll" Directory="INSTALLFOLDER" Guid="AECAE930-A2CB-48DC-8AA5-42F15925001F">
+            <Component Id="LiveCharts.dll" Directory="INSTALLFOLDER" Guid="63811BF3-8593-4414-B7D3-6236E1162603">
                 <File Id="LiveCharts.dll" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\LiveCharts.dll" />
             </Component>
-            <Component Id="LiveCharts.pdb" Directory="INSTALLFOLDER" Guid="DC422A35-3822-4E7C-A503-56A5BCF04BF3">
-                <File Id="LiveCharts.pdb" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\LiveCharts.pdb" />
-            </Component>
-            <Component Id="LiveCharts.Wpf.dll" Directory="INSTALLFOLDER" Guid="54D20C89-E993-4477-88E6-6F89838D6F7A">
+            <Component Id="LiveCharts.Wpf.dll" Directory="INSTALLFOLDER" Guid="231FE4B3-9BA9-4CBF-868A-EDEB269788D9">
                 <File Id="LiveCharts.Wpf.dll" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\LiveCharts.Wpf.dll" />
             </Component>
-            <Component Id="LiveCharts.Wpf.pdb" Directory="INSTALLFOLDER" Guid="E4131878-1947-4B41-87A7-9CFE8C5D8430">
-                <File Id="LiveCharts.Wpf.pdb" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\LiveCharts.Wpf.pdb" />
-            </Component>
-            <Component Id="LiveCharts.Wpf.xml" Directory="INSTALLFOLDER" Guid="81138A4D-952A-45A2-8429-37C1A8D1945D">
-                <File Id="LiveCharts.Wpf.xml" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\LiveCharts.Wpf.xml" />
-            </Component>
-            <Component Id="LiveCharts.xml" Directory="INSTALLFOLDER" Guid="50B3A430-7A34-45AD-B1C0-DD2214BC90B2">
-                <File Id="LiveCharts.xml" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\LiveCharts.xml" />
-            </Component>
-            <Component Id="MahApps.Metro.dll" Directory="INSTALLFOLDER" Guid="C7B54767-970B-4F74-A52E-F4402F790CCC">
+            <Component Id="MahApps.Metro.dll" Directory="INSTALLFOLDER" Guid="E0A375E6-3E16-406B-B7F1-E3C5A694429D">
                 <File Id="MahApps.Metro.dll" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\MahApps.Metro.dll" />
             </Component>
-            <Component Id="MahApps.Metro.pdb" Directory="INSTALLFOLDER" Guid="89A9D3AE-C1DD-4B10-BBBA-3E88D36AB790">
-                <File Id="MahApps.Metro.pdb" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\MahApps.Metro.pdb" />
-            </Component>
-            <Component Id="MahApps.Metro.xml" Directory="INSTALLFOLDER" Guid="3D2709DC-CF85-4A9D-8737-5FE560AE4D8D">
-                <File Id="MahApps.Metro.xml" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\MahApps.Metro.xml" />
-            </Component>
-            <Component Id="MaterialDesignColors.dll" Directory="INSTALLFOLDER" Guid="FA73F854-88E2-4EBC-9F1F-C89808325D8D">
+            <Component Id="MaterialDesignColors.dll" Directory="INSTALLFOLDER" Guid="7F6563F1-7848-40CB-8C52-C4C14CE748ED">
                 <File Id="MaterialDesignColors.dll" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\MaterialDesignColors.dll" />
             </Component>
-            <Component Id="MaterialDesignThemes.Wpf.dll" Directory="INSTALLFOLDER" Guid="7FDB3CAA-D702-4393-8CC2-169B1AD9791C">
+            <Component Id="MaterialDesignThemes.Wpf.dll" Directory="INSTALLFOLDER" Guid="DCF77AB0-8996-4D1B-B13D-A06920AA22EC">
                 <File Id="MaterialDesignThemes.Wpf.dll" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\MaterialDesignThemes.Wpf.dll" />
             </Component>
-            <Component Id="MaterialDesignThemes.Wpf.pdb" Directory="INSTALLFOLDER" Guid="7A9EB7BB-615D-496E-8E4F-AE1FCAA338B2">
-                <File Id="MaterialDesignThemes.Wpf.pdb" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\MaterialDesignThemes.Wpf.pdb" />
-            </Component>
-            <Component Id="MaterialDesignThemes.Wpf.xml" Directory="INSTALLFOLDER" Guid="C0C8E1E2-9195-4913-B5AE-333476D48071">
-                <File Id="MaterialDesignThemes.Wpf.xml" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\MaterialDesignThemes.Wpf.xml" />
-            </Component>
-            <Component Id="Newtonsoft.Json.dll" Directory="INSTALLFOLDER" Guid="C086C801-8E45-46F2-AD61-A4DC17C2BD0A">
+            <Component Id="Newtonsoft.Json.dll" Directory="INSTALLFOLDER" Guid="77F8CA58-BD17-4C39-AA1E-9954D0162D2E">
                 <File Id="Newtonsoft.Json.dll" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\Newtonsoft.Json.dll" />
             </Component>
-            <Component Id="Newtonsoft.Json.xml" Directory="INSTALLFOLDER" Guid="1F3C433E-1241-4EA7-99D5-532516BFB5C0">
-                <File Id="Newtonsoft.Json.xml" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\Newtonsoft.Json.xml" />
-            </Component>
-            <Component Id="Serilog.dll" Directory="INSTALLFOLDER" Guid="5FE0A717-DA55-46FA-8009-0E342048BCE0">
+            <Component Id="Serilog.dll" Directory="INSTALLFOLDER" Guid="060ABB2F-A898-435C-9E53-06F664E00137">
                 <Class Id="{0EF08EA2-A183-3DD1-B3E5-1656C2BF4F1A}" Context="InprocServer32" Description="Serilog.Formatting.Raw.RawFormatter" ThreadingModel="both" ForeignServer="mscoree.dll">
                     <ProgId Id="Serilog.Formatting.Raw.RawFormatter" Description="Serilog.Formatting.Raw.RawFormatter" />
                 </Class>
@@ -336,44 +273,28 @@
                 <RegistryValue Root="HKCR" Key="Record\{B3CBA6E6-0B75-3B33-82DF-C5C094BB1D92}\2.0.0.0" Name="RuntimeVersion" Value="v4.0.30319" Type="string" Action="write" />
                 <RegistryValue Root="HKCR" Key="Record\{B3CBA6E6-0B75-3B33-82DF-C5C094BB1D92}\2.0.0.0" Name="CodeBase" Value="file:///[#Serilog.dll]" Type="string" Action="write" />
             </Component>
-            <Component Id="Serilog.Sinks.File.dll" Directory="INSTALLFOLDER" Guid="551DB0EF-E1C4-4E7F-A9DC-8EE814B08DCC">
+            <Component Id="Serilog.Sinks.File.dll" Directory="INSTALLFOLDER" Guid="E733EB3E-71B1-4057-B562-A2488037BC5D">
                 <File Id="Serilog.Sinks.File.dll" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\Serilog.Sinks.File.dll" />
             </Component>
-            <Component Id="Serilog.Sinks.File.xml" Directory="INSTALLFOLDER" Guid="AA914812-066D-4AAB-BAEF-7DE9BE4FB9E4">
-                <File Id="Serilog.Sinks.File.xml" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\Serilog.Sinks.File.xml" />
-            </Component>
-            <Component Id="Serilog.xml" Directory="INSTALLFOLDER" Guid="AB2EA62E-1D2C-4751-B693-583D3901CB3B">
-                <File Id="Serilog.xml" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\Serilog.xml" />
-            </Component>
-            <Component Id="System.Data.SQLite.dll" Directory="INSTALLFOLDER" Guid="3DE9A5B0-F535-457F-9DFD-5B47C58AFC03">
+            <Component Id="System.Data.SQLite.dll" Directory="INSTALLFOLDER" Guid="2ABAA94C-57F3-405E-9BFE-1B6C03C754CD">
                 <File Id="System.Data.SQLite.dll" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\System.Data.SQLite.dll" />
             </Component>
-            <Component Id="System.Data.SQLite.dll.config" Directory="INSTALLFOLDER" Guid="F4124EF6-4466-4C5C-8B2B-4B0708DD760F">
+            <Component Id="System.Data.SQLite.dll.config" Directory="INSTALLFOLDER" Guid="7270B1A9-726C-4464-932F-1BEDA3EEB8ED">
                 <File Id="System.Data.SQLite.dll.config" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\System.Data.SQLite.dll.config" />
             </Component>
-            <Component Id="System.Data.SQLite.xml" Directory="INSTALLFOLDER" Guid="C2DD0E7F-B9EF-412B-AF46-E815710F6587">
-                <File Id="System.Data.SQLite.xml" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\System.Data.SQLite.xml" />
-            </Component>
-            <Component Id="System.Reactive.dll" Directory="INSTALLFOLDER" Guid="83708163-BB94-43BB-9419-193F951A87EE">
+            <Component Id="System.Reactive.dll" Directory="INSTALLFOLDER" Guid="991A7D71-E577-41C5-8AB9-1AAE32D6A5BA">
                 <File Id="System.Reactive.dll" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\System.Reactive.dll" />
             </Component>
-            <Component Id="System.Reactive.xml" Directory="INSTALLFOLDER" Guid="1586E9A2-42DA-46B7-90CE-6044793F157D">
-                <File Id="System.Reactive.xml" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\System.Reactive.xml" />
-            </Component>
-            <Component Id="System.ValueTuple.dll" Directory="INSTALLFOLDER" Guid="A290E245-DF95-46B0-AC45-F563D1D04B4B">
+            <Component Id="System.ValueTuple.dll" Directory="INSTALLFOLDER" Guid="21B08749-803B-411C-A433-7160ED36DF93">
                 <File Id="System.ValueTuple.dll" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\System.ValueTuple.dll" />
-                <RegistryValue Root="HKCR" Key="Record\{3ECF08FF-CEB0-3804-9FBB-D6E8902FED40}\4.0.1.0" Name="Class" Value="System.ValueTuple" Type="string" Action="write" />
-                <RegistryValue Root="HKCR" Key="Record\{3ECF08FF-CEB0-3804-9FBB-D6E8902FED40}\4.0.1.0" Name="Assembly" Value="System.ValueTuple, Version=4.0.1.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51" Type="string" Action="write" />
-                <RegistryValue Root="HKCR" Key="Record\{3ECF08FF-CEB0-3804-9FBB-D6E8902FED40}\4.0.1.0" Name="RuntimeVersion" Value="v4.0.30319" Type="string" Action="write" />
-                <RegistryValue Root="HKCR" Key="Record\{3ECF08FF-CEB0-3804-9FBB-D6E8902FED40}\4.0.1.0" Name="CodeBase" Value="file:///[#System.ValueTuple.dll]" Type="string" Action="write" />
             </Component>
-            <Component Id="System.Windows.Interactivity.dll" Directory="INSTALLFOLDER" Guid="15887004-5CD4-4CB7-BCED-8D84DEEE57F1">
+            <Component Id="System.Windows.Interactivity.dll" Directory="INSTALLFOLDER" Guid="EA4C4508-42F0-4CF2-8DF6-44DFC6F61F5A">
                 <File Id="System.Windows.Interactivity.dll" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\System.Windows.Interactivity.dll" />
             </Component>
-            <Component Id="SQLite.Interop.dll" Directory="x634" Guid="17591998-01F1-49D9-82B5-C32B05F0DED0">
+            <Component Id="SQLite.Interop.dll" Directory="x64cpy" Guid="CC33AB1D-3BC2-47A2-A385-EA219DB71A34">
                 <File Id="SQLite.Interop.dll" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\x64\SQLite.Interop.dll" />
             </Component>
-            <Component Id="SQLite.Interop.dll_1" Directory="x86" Guid="B3585CBB-D751-4F0E-A284-BE8926EFF672">
+            <Component Id="SQLite.Interop.dll_1" Directory="x86" Guid="8C50B1F8-C5DC-4D4B-AA2B-A8455B81E610">
                 <File Id="SQLite.Interop.dll_1" KeyPath="yes" Source="$(var.Cobalt.TaskbarNotifier.TargetDir)\x86\SQLite.Interop.dll" />
             </Component>
         </ComponentGroup>
