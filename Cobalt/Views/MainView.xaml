@@ -33,7 +33,7 @@
     </ctrls:AppLayout>-->
 
     <StackPanel Orientation="Vertical" VerticalAlignment="Center" HorizontalAlignment="Center">
-        <TextBlock FontSize="48" HorizontalAlignment="Center">Cobalt Viewer</TextBlock>
+        <TextBlock FontSize="48" HorizontalAlignment="Center">Cobalt</TextBlock>
         <TextBlock FontSize="32" HorizontalAlignment="Center">In Progress</TextBlock>
     </StackPanel>
 

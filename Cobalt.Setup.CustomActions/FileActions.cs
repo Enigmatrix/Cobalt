@@ -14,6 +14,7 @@ namespace Cobalt.Setup.CustomActions
         public static ActionResult DeleteRemnants(Session session)
         {
             var installFolder = Util.GetInstallFolder(session);
+            Util.StopCobalt();
             Directory.Delete(installFolder, true);
             return ActionResult.Success;
         }

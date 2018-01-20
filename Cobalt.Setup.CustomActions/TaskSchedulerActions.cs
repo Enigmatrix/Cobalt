@@ -83,6 +83,7 @@ namespace Cobalt.Setup.CustomActions
 
         private static void StopTask(string installLocation, string taskName, TaskService ts)
         {
+            Util.StopCobalt();
             ts.FindTask(taskName)?.Stop();
         }
 

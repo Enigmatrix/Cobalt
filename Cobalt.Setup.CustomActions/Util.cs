@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using Microsoft.Deployment.WindowsInstaller;
 
 namespace Cobalt.Setup.CustomActions
@@ -14,6 +15,15 @@ namespace Cobalt.Setup.CustomActions
             catch (Exception)
             {
                 return session["INSTALLFOLDER"];
+            }
+        }
+
+        public static void StopCobalt()
+        {
+            foreach (var process in Process.GetProcessesByName("Cobalt"))
+            {
+                process.Kill();
+                process.WaitForExit();
             }
         }
     }
