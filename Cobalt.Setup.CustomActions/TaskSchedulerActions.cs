@@ -17,6 +17,8 @@ namespace Cobalt.Setup.CustomActions
         public static ActionResult LaunchTasks(Session session) => RunOnTaskNames(session, LaunchTask);
         [CustomAction]
         public static ActionResult DeleteTasks(Session session) => RunOnTaskNames(session, DeleteTask);
+        [CustomAction]
+        public static ActionResult StopTasks(Session session) => RunOnTaskNames(session, StopTask);
 
         private static ActionResult RunOnTaskNames(Session session, Action<string, string, TaskService> func)
         {
@@ -66,15 +68,22 @@ namespace Cobalt.Setup.CustomActions
 
         private static void DeleteTask(string installLocation, string taskName, TaskService ts)
         {
+            try
+            {
+                ts.RootFolder.DeleteTask(taskName, false);
+            }
+            catch (Exception e)
+            {
+                var identity = WindowsIdentity.GetCurrent();
+                var principal = new WindowsPrincipal(identity);
+                var isAdmin = principal.IsInRole(WindowsBuiltInRole.Administrator);
+                throw new Exception($"Current user is: {identity.Name}, admin: {isAdmin}",e);
+            }
+        }
+
+        private static void StopTask(string installLocation, string taskName, TaskService ts)
+        {
             ts.FindTask(taskName)?.Stop();
-            System.Diagnostics.Process process = new System.Diagnostics.Process();
-            System.Diagnostics.ProcessStartInfo startInfo = new System.Diagnostics.ProcessStartInfo();
-            startInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
-            startInfo.FileName = "cmd.exe";
-            startInfo.Arguments = $"/C schtasks /delete {taskName}";
-            startInfo.Verb = "runas";
-            process.StartInfo = startInfo;
-            process.Start();
         }
 
         private static void LaunchTask(string installLocation, string taskName, TaskService ts)
