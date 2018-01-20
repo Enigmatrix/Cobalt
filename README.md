@@ -44,9 +44,4 @@ Tracks how long an app is on the screen, and displays useful statistics in a int
   
 <br />
 
-## Release Process
-- ```git tag <tag> # e.g. git tag 1.0```
-- ```git push origin --tags```
-- Edit the drafted release
-- Delete the previous 'release' (e.g. delete 1.0 and keep Cobalt-v1.0)
 
