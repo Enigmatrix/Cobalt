@@ -10,7 +10,6 @@ using Cobalt.Common.UI;
 using Cobalt.Common.UI.Util;
 using Cobalt.Common.UI.ViewModels;
 using Cobalt.Common.Util;
-using LiveCharts;
 
 namespace Cobalt.ViewModels
 {
@@ -21,8 +20,10 @@ namespace Cobalt.ViewModels
 
     public class SecretViewModel : ViewModelBase, IMainViewModel
     {
+        private BindableCollection<IAppDurationViewModel> _appDurations =
+            new BindableCollection<IAppDurationViewModel>();
+
         private IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> _hourlyChunks;
-        private BindableCollection<IAppDurationViewModel> _appDurations = new BindableCollection<IAppDurationViewModel>();
 
         public SecretViewModel(IResourceScope scope, IAppStatsStreamService stats)
         {
@@ -35,8 +36,9 @@ namespace Cobalt.ViewModels
             get => _appDurations;
             set => Set(ref _appDurations, value);
         }
+
         public Func<double, string> HourFormatter => x => x / 600000000 + "min";
-        public Func<double, string> DayHourFormatter => x => (x % 12 == 0? 12: x%12) + (x >= 12 ? "pm" : "am");
+        public Func<double, string> DayHourFormatter => x => (x % 12 == 0 ? 12 : x % 12) + (x >= 12 ? "pm" : "am");
 
         private IResourceScope Resources { get; }
 
@@ -53,8 +55,8 @@ namespace Cobalt.ViewModels
 
         protected override void OnActivate()
         {
-            var appUsagesStream = Stats.GetAppUsages(DateTime.Today, DateTime.Now);//.Publish();
-            var appDurationsStream = Stats.GetAppDurations(DateTime.Today);//.Publish();
+            var appUsagesStream = Stats.GetAppUsages(DateTime.Today, DateTime.Now); //.Publish();
+            var appDurationsStream = Stats.GetAppDurations(DateTime.Today); //.Publish();
             var appIncrementor = Resources.Resolve<IDurationIncrementor>();
 
             HourlyChunks = appUsagesStream
@@ -81,7 +83,8 @@ namespace Cobalt.ViewModels
 
         //TODO move this to common
 
-        private IEnumerable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> SplitUsageIntoHourChunks(Usage<AppUsage> usage)
+        private IEnumerable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> SplitUsageIntoHourChunks(
+            Usage<AppUsage> usage)
         {
             var appUsage = usage.Value;
             var start = appUsage.StartTimestamp;
@@ -90,10 +93,11 @@ namespace Cobalt.ViewModels
             {
                 var startHr = start.Subtract(new TimeSpan(0, 0, start.Minute, start.Second, start.Millisecond));
                 var endHr = Min(startHr.AddHours(1), end);
-                if(!(endHr < end) && usage.JustStarted)
-                    yield return new Usage<(App,DateTime,TimeSpan)>(justStarted:true, value: (appUsage.App, startHr, TimeSpan.Zero));
+                if (!(endHr < end) && usage.JustStarted)
+                    yield return new Usage<(App, DateTime, TimeSpan)>(justStarted: true,
+                        value: (appUsage.App, startHr, TimeSpan.Zero));
                 else
-                    yield return new Usage<(App,DateTime,TimeSpan)>((appUsage.App, startHr, endHr - start));    
+                    yield return new Usage<(App, DateTime, TimeSpan)>((appUsage.App, startHr, endHr - start));
                 start = endHr;
             }
         }

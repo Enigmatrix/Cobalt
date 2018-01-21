@@ -77,7 +77,7 @@ namespace Cobalt.Engine
                 }
             };
 
-            
+
             /*idleWatcher.IdleObtained += (_, e) =>
             {
                 repository.AddInteraction(e.Interaction);

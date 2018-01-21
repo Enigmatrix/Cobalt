@@ -15,11 +15,7 @@ namespace Cobalt.Engine
     {
         public string ResolveWindowPath(IntPtr hwnd)
         {
-            if (!IsWindowVisible(hwnd))
-            {
-                //Log.Information("Invisible Window, {hwnd}", hwnd);
-                return null;
-            }
+            if (!IsWindowVisible(hwnd)) return null;
 
             var pid = GetWindowProcessId(hwnd);
             var fileName = GetMainModuleFilePath(pid);
@@ -52,7 +48,7 @@ namespace Cobalt.Engine
             using (var searcher = new ManagementObjectSearcher(wmiQueryString))
             using (var results = searcher.Get())
             {
-                var ret =  (string)results.Cast<ManagementBaseObject>().First()["ExecutablePath"];
+                var ret = (string) results.Cast<ManagementBaseObject>().First()["ExecutablePath"];
                 timer.Stop();
                 Log.Information($"WEW: WMI: {timer.Elapsed}");
                 return ret;
@@ -93,6 +89,7 @@ namespace Cobalt.Engine
                     if (childPid != pid)
                         return childPid;
                 }
+
             //error! (technically 0 is an invalid process id for a window)
             return 0;
         }
@@ -112,6 +109,7 @@ namespace Cobalt.Engine
                 if (listHandle.IsAllocated)
                     listHandle.Free();
             }
+
             return result;
         }
 

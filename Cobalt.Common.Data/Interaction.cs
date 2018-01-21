@@ -10,7 +10,7 @@ namespace Cobalt.Common.Data
         {
             get
             {
-                if(_timestamp == DateTime.MinValue)
+                if (_timestamp == DateTime.MinValue)
                     _timestamp = new DateTime(Id);
                 return _timestamp;
             }

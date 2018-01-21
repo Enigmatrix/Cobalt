@@ -14,8 +14,8 @@ namespace Cobalt.TaskbarNotifier
     public partial class AppDurationTooltip : IChartTooltip
     {
         private TooltipData _data;
-        private List<DataPointViewModel> _sortedPoints;
         private string _selectedPath;
+        private List<DataPointViewModel> _sortedPoints;
 
         public AppDurationTooltip()
         {
@@ -29,6 +29,12 @@ namespace Cobalt.TaskbarNotifier
             set => Set(ref _sortedPoints, value);
         }
 
+        public string SelectedPath
+        {
+            get => _selectedPath;
+            set => Set(ref _selectedPath, value);
+        }
+
         public event PropertyChangedEventHandler PropertyChanged;
 
         public TooltipData Data
@@ -40,12 +46,6 @@ namespace Cobalt.TaskbarNotifier
                 SortedPoints = _data.Points.OrderByDescending(x => x.ChartPoint.Participation).ToList();
                 SelectedPath = ((IAppDurationViewModel) _data.SenderSeries.ChartPoints.First().Instance).App.Path;
             }
-        }
-
-        public string SelectedPath
-        {
-            get => _selectedPath;
-            set => Set(ref _selectedPath, value);
         }
 
         public TooltipSelectionMode? SelectionMode { get; set; }

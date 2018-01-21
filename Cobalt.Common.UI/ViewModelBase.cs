@@ -19,6 +19,5 @@ namespace Cobalt.Common.UI
 
     public class ViewModelBase : NotifyPropertyChanged, IViewModel
     {
-
     }
 }

@@ -1,17 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Globalization;
 using System.Linq;
 using System.Reactive.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
 using System.Windows.Data;
-using Caliburn.Micro;
 using Cobalt.Common.Analysis.OutputTypes;
 using Cobalt.Common.Data;
-using Cobalt.Common.IoC;
 using Cobalt.Common.UI.Util;
 using Cobalt.Common.UI.ViewModels;
 using Cobalt.Common.Util;
@@ -48,28 +42,30 @@ namespace Cobalt.Views.Converters
                 {
                     var stack = new StackedColumnSeries
                     {
-                        Values = new AppDurationViewModel[24].Select(_ => new AppDurationViewModel(x.App)).AsChartValues(),
+                        Values = new AppDurationViewModel[24].Select(_ => new AppDurationViewModel(x.App))
+                            .AsChartValues(),
                         LabelPoint = cp => x.App.Path
                     };
                     appMap[x.App] = stack;
                     series.Add(stack);
                 }
-                
+
                 var chunk = ((ChartValues<AppDurationViewModel>) appMap[x.App].Values)[x.StartHour.Hour];
                 chunk.Duration += x.Duration;
                 //chunk.DurationIncrement(new Usage<TimeSpan>(justStarted:justStarted, value: x.Duration), incrementor);
-
-
             });
-
-
-
 
 
             return series;
         }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+
         //TODO refactor this common componenent
-         void HandleDuration(Usage<TimeSpan> d, IDurationIncrementor incrementor, IHasDuration hasDur)
+        private void HandleDuration(Usage<TimeSpan> d, IDurationIncrementor incrementor, IHasDuration hasDur)
         {
             if (d.JustStarted)
             {
@@ -81,11 +77,6 @@ namespace Cobalt.Views.Converters
                 incrementor.Release();
                 hasDur.Duration += d.Value;
             }
-        }
-
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            throw new NotImplementedException();
         }
     }
 }

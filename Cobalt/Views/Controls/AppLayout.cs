@@ -7,7 +7,8 @@ namespace Cobalt.Views.Controls
     {
         static AppLayout()
         {
-            DefaultStyleKeyProperty.OverrideMetadata(typeof(AppLayout), new FrameworkPropertyMetadata(typeof(AppLayout)));
+            DefaultStyleKeyProperty.OverrideMetadata(typeof(AppLayout),
+                new FrameworkPropertyMetadata(typeof(AppLayout)));
         }
 
 
@@ -42,29 +43,31 @@ namespace Cobalt.Views.Controls
         }
 
         #region Framework Properties
-        
+
         public AppMenuItemCollection MenuItems
         {
-            get { return (AppMenuItemCollection)GetValue(MenuItemsProperty); }
-            set { SetValue(MenuItemsProperty, value); }
+            get => (AppMenuItemCollection) GetValue(MenuItemsProperty);
+            set => SetValue(MenuItemsProperty, value);
         }
 
         public static readonly DependencyProperty MenuItemsProperty =
-            DependencyProperty.Register("MenuItems", typeof(AppMenuItemCollection), typeof(AppLayout), new PropertyMetadata(new AppMenuItemCollection()));
+            DependencyProperty.Register("MenuItems", typeof(AppMenuItemCollection), typeof(AppLayout),
+                new PropertyMetadata(new AppMenuItemCollection()));
 
         public AppMenuItemCollection OptionItems
         {
-            get { return (AppMenuItemCollection)GetValue(OptionItemsProperty); }
-            set { SetValue(OptionItemsProperty, value); }
+            get => (AppMenuItemCollection) GetValue(OptionItemsProperty);
+            set => SetValue(OptionItemsProperty, value);
         }
 
         public static readonly DependencyProperty OptionItemsProperty =
-            DependencyProperty.Register("OptionItems", typeof(AppMenuItemCollection), typeof(AppLayout), new PropertyMetadata(new AppMenuItemCollection()));
+            DependencyProperty.Register("OptionItems", typeof(AppMenuItemCollection), typeof(AppLayout),
+                new PropertyMetadata(new AppMenuItemCollection()));
 
         public bool IsSlideOverMenu
         {
-            get { return (bool)GetValue(IsSlideOverMenuProperty); }
-            set { SetValue(IsSlideOverMenuProperty, value); }
+            get => (bool) GetValue(IsSlideOverMenuProperty);
+            set => SetValue(IsSlideOverMenuProperty, value);
         }
 
         public static readonly DependencyProperty IsSlideOverMenuProperty =
@@ -73,12 +76,13 @@ namespace Cobalt.Views.Controls
 
         public bool IsMenuOpen
         {
-            get { return (bool)GetValue(IsMenuOpenProperty); }
-            set { SetValue(IsMenuOpenProperty, value); }
+            get => (bool) GetValue(IsMenuOpenProperty);
+            set => SetValue(IsMenuOpenProperty, value);
         }
 
         public static readonly DependencyProperty IsMenuOpenProperty =
-            DependencyProperty.Register("IsMenuOpen", typeof(bool), typeof(AppLayout), new PropertyMetadata(false, FrameworkPropertyChanged));
+            DependencyProperty.Register("IsMenuOpen", typeof(bool), typeof(AppLayout),
+                new PropertyMetadata(false, FrameworkPropertyChanged));
 
         #endregion
     }

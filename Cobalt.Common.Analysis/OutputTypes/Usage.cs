@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Cobalt.Common.Analysis.OutputTypes
+﻿namespace Cobalt.Common.Analysis.OutputTypes
 {
     public struct Usage<T>
     {

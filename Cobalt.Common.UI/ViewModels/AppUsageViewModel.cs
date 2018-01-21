@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Cobalt.Common.Data;
 
 namespace Cobalt.Common.UI.ViewModels
@@ -16,14 +12,15 @@ namespace Cobalt.Common.UI.ViewModels
         DateTime StartTimestamp { get; }
         DateTime EndTimestamp { get; }
     }
+
     public class AppUsageViewModel : ViewModelBase, IAppUsageViewModel
     {
         private App _app;
-        private AppUsageType _usageType;
+        private DateTime _endTimestamp;
+        private DateTime _startTimestamp;
         private AppUsageEndReason _usageEndReason;
         private AppUsageStartReason _usageStartReason;
-        private DateTime _startTimestamp;
-        private DateTime _endTimestamp;
+        private AppUsageType _usageType;
 
         public AppUsageViewModel(AppUsage au)
         {
@@ -62,13 +59,21 @@ namespace Cobalt.Common.UI.ViewModels
         public DateTime StartTimestamp
         {
             get => _startTimestamp;
-            set { Set(ref _startTimestamp, value); NotifyOfPropertyChange(() => Duration); }
+            set
+            {
+                Set(ref _startTimestamp, value);
+                NotifyOfPropertyChange(() => Duration);
+            }
         }
 
         public DateTime EndTimestamp
         {
             get => _endTimestamp;
-            set { Set(ref _endTimestamp, value); NotifyOfPropertyChange(() => Duration); }
+            set
+            {
+                Set(ref _endTimestamp, value);
+                NotifyOfPropertyChange(() => Duration);
+            }
         }
 
         public TimeSpan Duration

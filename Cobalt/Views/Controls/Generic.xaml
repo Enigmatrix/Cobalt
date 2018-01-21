@@ -8,10 +8,10 @@
     xmlns:util="clr-namespace:Cobalt.Views.Util">
 
 
-    <mdConverters:DrawerOffsetConverter x:Key="DrawerOffsetConverter"></mdConverters:DrawerOffsetConverter>
+    <mdConverters:DrawerOffsetConverter x:Key="DrawerOffsetConverter" />
 
     <SolidColorBrush Color="Black" x:Key="BlackBackground" />
-    
+
     <Style TargetType="{x:Type controls:AppLayout}">
         <Setter Property="Template">
             <Setter.Value>
@@ -21,17 +21,17 @@
                             BorderThickness="{TemplateBinding BorderThickness}">
                         <Grid x:Name="RootGrid">
                             <Grid.Resources>
-                                <DataTemplate x:Key="MenuItemTemplate" DataType="controls:AppMenuItem" >
+                                <DataTemplate x:Key="MenuItemTemplate" DataType="controls:AppMenuItem">
                                     <Grid Height="48" Focusable="False">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="48" />
                                             <ColumnDefinition />
                                         </Grid.ColumnDefinitions>
                                         <md:PackIcon Grid.Column="0"
-                                                        HorizontalAlignment="Center"
-                                                        VerticalAlignment="Center"
-                                                        Focusable="False"
-                                                        Kind="{Binding Icon}" />
+                                                     HorizontalAlignment="Center"
+                                                     VerticalAlignment="Center"
+                                                     Focusable="False"
+                                                     Kind="{Binding Icon}" />
                                         <TextBlock Grid.Column="1"
                                                    VerticalAlignment="Center"
                                                    FontSize="16"
@@ -40,22 +40,29 @@
                                 </DataTemplate>
                                 <DataTemplate x:Key="AppContentTemplate">
                                     <Grid>
-                                        <md:Card util:WindowUtils.DragMove="True"  UniformCornerRadius="0" md:ShadowAssist.ShadowDepth="Depth1" Background="{DynamicResource PrimaryHueDarkBrush}" HorizontalAlignment="Stretch" Height="48">
-                                            <TextBlock Foreground="{DynamicResource PrimaryHueDarkForegroundBrush}" Text="Title" VerticalAlignment="Center" HorizontalAlignment="Left"  FontSize="16" LineHeight="18" FontWeight="Medium" Margin="15,0,0,2"/>
+                                        <md:Card util:WindowUtils.DragMove="True" UniformCornerRadius="0"
+                                                 md:ShadowAssist.ShadowDepth="Depth1"
+                                                 Background="{DynamicResource PrimaryHueDarkBrush}"
+                                                 HorizontalAlignment="Stretch" Height="48">
+                                            <TextBlock Foreground="{DynamicResource PrimaryHueDarkForegroundBrush}"
+                                                       Text="Title" VerticalAlignment="Center"
+                                                       HorizontalAlignment="Left" FontSize="16" LineHeight="18"
+                                                       FontWeight="Medium" Margin="15,0,0,2" />
                                         </md:Card>
 
                                         <!--this is the menu's shadow-->
-                                        <md:Card UniformCornerRadius="0" VerticalAlignment="Stretch" HorizontalAlignment="Left" Width="1"/>
+                                        <md:Card UniformCornerRadius="0" VerticalAlignment="Stretch"
+                                                 HorizontalAlignment="Left" Width="1" />
                                     </Grid>
                                 </DataTemplate>
                             </Grid.Resources>
                             <metro:HamburgerMenu PaneBackground="White" PaneForeground="Black"
-                                ItemsSource="{TemplateBinding MenuItems}"
-                                ItemTemplate="{StaticResource MenuItemTemplate}"
-                                OptionsItemsSource="{TemplateBinding OptionItems}"
-                                OptionsItemTemplate="{StaticResource MenuItemTemplate}"
-                                Content="{TemplateBinding Content}"
-                                ContentTemplate="{StaticResource AppContentTemplate}"/>
+                                                 ItemsSource="{TemplateBinding MenuItems}"
+                                                 ItemTemplate="{StaticResource MenuItemTemplate}"
+                                                 OptionsItemsSource="{TemplateBinding OptionItems}"
+                                                 OptionsItemTemplate="{StaticResource MenuItemTemplate}"
+                                                 Content="{TemplateBinding Content}"
+                                                 ContentTemplate="{StaticResource AppContentTemplate}" />
                         </Grid>
                     </Border>
                 </ControlTemplate>
@@ -67,13 +74,12 @@
     https://github.com/MahApps/MahApps.Metro/blob/22fed03579cfd1aa219babb3661569f3289ee1dc/src/MahApps.Metro/MahApps.Metro/Themes/HamburgerMenuTemplate.xaml
     and change the appmenuitem to inherit from listviewitem-->
     <Style TargetType="{x:Type controls:AppMenuItem}">
-        <Setter Property="Focusable" Value="False"/>
+        <Setter Property="Focusable" Value="False" />
         <Setter Property="Template">
             <Setter.Value>
-                <ControlTemplate TargetType="{x:Type controls:AppMenuItem}">
-                </ControlTemplate>
+                <ControlTemplate TargetType="{x:Type controls:AppMenuItem}" />
             </Setter.Value>
         </Setter>
     </Style>
-    
+
 </ResourceDictionary>

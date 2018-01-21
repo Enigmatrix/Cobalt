@@ -1,6 +1,5 @@
 using System;
 using System.Diagnostics;
-using System.IO;
 using System.Security.Principal;
 using Microsoft.Deployment.WindowsInstaller;
 using Microsoft.Win32.TaskScheduler;
@@ -9,16 +8,31 @@ namespace Cobalt.Setup.CustomActions
 {
     public class CustomActions
     {
-        private static readonly string[] TaskNames = { "Cobalt.Engine", "Cobalt.TaskbarNotifier" };
+        private static readonly string[] TaskNames = {"Cobalt.Engine", "Cobalt.TaskbarNotifier"};
 
         [CustomAction]
-        public static ActionResult InstallTasks(Session session) => RunOnTaskNames(session, InstallTask);
+        public static ActionResult InstallTasks(Session session)
+        {
+            return RunOnTaskNames(session, InstallTask);
+        }
+
         [CustomAction]
-        public static ActionResult LaunchTasks(Session session) => RunOnTaskNames(session, LaunchTask);
+        public static ActionResult LaunchTasks(Session session)
+        {
+            return RunOnTaskNames(session, LaunchTask);
+        }
+
         [CustomAction]
-        public static ActionResult DeleteTasks(Session session) => RunOnTaskNames(session, DeleteTask);
+        public static ActionResult DeleteTasks(Session session)
+        {
+            return RunOnTaskNames(session, DeleteTask);
+        }
+
         [CustomAction]
-        public static ActionResult StopTasks(Session session) => RunOnTaskNames(session, StopTask);
+        public static ActionResult StopTasks(Session session)
+        {
+            return RunOnTaskNames(session, StopTask);
+        }
 
         private static ActionResult RunOnTaskNames(Session session, Action<string, string, TaskService> func)
         {
@@ -26,11 +40,9 @@ namespace Cobalt.Setup.CustomActions
 
             using (var ts = new TaskService())
             {
-                foreach (var taskName in TaskNames)
-                {
-                    func(installLocation, taskName, ts);
-                }
+                foreach (var taskName in TaskNames) func(installLocation, taskName, ts);
             }
+
             return ActionResult.Success;
         }
 
@@ -77,7 +89,7 @@ namespace Cobalt.Setup.CustomActions
                 var identity = WindowsIdentity.GetCurrent();
                 var principal = new WindowsPrincipal(identity);
                 var isAdmin = principal.IsInRole(WindowsBuiltInRole.Administrator);
-                throw new Exception($"Current user is: {identity.Name}, admin: {isAdmin}",e);
+                throw new Exception($"Current user is: {identity.Name}, admin: {isAdmin}", e);
             }
         }
 

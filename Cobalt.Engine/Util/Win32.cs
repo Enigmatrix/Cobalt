@@ -126,7 +126,7 @@ namespace Cobalt.Engine
             public IntPtr Context;
         }
 
-        public enum HookType : int
+        public enum HookType
         {
             WH_JOURNALRECORD = 0,
             WH_JOURNALPLAYBACK = 1,

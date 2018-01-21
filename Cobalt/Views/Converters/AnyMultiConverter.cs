@@ -9,7 +9,7 @@ namespace Cobalt.Views.Converters
     {
         public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
         {
-            return values.Any(v => (bool)v);
+            return values.Any(v => (bool) v);
         }
 
         public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)

@@ -87,6 +87,7 @@ namespace Cobalt.Common.UI.Converters
                     break;
                 }
             }
+
             return File.Exists(imagePath) ? new BitmapImage(new Uri($@"file:/{imagePath}")) : null;
         }
 

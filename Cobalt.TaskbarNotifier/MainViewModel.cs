@@ -2,8 +2,6 @@
 using System.Reactive.Linq;
 using Caliburn.Micro;
 using Cobalt.Common.Analysis;
-using Cobalt.Common.Analysis.OutputTypes;
-using Cobalt.Common.Data.Repository;
 using Cobalt.Common.IoC;
 using Cobalt.Common.UI;
 using Cobalt.Common.UI.Util;
@@ -26,11 +24,11 @@ namespace Cobalt.TaskbarNotifier
             new BindableCollection<IAppDurationViewModel>();
 
         private bool _isPopupOpen;
-        private TimeSpan _totalDuration;
 
         private BindableCollection<ITagDurationViewModel> _tagDurations =
             new BindableCollection<ITagDurationViewModel>();
 
+        private TimeSpan _totalDuration;
 
 
         public MainViewModel(IResourceScope res)
@@ -67,7 +65,7 @@ namespace Cobalt.TaskbarNotifier
 
         public void PopupOpened()
         {
-            if(IsPopupOpen)
+            if (IsPopupOpen)
                 PopupClosed();
 
             IsPopupOpen = true;
@@ -120,7 +118,7 @@ namespace Cobalt.TaskbarNotifier
                 .Merge()
                 .Subscribe(x =>
                 {
-                    if(!IsPopupOpen) return;
+                    if (!IsPopupOpen) return;
                     hasTotalDur.DurationIncrement(x, totalDurationIncrementor);
                 });
 
@@ -142,8 +140,8 @@ namespace Cobalt.TaskbarNotifier
                 .ManageUsing(Current)
                 */
 
-                appUsageStream.Connect()
-                    .ManageUsing(Current);
+            appUsageStream.Connect()
+                .ManageUsing(Current);
         }
 
         public void PopupClosed()

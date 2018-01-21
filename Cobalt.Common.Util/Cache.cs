@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Runtime.CompilerServices;
 
 namespace Cobalt.Common.Util
 {
@@ -18,7 +13,8 @@ namespace Cobalt.Common.Util
             _internalCache = new ConditionalWeakTable<TKey, TValue>();
         }
 
-        public void Add(TKey key, TValue val){
+        public void Add(TKey key, TValue val)
+        {
             _internalCache.Add(key, val);
         }
 

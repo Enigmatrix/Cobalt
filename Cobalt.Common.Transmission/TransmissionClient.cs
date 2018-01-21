@@ -40,8 +40,10 @@ namespace Cobalt.Common.Transmission
                 while (_keepAlive)
                     lock (_pipe)
                     {
-                        using (var reader = new JsonTextReader(streamReader) { CloseInput = false })
+                        using (var reader = new JsonTextReader(streamReader) {CloseInput = false})
+                        {
                             SingalMessageReceived(serializer.Deserialize<MessageBase>(reader));
+                        }
                     }
             });
             _listeningThread.Start();
@@ -56,12 +58,12 @@ namespace Cobalt.Common.Transmission
             }
         }
 
+        public event EventHandler<MessageReceivedArgs> MessageReceived;
+
         private void SingalMessageReceived(MessageBase message)
         {
             if (MessageReceived != null)
                 MessageReceived(this, new MessageReceivedArgs(message));
         }
-
-        public event EventHandler<MessageReceivedArgs> MessageReceived;
     }
 }

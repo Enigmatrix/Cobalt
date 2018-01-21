@@ -12,11 +12,11 @@ namespace Cobalt.Common.UI.Converters
             var duration = value as TimeSpan? ?? new TimeSpan();
             return string.Join("", new[]
                 {
-                    (duration.Days != 0 ? $" {duration.Days}d" : ""),
-                    (duration.Hours != 0 ? $" {duration.Hours}h" : ""),
-                    (duration.Minutes != 0 ? $" {duration.Minutes}m" : ""),
-                    (duration.Seconds != 0 ? $" {duration.Seconds}s" : ""),
-                    (duration.Milliseconds != 0 ? $" {duration.Milliseconds:00}ms" : "")
+                    duration.Days != 0 ? $" {duration.Days}d" : "",
+                    duration.Hours != 0 ? $" {duration.Hours}h" : "",
+                    duration.Minutes != 0 ? $" {duration.Minutes}m" : "",
+                    duration.Seconds != 0 ? $" {duration.Seconds}s" : "",
+                    duration.Milliseconds != 0 ? $" {duration.Milliseconds:00}ms" : ""
                 }
                 .Where(x => !string.IsNullOrWhiteSpace(x))
                 .Take(2));

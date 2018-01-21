@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Runtime.CompilerServices;
 using System.Timers;
 using Cobalt.Common.Data;
 
@@ -7,10 +6,11 @@ namespace Cobalt.Engine
 {
     public class InteractionWatcher
     {
-        private HookManager _hookMgr;
-        private Win32.HookProc _keyboardCallback, _mouseCallback;
-        private Timer _timer;
+        private readonly HookManager _hookMgr;
         private bool _interaction;
+        private readonly Win32.HookProc _keyboardCallback;
+        private readonly Win32.HookProc _mouseCallback;
+        private readonly Timer _timer;
 
         public InteractionWatcher(HookManager hookMgr)
         {
@@ -29,22 +29,22 @@ namespace Cobalt.Engine
         {
             if (!_interaction) return;
             _interaction = false;
-            if(IdleObtained != null)
-                IdleObtained(this, new InteractionEventArgs(new Interaction{Timestamp = e.SignalTime}));
+            if (IdleObtained != null)
+                IdleObtained(this, new InteractionEventArgs(new Interaction {Timestamp = e.SignalTime}));
         }
 
         private IntPtr MouseCallback(int code, IntPtr wparam, IntPtr lparam)
         {
             if (code >= 0)
                 IdleCallback();
-            return Win32.CallNextHookEx((int)Win32.HookType.WH_MOUSE_LL, code, wparam, lparam);
+            return Win32.CallNextHookEx((int) Win32.HookType.WH_MOUSE_LL, code, wparam, lparam);
         }
 
         private IntPtr KeyboardCallback(int code, IntPtr wparam, IntPtr lparam)
         {
             if (code >= 0)
                 IdleCallback();
-            return Win32.CallNextHookEx((int)Win32.HookType.WH_KEYBOARD_LL, code, wparam, lparam);
+            return Win32.CallNextHookEx((int) Win32.HookType.WH_KEYBOARD_LL, code, wparam, lparam);
         }
 
 

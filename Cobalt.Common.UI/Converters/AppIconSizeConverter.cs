@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Data;
 
 namespace Cobalt.Common.UI.Converters
@@ -17,9 +13,9 @@ namespace Cobalt.Common.UI.Converters
                 return 0;
             if (val <= 3)
                 return 10;
-            if(val > 25/0.75)
-                return 0.75*val;
-            return 15 + Math.Max(0, val-15)*6/11;
+            if (val > 25 / 0.75)
+                return 0.75 * val;
+            return 15 + Math.Max(0, val - 15) * 6 / 11;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

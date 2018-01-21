@@ -13,8 +13,12 @@ namespace Cobalt.Common.Analysis
 {
     public interface IAppStatsStreamService
     {
-        IObservable<(App App, IObservable<Usage<TimeSpan>> Duration)> GetAppDurations(DateTime start, DateTime? end = null);
-        IObservable<(Tag Tag, IObservable<Usage<TimeSpan>> Duration)> GetTagDurations(DateTime start, DateTime? end = null);
+        IObservable<(App App, IObservable<Usage<TimeSpan>> Duration)> GetAppDurations(DateTime start,
+            DateTime? end = null);
+
+        IObservable<(Tag Tag, IObservable<Usage<TimeSpan>> Duration)> GetTagDurations(DateTime start,
+            DateTime? end = null);
+
         IObservable<Usage<AppUsage>> GetAppUsages(DateTime start, DateTime? end = null);
         //IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> HourlyChunks();
     }
@@ -81,8 +85,10 @@ namespace Cobalt.Common.Analysis
             return (x.Item1, new Usage<TimeSpan>(x.Item2));
         }
 
-        private static Usage<AppUsage> ToUsageAppUsage(AppUsage au) => 
-            new Usage<AppUsage>(au);
+        private static Usage<AppUsage> ToUsageAppUsage(AppUsage au)
+        {
+            return new Usage<AppUsage>(au);
+        }
 
         private IObservable<AppSwitchMessage> ReceivedAppSwitches()
         {
@@ -100,11 +106,11 @@ namespace Cobalt.Common.Analysis
                 {
                     //old app usage
                     (message.PreviousAppUsage.App,
-                        new Usage<TimeSpan>(message.PreviousAppUsage.Duration)),
+                    new Usage<TimeSpan>(message.PreviousAppUsage.Duration)),
                     //new app
                     (message.NewApp,
-                        new Usage<TimeSpan>(justStarted:true)),
-                //make sure the NewApp is not null
+                    new Usage<TimeSpan>(justStarted: true))
+                    //make sure the NewApp is not null
                 }.Where(x => x.Item1 != null));
         }
 
@@ -112,25 +118,26 @@ namespace Cobalt.Common.Analysis
         {
             return ReceivedAppSwitches()
                 .SelectMany(message =>
-                    Observable.Concat(
-                        //tagdurs for previous
-                        Repository.GetTags(message.PreviousAppUsage.App)
-                            .Select(t => (t, new Usage<TimeSpan>(message.PreviousAppUsage.Duration))), 
-                        message.NewApp == null ? 
-                            //empty
-                            Observable.Empty<(Tag, Usage<TimeSpan>)>() :
-                            //tagdurs for new
-                            Repository.GetTags(message.NewApp)
-                                .Select(t => (t, new Usage<TimeSpan>(justStarted:true)))));
+                    Repository.GetTags(message.PreviousAppUsage.App)
+                        .Select(t => (t, new Usage<TimeSpan>(message.PreviousAppUsage.Duration))).Concat(
+                            //tagdurs for previous
+                            message.NewApp == null
+                                ?
+                                //empty
+                                Observable.Empty<(Tag, Usage<TimeSpan>)>()
+                                :
+                                //tagdurs for new
+                                Repository.GetTags(message.NewApp)
+                                    .Select(t => (t, new Usage<TimeSpan>(justStarted: true)))));
         }
 
         private IObservable<Usage<AppUsage>> ReceivedAppUsages()
         {
             return ReceivedAppSwitches()
-                .SelectMany(message => new []
+                .SelectMany(message => new[]
                 {
                     new Usage<AppUsage>(message.PreviousAppUsage),
-                    new Usage<AppUsage>(new AppUsage{App = message.NewApp},justStarted:true), 
+                    new Usage<AppUsage>(new AppUsage {App = message.NewApp}, true)
                 });
         }
     }

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Drawing;
 using Cobalt.Common.Analysis.OutputTypes;
 using Cobalt.Common.UI.Util;
 
@@ -33,7 +32,8 @@ namespace Cobalt.Common.UI.ViewModels
 
     public static class HasDurationEx
     {
-        public static void DurationIncrement(this IHasDuration hasDur, Usage<TimeSpan> d, IDurationIncrementor incrementor)
+        public static void DurationIncrement(this IHasDuration hasDur, Usage<TimeSpan> d,
+            IDurationIncrementor incrementor)
         {
             if (d.JustStarted)
             {
