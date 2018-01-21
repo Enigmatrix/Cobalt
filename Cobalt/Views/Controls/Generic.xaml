@@ -31,7 +31,7 @@
                                                      HorizontalAlignment="Center"
                                                      VerticalAlignment="Center"
                                                      Focusable="False"
-                                                     Kind="{Binding Icon}" />
+                                                     Kind="{Binding Icon}"/>
                                         <TextBlock Grid.Column="1"
                                                    VerticalAlignment="Center"
                                                    FontSize="16"
@@ -61,7 +61,9 @@
                                                  ItemTemplate="{StaticResource MenuItemTemplate}"
                                                  OptionsItemsSource="{TemplateBinding OptionItems}"
                                                  OptionsItemTemplate="{StaticResource MenuItemTemplate}"
-                                                 Content="{TemplateBinding Content}"
+                                                 Content="{TemplateBinding Content}" SelectedIndex="0"
+                                                 SelectedItem="{Binding SelectedItem, RelativeSource={RelativeSource TemplatedParent}, Mode=OneWayToSource}"
+                                                 SelectedOptionsItem="{Binding SelectedItem, RelativeSource={RelativeSource TemplatedParent}, Mode=OneWayToSource}"
                                                  ContentTemplate="{StaticResource AppContentTemplate}" />
                         </Grid>
                     </Border>

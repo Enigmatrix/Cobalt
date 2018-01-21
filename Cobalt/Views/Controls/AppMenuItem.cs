@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using System;
+using System.Windows;
 using System.Windows.Controls;
 using MaterialDesignThemes.Wpf;
 
@@ -33,7 +34,17 @@ namespace Cobalt.Views.Controls
         public static readonly DependencyProperty DescriptionProperty =
             DependencyProperty.Register("Description", typeof(string), typeof(AppMenuItem), new PropertyMetadata(""));
 
-        //TODO some sort of command/link to fire when menu item clicked
+
+        public Type Type
+        {
+            get => (Type)GetValue(TypeProperty);
+            set => SetValue(TypeProperty, value);
+        }
+
+        public static readonly DependencyProperty TypeProperty =
+            DependencyProperty.Register("Type", typeof(Type), typeof(AppMenuItem), new PropertyMetadata(null));
+
+
 
         #endregion
     }

@@ -11,7 +11,6 @@ namespace Cobalt.Views.Controls
                 new FrameworkPropertyMetadata(typeof(AppLayout)));
         }
 
-
         public override void OnApplyTemplate()
         {
             base.OnApplyTemplate();
@@ -83,6 +82,15 @@ namespace Cobalt.Views.Controls
         public static readonly DependencyProperty IsMenuOpenProperty =
             DependencyProperty.Register("IsMenuOpen", typeof(bool), typeof(AppLayout),
                 new PropertyMetadata(false, FrameworkPropertyChanged));
+
+        public AppMenuItem SelectedItem
+        {
+            get => (AppMenuItem)GetValue(SelectedItemProperty);
+            set => SetValue(SelectedItemProperty, value);
+        }
+
+        public static readonly DependencyProperty SelectedItemProperty =
+            DependencyProperty.Register("SelectedItem", typeof(AppMenuItem), typeof(AppLayout), new PropertyMetadata(null));
 
         #endregion
     }

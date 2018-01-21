@@ -3,44 +3,35 @@
                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-                   xmlns:local="clr-namespace:Cobalt"
                    xmlns:metro="http://metro.mahapps.com/winfx/xaml/controls"
-                   xmlns:viewModels="clr-namespace:Cobalt.Common.UI.ViewModels;assembly=Cobalt.Common.UI"
-                   xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
-                   xmlns:wpf="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
-                   xmlns:converters="clr-namespace:Cobalt.Views.Converters"
                    xmlns:ctrls="clr-namespace:Cobalt.Views.Controls"
-                   xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+                   xmlns:converters="clr-namespace:Cobalt.Views.Converters"
+                   xmlns:pages="clr-namespace:Cobalt.ViewModels.Pages"
                    Closed="MainView_OnClosed"
                    Icon="pack://application:,,,/Cobalt.Common.UI;component/Assets/icon_32.png"
-                   xmlns:converters1="clr-namespace:Cobalt.Common.UI.Converters;assembly=Cobalt.Common.UI"
                    mc:Ignorable="d" ShowTitleBar="False" BorderBrush="{DynamicResource AccentColorBrush}"
                    BorderThickness="1"
                    Title="Cobalt" Height="500" Width="800">
+                   
+    <metro:MetroWindow.Resources>
+        <converters:AppMenuItemToTypeConverter x:Key="AppMenuItemToTypeConverter"/>
+    </metro:MetroWindow.Resources>
 
-    <ctrls:AppLayout>
+    <ctrls:AppLayout SelectedItem="{Binding ActiveItem, Mode=OneWayToSource, Converter={StaticResource AppMenuItemToTypeConverter}}">
         <ctrls:AppLayout.MenuItems>
             <ctrls:AppMenuItemCollection>
-                <ctrls:AppMenuItem Icon="Home" Description="Home" />
-                <ctrls:AppMenuItem Icon="Apps" Description="Apps" />
-                <ctrls:AppMenuItem Icon="Tag" Description="Tags" />
-                <ctrls:AppMenuItem Icon="History" Description="History" />
+                <ctrls:AppMenuItem Icon="Home" Description="Home" Type="pages:HomePageViewModel"/>
+                <ctrls:AppMenuItem Icon="Apps" Description="Apps" Type="pages:AppsPageViewModel"/>
+                <ctrls:AppMenuItem Icon="Tag" Description="Tags" Type="pages:TagsPageViewModel"/>
+                <ctrls:AppMenuItem Icon="History" Description="History" Type="pages:HistoryPageViewModel"/>
             </ctrls:AppMenuItemCollection>
         </ctrls:AppLayout.MenuItems>
         <ctrls:AppLayout.OptionItems>
             <ctrls:AppMenuItemCollection>
-                <ctrls:AppMenuItem Icon="Settings" Description="Settings" />
+                <ctrls:AppMenuItem Icon="Settings" Description="Settings" Type="pages:SettingsPageViewModel"/>
             </ctrls:AppMenuItemCollection>
         </ctrls:AppLayout.OptionItems>
     </ctrls:AppLayout>
-
-    <!--<Grid>
-        <StackPanel Orientation="Vertical" VerticalAlignment="Center" HorizontalAlignment="Center">
-            <TextBlock FontSize="48" HorizontalAlignment="Center">Cobalt</TextBlock>
-            <TextBlock FontSize="32" HorizontalAlignment="Center">In Progress</TextBlock>
-        </StackPanel>
-
-    </Grid>-->
 
     <!--
     <Grid>

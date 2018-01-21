@@ -83,5 +83,10 @@ namespace Cobalt.Common.IoC
         {
             return Container.Resolve<T>();
         }
+
+        public object Resolve(Type t)
+        {
+            return Container.Resolve(t);
+        }
     }
 }

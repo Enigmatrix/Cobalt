@@ -114,7 +114,12 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="ViewModels\Pages\HistoryPageViewModel.cs" />
+    <Compile Include="ViewModels\Pages\TagsPageViewModel.cs" />
+    <Compile Include="ViewModels\Pages\SettingsPageViewModel.cs" />
+    <Compile Include="ViewModels\Pages\AppsPageViewModel.cs" />
     <Compile Include="ViewModels\SecretViewModel.cs" />
+    <Compile Include="Views\Converters\AppMenuItemToTypeConverter.cs" />
     <Compile Include="Views\Util\WindowUtil.cs" />
     <Page Include="Views\Controls\Generic.xaml">
       <Generator>MSBuild:Compile</Generator>
