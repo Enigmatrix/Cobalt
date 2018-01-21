@@ -2,6 +2,7 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
 	<Fragment>
 	  <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
+	  <WixVariable Id="WixUILicenseRtf" Value="cobalt-eula.rtf" />
 
 	  <Property Id="IMPORT_UI_PROPERTIES" Value="meow" />
   </Fragment>
