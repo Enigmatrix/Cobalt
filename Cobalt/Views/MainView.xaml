@@ -22,7 +22,7 @@
                 <ctrls:AppMenuItem Icon="Home" Description="Home"/>
                 <ctrls:AppMenuItem Icon="Apps" Description="Apps"/>
                 <ctrls:AppMenuItem Icon="Tag" Description="Tags"/>
-                <ctrls:AppMenuItem Icon="Home" Description="History"/>
+                <ctrls:AppMenuItem Icon="History" Description="History"/>
             </ctrls:AppMenuItemCollection>
         </ctrls:AppLayout.MenuItems>
         <ctrls:AppLayout.OptionItems>
