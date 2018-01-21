@@ -4,7 +4,8 @@
     xmlns:metro="http://metro.mahapps.com/winfx/xaml/controls"
     xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:mdConverters="clr-namespace:MaterialDesignThemes.Wpf.Converters;assembly=MaterialDesignThemes.Wpf"
-    xmlns:controls="clr-namespace:Cobalt.Views.Controls">
+    xmlns:controls="clr-namespace:Cobalt.Views.Controls"
+    xmlns:util="clr-namespace:Cobalt.Views.Util">
 
 
     <mdConverters:DrawerOffsetConverter x:Key="DrawerOffsetConverter"></mdConverters:DrawerOffsetConverter>
@@ -39,7 +40,7 @@
                                 </DataTemplate>
                                 <DataTemplate x:Key="AppContentTemplate">
                                     <Grid>
-                                        <md:Card UniformCornerRadius="0" md:ShadowAssist.ShadowDepth="Depth1" Background="{DynamicResource PrimaryHueDarkBrush}" HorizontalAlignment="Stretch" Height="48">
+                                        <md:Card util:WindowUtils.DragMove="True"  UniformCornerRadius="0" md:ShadowAssist.ShadowDepth="Depth1" Background="{DynamicResource PrimaryHueDarkBrush}" HorizontalAlignment="Stretch" Height="48">
                                             <TextBlock Foreground="{DynamicResource PrimaryHueDarkForegroundBrush}" Text="Title" VerticalAlignment="Center" HorizontalAlignment="Left"  FontSize="16" LineHeight="18" FontWeight="Medium" Margin="15,0,0,2"/>
                                         </md:Card>
 
