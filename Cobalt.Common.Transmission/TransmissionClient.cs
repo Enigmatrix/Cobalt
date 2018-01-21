@@ -49,9 +49,9 @@ namespace Cobalt.Common.Transmission
 
         public void Dispose()
         {
+            _keepAlive = false;
             lock (_pipe)
             {
-                _keepAlive = false;
                 _pipe.Dispose();
             }
         }

@@ -20,36 +20,6 @@
                             BorderThickness="{TemplateBinding BorderThickness}">
 
                         <Grid x:Name="RootGrid">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition/>
-                            </Grid.ColumnDefinitions>
-                            <Grid Grid.Column="1" x:Name="PART_Content" Grid.ColumnSpan="1">
-                                <AdornerDecorator>
-                                    <ContentPresenter
-                                        x:Name="ContentPresenter" Opacity="1"
-                                        Content="{TemplateBinding Content}"
-                                        ContentTemplate="{TemplateBinding ContentTemplate}"
-                                        ContentStringFormat="{TemplateBinding ContentStringFormat}"/>
-                                </AdornerDecorator>
-                                <Grid x:Name="PART_ContentCover" Background="{x:Null}" Opacity="0"
-                                      IsHitTestVisible="False" Focusable="False" />
-                            </Grid>
-                            <Grid Grid.Column="0"  HorizontalAlignment="Left" VerticalAlignment="Stretch"
-                                  x:Name="PART_Drawer"
-                                  Margin="{Binding RelativeSource={RelativeSource Self}, Path=ActualWidth, Converter={StaticResource DrawerOffsetConverter}}">
-                                <AdornerDecorator>
-                                    <AdornerDecorator.CacheMode>
-                                        <BitmapCache EnableClearType="True" SnapsToDevicePixels="True" />
-                                    </AdornerDecorator.CacheMode>
-                                    <Border
-                                        Effect="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=(md:ShadowAssist.ShadowDepth), Converter={x:Static mdConverters:ShadowConverter.Instance}}"
-                                        Opacity="0" Background="{DynamicResource MaterialDesignPaper}"
-                                        x:Name="DrawerShadow">
-                                    </Border>
-                                </AdornerDecorator>
-                                <ContentPresenter Content="{TemplateBinding MenuItems}" />
-                            </Grid>
                         </Grid>
                     </Border>
                 </ControlTemplate>

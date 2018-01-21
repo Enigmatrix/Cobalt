@@ -77,6 +77,7 @@ namespace Cobalt.Common.IoC
                 .Register(c => new GlobalClock(TimeSpan.FromMilliseconds(35)))
                 .As<IGlobalClock>()
                 .InstancePerLifetimeScope();
+
         }
 
         public T Resolve<T>()

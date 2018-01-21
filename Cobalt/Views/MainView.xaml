@@ -11,12 +11,12 @@
         xmlns:converters="clr-namespace:Cobalt.Views.Converters"
         xmlns:ctrls="clr-namespace:Cobalt.Views.Controls"
                    xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
-         
+        Closed="MainView_OnClosed"
         xmlns:converters1="clr-namespace:Cobalt.Common.UI.Converters;assembly=Cobalt.Common.UI"
         mc:Ignorable="d" ShowTitleBar="False" BorderBrush="{DynamicResource AccentColorBrush}" BorderThickness="1"
         Title="Cobalt" Height="500" Width="800">
 
-    <!--<ctrls:AppLayout>
+    <ctrls:AppLayout>
         <ctrls:AppLayout.MenuItems>
             <ctrls:AppMenuItemCollection>
                 <ctrls:AppMenuItem Icon="Home" Description="Home"/>
@@ -30,12 +30,15 @@
                 <ctrls:AppMenuItem Icon="Settings" Description="Settings"/>
             </ctrls:AppMenuItemCollection>
         </ctrls:AppLayout.OptionItems>
-    </ctrls:AppLayout>-->
+    </ctrls:AppLayout>
 
-    <StackPanel Orientation="Vertical" VerticalAlignment="Center" HorizontalAlignment="Center">
-        <TextBlock FontSize="48" HorizontalAlignment="Center">Cobalt</TextBlock>
-        <TextBlock FontSize="32" HorizontalAlignment="Center">In Progress</TextBlock>
-    </StackPanel>
+    <!--<Grid>
+        <StackPanel Orientation="Vertical" VerticalAlignment="Center" HorizontalAlignment="Center">
+            <TextBlock FontSize="48" HorizontalAlignment="Center">Cobalt</TextBlock>
+            <TextBlock FontSize="32" HorizontalAlignment="Center">In Progress</TextBlock>
+        </StackPanel>
+
+    </Grid>-->
 
     <!--
     <Grid>
