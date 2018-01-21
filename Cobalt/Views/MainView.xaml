@@ -11,7 +11,7 @@
         xmlns:converters="clr-namespace:Cobalt.Views.Converters"
         xmlns:ctrls="clr-namespace:Cobalt.Views.Controls"
                    xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
-        Closed="MainView_OnClosed"
+        Closed="MainView_OnClosed" Icon="pack://application:,,,/Cobalt.Common.UI;component/Assets/icon_32.png"
         xmlns:converters1="clr-namespace:Cobalt.Common.UI.Converters;assembly=Cobalt.Common.UI"
         mc:Ignorable="d" ShowTitleBar="False" BorderBrush="{DynamicResource AccentColorBrush}" BorderThickness="1"
         Title="Cobalt" Height="500" Width="800">
