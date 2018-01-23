@@ -1,4 +1,5 @@
-﻿using System.Runtime.Serialization.Formatters;
+﻿using System;
+using System.Runtime.Serialization.Formatters;
 using Cobalt.Common.UI;
 using Cobalt.ViewModels.Utils;
 
@@ -6,19 +7,17 @@ namespace Cobalt.ViewModels
 {
     public class MainViewModel : ViewModelBase
     {
-        private object _activeItem;
 
         public MainViewModel(INavigationService navSvc)
         {
+            NavigationService = navSvc;
         }
 
-        public object ActiveItem
+        public Type ActiveItem
         {
-            get => _activeItem;
-            set {
-                if(value != null)
-                    Set(ref _activeItem, value);
-            }
+            set => NavigationService.NavigateToType(value);
         }
+
+        public INavigationService NavigationService { get; }
     }
 }

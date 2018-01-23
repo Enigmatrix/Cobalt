@@ -17,7 +17,9 @@
         <converters:AppMenuItemToTypeConverter x:Key="AppMenuItemToTypeConverter"/>
     </metro:MetroWindow.Resources>
 
-    <ctrls:AppLayout SelectedItem="{Binding ActiveItem, Mode=OneWayToSource, Converter={StaticResource AppMenuItemToTypeConverter}}">
+    <ctrls:AppLayout
+        SelectedItem="{Binding ActiveItem, Mode=OneWayToSource, Converter={StaticResource AppMenuItemToTypeConverter}}"
+        Content="{Binding NavigationService.CurrentView}">
         <ctrls:AppLayout.MenuItems>
             <ctrls:AppMenuItemCollection>
                 <ctrls:AppMenuItem Icon="Home" Description="Home" Type="pages:HomePageViewModel"/>

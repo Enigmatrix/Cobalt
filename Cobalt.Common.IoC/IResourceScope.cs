@@ -8,5 +8,6 @@ namespace Cobalt.Common.IoC
         void Manage(IDisposable dis);
         IResourceScope Subscope();
         T Resolve<T>();
+        T Resolve<T>(Type type);
     }
 }

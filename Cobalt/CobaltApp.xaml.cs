@@ -1,6 +1,8 @@
 ﻿using System.Windows.Threading;
+using Autofac;
 using Cobalt.Common.UI;
 using Cobalt.ViewModels;
+using Cobalt.ViewModels.Utils;
 using Serilog;
 
 namespace Cobalt
@@ -22,6 +24,14 @@ namespace Cobalt
                 .CreateLogger();
             Log.Information("NEW SESSION");
             base.PrepareApplication();
+        }
+
+        protected override void ConfigureContainer(ContainerBuilder builder)
+        {
+            base.ConfigureContainer(builder);
+            builder.RegisterType<NavigationService>()
+                .As<INavigationService>()
+                .SingleInstance();
         }
 
         protected override void OnUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)

@@ -25,6 +25,7 @@
 
                 <ResourceDictionary Source="pack://application:,,,/Cobalt.Common.UI;component/Resources/Common.xaml" />
                 <ResourceDictionary Source="Views/Controls/Generic.xaml" />
+                <ResourceDictionary Source="Views/Pages/Generic.xaml" />
 
                 <ResourceDictionary>
                     <local:AppBoostrapper x:Key="bootstrapper" />
