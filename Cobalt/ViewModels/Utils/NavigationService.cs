@@ -52,16 +52,14 @@ namespace Cobalt.ViewModels.Utils
             if (value == null || !typeof(PageViewModel).IsAssignableFrom(value)) return;
             if (_existing.ContainsKey(value))
             {
-                var (viewModel, view) = _existing[value];
-                CurrentViewModel = viewModel;
-                CurrentView = view;
+                (CurrentViewModel, CurrentView) = _existing[value];
             }
             else
             {
                 CurrentViewModel = _resolver.Resolve<PageViewModel>(value);
-                CurrentView = (PageView)ViewLocator.LocateForModel(CurrentViewModel, null, null);
-                ViewModelBinder.Bind(CurrentViewModel, CurrentView, null);
-                _existing[value] = (CurrentViewModel, CurrentView);
+                CurrentView = (PageView)ViewLocator.LocateForModel(_currentViewModel, null, null);
+                ViewModelBinder.Bind(_currentViewModel, _currentView, null);
+                _existing[value] = (_currentViewModel, _currentView);
             }
         }
 

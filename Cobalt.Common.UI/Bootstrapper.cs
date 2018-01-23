@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using System;
+using System.Windows;
 using Autofac;
 using Caliburn.Micro.Autofac;
 using Cobalt.Common.IoC;

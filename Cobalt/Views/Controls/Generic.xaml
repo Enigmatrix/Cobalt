@@ -5,7 +5,8 @@
     xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:mdConverters="clr-namespace:MaterialDesignThemes.Wpf.Converters;assembly=MaterialDesignThemes.Wpf"
     xmlns:controls="clr-namespace:Cobalt.Views.Controls"
-    xmlns:util="clr-namespace:Cobalt.Views.Util">
+    xmlns:util="clr-namespace:Cobalt.Views.Util"
+    xmlns:pages="clr-namespace:Cobalt.Views.Pages">
 
 
     <mdConverters:DrawerOffsetConverter x:Key="DrawerOffsetConverter" />
@@ -38,7 +39,7 @@
                                                    Text="{Binding Description}" />
                                     </Grid>
                                 </DataTemplate>
-                                <DataTemplate x:Key="AppContentTemplate">
+                                <DataTemplate x:Key="AppContentTemplate" DataType="pages:PageView">
                                     <Grid>
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="48"/>
@@ -49,7 +50,7 @@
                                                  Background="{DynamicResource PrimaryHueDarkBrush}"
                                                  HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
                                             <TextBlock Foreground="{DynamicResource PrimaryHueDarkForegroundBrush}"
-                                                       Text="{Binding Title, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center"
+                                                       Text="{Binding Title}" VerticalAlignment="Center"
                                                        HorizontalAlignment="Left" FontSize="16" LineHeight="18"
                                                        FontWeight="Medium" Margin="15,0,0,2" />
                                         </md:Card>
@@ -67,10 +68,10 @@
                                                  ItemTemplate="{StaticResource MenuItemTemplate}"
                                                  OptionsItemsSource="{TemplateBinding OptionItems}"
                                                  OptionsItemTemplate="{StaticResource MenuItemTemplate}"
-                                                 Content="{TemplateBinding Content}" SelectedIndex="0"
                                                  SelectedItem="{Binding SelectedItem, RelativeSource={RelativeSource TemplatedParent}, Mode=OneWayToSource}"
                                                  SelectedOptionsItem="{Binding SelectedItem, RelativeSource={RelativeSource TemplatedParent}, Mode=OneWayToSource}"
-                                                 ContentTemplate="{StaticResource AppContentTemplate}"/>
+                                                 ContentTemplate="{StaticResource AppContentTemplate}"
+                                                 Content="{TemplateBinding Content}"/>
                         </Grid>
                     </Border>
                 </ControlTemplate>

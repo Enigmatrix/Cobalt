@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Windows;
 using System.Windows.Input;
+using Cobalt.Common.IoC;
 
 namespace Cobalt.Views
 {
