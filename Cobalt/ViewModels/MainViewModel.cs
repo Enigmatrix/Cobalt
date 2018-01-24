@@ -18,7 +18,7 @@ namespace Cobalt.ViewModels
 
         public Type ActiveItem
         {
-            get => NavigationService.CurrentViewModel.GetType();
+            get => NavigationService.ActiveItem.GetType();
             set { NavigationService.NavigateToType(value); NotifyOfPropertyChange();}
         }
 

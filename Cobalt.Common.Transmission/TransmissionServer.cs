@@ -44,6 +44,11 @@ namespace Cobalt.Common.Transmission
                     }
                     catch (Exception)
                     {
+                        try
+                        {
+                            _broadcastingPipes[i].Disconnect();
+                        }catch(Exception){}
+
                         _broadcastingPipes[i].Dispose();
                         _broadcastingPipes.RemoveAt(i);
                         _broadcasters.RemoveAt(i);

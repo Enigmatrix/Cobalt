@@ -1,10 +1,11 @@
-﻿using System.ComponentModel;
+﻿using System;
+using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Caliburn.Micro;
 
 namespace Cobalt.Common.UI
 {
-    public interface IViewModel : INotifyPropertyChanged
+    public interface IViewModel : INotifyPropertyChanged, IDisposable
     {
     }
 
@@ -17,7 +18,11 @@ namespace Cobalt.Common.UI
         }
     }
 
-    public class ViewModelBase : NotifyPropertyChanged, IViewModel
+    public abstract class ViewModelBase : NotifyPropertyChanged, IViewModel
     {
+        public virtual void Dispose()
+        {
+
+        }
     }
 }

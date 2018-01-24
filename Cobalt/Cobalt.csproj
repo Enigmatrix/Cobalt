@@ -118,7 +118,6 @@
     <Compile Include="ViewModels\Pages\TagsPageViewModel.cs" />
     <Compile Include="ViewModels\Pages\SettingsPageViewModel.cs" />
     <Compile Include="ViewModels\Pages\AppsPageViewModel.cs" />
-    <Compile Include="ViewModels\SecretViewModel.cs" />
     <Compile Include="Views\Converters\AppMenuItemToTypeConverter.cs" />
     <Compile Include="Views\Pages\AppsPageView.xaml.cs">
       <DependentUpon>AppsPageView.xaml</DependentUpon>

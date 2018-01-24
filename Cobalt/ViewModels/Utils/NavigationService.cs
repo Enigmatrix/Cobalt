@@ -11,35 +11,30 @@ namespace Cobalt.ViewModels.Utils
 {
     public interface INavigationService : INotifyPropertyChanged, IDisposable
     {
-        PageViewModel CurrentViewModel { get; }
-        PageView CurrentView { get; }
+        PageView ActivePage { get; }
+        PageViewModel ActiveItem { get; }
         void NavigateTo<T>() where T : PageViewModel;
         void NavigateToType(Type value);
     }
 
-    public class NavigationService : NotifyPropertyChanged, INavigationService
+    public class NavigationService : Conductor<PageViewModel>.Collection.OneActive, INavigationService
     {
         private readonly IResourceScope _resolver;
-        private PageView _currentView;
-        private PageViewModel _currentViewModel;
+        private PageView _activePage;
         private readonly Dictionary<Type, (PageViewModel ViewModel, PageView View)> _existing;
 
         public NavigationService(IResourceScope resolver)
         {
             _resolver = resolver;
             _existing = new Dictionary<Type, (PageViewModel ViewModel, PageView View)>();
+            //needed for conductors that aren't shown
+            ((IActivate)this).Activate();
         }
 
-        public PageViewModel CurrentViewModel
+        public PageView ActivePage
         {
-            get => _currentViewModel;
-            set => Set(ref _currentViewModel, value);
-        }
-
-        public PageView CurrentView
-        {
-            get => _currentView;
-            set => Set(ref _currentView, value);
+            get => _activePage;
+            set { _activePage = value ;NotifyOfPropertyChange();}
         }
 
         public void NavigateTo<T>() where T : PageViewModel
@@ -52,14 +47,17 @@ namespace Cobalt.ViewModels.Utils
             if (value == null || !typeof(PageViewModel).IsAssignableFrom(value)) return;
             if (_existing.ContainsKey(value))
             {
-                (CurrentViewModel, CurrentView) = _existing[value];
+                var (vm, page) = _existing[value];
+                ActivePage = page;
+                ActivateItem(vm);
             }
             else
             {
-                CurrentViewModel = _resolver.Resolve<PageViewModel>(value);
-                CurrentView = (PageView)ViewLocator.LocateForModel(_currentViewModel, null, null);
-                ViewModelBinder.Bind(_currentViewModel, _currentView, null);
-                _existing[value] = (_currentViewModel, _currentView);
+                var vm = _resolver.Resolve<PageViewModel>(value);
+                ActivePage = (PageView)ViewLocator.LocateForModel(vm, null, null);
+                ViewModelBinder.Bind(vm, _activePage, null);
+                ActivateItem(vm);
+                _existing[value] = (vm, ActivePage);
             }
         }
 

@@ -66,12 +66,24 @@
                             <metro:HamburgerMenu PaneBackground="White" PaneForeground="Black"
                                                  ItemsSource="{TemplateBinding MenuItems}"
                                                  ItemTemplate="{StaticResource MenuItemTemplate}"
+                                                 
                                                  OptionsItemsSource="{TemplateBinding OptionItems}"
                                                  OptionsItemTemplate="{StaticResource MenuItemTemplate}"
                                                  SelectedItem="{Binding SelectedItem, RelativeSource={RelativeSource TemplatedParent}, Mode=OneWayToSource}"
                                                  SelectedOptionsItem="{Binding SelectedItem, RelativeSource={RelativeSource TemplatedParent}, Mode=OneWayToSource}"
                                                  ContentTemplate="{StaticResource AppContentTemplate}"
-                                                 Content="{TemplateBinding Content}"/>
+                                                 Content="{TemplateBinding Content}">
+                                                 <!--
+                                <metro:HamburgerMenu.HamburgerMenuHeaderTemplate>
+                                    <DataTemplate>
+                                        <TextBlock HorizontalAlignment="Left"
+                                                   VerticalAlignment="Center"
+                                                   FontSize="16"
+                                                   Foreground="Black"
+                                                   Text="" />
+                                    </DataTemplate>
+                                </metro:HamburgerMenu.HamburgerMenuHeaderTemplate>-->
+                            </metro:HamburgerMenu>
                         </Grid>
                     </Border>
                 </ControlTemplate>
