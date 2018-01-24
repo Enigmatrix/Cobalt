@@ -22,7 +22,7 @@ namespace Cobalt.Common.UI
     {
         public virtual void Dispose()
         {
-
+            OnDeactivate(true);
         }
     }
 }

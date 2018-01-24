@@ -112,8 +112,6 @@ namespace Cobalt.ViewModels.Pages
         public override void Dispose()
         {
             base.Dispose();
-            AppDurations.Clear();
-            Resources.Dispose();
             GlobalResources.Dispose();
         }
     }
