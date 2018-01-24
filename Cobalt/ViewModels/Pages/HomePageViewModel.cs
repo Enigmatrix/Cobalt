@@ -19,10 +19,9 @@ namespace Cobalt.ViewModels.Pages
 
         private IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> _hourlyChunks;
 
-        public HomePageViewModel(IResourceScope scope, IAppStatsStreamService stats)
+        public HomePageViewModel(IResourceScope scope)
         {
             GlobalResources = scope;
-            Stats = stats;
         }
 
         public BindableCollection<IAppDurationViewModel> AppDurations
@@ -37,8 +36,6 @@ namespace Cobalt.ViewModels.Pages
         private IResourceScope GlobalResources { get; }
         private IResourceScope Resources { get; set; }
 
-        private IAppStatsStreamService Stats { get; }
-
         private static IEqualityComparer<App> PathEquality { get; }
             = new SelectorEqualityComparer<App, string>(a => a.Path);
 
@@ -51,8 +48,9 @@ namespace Cobalt.ViewModels.Pages
         protected override void OnActivate()
         {
             Resources = GlobalResources.Subscope();
-            var appUsagesStream = Stats.GetAppUsages(DateTime.Today, DateTime.Now); //.Publish();
-            var appDurationsStream = Stats.GetAppDurations(DateTime.Today); //.Publish();
+            var stats = Resources.Resolve<IAppStatsStreamService>();
+            var appUsagesStream = stats.GetAppUsages(DateTime.Today, DateTime.Now); //.Publish();
+            var appDurationsStream = stats.GetAppDurations(DateTime.Today); //.Publish();
             var appIncrementor = Resources.Resolve<IDurationIncrementor>();
 
             HourlyChunks = appUsagesStream
