@@ -118,6 +118,9 @@
     <Compile Include="ViewModels\Pages\TagsPageViewModel.cs" />
     <Compile Include="ViewModels\Pages\SettingsPageViewModel.cs" />
     <Compile Include="ViewModels\Pages\AppsPageViewModel.cs" />
+    <Compile Include="Views\Controls\DateRangePicker.xaml.cs">
+      <DependentUpon>DateRangePicker.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\Converters\AppMenuItemToTypeConverter.cs" />
     <Compile Include="Views\Pages\AppsPageView.xaml.cs">
       <DependentUpon>AppsPageView.xaml</DependentUpon>
@@ -135,7 +138,12 @@
     <Compile Include="Views\Pages\TagsPageView.xaml.cs">
       <DependentUpon>TagsPageView.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Views\Util\ContentDataTemplateSelector.cs" />
     <Compile Include="Views\Util\WindowUtil.cs" />
+    <Page Include="Views\Controls\DateRangePicker.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Views\Pages\AppsPageView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
