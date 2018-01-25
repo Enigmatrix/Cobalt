@@ -102,5 +102,25 @@
             </Setter.Value>
         </Setter>
     </Style>
+    
+            <DataTemplate x:Key="TextDateRangeTemplate">
+                <TextBlock Text="{Binding}"/>
+            </DataTemplate>
+            <DataTemplate x:Key="CustomDateRangeTemplate">
+                <Grid Height="24" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+                    <DatePicker Grid.Column="0" md:HintAssist.Hint="Start Date"/>
+                    <md:TimePicker Grid.Column="1" Padding="0" md:TextFieldAssist.TextBoxViewMargin="0" Margin="0" md:HintAssist.Hint="Start Time"/>
+                    <TextBlock Text="to" Grid.Column="2" VerticalAlignment="Bottom" Margin="5,0"/>
+                    <DatePicker Grid.Column="3" md:HintAssist.Hint="End Date"/>
+                    <md:TimePicker Grid.Column="4" Padding="0" md:TextFieldAssist.TextBoxViewMargin="0" Margin="0" md:HintAssist.Hint="End Time"/>
+                </Grid>
+                </DataTemplate>
 
 </ResourceDictionary>

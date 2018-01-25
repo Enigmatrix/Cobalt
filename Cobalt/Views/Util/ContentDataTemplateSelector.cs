@@ -12,7 +12,8 @@ namespace Cobalt.Views.Util
     {
         public override DataTemplate SelectTemplate(object item, DependencyObject container)
         {
-            return base.SelectTemplate(item, container);
+            var res = container as FrameworkElement;
+            return ((string) item) == "Custom" ? (DataTemplate)res.FindResource("CustomDateRangeTemplate") : (DataTemplate)res.FindResource("TextDateRangeTemplate");
         }
     }
 }
