@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Diagnostics;
+using System.IO;
 using System.Reactive.Linq;
 using Caliburn.Micro;
 using Cobalt.Common.Analysis;
@@ -16,6 +18,7 @@ namespace Cobalt.TaskbarNotifier
         TimeSpan TotalDuration { get; set; }
         void PopupOpened();
         void PopupClosed();
+        void OpenCobalt();
     }
 
     public class MainViewModel : ViewModelBase, IMainViewModel
@@ -151,6 +154,13 @@ namespace Cobalt.TaskbarNotifier
             TotalDuration = TimeSpan.Zero;
             AppDurations.Clear();
             TagDurations.Clear();
+        }
+
+        public void OpenCobalt()
+        {
+            new Process {
+                StartInfo = new ProcessStartInfo("Cobalt.exe")
+            }.Start();
         }
     }
 }
