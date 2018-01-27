@@ -12,7 +12,7 @@ artifacts:
 build:
   verbosity: minimal
 deploy:
-  release: Cobalt-v$(APPVEYOR_REPO_TAG_NAME)
+  release: $(APPVEYOR_REPO_TAG_NAME)
   description: 'Release Description'
   provider: GitHub
   auth_token:
