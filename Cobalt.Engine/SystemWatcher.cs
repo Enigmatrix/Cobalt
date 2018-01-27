@@ -26,6 +26,8 @@ namespace Cobalt.Engine
             AppDomain.CurrentDomain.ProcessExit += (sender, args) => AppSessionEnded(Win32.CtrlType.CTRL_BREAK_EVENT);
             SystemEvents.PowerModeChanged += PowerModeChanged;
             SystemEvents.SessionEnded += SessionEnded;
+            SystemEvents.SessionEnding += (_, e) => Log.Information("Session Ending: {reason}", e.Reason);
+            SystemEvents.SessionSwitch += (_, e) => Log.Information("Session Switching: {rason}", e.Reason);
 
             Win32.RegisterPowerSettingNotification(window.WindowHandle,
                 ref Win32.GUID_MONITOR_POWER_ON,
