@@ -8,6 +8,6 @@
              mc:Ignorable="d" Title="History"
              d:DesignHeight="300" d:DesignWidth="300">
     <Grid>
-        <controls:DateRangePicker VerticalAlignment="Top" Width="500"/>
+        <controls:DateRangePicker VerticalAlignment="Top" HorizontalAlignment="Right"/>
     </Grid>
 </local:PageView>

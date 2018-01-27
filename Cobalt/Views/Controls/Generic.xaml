@@ -104,10 +104,10 @@
     </Style>
     
             <DataTemplate x:Key="TextDateRangeTemplate">
-                <TextBlock Text="{Binding}"/>
+                <ContentPresenter Content="{Binding}"/>
             </DataTemplate>
             <DataTemplate x:Key="CustomDateRangeTemplate">
-                <Grid Height="24" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+                <Grid Height="24" VerticalAlignment="Stretch" MinWidth="500" HorizontalAlignment="Stretch">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition/>
                         <ColumnDefinition/>
@@ -117,10 +117,14 @@
                     </Grid.ColumnDefinitions>
                     <DatePicker Grid.Column="0" md:HintAssist.Hint="Start Date"/>
                     <md:TimePicker Grid.Column="1" Padding="0" md:TextFieldAssist.TextBoxViewMargin="0" Margin="0" md:HintAssist.Hint="Start Time"/>
-                    <TextBlock Text="to" Grid.Column="2" VerticalAlignment="Bottom" Margin="5,0"/>
+                    <TextBlock Text=" - " Grid.Column="2" VerticalAlignment="Center" Margin="5,0"/>
                     <DatePicker Grid.Column="3" md:HintAssist.Hint="End Date"/>
                     <md:TimePicker Grid.Column="4" Padding="0" md:TextFieldAssist.TextBoxViewMargin="0" Margin="0" md:HintAssist.Hint="End Time"/>
                 </Grid>
                 </DataTemplate>
+    
+    <Style TargetType="controls:DateRangePicker">
+        <Setter Property="Background" Value="Red"/>
+    </Style>
 
 </ResourceDictionary>

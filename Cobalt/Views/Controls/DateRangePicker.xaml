@@ -6,7 +6,7 @@
              xmlns:local="clr-namespace:Cobalt.Views.Controls" BorderThickness="0"
              xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:converters="clr-namespace:MaterialDesignThemes.Wpf.Converters;assembly=MaterialDesignThemes.Wpf"
-             xmlns:util="clr-namespace:Cobalt.Views.Util"
+             xmlns:util="clr-namespace:Cobalt.Views.Util" DataContext="{Binding RelativeSource={RelativeSource Self}}"
              xmlns:Controls="http://metro.mahapps.com/winfx/xaml/controls"
              xmlns:Converters="http://metro.mahapps.com/winfx/xaml/shared"
              mc:Ignorable="d" SelectedIndex="4" HorizontalContentAlignment="Stretch"
@@ -376,7 +376,7 @@
              <ComboBoxItem>Yesterday</ComboBoxItem>
              <ComboBoxItem>This Week</ComboBoxItem>
              <ComboBoxItem>Last 7 Days</ComboBoxItem>
-             <ComboBoxItem>This Month</ComboBoxItem>
+             <ComboBoxItem>Last Month</ComboBoxItem>
              <ComboBoxItem x:Name="Custom">Custom</ComboBoxItem>
 
 </ComboBox>
