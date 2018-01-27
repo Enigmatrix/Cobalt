@@ -32,7 +32,7 @@
                                                      HorizontalAlignment="Center"
                                                      VerticalAlignment="Center"
                                                      Focusable="False"
-                                                     Kind="{Binding Icon}"/>
+                                                     Kind="{Binding Icon}" />
                                         <TextBlock Grid.Column="1"
                                                    VerticalAlignment="Center"
                                                    FontSize="16"
@@ -42,8 +42,8 @@
                                 <DataTemplate x:Key="AppContentTemplate" DataType="pages:PageView">
                                     <Grid>
                                         <Grid.RowDefinitions>
-                                            <RowDefinition Height="48"/>
-                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="48" />
+                                            <RowDefinition Height="*" />
                                         </Grid.RowDefinitions>
                                         <md:Card util:WindowUtils.DragMove="True" UniformCornerRadius="0"
                                                  md:ShadowAssist.ShadowDepth="Depth1" Grid.Row="0"
@@ -54,26 +54,26 @@
                                                        HorizontalAlignment="Left" FontSize="16" LineHeight="18"
                                                        FontWeight="Medium" Margin="15,0,0,2" />
                                         </md:Card>
-                                        
-                                        <ContentControl Grid.Row="1" Content="{Binding}"/>
+
+                                        <ContentControl Grid.Row="1" Content="{Binding}" />
 
                                         <!--this is the menu's shadow-->
                                         <md:Card Grid.RowSpan="2" UniformCornerRadius="0" VerticalAlignment="Stretch"
-                                                 HorizontalAlignment="Left" Width="1" Grid.Row="0"/>
+                                                 HorizontalAlignment="Left" Width="1" Grid.Row="0" />
                                     </Grid>
                                 </DataTemplate>
                             </Grid.Resources>
                             <metro:HamburgerMenu PaneBackground="White" PaneForeground="Black"
                                                  ItemsSource="{TemplateBinding MenuItems}"
                                                  ItemTemplate="{StaticResource MenuItemTemplate}"
-                                                 
+
                                                  OptionsItemsSource="{TemplateBinding OptionItems}"
                                                  OptionsItemTemplate="{StaticResource MenuItemTemplate}"
                                                  SelectedItem="{Binding SelectedItem, RelativeSource={RelativeSource TemplatedParent}, Mode=OneWayToSource}"
                                                  SelectedOptionsItem="{Binding SelectedItem, RelativeSource={RelativeSource TemplatedParent}, Mode=OneWayToSource}"
                                                  ContentTemplate="{StaticResource AppContentTemplate}"
                                                  Content="{TemplateBinding Content}">
-                                                 <!--
+                                <!--
                                 <metro:HamburgerMenu.HamburgerMenuHeaderTemplate>
                                     <DataTemplate>
                                         <TextBlock HorizontalAlignment="Left"
@@ -102,29 +102,31 @@
             </Setter.Value>
         </Setter>
     </Style>
-    
-            <DataTemplate x:Key="TextDateRangeTemplate">
-                <ContentPresenter Content="{Binding}"/>
-            </DataTemplate>
-            <DataTemplate x:Key="CustomDateRangeTemplate">
-                <Grid Height="24" VerticalAlignment="Stretch" MinWidth="500" HorizontalAlignment="Stretch">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition/>
-                        <ColumnDefinition/>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition/>
-                        <ColumnDefinition/>
-                    </Grid.ColumnDefinitions>
-                    <DatePicker Grid.Column="0" md:HintAssist.Hint="Start Date"/>
-                    <md:TimePicker Grid.Column="1" Padding="0" md:TextFieldAssist.TextBoxViewMargin="0" Margin="0" md:HintAssist.Hint="Start Time"/>
-                    <TextBlock Text=" - " Grid.Column="2" VerticalAlignment="Center" Margin="5,0"/>
-                    <DatePicker Grid.Column="3" md:HintAssist.Hint="End Date"/>
-                    <md:TimePicker Grid.Column="4" Padding="0" md:TextFieldAssist.TextBoxViewMargin="0" Margin="0" md:HintAssist.Hint="End Time"/>
-                </Grid>
-                </DataTemplate>
-    
+
+    <DataTemplate x:Key="TextDateRangeTemplate">
+        <ContentPresenter Content="{Binding}" />
+    </DataTemplate>
+    <DataTemplate x:Key="CustomDateRangeTemplate">
+        <Grid Height="24" VerticalAlignment="Stretch" MinWidth="500" HorizontalAlignment="Stretch">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition />
+                <ColumnDefinition />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition />
+                <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+            <DatePicker Grid.Column="0" md:HintAssist.Hint="Start Date" />
+            <md:TimePicker Grid.Column="1" Padding="0" md:TextFieldAssist.TextBoxViewMargin="0" Margin="0"
+                           md:HintAssist.Hint="Start Time" />
+            <TextBlock Text=" - " Grid.Column="2" VerticalAlignment="Center" Margin="5,0" />
+            <DatePicker Grid.Column="3" md:HintAssist.Hint="End Date" />
+            <md:TimePicker Grid.Column="4" Padding="0" md:TextFieldAssist.TextBoxViewMargin="0" Margin="0"
+                           md:HintAssist.Hint="End Time" />
+        </Grid>
+    </DataTemplate>
+
     <Style TargetType="controls:DateRangePicker">
-        <Setter Property="Background" Value="Red"/>
+        <Setter Property="Background" Value="Red" />
     </Style>
 
 </ResourceDictionary>

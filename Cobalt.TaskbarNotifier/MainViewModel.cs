@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using System.IO;
 using System.Reactive.Linq;
 using Caliburn.Micro;
 using Cobalt.Common.Analysis;
@@ -158,7 +157,8 @@ namespace Cobalt.TaskbarNotifier
 
         public void OpenCobalt()
         {
-            new Process {
+            new Process
+            {
                 StartInfo = new ProcessStartInfo("Cobalt.exe")
             }.Start();
         }

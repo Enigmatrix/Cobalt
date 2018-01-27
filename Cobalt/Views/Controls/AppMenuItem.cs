@@ -37,14 +37,12 @@ namespace Cobalt.Views.Controls
 
         public Type Type
         {
-            get => (Type)GetValue(TypeProperty);
+            get => (Type) GetValue(TypeProperty);
             set => SetValue(TypeProperty, value);
         }
 
         public static readonly DependencyProperty TypeProperty =
             DependencyProperty.Register("Type", typeof(Type), typeof(AppMenuItem), new PropertyMetadata(null));
-
-
 
         #endregion
     }

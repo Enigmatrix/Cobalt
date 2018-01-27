@@ -7,10 +7,10 @@ namespace Cobalt.Engine
     public class InteractionWatcher
     {
         private readonly HookManager _hookMgr;
-        private bool _interaction;
         private readonly Win32.HookProc _keyboardCallback;
         private readonly Win32.HookProc _mouseCallback;
         private readonly Timer _timer;
+        private bool _interaction;
 
         public InteractionWatcher(HookManager hookMgr)
         {

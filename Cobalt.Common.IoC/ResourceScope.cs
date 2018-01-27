@@ -32,7 +32,7 @@ namespace Cobalt.Common.IoC
 
         public T Resolve<T>(Type type)
         {
-            return (T)_scope.Resolve(type);
+            return (T) _scope.Resolve(type);
         }
 
         public void Manage(IDisposable dis)

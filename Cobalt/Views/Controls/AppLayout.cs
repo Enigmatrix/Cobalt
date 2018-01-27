@@ -85,12 +85,13 @@ namespace Cobalt.Views.Controls
 
         public AppMenuItem SelectedItem
         {
-            get => (AppMenuItem)GetValue(SelectedItemProperty);
+            get => (AppMenuItem) GetValue(SelectedItemProperty);
             set => SetValue(SelectedItemProperty, value);
         }
 
         public static readonly DependencyProperty SelectedItemProperty =
-            DependencyProperty.Register("SelectedItem", typeof(AppMenuItem), typeof(AppLayout), new PropertyMetadata(null));
+            DependencyProperty.Register("SelectedItem", typeof(AppMenuItem), typeof(AppLayout),
+                new PropertyMetadata(null));
 
         #endregion
     }

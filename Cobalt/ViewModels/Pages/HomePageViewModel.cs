@@ -105,10 +105,7 @@ namespace Cobalt.ViewModels.Pages
         {
             AppDurations.Clear();
             Resources.Dispose();
-            if (close)
-            {
-                GlobalResources.Dispose();
-            }
+            if (close) GlobalResources.Dispose();
         }
     }
 }

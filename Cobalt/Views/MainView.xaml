@@ -12,9 +12,9 @@
                    mc:Ignorable="d" ShowTitleBar="False" BorderBrush="{DynamicResource AccentColorBrush}"
                    BorderThickness="1"
                    Title="Cobalt" Height="500" Width="800">
-                   
+
     <metro:MetroWindow.Resources>
-        <converters:AppMenuItemToTypeConverter x:Key="AppMenuItemToTypeConverter"/>
+        <converters:AppMenuItemToTypeConverter x:Key="AppMenuItemToTypeConverter" />
     </metro:MetroWindow.Resources>
 
     <ctrls:AppLayout
@@ -22,15 +22,15 @@
         SelectedItem="{Binding ActiveItem, Mode=OneWayToSource, Converter={StaticResource AppMenuItemToTypeConverter}}">
         <ctrls:AppLayout.MenuItems>
             <ctrls:AppMenuItemCollection>
-                <ctrls:AppMenuItem Icon="Home" Description="Home" Type="pages:HomePageViewModel"/>
-                <ctrls:AppMenuItem Icon="Apps" Description="Apps" Type="pages:AppsPageViewModel"/>
-                <ctrls:AppMenuItem Icon="Tag" Description="Tags" Type="pages:TagsPageViewModel"/>
-                <ctrls:AppMenuItem Icon="History" Description="History" Type="pages:HistoryPageViewModel"/>
+                <ctrls:AppMenuItem Icon="Home" Description="Home" Type="pages:HomePageViewModel" />
+                <ctrls:AppMenuItem Icon="Apps" Description="Apps" Type="pages:AppsPageViewModel" />
+                <ctrls:AppMenuItem Icon="Tag" Description="Tags" Type="pages:TagsPageViewModel" />
+                <ctrls:AppMenuItem Icon="History" Description="History" Type="pages:HistoryPageViewModel" />
             </ctrls:AppMenuItemCollection>
         </ctrls:AppLayout.MenuItems>
         <ctrls:AppLayout.OptionItems>
             <ctrls:AppMenuItemCollection>
-                <ctrls:AppMenuItem Icon="Settings" Description="Settings" Type="pages:SettingsPageViewModel"/>
+                <ctrls:AppMenuItem Icon="Settings" Description="Settings" Type="pages:SettingsPageViewModel" />
             </ctrls:AppMenuItemCollection>
         </ctrls:AppLayout.OptionItems>
     </ctrls:AppLayout>
