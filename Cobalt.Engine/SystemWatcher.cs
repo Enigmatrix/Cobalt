@@ -38,6 +38,7 @@ namespace Cobalt.Engine
                 var monitorOn = bmsg.Data == 1;
                 if (_prevMonitorOn == monitorOn) return;
 
+                Log.Information("Monitor State Changed: {reason}", monitorOn ? "on" : "off");
                 RaiseSystemMainStateChanged(monitorOn ? SystemStateChange.MonitorOn : SystemStateChange.MonitorOff);
                 _prevMonitorOn = monitorOn;
             });
@@ -70,6 +71,7 @@ namespace Cobalt.Engine
 
         private void PowerModeChanged(object sender, PowerModeChangedEventArgs e)
         {
+            Log.Information("Power Mode Changed, Reason: {reason}", e.Mode);
             //TODO buggy: Sleep is called after monitoroff when device is going to sleep
             /*
             if (e.Mode == PowerModes.StatusChange) return;
