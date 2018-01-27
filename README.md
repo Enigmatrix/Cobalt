@@ -10,8 +10,8 @@
 </div>
 
 
-## Features
-Tracks how long an app is on the screen, and displays useful statistics in a interactive, useful manner.
+## What is it?
+An program to track how long an app is on the screen, and display useful statistics in a interactive manner.
 
 ## Screenshots
 
