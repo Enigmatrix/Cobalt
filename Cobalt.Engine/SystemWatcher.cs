@@ -41,11 +41,18 @@ namespace Cobalt.Engine
                 if (_prevMonitorOn == monitorOn) return;
 
                 Log.Information("Monitor State Changed: {reason}", monitorOn ? "on" : "off");
+                LogEnv();
                 RaiseSystemMainStateChanged(monitorOn ? SystemStateChange.MonitorOn : SystemStateChange.MonitorOff);
                 _prevMonitorOn = monitorOn;
             });
 
             Log.Information("Session SessionStart!");
+        }
+
+        private void LogEnv()
+        {
+            Log.Information("");
+            Log.Information("ENV: shutdown started: {s}, ", Environment.HasShutdownStarted);
         }
 
         public event EventHandler<SystemStateChangedArgs> SystemMainStateChanged = delegate { };
@@ -64,6 +71,7 @@ namespace Cobalt.Engine
 
         private void SessionEnded(object sender, SessionEndedEventArgs e)
         {
+                LogEnv();
             Log.Information("Session Ending, Reason: {reason}", e.Reason);
             if (e.Reason == SessionEndReasons.Logoff)
                 RaiseSystemMainStateChanged(SystemStateChange.Logoff);
@@ -73,6 +81,7 @@ namespace Cobalt.Engine
 
         private void PowerModeChanged(object sender, PowerModeChangedEventArgs e)
         {
+                LogEnv();
             Log.Information("Power Mode Changed, Reason: {reason}", e.Mode);
             //TODO buggy: Sleep is called after monitoroff when device is going to sleep
             /*
