@@ -68,7 +68,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="cobalt-eula.rtf" />
-    <Content Include="CobaltCombinedTransform.xslt" />
+    <Content Include="CobaltCombinedTransform.xsl" />
     <Content Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
@@ -93,14 +93,14 @@
     <Error Condition="!Exists('..\packages\WiX.3.11.1\build\wix.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\WiX.3.11.1\build\wix.props'))" />
   </Target>
   <PropertyGroup>
-    <PreBuildEvent>"$(WixExtDir)\heat" dir "$(SolutionDir)bin\$(Configuration)"  -dr INSTALLFOLDER -cg CobaltCombinedComponents -gg -g1 -sf -srd -var "var.Cobalt.TargetDir" -out "$(SolutionDir)Cobalt.Setup\CobaltCombined.wxs" -t "$(SolutionDir)Cobalt.Setup\CobaltCombinedTransform.xslt"</PreBuildEvent>
+    <PostBuildEvent />
   </PropertyGroup>
-  <!--
-	To modify your build process, add your task inside one of the targets below and uncomment it.
-	Other similar extension points exist, see Wix.targets.
-	<Target Name="BeforeBuild">
-	</Target>
-	<Target Name="AfterBuild">
-	</Target>
-	-->
+  <!--<PropertyGroup>
+    <PreBuildEvent>"$(WixExtDir)\heat" dir "$(SolutionDir)bin\$(Configuration)"  -dr INSTALLFOLDER -cg CobaltCombinedComponents -gg -g1 -sf -srd -var "var.Cobalt.TargetDir" -out "$(SolutionDir)Cobalt.Setup\CobaltCombined.wxs" -t "$(SolutionDir)Cobalt.Setup\CobaltCombinedTransform.xslt"</PreBuildEvent>
+  </PropertyGroup>-->
+  <Target Name="BeforeBuild">
+    <HeatDirectory OutputFile="$(SolutionDir)Cobalt.Setup\CobaltCombined.wxs" ToolPath="$(WixToolPath)" ComponentGroupName="CobaltCombinedComponents" Directory="$(SolutionDir)bin\$(Configuration)" DirectoryRefId="INSTALLFOLDER" PreprocessorVariable="var.Cobalt.TargetDir" GenerateGuidsNow="true" SuppressFragments="true" SuppressRootDirectory="true" Transforms="$(SolutionDir)Cobalt.Setup\CobaltCombinedTransform.xsl" />
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
 </Project>
