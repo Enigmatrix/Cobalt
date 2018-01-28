@@ -1,4 +1,7 @@
 ﻿using System;
+using System.ComponentModel;
+using System.Reactive;
+using System.Reactive.Linq;
 using Cobalt.Common.Analysis;
 using Cobalt.Common.IoC;
 using Cobalt.Common.UI.ViewModels;
@@ -7,36 +10,43 @@ namespace Cobalt.ViewModels.Pages
 {
     public class HistoryPageViewModel : PageViewModel
     {
-        private IObservable<IAppDurationViewModel> _appDurations;
-        private IObservable<IAppUsageViewModel> _appUsages;
+        private DateTime? _rangeStart;
+        private DateTime? _rangeEnd;
 
-        public HistoryPageViewModel(IResourceScope scope, IAppStatsStreamService stats)
+        public HistoryPageViewModel(IResourceScope scope)
         {
-            Resources = scope;
-            Stats = stats;
         }
 
-        public IObservable<IAppDurationViewModel> AppDurations
+        public DateTime? RangeStart
         {
-            get => _appDurations;
-            set => Set(ref _appDurations, value);
+            get => _rangeStart;
+            set => Set(ref _rangeStart, value);
         }
 
-        public IObservable<IAppUsageViewModel> AppUsages
+        public DateTime? RangeEnd
         {
-            get => _appUsages;
-            set => Set(ref _appUsages, value);
+            get => _rangeEnd;
+            set => Set(ref _rangeEnd, value);
         }
 
-        public IAppStatsStreamService Stats { get; set; }
-
-        public IResourceScope Resources { get; set; }
-
+        private IObservable<EventPattern<PropertyChangedEventArgs>> PropertyChangedEvents()
+        {
+            return Observable.FromEventPattern<PropertyChangedEventHandler, PropertyChangedEventArgs>(
+                handler => handler.Invoke, h => PropertyChanged += h, h => PropertyChanged -= h);
+        }
 
         protected override void OnActivate()
         {
-            var appUsagesStream = Stats.GetAppUsages(DateTime.Today);
-            var appDurationsStream = Stats.GetAppDurations(DateTime.Today);
+            PropertyChangedEvents()
+                .Where(x =>
+                    x.EventArgs.PropertyName == nameof(RangeEnd) ||
+                    x.EventArgs.PropertyName == nameof(RangeStart))
+                .Throttle(TimeSpan.FromMilliseconds(100))
+                .Select(x => new {RangeStart, RangeEnd})
+                .Subscribe(dataRange =>
+                {
+                    //work here
+                });
         }
 
         protected override void OnDeactivate(bool close)

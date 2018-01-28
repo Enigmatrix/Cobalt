@@ -115,18 +115,13 @@
                 <ColumnDefinition />
                 <ColumnDefinition />
             </Grid.ColumnDefinitions>
-            <DatePicker Grid.Column="0" md:HintAssist.Hint="Start Date" />
+            <DatePicker Grid.Column="0" md:HintAssist.Hint="Start Date" controls:DateRangePicker.StartDateSet="{Binding SelectedDate,RelativeSource={RelativeSource Self}, Mode=TwoWay}"/>
             <md:TimePicker Grid.Column="1" Padding="0" md:TextFieldAssist.TextBoxViewMargin="0" Margin="0"
-                           md:HintAssist.Hint="Start Time" />
+                           md:HintAssist.Hint="Start Time" controls:DateRangePicker.StartTimeSet="{Binding SelectedTime,RelativeSource={RelativeSource Self}}"/>
             <TextBlock Text=" - " Grid.Column="2" VerticalAlignment="Center" Margin="5,0" />
-            <DatePicker Grid.Column="3" md:HintAssist.Hint="End Date" />
+            <DatePicker Grid.Column="3" md:HintAssist.Hint="End Date" controls:DateRangePicker.EndDateSet="{Binding SelectedDate,RelativeSource={RelativeSource Self}}"/>
             <md:TimePicker Grid.Column="4" Padding="0" md:TextFieldAssist.TextBoxViewMargin="0" Margin="0"
-                           md:HintAssist.Hint="End Time" />
+                           md:HintAssist.Hint="End Time" controls:DateRangePicker.EndTimeSet="{Binding SelectedTime,RelativeSource={RelativeSource Self}}"/>
         </Grid>
     </DataTemplate>
-
-    <Style TargetType="controls:DateRangePicker">
-        <Setter Property="Background" Value="Red" />
-    </Style>
-
 </ResourceDictionary>

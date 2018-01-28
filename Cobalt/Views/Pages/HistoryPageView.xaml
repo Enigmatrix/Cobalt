@@ -8,6 +8,10 @@
                 mc:Ignorable="d" Title="History"
                 d:DesignHeight="300" d:DesignWidth="300">
     <Grid>
-        <controls:DateRangePicker VerticalAlignment="Top" HorizontalAlignment="Right" />
+        <controls:DateRangePicker VerticalAlignment="Top" HorizontalAlignment="Right" Start="{Binding RangeStart, Mode=OneWayToSource, UpdateSourceTrigger=PropertyChanged}" End="{Binding RangeEnd, Mode=OneWayToSource, UpdateSourceTrigger=PropertyChanged}"/>
+<StackPanel Orientation="Vertical" HorizontalAlignment="Left">
+        <TextBlock Text="{Binding RangeStart}"/>
+        <TextBlock Text="{Binding RangeEnd}"/>
+        </StackPanel>
     </Grid>
 </local:PageView>
