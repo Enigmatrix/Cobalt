@@ -45,6 +45,9 @@
                                             <RowDefinition Height="48" />
                                             <RowDefinition Height="*" />
                                         </Grid.RowDefinitions>
+
+                                        <ContentControl Grid.Row="1" Content="{Binding}" />
+                                        
                                         <md:Card util:WindowUtils.DragMove="True" UniformCornerRadius="0"
                                                  md:ShadowAssist.ShadowDepth="Depth1" Grid.Row="0"
                                                  Background="{DynamicResource PrimaryHueDarkBrush}"
@@ -54,8 +57,6 @@
                                                        HorizontalAlignment="Left" FontSize="16" LineHeight="18"
                                                        FontWeight="Medium" Margin="15,0,0,2" />
                                         </md:Card>
-
-                                        <ContentControl Grid.Row="1" Content="{Binding}" />
 
                                         <!--this is the menu's shadow-->
                                         <md:Card Grid.RowSpan="2" UniformCornerRadius="0" VerticalAlignment="Stretch"

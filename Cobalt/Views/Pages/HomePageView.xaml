@@ -9,7 +9,7 @@
                 xmlns:views="clr-namespace:Cobalt.Views"
                 xmlns:converters="clr-namespace:Cobalt.Common.UI.Converters;assembly=Cobalt.Common.UI"
                 xmlns:converters1="clr-namespace:Cobalt.Views.Converters"
-                mc:Ignorable="d" Title="Home"
+                mc:Ignorable="d" Title="Home" Background="{DynamicResource MaterialDesignPaper}"
                 d:DesignHeight="300" d:DesignWidth="300">
     <Grid Margin="0,0,5,5">
         <Grid.Resources>
