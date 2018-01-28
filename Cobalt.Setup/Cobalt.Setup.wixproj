@@ -68,7 +68,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="cobalt-eula.rtf" />
-    <Content Include="CobaltCombinedTransform.xml" />
+    <Content Include="CobaltCombinedTransform.xslt" />
     <Content Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
@@ -93,7 +93,7 @@
     <Error Condition="!Exists('..\packages\WiX.3.11.1\build\wix.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\WiX.3.11.1\build\wix.props'))" />
   </Target>
   <PropertyGroup>
-    <PreBuildEvent>heat dir "$(SolutionDir)bin\$(Configuration)"  -dr INSTALLFOLDER -cg CobaltCombinedComponents -gg -g1 -sf -srd -var "var.Cobalt.TargetDir" -out "$(SolutionDir)Cobalt.Setup\CobaltCombined.wxs" -t "$(SolutionDir)Cobalt.Setup\CobaltCombinedTransform.xml"</PreBuildEvent>
+    <PreBuildEvent>heat dir "$(SolutionDir)bin\$(Configuration)"  -dr INSTALLFOLDER -cg CobaltCombinedComponents -gg -g1 -sf -srd -var "var.Cobalt.TargetDir" -out "$(SolutionDir)Cobalt.Setup\CobaltCombined.wxs" -t "$(SolutionDir)Cobalt.Setup\CobaltCombinedTransform.xslt"</PreBuildEvent>
   </PropertyGroup>
   <!--
 	To modify your build process, add your task inside one of the targets below and uncomment it.
