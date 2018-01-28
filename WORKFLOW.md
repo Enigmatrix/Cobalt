@@ -3,8 +3,9 @@
 ## Adding new projects
 - Remember to set Properties->Build->Output Path to ../bin/Release for release config for proejcts to be included in Setup input
 
-## Building
+## Building/Debugging
 - ```msbuild Cobalt.sln```
+- Prefer not to debug on Release mode, CobaltCombined.wxs will be created anew, triggering unecessary source control changes
 
 ## Release New Version
 - Add data model migrations (if any) in the [Migrations folder](/Cobalt.Common.Data/Migration/Sqlite/) with a higher version number

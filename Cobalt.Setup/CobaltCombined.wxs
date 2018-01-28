@@ -2,7 +2,7 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
     <Fragment>
         <DirectoryRef Id="INSTALLFOLDER">
-            <Directory Id="x64" Name="x64" />
+            <Directory Id="x634" Name="x64" />
             <Directory Id="x86" Name="x86" />
         </DirectoryRef>
     </Fragment>
@@ -399,7 +399,7 @@
             <Component Id="System.Windows.Interactivity.dll" Directory="INSTALLFOLDER" Guid="92C42398-C3A4-4B76-BAAB-DAF9F9A06C98">
                 <File Id="System.Windows.Interactivity.dll" KeyPath="yes" Source="$(var.Cobalt.TargetDir)\System.Windows.Interactivity.dll" />
             </Component>
-            <Component Id="SQLite.Interop.dll" Directory="x64" Guid="E1E5AD23-FCF8-4FE5-A3BC-1A590A739C2D">
+            <Component Id="SQLite.Interop.dll" Directory="x634" Guid="E1E5AD23-FCF8-4FE5-A3BC-1A590A739C2D">
                 <File Id="SQLite.Interop.dll" KeyPath="yes" Source="$(var.Cobalt.TargetDir)\x64\SQLite.Interop.dll" />
             </Component>
             <Component Id="SQLite.Interop.dll_1" Directory="x86" Guid="D4CACE0D-9221-461D-AB60-9C7C7C3D6430">
