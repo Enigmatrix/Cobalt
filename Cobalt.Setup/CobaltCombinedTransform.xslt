@@ -15,7 +15,8 @@
     </xsl:copy>
   </xsl:template>
   
-  <xsl:template match="wix:Component[(contains(wix:File/@Source, '.pdb'))]" /> 
-  <xsl:template match="wix:Component[(contains(wix:File/@Source, '.xml'))]" /> 
+  <xsl:template match="wix:Component[not(contains(wix:File/@Source, '.pdb'))]" /> 
+  <xsl:template match="wix:Component[not(contains(wix:File/@Source, '.exe'))]" /> 
+  <xsl:template match="wix:Component[not(contains(wix:File/@Source, '.exe.config'))]" /> 
 
 </xsl:stylesheet>
