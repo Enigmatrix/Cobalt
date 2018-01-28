@@ -1,5 +1,8 @@
 # Workflows
 
+## Adding new projects
+- Remember to set Properties->Build->Output Path to ../bin/Release for release config for proejcts to be included in Setup input
+
 ## Building
 - ```msbuild Cobalt.sln```
 
