@@ -11,56 +11,49 @@
                 xmlns:converters1="clr-namespace:Cobalt.Views.Converters"
                 xmlns:controls="clr-namespace:Cobalt.Views.Controls"
                 mc:Ignorable="d" Title="Home" Background="{DynamicResource MaterialDesignPaper}"
-                d:DesignHeight="300" d:DesignWidth="300">
-    <Grid Margin="0,0,5,5">
-        <Grid.Resources>
-            <converters1:HourlyUsageConverter x:Key="HourlyUsageConverter" />
-            <converters:AppDurationSeriesConverter x:Key="AppDurationSeriesConverter" />
-            <Style TargetType="materialDesign:Card">
-                <Setter Property="VerticalAlignment" Value="Stretch" />
-                <Setter Property="Margin" Value="5,5,0,0" />
-                <Setter Property="Padding" Value="5" />
-
-            </Style>
-        </Grid.Resources>
-
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition />
-            <ColumnDefinition />
-        </Grid.ColumnDefinitions>
-        <Grid.RowDefinitions>
-            <RowDefinition />
-            <RowDefinition />
-        </Grid.RowDefinitions>
-        <controls:DataCard Grid.Row="0" Grid.ColumnSpan="2">
-            <wpf:CartesianChart Series="{Binding HourlyChunks, Converter={StaticResource HourlyUsageConverter}}"
-                                DisableAnimations="True">
-                <wpf:CartesianChart.AxisY>
-                    <wpf:Axis LabelFormatter="{Binding HourFormatter}" MaxValue="36000000000">
-                        <wpf:Axis.Separator>
-                            <wpf:Separator Step="6000000000" />
-                        </wpf:Axis.Separator>
-                    </wpf:Axis>
-                </wpf:CartesianChart.AxisY>
-                <wpf:CartesianChart.AxisX>
-                    <wpf:Axis LabelFormatter="{Binding DayHourFormatter}">
-                        <wpf:Axis.Separator>
-                            <wpf:Separator Step="1" />
-                        </wpf:Axis.Separator>
-                    </wpf:Axis>
-                </wpf:CartesianChart.AxisX>
-                <wpf:CartesianChart.DataTooltip>
-                    <views:HourlyAppDurationTooltip />
-                </wpf:CartesianChart.DataTooltip>
-            </wpf:CartesianChart>
-        </controls:DataCard>
-        <controls:DataCard Grid.Row="1" Grid.Column="1">
-            <wpf:PieChart DisableAnimations="True"
-                          Series="{Binding AppDurations, Converter={StaticResource AppDurationSeriesConverter}}">
-                <wpf:PieChart.DataTooltip>
-                    <views:HourlyAppDurationTooltip />
-                </wpf:PieChart.DataTooltip>
-            </wpf:PieChart>
-        </controls:DataCard>
-    </Grid>
+                d:DesignHeight="700" d:DesignWidth="1200">
+    <local:PageView.Resources>
+        <converters1:HourlyUsageConverter x:Key="HourlyUsageConverter" />
+        <converters:AppDurationSeriesConverter x:Key="AppDurationSeriesConverter" />
+        <Style TargetType="controls:DataCard">
+            <Setter Property="Margin" Value="8,8,0,0" />
+        </Style>
+    </local:PageView.Resources>
+    <ScrollViewer VerticalScrollBarVisibility="Visible">
+        <StackPanel Orientation="Vertical" Margin="0,0,8,8">
+            <controls:DataCard Height="300" Header="App Usage by Hour">
+                <wpf:CartesianChart Series="{Binding HourlyChunks, Converter={StaticResource HourlyUsageConverter}}"
+                                    DisableAnimations="True" Margin="5,0">
+                    <wpf:CartesianChart.AxisY>
+                        <wpf:Axis LabelFormatter="{Binding HourFormatter}" MaxValue="36000000000" Position="RightTop">
+                            <wpf:Axis.Separator>
+                                <wpf:Separator Step="6000000000" />
+                            </wpf:Axis.Separator>
+                        </wpf:Axis>
+                    </wpf:CartesianChart.AxisY>
+                    <wpf:CartesianChart.AxisX>
+                        <wpf:Axis LabelFormatter="{Binding DayHourFormatter}">
+                            <wpf:Axis.Separator>
+                                <wpf:Separator Step="1" />
+                            </wpf:Axis.Separator>
+                        </wpf:Axis>
+                    </wpf:CartesianChart.AxisX>
+                    <wpf:CartesianChart.DataTooltip>
+                        <views:HourlyAppDurationTooltip />
+                    </wpf:CartesianChart.DataTooltip>
+                </wpf:CartesianChart>
+            </controls:DataCard>
+            <WrapPanel>
+                <controls:DataCard Width="200" Height="200" Header="Grouped App Usage">
+                    <wpf:PieChart DisableAnimations="True"
+                                  Series="{Binding AppDurations, Converter={StaticResource AppDurationSeriesConverter}}">
+                        <wpf:PieChart.DataTooltip>
+                            <views:HourlyAppDurationTooltip />
+                        </wpf:PieChart.DataTooltip>
+                    </wpf:PieChart>
+                </controls:DataCard>
+                <controls:DataCard Width="300" Height="700" Header="Timetable" />
+            </WrapPanel>
+        </StackPanel>
+    </ScrollViewer>
 </local:PageView>

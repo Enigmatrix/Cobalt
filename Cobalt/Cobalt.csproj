@@ -142,6 +142,8 @@
       <DependentUpon>TagsPageView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\Util\ContentDataTemplateSelector.cs" />
+    <Compile Include="Views\Util\TypedTemplateEntry.cs" />
+    <Compile Include="Views\Util\TypedTemplateSelector.cs" />
     <Compile Include="Views\Util\WindowUtil.cs" />
     <Page Include="Views\Controls\DataCard.xaml">
       <SubType>Designer</SubType>
