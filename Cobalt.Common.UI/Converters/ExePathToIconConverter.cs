@@ -33,8 +33,7 @@ namespace Cobalt.Common.UI.Converters
                 }
             }
 
-            var pathStr = value as string;
-            if (pathStr is null) return null;
+            if (!(value is string pathStr)) return null;
             if (!_iconMapper.ContainsKey(pathStr)) _iconMapper[pathStr] = Get(pathStr);
             return _iconMapper[pathStr];
         }
