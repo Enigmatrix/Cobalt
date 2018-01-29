@@ -18,6 +18,7 @@ namespace Cobalt.ViewModels.Pages
             new BindableCollection<IAppDurationViewModel>();
 
         private IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> _hourlyChunks;
+        private IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> _dayChunks;
 
         public HomePageViewModel(IResourceScope scope)
         {
@@ -31,7 +32,9 @@ namespace Cobalt.ViewModels.Pages
         }
 
         public Func<double, string> HourFormatter => x => x / 600000000 + "min";
+        public Func<double, string> DayFormatter => x => x == 0 ? "" : (x / 36000000000 + (x == 1 ? "hr" : "hrs"));
         public Func<double, string> DayHourFormatter => x => (x % 12 == 0 ? 12 : x % 12) + (x >= 12 ? "pm" : "am");
+        public Func<double, string> DayOfWeekFormatter => x => ((DayOfWeek) (int)x).ToString();
 
         private IResourceScope GlobalResources { get; }
         private IResourceScope Resources { get; set; }
@@ -50,12 +53,15 @@ namespace Cobalt.ViewModels.Pages
             Resources = GlobalResources.Subscope();
             var stats = Resources.Resolve<IAppStatsStreamService>();
             var appUsagesStream = stats.GetAppUsages(DateTime.Today, DateTime.Now); //.Publish();
+            var weekAppUsagesStream = stats.GetAppUsages(DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek), DateTime.Now); //.Publish();
             var appDurationsStream = stats.GetAppDurations(DateTime.Today); //.Publish();
             var appIncrementor = Resources.Resolve<IDurationIncrementor>();
 
             HourlyChunks = appUsagesStream
                 .SelectMany(SplitUsageIntoHourChunks);
 
+            DayChunks = weekAppUsagesStream
+                .SelectMany(SplitUsageIntoDayChunks);
 
             appDurationsStream
                 .Select(x =>
@@ -75,6 +81,12 @@ namespace Cobalt.ViewModels.Pages
             //appUsagesStream.Connect().ManageUsing(GlobalResources);
         }
 
+        public IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> DayChunks
+        {
+            get => _dayChunks;
+            set => Set(ref _dayChunks, value);
+        }
+
         //TODO move this to common
 
         private IEnumerable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> SplitUsageIntoHourChunks(
@@ -87,6 +99,24 @@ namespace Cobalt.ViewModels.Pages
             {
                 var startHr = start.Subtract(new TimeSpan(0, 0, start.Minute, start.Second, start.Millisecond));
                 var endHr = Min(startHr.AddHours(1), end);
+                if (!(endHr < end) && usage.JustStarted)
+                    yield return new Usage<(App, DateTime, TimeSpan)>(justStarted: true,
+                        value: (appUsage.App, startHr, TimeSpan.Zero));
+                else
+                    yield return new Usage<(App, DateTime, TimeSpan)>((appUsage.App, startHr, endHr - start));
+                start = endHr;
+            }
+        }
+        private IEnumerable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> SplitUsageIntoDayChunks(
+            Usage<AppUsage> usage)
+        {
+            var appUsage = usage.Value;
+            var start = appUsage.StartTimestamp;
+            var end = appUsage.EndTimestamp;
+            while (start < end)
+            {
+                var startHr = start.Date;
+                var endHr = Min(startHr.AddDays(1), end);
                 if (!(endHr < end) && usage.JustStarted)
                     yield return new Usage<(App, DateTime, TimeSpan)>(justStarted: true,
                         value: (appUsage.App, startHr, TimeSpan.Zero));
