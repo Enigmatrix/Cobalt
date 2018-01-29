@@ -118,6 +118,9 @@
     <Compile Include="ViewModels\Pages\TagsPageViewModel.cs" />
     <Compile Include="ViewModels\Pages\SettingsPageViewModel.cs" />
     <Compile Include="ViewModels\Pages\AppsPageViewModel.cs" />
+    <Compile Include="Views\Controls\DataCard.xaml.cs">
+      <DependentUpon>DataCard.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\Controls\DateRangePicker.xaml.cs">
       <DependentUpon>DateRangePicker.xaml</DependentUpon>
     </Compile>
@@ -140,6 +143,10 @@
     </Compile>
     <Compile Include="Views\Util\ContentDataTemplateSelector.cs" />
     <Compile Include="Views\Util\WindowUtil.cs" />
+    <Page Include="Views\Controls\DataCard.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Views\Controls\DateRangePicker.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

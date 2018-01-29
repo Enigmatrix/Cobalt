@@ -9,6 +9,7 @@
                 xmlns:views="clr-namespace:Cobalt.Views"
                 xmlns:converters="clr-namespace:Cobalt.Common.UI.Converters;assembly=Cobalt.Common.UI"
                 xmlns:converters1="clr-namespace:Cobalt.Views.Converters"
+                xmlns:controls="clr-namespace:Cobalt.Views.Controls"
                 mc:Ignorable="d" Title="Home" Background="{DynamicResource MaterialDesignPaper}"
                 d:DesignHeight="300" d:DesignWidth="300">
     <Grid Margin="0,0,5,5">
@@ -31,11 +32,11 @@
             <RowDefinition />
             <RowDefinition />
         </Grid.RowDefinitions>
-        <materialDesign:Card Grid.Row="0" Grid.ColumnSpan="2">
+        <controls:DataCard Grid.Row="0" Grid.ColumnSpan="2">
             <wpf:CartesianChart Series="{Binding HourlyChunks, Converter={StaticResource HourlyUsageConverter}}"
                                 DisableAnimations="True">
                 <wpf:CartesianChart.AxisY>
-                    <wpf:Axis LabelFormatter="{Binding HourFormatter}" MaxValue="36000000000" IsMerged="True">
+                    <wpf:Axis LabelFormatter="{Binding HourFormatter}" MaxValue="36000000000">
                         <wpf:Axis.Separator>
                             <wpf:Separator Step="6000000000" />
                         </wpf:Axis.Separator>
@@ -52,14 +53,14 @@
                     <views:HourlyAppDurationTooltip />
                 </wpf:CartesianChart.DataTooltip>
             </wpf:CartesianChart>
-        </materialDesign:Card>
-        <materialDesign:Card Grid.Row="1" Grid.Column="1">
+        </controls:DataCard>
+        <controls:DataCard Grid.Row="1" Grid.Column="1">
             <wpf:PieChart DisableAnimations="True"
                           Series="{Binding AppDurations, Converter={StaticResource AppDurationSeriesConverter}}">
                 <wpf:PieChart.DataTooltip>
                     <views:HourlyAppDurationTooltip />
                 </wpf:PieChart.DataTooltip>
             </wpf:PieChart>
-        </materialDesign:Card>
+        </controls:DataCard>
     </Grid>
 </local:PageView>
