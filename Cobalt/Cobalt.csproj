@@ -124,6 +124,7 @@
     <Compile Include="Views\Controls\DateRangePicker.xaml.cs">
       <DependentUpon>DateRangePicker.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Views\Converters\ScopedAppDurationSeriesConverter.cs" />
     <Compile Include="Views\Converters\AppMenuItemToTypeConverter.cs" />
     <Compile Include="Views\Converters\PerWeekUsageConverter.cs" />
     <Compile Include="Views\Pages\AppsPageView.xaml.cs">

@@ -2,20 +2,38 @@
 using System.ComponentModel;
 using System.Reactive;
 using System.Reactive.Linq;
+using Caliburn.Micro;
 using Cobalt.Common.Analysis;
 using Cobalt.Common.IoC;
+using Cobalt.Common.UI.Util;
 using Cobalt.Common.UI.ViewModels;
 
 namespace Cobalt.ViewModels.Pages
 {
     public class HistoryPageViewModel : PageViewModel
     {
-        private DateTime? _rangeStart;
-        private DateTime? _rangeEnd;
+        private BindableCollection<IAppDurationViewModel> _appDurations =
+            new BindableCollection<IAppDurationViewModel>();
 
-        public HistoryPageViewModel(IResourceScope scope)
+        private DateTime? _rangeEnd;
+        private DateTime? _rangeStart;
+
+        public HistoryPageViewModel(IResourceScope scope, IAppStatsStreamService stats)
         {
+            GlobalResources = scope;
+            Stats = stats;
         }
+
+        public BindableCollection<IAppDurationViewModel> AppDurations
+        {
+            get => _appDurations;
+            set => Set(ref _appDurations, value);
+        }
+
+        public IAppStatsStreamService Stats { get; set; }
+
+        public IResourceScope Resources { get; set; }
+        public IResourceScope GlobalResources { get; set; }
 
         public DateTime? RangeStart
         {
@@ -45,7 +63,40 @@ namespace Cobalt.ViewModels.Pages
                 .Select(x => new {RangeStart, RangeEnd})
                 .Subscribe(dataRange =>
                 {
-                    //work here
+                    AppDurations?.Clear();
+                    Resources?.Dispose();
+                    Resources = GlobalResources.Subscope();
+
+                    if (dataRange.RangeStart == null && dataRange.RangeEnd == null) return;
+
+                    var stats = Resources.Resolve<IAppStatsStreamService>();
+                    var appDurationsStream =
+                        stats.GetAppDurations(dataRange.RangeStart ?? DateTime.MinValue,
+                            dataRange.RangeEnd); //.Publish();
+                    var appIncrementor = Resources.Resolve<IDurationIncrementor>();
+
+
+                    appDurationsStream
+                        .Select(x =>
+                        {
+                            var appDur = new AppDurationViewModel(x.App);
+
+                            x.Duration
+                                .Subscribe(d =>
+                                {
+                                    if(!d.JustStarted)
+                                        appDur.Duration += d.Value;
+                                })
+                                .ManageUsing(Resources);
+
+                            return appDur;
+                        })
+                        .Buffer(TimeSpan.FromMilliseconds(300))
+                        .Subscribe(x =>
+                        {
+                            if(x.Count != 0)
+                                AppDurations.AddRange(x);
+                        }).ManageUsing(Resources);
                 });
         }
 

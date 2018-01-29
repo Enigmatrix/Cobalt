@@ -5,13 +5,30 @@
                 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                 xmlns:local="clr-namespace:Cobalt.Views.Pages"
                 xmlns:controls="clr-namespace:Cobalt.Views.Controls"
+                xmlns:converters="clr-namespace:Cobalt.Common.UI.Converters;assembly=Cobalt.Common.UI"
+                xmlns:wpf="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
+                xmlns:views="clr-namespace:Cobalt.Views"
+                xmlns:converters1="clr-namespace:Cobalt.Views.Converters"
                 mc:Ignorable="d" Title="History"
                 d:DesignHeight="300" d:DesignWidth="300">
+                <local:PageView.Resources>
+
+        <converters1:ScopedAppDurationSeriesConverter x:Key="AppDurationSeriesConverter" />
+                </local:PageView.Resources>
     <Grid>
         <controls:DateRangePicker VerticalAlignment="Top" HorizontalAlignment="Right" Start="{Binding RangeStart, Mode=OneWayToSource, UpdateSourceTrigger=PropertyChanged}" End="{Binding RangeEnd, Mode=OneWayToSource, UpdateSourceTrigger=PropertyChanged}"/>
 <StackPanel Orientation="Vertical" HorizontalAlignment="Left">
         <TextBlock Text="{Binding RangeStart}"/>
         <TextBlock Text="{Binding RangeEnd}"/>
         </StackPanel>
+        
+                <controls:DataCard Width="300" Height="300" Header="Today">
+                    <wpf:PieChart DisableAnimations="True"
+                                  Series="{Binding AppDurations, Converter={StaticResource AppDurationSeriesConverter}}">
+                        <wpf:PieChart.DataTooltip>
+                            <views:HourlyAppDurationTooltip />
+                        </wpf:PieChart.DataTooltip>
+                    </wpf:PieChart>
+                </controls:DataCard>
     </Grid>
 </local:PageView>
