@@ -58,11 +58,10 @@ namespace Cobalt.Engine
             IntPtr hwineventhook, uint eventtype, IntPtr hwnd, int idobject, int idchild, uint dweventthread,
             uint dwmseventtime)
         {
+            var dwmsTimestamp = DateTime.Now.AddMilliseconds(dwmseventtime - Environment.TickCount);
             lock (_appUsageLock)
             {
-                var dwmsTimestamp = DateTime.Now.AddMilliseconds(dwmseventtime - Environment.TickCount);
                 var path = _pathResolver.ResolveWindowPath(hwnd);
-
                 if (string.IsNullOrEmpty(path) || path == _prevPath) return;
 
                 RecordForegroundAppUsage(path, dwmsTimestamp);

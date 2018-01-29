@@ -91,7 +91,7 @@ namespace Cobalt.ViewModels.Pages
 
                             return appDur;
                         })
-                        .Buffer(TimeSpan.FromMilliseconds(300))
+                        .Buffer(TimeSpan.FromMilliseconds(50))
                         .Subscribe(x =>
                         {
                             if(x.Count != 0)
