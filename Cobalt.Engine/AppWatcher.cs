@@ -41,8 +41,9 @@ namespace Cobalt.Engine
 
         private void RecordForegroundAppUsage(string path, DateTime endTime)
         {
-            //TODO make sure
-            if (!_recording) return;
+            //Sometimes the duration is negative, but only by a few nanoseconds.
+            //It is mostly harmless, but the charts considers them as having larger duration than other durations
+            if (!_recording || endTime < _prevFgChangeTime) return;
             _prev = ForegroundAppUsage(_prevFgChangeTime, endTime, _prevPath);
             ForegroundAppUsageObtained(this,
                 new ForegroundAppSwitchEventArgs(_prev, path == null ? null : new App {Path = path}));
