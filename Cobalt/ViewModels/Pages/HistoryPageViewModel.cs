@@ -12,18 +12,17 @@ namespace Cobalt.ViewModels.Pages
 {
     public class HistoryPageViewModel : PageViewModel
     {
-        private BindableCollection<IAppDurationViewModel> _appDurations =
-            new BindableCollection<IAppDurationViewModel>();
 
         private DateTime? _rangeEnd;
         private DateTime? _rangeStart;
+        private IObservable<IAppDurationViewModel> _appDurations;
 
         public HistoryPageViewModel(IResourceScope scope, IAppStatsStreamService stats) : base(scope)
         {
             Stats = stats;
         }
 
-        public BindableCollection<IAppDurationViewModel> AppDurations
+        public IObservable<IAppDurationViewModel> AppDurations
         {
             get => _appDurations;
             set => Set(ref _appDurations, value);
@@ -59,7 +58,6 @@ namespace Cobalt.ViewModels.Pages
                 .Select(x => new {RangeStart, RangeEnd})
                 .Subscribe(dataRange =>
                 {
-                    AppDurations.Clear();
 
                     if (dataRange.RangeStart == null && dataRange.RangeEnd == null) return;
 
@@ -69,7 +67,7 @@ namespace Cobalt.ViewModels.Pages
                             dataRange.RangeEnd); //.Publish();
 
 
-                    appDurationsStream
+                    AppDurations = appDurationsStream
                         .Select(x =>
                         {
                             var appDur = new AppDurationViewModel(x.App);
@@ -77,25 +75,18 @@ namespace Cobalt.ViewModels.Pages
                             x.Duration
                                 .Subscribe(d =>
                                 {
-                                    if(!d.JustStarted)
+                                    if (!d.JustStarted)
                                         appDur.Duration += d.Value;
                                 })
                                 .ManageUsing(res);
 
                             return appDur;
-                        })
-                        .Buffer(TimeSpan.FromMilliseconds(50))
-                        .Subscribe(x =>
-                        {
-                            if(x.Count != 0)
-                                AppDurations.AddRange(x);
-                        }).ManageUsing(res);
-                });
+                        });
+                }).ManageUsing(res);
         }
 
         protected override void OnDeactivate(bool close, IResourceScope res)
         {
-                    AppDurations.Clear();
         }
     }
 }
