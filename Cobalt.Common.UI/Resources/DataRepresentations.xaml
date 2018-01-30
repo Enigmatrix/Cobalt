@@ -17,10 +17,4 @@
                Height="{Binding Point.Participation, Converter={StaticResource SizeConverter}}"
                Width="{Binding Point.Participation, Converter={StaticResource SizeConverter}}" />
     </DataTemplate>
-    <DataTemplate x:Key="ScopedAppPieRepresentation" DataType="liveCharts:DataLabelViewModel">
-        <Image Source="{Binding Point.Instance.App.Path, Converter={StaticResource ExePathToIconConverter}, Mode=OneTime, IsAsync=True}"
-               Stretch="Fill"
-               Height="{Binding Point.Participation, Converter={StaticResource SizeConverter}}"
-               Width="{Binding Point.Participation, Converter={StaticResource SizeConverter}}" />
-    </DataTemplate>
 </ResourceDictionary>

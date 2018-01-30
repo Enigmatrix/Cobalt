@@ -46,8 +46,13 @@
             </controls:DataCard>
             <WrapPanel>
                 <controls:DataCard Width="300" Height="300" Header="Today">
-                    <wpf:PieChart DisableAnimations="True"
-                                  Series="{Binding AppDurations, Converter={StaticResource AppDurationSeriesConverter}}">
+                    <wpf:PieChart DisableAnimations="True">
+                        <wpf:PieChart.Series>
+                            <MultiBinding Converter="{StaticResource AppDurationSeriesConverter}">
+                                <Binding Path="AppDurations"/>
+                                <Binding Path="Resources"/>
+                            </MultiBinding>
+                        </wpf:PieChart.Series>
                         <wpf:PieChart.DataTooltip>
                             <views:HourlyAppDurationTooltip />
                         </wpf:PieChart.DataTooltip>

@@ -12,12 +12,9 @@
                 mc:Ignorable="d" Title="History" x:Name="Page"
                 d:DesignHeight="300" d:DesignWidth="300">
     <local:PageView.Resources>
-        <FrameworkElement x:Key="Proxy" DataContext="{Binding}"/>
-        <converters1:ScopedAppDurationSeriesConverter x:Key="AppDurationSeriesConverter" Manager="{Binding DataContext.Resources, Source={StaticResource Proxy}}" />
+        <converters:AppDurationSeriesConverter x:Key="AppDurationSeriesConverter" />
     </local:PageView.Resources>
     <Grid>
-        <ContentControl Visibility="Collapsed"
-                        Content="{StaticResource Proxy}"/>
         <controls:DateRangePicker VerticalAlignment="Top" HorizontalAlignment="Right"
                                   Start="{Binding RangeStart, Mode=OneWayToSource, UpdateSourceTrigger=PropertyChanged}"
                                   End="{Binding RangeEnd, Mode=OneWayToSource, UpdateSourceTrigger=PropertyChanged}" />
@@ -27,8 +24,13 @@
         </StackPanel>
 
         <controls:DataCard Width="300" Height="300" Header="Today">
-            <wpf:PieChart DisableAnimations="True"
-                          Series="{Binding AppDurations, Converter={StaticResource AppDurationSeriesConverter}}">
+            <wpf:PieChart DisableAnimations="True">
+                <wpf:PieChart.Series>
+                    <MultiBinding Converter="{StaticResource AppDurationSeriesConverter}">
+                        <Binding Path="AppDurations" />
+                        <Binding Path="Resources" />
+                    </MultiBinding>
+                </wpf:PieChart.Series>
                 <wpf:PieChart.DataTooltip>
                     <views:HourlyAppDurationTooltip />
                 </wpf:PieChart.DataTooltip>

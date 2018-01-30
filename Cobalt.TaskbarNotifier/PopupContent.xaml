@@ -28,8 +28,13 @@
                            FontSize="20" Style="{DynamicResource MaterialDesignTitleTextBlock}" />
             </StackPanel>
         </materialDesign:Card>
-        <lv:PieChart DisableAnimations="True" Grid.Row="1"
-                     Series="{Binding AppDurations, Converter={StaticResource AppDurationSeriesConverter}}">
+        <lv:PieChart DisableAnimations="True" Grid.Row="1">
+            <lv:PieChart.Series>
+                <MultiBinding Converter="{StaticResource AppDurationSeriesConverter}">
+                    <Binding Path="AppDurations" />
+                    <Binding Path="Resources" />
+                </MultiBinding>
+            </lv:PieChart.Series>
             <lv:PieChart.DataTooltip>
                 <local:AppDurationTooltip />
             </lv:PieChart.DataTooltip>

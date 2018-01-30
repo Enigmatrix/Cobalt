@@ -74,6 +74,9 @@
     <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
+    <Reference Include="System.Reactive, Version=4.0.0.0, Culture=neutral, PublicKeyToken=94bc3704cddfc263, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Reactive.4.0.0-preview00001\lib\net45\System.Reactive.dll</HintPath>
+    </Reference>
     <Reference Include="System.Windows.Interactivity, Version=4.5.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\ControlzEx.3.0.2.4\lib\net45\System.Windows.Interactivity.dll</HintPath>
       <Private>True</Private>
@@ -93,12 +96,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Bootstrapper.cs" />
-    <Compile Include="Converters\AppDurationSeriesConverter.cs" />
     <Compile Include="Converters\AppIconSizeConverter.cs" />
     <Compile Include="Converters\AppToExeNameConverter.cs" />
     <Compile Include="Converters\ExePathToIconConverter.cs" />
     <Compile Include="Converters\HumanReadableTimeSpanConverter.cs" />
     <Compile Include="Converters\IsEqualToConverter.cs" />
+    <Compile Include="Converters\AppDurationSeriesConverter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>

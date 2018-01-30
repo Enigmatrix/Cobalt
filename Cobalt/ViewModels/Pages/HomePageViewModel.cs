@@ -14,18 +14,17 @@ namespace Cobalt.ViewModels.Pages
 {
     public class HomePageViewModel : PageViewModel
     {
-        private BindableCollection<IAppDurationViewModel> _appDurations =
-            new BindableCollection<IAppDurationViewModel>();
 
         private IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> _hourlyChunks;
         private IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> _dayChunks;
+        private IObservable<IAppDurationViewModel> _appDurations;
 
         public HomePageViewModel(IResourceScope scope) : base(scope)
         {
 
         }
 
-        public BindableCollection<IAppDurationViewModel> AppDurations
+        public IObservable<IAppDurationViewModel> AppDurations
         {
             get => _appDurations;
             set => Set(ref _appDurations, value);
@@ -59,7 +58,7 @@ namespace Cobalt.ViewModels.Pages
             DayChunks = weekAppUsagesStream
                 .SelectMany(SplitUsageIntoDayChunks);
 
-            appDurationsStream
+            AppDurations = appDurationsStream
                 .Select(x =>
                 {
                     var appDur = new AppDurationViewModel(x.App);
@@ -69,10 +68,7 @@ namespace Cobalt.ViewModels.Pages
                         .ManageUsing(res);
 
                     return appDur;
-                })
-                .ObserveOnDispatcher()
-                .Subscribe(x =>
-                    AppDurations.Add(x));
+                });
         }
 
         public IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> DayChunks
@@ -127,7 +123,6 @@ namespace Cobalt.ViewModels.Pages
 
         protected override void OnDeactivate(bool close, IResourceScope res)
         {
-            AppDurations.Clear();
         }
     }
 }

@@ -12,7 +12,7 @@ namespace Cobalt.TaskbarNotifier
 {
     public interface IMainViewModel : IViewModel
     {
-        BindableCollection<IAppDurationViewModel> AppDurations { get; }
+        IObservable<IAppDurationViewModel> AppDurations { get; }
         BindableCollection<ITagDurationViewModel> TagDurations { get; }
         TimeSpan TotalDuration { get; set; }
         void PopupOpened();
@@ -22,8 +22,6 @@ namespace Cobalt.TaskbarNotifier
 
     public class MainViewModel : ViewModelBase, IMainViewModel
     {
-        private BindableCollection<IAppDurationViewModel> _appDurations =
-            new BindableCollection<IAppDurationViewModel>();
 
         private bool _isPopupOpen;
 
@@ -31,6 +29,7 @@ namespace Cobalt.TaskbarNotifier
             new BindableCollection<ITagDurationViewModel>();
 
         private TimeSpan _totalDuration;
+        private IObservable<IAppDurationViewModel> _appDurations;
 
 
         public MainViewModel(IResourceScope res)
@@ -39,7 +38,7 @@ namespace Cobalt.TaskbarNotifier
         }
 
         private IResourceScope Global { get; }
-        private IResourceScope Current { get; set; }
+        private IResourceScope Resources { get; set; }
 
         public bool IsPopupOpen
         {
@@ -47,7 +46,7 @@ namespace Cobalt.TaskbarNotifier
             set => Set(ref _isPopupOpen, value);
         }
 
-        public BindableCollection<IAppDurationViewModel> AppDurations
+        public IObservable<IAppDurationViewModel> AppDurations
         {
             get => _appDurations;
             set => Set(ref _appDurations, value);
@@ -73,28 +72,28 @@ namespace Cobalt.TaskbarNotifier
             IsPopupOpen = true;
 
             //TODO http://www.introtorx.com/content/v1.0.10621.0/14_HotAndColdObservables.html#HotAndCold try this later
-            Current = Global.Subscope();
-            var stats = Current.Resolve<IAppStatsStreamService>();
+            Resources = Global.Subscope();
+            var stats = Resources.Resolve<IAppStatsStreamService>();
 
             var appUsageStream = stats.GetAppDurations(DateTime.Today).Publish();
 
             var hasTotalDur = HasDuration.From(
                 () => TotalDuration, x => TotalDuration = x);
 
-            var appIncrementor = Current.Resolve<IDurationIncrementor>();
-            var totalDurationIncrementor = Current.Resolve<IDurationIncrementor>();
-            //var tagIncrementor = Current.Resolve<IDurationIncrementor>();
+            var appIncrementor = Resources.Resolve<IDurationIncrementor>();
+            var totalDurationIncrementor = Resources.Resolve<IDurationIncrementor>();
+            //var tagIncrementor = Resources.Resolve<IDurationIncrementor>();
 
-            /*var repo = Current.Resolve<IDbRepository>();
+            /*var repo = Resources.Resolve<IDbRepository>();
 
             repo.GetIdleDurations(TimeSpan.FromMinutes(1), DateTime.Today)
                 .Sum(t => (t.End - t.Start).Ticks)
                 .Select(TimeSpan.FromTicks)
                 .ObserveOnDispatcher()
                 .Subscribe(x => IdleTime = x)
-                .ManageUsing(Current);*/
+                .ManageUsing(Resources);*/
 
-            appUsageStream
+            AppDurations = appUsageStream
                 .Select(x =>
                 {
                     //random bug - this is called even though the popup is closed and this has been disposed
@@ -107,13 +106,10 @@ namespace Cobalt.TaskbarNotifier
                             if (!IsPopupOpen) return;
                             appDur.DurationIncrement(d, appIncrementor);
                         })
-                        .ManageUsing(Current);
+                        .ManageUsing(Resources);
 
                     return appDur;
-                })
-                .ObserveOnDispatcher()
-                .Subscribe(x =>
-                    AppDurations.Add(x));
+                });
 
             appUsageStream
                 .Select(x => x.Duration)
@@ -132,26 +128,26 @@ namespace Cobalt.TaskbarNotifier
 
                     x.Duration
                         .Subscribe(d => DurationIncrement(d, tagIncrementor, tagDur))
-                        .ManageUsing(Current);
+                        .ManageUsing(Resources);
 
                     return tagDur;
                 })
                 
                 //TODO after converter and views are made
                 .Subscribe(x => TagDurations.Add(x))
-                .ManageUsing(Current)
+                .ManageUsing(Resources)
                 */
 
             appUsageStream.Connect()
-                .ManageUsing(Current);
+                .ManageUsing(Resources);
         }
 
         public void PopupClosed()
         {
             IsPopupOpen = false;
-            Current.Dispose();
+            Resources.Dispose();
             TotalDuration = TimeSpan.Zero;
-            AppDurations.Clear();
+            AppDurations = null;
             TagDurations.Clear();
         }
 
