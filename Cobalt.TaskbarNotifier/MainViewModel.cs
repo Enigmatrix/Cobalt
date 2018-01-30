@@ -30,6 +30,7 @@ namespace Cobalt.TaskbarNotifier
 
         private TimeSpan _totalDuration;
         private IObservable<IAppDurationViewModel> _appDurations;
+        private IResourceScope _resources;
 
 
         public MainViewModel(IResourceScope res)
@@ -38,7 +39,12 @@ namespace Cobalt.TaskbarNotifier
         }
 
         private IResourceScope Global { get; }
-        private IResourceScope Resources { get; set; }
+
+        public IResourceScope Resources
+        {
+            get => _resources;
+            set => Set(ref _resources, value);
+        }
 
         public bool IsPopupOpen
         {

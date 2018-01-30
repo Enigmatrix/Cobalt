@@ -33,11 +33,11 @@ namespace Cobalt.Common.UI.Converters
                 !(values[1] is IResourceScope manager)) return null;
 
             var mapper = Mappers
-                .Pie<IAppDurationViewModel>()
+                .Pie<AppDurationViewModel>()
                 .Value(x => x.Duration.Ticks);
             var series = new SeriesCollection(mapper);
 
-            PieSeries ToSeries(IAppDurationViewModel newAppDur)
+            PieSeries ToSeries(AppDurationViewModel newAppDur)
             {
                 return new PieSeries
                 {
@@ -45,7 +45,7 @@ namespace Cobalt.Common.UI.Converters
                     DataLabels = true,
                     LabelPoint = LabelPoint,
                     DataLabelsTemplate = (DataTemplate) Application.Current.Resources["AppPieRepresentation"],
-                    Values = new ChartValues<IAppDurationViewModel>
+                    Values = new ChartValues<AppDurationViewModel>
                     {
                         newAppDur
                     }
@@ -53,11 +53,11 @@ namespace Cobalt.Common.UI.Converters
             }
 
             var sub = BufferDuration == TimeSpan.Zero
-                ? coll.ObserveOnDispatcher().Subscribe(x => series.Add(ToSeries(x)))
+                ? coll.ObserveOnDispatcher().Subscribe(x => series.Add(ToSeries((AppDurationViewModel)x)))
                 : coll.Buffer(BufferDuration)
                     .Where(x => x.Count != 0)
                     .ObserveOnDispatcher()
-                    .Subscribe(x => series.AddRange(x.Select(ToSeries)));
+                    .Subscribe(x => series.AddRange(x.Cast<AppDurationViewModel>().Select(ToSeries)));
 
             sub.ManageUsing(manager);
             return series;
