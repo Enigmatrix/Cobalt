@@ -7,6 +7,6 @@
                 mc:Ignorable="d" Title="Tags"
                 d:DesignHeight="300" d:DesignWidth="300">
     <Grid>
-        <TextBlock Foreground="Red">SOME TAGS HAHAAHH</TextBlock>
+        <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Text="Coming soon!" Style="{DynamicResource MaterialDesignDisplay3TextBlock}"/>
     </Grid>
 </local:PageView>

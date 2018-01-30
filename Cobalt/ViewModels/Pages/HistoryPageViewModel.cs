@@ -18,9 +18,8 @@ namespace Cobalt.ViewModels.Pages
         private DateTime? _rangeEnd;
         private DateTime? _rangeStart;
 
-        public HistoryPageViewModel(IResourceScope scope, IAppStatsStreamService stats)
+        public HistoryPageViewModel(IResourceScope scope, IAppStatsStreamService stats) : base(scope)
         {
-            GlobalResources = scope;
             Stats = stats;
         }
 
@@ -31,9 +30,6 @@ namespace Cobalt.ViewModels.Pages
         }
 
         public IAppStatsStreamService Stats { get; set; }
-
-        public IResourceScope Resources { get; set; }
-        public IResourceScope GlobalResources { get; set; }
 
         public DateTime? RangeStart
         {
@@ -53,7 +49,7 @@ namespace Cobalt.ViewModels.Pages
                 handler => handler.Invoke, h => PropertyChanged += h, h => PropertyChanged -= h);
         }
 
-        protected override void OnActivate()
+        protected override void OnActivate(IResourceScope res)
         {
             PropertyChangedEvents()
                 .Where(x =>
@@ -63,17 +59,14 @@ namespace Cobalt.ViewModels.Pages
                 .Select(x => new {RangeStart, RangeEnd})
                 .Subscribe(dataRange =>
                 {
-                    AppDurations?.Clear();
-                    Resources?.Dispose();
-                    Resources = GlobalResources.Subscope();
+                    AppDurations.Clear();
 
                     if (dataRange.RangeStart == null && dataRange.RangeEnd == null) return;
 
-                    var stats = Resources.Resolve<IAppStatsStreamService>();
+                    var stats = res.Resolve<IAppStatsStreamService>();
                     var appDurationsStream =
                         stats.GetAppDurations(dataRange.RangeStart ?? DateTime.MinValue,
                             dataRange.RangeEnd); //.Publish();
-                    var appIncrementor = Resources.Resolve<IDurationIncrementor>();
 
 
                     appDurationsStream
@@ -87,7 +80,7 @@ namespace Cobalt.ViewModels.Pages
                                     if(!d.JustStarted)
                                         appDur.Duration += d.Value;
                                 })
-                                .ManageUsing(Resources);
+                                .ManageUsing(res);
 
                             return appDur;
                         })
@@ -96,12 +89,13 @@ namespace Cobalt.ViewModels.Pages
                         {
                             if(x.Count != 0)
                                 AppDurations.AddRange(x);
-                        }).ManageUsing(Resources);
+                        }).ManageUsing(res);
                 });
         }
 
-        protected override void OnDeactivate(bool close)
+        protected override void OnDeactivate(bool close, IResourceScope res)
         {
+                    AppDurations.Clear();
         }
     }
 }

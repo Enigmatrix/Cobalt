@@ -20,9 +20,9 @@ namespace Cobalt.ViewModels.Pages
         private IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> _hourlyChunks;
         private IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> _dayChunks;
 
-        public HomePageViewModel(IResourceScope scope)
+        public HomePageViewModel(IResourceScope scope) : base(scope)
         {
-            GlobalResources = scope;
+
         }
 
         public BindableCollection<IAppDurationViewModel> AppDurations
@@ -36,9 +36,6 @@ namespace Cobalt.ViewModels.Pages
         public Func<double, string> DayHourFormatter => x => (x % 12 == 0 ? 12 : x % 12) + (x >= 12 ? "pm" : "am");
         public Func<double, string> DayOfWeekFormatter => x => ((DayOfWeek) (int)x).ToString();
 
-        private IResourceScope GlobalResources { get; }
-        private IResourceScope Resources { get; set; }
-
         private static IEqualityComparer<App> PathEquality { get; }
             = new SelectorEqualityComparer<App, string>(a => a.Path);
 
@@ -48,14 +45,13 @@ namespace Cobalt.ViewModels.Pages
             set => Set(ref _hourlyChunks, value);
         }
 
-        protected override void OnActivate()
+        protected override void OnActivate(IResourceScope res)
         {
-            Resources = GlobalResources.Subscope();
-            var stats = Resources.Resolve<IAppStatsStreamService>();
+            var stats = res.Resolve<IAppStatsStreamService>();
             var appUsagesStream = stats.GetAppUsages(DateTime.Today, DateTime.Now); //.Publish();
             var weekAppUsagesStream = stats.GetAppUsages(DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek), DateTime.Now); //.Publish();
             var appDurationsStream = stats.GetAppDurations(DateTime.Today); //.Publish();
-            var appIncrementor = Resources.Resolve<IDurationIncrementor>();
+            var appIncrementor = res.Resolve<IDurationIncrementor>();
 
             HourlyChunks = appUsagesStream
                 .SelectMany(SplitUsageIntoHourChunks);
@@ -70,15 +66,13 @@ namespace Cobalt.ViewModels.Pages
 
                     x.Duration
                         .Subscribe(d => { appDur.DurationIncrement(d, appIncrementor); })
-                        .ManageUsing(Resources);
+                        .ManageUsing(res);
 
                     return appDur;
                 })
                 .ObserveOnDispatcher()
                 .Subscribe(x =>
                     AppDurations.Add(x));
-
-            //appUsagesStream.Connect().ManageUsing(GlobalResources);
         }
 
         public IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> DayChunks
@@ -131,11 +125,9 @@ namespace Cobalt.ViewModels.Pages
             return a.CompareTo(b) < 0 ? a : b;
         }
 
-        protected override void OnDeactivate(bool close)
+        protected override void OnDeactivate(bool close, IResourceScope res)
         {
             AppDurations.Clear();
-            Resources.Dispose();
-            if (close) GlobalResources.Dispose();
         }
     }
 }
