@@ -1,7 +1,4 @@
-﻿using System;
-using Cobalt.Common.Analysis;
-using Cobalt.Common.IoC;
-using Cobalt.Common.UI.ViewModels;
+﻿using Cobalt.Common.IoC;
 
 namespace Cobalt.ViewModels.Pages
 {

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Data.SQLite;
@@ -134,13 +133,14 @@ namespace Cobalt.Common.Data.Repository
             var (startTicks, endTicks) = ToTickRange(start, end);
             return Get(@"select a.Id, a.Name, a.Path, 
 								au.Id, au.AppId, au.UsageType, 
-								(case when au.StartTimestamp < @start then @start else au.StartTimestamp end), (case when au.EndTimestamp > @end then @end else au.EndTimestamp end), 
+								(case when au.StartTimestamp < @start then @start else au.StartTimestamp end),
+                                (case when au.EndTimestamp > @end then @end else au.EndTimestamp end), 
 								au.UsageStartReason, au.UsageEndReason  
 							from AppUsage au, App a
 							where StartTimestamp <= @end and EndTimestamp >= @start and au.AppId = a.Id",
-                r => AppUsageMapper(r, AppOffset, AppMapper(r)),
-                ("start", startTicks),
-                ("end", endTicks))
+                    r => AppUsageMapper(r, AppOffset, AppMapper(r)),
+                    ("start", startTicks),
+                    ("end", endTicks))
                 .Do(appUsage => appUsage.App.Tags = GetTags(appUsage.App));
         }
 
@@ -150,7 +150,8 @@ namespace Cobalt.Common.Data.Repository
             var (startTicks, endTicks) = ToTickRange(start, end);
             return Get(@"select a.Id, a.Name, a.Path, 
 								au.Id, au.AppId, au.UsageType, 
-								(case when au.StartTimestamp < @start then @start else au.StartTimestamp end), (case when au.EndTimestamp > @end then @end else au.EndTimestamp end), 
+								(case when au.StartTimestamp < @start then @start else au.StartTimestamp end),
+                                (case when au.EndTimestamp > @end then @end else au.EndTimestamp end), 
 								au.UsageStartReason, au.UsageEndReason  
 							from AppUsage au, App a
 							where StartTimestamp <= @end and EndTimestamp >= @start where au.AppId = a.Id and a.Id = @id",
@@ -183,7 +184,8 @@ namespace Cobalt.Common.Data.Repository
 											(case when EndTimestamp > @end then @end else EndTimestamp end)
 										-   (case when StartTimestamp < @start then @start else StartTimestamp end)) Duration
 										from AppUsage, App a, AppTag at, Tag t
-										where (StartTimestamp <= @end and EndTimestamp >= @start) and a.Id = AppId and a.Id = at.AppId and t.Id = at.TagId
+										where (StartTimestamp <= @end and EndTimestamp >= @start) and a.Id = AppId
+                                            and a.Id = at.AppId and t.Id = at.TagId
 										group by t.Id",
                 r => (TagMapper(r), TimeSpan.FromTicks(r.GetInt64(TagOffset))),
                 ("start", startTicks),
@@ -192,14 +194,16 @@ namespace Cobalt.Common.Data.Repository
 
         public IObservable<Tag> GetTags(App app)
         {
-            return Get("select * from Tag where Id in (select TagId from AppTag where AppId = @id)", r => TagMapper(r), ("id", app.Id));
+            return Get("select * from Tag where Id in (select TagId from AppTag where AppId = @id)", r => TagMapper(r),
+                ("id", app.Id));
         }
 
         public IObservable<(DateTime Start, DateTime End)> GetIdleDurations(TimeSpan minDuration,
             DateTime? start = null, DateTime? end = null)
         {
             var (startTicks, endTicks) = ToTickRange(start, end);
-            return Get(@"select a1.Id, (case when a2.Id > @end then @ned else a2.Id end) from Interaction a1, Interaction a2 
+            return Get(
+                @"select a1.Id, (case when a2.Id > @end then @ned else a2.Id end) from Interaction a1, Interaction a2 
 							where a1.Id >= @start and a1.Id < @end and a2.rowid=a1.rowid+1 and (a2.Id-a1.Id)>=@minDur",
                 r => IdleMapper(r),
                 ("start", startTicks),
@@ -237,14 +241,16 @@ namespace Cobalt.Common.Data.Repository
             }
         }
 
-        private (SQLiteCommand Cmd, SQLiteDataReader Reader) ExecuteReader(string cmdStr, params (string, object)[] args)
+        private (SQLiteCommand Cmd, SQLiteDataReader Reader) ExecuteReader(string cmdStr,
+            params (string, object)[] args)
         {
             var cmd = new SQLiteCommand(cmdStr, _connection);
             foreach (var p in args)
                 cmd.Parameters.AddWithValue(p.Item1, p.Item2);
             return (cmd, cmd.ExecuteReader());
         }
-        private IObservable<T> Get<T>(string cmdStr, Func<SQLiteDataReader, T> mapper, params (string,object)[] param)
+
+        private IObservable<T> Get<T>(string cmdStr, Func<SQLiteDataReader, T> mapper, params (string, object)[] param)
         {
             return Observable.Create<T>(obs =>
             {

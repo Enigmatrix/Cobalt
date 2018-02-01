@@ -1,14 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Reactive.Linq;
-using System.Windows.Data;
 using Cobalt.Common.Analysis.OutputTypes;
 using Cobalt.Common.Data;
 using Cobalt.Common.IoC;
 using Cobalt.Common.UI.Converters;
-using Cobalt.Common.UI.Util;
 using Cobalt.Common.UI.ViewModels;
 using Cobalt.Common.Util;
 using LiveCharts;
@@ -18,12 +15,14 @@ using LiveCharts.Wpf;
 
 namespace Cobalt.Views.Converters
 {
-    public class HourlyUsageConverter : ObservableToSeriesConverter<Usage<(App App, DateTime StartHour, TimeSpan Duration)>>
+    public class
+        HourlyUsageConverter : ObservableToSeriesConverter<Usage<(App App, DateTime StartHour, TimeSpan Duration)>>
     {
         private static IEqualityComparer<App> PathEquality { get; }
             = new SelectorEqualityComparer<App, string>(a => a.Path);
 
-        protected override SeriesCollection Convert(IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> coll, IResourceScope manager)
+        protected override SeriesCollection Convert(
+            IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> coll, IResourceScope manager)
         {
             var mapper = Mappers
                 .Xy<AppDurationViewModel>()

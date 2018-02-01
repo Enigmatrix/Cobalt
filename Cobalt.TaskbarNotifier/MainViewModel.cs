@@ -22,15 +22,15 @@ namespace Cobalt.TaskbarNotifier
 
     public class MainViewModel : ViewModelBase, IMainViewModel
     {
+        private IObservable<IAppDurationViewModel> _appDurations;
 
         private bool _isPopupOpen;
+        private IResourceScope _resources;
 
         private BindableCollection<ITagDurationViewModel> _tagDurations =
             new BindableCollection<ITagDurationViewModel>();
 
         private TimeSpan _totalDuration;
-        private IObservable<IAppDurationViewModel> _appDurations;
-        private IResourceScope _resources;
 
 
         public MainViewModel(IResourceScope res)

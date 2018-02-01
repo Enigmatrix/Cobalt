@@ -71,7 +71,7 @@ namespace Cobalt.Engine
 
         private void SessionEnded(object sender, SessionEndedEventArgs e)
         {
-                LogEnv();
+            LogEnv();
             Log.Information("Session Ending, Reason: {reason}", e.Reason);
             if (e.Reason == SessionEndReasons.Logoff)
                 RaiseSystemMainStateChanged(SystemStateChange.Logoff);
@@ -81,7 +81,7 @@ namespace Cobalt.Engine
 
         private void PowerModeChanged(object sender, PowerModeChangedEventArgs e)
         {
-                LogEnv();
+            LogEnv();
             Log.Information("Power Mode Changed, Reason: {reason}", e.Mode);
             //TODO buggy: Sleep is called after monitoroff when device is going to sleep
             /*

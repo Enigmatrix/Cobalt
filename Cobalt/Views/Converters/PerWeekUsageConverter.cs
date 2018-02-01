@@ -1,14 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Reactive.Linq;
-using System.Windows.Data;
 using Cobalt.Common.Analysis.OutputTypes;
 using Cobalt.Common.Data;
 using Cobalt.Common.IoC;
 using Cobalt.Common.UI.Converters;
-using Cobalt.Common.UI.Util;
 using Cobalt.Common.UI.ViewModels;
 using Cobalt.Common.Util;
 using LiveCharts;
@@ -18,13 +15,15 @@ using LiveCharts.Wpf;
 
 namespace Cobalt.Views.Converters
 {
-    public class PerWeekUsageConverter : ObservableToSeriesConverter<Usage<(App App, DateTime StartDay, TimeSpan Duration)>>
+    public class
+        PerWeekUsageConverter : ObservableToSeriesConverter<Usage<(App App, DateTime StartDay, TimeSpan Duration)>>
     {
         private static IEqualityComparer<App> PathEquality { get; }
             = new SelectorEqualityComparer<App, string>(a => a.Path);
 
 
-        protected override SeriesCollection Convert(IObservable<Usage<(App App, DateTime StartDay, TimeSpan Duration)>> coll, IResourceScope manager)
+        protected override SeriesCollection Convert(
+            IObservable<Usage<(App App, DateTime StartDay, TimeSpan Duration)>> coll, IResourceScope manager)
         {
             var mapper = Mappers
                 .Xy<AppDurationViewModel>()
@@ -52,7 +51,7 @@ namespace Cobalt.Views.Converters
                     series.Add(stack);
                 }
 
-                var chunk = ((ChartValues<AppDurationViewModel>) appMap[x.App].Values)[(int)x.StartDay.DayOfWeek];
+                var chunk = ((ChartValues<AppDurationViewModel>) appMap[x.App].Values)[(int) x.StartDay.DayOfWeek];
                 chunk.Duration += x.Duration;
                 //chunk.DurationIncrement(new Usage<TimeSpan>(justStarted:justStarted, value: x.Duration), incrementor);
             }).ManageUsing(manager);

@@ -1,10 +1,6 @@
 ﻿using System;
-using System.ComponentModel;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
 using MahApps.Metro.Controls;
-
 
 namespace Cobalt.Views.Controls
 {
@@ -111,36 +107,57 @@ namespace Cobalt.Views.Controls
         private static void CustomStartDateChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             var dis = GetRangePicker(d);
-            if (e.NewValue == null) {dis.Start = null; return;}
-            var ne = (DateTime)e.NewValue;
+            if (e.NewValue == null)
+            {
+                dis.Start = null;
+                return;
+            }
+
+            var ne = (DateTime) e.NewValue;
             var start = dis.Start;
-            dis.Start = start?.Add(ne-start.Value.Date) ?? ne;
+            dis.Start = start?.Add(ne - start.Value.Date) ?? ne;
         }
 
         private static void CustomEndDateChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             var dis = GetRangePicker(d);
-            if (e.NewValue == null) {dis.Start = null; return;}
-            var ne = (DateTime)e.NewValue;
+            if (e.NewValue == null)
+            {
+                dis.Start = null;
+                return;
+            }
+
+            var ne = (DateTime) e.NewValue;
             var end = dis.End;
-            dis.End = end?.Add(ne-end.Value.Date) ?? ne;
+            dis.End = end?.Add(ne - end.Value.Date) ?? ne;
         }
+
         private static void CustomStartTimeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             var dis = GetRangePicker(d);
-            if (e.NewValue == null) {dis.Start = null; return;}
-            var ne = (DateTime)e.NewValue;
+            if (e.NewValue == null)
+            {
+                dis.Start = null;
+                return;
+            }
+
+            var ne = (DateTime) e.NewValue;
             var start = dis.Start;
-            dis.Start = start?.Add(ne.TimeOfDay-start.Value.TimeOfDay) ?? ne;
+            dis.Start = start?.Add(ne.TimeOfDay - start.Value.TimeOfDay) ?? ne;
         }
 
         private static void CustomEndTimeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             var dis = GetRangePicker(d);
-            if (e.NewValue == null) {dis.Start = null; return;}
-            var ne = (DateTime)e.NewValue;
+            if (e.NewValue == null)
+            {
+                dis.Start = null;
+                return;
+            }
+
+            var ne = (DateTime) e.NewValue;
             var end = dis.End;
-            dis.End = end?.Add(ne.TimeOfDay-end.Value.TimeOfDay) ?? ne;
+            dis.End = end?.Add(ne.TimeOfDay - end.Value.TimeOfDay) ?? ne;
         }
 
         private void DateRangePicker_OnSelected(object sender, RoutedEventArgs e)
@@ -151,7 +168,7 @@ namespace Cobalt.Views.Controls
             else if (ReferenceEquals(SelectedItem, Yesterday))
                 (Start, End) = (today.Subtract(TimeSpan.FromDays(1)), today);
             else if (ReferenceEquals(SelectedItem, ThisWeek))
-                (Start, End) = (today.AddDays(-(int)today.DayOfWeek), null);
+                (Start, End) = (today.AddDays(-(int) today.DayOfWeek), null);
             else if (ReferenceEquals(SelectedItem, ThisMonth))
                 (Start, End) = (today.AddDays(1 - today.Day), null);
             else

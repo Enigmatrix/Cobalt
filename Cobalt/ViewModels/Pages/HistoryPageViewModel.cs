@@ -2,20 +2,18 @@
 using System.ComponentModel;
 using System.Reactive;
 using System.Reactive.Linq;
-using Caliburn.Micro;
 using Cobalt.Common.Analysis;
 using Cobalt.Common.IoC;
-using Cobalt.Common.UI.Util;
 using Cobalt.Common.UI.ViewModels;
 
 namespace Cobalt.ViewModels.Pages
 {
     public class HistoryPageViewModel : PageViewModel
     {
+        private IObservable<IAppDurationViewModel> _appDurations;
 
         private DateTime? _rangeEnd;
         private DateTime? _rangeStart;
-        private IObservable<IAppDurationViewModel> _appDurations;
 
         public HistoryPageViewModel(IResourceScope scope, IAppStatsStreamService stats) : base(scope)
         {
@@ -58,7 +56,6 @@ namespace Cobalt.ViewModels.Pages
                 .Select(x => new {RangeStart, RangeEnd})
                 .Subscribe(dataRange =>
                 {
-
                     if (dataRange.RangeStart == null && dataRange.RangeEnd == null) return;
 
                     var stats = res.Resolve<IAppStatsStreamService>();

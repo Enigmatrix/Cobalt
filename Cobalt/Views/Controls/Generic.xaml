@@ -47,7 +47,7 @@
                                         </Grid.RowDefinitions>
 
                                         <ContentControl Grid.Row="1" Content="{Binding}" />
-                                        
+
                                         <md:Card util:WindowUtils.DragMove="True" UniformCornerRadius="0"
                                                  md:ShadowAssist.ShadowDepth="Depth1" Grid.Row="0"
                                                  Background="{DynamicResource PrimaryHueDarkBrush}"
@@ -116,13 +116,17 @@
                 <ColumnDefinition />
                 <ColumnDefinition />
             </Grid.ColumnDefinitions>
-            <DatePicker Grid.Column="0" md:HintAssist.Hint="Start Date" controls:DateRangePicker.StartDateSet="{Binding SelectedDate,RelativeSource={RelativeSource Self}, Mode=TwoWay}"/>
+            <DatePicker Grid.Column="0" md:HintAssist.Hint="Start Date"
+                        controls:DateRangePicker.StartDateSet="{Binding SelectedDate,RelativeSource={RelativeSource Self}, Mode=TwoWay}" />
             <md:TimePicker Grid.Column="1" Padding="0" md:TextFieldAssist.TextBoxViewMargin="0" Margin="0"
-                           md:HintAssist.Hint="Start Time" controls:DateRangePicker.StartTimeSet="{Binding SelectedTime,RelativeSource={RelativeSource Self}}"/>
+                           md:HintAssist.Hint="Start Time"
+                           controls:DateRangePicker.StartTimeSet="{Binding SelectedTime,RelativeSource={RelativeSource Self}}" />
             <TextBlock Text=" - " Grid.Column="2" VerticalAlignment="Center" Margin="5,0" />
-            <DatePicker Grid.Column="3" md:HintAssist.Hint="End Date" controls:DateRangePicker.EndDateSet="{Binding SelectedDate,RelativeSource={RelativeSource Self}}"/>
+            <DatePicker Grid.Column="3" md:HintAssist.Hint="End Date"
+                        controls:DateRangePicker.EndDateSet="{Binding SelectedDate,RelativeSource={RelativeSource Self}}" />
             <md:TimePicker Grid.Column="4" Padding="0" md:TextFieldAssist.TextBoxViewMargin="0" Margin="0"
-                           md:HintAssist.Hint="End Time" controls:DateRangePicker.EndTimeSet="{Binding SelectedTime,RelativeSource={RelativeSource Self}}"/>
+                           md:HintAssist.Hint="End Time"
+                           controls:DateRangePicker.EndTimeSet="{Binding SelectedTime,RelativeSource={RelativeSource Self}}" />
         </Grid>
     </DataTemplate>
 </ResourceDictionary>

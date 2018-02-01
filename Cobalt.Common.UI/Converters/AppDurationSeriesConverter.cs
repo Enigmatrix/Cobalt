@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Globalization;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Windows;
-using System.Windows.Data;
 using Cobalt.Common.IoC;
 using Cobalt.Common.UI.ViewModels;
 using LiveCharts;
@@ -37,7 +35,7 @@ namespace Cobalt.Common.UI.Converters
             }
 
             var sub = BufferDuration == TimeSpan.Zero
-                ? coll.ObserveOnDispatcher().Subscribe(x => series.Add(ToSeries((AppDurationViewModel)x)))
+                ? coll.ObserveOnDispatcher().Subscribe(x => series.Add(ToSeries((AppDurationViewModel) x)))
                 : coll.Buffer(BufferDuration)
                     .Where(x => x.Count != 0)
                     .ObserveOnDispatcher()

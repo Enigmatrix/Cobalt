@@ -25,11 +25,11 @@
             <controls:DataCard Height="300" Header="Breakdown per Hour">
                 <wpf:CartesianChart DisableAnimations="True" Margin="5,0">
                     <wpf:CartesianChart.Series>
-                            <MultiBinding Converter="{StaticResource HourlyUsageConverter}">
-                                <Binding Path="HourlyChunks"/>
-                                <Binding Path="Resources"/>
-                            </MultiBinding>
-                            </wpf:CartesianChart.Series>
+                        <MultiBinding Converter="{StaticResource HourlyUsageConverter}">
+                            <Binding Path="HourlyChunks" />
+                            <Binding Path="Resources" />
+                        </MultiBinding>
+                    </wpf:CartesianChart.Series>
                     <wpf:CartesianChart.AxisY>
                         <wpf:Axis LabelFormatter="{Binding HourFormatter}" MaxValue="36000000000" Position="RightTop">
                             <wpf:Axis.Separator>
@@ -54,8 +54,8 @@
                     <wpf:PieChart DisableAnimations="True">
                         <wpf:PieChart.Series>
                             <MultiBinding Converter="{StaticResource AppDurationSeriesConverter}">
-                                <Binding Path="AppDurations"/>
-                                <Binding Path="Resources"/>
+                                <Binding Path="AppDurations" />
+                                <Binding Path="Resources" />
                             </MultiBinding>
                         </wpf:PieChart.Series>
                         <wpf:PieChart.DataTooltip>
@@ -64,32 +64,33 @@
                     </wpf:PieChart>
                 </controls:DataCard>
                 <controls:DataCard Width="700" Height="300" Header="Week">
-                <wpf:CartesianChart DisableAnimations="True" Margin="5,0">
-                    <wpf:CartesianChart.Series>
+                    <wpf:CartesianChart DisableAnimations="True" Margin="5,0">
+                        <wpf:CartesianChart.Series>
                             <MultiBinding Converter="{StaticResource PerWeekUsageConverter}">
-                                <Binding Path="DayChunks"/>
-                                <Binding Path="Resources"/>
+                                <Binding Path="DayChunks" />
+                                <Binding Path="Resources" />
                             </MultiBinding>
-                            </wpf:CartesianChart.Series>
-                    <wpf:CartesianChart.AxisY>
-                        <wpf:Axis LabelFormatter="{Binding DayFormatter}" MaxValue="864000000000" Position="RightTop">
-                            <wpf:Axis.Separator>
-                                <wpf:Separator Step="36000000000" />
-                            </wpf:Axis.Separator>
-                        </wpf:Axis>
-                    </wpf:CartesianChart.AxisY>
-                    <wpf:CartesianChart.AxisX>
-                        <wpf:Axis LabelFormatter="{Binding DayOfWeekFormatter}">
-                            <wpf:Axis.Separator>
-                                <wpf:Separator Step="1" />
-                            </wpf:Axis.Separator>
-                        </wpf:Axis>
-                    </wpf:CartesianChart.AxisX>
-                    <wpf:CartesianChart.DataTooltip>
-                        <views:HourlyAppDurationTooltip />
-                    </wpf:CartesianChart.DataTooltip>
-                </wpf:CartesianChart>
-            
+                        </wpf:CartesianChart.Series>
+                        <wpf:CartesianChart.AxisY>
+                            <wpf:Axis LabelFormatter="{Binding DayFormatter}" MaxValue="864000000000"
+                                      Position="RightTop">
+                                <wpf:Axis.Separator>
+                                    <wpf:Separator Step="36000000000" />
+                                </wpf:Axis.Separator>
+                            </wpf:Axis>
+                        </wpf:CartesianChart.AxisY>
+                        <wpf:CartesianChart.AxisX>
+                            <wpf:Axis LabelFormatter="{Binding DayOfWeekFormatter}">
+                                <wpf:Axis.Separator>
+                                    <wpf:Separator Step="1" />
+                                </wpf:Axis.Separator>
+                            </wpf:Axis>
+                        </wpf:CartesianChart.AxisX>
+                        <wpf:CartesianChart.DataTooltip>
+                            <views:HourlyAppDurationTooltip />
+                        </wpf:CartesianChart.DataTooltip>
+                    </wpf:CartesianChart>
+
                 </controls:DataCard>
             </WrapPanel>
         </StackPanel>

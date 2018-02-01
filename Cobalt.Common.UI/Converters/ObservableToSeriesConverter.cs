@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Data;
 using Cobalt.Common.IoC;
@@ -13,7 +9,6 @@ namespace Cobalt.Common.UI.Converters
 {
     public abstract class ObservableToSeriesConverter<T> : DependencyObject, IMultiValueConverter
     {
-
         public static readonly DependencyProperty BufferDurationProperty =
             DependencyProperty.Register("BufferDuration", typeof(TimeSpan), typeof(ObservableToSeriesConverter<T>),
                 new PropertyMetadata(TimeSpan.Zero));
@@ -32,12 +27,12 @@ namespace Cobalt.Common.UI.Converters
             return Convert(coll, manager);
         }
 
-        protected abstract SeriesCollection Convert(IObservable<T> values, IResourceScope targetType);
-
         //usually no need to convert back
         public virtual object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
         {
             throw new NotImplementedException();
         }
+
+        protected abstract SeriesCollection Convert(IObservable<T> values, IResourceScope targetType);
     }
 }

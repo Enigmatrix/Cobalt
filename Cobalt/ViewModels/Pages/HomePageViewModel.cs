@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Reactive.Linq;
-using Caliburn.Micro;
 using Cobalt.Common.Analysis;
 using Cobalt.Common.Analysis.OutputTypes;
 using Cobalt.Common.Data;
@@ -14,14 +13,13 @@ namespace Cobalt.ViewModels.Pages
 {
     public class HomePageViewModel : PageViewModel
     {
+        private IObservable<IAppDurationViewModel> _appDurations;
+        private IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> _dayChunks;
 
         private IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> _hourlyChunks;
-        private IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> _dayChunks;
-        private IObservable<IAppDurationViewModel> _appDurations;
 
         public HomePageViewModel(IResourceScope scope) : base(scope)
         {
-
         }
 
         public IObservable<IAppDurationViewModel> AppDurations
@@ -31,9 +29,9 @@ namespace Cobalt.ViewModels.Pages
         }
 
         public Func<double, string> HourFormatter => x => x / 600000000 + "min";
-        public Func<double, string> DayFormatter => x => x == 0 ? "" : (x / 36000000000 + (x == 1 ? "hr" : "hrs"));
+        public Func<double, string> DayFormatter => x => x == 0 ? "" : x / 36000000000 + (x == 1 ? "hr" : "hrs");
         public Func<double, string> DayHourFormatter => x => (x % 12 == 0 ? 12 : x % 12) + (x >= 12 ? "pm" : "am");
-        public Func<double, string> DayOfWeekFormatter => x => ((DayOfWeek) (int)x).ToString();
+        public Func<double, string> DayOfWeekFormatter => x => ((DayOfWeek) (int) x).ToString();
 
         private static IEqualityComparer<App> PathEquality { get; }
             = new SelectorEqualityComparer<App, string>(a => a.Path);
@@ -44,11 +42,18 @@ namespace Cobalt.ViewModels.Pages
             set => Set(ref _hourlyChunks, value);
         }
 
+        public IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> DayChunks
+        {
+            get => _dayChunks;
+            set => Set(ref _dayChunks, value);
+        }
+
         protected override void OnActivate(IResourceScope res)
         {
             var stats = res.Resolve<IAppStatsStreamService>();
             var appUsagesStream = stats.GetAppUsages(DateTime.Today, DateTime.Now); //.Publish();
-            var weekAppUsagesStream = stats.GetAppUsages(DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek), DateTime.Now);
+            var weekAppUsagesStream =
+                stats.GetAppUsages(DateTime.Today.AddDays(-(int) DateTime.Today.DayOfWeek), DateTime.Now);
             var appDurationsStream = stats.GetAppDurations(DateTime.Today);
             var appIncrementor = res.Resolve<IDurationIncrementor>();
 
@@ -71,12 +76,6 @@ namespace Cobalt.ViewModels.Pages
                 });
         }
 
-        public IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> DayChunks
-        {
-            get => _dayChunks;
-            set => Set(ref _dayChunks, value);
-        }
-
         //TODO move this to common
 
         private IEnumerable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> SplitUsageIntoHourChunks(
@@ -97,6 +96,7 @@ namespace Cobalt.ViewModels.Pages
                 start = endHr;
             }
         }
+
         private IEnumerable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> SplitUsageIntoDayChunks(
             Usage<AppUsage> usage)
         {

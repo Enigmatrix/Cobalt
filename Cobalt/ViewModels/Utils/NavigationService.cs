@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using Caliburn.Micro;
 using Cobalt.Common.IoC;
@@ -51,7 +50,8 @@ namespace Cobalt.ViewModels.Utils
         public void NavigateToType(Type value)
         {
             if (value == null || !typeof(PageViewModel).IsAssignableFrom(value)) return;
-            if(_existingViewModels.TryGetValue(value, out var viewModel) && _existingViews.TryGetValue(value, out var view))
+            if (_existingViewModels.TryGetValue(value, out var viewModel) &&
+                _existingViews.TryGetValue(value, out var view))
             {
                 ActivePage = view;
                 ActivateItem(viewModel);
