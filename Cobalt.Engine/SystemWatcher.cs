@@ -51,8 +51,6 @@ namespace Cobalt.Engine
 
         private void LogEnv()
         {
-            Log.Information("");
-            Log.Information("ENV: shutdown started: {s}, ", Environment.HasShutdownStarted);
         }
 
         public event EventHandler<SystemStateChangedArgs> SystemMainStateChanged = delegate { };
