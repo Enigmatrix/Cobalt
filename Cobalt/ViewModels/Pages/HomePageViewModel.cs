@@ -48,8 +48,8 @@ namespace Cobalt.ViewModels.Pages
         {
             var stats = res.Resolve<IAppStatsStreamService>();
             var appUsagesStream = stats.GetAppUsages(DateTime.Today, DateTime.Now); //.Publish();
-            var weekAppUsagesStream = stats.GetAppUsages(DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek), DateTime.Now); //.Publish();
-            var appDurationsStream = stats.GetAppDurations(DateTime.Today); //.Publish();
+            var weekAppUsagesStream = stats.GetAppUsages(DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek), DateTime.Now);
+            var appDurationsStream = stats.GetAppDurations(DateTime.Today);
             var appIncrementor = res.Resolve<IDurationIncrementor>();
 
             HourlyChunks = appUsagesStream
@@ -123,6 +123,7 @@ namespace Cobalt.ViewModels.Pages
 
         protected override void OnDeactivate(bool close, IResourceScope res)
         {
+            AppDurations = null;
         }
     }
 }

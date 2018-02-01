@@ -102,6 +102,7 @@
     <Compile Include="Converters\HumanReadableTimeSpanConverter.cs" />
     <Compile Include="Converters\IsEqualToConverter.cs" />
     <Compile Include="Converters\AppDurationSeriesConverter.cs" />
+    <Compile Include="Converters\ObservableToSeriesConverter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>

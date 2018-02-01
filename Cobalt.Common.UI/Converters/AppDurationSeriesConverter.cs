@@ -12,26 +12,10 @@ using LiveCharts.Wpf;
 
 namespace Cobalt.Common.UI.Converters
 {
-    public class AppDurationSeriesConverter : DependencyObject, IMultiValueConverter
+    public class AppDurationSeriesConverter : ObservableToSeriesConverter<IAppDurationViewModel>
     {
-        public static readonly DependencyProperty BufferDurationProperty =
-            DependencyProperty.Register("BufferDuration", typeof(TimeSpan), typeof(AppDurationSeriesConverter),
-                new PropertyMetadata(TimeSpan.Zero));
-
-
-        public TimeSpan BufferDuration
+        protected override SeriesCollection Convert(IObservable<IAppDurationViewModel> coll, IResourceScope manager)
         {
-            get => (TimeSpan) GetValue(BufferDurationProperty);
-            set => SetValue(BufferDurationProperty, value);
-        }
-
-
-        public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
-        {
-            if (values.Length != 2 ||
-                !(values[0] is IObservable<IAppDurationViewModel> coll) ||
-                !(values[1] is IResourceScope manager)) return null;
-
             var mapper = Mappers
                 .Pie<AppDurationViewModel>()
                 .Value(x => x.Duration.Ticks);
@@ -61,11 +45,6 @@ namespace Cobalt.Common.UI.Converters
 
             sub.ManageUsing(manager);
             return series;
-        }
-
-        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
-        {
-            throw new NotImplementedException();
         }
 
         private string LabelPoint(ChartPoint c)

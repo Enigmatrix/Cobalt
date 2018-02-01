@@ -6,6 +6,8 @@ using System.Reactive.Linq;
 using System.Windows.Data;
 using Cobalt.Common.Analysis.OutputTypes;
 using Cobalt.Common.Data;
+using Cobalt.Common.IoC;
+using Cobalt.Common.UI.Converters;
 using Cobalt.Common.UI.Util;
 using Cobalt.Common.UI.ViewModels;
 using Cobalt.Common.Util;
@@ -16,18 +18,18 @@ using LiveCharts.Wpf;
 
 namespace Cobalt.Views.Converters
 {
-    public class PerWeekUsageConverter : IValueConverter
+    public class PerWeekUsageConverter : ObservableToSeriesConverter<Usage<(App App, DateTime StartDay, TimeSpan Duration)>>
     {
         private static IEqualityComparer<App> PathEquality { get; }
             = new SelectorEqualityComparer<App, string>(a => a.Path);
 
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+
+        protected override SeriesCollection Convert(IObservable<Usage<(App App, DateTime StartDay, TimeSpan Duration)>> coll, IResourceScope manager)
         {
             var mapper = Mappers
                 .Xy<AppDurationViewModel>()
                 .Y(x => x.Duration.Ticks);
             var series = new SeriesCollection(mapper);
-            if (!(value is IObservable<Usage<(App App, DateTime StartDay, TimeSpan Duration)>> coll)) return null;
 
             var appMap = new Dictionary<App, StackedColumnSeries>(PathEquality);
 
@@ -53,30 +55,10 @@ namespace Cobalt.Views.Converters
                 var chunk = ((ChartValues<AppDurationViewModel>) appMap[x.App].Values)[(int)x.StartDay.DayOfWeek];
                 chunk.Duration += x.Duration;
                 //chunk.DurationIncrement(new Usage<TimeSpan>(justStarted:justStarted, value: x.Duration), incrementor);
-            });
+            }).ManageUsing(manager);
 
 
             return series;
-        }
-
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            throw new NotImplementedException();
-        }
-
-        //TODO refactor this common componenent
-        private void HandleDuration(Usage<TimeSpan> d, IDurationIncrementor incrementor, IHasDuration hasDur)
-        {
-            if (d.JustStarted)
-            {
-                //handle new app/tag started here
-                incrementor.Increment(hasDur);
-            }
-            else
-            {
-                incrementor.Release();
-                hasDur.Duration += d.Value;
-            }
         }
     }
 }

@@ -23,8 +23,13 @@
     <ScrollViewer VerticalScrollBarVisibility="Visible">
         <StackPanel Orientation="Vertical" Margin="0,0,8,8">
             <controls:DataCard Height="300" Header="Breakdown per Hour">
-                <wpf:CartesianChart Series="{Binding HourlyChunks, Converter={StaticResource HourlyUsageConverter}}"
-                                    DisableAnimations="True" Margin="5,0">
+                <wpf:CartesianChart DisableAnimations="True" Margin="5,0">
+                    <wpf:CartesianChart.Series>
+                            <MultiBinding Converter="{StaticResource HourlyUsageConverter}">
+                                <Binding Path="HourlyChunks"/>
+                                <Binding Path="Resources"/>
+                            </MultiBinding>
+                            </wpf:CartesianChart.Series>
                     <wpf:CartesianChart.AxisY>
                         <wpf:Axis LabelFormatter="{Binding HourFormatter}" MaxValue="36000000000" Position="RightTop">
                             <wpf:Axis.Separator>
@@ -59,8 +64,13 @@
                     </wpf:PieChart>
                 </controls:DataCard>
                 <controls:DataCard Width="700" Height="300" Header="Week">
-                <wpf:CartesianChart Series="{Binding DayChunks, Converter={StaticResource PerWeekUsageConverter}}"
-                                    DisableAnimations="True" Margin="5,0">
+                <wpf:CartesianChart DisableAnimations="True" Margin="5,0">
+                    <wpf:CartesianChart.Series>
+                            <MultiBinding Converter="{StaticResource PerWeekUsageConverter}">
+                                <Binding Path="DayChunks"/>
+                                <Binding Path="Resources"/>
+                            </MultiBinding>
+                            </wpf:CartesianChart.Series>
                     <wpf:CartesianChart.AxisY>
                         <wpf:Axis LabelFormatter="{Binding DayFormatter}" MaxValue="864000000000" Position="RightTop">
                             <wpf:Axis.Separator>

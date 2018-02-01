@@ -185,11 +185,7 @@
     <Compile Include="Views\Controls\AppLayout.cs" />
     <Compile Include="Views\Controls\AppMenuItem.cs" />
     <Compile Include="Views\Controls\AppMenuItemCollection.cs" />
-    <Compile Include="Views\Converters\AnyMultiConverter.cs" />
-    <Compile Include="Views\Converters\BothMultiConverter.cs" />
-    <Compile Include="Views\Converters\FirstOnlyMultiConverter.cs" />
     <Compile Include="Views\Converters\HourlyUsageConverter.cs" />
-    <Compile Include="Views\Converters\InverseConverter.cs" />
     <Compile Include="Views\HourlyAppDurationTooltip.xaml.cs">
       <DependentUpon>HourlyAppDurationTooltip.xaml</DependentUpon>
     </Compile>
