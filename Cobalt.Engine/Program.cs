@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Reactive.Linq;
 using Cobalt.Common.Data;
 using Cobalt.Common.Data.Repository;
@@ -85,23 +84,23 @@ namespace Cobalt.Engine
                 repository.AddInteraction(e.Interaction);
             };*/
 
-            Observable.FromEventPattern<SystemStateChangedArgs>(
+            var systemStateChanges = Observable.FromEventPattern<SystemStateChangedArgs>(
                     handler => sysWatcher.SystemMainStateChanged += handler,
                     handler => sysWatcher.SystemMainStateChanged -= handler)
-                //TODO this might be a bit too high actually
-                //TODO find if theres a way to buffer for only MonitorOff instead of all events
-                .Buffer(TimeSpan.FromMilliseconds(5000))
-                .Where(x => x.Count != 0)
-                .Select(x => x.OrderBy(y => y.EventArgs.ChangedToState).Last())
-                .Subscribe(x =>
-                {
-                    var e = x.EventArgs;
-                    Log.Information($"STATE CHANGE TO: {e.ChangedToState}");
-                    if (e.ChangedToState.IsStartRecordingEvent())
-                        appWatcher.StartRecordingWith(e.ChangedToState.ToStartReason());
-                    else
-                        appWatcher.EndRecordingWith(e.ChangedToState.ToEndReason());
-                });
+                .Select(x => x.EventArgs.ChangedToState).Publish();
+
+            var notMonitorOff = systemStateChanges.Where(x => x != SystemStateChange.MonitorOff);
+            //monitor off usually comes before sleep/hibernate by a few milliseconds, so we are throttling it!
+            var monitorOff = systemStateChanges.Where(x => x == SystemStateChange.MonitorOff)
+                .Throttle(TimeSpan.FromMilliseconds(1000));
+            notMonitorOff.Merge(monitorOff).Subscribe(x =>
+            {
+                Log.Information($"STATE CHANGE TO: {x}");
+                if (x.IsStartRecordingEvent())
+                    appWatcher.StartRecordingWith(x.ToStartReason());
+                else appWatcher.EndRecordingWith(x.ToEndReason());
+            });
+            systemStateChanges.Connect();
 
             appWatcher.EventLoop();
         }

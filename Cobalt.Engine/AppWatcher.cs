@@ -84,6 +84,7 @@ namespace Cobalt.Engine
         {
             lock (_appUsageLock)
             {
+                if (!_recording) return;
                 _endReason = reason;
                 RecordForegroundAppUsage(null, DateTime.Now);
                 _recording = false;
