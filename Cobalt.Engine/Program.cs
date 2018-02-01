@@ -90,7 +90,7 @@ namespace Cobalt.Engine
                     handler => sysWatcher.SystemMainStateChanged -= handler)
                 //TODO this might be a bit too high actually
                 //TODO find if theres a way to buffer for only MonitorOff instead of all events
-                .Buffer(TimeSpan.FromMilliseconds(1000))
+                .Buffer(TimeSpan.FromMilliseconds(5000))
                 .Where(x => x.Count != 0)
                 .Select(x => x.OrderBy(y => y.EventArgs.ChangedToState).Last())
                 .Subscribe(x =>
