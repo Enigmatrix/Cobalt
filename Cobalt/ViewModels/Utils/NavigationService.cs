@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using Caliburn.Micro;
 using Cobalt.Common.IoC;
+using Cobalt.Common.Util;
 using Cobalt.ViewModels.Pages;
 using Cobalt.Views.Pages;
 
@@ -18,14 +19,16 @@ namespace Cobalt.ViewModels.Utils
 
     public class NavigationService : Conductor<PageViewModel>.Collection.OneActive, INavigationService
     {
-        private readonly Dictionary<Type, (PageViewModel ViewModel, PageView View)> _existing;
+        private readonly Cache<Type, PageViewModel> _existingViewModels;
+        private readonly Cache<Type, PageView> _existingViews;
         private readonly IResourceScope _resolver;
         private PageView _activePage;
 
         public NavigationService(IResourceScope resolver)
         {
             _resolver = resolver;
-            _existing = new Dictionary<Type, (PageViewModel ViewModel, PageView View)>();
+            _existingViewModels = new Cache<Type, PageViewModel>();
+            _existingViews = new Cache<Type, PageView>();
             //needed for conductors that aren't shown
             ((IActivate) this).Activate();
         }
@@ -48,11 +51,10 @@ namespace Cobalt.ViewModels.Utils
         public void NavigateToType(Type value)
         {
             if (value == null || !typeof(PageViewModel).IsAssignableFrom(value)) return;
-            if (_existing.ContainsKey(value))
+            if(_existingViewModels.TryGetValue(value, out var viewModel) && _existingViews.TryGetValue(value, out var view))
             {
-                var (vm, page) = _existing[value];
-                ActivePage = page;
-                ActivateItem(vm);
+                ActivePage = view;
+                ActivateItem(viewModel);
             }
             else
             {
@@ -60,7 +62,9 @@ namespace Cobalt.ViewModels.Utils
                 ActivePage = (PageView) ViewLocator.LocateForModel(vm, null, null);
                 ViewModelBinder.Bind(vm, _activePage, null);
                 ActivateItem(vm);
-                _existing[value] = (vm, ActivePage);
+
+                _existingViewModels.Add(value, vm);
+                _existingViews.Add(value, ActivePage);
             }
         }
 
