@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Linq;
+using System.Reactive.Linq;
 using Cobalt.Common.Data;
 using Cobalt.Common.Data.Repository;
 using Cobalt.Common.IoC;
@@ -83,13 +85,23 @@ namespace Cobalt.Engine
                 repository.AddInteraction(e.Interaction);
             };*/
 
-            sysWatcher.SystemMainStateChanged += (_, e) =>
-            {
-                if (e.ChangedToState.IsStartRecordingEvent())
-                    appWatcher.StartRecordingWith(e.ChangedToState.ToStartReason());
-                else
-                    appWatcher.EndRecordingWith(e.ChangedToState.ToEndReason());
-            };
+            Observable.FromEventPattern<SystemStateChangedArgs>(
+                    handler => sysWatcher.SystemMainStateChanged += handler,
+                    handler => sysWatcher.SystemMainStateChanged -= handler)
+                //TODO this might be a bit too high actually
+                //TODO find if theres a way to buffer for only MonitorOff instead of all events
+                .Buffer(TimeSpan.FromMilliseconds(1000))
+                .Where(x => x.Count != 0)
+                .Select(x => x.OrderBy(y => y.EventArgs.ChangedToState).Last())
+                .Subscribe(x =>
+                {
+                    var e = x.EventArgs;
+                    Log.Information($"STATE CHANGE TO: {e.ChangedToState}");
+                    if (e.ChangedToState.IsStartRecordingEvent())
+                        appWatcher.StartRecordingWith(e.ChangedToState.ToStartReason());
+                    else
+                        appWatcher.EndRecordingWith(e.ChangedToState.ToEndReason());
+                });
 
             appWatcher.EventLoop();
         }
