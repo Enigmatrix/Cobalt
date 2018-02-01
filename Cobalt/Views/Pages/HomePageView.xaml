@@ -17,11 +17,11 @@
         <converters1:PerWeekUsageConverter x:Key="PerWeekUsageConverter" />
         <converters:AppDurationSeriesConverter x:Key="AppDurationSeriesConverter" />
         <Style TargetType="controls:DataCard">
-            <Setter Property="Margin" Value="8,8,0,0" />
+            <Setter Property="Margin" Value="12,12,0,0" />
         </Style>
     </local:PageView.Resources>
     <ScrollViewer VerticalScrollBarVisibility="Visible">
-        <StackPanel Orientation="Vertical" Margin="0,0,8,8">
+        <StackPanel Orientation="Vertical" Margin="0,0,12,12">
             <controls:DataCard Height="300" Header="Breakdown per Hour">
                 <wpf:CartesianChart DisableAnimations="True" Margin="5,0">
                     <wpf:CartesianChart.Series>

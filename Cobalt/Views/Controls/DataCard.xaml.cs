@@ -1,4 +1,6 @@
-﻿namespace Cobalt.Views.Controls
+﻿using System.Windows;
+
+namespace Cobalt.Views.Controls
 {
     /// <summary>
     ///     Interaction logic for DataCard.xaml
@@ -8,6 +10,11 @@
         public DataCard()
         {
             InitializeComponent();
+        }
+
+        private void DataCardExpand(object sender, RoutedEventArgs e)
+        {
+
         }
     }
 }

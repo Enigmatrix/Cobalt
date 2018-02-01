@@ -32,10 +32,12 @@
                                                      HorizontalAlignment="Center"
                                                      VerticalAlignment="Center"
                                                      Focusable="False"
+                                                     Foreground="{DynamicResource MaterialDesignBody}"
                                                      Kind="{Binding Icon}" />
                                         <TextBlock Grid.Column="1"
                                                    VerticalAlignment="Center"
                                                    FontSize="16"
+                                                   Foreground="{DynamicResource MaterialDesignBody}"
                                                    Text="{Binding Description}" />
                                     </Grid>
                                 </DataTemplate>
@@ -64,16 +66,26 @@
                                     </Grid>
                                 </DataTemplate>
                             </Grid.Resources>
-                            <metro:HamburgerMenu PaneBackground="White" PaneForeground="Black"
+                            <metro:HamburgerMenu PaneBackground="{DynamicResource MaterialDesignCardBackground}"
+                                                 PaneForeground="Black"
                                                  ItemsSource="{TemplateBinding MenuItems}"
                                                  ItemTemplate="{StaticResource MenuItemTemplate}"
-
+                                                 Foreground="{DynamicResource MaterialDesignBody}"
                                                  OptionsItemsSource="{TemplateBinding OptionItems}"
                                                  OptionsItemTemplate="{StaticResource MenuItemTemplate}"
                                                  SelectedItem="{Binding SelectedItem, RelativeSource={RelativeSource TemplatedParent}, Mode=OneWayToSource}"
                                                  SelectedOptionsItem="{Binding SelectedItem, RelativeSource={RelativeSource TemplatedParent}, Mode=OneWayToSource}"
                                                  ContentTemplate="{StaticResource AppContentTemplate}"
                                                  Content="{TemplateBinding Content}">
+                                <metro:HamburgerMenu.HamburgerMenuTemplate>
+                                    <DataTemplate>
+                                        <!--  PackIconMaterial - Menu  -->
+                                        <ContentControl Width="22"
+                                                        Height="22" Foreground="{DynamicResource MaterialDesignBody}"
+                                                        Content="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"
+                                                        Style="{DynamicResource PathIconContentControlStyle}" />
+                                    </DataTemplate>
+                                </metro:HamburgerMenu.HamburgerMenuTemplate>
                                 <!--
                                 <metro:HamburgerMenu.HamburgerMenuHeaderTemplate>
                                     <DataTemplate>
