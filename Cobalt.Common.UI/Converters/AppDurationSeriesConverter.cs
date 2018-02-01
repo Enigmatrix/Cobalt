@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Reactive.Linq;
 using System.Windows;
+using System.Windows.Media;
 using Cobalt.Common.IoC;
 using Cobalt.Common.UI.ViewModels;
 using LiveCharts;
@@ -31,7 +32,7 @@ namespace Cobalt.Common.UI.Converters
                     {
                         newAppDur
                     }
-                };
+                }.BindFill(newAppDur.App.Path);
             }
 
             var sub = BufferDuration == TimeSpan.Zero

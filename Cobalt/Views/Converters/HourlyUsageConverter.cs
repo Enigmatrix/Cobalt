@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Windows.Media;
 using Cobalt.Common.Analysis.OutputTypes;
 using Cobalt.Common.Data;
 using Cobalt.Common.IoC;
@@ -45,7 +46,7 @@ namespace Cobalt.Views.Converters
                         Values = new AppDurationViewModel[24].Select(_ => new AppDurationViewModel(x.App))
                             .AsChartValues(),
                         LabelPoint = cp => x.App.Path
-                    };
+                    }.BindFill(x.App.Path);
                     appMap[x.App] = stack;
                     series.Add(stack);
                 }
