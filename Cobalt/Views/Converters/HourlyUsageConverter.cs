@@ -7,6 +7,7 @@ using Cobalt.Common.Analysis.OutputTypes;
 using Cobalt.Common.Data;
 using Cobalt.Common.IoC;
 using Cobalt.Common.UI.Converters;
+using Cobalt.Common.UI.Util;
 using Cobalt.Common.UI.ViewModels;
 using Cobalt.Common.Util;
 using LiveCharts;
@@ -43,10 +44,11 @@ namespace Cobalt.Views.Converters
                 {
                     var stack = new StackedColumnSeries
                     {
+                        Fill = AppResourceCache.Instance.GetColor(x.App.Path),
                         Values = new AppDurationViewModel[24].Select(_ => new AppDurationViewModel(x.App))
                             .AsChartValues(),
                         LabelPoint = cp => x.App.Path
-                    }.BindFill(x.App.Path);
+                    };
                     appMap[x.App] = stack;
                     series.Add(stack);
                 }

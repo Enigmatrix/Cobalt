@@ -4,6 +4,7 @@ using System.Reactive.Linq;
 using System.Windows;
 using System.Windows.Media;
 using Cobalt.Common.IoC;
+using Cobalt.Common.UI.Util;
 using Cobalt.Common.UI.ViewModels;
 using LiveCharts;
 using LiveCharts.Configurations;
@@ -25,6 +26,7 @@ namespace Cobalt.Common.UI.Converters
                 return new PieSeries
                 {
                     Title = newAppDur.App.Path,
+                    Fill = AppResourceCache.Instance.GetColor(newAppDur.App.Path),
                     DataLabels = true,
                     LabelPoint = LabelPoint,
                     DataLabelsTemplate = (DataTemplate) Application.Current.Resources["AppPieRepresentation"],
@@ -32,7 +34,7 @@ namespace Cobalt.Common.UI.Converters
                     {
                         newAppDur
                     }
-                }.BindFill(newAppDur.App.Path);
+                };
             }
 
             var sub = BufferDuration == TimeSpan.Zero
