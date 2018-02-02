@@ -15,9 +15,14 @@ namespace Cobalt.ViewModels.Pages
 
         public SettingsPageViewModel(IResourceScope scope, ISettingsService settings) : base(scope)
         {
-            //todo propogate changes from isettingsservice to settingspageviewmodel
             _settings = settings;
             Swatches = new SwatchesProvider().Swatches;
+            _settings.PropertyChanged += SettingsPropertyChanged;
+        }
+
+        private void SettingsPropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            NotifyOfPropertyChange(e.PropertyName);
         }
 
         public bool IsDark
@@ -27,5 +32,7 @@ namespace Cobalt.ViewModels.Pages
         }
 
         public IEnumerable<Swatch> Swatches { get; }
+        public ISettingsService SettingsService { get; set; }
+
     }
 }
