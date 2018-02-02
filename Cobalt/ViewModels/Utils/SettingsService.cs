@@ -20,7 +20,6 @@ namespace Cobalt.ViewModels.Utils
         , ISettingsService
     {
         private readonly Settings _settings;
-        private bool _isDark;
         private readonly IDisposable _saveTracker;
 
         public SettingsService()
