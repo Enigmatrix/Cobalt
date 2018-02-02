@@ -32,6 +32,7 @@ namespace Cobalt
             builder.RegisterType<NavigationService>()
                 .As<INavigationService>()
                 .SingleInstance();
+            builder.RegisterInstance<ISettingsService>(new SettingsService());
         }
 
         protected override void OnUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)

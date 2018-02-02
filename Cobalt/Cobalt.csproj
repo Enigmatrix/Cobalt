@@ -118,6 +118,7 @@
     <Compile Include="ViewModels\Pages\TagsPageViewModel.cs" />
     <Compile Include="ViewModels\Pages\SettingsPageViewModel.cs" />
     <Compile Include="ViewModels\Pages\AppsPageViewModel.cs" />
+    <Compile Include="ViewModels\Utils\SettingsService.cs" />
     <Compile Include="Views\Controls\DataCard.xaml.cs">
       <DependentUpon>DataCard.xaml</DependentUpon>
     </Compile>

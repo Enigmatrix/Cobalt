@@ -4,7 +4,38 @@
                 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
                 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                 xmlns:local="clr-namespace:Cobalt.Views.Pages"
+                xmlns:materialDesignColors="clr-namespace:MaterialDesignColors;assembly=MaterialDesignColors"
                 mc:Ignorable="d" Title="Settings"
                 d:DesignHeight="300" d:DesignWidth="300">
-    <Grid />
+    <Grid >
+        <ToggleButton IsChecked="{Binding IsDark}"></ToggleButton>
+        <ListBox ItemsSource="{Binding Swatches}">
+            <ListBox.ItemTemplate>
+                <DataTemplate DataType="materialDesignColors:Swatch">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition/>
+                            <ColumnDefinition/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{Binding AccentExemplarHue.Name}">
+                            <TextBlock.Background>
+                                <SolidColorBrush Color="{Binding AccentExemplarHue.Color}"/>
+                            </TextBlock.Background>
+                            <TextBlock.Foreground>
+                                <SolidColorBrush Color="{Binding AccentExemplarHue.Foreground}"/>
+                            </TextBlock.Foreground>
+                        </TextBlock>
+                        <TextBlock Text="{Binding ExemplarHue.Name}" Grid.Column="1">
+                            <TextBlock.Background>
+                                <SolidColorBrush Color="{Binding ExemplarHue.Color}"/>
+                            </TextBlock.Background>
+                            <TextBlock.Foreground>
+                                <SolidColorBrush Color="{Binding ExemplarHue.Foreground}"/>
+                            </TextBlock.Foreground>
+                        </TextBlock>
+                    </Grid>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+    </Grid>
 </local:PageView>
