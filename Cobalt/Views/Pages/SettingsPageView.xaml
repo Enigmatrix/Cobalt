@@ -9,7 +9,7 @@
                 d:DesignHeight="300" d:DesignWidth="300">
     <Grid >
         <ToggleButton IsChecked="{Binding IsDark}"></ToggleButton>
-        <ListBox ItemsSource="{Binding Swatches}">
+        <ListBox ItemsSource="{Binding Swatches}" Width="300" HorizontalAlignment="Left">
             <ListBox.ItemTemplate>
                 <DataTemplate DataType="materialDesignColors:Swatch">
                     <Grid>

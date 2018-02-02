@@ -26,6 +26,8 @@ namespace Cobalt.Common.UI.Converters
                 return new PieSeries
                 {
                     Title = newAppDur.App.Path,
+                    StrokeThickness = 0.5,
+                    //Stroke = new SolidColorBrush(Color.FromArgb(1,0,0,0)),
                     Fill = AppResourceCache.Instance.GetColor(newAppDur.App.Path),
                     DataLabels = true,
                     LabelPoint = LabelPoint,
