@@ -19,30 +19,49 @@ namespace Cobalt.Views.Controls
             InitializeComponent();
         }
 
+        public static readonly DependencyProperty ExpandedProperty =
+            DependencyProperty.RegisterAttached(
+                "Expanded",
+                typeof(bool),
+                typeof(DataCard),
+                new PropertyMetadata(false)
+            );
+
+        public static void SetExpanded(UIElement element, bool value)
+        {
+            element.SetValue(ExpandedProperty, value);
+        }
+
+        public static bool GetExpanded(UIElement element)
+        {
+            return (bool) element.GetValue(ExpandedProperty);
+        }
+
+
         private async void DataCardExpand(object sender, RoutedEventArgs e)
         {
             var container = (ContentControl) FindResource("DialogContainer");
             var root = (Grid) GetTemplateChild("Root");
             var contentHolder = (ContentPresenter) GetTemplateChild("ContentHolder");
             var parent = (ContentControl) root.Parent;
+            var actualContent = (UIElement)contentHolder.Content;
 
             parent.Content = null;
             container.Content = root;
 
             await this.ShowDialog(container, (o, oe) =>
             {
+                SetExpanded(actualContent, true);
                 container.UpdateLayout();
-                if (contentHolder.Content is Chart chart)
-                {
+                if (actualContent is Chart chart)
                     chart.Update(true, true);
-
-                }
             }, (o, ce) =>
             {
+                SetExpanded(actualContent, false);
                 container.Content = null;
                 parent.Content = root;
-                root.UpdateLayout();
-                if (contentHolder.Content is Chart chart)
+                parent.UpdateLayout();
+                if (actualContent is Chart chart)
                     chart.Update(true, true);
             });
         }

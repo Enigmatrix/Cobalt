@@ -16,6 +16,7 @@
         <converters1:HourlyUsageConverter x:Key="HourlyUsageConverter" />
         <converters1:PerWeekUsageConverter x:Key="PerWeekUsageConverter" />
         <converters:AppDurationSeriesConverter x:Key="AppDurationSeriesConverter" />
+        <converters1:BooleanToLegendLocation x:Key="BoolToLegendLocation"/>
         <Style TargetType="controls:DataCard">
             <Setter Property="Margin" Value="12,12,0,0" />
         </Style>
@@ -50,8 +51,8 @@
                 </wpf:CartesianChart>
             </controls:DataCard>
             <WrapPanel>
-                <controls:DataCard Width="300" Height="300" Header="Today">
-                    <wpf:PieChart DisableAnimations="True">
+                <controls:DataCard Width="300" Height="300" Header="Today" x:Name="Pie">
+                    <wpf:PieChart DisableAnimations="True" LegendLocation="{Binding Path=(controls:DataCard.Expanded), RelativeSource={RelativeSource Self}, Converter={StaticResource BoolToLegendLocation}}">
                         <wpf:PieChart.Series>
                             <MultiBinding Converter="{StaticResource AppDurationSeriesConverter}">
                                 <Binding Path="AppDurations" />
@@ -61,6 +62,9 @@
                         <wpf:PieChart.DataTooltip>
                             <views:HourlyAppDurationTooltip />
                         </wpf:PieChart.DataTooltip>
+                        <wpf:PieChart.ChartLegend>
+                            <wpf:DefaultLegend/>
+                        </wpf:PieChart.ChartLegend>
                     </wpf:PieChart>
                 </controls:DataCard>
                 <controls:DataCard Width="700" Height="300" Header="Week">
