@@ -20,6 +20,9 @@
         <Style TargetType="controls:DataCard">
             <Setter Property="Margin" Value="12,12,0,0" />
         </Style>
+        <Style TargetType="wpf:Separator">
+            <Setter Property="Stroke" Value="{DynamicResource MaterialDesignSelection}" />
+        </Style>
     </local:PageView.Resources>
     <ScrollViewer VerticalScrollBarVisibility="Visible">
         <StackPanel Orientation="Vertical" Margin="0,0,12,12">
@@ -34,7 +37,7 @@
                     <wpf:CartesianChart.AxisY>
                         <wpf:Axis LabelFormatter="{Binding HourFormatter}" MaxValue="36000000000" Position="RightTop">
                             <wpf:Axis.Separator>
-                                <wpf:Separator Step="6000000000" />
+                                <wpf:Separator Step="6000000000"/>
                             </wpf:Axis.Separator>
                         </wpf:Axis>
                     </wpf:CartesianChart.AxisY>
@@ -79,10 +82,10 @@
                             </MultiBinding>
                         </wpf:CartesianChart.Series>
                         <wpf:CartesianChart.AxisY>
-                            <wpf:Axis LabelFormatter="{Binding DayFormatter}" MaxValue="864000000000"
+                            <wpf:Axis LabelFormatter="{Binding DayFormatter}"
                                       Position="RightTop">
                                 <wpf:Axis.Separator>
-                                    <wpf:Separator Step="36000000000" />
+                                    <wpf:Separator Step="72000000000" />
                                 </wpf:Axis.Separator>
                             </wpf:Axis>
                         </wpf:CartesianChart.AxisY>

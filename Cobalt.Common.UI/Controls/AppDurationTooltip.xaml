@@ -38,7 +38,7 @@
                             <ColumnDefinition Width="Auto" SharedSizeGroup="Title" />
                             <ColumnDefinition Width="Auto" SharedSizeGroup="Duration" />
                         </Grid.ColumnDefinitions>
-                        <Border Background="{DynamicResource AccentColorBrush3}">
+                        <Border Background="{DynamicResource MaterialDesignDivider}">
                             <Image Width="16" Height="16"
                                    Source="{Binding ChartPoint.Instance.App.Path, Converter={StaticResource ExePathToIconConverter}, IsAsync=True}" />
                         </Border>
