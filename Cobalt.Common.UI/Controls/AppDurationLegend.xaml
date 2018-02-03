@@ -7,9 +7,9 @@
              xmlns:base="clr-namespace:LiveCharts.Wpf.Charts.Base;assembly=LiveCharts.Wpf"
              xmlns:wpf="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-             mc:Ignorable="d"
+             mc:Ignorable="d"  MaxHeight="{Binding Chart.ActualHeight}"
              d:DesignHeight="300" d:DesignWidth="300">
-    <ScrollViewer VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Visible">
+    <ScrollViewer VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Hidden">
         <ListView ItemsSource="{Binding ChartSeries}" Grid.IsSharedSizeScope="True">
             <ListView.ItemTemplate>
                 <DataTemplate DataType="{x:Type local:SeriesReference}">

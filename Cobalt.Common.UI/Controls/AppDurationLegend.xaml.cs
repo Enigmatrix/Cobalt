@@ -19,21 +19,28 @@ namespace Cobalt.Common.UI.Controls
     {
         private List<SeriesViewModel> _series;
         private BindableCollection<SeriesReference> _chartSeries;
+        private Chart _chart;
 
         public AppDurationLegend()
         {
             InitializeComponent();
-            DataContext = this;
             Loaded += (o, e) =>
             {
-                var chart = GetRootChart(this);
-                ChartSeries = SyncedSeriesReferences(chart.Series);
+                Chart = GetRootChart(this);
+                DataContext = this;
+                ChartSeries = SyncedSeriesReferences(Chart.Series);
 
                 //not sure why, but this is called when 
                 //the expansion of datacard is closed also
 
                 //might lead to bugs? xD
             };
+        }
+
+        public Chart Chart
+        {
+            get => _chart;
+            set { _chart = value;OnPropertyChanged(); }
         }
 
         public List<SeriesViewModel> Series
