@@ -11,7 +11,7 @@
                    Icon="pack://application:,,,/Cobalt.Common.UI;component/Assets/icon_32.png"
                    mc:Ignorable="d" ShowTitleBar="False" BorderBrush="{DynamicResource AccentColorBrush}"
                    BorderThickness="1"
-                   Title="Cobalt" Height="500" Width="800">
+                   Title="Cobalt" Height="600" Width="900">
 
     <metro:MetroWindow.Resources>
         <converters:AppMenuItemToTypeConverter x:Key="AppMenuItemToTypeConverter" />

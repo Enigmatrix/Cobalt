@@ -48,8 +48,11 @@ namespace Cobalt.Views.Converters
                         Fill = AppResourceCache.Instance.GetColor(x.App.Path),
                         Values = new AppDurationViewModel[7].Select(_ => new AppDurationViewModel(x.App))
                             .AsChartValues(),
-                        LabelPoint = cp => x.App.Path
+                        LabelPoint = cp => x.App.Path,
+                        Title = x.App.Path,
+                        StrokeThickness = 0.3
                     };
+                    stack.SetResourceReference(Series.StrokeProperty, "MaterialDesignBody");
                     appMap[x.App] = stack;
                     series.Add(stack);
                 }

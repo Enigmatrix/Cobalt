@@ -24,7 +24,7 @@
     <ScrollViewer VerticalScrollBarVisibility="Visible">
         <StackPanel Orientation="Vertical" Margin="0,0,12,12">
             <controls:DataCard Height="300" Header="Breakdown per Hour">
-                <wpf:CartesianChart DisableAnimations="True" Margin="5,0">
+                <wpf:CartesianChart DisableAnimations="True" Margin="5,0" LegendLocation="{Binding Path=(controls:DataCard.Expanded), RelativeSource={RelativeSource Self}, Converter={StaticResource BoolToLegendLocation}}">
                     <wpf:CartesianChart.Series>
                         <MultiBinding Converter="{StaticResource HourlyUsageConverter}">
                             <Binding Path="HourlyChunks" />
@@ -48,6 +48,9 @@
                     <wpf:CartesianChart.DataTooltip>
                         <controls1:AppDurationTooltip />
                     </wpf:CartesianChart.DataTooltip>
+                        <wpf:CartesianChart.ChartLegend>
+                            <controls1:AppDurationLegend/>
+                        </wpf:CartesianChart.ChartLegend>
                 </wpf:CartesianChart>
             </controls:DataCard>
             <WrapPanel>
@@ -68,7 +71,7 @@
                     </wpf:PieChart>
                 </controls:DataCard>
                 <controls:DataCard Width="700" Height="300" Header="Week">
-                    <wpf:CartesianChart DisableAnimations="True" Margin="5,0">
+                    <wpf:CartesianChart DisableAnimations="True" Margin="5,0" LegendLocation="{Binding Path=(controls:DataCard.Expanded), RelativeSource={RelativeSource Self}, Converter={StaticResource BoolToLegendLocation}}">
                         <wpf:CartesianChart.Series>
                             <MultiBinding Converter="{StaticResource PerWeekUsageConverter}">
                                 <Binding Path="DayChunks" />
@@ -93,6 +96,9 @@
                         <wpf:CartesianChart.DataTooltip>
                             <controls1:AppDurationTooltip />
                         </wpf:CartesianChart.DataTooltip>
+                        <wpf:CartesianChart.ChartLegend>
+                            <controls1:AppDurationLegend/>
+                        </wpf:CartesianChart.ChartLegend>
                     </wpf:CartesianChart>
 
                 </controls:DataCard>
