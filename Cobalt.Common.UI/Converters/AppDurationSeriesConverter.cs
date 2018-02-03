@@ -23,11 +23,10 @@ namespace Cobalt.Common.UI.Converters
 
             PieSeries ToSeries(AppDurationViewModel newAppDur)
             {
-                return new PieSeries
+                var slice = new PieSeries
                 {
                     Title = newAppDur.App.Path,
-                    StrokeThickness = 0.5,
-                    //Stroke = new SolidColorBrush(Color.FromArgb(1,0,0,0)),
+                    StrokeThickness = 0.3,
                     Fill = AppResourceCache.Instance.GetColor(newAppDur.App.Path),
                     DataLabels = true,
                     LabelPoint = LabelPoint,
@@ -37,6 +36,8 @@ namespace Cobalt.Common.UI.Converters
                         newAppDur
                     }
                 };
+                slice.SetResourceReference(Series.StrokeProperty, "MaterialDesignBody");
+                return slice;
             }
 
             var sub = BufferDuration == TimeSpan.Zero
