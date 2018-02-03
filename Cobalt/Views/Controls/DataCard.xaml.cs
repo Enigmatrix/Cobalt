@@ -45,6 +45,10 @@ namespace Cobalt.Views.Controls
             var contentHolder = (ContentPresenter) GetTemplateChild("ContentHolder");
             var parent = (ContentControl) root.Parent;
             var actualContent = (UIElement)contentHolder.Content;
+            var chart = actualContent as Chart;
+
+            if(chart != null)
+                chart.Loaded += (_, __) => chart.Update(true,true);
 
             parent.Content = null;
             container.Content = root;
@@ -53,16 +57,14 @@ namespace Cobalt.Views.Controls
             {
                 SetExpanded(actualContent, true);
                 container.UpdateLayout();
-                if (actualContent is Chart chart)
-                    chart.Update(true, true);
+                chart?.Update(true,true);
             }, (o, ce) =>
             {
                 SetExpanded(actualContent, false);
                 container.Content = null;
                 parent.Content = root;
                 parent.UpdateLayout();
-                if (actualContent is Chart chart)
-                    chart.Update(true, true);
+                chart?.Update(true, true);
             });
         }
     }
