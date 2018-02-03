@@ -27,6 +27,10 @@
             <materialDesign:Card HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                                  UniformCornerRadius="4" materialDesign:ShadowAssist.ShadowDepth="Depth1">
                 <Grid x:Name="Root" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+                    <Grid.Resources>
+                        <converters:BooleanToVisibilityConverter x:Key="InverseBoolToVis" TrueValue="Collapsed" FalseValue="Visible"/>
+                        <converters:BooleanToVisibilityConverter x:Key="BoolToVis" FalseValue="Collapsed" TrueValue="Visible"/>
+                    </Grid.Resources>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition />
@@ -53,7 +57,7 @@
                                 </util:TypedTemplateSelector>
                             </ContentPresenter.ContentTemplateSelector>
                         </ContentPresenter>
-                        <materialDesign:PopupBox
+                        <materialDesign:PopupBox Visibility="{Binding Path=(local:DataCard.Expanded), ElementName=Root, Converter={StaticResource InverseBoolToVis}}"
                             PlacementMode="BottomAndAlignRightEdges"
                             StaysOpen="False" HorizontalAlignment="Right" VerticalAlignment="Top">
                             <materialDesign:PopupBox.ToggleContent>
@@ -64,6 +68,11 @@
                                 <Button Content="Setting" />
                             </StackPanel>
                         </materialDesign:PopupBox>
+                        <Button Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}" HorizontalAlignment="Right"
+                                Visibility="{Binding Path=(local:DataCard.Expanded), ElementName=Root, Converter={StaticResource BoolToVis}}"
+                                Style="{DynamicResource MaterialDesignFlatButton}">
+                            <materialDesign:PackIcon Kind="Close" Foreground="Red"/>
+                        </Button>
                     </Grid>
                 </Grid>
             </materialDesign:Card>

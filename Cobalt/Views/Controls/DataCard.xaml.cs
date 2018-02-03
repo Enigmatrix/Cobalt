@@ -56,11 +56,13 @@ namespace Cobalt.Views.Controls
             await this.ShowDialog(container, (o, oe) =>
             {
                 SetExpanded(actualContent, true);
+                SetExpanded(root, true);
                 container.UpdateLayout();
                 chart?.Update(true,true);
             }, (o, ce) =>
             {
                 SetExpanded(actualContent, false);
+                SetExpanded(root, false);
                 container.Content = null;
                 parent.Content = root;
                 parent.UpdateLayout();
