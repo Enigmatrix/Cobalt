@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Cobalt.Common.UI;
 using Cobalt.Properties;
 using MahApps.Metro;
+using MaterialDesignColors;
 using MaterialDesignThemes.Wpf;
 
 namespace Cobalt.ViewModels.Utils
@@ -16,15 +17,17 @@ namespace Cobalt.ViewModels.Utils
     {
         bool IsDark { get; set; }
     }
-    public class SettingsService : NotifyPropertyChanged, IDisposable
-        , ISettingsService
+    public class SettingsService : NotifyPropertyChanged, IDisposable, ISettingsService
     {
         private readonly Settings _settings;
+        private readonly PaletteHelper _palette;
         private readonly IDisposable _saveTracker;
 
         public SettingsService()
         {
             _settings = Settings.Default;
+            _palette = new PaletteHelper();
+
             //reassign to trigger change
             IsDark = _settings.IsDark;
 
@@ -43,7 +46,7 @@ namespace Cobalt.ViewModels.Utils
             set
             {
                 _settings.IsDark = value;
-                new PaletteHelper().SetLightDark(value);
+                _palette.SetLightDark(value);
                 NotifyOfPropertyChange();
             }
         }

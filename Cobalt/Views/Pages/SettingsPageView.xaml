@@ -5,11 +5,77 @@
                 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                 xmlns:local="clr-namespace:Cobalt.Views.Pages"
                 xmlns:materialDesignColors="clr-namespace:MaterialDesignColors;assembly=MaterialDesignColors"
+                xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
                 mc:Ignorable="d" Title="Settings"
                 d:DesignHeight="300" d:DesignWidth="300">
-    <Grid >
-        <ToggleButton IsChecked="{Binding IsDark}"></ToggleButton>
-        <ListBox ItemsSource="{Binding Swatches}" Width="300" HorizontalAlignment="Left">
+    <WrapPanel>
+        <GroupBox
+            Margin="16"
+            Header="Theme" MinWidth="200"
+            Style="{DynamicResource MaterialDesignCardGroupBox}">
+            <GroupBox.HeaderTemplate>
+                <DataTemplate>
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon
+                            Width="32"
+                            Height="32"
+                            VerticalAlignment="Center"
+                            Kind="Pencil" />
+                        <TextBlock
+                            Margin="8,0,0,0"
+                            VerticalAlignment="Center"
+                            Style="{StaticResource MaterialDesignSubheadingTextBlock}"
+                            Text="{Binding}" />
+                    </StackPanel>
+                </DataTemplate>
+            </GroupBox.HeaderTemplate>
+            <StackPanel Orientation="Vertical">
+                <Grid Margin="5">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Style="{DynamicResource MaterialDesignBody2TextBlock}"  VerticalAlignment="Center" Text="Dark Theme" HorizontalAlignment="Left" Foreground="{DynamicResource MaterialDesignBody}"/>
+                    <ToggleButton IsChecked="{Binding IsDark}" HorizontalAlignment="Right" Grid.Column="2"></ToggleButton>
+                </Grid>
+                <Grid Margin="5">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Style="{DynamicResource MaterialDesignBody2TextBlock}" VerticalAlignment="Center" Text="Main" HorizontalAlignment="Left" Foreground="{DynamicResource MaterialDesignBody}"/>
+                    <ComboBox Grid.Column="2" ItemsSource="{Binding MainHues}" SelectedItem="{Binding MainHue}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate DataType="materialDesignColors:Hue">
+                                <Border VerticalAlignment="Stretch" HorizontalAlignment="Stretch" MinHeight="30" MinWidth="60">
+                                    <Border.Background><SolidColorBrush Color="{Binding}"/></Border.Background>
+                                </Border>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </Grid>
+                <Grid Margin="5">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Style="{DynamicResource MaterialDesignBody2TextBlock}" VerticalAlignment="Center" Text="Accent" HorizontalAlignment="Left" Foreground="{DynamicResource MaterialDesignBody}"/>
+                    <ComboBox Grid.Column="2" ItemsSource="{Binding AccentHues}" SelectedItem="{Binding AccentHue}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate DataType="materialDesignColors:Hue">
+                                <Border VerticalAlignment="Stretch" HorizontalAlignment="Stretch" MinHeight="30" MinWidth="60">
+                                    <Border.Background><SolidColorBrush Color="{Binding}"/></Border.Background>
+                                </Border>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </Grid>
+            </StackPanel>
+        </GroupBox>
+        <!--<ListBox ItemsSource="{Binding Swatches}" Width="300" HorizontalAlignment="Left">
             <ListBox.ItemTemplate>
                 <DataTemplate DataType="materialDesignColors:Swatch">
                     <Grid>
@@ -36,6 +102,6 @@
                     </Grid>
                 </DataTemplate>
             </ListBox.ItemTemplate>
-        </ListBox>
-    </Grid>
+        </ListBox>-->
+    </WrapPanel>
 </local:PageView>

@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Windows.Media;
 using Cobalt.Common.IoC;
 using Cobalt.ViewModels.Utils;
 using MaterialDesignColors;
@@ -16,7 +17,10 @@ namespace Cobalt.ViewModels.Pages
         public SettingsPageViewModel(IResourceScope scope, ISettingsService settings) : base(scope)
         {
             _settings = settings;
-            Swatches = new SwatchesProvider().Swatches;
+            var swatches = new SwatchesProvider().Swatches.ToArray();
+            MainHues = swatches.Select(x => x.ExemplarHue?.Color).Where(x => x!= null).Select(x => x.Value);
+            AccentHues = swatches.Select(x => x.AccentExemplarHue?.Color).Where(x => x!= null).Select(x => x.Value);
+
             _settings.PropertyChanged += SettingsPropertyChanged;
         }
 
@@ -31,7 +35,9 @@ namespace Cobalt.ViewModels.Pages
             set => _settings.IsDark = value;
         }
 
-        public IEnumerable<Swatch> Swatches { get; }
+        public IEnumerable<Color> MainHues { get; }
+        public IEnumerable<Color> AccentHues { get; }
+
         public ISettingsService SettingsService { get; set; }
 
     }
