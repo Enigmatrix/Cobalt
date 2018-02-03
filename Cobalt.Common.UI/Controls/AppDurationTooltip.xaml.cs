@@ -6,19 +6,18 @@ using Cobalt.Common.UI.ViewModels;
 using LiveCharts;
 using LiveCharts.Wpf;
 
-namespace Cobalt.Views
+namespace Cobalt.Common.UI.Controls
 {
     /// <summary>
-    ///     Interaction logic for HourlyAppDurationTooltip.xaml
+    /// Interaction logic for AppDurationTooltip.xaml
     /// </summary>
-    /// //TODO INSTEAD OF USING THIS, USE THE APPDURATIONTOOLTIP
-    public partial class HourlyAppDurationTooltip : IChartTooltip
+    public partial class AppDurationTooltip : IChartTooltip
     {
         private TooltipData _data;
         private string _selectedPath;
         private List<DataPointViewModel> _sortedPoints;
 
-        public HourlyAppDurationTooltip()
+        public AppDurationTooltip()
         {
             InitializeComponent();
             DataContext = this;

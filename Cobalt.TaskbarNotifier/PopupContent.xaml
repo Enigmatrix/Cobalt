@@ -9,6 +9,7 @@
                      xmlns:viewModels="clr-namespace:Cobalt.Common.UI.ViewModels;assembly=Cobalt.Common.UI"
                      xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
                      xmlns:cal="http://www.caliburnproject.org"
+                     xmlns:controls="clr-namespace:Cobalt.Common.UI.Controls;assembly=Cobalt.Common.UI"
                      mc:Ignorable="d" Background="{DynamicResource MaterialDesignPaper}" Height="450" Width="400"
                      d:DesignHeight="300" d:DesignWidth="300">
     <Grid>
@@ -36,7 +37,7 @@
                 </MultiBinding>
             </lv:PieChart.Series>
             <lv:PieChart.DataTooltip>
-                <local:AppDurationTooltip />
+                <controls:AppDurationTooltip />
             </lv:PieChart.DataTooltip>
         </lv:PieChart>
         <Grid Grid.Row="2" Margin="5">

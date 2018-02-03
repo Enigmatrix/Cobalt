@@ -9,6 +9,7 @@
                 xmlns:wpf="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
                 xmlns:views="clr-namespace:Cobalt.Views"
                 xmlns:converters1="clr-namespace:Cobalt.Views.Converters"
+                xmlns:controls1="clr-namespace:Cobalt.Common.UI.Controls;assembly=Cobalt.Common.UI"
                 mc:Ignorable="d" Title="History" x:Name="Page"
                 d:DesignHeight="300" d:DesignWidth="300">
     <local:PageView.Resources>
@@ -32,7 +33,7 @@
                     </MultiBinding>
                 </wpf:PieChart.Series>
                 <wpf:PieChart.DataTooltip>
-                    <views:HourlyAppDurationTooltip />
+                    <controls1:AppDurationTooltip />
                 </wpf:PieChart.DataTooltip>
             </wpf:PieChart>
         </controls:DataCard>

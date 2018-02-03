@@ -1,11 +1,11 @@
-﻿<UserControl x:Class="Cobalt.TaskbarNotifier.AppDurationTooltip"
+﻿<UserControl x:Class="Cobalt.Common.UI.Controls.AppDurationTooltip"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:wpf="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-             xmlns:converters="clr-namespace:Cobalt.Common.UI.Converters;assembly=Cobalt.Common.UI"
+             xmlns:converters="clr-namespace:Cobalt.Common.UI.Converters"
              mc:Ignorable="d" Background="Transparent" x:Name="Popup"
              d:DesignHeight="300" d:DesignWidth="300">
     <UserControl.Resources>
@@ -40,7 +40,7 @@
                         </Grid.ColumnDefinitions>
                         <Border Background="{DynamicResource AccentColorBrush3}">
                             <Image Width="16" Height="16"
-                                   Source="{Binding ChartPoint.Instance.App.Path, Converter={StaticResource ExePathToIconConverter}}" />
+                                   Source="{Binding ChartPoint.Instance.App.Path, Converter={StaticResource ExePathToIconConverter}, IsAsync=True}" />
                         </Border>
                         <TextBlock Grid.Column="1"
                                    Text="{Binding ChartPoint.Instance.App, Converter={StaticResource AppToExeNameConverter}}"

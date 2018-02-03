@@ -99,6 +99,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Bootstrapper.cs" />
+    <Compile Include="Controls\AppDurationTooltip.xaml.cs">
+      <DependentUpon>AppDurationTooltip.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Converters\AppIconSizeConverter.cs" />
     <Compile Include="Converters\AppToExeNameConverter.cs" />
     <Compile Include="Converters\ExePathToIconConverter.cs" />
@@ -156,6 +159,10 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Page Include="Controls\AppDurationTooltip.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Resources\Common.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
