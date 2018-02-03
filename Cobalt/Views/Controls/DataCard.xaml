@@ -7,18 +7,31 @@
                         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
                         xmlns:util="clr-namespace:Cobalt.Views.Util"
                         xmlns:system="clr-namespace:System;assembly=mscorlib"
+                        xmlns:converters="clr-namespace:MaterialDesignThemes.Wpf.Converters;assembly=MaterialDesignThemes.Wpf"
                         mc:Ignorable="d"
                         d:DesignHeight="300" d:DesignWidth="300">
+    <HeaderedContentControl.Resources>
+        <converters:MathConverter x:Key="MathConverter" Operation="Subtract"/>
+        <ContentControl x:Key="DialogContainer" 
+                        Width="{Binding ActualWidth, RelativeSource={RelativeSource FindAncestor, AncestorType=materialDesign:DialogHost}, Converter={StaticResource MathConverter}, ConverterParameter=100}"
+                        Height="{Binding ActualHeight, RelativeSource={RelativeSource FindAncestor, AncestorType=materialDesign:DialogHost}, Converter={StaticResource MathConverter}, ConverterParameter=100}">
+            <ContentControl.ContentTemplate>
+                <DataTemplate>
+                    <ContentControl Content="{Binding}"/>
+                </DataTemplate>
+            </ContentControl.ContentTemplate>
+        </ContentControl>
+    </HeaderedContentControl.Resources>
     <HeaderedContentControl.Template>
         <ControlTemplate TargetType="HeaderedContentControl">
             <materialDesign:Card HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                                  UniformCornerRadius="4" materialDesign:ShadowAssist.ShadowDepth="Depth1">
-                <Grid>
+                <Grid x:Name="Root" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition />
                     </Grid.RowDefinitions>
-                    <ContentPresenter Content="{TemplateBinding Content}" Grid.Row="1" />
+                    <ContentPresenter x:Name="ContentHolder" Content="{TemplateBinding Content}" Grid.Row="1" />
                     <Grid Grid.Row="0">
                         <ContentPresenter Content="{TemplateBinding Header}" HorizontalAlignment="Left"
                                           VerticalAlignment="Top" Margin="5,5">

@@ -20,7 +20,8 @@
                     <Border Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}">
-                        <Grid x:Name="RootGrid">
+                        <md:DialogHost x:Name="DialogHoster" CloseOnClickAway="True">
+                            <Grid x:Name="RootGrid">
                             <Grid.Resources>
                                 <DataTemplate x:Key="MenuItemTemplate" DataType="controls:AppMenuItem">
                                     <Grid Height="48" Focusable="False">
@@ -98,6 +99,7 @@
                                 </metro:HamburgerMenu.HamburgerMenuHeaderTemplate>-->
                             </metro:HamburgerMenu>
                         </Grid>
+                        </md:DialogHost>
                     </Border>
                 </ControlTemplate>
             </Setter.Value>
