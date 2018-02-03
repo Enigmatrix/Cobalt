@@ -17,19 +17,11 @@ namespace Cobalt.Common.UI.Util
 {
     public class AppResourceCache
     {
-        public static AppResourceCache Instance { get; } = new AppResourceCache();
-
-        private readonly Dictionary<string, ImageSource> _iconMapper = new Dictionary<string, ImageSource>();
-        private readonly Dictionary<string, string> _nameMapper = new Dictionary<string, string>();
         private readonly Dictionary<string, SolidColorBrush> _colorMapper = new Dictionary<string, SolidColorBrush>();
 
-        private readonly Random _rng = new Random();
-        private static SolidColorBrush rgb(byte r, byte g, byte b)
+        private readonly SolidColorBrush[] _colors =
         {
-            return new SolidColorBrush(Color.FromRgb(r,g,b));
-        }
-
-        private readonly SolidColorBrush[] _colors = {
+            //from https://flatuicolors.com/palette/es
             rgb(64, 64, 122),
             rgb(112, 111, 211),
             rgb(247, 241, 227),
@@ -52,10 +44,38 @@ namespace Cobalt.Common.UI.Util
             rgb(205, 97, 51),
             rgb(132, 129, 122),
             rgb(204, 142, 53),
-            rgb(204, 174, 98)
+            rgb(204, 174, 98),
+
+            //from http://ethanschoonover.com/solarized
+            rgb(65, 181, 137),
+            rgb(203, 75, 22),
+            rgb(220, 50, 47),
+            rgb(211, 54, 130),
+            rgb(108, 113, 196),
+
+            rgb(38, 139, 210),
+
+            rgb(42, 161, 152),
+
+            rgb(133, 153, 0)
         };
 
-        private SolidColorBrush RandomColor() => _colors[_rng.Next(_colors.Length)];
+        private readonly Dictionary<string, ImageSource> _iconMapper = new Dictionary<string, ImageSource>();
+        private readonly Dictionary<string, string> _nameMapper = new Dictionary<string, string>();
+
+        private readonly Random _rng = new Random();
+        public static AppResourceCache Instance { get; } = new AppResourceCache();
+
+        private static SolidColorBrush rgb(byte r, byte g, byte b)
+        {
+            return new SolidColorBrush(Color.FromRgb(r, g, b));
+        }
+
+
+        private SolidColorBrush RandomColor()
+        {
+            return _colors[_rng.Next(_colors.Length)];
+        }
 
         public SolidColorBrush GetColor(string path)
         {
@@ -98,7 +118,7 @@ namespace Cobalt.Common.UI.Util
             if (!_iconMapper.ContainsKey(pathStr)) _iconMapper[pathStr] = Get(pathStr);
             return _iconMapper[pathStr];
         }
-        
+
         private static ImageSource GetModernAppIcon(string path)
         {
             //TODO cleanup all these IO reads with exception handling?
@@ -142,6 +162,7 @@ namespace Cobalt.Common.UI.Util
                     break;
                 }
             }
+
             return File.Exists(imagePath) ? new BitmapImage(new Uri($@"file:/{imagePath}")) : null;
         }
 
@@ -174,6 +195,5 @@ namespace Cobalt.Common.UI.Util
 
             return wpfBitmap;
         }
-    
     }
 }
