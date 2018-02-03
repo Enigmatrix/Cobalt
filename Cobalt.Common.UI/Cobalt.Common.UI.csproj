@@ -99,6 +99,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Bootstrapper.cs" />
+    <Compile Include="Controls\AppDurationLegend.xaml.cs">
+      <DependentUpon>AppDurationLegend.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Controls\AppDurationTooltip.xaml.cs">
       <DependentUpon>AppDurationTooltip.xaml</DependentUpon>
     </Compile>
@@ -159,6 +162,10 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Page Include="Controls\AppDurationLegend.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Controls\AppDurationTooltip.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

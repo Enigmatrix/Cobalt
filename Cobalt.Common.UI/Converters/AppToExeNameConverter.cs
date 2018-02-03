@@ -13,8 +13,14 @@ namespace Cobalt.Common.UI.Converters
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (!(value is App app)) throw new NullReferenceException(nameof(App));
-            return app.Name ?? AppResourceCache.Instance.GetName(app.Path);
+            switch (value)
+            {
+                case App app:
+                    return app.Name ?? AppResourceCache.Instance.GetName(app.Path);
+                case string path:
+                    return AppResourceCache.Instance.GetName(path);
+                default: throw new ArgumentException();
+            }
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

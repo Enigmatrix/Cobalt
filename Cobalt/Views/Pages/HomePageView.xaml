@@ -63,7 +63,7 @@
                             <controls1:AppDurationTooltip />
                         </wpf:PieChart.DataTooltip>
                         <wpf:PieChart.ChartLegend>
-                            <wpf:DefaultLegend/>
+                            <controls1:AppDurationLegend/>
                         </wpf:PieChart.ChartLegend>
                     </wpf:PieChart>
                 </controls:DataCard>
