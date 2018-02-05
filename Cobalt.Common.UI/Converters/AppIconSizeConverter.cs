@@ -11,7 +11,7 @@ namespace Cobalt.Common.UI.Converters
             if (!(values[0] is double participation) || !(values[1] is double height) ||
                 !(values[2] is double width)) return null;
             var minsz = Min(height, width);
-            var transed = Min(0.25, participation*1.2);
+            var transed = Min(0.15, participation*1.2);
             return transed * minsz;
         }
 
