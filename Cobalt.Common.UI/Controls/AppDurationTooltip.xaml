@@ -10,21 +10,6 @@
              d:DesignHeight="300" d:DesignWidth="300">
     <UserControl.Resources>
         <converters:IsEqualToConverter x:Key="IsEqualToConverter" />
-        <Style TargetType="TextBlock" x:Key="BoldWhenSelectedStyle">
-            <Style.Triggers>
-                <DataTrigger Value="True">
-                    <DataTrigger.Binding>
-                        <MultiBinding Converter="{StaticResource IsEqualToConverter}">
-                            <Binding Path="ChartPoint.Instance.App.Path" />
-                            <Binding Path="SelectedPath" ElementName="Popup" />
-                        </MultiBinding>
-                    </DataTrigger.Binding>
-                    <DataTrigger.Setters>
-                        <Setter Property="FontWeight" Value="Bold" />
-                    </DataTrigger.Setters>
-                </DataTrigger>
-            </Style.Triggers>
-        </Style>
     </UserControl.Resources>
     <materialDesign:Card Background="{DynamicResource MaterialDesignPaper}" Margin="4">
         <ItemsControl ItemsSource="{Binding SortedPoints}" Grid.IsSharedSizeScope="True">
@@ -32,7 +17,8 @@
             </ItemsControl.Resources>
             <ItemsControl.ItemTemplate>
                 <DataTemplate DataType="{x:Type wpf:DataPointViewModel}">
-                    <Grid Margin="4">
+                    <Border Padding="4" x:Name="AppRoot">
+                    <Grid >
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="Auto" SharedSizeGroup="Title" />
@@ -45,14 +31,29 @@
                         <TextBlock Grid.Column="1"
                                    Text="{Binding ChartPoint.Instance.App, Converter={StaticResource AppToExeNameConverter}}"
                                    Margin="10 0 0 0" VerticalAlignment="Center"
-                                   Foreground="{DynamicResource BlackBrush}"
-                                   Style="{DynamicResource BoldWhenSelectedStyle}" />
+                                   Foreground="{DynamicResource BlackBrush}" x:Name="AppName"/>
                         <TextBlock Grid.Column="2"
                                    Text="{Binding ChartPoint.Instance.Duration, Converter={StaticResource HumanReadableTimeSpanConverter}}"
-                                   Margin="5 0 0 0" VerticalAlignment="Center"
-                                   Foreground="{DynamicResource PrimaryHueDarkBrush}"
-                                   Style="{DynamicResource BoldWhenSelectedStyle}" />
-                    </Grid>
+                                   Margin="5 0 0 0" VerticalAlignment="Center" x:Name="AppDur"
+                                   Foreground="{DynamicResource PrimaryHueDarkBrush}"/>
+                    </Grid></Border>
+                    <DataTemplate.Triggers>
+                        <DataTrigger Value="true">
+                            <DataTrigger.Binding>
+                                <MultiBinding Converter="{StaticResource IsEqualToConverter}">
+                                    <Binding Path="ChartPoint.Instance.App.Path" />
+                                    <Binding Path="SelectedPath" ElementName="Popup" />
+                                </MultiBinding>
+                            </DataTrigger.Binding>
+                            <DataTrigger.Setters>
+                                <Setter TargetName="AppRoot" Property="Background" Value="{DynamicResource SecondaryAccentBrush}"/>
+                                <Setter TargetName="AppName" Property="Foreground" Value="{DynamicResource SecondaryAccentForegroundBrush}"/>
+                                <Setter TargetName="AppDur" Property="Foreground" Value="{DynamicResource SecondaryAccentForegroundBrush}"/>
+                                <Setter TargetName="AppName" Property="FontWeight" Value="Bold"/>
+                                <Setter TargetName="AppDur" Property="FontWeight" Value="Bold"/>
+                            </DataTrigger.Setters>
+                        </DataTrigger>
+                    </DataTemplate.Triggers>
                 </DataTemplate>
             </ItemsControl.ItemTemplate>
         </ItemsControl>
