@@ -4,21 +4,21 @@ using System.Windows.Data;
 
 namespace Cobalt.Common.UI.Converters
 {
-    public class AppIconSizeConverter : IValueConverter
+    public class AppIconSizeConverter : IMultiValueConverter
     {
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
         {
-            var val = 100 * (double) value;
-            if (val <= 1)
-                return 0;
-            if (val <= 3)
-                return 10;
-            if (val > 25 / 0.75)
-                return 0.75 * val;
-            return 15 + Math.Max(0, val - 15) * 6 / 11;
+            if (!(values[0] is double participation) || !(values[1] is double height) ||
+                !(values[2] is double width)) return null;
+            var minsz = Min(height, width);
+            var transed = Min(0.25, participation*1.2);
+            return transed * minsz;
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        public static double Min(double a, double b) => a < b ? a : b;
+        public static double Max(double a, double b) => a > b ? a : b;
+
+        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
         {
             throw new NotImplementedException();
         }

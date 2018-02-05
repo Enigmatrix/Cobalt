@@ -14,8 +14,21 @@
     <DataTemplate x:Key="AppPieRepresentation" DataType="liveCharts:DataLabelViewModel">
         <Image
             Source="{Binding Point.Instance.App.Path, Converter={StaticResource ExePathToIconConverter}, Mode=OneTime}"
-            Stretch="Fill"
-            Height="{Binding Point.Participation, Converter={StaticResource SizeConverter}}"
-            Width="{Binding Point.Participation, Converter={StaticResource SizeConverter}}" />
+            Stretch="Fill">
+            <Image.Height>
+                <MultiBinding Converter="{StaticResource SizeConverter}">
+                    <Binding Path="Point.Participation"/>
+                    <Binding Path="Point.ChartView.ActualHeight"/>
+                    <Binding Path="Point.ChartView.ActualWidth"/>
+                </MultiBinding>
+            </Image.Height>
+            <Image.Width>
+                <MultiBinding Converter="{StaticResource SizeConverter}">
+                    <Binding Path="Point.Participation"/>
+                    <Binding Path="Point.ChartView.ActualHeight"/>
+                    <Binding Path="Point.ChartView.ActualWidth"/>
+                </MultiBinding>
+            </Image.Width>
+        </Image>
     </DataTemplate>
 </ResourceDictionary>
