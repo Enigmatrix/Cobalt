@@ -3,27 +3,23 @@ using Cobalt.Common.Data;
 
 namespace Cobalt.Common.UI.ViewModels
 {
-    public interface IAppDurationViewModel : IViewModel, IHasDuration
-    {
-        App App { get; set; }
-    }
 
-    public class AppDurationViewModel : ViewModelBase, IAppDurationViewModel
+    public class AppDurationViewModel : EntityViewModel, IHasDuration
     {
-        private App _app;
+        private AppViewModel _app;
         private TimeSpan _duration;
 
         public AppDurationViewModel(App app) : this(app, TimeSpan.Zero)
         {
         }
 
-        public AppDurationViewModel(App app, TimeSpan duration)
+        public AppDurationViewModel(App app, TimeSpan duration) : base(app)
         {
-            App = app;
+            App = new AppViewModel(app);
             Duration = duration;
         }
 
-        public App App
+        public AppViewModel App
         {
             get => _app;
             set => Set(ref _app, value);

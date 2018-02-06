@@ -10,25 +10,15 @@ using Cobalt.Common.UI.ViewModels;
 
 namespace Cobalt.TaskbarNotifier
 {
-    public interface IMainViewModel : IViewModel
+    public class MainViewModel : ViewModelBase
     {
-        IObservable<IAppDurationViewModel> AppDurations { get; }
-        BindableCollection<ITagDurationViewModel> TagDurations { get; }
-        TimeSpan TotalDuration { get; set; }
-        void PopupOpened();
-        void PopupClosed();
-        void OpenCobalt();
-    }
-
-    public class MainViewModel : ViewModelBase, IMainViewModel
-    {
-        private IObservable<IAppDurationViewModel> _appDurations;
+        private IObservable<AppDurationViewModel> _appDurations;
 
         private bool _isPopupOpen;
         private IResourceScope _resources;
 
-        private BindableCollection<ITagDurationViewModel> _tagDurations =
-            new BindableCollection<ITagDurationViewModel>();
+        private BindableCollection<TagDurationViewModel> _tagDurations =
+            new BindableCollection<TagDurationViewModel>();
 
         private TimeSpan _totalDuration;
 
@@ -52,13 +42,13 @@ namespace Cobalt.TaskbarNotifier
             set => Set(ref _isPopupOpen, value);
         }
 
-        public IObservable<IAppDurationViewModel> AppDurations
+        public IObservable<AppDurationViewModel> AppDurations
         {
             get => _appDurations;
             set => Set(ref _appDurations, value);
         }
 
-        public BindableCollection<ITagDurationViewModel> TagDurations
+        public BindableCollection<TagDurationViewModel> TagDurations
         {
             get => _tagDurations;
             set => Set(ref _tagDurations, value);

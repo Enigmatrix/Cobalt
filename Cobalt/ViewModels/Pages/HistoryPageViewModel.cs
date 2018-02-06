@@ -10,7 +10,7 @@ namespace Cobalt.ViewModels.Pages
 {
     public class HistoryPageViewModel : PageViewModel
     {
-        private IObservable<IAppDurationViewModel> _appDurations;
+        private IObservable<AppDurationViewModel> _appDurations;
 
         private DateTime? _rangeEnd;
         private DateTime? _rangeStart;
@@ -20,7 +20,7 @@ namespace Cobalt.ViewModels.Pages
             Stats = stats;
         }
 
-        public IObservable<IAppDurationViewModel> AppDurations
+        public IObservable<AppDurationViewModel> AppDurations
         {
             get => _appDurations;
             set => Set(ref _appDurations, value);

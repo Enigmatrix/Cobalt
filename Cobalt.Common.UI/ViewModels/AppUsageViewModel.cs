@@ -3,28 +3,19 @@ using Cobalt.Common.Data;
 
 namespace Cobalt.Common.UI.ViewModels
 {
-    public interface IAppUsageViewModel : IViewModel, IHasDuration
-    {
-        App App { get; }
-        AppUsageType UsageType { get; }
-        AppUsageStartReason UsageStartReason { get; }
-        AppUsageEndReason UsageEndReason { get; }
-        DateTime StartTimestamp { get; }
-        DateTime EndTimestamp { get; }
-    }
 
-    public class AppUsageViewModel : ViewModelBase, IAppUsageViewModel
+    public class AppUsageViewModel : EntityViewModel, IHasDuration
     {
-        private App _app;
+        private AppViewModel _app;
         private DateTime _endTimestamp;
         private DateTime _startTimestamp;
         private AppUsageEndReason _usageEndReason;
         private AppUsageStartReason _usageStartReason;
         private AppUsageType _usageType;
 
-        public AppUsageViewModel(AppUsage au)
+        public AppUsageViewModel(AppUsage au) : base(au)
         {
-            _app = au.App;
+            _app = new AppViewModel(au.App);
             EndTimestamp = au.EndTimestamp;
             StartTimestamp = au.StartTimestamp;
             UsageStartReason = au.UsageStartReason;
@@ -32,7 +23,7 @@ namespace Cobalt.Common.UI.ViewModels
             UsageType = au.UsageType;
         }
 
-        public App App
+        public AppViewModel App
         {
             get => _app;
             set => Set(ref _app, value);

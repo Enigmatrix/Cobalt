@@ -6,6 +6,7 @@ using System.IO;
 using System.Windows.Data;
 using Cobalt.Common.Data;
 using Cobalt.Common.UI.Util;
+using Cobalt.Common.UI.ViewModels;
 
 namespace Cobalt.Common.UI.Converters
 {
@@ -15,7 +16,7 @@ namespace Cobalt.Common.UI.Converters
         {
             switch (value)
             {
-                case App app:
+                case AppViewModel app:
                     return app.Name ?? AppResourceCache.Instance.GetName(app.Path);
                 case string path:
                     return AppResourceCache.Instance.GetName(path);

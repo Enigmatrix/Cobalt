@@ -12,9 +12,9 @@ using LiveCharts.Wpf;
 
 namespace Cobalt.Common.UI.Converters
 {
-    public class AppDurationSeriesConverter : ObservableToSeriesConverter<IAppDurationViewModel>
+    public class AppDurationSeriesConverter : ObservableToSeriesConverter<AppDurationViewModel>
     {
-        protected override SeriesCollection Convert(IObservable<IAppDurationViewModel> coll, IResourceScope manager)
+        protected override SeriesCollection Convert(IObservable<AppDurationViewModel> coll, IResourceScope manager)
         {
             var mapper = Mappers
                 .Pie<AppDurationViewModel>()
@@ -41,11 +41,11 @@ namespace Cobalt.Common.UI.Converters
             }
 
             var sub = BufferDuration == TimeSpan.Zero
-                ? coll.ObserveOnDispatcher().Subscribe(x => series.Add(ToSeries((AppDurationViewModel) x)))
+                ? coll.ObserveOnDispatcher().Subscribe(x => series.Add(ToSeries(x)))
                 : coll.Buffer(BufferDuration)
                     .Where(x => x.Count != 0)
                     .ObserveOnDispatcher()
-                    .Subscribe(x => series.AddRange(x.Cast<AppDurationViewModel>().Select(ToSeries)));
+                    .Subscribe(x => series.AddRange(x.Select(ToSeries)));
 
             sub.ManageUsing(manager);
             return series;
@@ -53,7 +53,7 @@ namespace Cobalt.Common.UI.Converters
 
         private string LabelPoint(ChartPoint c)
         {
-            var duration = (c.Instance as IAppDurationViewModel)?.Duration;
+            var duration = (c.Instance as AppDurationViewModel)?.Duration;
             return duration?.ToString(@"hh\:mm\:ss\.fff") ?? "";
         }
     }

@@ -13,7 +13,7 @@ namespace Cobalt.ViewModels.Pages
 {
     public class HomePageViewModel : PageViewModel
     {
-        private IObservable<IAppDurationViewModel> _appDurations;
+        private IObservable<AppDurationViewModel> _appDurations;
         private IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> _dayChunks;
 
         private IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> _hourlyChunks;
@@ -22,7 +22,7 @@ namespace Cobalt.ViewModels.Pages
         {
         }
 
-        public IObservable<IAppDurationViewModel> AppDurations
+        public IObservable<AppDurationViewModel> AppDurations
         {
             get => _appDurations;
             set => Set(ref _appDurations, value);

@@ -1,4 +1,5 @@
-﻿using Cobalt.Common.IoC;
+﻿using System;
+using Cobalt.Common.IoC;
 
 namespace Cobalt.ViewModels.Pages
 {
@@ -6,6 +7,12 @@ namespace Cobalt.ViewModels.Pages
     {
         public AppsPageViewModel(IResourceScope scope) : base(scope)
         {
+        }
+
+
+        protected override void OnActivate(IResourceScope resources)
+        {
+
         }
     }
 }

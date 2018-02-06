@@ -12,7 +12,7 @@ namespace Cobalt.TaskbarNotifier
     {
     }
 
-    public class AppBoostrapper : Bootstrapper<IMainViewModel>
+    public class AppBoostrapper : Bootstrapper<MainViewModel>
     {
         protected override void PrepareApplication()
         {

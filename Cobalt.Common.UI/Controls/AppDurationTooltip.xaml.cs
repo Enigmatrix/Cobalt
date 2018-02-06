@@ -46,7 +46,7 @@ namespace Cobalt.Common.UI.Controls
                 Set(ref _data, value);
                 SortedPoints = _data.Points.Where(x => x.ChartPoint.Participation != 0.0)
                     .OrderByDescending(x => x.ChartPoint.Participation).ToList();
-                SelectedPath = ((IAppDurationViewModel) _data.SenderSeries.ChartPoints.First().Instance).App.Path;
+                SelectedPath = ((AppDurationViewModel) _data.SenderSeries.ChartPoints.First().Instance).App.Path;
             }
         }
 

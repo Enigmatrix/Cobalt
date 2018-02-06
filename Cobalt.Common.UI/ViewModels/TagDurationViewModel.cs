@@ -3,15 +3,10 @@ using Cobalt.Common.Data;
 
 namespace Cobalt.Common.UI.ViewModels
 {
-    public interface ITagDurationViewModel : IViewModel, IHasDuration
-    {
-        Tag Tag { get; set; }
-    }
-
-    public class TagDurationViewModel : ViewModelBase, ITagDurationViewModel
+    public class TagDurationViewModel : ViewModelBase, IHasDuration
     {
         private TimeSpan _duration;
-        private Tag _tag;
+        private TagViewModel _tag;
 
         public TagDurationViewModel(Tag tag) : this(tag, TimeSpan.Zero)
         {
@@ -19,7 +14,7 @@ namespace Cobalt.Common.UI.ViewModels
 
         public TagDurationViewModel(Tag tag, TimeSpan span)
         {
-            Tag = tag;
+            Tag = new TagViewModel(tag);
             Duration = span;
         }
 
@@ -29,7 +24,7 @@ namespace Cobalt.Common.UI.ViewModels
             set => Set(ref _duration, value);
         }
 
-        public Tag Tag
+        public TagViewModel Tag
         {
             get => _tag;
             set => Set(ref _tag, value);
