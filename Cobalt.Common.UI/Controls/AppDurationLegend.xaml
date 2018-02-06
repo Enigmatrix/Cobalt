@@ -10,10 +10,16 @@
              mc:Ignorable="d"  MaxHeight="{Binding Chart.ActualHeight}"
              d:DesignHeight="300" d:DesignWidth="300">
     <ScrollViewer VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Hidden">
-        <ListView ItemsSource="{Binding ChartSeries}" Grid.IsSharedSizeScope="True">
+        <ListView ItemsSource="{Binding ChartSeries}" Grid.IsSharedSizeScope="True" Padding="0" Margin="0">
+            <ListView.ItemContainerStyle>
+                <Style TargetType="ListViewItem">
+                    <Setter Property="Padding" Value="0"/>
+                    <Setter Property="Margin" Value="0"/>
+                </Style>
+            </ListView.ItemContainerStyle>
             <ListView.ItemTemplate>
                 <DataTemplate DataType="{x:Type local:SeriesReference}">
-                    <Grid Margin="1" Clip="{x:Null}" ClipToBounds="False">
+                    <Grid Margin="0" Clip="{x:Null}" ClipToBounds="False">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="Auto" SharedSizeGroup="Title"/>
