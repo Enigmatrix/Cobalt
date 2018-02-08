@@ -6,6 +6,7 @@ using System.Reactive.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Cobalt.Common.UI;
+using Cobalt.Common.Util;
 using Cobalt.Properties;
 using MahApps.Metro;
 using MaterialDesignColors;
@@ -31,13 +32,9 @@ namespace Cobalt.ViewModels.Utils
             //reassign to trigger change
             IsDark = _settings.IsDark;
 
-            _saveTracker = Observable.FromEventPattern<PropertyChangedEventHandler, PropertyChangedEventArgs>(
-                    handler => handler.Invoke, h => PropertyChanged += h, h => PropertyChanged -= h)
+            _saveTracker = this.PropertyChanges()
                 .Throttle(TimeSpan.FromMilliseconds(150))
-                .Subscribe(x =>
-                {
-                    _settings.Save();
-                });
+                .Subscribe(x => _settings.Save());
         }
 
         public bool IsDark

@@ -1,10 +1,9 @@
 ﻿using System;
-using System.ComponentModel;
-using System.Reactive;
 using System.Reactive.Linq;
 using Cobalt.Common.Analysis;
 using Cobalt.Common.IoC;
 using Cobalt.Common.UI.ViewModels;
+using Cobalt.Common.Util;
 
 namespace Cobalt.ViewModels.Pages
 {
@@ -40,18 +39,13 @@ namespace Cobalt.ViewModels.Pages
             set => Set(ref _rangeEnd, value);
         }
 
-        private IObservable<EventPattern<PropertyChangedEventArgs>> PropertyChangedEvents()
-        {
-            return Observable.FromEventPattern<PropertyChangedEventHandler, PropertyChangedEventArgs>(
-                handler => handler.Invoke, h => PropertyChanged += h, h => PropertyChanged -= h);
-        }
 
         protected override void OnActivate(IResourceScope res)
         {
-            PropertyChangedEvents()
+            this.PropertyChanges()
                 .Where(x =>
-                    x.EventArgs.PropertyName == nameof(RangeEnd) ||
-                    x.EventArgs.PropertyName == nameof(RangeStart))
+                    x == nameof(RangeEnd) ||
+                    x == nameof(RangeStart))
                 .Throttle(TimeSpan.FromMilliseconds(100))
                 .Select(x => new {RangeStart, RangeEnd})
                 .Subscribe(dataRange =>
