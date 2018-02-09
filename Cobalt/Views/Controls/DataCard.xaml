@@ -6,18 +6,18 @@
                         xmlns:local="clr-namespace:Cobalt.Views.Controls"
                         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
                         xmlns:util="clr-namespace:Cobalt.Views.Util"
-                        xmlns:system="clr-namespace:System;assembly=mscorlib"
+                        xmlns:system="clr-namespace:System;assembly=mscorlib" x:Name="RootCard"
                         xmlns:converters="clr-namespace:MaterialDesignThemes.Wpf.Converters;assembly=MaterialDesignThemes.Wpf"
-                        mc:Ignorable="d"
+                        mc:Ignorable="d" Background="{DynamicResource MaterialDesignCardBackground}" Foreground="{DynamicResource MaterialDesignBody}"
                         d:DesignHeight="300" d:DesignWidth="300">
     <HeaderedContentControl.Resources>
-        <converters:MathConverter x:Key="MathConverter" Operation="Subtract"/>
-        <ContentControl x:Key="DialogContainer" 
+        <converters:MathConverter x:Key="MathConverter" Operation="Subtract" />
+        <ContentControl x:Key="DialogContainer"
                         Width="{Binding ActualWidth, RelativeSource={RelativeSource FindAncestor, AncestorType=materialDesign:DialogHost}, Converter={StaticResource MathConverter}, ConverterParameter=100}"
                         Height="{Binding ActualHeight, RelativeSource={RelativeSource FindAncestor, AncestorType=materialDesign:DialogHost}, Converter={StaticResource MathConverter}, ConverterParameter=100}">
             <ContentControl.ContentTemplate>
                 <DataTemplate>
-                    <ContentControl Content="{Binding}"/>
+                    <ContentControl Content="{Binding}" />
                 </DataTemplate>
             </ContentControl.ContentTemplate>
         </ContentControl>
@@ -25,11 +25,14 @@
     <HeaderedContentControl.Template>
         <ControlTemplate TargetType="HeaderedContentControl">
             <materialDesign:Card HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                                 Background="{TemplateBinding Background}"
                                  UniformCornerRadius="4" materialDesign:ShadowAssist.ShadowDepth="Depth1">
                 <Grid x:Name="Root" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
                     <Grid.Resources>
-                        <converters:BooleanToVisibilityConverter x:Key="InverseBoolToVis" TrueValue="Collapsed" FalseValue="Visible"/>
-                        <converters:BooleanToVisibilityConverter x:Key="BoolToVis" FalseValue="Collapsed" TrueValue="Visible"/>
+                        <converters:BooleanToVisibilityConverter x:Key="InverseBoolToVis" TrueValue="Collapsed"
+                                                                 FalseValue="Visible" />
+                        <converters:BooleanToVisibilityConverter x:Key="BoolToVis" FalseValue="Collapsed"
+                                                                 TrueValue="Visible" />
                     </Grid.Resources>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -46,7 +49,7 @@
                                             <util:TypedTemplateEntry Type="system:String">
                                                 <util:TypedTemplateEntry.Template>
                                                     <DataTemplate>
-                                                        <TextBlock Text="{Binding}"
+                                                        <TextBlock Text="{Binding}" Foreground="{Binding Foreground, ElementName=RootCard}"
                                                                    Style="{DynamicResource MaterialDesignTitleTextBlock}"
                                                                    FontSize="16" />
                                                     </DataTemplate>
@@ -57,21 +60,23 @@
                                 </util:TypedTemplateSelector>
                             </ContentPresenter.ContentTemplateSelector>
                         </ContentPresenter>
-                        <materialDesign:PopupBox Visibility="{Binding Path=(local:DataCard.Expanded), ElementName=Root, Converter={StaticResource InverseBoolToVis}}"
-                            PlacementMode="BottomAndAlignRightEdges"
+                        <materialDesign:PopupBox
+                            Visibility="{Binding Path=(local:DataCard.Expanded), ElementName=Root, Converter={StaticResource InverseBoolToVis}}"
+                            PlacementMode="BottomAndAlignRightEdges" Foreground="{TemplateBinding Foreground}"
                             StaysOpen="False" HorizontalAlignment="Right" VerticalAlignment="Top">
                             <materialDesign:PopupBox.ToggleContent>
-                                <materialDesign:PackIcon Kind="DotsVertical" Margin="5,5" />
+                                <materialDesign:PackIcon Kind="DotsVertical" Margin="5,5" Foreground="{TemplateBinding Foreground}"/>
                             </materialDesign:PopupBox.ToggleContent>
                             <StackPanel>
                                 <Button Content="Expand" Click="DataCardExpand" />
                                 <Button Content="Setting" />
                             </StackPanel>
                         </materialDesign:PopupBox>
-                        <Button Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}" HorizontalAlignment="Right"
+                        <Button Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}"
+                                HorizontalAlignment="Right"
                                 Visibility="{Binding Path=(local:DataCard.Expanded), ElementName=Root, Converter={StaticResource BoolToVis}}"
                                 Style="{DynamicResource MaterialDesignFlatButton}">
-                            <materialDesign:PackIcon Kind="Close" Foreground="Red"/>
+                            <materialDesign:PackIcon Kind="Close" Foreground="Red" />
                         </Button>
                     </Grid>
                 </Grid>
