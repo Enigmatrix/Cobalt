@@ -47,6 +47,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AppStatsStreamService.cs" />
+    <Compile Include="EntityStreamService.cs" />
     <Compile Include="OutputTypes\Usage.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

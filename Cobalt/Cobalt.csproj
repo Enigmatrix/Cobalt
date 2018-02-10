@@ -126,6 +126,7 @@
       <DependentUpon>DateRangePicker.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\Converters\AppMenuItemToTypeConverter.cs" />
+    <Compile Include="Views\Converters\AppsConverter.cs" />
     <Compile Include="Views\Converters\BooleanToLegendLocation.cs" />
     <Compile Include="Views\Converters\ChunkedUsageConverter.cs" />
     <Compile Include="Views\Pages\AppsPageView.xaml.cs">

@@ -12,7 +12,7 @@ using LiveCharts.Wpf;
 
 namespace Cobalt.Common.UI.Converters
 {
-    public class AppDurationSeriesConverter : ObservableToSeriesConverter<AppDurationViewModel>
+    public class AppDurationSeriesConverter : ObservableConverter<AppDurationViewModel, SeriesCollection>
     {
         protected override SeriesCollection Convert(IObservable<AppDurationViewModel> coll, object p, IResourceScope manager)
         {

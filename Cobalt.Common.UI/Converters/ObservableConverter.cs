@@ -7,10 +7,10 @@ using LiveCharts;
 
 namespace Cobalt.Common.UI.Converters
 {
-    public abstract class ObservableToSeriesConverter<T> : DependencyObject, IMultiValueConverter
+    public abstract class ObservableConverter<T, TE> : DependencyObject, IMultiValueConverter
     {
         public static readonly DependencyProperty BufferDurationProperty =
-            DependencyProperty.Register("BufferDuration", typeof(TimeSpan), typeof(ObservableToSeriesConverter<T>),
+            DependencyProperty.Register("BufferDuration", typeof(TimeSpan), typeof(ObservableConverter<T, TE>),
                 new PropertyMetadata(TimeSpan.Zero));
 
         public TimeSpan BufferDuration
@@ -33,6 +33,6 @@ namespace Cobalt.Common.UI.Converters
             throw new NotImplementedException();
         }
 
-        protected abstract SeriesCollection Convert(IObservable<T> values, object parameter, IResourceScope targetType);
+        protected abstract TE Convert(IObservable<T> values, object parameter, IResourceScope manager);
     }
 }

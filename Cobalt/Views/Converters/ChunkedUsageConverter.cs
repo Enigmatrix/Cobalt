@@ -19,7 +19,7 @@ using LiveCharts.Wpf;
 
 namespace Cobalt.Views.Converters
 {
-    public class ChunkedUsageConverter : ObservableToSeriesConverter<Usage<(App App, DateTime Time, TimeSpan Duration)>>
+    public class ChunkedUsageConverter : ObservableConverter<Usage<(App App, DateTime Time, TimeSpan Duration)>, SeriesCollection>
     {
         private static IEqualityComparer<App> PathEquality { get; }
             = new SelectorEqualityComparer<App, string>(a => a.Path);
