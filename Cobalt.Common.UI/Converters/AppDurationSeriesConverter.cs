@@ -14,7 +14,7 @@ namespace Cobalt.Common.UI.Converters
 {
     public class AppDurationSeriesConverter : ObservableToSeriesConverter<AppDurationViewModel>
     {
-        protected override SeriesCollection Convert(IObservable<AppDurationViewModel> coll, IResourceScope manager)
+        protected override SeriesCollection Convert(IObservable<AppDurationViewModel> coll, object p, IResourceScope manager)
         {
             var mapper = Mappers
                 .Pie<AppDurationViewModel>()

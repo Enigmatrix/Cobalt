@@ -24,7 +24,7 @@ namespace Cobalt.Common.UI.Converters
             if (values.Length != 2 ||
                 !(values[0] is IObservable<T> coll) ||
                 !(values[1] is IResourceScope manager)) return null;
-            return Convert(coll, manager);
+            return Convert(coll, parameter, manager);
         }
 
         //usually no need to convert back
@@ -33,6 +33,6 @@ namespace Cobalt.Common.UI.Converters
             throw new NotImplementedException();
         }
 
-        protected abstract SeriesCollection Convert(IObservable<T> values, IResourceScope targetType);
+        protected abstract SeriesCollection Convert(IObservable<T> values, object parameter, IResourceScope targetType);
     }
 }

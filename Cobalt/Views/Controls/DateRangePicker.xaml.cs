@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Windows;
+using Cobalt.Common.Util;
 using MahApps.Metro.Controls;
 
 namespace Cobalt.Views.Controls
@@ -168,9 +169,9 @@ namespace Cobalt.Views.Controls
             else if (ReferenceEquals(SelectedItem, Yesterday))
                 (Start, End) = (today.Subtract(TimeSpan.FromDays(1)), today);
             else if (ReferenceEquals(SelectedItem, ThisWeek))
-                (Start, End) = (today.AddDays(-(int) today.DayOfWeek), null);
+                (Start, End) = (today.StartOfWeek(), null);
             else if (ReferenceEquals(SelectedItem, ThisMonth))
-                (Start, End) = (today.AddDays(1 - today.Day), null);
+                (Start, End) = (today.StartOfMonth(), null);
             else
                 (Start, End) = (null, null);
         }

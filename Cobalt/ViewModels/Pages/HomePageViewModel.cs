@@ -15,7 +15,6 @@ namespace Cobalt.ViewModels.Pages
     {
         private IObservable<AppDurationViewModel> _appDurations;
         private IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> _dayChunks;
-
         private IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> _hourlyChunks;
 
         public HomePageViewModel(IResourceScope scope) : base(scope)
@@ -32,6 +31,14 @@ namespace Cobalt.ViewModels.Pages
         public Func<double, string> DayFormatter => x => x == 0 ? "" : x / 36000000000 + (x == 1 ? "hr" : "hrs");
         public Func<double, string> DayHourFormatter => x => (x % 12 == 0 ? 12 : x % 12) + (x >= 12 ? "pm" : "am");
         public Func<double, string> DayOfWeekFormatter => x => ((DayOfWeek) (int) x).ToString();
+
+        public static DateTime WeekStart => DateTime.Today.StartOfWeek();
+        public static DateTime WeekEnd => DateTime.Today.EndOfWeek();
+        public static TimeSpan DayDuration => TimeSpan.FromDays(1);
+
+        public static DateTime DayStart => DateTime.Today;
+        public static DateTime DayEnd => DateTime.Today.AddDays(1);
+        public static TimeSpan HourDuration => TimeSpan.FromHours(1);
 
         private static IEqualityComparer<App> PathEquality { get; }
             = new SelectorEqualityComparer<App, string>(a => a.Path);
@@ -58,10 +65,10 @@ namespace Cobalt.ViewModels.Pages
             var appIncrementor = res.Resolve<IDurationIncrementor>();
 
             HourlyChunks = appUsagesStream
-                .SelectMany(SplitUsageIntoHourChunks);
+                .SelectMany(u => SplitUsageIntoChunks(u, TimeSpan.FromHours(1), d => d.Date.AddHours(d.Hour)));
 
             DayChunks = weekAppUsagesStream
-                .SelectMany(SplitUsageIntoDayChunks);
+                .SelectMany(u => SplitUsageIntoChunks(u, TimeSpan.FromDays(1), d => d.Date));
 
             AppDurations = appDurationsStream
                 .Select(x =>
@@ -78,35 +85,16 @@ namespace Cobalt.ViewModels.Pages
 
         //TODO move this to common
 
-        private IEnumerable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> SplitUsageIntoHourChunks(
-            Usage<AppUsage> usage)
+        private IEnumerable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> SplitUsageIntoChunks(
+            Usage<AppUsage> usage, TimeSpan chunk, Func<DateTime, DateTime> startSelector)
         {
             var appUsage = usage.Value;
             var start = appUsage.StartTimestamp;
             var end = appUsage.EndTimestamp;
             while (start < end)
             {
-                var startHr = start.Subtract(new TimeSpan(0, 0, start.Minute, start.Second, start.Millisecond));
-                var endHr = Min(startHr.AddHours(1), end);
-                if (!(endHr < end) && usage.JustStarted)
-                    yield return new Usage<(App, DateTime, TimeSpan)>(justStarted: true,
-                        value: (appUsage.App, startHr, TimeSpan.Zero));
-                else
-                    yield return new Usage<(App, DateTime, TimeSpan)>((appUsage.App, startHr, endHr - start));
-                start = endHr;
-            }
-        }
-
-        private IEnumerable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> SplitUsageIntoDayChunks(
-            Usage<AppUsage> usage)
-        {
-            var appUsage = usage.Value;
-            var start = appUsage.StartTimestamp;
-            var end = appUsage.EndTimestamp;
-            while (start < end)
-            {
-                var startHr = start.Date;
-                var endHr = Min(startHr.AddDays(1), end);
+                var startHr = startSelector(start);
+                var endHr = Min(startHr+chunk, end);
                 if (!(endHr < end) && usage.JustStarted)
                     yield return new Usage<(App, DateTime, TimeSpan)>(justStarted: true,
                         value: (appUsage.App, startHr, TimeSpan.Zero));

@@ -127,7 +127,7 @@
     </Compile>
     <Compile Include="Views\Converters\AppMenuItemToTypeConverter.cs" />
     <Compile Include="Views\Converters\BooleanToLegendLocation.cs" />
-    <Compile Include="Views\Converters\PerWeekUsageConverter.cs" />
+    <Compile Include="Views\Converters\ChunkedUsageConverter.cs" />
     <Compile Include="Views\Pages\AppsPageView.xaml.cs">
       <DependentUpon>AppsPageView.xaml</DependentUpon>
     </Compile>
@@ -183,7 +183,6 @@
     <Compile Include="Views\Controls\AppLayout.cs" />
     <Compile Include="Views\Controls\AppMenuItem.cs" />
     <Compile Include="Views\Controls\AppMenuItemCollection.cs" />
-    <Compile Include="Views\Converters\HourlyUsageConverter.cs" />
     <Compile Include="Views\MainView.xaml.cs">
       <DependentUpon>MainView.xaml</DependentUpon>
       <SubType>Code</SubType>

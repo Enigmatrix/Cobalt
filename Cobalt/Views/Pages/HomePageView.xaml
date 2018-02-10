@@ -10,11 +10,18 @@
                 xmlns:converters1="clr-namespace:Cobalt.Views.Converters"
                 xmlns:controls="clr-namespace:Cobalt.Views.Controls"
                 xmlns:controls1="clr-namespace:Cobalt.Common.UI.Controls;assembly=Cobalt.Common.UI"
+                xmlns:pages="clr-namespace:Cobalt.ViewModels.Pages"
                 mc:Ignorable="d" Title="Home" Background="{DynamicResource MaterialDesignPaper}"
                 d:DesignHeight="700" d:DesignWidth="1200">
     <local:PageView.Resources>
-        <converters1:HourlyUsageConverter x:Key="HourlyUsageConverter" />
-        <converters1:PerWeekUsageConverter x:Key="PerWeekUsageConverter" />
+        <converters1:ChunkedUsageConverter x:Key="HourlyUsageConverter"
+                                           Start="{x:Static pages:HomePageViewModel.DayStart}"
+                                           End="{x:Static pages:HomePageViewModel.DayEnd}"
+                                           Duration="{x:Static pages:HomePageViewModel.HourDuration}"/>
+        <converters1:ChunkedUsageConverter x:Key="PerWeekUsageConverter"
+                                           Start="{x:Static pages:HomePageViewModel.WeekStart}"
+                                           End="{x:Static pages:HomePageViewModel.WeekEnd}"
+                                           Duration="{x:Static pages:HomePageViewModel.DayDuration}"/>
         <converters:AppDurationSeriesConverter x:Key="AppDurationSeriesConverter" />
         <converters1:BooleanToLegendLocation x:Key="BoolToLegendLocation"/>
         <Style TargetType="controls:DataCard">

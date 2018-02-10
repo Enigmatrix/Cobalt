@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
-using System.Windows.Media;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows;
 using Cobalt.Common.Analysis.OutputTypes;
 using Cobalt.Common.Data;
 using Cobalt.Common.IoC;
@@ -17,15 +19,49 @@ using LiveCharts.Wpf;
 
 namespace Cobalt.Views.Converters
 {
-    public class
-        HourlyUsageConverter : ObservableToSeriesConverter<Usage<(App App, DateTime StartHour, TimeSpan Duration)>>
+    public class ChunkedUsageConverter : ObservableToSeriesConverter<Usage<(App App, DateTime Time, TimeSpan Duration)>>
     {
         private static IEqualityComparer<App> PathEquality { get; }
             = new SelectorEqualityComparer<App, string>(a => a.Path);
 
-        protected override SeriesCollection Convert(
-            IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> coll, IResourceScope manager)
+
+
+        public DateTime Start
         {
+            get => (DateTime)GetValue(StartProperty);
+            set => SetValue(StartProperty, value);
+        }
+
+        public static readonly DependencyProperty StartProperty =
+            DependencyProperty.Register("Start", typeof(DateTime), typeof(ChunkedUsageConverter), new PropertyMetadata(DateTime.Today));
+
+        public DateTime End
+        {
+            get => (DateTime)GetValue(EndProperty);
+            set => SetValue(EndProperty, value);
+        }
+
+        public static readonly DependencyProperty EndProperty =
+            DependencyProperty.Register("End", typeof(DateTime), typeof(ChunkedUsageConverter), new PropertyMetadata(DateTime.Today));
+
+        public TimeSpan Duration
+        {
+            get => (TimeSpan)GetValue(DurationProperty);
+            set => SetValue(DurationProperty, value);
+        }
+
+        public static readonly DependencyProperty DurationProperty =
+            DependencyProperty.Register("Duration", typeof(TimeSpan), typeof(ChunkedUsageConverter), new PropertyMetadata(TimeSpan.FromMilliseconds(1)));
+
+
+
+        protected override SeriesCollection Convert(
+            IObservable<Usage<(App App, DateTime Time, TimeSpan Duration)>> coll, object parameter, IResourceScope manager)
+        {
+            var (start, end, chunkDuration) = (Start, End, Duration);
+            var count = (end - start).Ticks / chunkDuration.Ticks;
+            if (count <= 0) return null;
+
             var mapper = Mappers
                 .Xy<AppDurationViewModel>()
                 .Y(x => x.Duration.Ticks);
@@ -45,18 +81,19 @@ namespace Cobalt.Views.Converters
                     var stack = new StackedColumnSeries
                     {
                         Fill = AppResourceCache.Instance.GetColor(x.App.Path),
-                        Values = new AppDurationViewModel[24].Select(_ => new AppDurationViewModel(x.App))
+                        Values = Enumerable.Range(0, (int)count).Select(t => new AppDurationViewModel(x.App))
                             .AsChartValues(),
                         LabelPoint = cp => x.App.Path,
                         Title = x.App.Path,
-                        StrokeThickness = 0.3,
+                        StrokeThickness = 0.3
                     };
                     stack.SetResourceReference(Series.StrokeProperty, "MaterialDesignBody");
                     appMap[x.App] = stack;
                     series.Add(stack);
                 }
 
-                var chunk = ((ChartValues<AppDurationViewModel>) appMap[x.App].Values)[x.StartHour.Hour];
+                var chunk =
+                    ((ChartValues<AppDurationViewModel>) appMap[x.App].Values)[(int) ((x.Time-start).Ticks/chunkDuration.Ticks)];
                 chunk.Duration += x.Duration;
                 //chunk.DurationIncrement(new Usage<TimeSpan>(justStarted:justStarted, value: x.Duration), incrementor);
             }).ManageUsing(manager);
