@@ -23,9 +23,10 @@ namespace Cobalt.TaskbarNotifier
         private TimeSpan _totalDuration;
 
 
-        public MainViewModel(IResourceScope res)
+        public MainViewModel(IResourceScope res, AlertService alert)
         {
             Global = res;
+            alert.StartMonitoring();
         }
 
         private IResourceScope Global { get; }

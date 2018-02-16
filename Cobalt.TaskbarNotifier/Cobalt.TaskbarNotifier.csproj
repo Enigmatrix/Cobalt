@@ -132,6 +132,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Compile Include="AlertService.cs" />
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -192,6 +193,10 @@
     <ProjectReference Include="..\Cobalt.Common.UI\Cobalt.Common.UI.csproj">
       <Project>{888CA17F-6DB6-4286-BA06-1087F99F2259}</Project>
       <Name>Cobalt.Common.UI</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Cobalt.Common.Util\Cobalt.Common.Util.csproj">
+      <Project>{0CED98A9-89FE-4B5F-95E8-1FC895B96281}</Project>
+      <Name>Cobalt.Common.Util</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

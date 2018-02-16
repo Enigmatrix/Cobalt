@@ -53,6 +53,7 @@
     <Compile Include="Cache.cs" />
     <Compile Include="DateTimeUtils.cs" />
     <Compile Include="GlobalClock.cs" />
+    <Compile Include="MidnightNotifier.cs" />
     <Compile Include="PropertyChangedEx.cs" />
     <Compile Include="SelectorEqualityComparer.cs" />
     <Compile Include="Throw.cs" />
