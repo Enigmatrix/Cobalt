@@ -69,6 +69,7 @@
     <Compile Include="Migration\MigratorBase.cs" />
     <Compile Include="Migration\Sqlite\SqliteMigrationBase.cs" />
     <Compile Include="Migration\Sqlite\SqliteMigrationV1.cs" />
+    <Compile Include="Migration\Sqlite\SqliteMigrationV2.cs" />
     <Compile Include="Migration\Sqlite\SqliteMigrator.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Repository\IDbRepository.cs" />

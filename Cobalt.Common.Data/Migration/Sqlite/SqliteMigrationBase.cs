@@ -27,9 +27,12 @@ namespace Cobalt.Common.Data.Migration.Sqlite
 
         public void ExecuteSql(params string[] sql)
         {
-            var s = new SQLiteCommand(string.Join("\n", sql), Connection);
-            s.ExecuteNonQuery();
-            s.Dispose();
+            using(var transaction = Connection.BeginTransaction()){
+                var s = new SQLiteCommand(string.Join("\n", sql), Connection);
+                s.ExecuteNonQuery();
+                s.Dispose(); 
+                transaction.Commit();
+            }
         }
 
         #region Tables, Fields, and Index creations
@@ -59,6 +62,16 @@ namespace Cobalt.Common.Data.Migration.Sqlite
             return $"create index {name} on {on};";
         }
 
+        public string Update(string table, params (string, object)[] v)
+        {
+            return $"update {table} set " + string.Join(", ", v.Select(x => x.Item1+"="+x.Item2)) + ";";
+        }
+
+        public string AlterAddColumn(string table, params (string, string)[] add)
+        {
+            return string.Join("", add.Select(x => $"alter table {table} add column {x.Item1} {x.Item2};"));
+        }
+
         #endregion
 
         #region Field extras
@@ -67,10 +80,18 @@ namespace Cobalt.Common.Data.Migration.Sqlite
         {
             return "primary key autoincrement";
         }
+        public string Pk()
+        {
+            return "primary";
+        }
 
         public string NotNullUnique()
         {
             return "not null unique";
+        }
+        public string NotNull()
+        {
+            return "not null";
         }
 
         #endregion

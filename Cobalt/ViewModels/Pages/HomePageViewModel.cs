@@ -35,8 +35,8 @@ namespace Cobalt.ViewModels.Pages
         }
 
         public Func<double, string> HourFormatter => x => x / 600000000 + "min";
-        public Func<double, string> DayFormatter => x => x == 0 ? "" : x / 36000000000 + (x == 1 ? "hr" : "hrs");
-        public Func<double, string> DayHourFormatter => x => (x % 12 == 0 ? 12 : x % 12) + (x >= 12 ? "pm" : "am");
+        public Func<double, string> DayFormatter => x => x == 0 ? "" : x / 36000000000 + "h";
+        public Func<double, string> DayHourFormatter => x => (x % 12 == 0 ? 12 : x % 12) + (x >= 12 ? "p" : "a");
         public Func<double, string> DayOfWeekFormatter => x => ((DayOfWeek)(int)x).ToString();
 
         public static DateTime WeekStart => DateTime.Today.StartOfWeek();
