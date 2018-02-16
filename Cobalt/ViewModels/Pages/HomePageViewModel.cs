@@ -16,6 +16,8 @@ namespace Cobalt.ViewModels.Pages
         private IObservable<AppDurationViewModel> _appDurations;
         private IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> _dayChunks;
         private IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> _hourlyChunks;
+        private TimeSpan _hoursSpent;
+        private IObservable<AppDurationViewModel> _weekAppDurations;
 
         public HomePageViewModel(IResourceScope scope) : base(scope)
         {
@@ -26,11 +28,16 @@ namespace Cobalt.ViewModels.Pages
             get => _appDurations;
             set => Set(ref _appDurations, value);
         }
+        public IObservable<AppDurationViewModel> WeekAppDurations
+        {
+            get => _weekAppDurations;
+            set => Set(ref _weekAppDurations, value);
+        }
 
         public Func<double, string> HourFormatter => x => x / 600000000 + "min";
         public Func<double, string> DayFormatter => x => x == 0 ? "" : x / 36000000000 + (x == 1 ? "hr" : "hrs");
         public Func<double, string> DayHourFormatter => x => (x % 12 == 0 ? 12 : x % 12) + (x >= 12 ? "pm" : "am");
-        public Func<double, string> DayOfWeekFormatter => x => ((DayOfWeek) (int) x).ToString();
+        public Func<double, string> DayOfWeekFormatter => x => ((DayOfWeek)(int)x).ToString();
 
         public static DateTime WeekStart => DateTime.Today.StartOfWeek();
         public static DateTime WeekEnd => DateTime.Today.EndOfWeek();
@@ -42,6 +49,8 @@ namespace Cobalt.ViewModels.Pages
 
         private static IEqualityComparer<App> PathEquality { get; }
             = new SelectorEqualityComparer<App, string>(a => a.Path);
+
+        public TimeSpan HoursSpent { get => _hoursSpent; set => Set(ref _hoursSpent, value); }
 
         public IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> HourlyChunks
         {
@@ -59,10 +68,20 @@ namespace Cobalt.ViewModels.Pages
         {
             var stats = res.Resolve<IAppStatsStreamService>();
             var appUsagesStream = stats.GetAppUsages(DateTime.Today, DateTime.Now); //.Publish();
-            var weekAppUsagesStream =
-                stats.GetAppUsages(DateTime.Today.AddDays(-(int) DateTime.Today.DayOfWeek), DateTime.Now);
+            var weekAppUsagesStream = stats.GetAppUsages(WeekStart, DateTime.Now);
+
             var appDurationsStream = stats.GetAppDurations(DateTime.Today);
+            var weekAppDurationsStream = stats.GetAppDurations(WeekStart);
             var appIncrementor = res.Resolve<IDurationIncrementor>();
+
+            var tick = TimeSpan.FromSeconds(1);
+            //may not be accurate
+            stats.GetAppDurations(DateTime.Today, DateTime.Now)
+                .Sum(x => x.Duration.Sum(y => y.Value.Ticks).Single())
+                .Select(x => TimeSpan.FromTicks(x))
+                .CombineLatest(Observable.Timer(tick, tick), (x, y) => x + TimeSpan.FromTicks(tick.Ticks * y))
+                .ObserveOnDispatcher()
+                .Subscribe(x => HoursSpent = x).ManageUsing(Resources);
 
             HourlyChunks = appUsagesStream
                 .SelectMany(u => SplitUsageIntoChunks(u, TimeSpan.FromHours(1), d => d.Date.AddHours(d.Hour)));
@@ -71,6 +90,18 @@ namespace Cobalt.ViewModels.Pages
                 .SelectMany(u => SplitUsageIntoChunks(u, TimeSpan.FromDays(1), d => d.Date));
 
             AppDurations = appDurationsStream
+                .Select(x =>
+                {
+                    var appDur = new AppDurationViewModel(x.App);
+
+                    x.Duration
+                        .Subscribe(d => { appDur.DurationIncrement(d, appIncrementor); })
+                        .ManageUsing(res);
+
+                    return appDur;
+                });
+
+            WeekAppDurations = weekAppDurationsStream
                 .Select(x =>
                 {
                     var appDur = new AppDurationViewModel(x.App);
@@ -94,7 +125,7 @@ namespace Cobalt.ViewModels.Pages
             while (start < end)
             {
                 var startHr = startSelector(start);
-                var endHr = Min(startHr+chunk, end);
+                var endHr = Min(startHr + chunk, end);
                 if (!(endHr < end) && usage.JustStarted)
                     yield return new Usage<(App, DateTime, TimeSpan)>(justStarted: true,
                         value: (appUsage.App, startHr, TimeSpan.Zero));
