@@ -7,6 +7,9 @@ using System.Linq;
 using System.Reactive.Linq;
 using System.Diagnostics;
 using Appl = Cobalt.Common.Data.App;
+using System.Collections.Generic;
+using Cobalt.Common.Transmission.Messages;
+using Cobalt.Common.Data;
 
 namespace Cobalt.TaskbarNotifier
 {
@@ -25,57 +28,123 @@ namespace Cobalt.TaskbarNotifier
         public IResourceScope GlobalResources { get; }
         public IResourceScope Resources { get; set; }
 
+        private Dictionary<long, IDisposable> AlertWatchers { get; set; }
+
         public void StartMonitoring()
         {
             Resources?.Dispose();
             Resources = GlobalResources.Subscope();
-            /*
-            var alertWatchers = new Dictionary<int, IDisposable>();
+            AlertWatchers = new Dictionary<long, IDisposable>();
+
+            GetAppDurationForDay(new Appl{ Id = 6, Path = @"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"}, DateTime.Today, DateTime.Now.AddSeconds(15))
+                .Subscribe(x => Debug.WriteLine($"{DateTime.Now}: chrome at {x}"));
 
             Entities.GetAlertChanges().Subscribe(c => {
                 switch (c.ChangeType)
                 {
                     case ChangeType.Remove:
-                        alertWatchers[c.AssociatedAlert.Id].Dispose();
+                        DemonitorAlert(c.AssociatedEntity);
                         break;
                     case ChangeType.Add:
-                        alertWatchers[c.AssociatedAlert.Id] = MonitorAlert(c.AssociatedAlert);
+                        MonitorAlert(c.AssociatedEntity);
                         break;
                     case ChangeType.Modify:
-                        alertWatchers[c.AssociatedAlert.Id].Dispose();
-                        alertWatchers[c.AssociatedAlert.Id] = MonitorAlert(c.AssociatedAlert);
+                        DemonitorAlert(c.AssociatedEntity);
+                        MonitorAlert(c.AssociatedEntity);
                         break;
                 }
             });
 
         }
 
-        public IDisposable MonitorAlert(Alert alert)
+        public void MonitorAlert(Alert alert)
         {
-            return null;
-            */
+            var durations = GetEffectiveTimeRange(DateTime.Today, alert.Range)
+                .Select(x => alert is AppAlert appAlert ?
+                    GetAppDurationForDay(appAlert.App, x.Item1, x.Item2.Value) :
+                    GetAppDurationForDay(null, x.Item1, x.Item2.Value));
+            durations.CombineLatest(x => TimeSpan.FromTicks(x.Sum(ti => ti.Ticks)))
+                .Subscribe(dur => { 
+                    if(dur >= alert.MaxDuration)
+                    {
+                        //do stuff
+                    }
+                    else if (dur >= (alert.MaxDuration - alert.ReminderOffset))
+                    {
+                        //send message
+                    }
+                });
+
         }
 
-        public IObservable<TimeSpan> GetAppDuration(Appl app, DateTime? start = null, DateTime? end = null)
+        public void DemonitorAlert(Alert alert)
         {
-            var tick = TimeSpan.FromSeconds(1);
-            var timer = Observable.Timer(tick, tick);
+            AlertWatchers[alert.Id].Dispose();
+        }
 
-            var appDurs = Statistics.GetAppDurations(DateTime.MinValue)
-                //TODO make a custom one -_- instead of filtering
-                .Where(a => a.App.Path == app.Path)
-                .SelectMany(x => x.Duration.Scan(new Usage<TimeSpan>(),
-                    (a1, a2) => new Usage<TimeSpan>((a1.Value + a2.Value), a2.JustStarted)));
+        public IEnumerable<(DateTime, DateTime?)> GetEffectiveTimeRange(DateTime today, AlertRange range)
+        {
+            if(range is OnceAlertRange once && once.StartTimestamp.Date == today)
+                    yield return (once.StartTimestamp, once.EndTimestamp);
+            else if(range is RepeatingAlertRange repeat) {
+                DateTime start = DateTime.MinValue;
+                DateTime end = DateTime.MaxValue;
+                switch (repeat.RepeatType)
+                {
+                    case RepeatType.Daily:
+                        start = today;
+                        end = today.AddDays(1);
+                        break;
+                    case RepeatType.Weekly:
+                        start = today.StartOfWeek();
+                        end = today.EndOfWeek();
+                        break;
+                    case RepeatType.Weekday:
+                        start = today.StartOfWeek().AddDays(1);
+                        end = today.EndOfWeek().AddDays(-1);
+                        break;
+                    case RepeatType.Weekend:
+                        start = today.DayOfWeek == DayOfWeek.Sunday ?
+                            today.AddDays(-1) : today.EndOfWeek().AddDays(-1) ;
+                        end = start.AddDays(2);
+                        break;
+                    case RepeatType.Monthly:
+                        start = today.StartOfMonth();
+                        end = today.EndOfMonth();
+                        break;
+                }
+                for(var current = start; current <= today && current < end; current = current.AddDays(1))
+                    yield return AdjustedTimeRange(current, repeat.DailyStartOffset, repeat.DailyEndOffset);
+            }
+        }
+
+        public (DateTime, DateTime) AdjustedTimeRange(DateTime day, TimeSpan start, TimeSpan end)
+        {
+            return (day + start, day.AddDays(1) - end);
+        }
+
+        public IObservable<TimeSpan> GetAppDurationForDay(Appl app, DateTime start, DateTime end)
+        {
+            if(start.Date != DateTime.Today)
+                return Statistics.GetAppDuration(app, start, end)
+                    .Select(x => x.Value);
+            
+            var tick = TimeSpan.FromSeconds(1);
+            var timer = Observable.Timer(tick, tick).TakeWhile(_ => DateTime.Now <= end);
+
+            var appDurs = Statistics.GetAppDuration(app, start, end, listen:true)
+                .Scan(new Usage<TimeSpan>(),
+                    (a1, a2) => new Usage<TimeSpan>((a1.Value + a2.Value), a2.JustStarted));
+
 
             var prevAppDurs = appDurs.Where(x => !x.JustStarted);
-
-            var justStartedAppDurs = appDurs.Where(x => x.JustStarted)
-                //make a new timer everytime a app is on foreground
+            var justStartedAppDurs = prevAppDurs.Select(x=> Observable.Return(x)).Merge(appDurs.Where(x => x.JustStarted)
                 .Select(x => timer.Select(y =>
                     new Usage<TimeSpan>(TimeSpan.FromSeconds(y) + x.Value, x.JustStarted)).StartWith(x))
-                .Switch();
+                ).Switch();
 
-            return prevAppDurs.Merge(justStartedAppDurs).Select(x => x.Value);
+            return justStartedAppDurs
+                .Select(x => x.Value);
         }
 
     }

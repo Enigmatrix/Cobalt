@@ -17,7 +17,7 @@ namespace Cobalt.Common.Analysis
             DateTime? end = null);
 
         IObservable<Usage<TimeSpan>> GetAppDuration(App app, DateTime start,
-            DateTime? end = null);
+            DateTime end, bool listen =  false);
 
         IObservable<(Tag Tag, IObservable<Usage<TimeSpan>> Duration)> GetTagDurations(DateTime start,
             DateTime? end = null);
@@ -52,14 +52,17 @@ namespace Cobalt.Common.Analysis
                 .Select(x => (x.Key, x.Select(y => y.Duration)));
         }
         public IObservable<Usage<TimeSpan>> GetAppDuration(App app, DateTime start,
-            DateTime? end = null)
+            DateTime end, bool listen = false)
         {
-            if (end != null)
+            if (!listen)
                 return Repository.GetAppDuration(app, start, end)
                     .Select(x => new Usage<TimeSpan>(x));
-            return Repository.GetAppDuration(app, start)
+            return Repository.GetAppDuration(app, start, end)
                 .Select(x => new Usage<TimeSpan>(x))
-                .Concat(ReceivedAppDuration(app));
+                .Concat(ReceivedAppStartEnds(app)
+                    .Select(x => new Usage<TimeSpan>(
+                        x.Value.Item2.Min(end) - x.Value.Item1.Max(start), x.JustStarted)))
+                    .Where(x => x.JustStarted || x.Value >= TimeSpan.Zero);
         }
 
         public IObservable<(Tag Tag, IObservable<Usage<TimeSpan>> Duration)> GetTagDurations(DateTime start,
@@ -112,6 +115,27 @@ namespace Cobalt.Common.Analysis
                     new Usage<TimeSpan>(justStarted: true))
                     //make sure the NewApp is not null
                 }.Where(x => x.Item1 != null));
+        }
+
+        private IObservable<(App App, Usage<(DateTime, DateTime)> StartEnds)> ReceivedAppStartEnds()
+        {
+            return ReceivedAppSwitches()
+                .SelectMany(message => new[]
+                {
+                    //old app usage
+                    (message.PreviousAppUsage.App,
+                    new Usage<(DateTime, DateTime)>((message.PreviousAppUsage.StartTimestamp, message.PreviousAppUsage.EndTimestamp))),
+                    //new app
+                    (message.NewApp,
+                    new Usage<(DateTime, DateTime)>((message.PreviousAppUsage.EndTimestamp, message.PreviousAppUsage.EndTimestamp),justStarted: true))
+                    //make sure the NewApp is not null
+                }.Where(x => x.Item1 != null));
+        }
+
+        private IObservable<Usage<(DateTime, DateTime)>> ReceivedAppStartEnds(App app)
+        {
+            return ReceivedAppStartEnds().Where(x => x.App.Id == app.Id)
+                .Select(x => x.StartEnds);
         }
 
         private IObservable<Usage<TimeSpan>> ReceivedAppDuration(App app)

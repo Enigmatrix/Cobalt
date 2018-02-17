@@ -190,6 +190,10 @@
       <Project>{D3409738-6594-4B95-9068-49ED79F9521B}</Project>
       <Name>Cobalt.Common.IoC</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Cobalt.Common.Transmission\Cobalt.Common.Transmission.csproj">
+      <Project>{D6EF1899-D2B4-4A35-8441-046D26E14E62}</Project>
+      <Name>Cobalt.Common.Transmission</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Cobalt.Common.UI\Cobalt.Common.UI.csproj">
       <Project>{888CA17F-6DB6-4286-BA06-1087F99F2259}</Project>
       <Name>Cobalt.Common.UI</Name>

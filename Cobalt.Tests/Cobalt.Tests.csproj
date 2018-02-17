@@ -67,6 +67,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssertEx.cs" />
+    <Compile Include="Common\Analysis\AlertServiceTests.cs" />
     <Compile Include="Common\Data\AlertTests.cs" />
     <Compile Include="Common\Data\MigrationTests.cs" />
     <Compile Include="Common\Data\QueryTests.cs" />
@@ -82,6 +83,10 @@
     <Analyzer Include="..\packages\xunit.analyzers.0.3.0\analyzers\dotnet\cs\xunit.analyzers.dll" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Cobalt.Common.Analysis\Cobalt.Common.Analysis.csproj">
+      <Project>{1B7B20B5-0240-402F-AB98-7A7770D920B5}</Project>
+      <Name>Cobalt.Common.Analysis</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Cobalt.Common.Data\Cobalt.Common.Data.csproj">
       <Project>{1367640D-5813-4E0F-A9FC-85A4CAB3BD0B}</Project>
       <Name>Cobalt.Common.Data</Name>
@@ -93,6 +98,14 @@
     <ProjectReference Include="..\Cobalt.Common.Transmission\Cobalt.Common.Transmission.csproj">
       <Project>{D6EF1899-D2B4-4A35-8441-046D26E14E62}</Project>
       <Name>Cobalt.Common.Transmission</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Cobalt.Common.Util\Cobalt.Common.Util.csproj">
+      <Project>{0CED98A9-89FE-4B5F-95E8-1FC895B96281}</Project>
+      <Name>Cobalt.Common.Util</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Cobalt.TaskbarNotifier\Cobalt.TaskbarNotifier.csproj">
+      <Project>{6FD1F225-839B-4B1F-9A97-70966A39B6B2}</Project>
+      <Name>Cobalt.TaskbarNotifier</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

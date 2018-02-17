@@ -217,10 +217,11 @@ namespace Cobalt.Common.Data.Repository
         {
             var (startTicks, endTicks) = ToTickRange(start, end);
             return Get(@"select sum((case when EndTimestamp > @end then @end else EndTimestamp end)
-								-   (case when StartTimestamp < @start then @start else StartTimestamp end)) Duration
+								-   (case when StartTimestamp < @start then @start else StartTimestamp end))
 										from AppUsage
 										where (StartTimestamp <= @end and EndTimestamp >= @start) and AppId = @app",
-                    r =>  TimeSpan.FromTicks(r.GetInt64(0)),
+                    r => 
+                    TimeSpan.FromTicks(r.IsDBNull(0) ? 0 : r.GetInt64(0)),
                     ("app", app.Id),
                     ("start", startTicks),
                     ("end", endTicks));
