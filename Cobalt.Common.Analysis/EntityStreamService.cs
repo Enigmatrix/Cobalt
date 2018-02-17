@@ -15,17 +15,13 @@ namespace Cobalt.Common.Analysis
     public interface IEntityStreamService
     {
         IObservable<App> GetApps();
+        IObservable<EntityChange<Alert>> GetAlertChanges();
     }
-    public class EntityStreamService : IEntityStreamService
+    public class EntityStreamService : StreamService, IEntityStreamService
     {
-        public EntityStreamService(IDbRepository repo, ITransmissionClient client)
+        public EntityStreamService(IDbRepository repo, ITransmissionClient client) : base(repo, client)
         {
-            Repository = repo;
-            Receiver = client;
         }
-
-        private IDbRepository Repository { get; }
-        private ITransmissionClient Receiver { get; }
 
         private readonly IEqualityComparer<App> _pathEquality = new SelectorEqualityComparer<App, string>(x => x.Path);
 
@@ -38,12 +34,20 @@ namespace Cobalt.Common.Analysis
 
         private IObservable<App> ReceivedApps()
         {
-            return Observable.FromEventPattern<MessageReceivedArgs>(
-                    e => Receiver.MessageReceived += e,
-                    e => Receiver.MessageReceived -= e)
-                .Select(e => e.EventArgs.Message as AppSwitchMessage)
-                .Where(e => e!=null)
+            return ReceivedAppSwitches()
                 .SelectMany(e => new []{e.NewApp, e.PreviousAppUsage.App});
+        }
+
+        public IObservable<EntityChange<Alert>> GetAlertChanges()
+        {
+            return Repository.GetAlerts()
+                .Select(x => new EntityChange<Alert>(x, ChangeType.Add))
+                .Concat(ReceivedAlertChanges());
+        }
+
+        private IObservable<EntityChange<Alert>> ReceivedAlertChanges()
+        {
+            return ReceivedMessages().OfType<EntityChangeMessage<Alert>>().Select(x => x.Change);
         }
     }
 }

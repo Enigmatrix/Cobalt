@@ -53,6 +53,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Messages\AppSwitchMessage.cs" />
+    <Compile Include="Messages\EntityChangeMessage.cs" />
     <Compile Include="Messages\MessageBase.cs" />
     <Compile Include="MessageReceivedArgs.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

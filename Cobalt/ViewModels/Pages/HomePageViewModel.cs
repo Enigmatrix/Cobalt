@@ -77,7 +77,7 @@ namespace Cobalt.ViewModels.Pages
             var tick = TimeSpan.FromSeconds(1);
             //may not be accurate
             stats.GetAppDurations(DateTime.Today, DateTime.Now)
-                .Sum(x => x.Duration.Sum(y => y.Value.Ticks).Single())
+                .Sum(x => x.Duration.Sum(y => y.Value.Ticks).SingleAsync().Wait())
                 .Select(x => TimeSpan.FromTicks(x))
                 .CombineLatest(Observable.Timer(tick, tick), (x, y) => x + TimeSpan.FromTicks(tick.Ticks * y))
                 .ObserveOnDispatcher()

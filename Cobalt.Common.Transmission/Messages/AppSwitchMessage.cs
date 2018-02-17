@@ -14,7 +14,7 @@ namespace Cobalt.Common.Transmission.Messages
         {
         }
 
-        public AppUsage PreviousAppUsage { get; set; }
-        public App NewApp { get; set; }
+        public AppUsage PreviousAppUsage { get; }
+        public App NewApp { get;}
     }
 }

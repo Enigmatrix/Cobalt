@@ -16,6 +16,9 @@ namespace Cobalt.Common.Analysis
         IObservable<(App App, IObservable<Usage<TimeSpan>> Duration)> GetAppDurations(DateTime start,
             DateTime? end = null);
 
+        IObservable<Usage<TimeSpan>> GetAppDuration(App app, DateTime start,
+            DateTime? end = null);
+
         IObservable<(Tag Tag, IObservable<Usage<TimeSpan>> Duration)> GetTagDurations(DateTime start,
             DateTime? end = null);
 
@@ -23,16 +26,11 @@ namespace Cobalt.Common.Analysis
         //IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> HourlyChunks();
     }
 
-    public class AppStatsStreamService : IAppStatsStreamService
+    public class AppStatsStreamService : StreamService, IAppStatsStreamService
     {
-        public AppStatsStreamService(IDbRepository repo, ITransmissionClient client)
+        public AppStatsStreamService(IDbRepository repo, ITransmissionClient client) : base(repo, client)
         {
-            Repository = repo;
-            Receiver = client;
         }
-
-        private IDbRepository Repository { get; }
-        private ITransmissionClient Receiver { get; }
 
         private static IEqualityComparer<App> PathEquality { get; }
             = new SelectorEqualityComparer<App, string>(a => a.Path);
@@ -52,6 +50,16 @@ namespace Cobalt.Common.Analysis
                 .Concat(ReceivedAppDurations())
                 .GroupBy(x => x.App, PathEquality)
                 .Select(x => (x.Key, x.Select(y => y.Duration)));
+        }
+        public IObservable<Usage<TimeSpan>> GetAppDuration(App app, DateTime start,
+            DateTime? end = null)
+        {
+            if (end != null)
+                return Repository.GetAppDuration(app, start, end)
+                    .Select(x => new Usage<TimeSpan>(x));
+            return Repository.GetAppDuration(app, start)
+                .Select(x => new Usage<TimeSpan>(x))
+                .Concat(ReceivedAppDuration(app));
         }
 
         public IObservable<(Tag Tag, IObservable<Usage<TimeSpan>> Duration)> GetTagDurations(DateTime start,
@@ -90,14 +98,6 @@ namespace Cobalt.Common.Analysis
             return new Usage<AppUsage>(au);
         }
 
-        private IObservable<AppSwitchMessage> ReceivedAppSwitches()
-        {
-            return Observable.FromEventPattern<MessageReceivedArgs>(
-                    e => Receiver.MessageReceived += e,
-                    e => Receiver.MessageReceived -= e)
-                .Where(e => e.EventArgs.Message is AppSwitchMessage)
-                .Select(e => (AppSwitchMessage) e.EventArgs.Message);
-        }
 
         private IObservable<(App App, Usage<TimeSpan> Duration)> ReceivedAppDurations()
         {
@@ -112,6 +112,13 @@ namespace Cobalt.Common.Analysis
                     new Usage<TimeSpan>(justStarted: true))
                     //make sure the NewApp is not null
                 }.Where(x => x.Item1 != null));
+        }
+
+        private IObservable<Usage<TimeSpan>> ReceivedAppDuration(App app)
+        {
+            //whats the equality here?
+            return ReceivedAppDurations().Where(x => x.App.Id == app.Id)
+                .Select(x => x.Duration);
         }
 
         private IObservable<(Tag Tag, Usage<TimeSpan> Duration)> ReceivedTagDurations()

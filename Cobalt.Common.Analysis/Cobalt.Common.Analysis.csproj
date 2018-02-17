@@ -50,6 +50,7 @@
     <Compile Include="EntityStreamService.cs" />
     <Compile Include="OutputTypes\Usage.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="StreamService.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Cobalt.Common.Data\Cobalt.Common.Data.csproj">
