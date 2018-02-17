@@ -57,6 +57,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Alert.cs" />
     <Compile Include="App.cs" />
     <Compile Include="AppUsage.cs" />
     <Compile Include="AppUsageEndReason.cs" />

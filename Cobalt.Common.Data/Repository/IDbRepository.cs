@@ -13,12 +13,15 @@ namespace Cobalt.Common.Data.Repository
 
         void AddApp(App app);
         void AddTag(Tag tag);
-        void AddInteraction(Interaction interaction);
-
-        //remove/add tag
         void AddTagToApp(Tag tag, App app);
+        void AddInteraction(Interaction interaction);
+        void AddAlert(Alert alert);
 
+        //remove
         void RemoveTagFromApp(Tag tag, App app);
+        void RemoveAlert(Alert alert);
+
+
 
         //get
         IObservable<App> GetApps();
@@ -31,15 +34,17 @@ namespace Cobalt.Common.Data.Repository
         IObservable<AppUsage> GetAppUsagesForApp(App app, DateTime? start = null, DateTime? end = null);
 
         IObservable<(App App, TimeSpan Duration)> GetAppDurations(DateTime? start = null, DateTime? end = null);
+        IObservable<TimeSpan> GetAppDuration(App app, DateTime? start = null, DateTime? end = null);
         IObservable<(Tag Tag, TimeSpan Duration)> GetTagDurations(DateTime? start = null, DateTime? end = null);
 
         IObservable<(DateTime Start, DateTime End)> GetIdleDurations(TimeSpan minDuration, DateTime? start = null,
             DateTime? end = null);
+        IObservable<Alert> GetAlerts();
 
         //update
         void UpdateApp(App app);
-
         void UpdateTag(Tag tag);
+        void UpdateAlert(Alert alert);
 
         //find
         long? FindAppIdByPath(string appPath);

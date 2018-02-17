@@ -91,6 +91,38 @@ namespace Cobalt.Common.Data.Repository
             Insert("insert into Interaction(Id) values (?)", interaction.Id);
         }
 
+        public void AddAlert(Alert alert)
+        {
+            long start = 0, end = 0, repeatType = 0;
+            switch (alert.Range)
+            {
+                case OnceAlertRange once:
+                    start = once.StartTimestamp.Ticks;
+                    end = once.EndTimestamp.Ticks;
+                    repeatType = 0;
+                    break;
+                case RepeatingAlertRange repeat:
+                    start = repeat.DailyStartOffset.Ticks;
+                    end = repeat.DailyEndOffset.Ticks;
+                    repeatType = ((int)repeat.RepeatType)+1;
+                    break;
+            }
+            alert.Id = Insert("insert into Alert" +
+                "(Id, AppId, TagId, AlertType, MaxDuration, ReminderOffset, " +
+                "IsEnabled, AlertAction, Start, End, RepeatType) values" +
+                "(?,?,?,?,?,?,?,?,?,?,?)",
+                null, 
+                (alert as AppAlert)?.App.Id,
+                (alert as TagAlert)?.Tag.Id,
+                alert is TagAlert,
+                alert.MaxDuration.Ticks,
+                alert.ReminderOffset.Ticks,
+                alert.IsEnabled,
+                (int)alert.AlertAction,
+                start, end, repeatType
+                );
+        }
+
         public void AddTagToApp(Tag tag, App app)
         {
             Insert("insert into AppTag(AppId, TagId) values (?,?)", app.Id, tag.Id);
@@ -100,6 +132,11 @@ namespace Cobalt.Common.Data.Repository
         public void RemoveTagFromApp(Tag tag, App app)
         {
             Delete("AppTag", "AppId = ? and TagId = ?", app.Id, tag.Id);
+        }
+
+        public void RemoveAlert(Alert alert)
+        {
+            Delete("Alert", "Id = ?", alert.Id);
         }
 
         #endregion
@@ -176,6 +213,18 @@ namespace Cobalt.Common.Data.Repository
                     ("end", endTicks))
                 .Do(appDur => appDur.Item1.Tags = GetTags(appDur.Item1));
         }
+        public IObservable<TimeSpan> GetAppDuration(App app, DateTime? start = null, DateTime? end = null)
+        {
+            var (startTicks, endTicks) = ToTickRange(start, end);
+            return Get(@"select sum((case when EndTimestamp > @end then @end else EndTimestamp end)
+								-   (case when StartTimestamp < @start then @start else StartTimestamp end)) Duration
+										from AppUsage
+										where (StartTimestamp <= @end and EndTimestamp >= @start) and AppId = @app",
+                    r =>  TimeSpan.FromTicks(r.GetInt64(0)),
+                    ("app", app.Id),
+                    ("start", startTicks),
+                    ("end", endTicks));
+        }
 
         public IObservable<(Tag Tag, TimeSpan Duration)> GetTagDurations(DateTime? start = null, DateTime? end = null)
         {
@@ -209,6 +258,12 @@ namespace Cobalt.Common.Data.Repository
                 ("start", startTicks),
                 ("end", endTicks),
                 ("minDur", minDuration.Ticks));
+        }
+
+        public IObservable<Alert> GetAlerts()
+        {
+            return Get("select Id, AppId, TagId, AlertType, MaxDuration, ReminderOffset, " +
+                       "IsEnabled, AlertAction, Start, End, RepeatType from Alert", r => AlertMapper(r));
         }
 
         #endregion
@@ -314,6 +369,35 @@ namespace Cobalt.Common.Data.Repository
             };
         }
 
+        private Alert AlertMapper(SQLiteDataReader reader, int offset = 0)
+        {
+            Alert SetAlertFields(Alert alert)
+            {
+                alert.Id = reader.GetInt64(offset + 0);
+                alert.MaxDuration = TimeSpan.FromTicks(reader.GetInt64(offset + 4));
+                alert.ReminderOffset = TimeSpan.FromTicks(reader.GetInt64(offset + 5));
+                alert.IsEnabled = reader.GetBoolean(offset + 6);
+                alert.AlertAction = (AlertAction)reader.GetInt32(offset + 7);
+                var start = reader.GetInt64(offset+8);
+                var end = reader.GetInt64(offset+9);
+                var repeatMode = reader.GetInt32(offset + 10);
+                alert.Range = repeatMode == 0 ? 
+                    (AlertRange)new OnceAlertRange { 
+                        StartTimestamp = new DateTime(start),
+                        EndTimestamp = new DateTime(end) } : 
+                    (AlertRange)new RepeatingAlertRange {
+                        DailyStartOffset = TimeSpan.FromTicks(start),
+                        DailyEndOffset = TimeSpan.FromTicks(end),
+                        RepeatType = (RepeatType)(repeatMode-1)};
+                return alert;
+            }
+
+            if (reader.GetInt32(offset + 3) == 0)
+                return SetAlertFields(new AppAlert { App = new App { Id = reader.GetInt64(offset + 1) }});
+            else
+                return SetAlertFields(new TagAlert { Tag = new Tag { Id = reader.GetInt64(offset + 2) }});
+        }
+
         //returns a (start, end)
         private (long, long) ToTickRange(DateTime? start, DateTime? end)
         {
@@ -332,6 +416,35 @@ namespace Cobalt.Common.Data.Repository
         public void UpdateTag(Tag tag)
         {
             Update("Tag", "Name = ?", tag.Id, tag.Name);
+        }
+
+        public void UpdateAlert(Alert alert)
+        {
+            long start = 0, end = 0, repeatType = 0;
+            switch (alert.Range)
+            {
+                case OnceAlertRange once:
+                    start = once.StartTimestamp.Ticks;
+                    end = once.EndTimestamp.Ticks;
+                    repeatType = 0;
+                    break;
+                case RepeatingAlertRange repeat:
+                    start = repeat.DailyStartOffset.Ticks;
+                    end = repeat.DailyEndOffset.Ticks;
+                    repeatType = ((int)repeat.RepeatType)+1;
+                    break;
+            }
+            Update("Alert", "AppId=?, TagId=?, AlertType=?, MaxDuration=?, ReminderOffset=?, " +
+                       "IsEnabled=?, AlertAction=?, Start=?, End=?, RepeatType=?",
+                alert.Id,
+                (alert as AppAlert)?.App.Id,
+                (alert as TagAlert)?.Tag.Id,
+                alert is TagAlert,
+                alert.MaxDuration.Ticks,
+                alert.ReminderOffset.Ticks,
+                alert.IsEnabled,
+                (int)alert.AlertAction,
+                start, end, repeatType);
         }
 
         #endregion

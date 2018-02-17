@@ -33,16 +33,17 @@ namespace Cobalt.Common.Data.Migration.Sqlite
                     //0 for enable, 1 for disabled
                     Field("IsEnabled", Integer()),
                     //0 for send annoying message, 1 for kill process
-                    Field("Action", Integer()),
+                    Field("AlertAction", Integer()),
 
-                    //if type!=once then start is a offset from the day/week/month where monitoring starts counting
+                    //if type!=once then start is offset from start of day
                     Field("Start", Integer()),
-                    //if type!=once then end is a offset from the day/week/month's end where monitoring ends
+                    //if type!=once then end is a offset from end of day
                     Field("End", Integer()),
-                    //0 for once, 1 for daily, 2 for weekly, 3 for monthly
+                    //0 for once, 1 for daily, 2 for weekly, 3 for weekday, 4 for weekend, 5 for monthly
                     Field("RepeatType", Integer()),
 
-                    ForeignKey("AppId", "App(Id)")));
+                    ForeignKey("AppId", "App(Id)"),
+                    ForeignKey("TagId", "Tag(Id)")));
         }
     }
 }

@@ -12,7 +12,7 @@ namespace Cobalt.Tests.Common.Data
 {
     public class QueryTests
     {
-        public void GetappDurations()
+        public void GetAppDurations()
         {
             var conn = new SQLiteConnection("Data Source=dat2.db").OpenAndReturn();
             var repo = new SqliteRepository(conn, new SqliteMigrator(conn));

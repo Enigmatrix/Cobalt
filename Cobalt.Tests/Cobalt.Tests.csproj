@@ -66,6 +66,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AssertEx.cs" />
+    <Compile Include="Common\Data\AlertTests.cs" />
     <Compile Include="Common\Data\MigrationTests.cs" />
     <Compile Include="Common\Data\QueryTests.cs" />
     <Compile Include="Common\IoC\IoCTests.cs" />
@@ -92,6 +94,9 @@
       <Project>{D6EF1899-D2B4-4A35-8441-046D26E14E62}</Project>
       <Name>Cobalt.Common.Transmission</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
