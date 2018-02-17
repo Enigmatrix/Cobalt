@@ -29,6 +29,6 @@ namespace Cobalt.Common.Transmission.Messages
         {
             Change = change;
         }
-        public EntityChange<T> Change { get; }
+        public EntityChange<T> Change { get; set; }
     }
 }
