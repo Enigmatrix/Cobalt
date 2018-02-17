@@ -29,9 +29,31 @@ namespace Cobalt.TaskbarNotifier
         {
             Resources?.Dispose();
             Resources = GlobalResources.Subscope();
+            /*
+            var alertWatchers = new Dictionary<int, IDisposable>();
 
+            Entities.GetAlertChanges().Subscribe(c => {
+                switch (c.ChangeType)
+                {
+                    case ChangeType.Remove:
+                        alertWatchers[c.AssociatedAlert.Id].Dispose();
+                        break;
+                    case ChangeType.Add:
+                        alertWatchers[c.AssociatedAlert.Id] = MonitorAlert(c.AssociatedAlert);
+                        break;
+                    case ChangeType.Modify:
+                        alertWatchers[c.AssociatedAlert.Id].Dispose();
+                        alertWatchers[c.AssociatedAlert.Id] = MonitorAlert(c.AssociatedAlert);
+                        break;
+                }
+            });
 
+        }
 
+        public IDisposable MonitorAlert(Alert alert)
+        {
+            return null;
+            */
         }
 
         public IObservable<TimeSpan> GetAppDuration(Appl app, DateTime? start = null, DateTime? end = null)
