@@ -25,6 +25,7 @@
                 <ctrls:AppMenuItem Icon="Home" Description="Home" Type="pages:HomePageViewModel" />
                 <ctrls:AppMenuItem Icon="Apps" Description="Apps" Type="pages:AppsPageViewModel" />
                 <ctrls:AppMenuItem Icon="Tag" Description="Tags" Type="pages:TagsPageViewModel" />
+                <ctrls:AppMenuItem Icon="Bell" Description="Alerts" Type="pages:AlertsPageViewModel" />
                 <ctrls:AppMenuItem Icon="History" Description="History" Type="pages:HistoryPageViewModel" />
             </ctrls:AppMenuItemCollection>
         </ctrls:AppLayout.MenuItems>

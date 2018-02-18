@@ -128,11 +128,14 @@
     <Compile Include="Util\AppResourceCache.cs" />
     <Compile Include="Util\DurationIncrementor.cs" />
     <Compile Include="ViewModelBase.cs" />
+    <Compile Include="ViewModels\AlertViewModel.cs" />
+    <Compile Include="ViewModels\AppAlertViewModel.cs" />
     <Compile Include="ViewModels\AppDurationViewModel.cs" />
     <Compile Include="ViewModels\AppUsageViewModel.cs" />
     <Compile Include="ViewModels\AppViewModel.cs" />
     <Compile Include="ViewModels\EntityViewModel.cs" />
     <Compile Include="ViewModels\IHasDuration.cs" />
+    <Compile Include="ViewModels\TagAlertViewModel.cs" />
     <Compile Include="ViewModels\TagDurationViewModel.cs" />
     <Compile Include="ViewModels\TagViewModel.cs" />
     <EmbeddedResource Include="Properties\Resources.resx">

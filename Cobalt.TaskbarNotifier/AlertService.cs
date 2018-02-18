@@ -63,7 +63,7 @@ namespace Cobalt.TaskbarNotifier
                 .Select(x => alert is AppAlert appAlert ?
                     GetAppDurationForDay(appAlert.App, x.Item1, x.Item2.Value) :
                     GetAppDurationForDay(null, x.Item1, x.Item2.Value));
-            durations.CombineLatest(x => TimeSpan.FromTicks(x.Sum(ti => ti.Ticks)))
+            AlertWatchers[alert.Id] = durations.CombineLatest(x => TimeSpan.FromTicks(x.Sum(ti => ti.Ticks)))
                 .Subscribe(dur => { 
                     if(dur >= alert.MaxDuration)
                     {
@@ -72,8 +72,9 @@ namespace Cobalt.TaskbarNotifier
                     else if (dur >= (alert.MaxDuration - alert.ReminderOffset))
                     {
                         //send message
+                        //shit run this once only
                     }
-                });
+                }).ManagedBy(Resources);
 
         }
 

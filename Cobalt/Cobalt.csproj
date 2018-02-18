@@ -114,11 +114,15 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="ViewModels\Pages\AlertsPageViewModel.cs" />
     <Compile Include="ViewModels\Pages\HistoryPageViewModel.cs" />
     <Compile Include="ViewModels\Pages\TagsPageViewModel.cs" />
     <Compile Include="ViewModels\Pages\SettingsPageViewModel.cs" />
     <Compile Include="ViewModels\Pages\AppsPageViewModel.cs" />
     <Compile Include="ViewModels\Utils\SettingsService.cs" />
+    <Compile Include="Views\Controls\AppAlertViewModelDialog.xaml.cs">
+      <DependentUpon>AppAlertViewModelDialog.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\Controls\DataCard.xaml.cs">
       <DependentUpon>DataCard.xaml</DependentUpon>
     </Compile>
@@ -129,6 +133,9 @@
     <Compile Include="Views\Converters\AppsConverter.cs" />
     <Compile Include="Views\Converters\BooleanToLegendLocation.cs" />
     <Compile Include="Views\Converters\ChunkedUsageConverter.cs" />
+    <Compile Include="Views\Pages\AlertsPageView.xaml.cs">
+      <DependentUpon>AlertsPageView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\Pages\AppsPageView.xaml.cs">
       <DependentUpon>AppsPageView.xaml</DependentUpon>
     </Compile>
@@ -149,11 +156,19 @@
     <Compile Include="Views\Util\TypedTemplateEntry.cs" />
     <Compile Include="Views\Util\TypedTemplateSelector.cs" />
     <Compile Include="Views\Util\WindowUtil.cs" />
+    <Page Include="Views\Controls\AppAlertViewModelDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Views\Controls\DataCard.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Views\Controls\DateRangePicker.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\Pages\AlertsPageView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -244,6 +259,10 @@
     <ProjectReference Include="..\Cobalt.Common.IoC\Cobalt.Common.IoC.csproj">
       <Project>{D3409738-6594-4B95-9068-49ED79F9521B}</Project>
       <Name>Cobalt.Common.IoC</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Cobalt.Common.Transmission\Cobalt.Common.Transmission.csproj">
+      <Project>{D6EF1899-D2B4-4A35-8441-046D26E14E62}</Project>
+      <Name>Cobalt.Common.Transmission</Name>
     </ProjectReference>
     <ProjectReference Include="..\Cobalt.Common.UI\Cobalt.Common.UI.csproj">
       <Project>{888CA17F-6DB6-4286-BA06-1087F99F2259}</Project>
