@@ -120,9 +120,6 @@
     <Compile Include="ViewModels\Pages\SettingsPageViewModel.cs" />
     <Compile Include="ViewModels\Pages\AppsPageViewModel.cs" />
     <Compile Include="ViewModels\Utils\SettingsService.cs" />
-    <Compile Include="Views\Controls\AppAlertViewModelDialog.xaml.cs">
-      <DependentUpon>AppAlertViewModelDialog.xaml</DependentUpon>
-    </Compile>
     <Compile Include="Views\Controls\DataCard.xaml.cs">
       <DependentUpon>DataCard.xaml</DependentUpon>
     </Compile>
@@ -133,6 +130,10 @@
     <Compile Include="Views\Converters\AppsConverter.cs" />
     <Compile Include="Views\Converters\BooleanToLegendLocation.cs" />
     <Compile Include="Views\Converters\ChunkedUsageConverter.cs" />
+    <Compile Include="Views\Dialogs\Dialog.cs" />
+    <Compile Include="Views\Dialogs\EditAppAlertDialog.xaml.cs">
+      <DependentUpon>EditAppAlertDialog.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\Pages\AlertsPageView.xaml.cs">
       <DependentUpon>AlertsPageView.xaml</DependentUpon>
     </Compile>
@@ -156,15 +157,19 @@
     <Compile Include="Views\Util\TypedTemplateEntry.cs" />
     <Compile Include="Views\Util\TypedTemplateSelector.cs" />
     <Compile Include="Views\Util\WindowUtil.cs" />
-    <Page Include="Views\Controls\AppAlertViewModelDialog.xaml">
-      <SubType>Designer</SubType>
+    <Page Include="Views\Dialogs\Generic.xaml">
       <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="Views\Controls\DataCard.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Views\Controls\DateRangePicker.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\Dialogs\EditAppAlertDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

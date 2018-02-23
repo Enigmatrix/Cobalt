@@ -15,6 +15,7 @@
                     Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.Dark.xaml" />
 
                 <ResourceDictionary Source="Views/Controls/Generic.xaml" />
+                <ResourceDictionary Source="Views/Dialogs/Generic.xaml" />
                 <ResourceDictionary Source="Views/Pages/Generic.xaml" />
 
                 <ResourceDictionary>

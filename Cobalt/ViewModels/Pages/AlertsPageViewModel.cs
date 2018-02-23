@@ -5,6 +5,7 @@ using Cobalt.Common.Data.Repository;
 using Cobalt.Common.IoC;
 using Cobalt.Common.Transmission.Messages;
 using Cobalt.Common.UI.ViewModels;
+using Cobalt.Views.Dialogs;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -20,8 +21,9 @@ namespace Cobalt.ViewModels.Pages
         private BindableCollection<TagAlertViewModel> _tagAlerts;
 
         public IDbRepository Repository { get; }
+        public Utils.INavigationService NavigationService { get; }
 
-        public static AlertsPageViewModel Test => new AlertsPageViewModel(null, null);
+        public static AlertsPageViewModel Test => new AlertsPageViewModel(null, null, null);
 
         private AppAlertViewModel mew = 
                     new AppAlertViewModel(new AppAlert{ 
@@ -36,13 +38,14 @@ namespace Cobalt.ViewModels.Pages
                         }
                     });
 
-        public AlertsPageViewModel(IResourceScope scope, IDbRepository repo) : base(scope)
+        public AlertsPageViewModel(IResourceScope scope, IDbRepository repo, Utils.INavigationService navSvc) : base(scope)
         {
             _appAlerts = new BindableCollection<AppAlertViewModel>(new[]{ 
                 mew
                 });
             _tagAlerts = new BindableCollection<TagAlertViewModel>();
             Repository = repo;
+            NavigationService = navSvc;
         }
 
         public BindableCollection<AppAlertViewModel> AppAlerts
@@ -92,6 +95,12 @@ namespace Cobalt.ViewModels.Pages
                 }
             }).ManageUsing(resources);
         }
+
+        public void EditAppAlert(AppAlertViewModel appAlert)
+        {
+            NavigationService.ShowDialog<EditAppAlertDialog>(appAlert);
+        }
+
         public T EnableSaving<T>(T alert) where T : AlertViewModel
         {
             alert.PropertyChanged += SaveAlert;

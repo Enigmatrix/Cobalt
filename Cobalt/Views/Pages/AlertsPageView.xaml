@@ -49,7 +49,7 @@
                         <ListBox.ItemTemplate>
                             <DataTemplate DataType="viewModels:AppAlertViewModel">
 
-                                <materialDesign:Card Height="80" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" UniformCornerRadius="5">
+                                <materialDesign:Card cal:Message.Attach="[Event MouseUp] = [Action EditAppAlert($dataContext)]" Height="80" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" UniformCornerRadius="5">
                                     <Grid>
                                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Stretch">
                                             <Button Height="80" Width="40" Background="{DynamicResource AccentColorBrush}">
@@ -62,7 +62,7 @@
                                                         Source="{Binding App.Path, Converter={StaticResource ExePathToIconConverter}, IsAsync=True}"
                                                         Width="36" Height="36" />
                                                     <TextBlock Style="{DynamicResource MaterialDesignBody2TextBlock}" Margin="8,0"
-                                                            Text="{Binding App,Converter={StaticResource AppToExeNameConverter}, IsAsync=True}"
+                                                            Text="{Binding App, Converter={StaticResource AppToExeNameConverter}, IsAsync=True}"
                                                             VerticalAlignment="Center" FontSize="24"/>
                                                 </StackPanel>
                                                 <TextBlock Text="Repeat Daily" VerticalAlignment="Bottom" FontSize="14" Margin="52,8" />
@@ -77,7 +77,10 @@
                                                 <StackPanel VerticalAlignment="Bottom" HorizontalAlignment="Right" Orientation="Horizontal">
                                                 <materialDesign:PackIcon VerticalAlignment="Center" HorizontalAlignment="Center"
                                                                          Height="14" Kind="Bell" Width="14"/>
-                                                    <TextBlock Text="5:00m before end" Margin="4,0"/>
+                                                    <TextBlock Text="@  5:00m before" Margin="4,0"/>
+                                                <materialDesign:PackIcon VerticalAlignment="Center" HorizontalAlignment="Center"
+                                                                         Height="14" Kind="CalendarRemove" Width="14"/>
+
                                                 </StackPanel>
 
                                             </Grid>

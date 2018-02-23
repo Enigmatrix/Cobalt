@@ -4,7 +4,9 @@ using Caliburn.Micro;
 using Cobalt.Common.IoC;
 using Cobalt.Common.Util;
 using Cobalt.ViewModels.Pages;
+using Cobalt.Views.Dialogs;
 using Cobalt.Views.Pages;
+using MaterialDesignThemes.Wpf;
 
 namespace Cobalt.ViewModels.Utils
 {
@@ -14,6 +16,7 @@ namespace Cobalt.ViewModels.Utils
         PageViewModel ActiveItem { get; }
         void NavigateTo<T>() where T : PageViewModel;
         void NavigateToType(Type value);
+        void ShowDialog<T>(params object[] args) where T : Dialog, new();
     }
 
     public class NavigationService : Conductor<PageViewModel>.Collection.OneActive, INavigationService
@@ -71,6 +74,13 @@ namespace Cobalt.ViewModels.Utils
         public void Dispose()
         {
             _resolver.Dispose();
+        }
+
+        public async void ShowDialog<T>(params object[] args) where T : Dialog, new()
+        {
+            var dialog = new T();
+            dialog.Prepare(args);
+            await ActivePage.ShowDialog(dialog);
         }
     }
 }
