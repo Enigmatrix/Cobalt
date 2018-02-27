@@ -7,17 +7,21 @@
                         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
                         xmlns:util="clr-namespace:Cobalt.Views.Util"
                         xmlns:system="clr-namespace:System;assembly=mscorlib" x:Name="RootCard"
+                        xmlns:f="http://metro.mahapps.com/winfx/xaml/controls"
                         xmlns:converters="clr-namespace:MaterialDesignThemes.Wpf.Converters;assembly=MaterialDesignThemes.Wpf"
                         mc:Ignorable="d" Background="{DynamicResource MaterialDesignCardBackground}" Foreground="{DynamicResource MaterialDesignBody}"
                         d:DesignHeight="300" d:DesignWidth="300">
     <HeaderedContentControl.Resources>
         <converters:MathConverter x:Key="MathConverter" Operation="Subtract" />
-        <ContentControl x:Key="DialogContainer"
+        <ContentControl x:Key="DialogContainer" MaxHeight="650"
                         Width="{Binding ActualWidth, RelativeSource={RelativeSource FindAncestor, AncestorType=materialDesign:DialogHost}, Converter={StaticResource MathConverter}, ConverterParameter=100}"
                         Height="{Binding ActualHeight, RelativeSource={RelativeSource FindAncestor, AncestorType=materialDesign:DialogHost}, Converter={StaticResource MathConverter}, ConverterParameter=100}">
             <ContentControl.ContentTemplate>
                 <DataTemplate>
-                    <ContentControl Content="{Binding}" />
+                    <ContentPresenter Content="{Binding}"
+                             Height="{Binding ActualHeight, RelativeSource={RelativeSource FindAncestor, AncestorType=ContentControl}}"
+                                    Width="{Binding ActualWidth, RelativeSource={RelativeSource FindAncestor, AncestorType=ContentControl}}"/>
+
                 </DataTemplate>
             </ContentControl.ContentTemplate>
         </ContentControl>

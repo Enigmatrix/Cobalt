@@ -20,7 +20,7 @@
                     <Border Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}">
-                        <md:DialogHost x:Name="DialogHoster" CloseOnClickAway="True">
+                        <md:DialogHost x:Name="DialogHoster" CloseOnClickAway="True" DialogMargin="0">
                             <Grid x:Name="RootGrid">
                             <Grid.Resources>
                                 <DataTemplate x:Key="MenuItemTemplate" DataType="controls:AppMenuItem">

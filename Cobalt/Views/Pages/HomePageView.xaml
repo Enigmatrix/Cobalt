@@ -78,7 +78,7 @@
                         <wpf:PieChart DisableAnimations="True" Grid.Row="1">
                             <wpf:PieChart.Series>
                                 <MultiBinding Converter="{StaticResource AppDurationSeriesConverter}">
-                                    <Binding Path="AppDurations" />
+                                    <Binding Path="WeekAppDurations" />
                                     <Binding Path="Resources" />
                                 </MultiBinding>
                             </wpf:PieChart.Series>
