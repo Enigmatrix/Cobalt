@@ -120,6 +120,12 @@
     <Compile Include="ViewModels\Pages\SettingsPageViewModel.cs" />
     <Compile Include="ViewModels\Pages\AppsPageViewModel.cs" />
     <Compile Include="ViewModels\Utils\SettingsService.cs" />
+    <Compile Include="Views\Controls\AlertRangePicker.xaml.cs">
+      <DependentUpon>AlertRangePicker.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Controls\AlertRangePickerDialog.xaml.cs">
+      <DependentUpon>AlertRangePickerDialog.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\Controls\DataCard.xaml.cs">
       <DependentUpon>DataCard.xaml</DependentUpon>
     </Compile>
@@ -157,6 +163,14 @@
     <Compile Include="Views\Util\TypedTemplateEntry.cs" />
     <Compile Include="Views\Util\TypedTemplateSelector.cs" />
     <Compile Include="Views\Util\WindowUtil.cs" />
+    <Page Include="Views\Controls\AlertRangePicker.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\Controls\AlertRangePickerDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Views\Dialogs\Generic.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

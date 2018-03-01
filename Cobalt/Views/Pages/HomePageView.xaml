@@ -87,7 +87,15 @@
                             </wpf:PieChart.DataTooltip>
                         </wpf:PieChart>
                     </Grid>
-                    <TextBlock VerticalAlignment="Center" HorizontalAlignment="Right" Text="{Binding HoursSpent}" Grid.Column="2"/>
+                    <Grid Grid.Column="2">
+                        <StackPanel Orientation="Vertical" HorizontalAlignment="Center" Margin="4">
+                            <TextBlock Text="Total Time Spent Today" Style="{DynamicResource MaterialDesignBody1TextBlock}"/>
+                            <TextBlock VerticalAlignment="Center" HorizontalAlignment="Right" Text="{Binding HoursSpent}" Style="{DynamicResource MaterialDesignDisplay1TextBlock}"/>
+                            <Rectangle Height="10"/>
+                            <TextBlock Text="Total Time Spent This Week" Style="{DynamicResource MaterialDesignBody1TextBlock}"/>
+                            <TextBlock VerticalAlignment="Center" HorizontalAlignment="Right" Text="{Binding HoursSpent}" Style="{DynamicResource MaterialDesignDisplay1TextBlock}"/>
+                        </StackPanel>
+                    </Grid>
                 </Grid>
             </controls:DataCard>
             <controls:DataCard Height="300" Header="Breakdown per Hour" Grid.ColumnSpan="3" Grid.Row="1">

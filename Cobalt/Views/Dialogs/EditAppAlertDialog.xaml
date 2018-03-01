@@ -13,8 +13,7 @@
     </local:Dialog.Resources>
     <Grid
         Width="{Binding ActualWidth, RelativeSource={RelativeSource FindAncestor, AncestorType=materialDesign:DialogHost}, Converter={StaticResource MathConverter}, ConverterParameter=100}"
-        Height="{Binding ActualHeight, RelativeSource={RelativeSource FindAncestor, AncestorType=materialDesign:DialogHost}, Converter={StaticResource MathConverter}, ConverterParameter=100}"
-        MaxHeight="650" MaxWidth="500">
+        MaxWidth="500">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition/>

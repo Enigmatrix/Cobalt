@@ -7,6 +7,7 @@
              xmlns:vm="clr-namespace:Cobalt.ViewModels.Pages"
              xmlns:cal="http://www.caliburnproject.org"
                 xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+                xmlns:controls="clr-namespace:Cobalt.Views.Controls"
                 mc:Ignorable="d" Title="Alerts" DataContext="{x:Static vm:AlertsPageViewModel.Test}"
              d:DesignHeight="800" d:DesignWidth="800">
     <Grid>
@@ -65,7 +66,7 @@
                                                             Text="{Binding App, Converter={StaticResource AppToExeNameConverter}, IsAsync=True}"
                                                             VerticalAlignment="Center" FontSize="24"/>
                                                 </StackPanel>
-                                                <TextBlock Text="Repeat Daily" VerticalAlignment="Bottom" FontSize="14" Margin="52,8" />
+                                                <controls:AlertRangePicker VerticalAlignment="Bottom" FontSize="14" Margin="52,8" AlertRange="{Binding Range}" />
                                             </Grid>
                                         </StackPanel>
                                         
