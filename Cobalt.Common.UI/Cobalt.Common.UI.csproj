@@ -106,6 +106,7 @@
       <DependentUpon>AppDurationTooltip.xaml</DependentUpon>
     </Compile>
     <Compile Include="Converters\AppIconSizeConverter.cs" />
+    <Compile Include="Converters\ExePathToColorConverter.cs" />
     <Compile Include="Converters\AppToExeNameConverter.cs" />
     <Compile Include="Converters\ExePathToIconConverter.cs" />
     <Compile Include="Converters\HumanReadableTimeSpanConverter.cs" />

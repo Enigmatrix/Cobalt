@@ -85,7 +85,8 @@ namespace Cobalt.Views.Converters
                             .AsChartValues(),
                         LabelPoint = cp => x.App.Path,
                         Title = x.App.Path,
-                        StrokeThickness = 0.3
+                        StrokeThickness = 0.3,
+                        //DataLabelsTemplate = (DataTemplate) Application.Current.Resources["BarRepresentation"],
                     };
                     stack.SetResourceReference(Series.StrokeProperty, "MaterialDesignBody");
                     appMap[x.App] = stack;

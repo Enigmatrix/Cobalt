@@ -31,4 +31,10 @@
             </Image.Width>
         </Image>
     </DataTemplate>
+    <DataTemplate x:Key="BarRepresentation" DataType="liveCharts:DataLabelViewModel">
+        <!--<Image
+            Source="{Binding Point.Instance.App.Path, Converter={StaticResource ExePathToIconConverter}, Mode=OneTime}"
+            Stretch="Fill"  Width="20" Height="20">
+        </Image>-->
+    </DataTemplate>
 </ResourceDictionary>

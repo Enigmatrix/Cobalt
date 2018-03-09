@@ -26,7 +26,7 @@ namespace Cobalt.Common.UI.Converters
                 var slice = new PieSeries
                 {
                     Title = newAppDur.App.Path,
-                    StrokeThickness = 0.3,
+                    StrokeThickness = .5,
                     Fill = AppResourceCache.Instance.GetColor(newAppDur.App.Path),
                     DataLabels = true,
                     LabelPoint = LabelPoint,

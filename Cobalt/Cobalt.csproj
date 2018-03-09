@@ -132,8 +132,10 @@
     <Compile Include="Views\Controls\DateRangePicker.xaml.cs">
       <DependentUpon>DateRangePicker.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Views\Controls\TimePanel.cs" />
     <Compile Include="Views\Converters\AppMenuItemToTypeConverter.cs" />
     <Compile Include="Views\Converters\AppsConverter.cs" />
+    <Compile Include="Views\Converters\AppUsagesConverter.cs" />
     <Compile Include="Views\Converters\BooleanToLegendLocation.cs" />
     <Compile Include="Views\Converters\ChunkedUsageConverter.cs" />
     <Compile Include="Views\Dialogs\Dialog.cs" />

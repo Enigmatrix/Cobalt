@@ -11,19 +11,22 @@
                 xmlns:controls="clr-namespace:Cobalt.Views.Controls"
                 xmlns:controls1="clr-namespace:Cobalt.Common.UI.Controls;assembly=Cobalt.Common.UI"
                 xmlns:pages="clr-namespace:Cobalt.ViewModels.Pages"
+                xmlns:viewModels="clr-namespace:Cobalt.Common.UI.ViewModels;assembly=Cobalt.Common.UI"
                 mc:Ignorable="d" Title="Home" Background="{DynamicResource MaterialDesignPaper}"
                 d:DesignHeight="700" d:DesignWidth="1200">
     <local:PageView.Resources>
         <converters1:ChunkedUsageConverter x:Key="HourlyUsageConverter"
                                            Start="{x:Static pages:HomePageViewModel.DayStart}"
                                            End="{x:Static pages:HomePageViewModel.DayEnd}"
-                                           Duration="{x:Static pages:HomePageViewModel.HourDuration}"/>
+                                           Duration="{x:Static pages:HomePageViewModel.HourDuration}" />
         <converters1:ChunkedUsageConverter x:Key="PerWeekUsageConverter"
                                            Start="{x:Static pages:HomePageViewModel.WeekStart}"
                                            End="{x:Static pages:HomePageViewModel.WeekEnd}"
-                                           Duration="{x:Static pages:HomePageViewModel.DayDuration}"/>
+                                           Duration="{x:Static pages:HomePageViewModel.DayDuration}" />
         <converters:AppDurationSeriesConverter x:Key="AppDurationSeriesConverter" />
-        <converters1:BooleanToLegendLocation x:Key="BoolToLegendLocation"/>
+        <converters1:AppUsagesConverter x:Key="AppUsagesConverter" />
+        <converters:ExePathToColorConverter x:Key="ExePathToColorConverter" />
+        <converters1:BooleanToLegendLocation x:Key="BoolToLegendLocation" />
         <Style TargetType="controls:DataCard">
             <Setter Property="Margin" Value="12,12,0,0" />
         </Style>
@@ -34,29 +37,31 @@
     <ScrollViewer VerticalScrollBarVisibility="Visible">
         <Grid Margin="0,0,12,12">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition/>
-                <ColumnDefinition/>
-                <ColumnDefinition/>
+                <ColumnDefinition />
+                <ColumnDefinition />
+                <ColumnDefinition />
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
             <controls:DataCard Height="300" Header="Overview" Grid.ColumnSpan="3" Grid.Row="0"
-                               Background="{DynamicResource PrimaryHueMidBrush}" Foreground="{DynamicResource PrimaryHueDarkForegroundBrush}">
+                               Background="{DynamicResource PrimaryHueMidBrush}"
+                               Foreground="{DynamicResource PrimaryHueDarkForegroundBrush}">
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition/>
-                        <ColumnDefinition/>
-                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition />
+                        <ColumnDefinition />
+                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <Grid Grid.Column="0">
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition/>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition />
                         </Grid.RowDefinitions>
-                        <TextBlock Text="Today" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Today" HorizontalAlignment="Center" />
                         <wpf:PieChart DisableAnimations="True" Grid.Row="1">
                             <wpf:PieChart.Series>
                                 <MultiBinding Converter="{StaticResource AppDurationSeriesConverter}">
@@ -71,10 +76,10 @@
                     </Grid>
                     <Grid Grid.Column="1">
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition/>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition />
                         </Grid.RowDefinitions>
-                        <TextBlock Text="Week So Far" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Week So Far" HorizontalAlignment="Center" />
                         <wpf:PieChart DisableAnimations="True" Grid.Row="1">
                             <wpf:PieChart.Series>
                                 <MultiBinding Converter="{StaticResource AppDurationSeriesConverter}">
@@ -89,17 +94,25 @@
                     </Grid>
                     <Grid Grid.Column="2">
                         <StackPanel Orientation="Vertical" Margin="8">
-                            <TextBlock Text="Total Time Spent Today" HorizontalAlignment="Right" Style="{DynamicResource MaterialDesignBody1TextBlock}"/>
-                            <TextBlock VerticalAlignment="Center" HorizontalAlignment="Right" Text="{Binding HoursSpentDay}" Style="{DynamicResource MaterialDesignDisplay1TextBlock}"/>
-                            <Rectangle Height="10"/>
-                            <TextBlock Text="Total Time Spent This Week" Style="{DynamicResource MaterialDesignBody1TextBlock}" HorizontalAlignment="Right"/>
-                            <TextBlock VerticalAlignment="Center" HorizontalAlignment="Right" Text="{Binding HoursSpentWeek}" Style="{DynamicResource MaterialDesignDisplay1TextBlock}"/>
+                            <TextBlock Text="Usage for Today" HorizontalAlignment="Right"
+                                       Style="{DynamicResource MaterialDesignBody1TextBlock}" />
+                            <TextBlock VerticalAlignment="Center" HorizontalAlignment="Right"
+                                       Text="{Binding HoursSpentDay, Converter={StaticResource HumanReadableTimeSpanConverter}}"
+                                       Style="{DynamicResource MaterialDesignDisplay1TextBlock}" />
+                            <Rectangle Height="10" />
+                            <TextBlock Text="Usage for this Week"
+                                       Style="{DynamicResource MaterialDesignBody1TextBlock}"
+                                       HorizontalAlignment="Right" />
+                            <TextBlock VerticalAlignment="Center" HorizontalAlignment="Right"
+                                       Text="{Binding HoursSpentWeek, Converter={StaticResource HumanReadableTimeSpanConverter}}"
+                                       Style="{DynamicResource MaterialDesignDisplay1TextBlock}" />
                         </StackPanel>
                     </Grid>
                 </Grid>
             </controls:DataCard>
             <controls:DataCard Height="300" Header="Breakdown per Hour" Grid.ColumnSpan="3" Grid.Row="1">
-                <wpf:CartesianChart DisableAnimations="True" Margin="5,0" LegendLocation="{Binding Path=(controls:DataCard.Expanded), RelativeSource={RelativeSource Self}, Converter={StaticResource BoolToLegendLocation}}">
+                <wpf:CartesianChart DisableAnimations="True" Margin="5,0"
+                                    LegendLocation="{Binding Path=(controls:DataCard.Expanded), RelativeSource={RelativeSource Self}, Converter={StaticResource BoolToLegendLocation}}">
                     <wpf:CartesianChart.Series>
                         <MultiBinding Converter="{StaticResource HourlyUsageConverter}">
                             <Binding Path="HourlyChunks" />
@@ -109,7 +122,7 @@
                     <wpf:CartesianChart.AxisY>
                         <wpf:Axis LabelFormatter="{Binding HourFormatter}" MaxValue="36000000000" Position="RightTop">
                             <wpf:Axis.Separator>
-                                <wpf:Separator Step="6000000000"/>
+                                <wpf:Separator Step="6000000000" />
                             </wpf:Axis.Separator>
                         </wpf:Axis>
                     </wpf:CartesianChart.AxisY>
@@ -124,13 +137,14 @@
                         <controls1:AppDurationTooltip />
                     </wpf:CartesianChart.DataTooltip>
                     <wpf:CartesianChart.ChartLegend>
-                        <controls1:AppDurationLegend/>
+                        <controls1:AppDurationLegend />
                     </wpf:CartesianChart.ChartLegend>
                 </wpf:CartesianChart>
             </controls:DataCard>
 
             <controls:DataCard Height="300" Header="Today" x:Name="Pie" Grid.ColumnSpan="1" Grid.Row="2">
-                <wpf:PieChart DisableAnimations="True" LegendLocation="{Binding Path=(controls:DataCard.Expanded), RelativeSource={RelativeSource Self}, Converter={StaticResource BoolToLegendLocation}}">
+                <wpf:PieChart DisableAnimations="True"
+                              LegendLocation="{Binding Path=(controls:DataCard.Expanded), RelativeSource={RelativeSource Self}, Converter={StaticResource BoolToLegendLocation}}">
                     <wpf:PieChart.Series>
                         <MultiBinding Converter="{StaticResource AppDurationSeriesConverter}">
                             <Binding Path="AppDurations" />
@@ -141,12 +155,13 @@
                         <controls1:AppDurationTooltip />
                     </wpf:PieChart.DataTooltip>
                     <wpf:PieChart.ChartLegend>
-                        <controls1:AppDurationLegend/>
+                        <controls1:AppDurationLegend />
                     </wpf:PieChart.ChartLegend>
                 </wpf:PieChart>
             </controls:DataCard>
             <controls:DataCard Height="300" Header="Week" Grid.ColumnSpan="2" Grid.Column="1" Grid.Row="2">
-                <wpf:CartesianChart DisableAnimations="True" Margin="5,0" LegendLocation="{Binding Path=(controls:DataCard.Expanded), RelativeSource={RelativeSource Self}, Converter={StaticResource BoolToLegendLocation}}">
+                <wpf:CartesianChart DisableAnimations="True" Margin="5,0"
+                                    LegendLocation="{Binding Path=(controls:DataCard.Expanded), RelativeSource={RelativeSource Self}, Converter={StaticResource BoolToLegendLocation}}">
                     <wpf:CartesianChart.Series>
                         <MultiBinding Converter="{StaticResource PerWeekUsageConverter}">
                             <Binding Path="DayChunks" />
@@ -155,7 +170,7 @@
                     </wpf:CartesianChart.Series>
                     <wpf:CartesianChart.AxisY>
                         <wpf:Axis LabelFormatter="{Binding DayFormatter}"
-                                      Position="RightTop">
+                                  Position="RightTop">
                             <wpf:Axis.Separator>
                                 <wpf:Separator Step="72000000000" />
                             </wpf:Axis.Separator>
@@ -172,12 +187,40 @@
                         <controls1:AppDurationTooltip />
                     </wpf:CartesianChart.DataTooltip>
                     <wpf:CartesianChart.ChartLegend>
-                        <controls1:AppDurationLegend/>
+                        <controls1:AppDurationLegend />
                     </wpf:CartesianChart.ChartLegend>
                 </wpf:CartesianChart>
 
             </controls:DataCard>
 
+            <controls:DataCard Height="300" Header="Timeline" Grid.ColumnSpan="3" Grid.Row="3">
+                <ItemsControl Style="{StaticResource {x:Type ItemsControl}}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <controls:TimePanel />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemsSource>
+                        <MultiBinding Converter="{StaticResource AppUsagesConverter}">
+                            <Binding Path="AppUsagesToday" />
+                            <Binding Path="Resources" />
+                        </MultiBinding>
+                    </ItemsControl.ItemsSource>
+                    <ItemsControl.ItemContainerStyle>
+                        <Style TargetType="ContentPresenter">
+                            <Setter Property="controls:TimePanel.Start" Value="{Binding StartTimestamp}"/>
+                            <Setter Property="controls:TimePanel.End" Value="{Binding EndTimestamp}"/>
+                            <Setter Property="ContentTemplate">
+                                <Setter.Value>
+                                    <DataTemplate DataType="viewModels:AppUsageViewModel">
+                                        <Rectangle Fill="{Binding App.Path, Converter={StaticResource ExePathToColorConverter}}"/>
+                                    </DataTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ItemsControl.ItemContainerStyle>
+                </ItemsControl>
+            </controls:DataCard>
         </Grid>
     </ScrollViewer>
 </local:PageView>

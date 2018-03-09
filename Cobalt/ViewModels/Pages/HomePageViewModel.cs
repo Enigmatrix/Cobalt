@@ -19,6 +19,7 @@ namespace Cobalt.ViewModels.Pages
         private TimeSpan _hoursSpentDay;
         private TimeSpan _hoursSpentWeek;
         private IObservable<AppDurationViewModel> _weekAppDurations;
+        private IObservable<AppUsageViewModel> _appUsagesToday;
 
         public HomePageViewModel(IResourceScope scope) : base(scope)
         {
@@ -66,6 +67,12 @@ namespace Cobalt.ViewModels.Pages
             set => Set(ref _dayChunks, value);
         }
 
+        public IObservable<AppUsageViewModel> AppUsagesToday
+        {
+            get => _appUsagesToday;
+            set => Set(ref _appUsagesToday, value);
+        }
+
         protected override void OnActivate(IResourceScope res)
         {
             var stats = res.Resolve<IAppStatsStreamService>();
@@ -91,6 +98,9 @@ namespace Cobalt.ViewModels.Pages
                 .CombineLatest(Observable.Timer(tick, tick), (x, y) => x + TimeSpan.FromTicks(tick.Ticks * y))
                 .ObserveOnDispatcher()
                 .Subscribe(x => HoursSpentWeek = x).ManageUsing(Resources);
+
+            AppUsagesToday = stats.GetAppUsages(DateTime.Today).Select(x =>
+                /*TODO handle duration animation*/new AppUsageViewModel(x.Value));
 
             HourlyChunks = appUsagesStream
                 .SelectMany(u => SplitUsageIntoChunks(u, TimeSpan.FromHours(1), d => d.Date.AddHours(d.Hour)));
