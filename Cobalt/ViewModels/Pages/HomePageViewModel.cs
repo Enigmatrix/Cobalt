@@ -16,7 +16,8 @@ namespace Cobalt.ViewModels.Pages
         private IObservable<AppDurationViewModel> _appDurations;
         private IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> _dayChunks;
         private IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> _hourlyChunks;
-        private TimeSpan _hoursSpent;
+        private TimeSpan _hoursSpentDay;
+        private TimeSpan _hoursSpentWeek;
         private IObservable<AppDurationViewModel> _weekAppDurations;
 
         public HomePageViewModel(IResourceScope scope) : base(scope)
@@ -50,7 +51,8 @@ namespace Cobalt.ViewModels.Pages
         private static IEqualityComparer<App> PathEquality { get; }
             = new SelectorEqualityComparer<App, string>(a => a.Path);
 
-        public TimeSpan HoursSpent { get => _hoursSpent; set => Set(ref _hoursSpent, value); }
+        public TimeSpan HoursSpentDay { get => _hoursSpentDay; set => Set(ref _hoursSpentDay, value); }
+        public TimeSpan HoursSpentWeek { get => _hoursSpentWeek; set => Set(ref _hoursSpentWeek, value); }
 
         public IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> HourlyChunks
         {
@@ -75,13 +77,20 @@ namespace Cobalt.ViewModels.Pages
             var appIncrementor = res.Resolve<IDurationIncrementor>();
 
             var tick = TimeSpan.FromSeconds(1);
-            //may not be accurate
+            //TODO refactor
             stats.GetAppDurations(DateTime.Today, DateTime.Now)
                 .Sum(x => x.Duration.Sum(y => y.Value.Ticks).SingleAsync().Wait())
                 .Select(x => TimeSpan.FromTicks(x))
                 .CombineLatest(Observable.Timer(tick, tick), (x, y) => x + TimeSpan.FromTicks(tick.Ticks * y))
                 .ObserveOnDispatcher()
-                .Subscribe(x => HoursSpent = x).ManageUsing(Resources);
+                .Subscribe(x => HoursSpentDay = x).ManageUsing(Resources);
+            //TODO refactor
+            stats.GetAppDurations(DateTime.Today.StartOfWeek(), DateTime.Now)
+                .Sum(x => x.Duration.Sum(y => y.Value.Ticks).SingleAsync().Wait())
+                .Select(x => TimeSpan.FromTicks(x))
+                .CombineLatest(Observable.Timer(tick, tick), (x, y) => x + TimeSpan.FromTicks(tick.Ticks * y))
+                .ObserveOnDispatcher()
+                .Subscribe(x => HoursSpentWeek = x).ManageUsing(Resources);
 
             HourlyChunks = appUsagesStream
                 .SelectMany(u => SplitUsageIntoChunks(u, TimeSpan.FromHours(1), d => d.Date.AddHours(d.Hour)));

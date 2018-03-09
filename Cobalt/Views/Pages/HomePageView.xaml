@@ -88,12 +88,12 @@
                         </wpf:PieChart>
                     </Grid>
                     <Grid Grid.Column="2">
-                        <StackPanel Orientation="Vertical" HorizontalAlignment="Center" Margin="4">
-                            <TextBlock Text="Total Time Spent Today" Style="{DynamicResource MaterialDesignBody1TextBlock}"/>
-                            <TextBlock VerticalAlignment="Center" HorizontalAlignment="Right" Text="{Binding HoursSpent}" Style="{DynamicResource MaterialDesignDisplay1TextBlock}"/>
+                        <StackPanel Orientation="Vertical" Margin="8">
+                            <TextBlock Text="Total Time Spent Today" HorizontalAlignment="Right" Style="{DynamicResource MaterialDesignBody1TextBlock}"/>
+                            <TextBlock VerticalAlignment="Center" HorizontalAlignment="Right" Text="{Binding HoursSpentDay}" Style="{DynamicResource MaterialDesignDisplay1TextBlock}"/>
                             <Rectangle Height="10"/>
-                            <TextBlock Text="Total Time Spent This Week" Style="{DynamicResource MaterialDesignBody1TextBlock}"/>
-                            <TextBlock VerticalAlignment="Center" HorizontalAlignment="Right" Text="{Binding HoursSpent}" Style="{DynamicResource MaterialDesignDisplay1TextBlock}"/>
+                            <TextBlock Text="Total Time Spent This Week" Style="{DynamicResource MaterialDesignBody1TextBlock}" HorizontalAlignment="Right"/>
+                            <TextBlock VerticalAlignment="Center" HorizontalAlignment="Right" Text="{Binding HoursSpentWeek}" Style="{DynamicResource MaterialDesignDisplay1TextBlock}"/>
                         </StackPanel>
                     </Grid>
                 </Grid>
