@@ -30,6 +30,8 @@ namespace Cobalt.Common.Data.Repository
         IObservable<Tag> GetTags(App newApp);
         IObservable<App> GetAppsWithTag(Tag tag);
 
+        IObservable<TimeSpan> GetAppUsageTime(DateTime? start = null, DateTime? end = null);
+
         IObservable<AppUsage> GetAppUsages(DateTime? start = null, DateTime? end = null);
         IObservable<AppUsage> GetAppUsagesForApp(App app, DateTime? start = null, DateTime? end = null);
 

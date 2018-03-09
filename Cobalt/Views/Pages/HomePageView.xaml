@@ -193,33 +193,47 @@
 
             </controls:DataCard>
 
-            <controls:DataCard Height="300" Header="Timeline" Grid.ColumnSpan="3" Grid.Row="3">
-                <ItemsControl Style="{StaticResource {x:Type ItemsControl}}">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <controls:TimePanel />
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemsSource>
-                        <MultiBinding Converter="{StaticResource AppUsagesConverter}">
-                            <Binding Path="AppUsagesToday" />
-                            <Binding Path="Resources" />
-                        </MultiBinding>
-                    </ItemsControl.ItemsSource>
-                    <ItemsControl.ItemContainerStyle>
-                        <Style TargetType="ContentPresenter">
-                            <Setter Property="controls:TimePanel.Start" Value="{Binding StartTimestamp}"/>
-                            <Setter Property="controls:TimePanel.End" Value="{Binding EndTimestamp}"/>
-                            <Setter Property="ContentTemplate">
-                                <Setter.Value>
-                                    <DataTemplate DataType="viewModels:AppUsageViewModel">
-                                        <Rectangle Fill="{Binding App.Path, Converter={StaticResource ExePathToColorConverter}}"/>
-                                    </DataTemplate>
-                                </Setter.Value>
-                            </Setter>
-                        </Style>
-                    </ItemsControl.ItemContainerStyle>
-                </ItemsControl>
+            <controls:DataCard Grid.Column="0" Height="300" Header="Timeline" Grid.ColumnSpan="3" Grid.Row="3">
+                <Grid Margin="4">
+                    <Grid.RowDefinitions>
+                        <RowDefinition />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Border BorderBrush="{DynamicResource MaterialDesignPaper}" BorderThickness="1">
+                        <ItemsControl Style="{StaticResource {x:Type ItemsControl}}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <controls:TimePanel />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemsSource>
+                                <MultiBinding Converter="{StaticResource AppUsagesConverter}">
+                                    <Binding Path="AppUsagesToday" />
+                                    <Binding Path="Resources" />
+                                </MultiBinding>
+                            </ItemsControl.ItemsSource>
+                            <ItemsControl.ItemContainerStyle>
+                                <Style TargetType="ContentPresenter">
+                                    <Setter Property="controls:TimePanel.Start" Value="{Binding StartTimestamp}" />
+                                    <Setter Property="controls:TimePanel.End" Value="{Binding EndTimestamp}" />
+                                    <Setter Property="ContentTemplate">
+                                        <Setter.Value>
+                                            <DataTemplate DataType="viewModels:AppUsageViewModel">
+                                                <Rectangle
+                                                    Fill="{Binding App.Path, Converter={StaticResource ExePathToColorConverter}}" />
+                                            </DataTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </ItemsControl.ItemContainerStyle>
+                        </ItemsControl>
+                    </Border>
+                    <Grid Grid.Row="1">
+                        <TickBar Height="5" Fill="{DynamicResource MaterialDesignPaper}" Minimum="0" Maximum="24" TickFrequency="1"></TickBar>
+                        <Grid>
+                        </Grid>
+                    </Grid>
+                </Grid>
             </controls:DataCard>
         </Grid>
     </ScrollViewer>

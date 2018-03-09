@@ -164,6 +164,19 @@ namespace Cobalt.Common.Data.Repository
                 .Do(app => app.Tags = GetTags(app));
         }
 
+        public IObservable<TimeSpan> GetAppUsageTime(DateTime? start = null, DateTime? end = null)
+        {
+            var (startTicks, endTicks) = ToTickRange(start, end);
+            var ticks = ExecuteScalar<long>(@"select sum(
+                                (case when au.EndTimestamp > @end then @end else au.EndTimestamp end) -
+								(case when au.StartTimestamp < @start then @start else au.StartTimestamp end))
+                                from AppUsage au
+                                where StartTimestamp <= @end and EndTimestamp >= @start",
+                ("start", startTicks),
+                ("end", endTicks));
+            return Observable.Return(TimeSpan.FromTicks(ticks));
+        }
+
         public IObservable<AppUsage> GetAppUsages(DateTime? start, DateTime? end)
         {
             //TODO might cause high memory usage, implement cache
@@ -294,6 +307,17 @@ namespace Cobalt.Common.Data.Repository
                 foreach (var p in param)
                     cmd.Parameters.AddWithValue(null, p);
                 cmd.ExecuteNonQuery();
+            }
+        }
+
+        private T ExecuteScalar<T>(string cmdStr, 
+            params (string, object)[] args)
+        {
+            using (var cmd = new SQLiteCommand(cmdStr, _connection))
+            {
+                foreach (var p in args)
+                    cmd.Parameters.AddWithValue(p.Item1, p.Item2);
+                return (T)cmd.ExecuteScalar();
             }
         }
 

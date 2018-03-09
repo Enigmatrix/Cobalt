@@ -23,6 +23,7 @@ namespace Cobalt.Common.Analysis
             DateTime? end = null);
 
         IObservable<Usage<AppUsage>> GetAppUsages(DateTime start, DateTime? end = null);
+        IObservable<TimeSpan> GetAppUsageDuration(DateTime? start = null, DateTime? end = null);
         //IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> HourlyChunks();
     }
 
@@ -84,6 +85,18 @@ namespace Cobalt.Common.Analysis
                 return Repository.GetAppUsages(start, end).Select(ToUsageAppUsage);
             return Repository.GetAppUsages(start).Select(ToUsageAppUsage)
                 .Concat(ReceivedAppUsages());
+        }
+
+        public IObservable<TimeSpan> GetAppUsageDuration(DateTime? start = null, DateTime? end = null)
+        {
+            var tick = Repository.GetAppUsageTime(start, end);
+            if (end == null)
+            {
+                var period = TimeSpan.FromMilliseconds(300);
+                var timer = Observable.Timer(period, period);
+                tick = tick.CombineLatest(timer, (x, y) => x.Add(TimeSpan.FromMilliseconds(period.TotalMilliseconds*y)));
+            }
+            return tick;
         }
 
         private static (App App, Usage<TimeSpan> Duration) ToUsageAppDuration((App, TimeSpan) x)

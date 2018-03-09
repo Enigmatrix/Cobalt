@@ -49,9 +49,6 @@ namespace Cobalt.ViewModels.Pages
         public static DateTime DayEnd => DateTime.Today.AddDays(1);
         public static TimeSpan HourDuration => TimeSpan.FromHours(1);
 
-        private static IEqualityComparer<App> PathEquality { get; }
-            = new SelectorEqualityComparer<App, string>(a => a.Path);
-
         public TimeSpan HoursSpentDay { get => _hoursSpentDay; set => Set(ref _hoursSpentDay, value); }
         public TimeSpan HoursSpentWeek { get => _hoursSpentWeek; set => Set(ref _hoursSpentWeek, value); }
 
@@ -83,19 +80,10 @@ namespace Cobalt.ViewModels.Pages
             var weekAppDurationsStream = stats.GetAppDurations(WeekStart);
             var appIncrementor = res.Resolve<IDurationIncrementor>();
 
-            var tick = TimeSpan.FromSeconds(1);
-            //TODO refactor
-            stats.GetAppDurations(DateTime.Today, DateTime.Now)
-                .Sum(x => x.Duration.Sum(y => y.Value.Ticks).SingleAsync().Wait())
-                .Select(x => TimeSpan.FromTicks(x))
-                .CombineLatest(Observable.Timer(tick, tick), (x, y) => x + TimeSpan.FromTicks(tick.Ticks * y))
+            stats.GetAppUsageDuration(DateTime.Today)
                 .ObserveOnDispatcher()
                 .Subscribe(x => HoursSpentDay = x).ManageUsing(Resources);
-            //TODO refactor
-            stats.GetAppDurations(DateTime.Today.StartOfWeek(), DateTime.Now)
-                .Sum(x => x.Duration.Sum(y => y.Value.Ticks).SingleAsync().Wait())
-                .Select(x => TimeSpan.FromTicks(x))
-                .CombineLatest(Observable.Timer(tick, tick), (x, y) => x + TimeSpan.FromTicks(tick.Ticks * y))
+            stats.GetAppUsageDuration(DateTime.Today.StartOfWeek())
                 .ObserveOnDispatcher()
                 .Subscribe(x => HoursSpentWeek = x).ManageUsing(Resources);
 
