@@ -14,7 +14,7 @@ namespace Cobalt.Common.UI.ViewModels
 
         public EntityViewModel(Entity entity)
         {
-            
+            Entity = entity;
         }
 
         public int Id
@@ -22,5 +22,7 @@ namespace Cobalt.Common.UI.ViewModels
             get => _id;
             set => Set(ref _id, value);
         }
+
+        public Entity Entity { get; }
     }
 }

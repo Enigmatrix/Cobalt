@@ -138,6 +138,7 @@
     <Compile Include="Views\Converters\AppUsagesConverter.cs" />
     <Compile Include="Views\Converters\BooleanToLegendLocation.cs" />
     <Compile Include="Views\Converters\ChunkedUsageConverter.cs" />
+    <Compile Include="Views\Converters\TagsConverter.cs" />
     <Compile Include="Views\Dialogs\Dialog.cs" />
     <Compile Include="Views\Dialogs\EditAppAlertDialog.xaml.cs">
       <DependentUpon>EditAppAlertDialog.xaml</DependentUpon>
@@ -162,6 +163,8 @@
       <DependentUpon>TagsPageView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\Util\ContentDataTemplateSelector.cs" />
+    <Compile Include="Views\Util\RoutedEventTrigger.cs" />
+    <Compile Include="Views\Util\TextBoxUtil.cs" />
     <Compile Include="Views\Util\TypedTemplateEntry.cs" />
     <Compile Include="Views\Util\TypedTemplateSelector.cs" />
     <Compile Include="Views\Util\WindowUtil.cs" />

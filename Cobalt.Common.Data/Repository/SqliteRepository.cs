@@ -139,6 +139,12 @@ namespace Cobalt.Common.Data.Repository
             Delete("Alert", "Id = ?", alert.Id);
         }
 
+        public void RemoveTag(Tag tag)
+        {
+            Delete("AppTag", "TagId = ?", tag.Id);
+            Delete("Tag", "Id = ?", tag.Id);
+        }
+
         #endregion
 
         #region Get
@@ -151,14 +157,14 @@ namespace Cobalt.Common.Data.Repository
 
         public IObservable<Tag> GetTags()
         {
-            return Get(@"select * from Tags", r => TagMapper(r));
+            return Get(@"select * from Tag", r => TagMapper(r));
         }
 
 
         public IObservable<App> GetAppsWithTag(Tag tag)
         {
             return Get(@"select * from App
-								where Id = (select AppId from AppTag
+								where Id in (select AppId from AppTag
 									where TagId = (select Id from Tag 
 										where Name = @name))", r => AppMapper(r), ("name", tag.Name))
                 .Do(app => app.Tags = GetTags(app));
@@ -317,7 +323,8 @@ namespace Cobalt.Common.Data.Repository
             {
                 foreach (var p in args)
                     cmd.Parameters.AddWithValue(p.Item1, p.Item2);
-                return (T)cmd.ExecuteScalar();
+                var res = cmd.ExecuteScalar();
+                return res == DBNull.Value ? default(T) : (T) res;
             }
         }
 

@@ -20,6 +20,7 @@ namespace Cobalt.Common.Data.Repository
         //remove
         void RemoveTagFromApp(Tag tag, App app);
         void RemoveAlert(Alert alert);
+        void RemoveTag(Tag tagEntity);
 
 
 
