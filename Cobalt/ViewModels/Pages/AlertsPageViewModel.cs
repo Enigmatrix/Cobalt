@@ -98,7 +98,7 @@ namespace Cobalt.ViewModels.Pages
 
         public void EditAppAlert(AppAlertViewModel appAlert)
         {
-            NavigationService.ShowDialog<EditAppAlertDialog>(appAlert);
+
         }
 
         public T EnableSaving<T>(T alert) where T : AlertViewModel

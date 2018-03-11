@@ -140,8 +140,8 @@
     <Compile Include="Views\Converters\ChunkedUsageConverter.cs" />
     <Compile Include="Views\Converters\TagsConverter.cs" />
     <Compile Include="Views\Dialogs\Dialog.cs" />
-    <Compile Include="Views\Dialogs\EditAppAlertDialog.xaml.cs">
-      <DependentUpon>EditAppAlertDialog.xaml</DependentUpon>
+    <Compile Include="Views\Dialogs\SelectAppsDialog.xaml.cs">
+      <DependentUpon>SelectAppsDialog.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\Pages\AlertsPageView.xaml.cs">
       <DependentUpon>AlertsPageView.xaml</DependentUpon>
@@ -188,7 +188,7 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Views\Dialogs\EditAppAlertDialog.xaml">
+    <Page Include="Views\Dialogs\SelectAppsDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

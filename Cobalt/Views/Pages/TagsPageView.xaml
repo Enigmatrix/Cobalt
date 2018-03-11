@@ -30,7 +30,8 @@
                                         <TextBlock Text="{Binding Name}" FontSize="15" VerticalAlignment="Center" />
                                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                                             <Button Style="{DynamicResource MaterialDesignFlatButton}"
-                                                    ToolTip="Tag an App">
+                                                    ToolTip="Tag an App"
+                                                    cal:Message.Attach="AddAppsToTag($dataContext)">
                                                 <Grid Width="24" Height="24" ToolTip="Tag an App">
                                                     <materialDesign:PackIcon Kind="Application" Width="18" Height="18"
                                                                              HorizontalAlignment="Left"
@@ -52,68 +53,78 @@
                                         </StackPanel>
                                     </Grid>
                                 </Expander.Header>
-                                <ItemsControl ItemsSource="{Binding TaggedApps}">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate DataType="viewModels:AppViewModel">
-                                            <materialDesign:Card Margin="4,0,4,4"
-                                                                 materialDesign:ShadowAssist.ShadowDepth="Depth1">
-                                                <Grid>
-                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left"
-                                                                Margin="8">
-                                                        <Image
-                                                            Source="{Binding Path, Converter={StaticResource ExePathToIconConverter}, IsAsync=True}"
-                                                            Width="24" Height="24" />
-                                                        <TextBlock
-                                                            Style="{DynamicResource MaterialDesignBody2TextBlock}"
-                                                            Margin="8,0"
-                                                            Text="{Binding Converter={StaticResource AppToExeNameConverter}, IsAsync=True}"
-                                                            VerticalAlignment="Center" />
-                                                    </StackPanel>
-                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                                        <ItemsControl>
-                                                            <ItemsControl.ItemsSource>
-                                                                <MultiBinding
-                                                                    Converter="{StaticResource TagsConverter}">
-                                                                    <Binding Path="Tags" />
-                                                                    <Binding Path="DataContext.Resources"
-                                                                             ElementName="Page" />
-                                                                </MultiBinding>
-                                                            </ItemsControl.ItemsSource>
-                                                            <ItemsControl.ItemsPanel>
-                                                                <ItemsPanelTemplate>
-                                                                    <StackPanel Orientation="Horizontal" />
-                                                                </ItemsPanelTemplate>
-                                                            </ItemsControl.ItemsPanel>
-                                                            <ItemsControl.ItemTemplate>
-                                                                <DataTemplate DataType="viewModels:TagViewModel">
-                                                                    <materialDesign:Chip
-                                                                        Margin="2"
-                                                                        Content="{Binding Name}" />
-                                                                </DataTemplate>
-                                                            </ItemsControl.ItemTemplate>
-                                                        </ItemsControl>
-                                                        <Button Style="{DynamicResource MaterialDesignFlatButton}"
-                                                                Margin="4,4,0,0">
-                                                            <i:Interaction.Triggers>
-                                                                <i:EventTrigger EventName="Click">
-                                                                    <cal:ActionMessage MethodName="RemoveTagFromApp">
-                                                                        <cal:Parameter
-                                                                            Value="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Expander}}" />
-                                                                        <cal:Parameter
-                                                                            Value="$dataContext" />
-                                                                    </cal:ActionMessage>
-                                                                </i:EventTrigger>
-                                                            </i:Interaction.Triggers>
+                                <StackPanel Orientation="Vertical">
+                                    <TextBlock Text="Tagged Apps" Style="{DynamicResource MaterialDesignSubheadingTextBlock}" Margin="24,0,20,16" FontSize="13" FontWeight="Bold"/> 
+                                    <ItemsControl ItemsSource="{Binding TaggedApps}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate DataType="viewModels:AppViewModel">
+                                                <materialDesign:Card Margin="4,0,4,4"
+                                                                     materialDesign:ShadowAssist.ShadowDepth="Depth1">
+                                                    <Grid>
+                                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left"
+                                                                    Margin="8">
+                                                            <Image
+                                                                Source="{Binding Path, Converter={StaticResource ExePathToIconConverter}, IsAsync=True}"
+                                                                Width="24" Height="24" />
+                                                            <TextBlock
+                                                                Style="{DynamicResource MaterialDesignBody2TextBlock}"
+                                                                Margin="8,0"
+                                                                Text="{Binding Converter={StaticResource AppToExeNameConverter}, IsAsync=True}"
+                                                                VerticalAlignment="Center" />
+                                                        </StackPanel>
+                                                        <StackPanel Orientation="Horizontal"
+                                                                    HorizontalAlignment="Right">
+                                                            <ItemsControl>
+                                                                <ItemsControl.ItemsSource>
+                                                                    <MultiBinding
+                                                                        Converter="{StaticResource TagsConverter}">
+                                                                        <Binding Path="Tags" />
+                                                                        <Binding Path="DataContext.Resources"
+                                                                                 ElementName="Page" />
+                                                                    </MultiBinding>
+                                                                </ItemsControl.ItemsSource>
+                                                                <ItemsControl.ItemsPanel>
+                                                                    <ItemsPanelTemplate>
+                                                                        <StackPanel Orientation="Horizontal" />
+                                                                    </ItemsPanelTemplate>
+                                                                </ItemsControl.ItemsPanel>
+                                                                <ItemsControl.ItemTemplate>
+                                                                    <DataTemplate DataType="viewModels:TagViewModel">
+                                                                        <materialDesign:Chip
+                                                                            Margin="2"
+                                                                            Content="{Binding Name}" />
+                                                                    </DataTemplate>
+                                                                </ItemsControl.ItemTemplate>
+                                                            </ItemsControl>
+                                                            <Button Style="{DynamicResource MaterialDesignFlatButton}"
+                                                                    Margin="4,4,0,0">
+                                                                <i:Interaction.Triggers>
+                                                                    <i:EventTrigger EventName="Click">
+                                                                        <cal:ActionMessage
+                                                                            MethodName="RemoveTagFromApp">
+                                                                            <cal:Parameter
+                                                                                Value="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Expander}}" />
+                                                                            <cal:Parameter
+                                                                                Value="$dataContext" />
+                                                                        </cal:ActionMessage>
+                                                                    </i:EventTrigger>
+                                                                </i:Interaction.Triggers>
 
-                                                            <materialDesign:PackIcon Kind="Close" Height="18"
-                                                                                     Width="18" />
-                                                        </Button>
-                                                    </StackPanel>
-                                                </Grid>
-                                            </materialDesign:Card>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
+                                                                <materialDesign:PackIcon Kind="Close" Height="18"
+                                                                                         Width="18" />
+                                                            </Button>
+                                                        </StackPanel>
+                                                    </Grid>
+                                                </materialDesign:Card>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+
+                                    <TextBlock Text="Statistics" Style="{DynamicResource MaterialDesignSubheadingTextBlock}" Margin="24,0,20,16" FontSize="13" FontWeight="Bold"/> 
+                                    <Grid>
+
+                                    </Grid>
+                                </StackPanel>
                             </Expander>
                         </materialDesign:Card>
                     </DataTemplate>
@@ -127,10 +138,10 @@
                 <StackPanel>
                     <TextBox materialDesign:HintAssist.Hint="Name" Text=""
                              materialDesign:HintAssist.IsFloating="True" Width="300"
-                             Margin="16" x:Name="TagName" AcceptsReturn="True">
-                    </TextBox>
+                             Margin="16" x:Name="TagName" AcceptsReturn="True" />
                     <Button Content="ADD TAG" Width="100" HorizontalAlignment="Right" Margin="4"
-                            cal:Message.Attach="AddTag(TagName)" Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}"/>
+                            cal:Message.Attach="AddTag(TagName)"
+                            Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}" />
                 </StackPanel>
             </Button.CommandParameter>
             <materialDesign:PackIcon

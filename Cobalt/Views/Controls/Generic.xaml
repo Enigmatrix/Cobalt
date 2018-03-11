@@ -6,8 +6,10 @@
     xmlns:mdConverters="clr-namespace:MaterialDesignThemes.Wpf.Converters;assembly=MaterialDesignThemes.Wpf"
     xmlns:controls="clr-namespace:Cobalt.Views.Controls"
     xmlns:util="clr-namespace:Cobalt.Views.Util"
-    xmlns:pages="clr-namespace:Cobalt.Views.Pages">
+    xmlns:pages="clr-namespace:Cobalt.Views.Pages"
+    xmlns:converters="http://metro.mahapps.com/winfx/xaml/shared">
 
+                  <converters:MathConverter x:Key="SubtractMathConverter" Operation="Subtract"/>
 
     <mdConverters:DrawerOffsetConverter x:Key="DrawerOffsetConverter" />
 

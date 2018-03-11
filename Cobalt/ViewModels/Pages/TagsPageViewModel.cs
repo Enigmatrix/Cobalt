@@ -1,10 +1,16 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Reactive.Linq;
+using System.Security.RightsManagement;
+using Cobalt.Common.Analysis;
 using Cobalt.Common.Data;
 using Cobalt.Common.Data.Repository;
 using Cobalt.Common.IoC;
 using Cobalt.Common.UI.ViewModels;
+using Cobalt.ViewModels.Utils;
+using Cobalt.Views.Dialogs;
 
 namespace Cobalt.ViewModels.Pages
 {
@@ -18,9 +24,19 @@ namespace Cobalt.ViewModels.Pages
             set => Set(ref _tags, value);
         }
 
-        public TagsPageViewModel(IResourceScope scope, IDbRepository repo) : base(scope)
+        public INavigationService NavigationService
         {
+            get;
+            set;
+        }
+
+        public IEntityStreamService EntityStreamService { get; set; }
+
+        public TagsPageViewModel(IResourceScope scope, IEntityStreamService entities, IDbRepository repo, INavigationService svc) : base(scope)
+        {
+            NavigationService = svc;
             Repository = repo;
+            EntityStreamService = entities;
         }
 
         public IDbRepository Repository { get; set; }
@@ -59,6 +75,17 @@ namespace Cobalt.ViewModels.Pages
         {
             Repository.RemoveTag((Tag)tag.Entity);
             Tags.Remove(tag);
+        }
+
+        public async void AddAppsToTag(TagViewModel tag)
+        {
+            var apps = EntityStreamService.GetApps().Select(x => new AppViewModel(x));
+            var result = (IList)await NavigationService.ShowDialog<SelectAppsDialog>(apps, Resources);
+            if (result == null) return;
+            foreach (var appViewModel in result)
+            {
+                AddTagToApp(tag, (AppViewModel)appViewModel);
+            }
         }
 
         public void AddTagToApp(TagViewModel tag, AppViewModel app)

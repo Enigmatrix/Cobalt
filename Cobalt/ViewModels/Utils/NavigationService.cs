@@ -1,5 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Threading;
+using System.Threading.Tasks;
 using Caliburn.Micro;
 using Cobalt.Common.IoC;
 using Cobalt.Common.Util;
@@ -16,7 +18,7 @@ namespace Cobalt.ViewModels.Utils
         PageViewModel ActiveItem { get; }
         void NavigateTo<T>() where T : PageViewModel;
         void NavigateToType(Type value);
-        void ShowDialog<T>(params object[] args) where T : Dialog, new();
+        Task<object> ShowDialog<T>(params object[] args) where T : Dialog, new();
     }
 
     public class NavigationService : Conductor<PageViewModel>.Collection.OneActive, INavigationService
@@ -76,11 +78,11 @@ namespace Cobalt.ViewModels.Utils
             _resolver.Dispose();
         }
 
-        public async void ShowDialog<T>(params object[] args) where T : Dialog, new()
+        public async Task<object> ShowDialog<T>(params object[] args) where T : Dialog, new()
         {
             var dialog = new T();
             dialog.Prepare(args);
-            await ActivePage.ShowDialog(dialog);
+            return await ActivePage.ShowDialog(dialog);
         }
     }
 }
