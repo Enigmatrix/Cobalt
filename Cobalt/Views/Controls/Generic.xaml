@@ -9,7 +9,7 @@
     xmlns:pages="clr-namespace:Cobalt.Views.Pages"
     xmlns:converters="http://metro.mahapps.com/winfx/xaml/shared">
 
-                  <converters:MathConverter x:Key="SubtractMathConverter" Operation="Subtract"/>
+    <converters:MathConverter x:Key="SubtractMathConverter" Operation="Subtract" />
 
     <mdConverters:DrawerOffsetConverter x:Key="DrawerOffsetConverter" />
 
@@ -24,72 +24,74 @@
                             BorderThickness="{TemplateBinding BorderThickness}">
                         <md:DialogHost x:Name="DialogHoster" CloseOnClickAway="True" DialogMargin="0">
                             <Grid x:Name="RootGrid">
-                            <Grid.Resources>
-                                <DataTemplate x:Key="MenuItemTemplate" DataType="controls:AppMenuItem">
-                                    <Grid Height="48" Focusable="False">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="48" />
-                                            <ColumnDefinition />
-                                        </Grid.ColumnDefinitions>
-                                        <md:PackIcon Grid.Column="0"
-                                                     HorizontalAlignment="Center"
-                                                     VerticalAlignment="Center"
-                                                     Focusable="False"
-                                                     Foreground="{DynamicResource MaterialDesignBody}"
-                                                     Kind="{Binding Icon}" />
-                                        <TextBlock Grid.Column="1"
-                                                   VerticalAlignment="Center"
-                                                   FontSize="16"
-                                                   Foreground="{DynamicResource MaterialDesignBody}"
-                                                   Text="{Binding Description}" />
-                                    </Grid>
-                                </DataTemplate>
-                                <DataTemplate x:Key="AppContentTemplate" DataType="pages:PageView">
-                                    <Grid>
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition Height="48" />
-                                            <RowDefinition Height="*" />
-                                        </Grid.RowDefinitions>
-
-                                        <ContentControl Grid.Row="1" Content="{Binding}" />
-
-                                        <md:Card util:WindowUtils.DragMove="True" UniformCornerRadius="0"
-                                                 md:ShadowAssist.ShadowDepth="Depth1" Grid.Row="0"
-                                                 Background="{DynamicResource PrimaryHueDarkBrush}"
-                                                 HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-                                            <TextBlock Foreground="{DynamicResource PrimaryHueDarkForegroundBrush}"
-                                                       Text="{Binding Title}" VerticalAlignment="Center"
-                                                       HorizontalAlignment="Left" FontSize="16" LineHeight="18"
-                                                       FontWeight="Medium" Margin="15,0,0,2" />
-                                        </md:Card>
-
-                                        <!--this is the menu's shadow-->
-                                        <md:Card Grid.RowSpan="2" UniformCornerRadius="0" VerticalAlignment="Stretch"
-                                                 HorizontalAlignment="Left" Width="1" Grid.Row="0" />
-                                    </Grid>
-                                </DataTemplate>
-                            </Grid.Resources>
-                            <metro:HamburgerMenu PaneBackground="{DynamicResource MaterialDesignCardBackground}"
-                                                 PaneForeground="Black"
-                                                 ItemsSource="{TemplateBinding MenuItems}"
-                                                 ItemTemplate="{StaticResource MenuItemTemplate}"
-                                                 Foreground="{DynamicResource MaterialDesignBody}"
-                                                 OptionsItemsSource="{TemplateBinding OptionItems}"
-                                                 OptionsItemTemplate="{StaticResource MenuItemTemplate}"
-                                                 SelectedItem="{Binding SelectedItem, RelativeSource={RelativeSource TemplatedParent}, Mode=OneWayToSource}"
-                                                 SelectedOptionsItem="{Binding SelectedItem, RelativeSource={RelativeSource TemplatedParent}, Mode=OneWayToSource}"
-                                                 ContentTemplate="{StaticResource AppContentTemplate}"
-                                                 Content="{TemplateBinding Content}">
-                                <metro:HamburgerMenu.HamburgerMenuTemplate>
-                                    <DataTemplate>
-                                        <!--  PackIconMaterial - Menu  -->
-                                        <ContentControl Width="22"
-                                                        Height="22" Foreground="{DynamicResource MaterialDesignBody}"
-                                                        Content="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"
-                                                        Style="{DynamicResource PathIconContentControlStyle}" />
+                                <Grid.Resources>
+                                    <DataTemplate x:Key="MenuItemTemplate" DataType="controls:AppMenuItem">
+                                        <Grid Height="48" Focusable="False">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="48" />
+                                                <ColumnDefinition />
+                                            </Grid.ColumnDefinitions>
+                                            <md:PackIcon Grid.Column="0"
+                                                         HorizontalAlignment="Center"
+                                                         VerticalAlignment="Center"
+                                                         Focusable="False"
+                                                         Foreground="{DynamicResource MaterialDesignBody}"
+                                                         Kind="{Binding Icon}" />
+                                            <TextBlock Grid.Column="1"
+                                                       VerticalAlignment="Center"
+                                                       FontSize="16"
+                                                       Foreground="{DynamicResource MaterialDesignBody}"
+                                                       Text="{Binding Description}" />
+                                        </Grid>
                                     </DataTemplate>
-                                </metro:HamburgerMenu.HamburgerMenuTemplate>
-                                <!--
+                                    <DataTemplate x:Key="AppContentTemplate" DataType="pages:PageView">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="48" />
+                                                <RowDefinition Height="*" />
+                                            </Grid.RowDefinitions>
+
+                                            <ContentControl Grid.Row="1" Content="{Binding}" />
+
+                                            <md:Card util:WindowUtils.DragMove="True" UniformCornerRadius="0"
+                                                     md:ShadowAssist.ShadowDepth="Depth1" Grid.Row="0"
+                                                     Background="{DynamicResource PrimaryHueDarkBrush}"
+                                                     HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                                                <TextBlock Foreground="{DynamicResource PrimaryHueDarkForegroundBrush}"
+                                                           Text="{Binding Title}" VerticalAlignment="Center"
+                                                           HorizontalAlignment="Left" FontSize="16" LineHeight="18"
+                                                           FontWeight="Medium" Margin="15,0,0,2" />
+                                            </md:Card>
+
+                                            <!--this is the menu's shadow-->
+                                            <md:Card Grid.RowSpan="2" UniformCornerRadius="0"
+                                                     VerticalAlignment="Stretch"
+                                                     HorizontalAlignment="Left" Width="1" Grid.Row="0" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </Grid.Resources>
+                                <metro:HamburgerMenu PaneBackground="{DynamicResource MaterialDesignCardBackground}"
+                                                     PaneForeground="Black"
+                                                     ItemsSource="{TemplateBinding MenuItems}"
+                                                     ItemTemplate="{StaticResource MenuItemTemplate}"
+                                                     Foreground="{DynamicResource MaterialDesignBody}"
+                                                     OptionsItemsSource="{TemplateBinding OptionItems}"
+                                                     OptionsItemTemplate="{StaticResource MenuItemTemplate}"
+                                                     SelectedItem="{Binding SelectedItem, RelativeSource={RelativeSource TemplatedParent}, Mode=OneWayToSource}"
+                                                     SelectedOptionsItem="{Binding SelectedItem, RelativeSource={RelativeSource TemplatedParent}, Mode=OneWayToSource}"
+                                                     ContentTemplate="{StaticResource AppContentTemplate}"
+                                                     Content="{TemplateBinding Content}">
+                                    <metro:HamburgerMenu.HamburgerMenuTemplate>
+                                        <DataTemplate>
+                                            <!--  PackIconMaterial - Menu  -->
+                                            <ContentControl Width="22"
+                                                            Height="22"
+                                                            Foreground="{DynamicResource MaterialDesignBody}"
+                                                            Content="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"
+                                                            Style="{DynamicResource PathIconContentControlStyle}" />
+                                        </DataTemplate>
+                                    </metro:HamburgerMenu.HamburgerMenuTemplate>
+                                    <!--
                                 <metro:HamburgerMenu.HamburgerMenuHeaderTemplate>
                                     <DataTemplate>
                                         <TextBlock HorizontalAlignment="Left"
@@ -99,8 +101,8 @@
                                                    Text="" />
                                     </DataTemplate>
                                 </metro:HamburgerMenu.HamburgerMenuHeaderTemplate>-->
-                            </metro:HamburgerMenu>
-                        </Grid>
+                                </metro:HamburgerMenu>
+                            </Grid>
                         </md:DialogHost>
                     </Border>
                 </ControlTemplate>

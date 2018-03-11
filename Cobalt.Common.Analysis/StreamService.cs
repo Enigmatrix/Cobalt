@@ -1,12 +1,8 @@
-﻿using Cobalt.Common.Data.Repository;
+﻿using System;
+using System.Reactive.Linq;
+using Cobalt.Common.Data.Repository;
 using Cobalt.Common.Transmission;
 using Cobalt.Common.Transmission.Messages;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reactive.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Cobalt.Common.Analysis
 {
@@ -22,12 +18,13 @@ namespace Cobalt.Common.Analysis
         protected ITransmissionClient Receiver { get; }
 
 
-        public IObservable<MessageBase> ReceivedMessages(){
+        public IObservable<MessageBase> ReceivedMessages()
+        {
             return Observable.FromEventPattern<MessageReceivedArgs>(
                     e => Receiver.MessageReceived += e,
                     e => Receiver.MessageReceived -= e)
-                    .Select(x => x.EventArgs.Message);
-         }
+                .Select(x => x.EventArgs.Message);
+        }
 
         protected IObservable<AppSwitchMessage> ReceivedAppSwitches()
         {

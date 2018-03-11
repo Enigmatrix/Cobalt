@@ -27,10 +27,11 @@ namespace Cobalt.Common.Data.Migration.Sqlite
 
         public void ExecuteSql(params string[] sql)
         {
-            using(var transaction = Connection.BeginTransaction()){
+            using (var transaction = Connection.BeginTransaction())
+            {
                 var s = new SQLiteCommand(string.Join("\n", sql), Connection);
                 s.ExecuteNonQuery();
-                s.Dispose(); 
+                s.Dispose();
                 transaction.Commit();
             }
         }
@@ -64,7 +65,7 @@ namespace Cobalt.Common.Data.Migration.Sqlite
 
         public string Update(string table, params (string, object)[] v)
         {
-            return $"update {table} set " + string.Join(", ", v.Select(x => x.Item1+"="+x.Item2)) + ";";
+            return $"update {table} set " + string.Join(", ", v.Select(x => x.Item1 + "=" + x.Item2)) + ";";
         }
 
         public string AlterAddColumn(string table, params (string, string)[] add)
@@ -80,6 +81,7 @@ namespace Cobalt.Common.Data.Migration.Sqlite
         {
             return "primary key autoincrement";
         }
+
         public string Pk()
         {
             return "primary";
@@ -89,6 +91,7 @@ namespace Cobalt.Common.Data.Migration.Sqlite
         {
             return "not null unique";
         }
+
         public string NotNull()
         {
             return "not null";

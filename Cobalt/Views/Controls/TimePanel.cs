@@ -1,11 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using Cobalt.Common.UI.ViewModels;
 
 namespace Cobalt.Views.Controls
 {
@@ -14,6 +9,14 @@ namespace Cobalt.Views.Controls
         public static readonly DependencyProperty StartProperty =
             DependencyProperty.RegisterAttached(
                 "Start",
+                typeof(DateTime),
+                typeof(TimePanel),
+                new PropertyMetadata()
+            );
+
+        public static readonly DependencyProperty EndProperty =
+            DependencyProperty.RegisterAttached(
+                "End",
                 typeof(DateTime),
                 typeof(TimePanel),
                 new PropertyMetadata()
@@ -28,14 +31,6 @@ namespace Cobalt.Views.Controls
         {
             return (DateTime) element.GetValue(StartProperty);
         }
-
-        public static readonly DependencyProperty EndProperty =
-            DependencyProperty.RegisterAttached(
-                "End",
-                typeof(DateTime),
-                typeof(TimePanel),
-                new PropertyMetadata()
-            );
 
         public static void SetEnd(UIElement element, DateTime value)
         {
@@ -58,11 +53,12 @@ namespace Cobalt.Views.Controls
             var w = availableSize.Width;
             foreach (UIElement child in InternalChildren)
             {
-                var ts = (GetStart(child)-DateTime.Today).Ticks*w/TimeSpan.TicksPerDay;
-                var te = (GetEnd(child)-DateTime.Today).Ticks*w/TimeSpan.TicksPerDay;
+                var ts = (GetStart(child) - DateTime.Today).Ticks * w / TimeSpan.TicksPerDay;
+                var te = (GetEnd(child) - DateTime.Today).Ticks * w / TimeSpan.TicksPerDay;
 
-                child.Arrange(new Rect(new Point(ts, 0), new Point(te,h)));
+                child.Arrange(new Rect(new Point(ts, 0), new Point(te, h)));
             }
+
             return availableSize;
         }
     }

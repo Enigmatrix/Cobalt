@@ -9,7 +9,7 @@ using LiveCharts.Wpf;
 namespace Cobalt.Common.UI.Controls
 {
     /// <summary>
-    /// Interaction logic for AppDurationTooltip.xaml
+    ///     Interaction logic for AppDurationTooltip.xaml
     /// </summary>
     public partial class AppDurationTooltip : IChartTooltip
     {

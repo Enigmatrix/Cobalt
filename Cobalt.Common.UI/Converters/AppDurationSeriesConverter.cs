@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Reactive.Linq;
 using System.Windows;
-using System.Windows.Media;
 using Cobalt.Common.IoC;
 using Cobalt.Common.UI.Util;
 using Cobalt.Common.UI.ViewModels;
@@ -14,7 +13,8 @@ namespace Cobalt.Common.UI.Converters
 {
     public class AppDurationSeriesConverter : ObservableConverter<AppDurationViewModel, SeriesCollection>
     {
-        protected override SeriesCollection Convert(IObservable<AppDurationViewModel> coll, object p, IResourceScope manager)
+        protected override SeriesCollection Convert(IObservable<AppDurationViewModel> coll, object p,
+            IResourceScope manager)
         {
             var mapper = Mappers
                 .Pie<AppDurationViewModel>()

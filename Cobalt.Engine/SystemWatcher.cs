@@ -12,13 +12,13 @@ namespace Cobalt.Engine
         MonitorOn,
         MonitorOff,
         Suspend,
-        Resume,
+        Resume
     }
 
     public class SystemWatcher
     {
+        private bool _locked;
         private bool _prevMonitorOn = true;
-        private bool _locked = false;
 
         public SystemWatcher(MessageWindow window)
         {
@@ -41,7 +41,7 @@ namespace Cobalt.Engine
                 if (_prevMonitorOn == monitorOn) return;
 
                 Log.Information("Monitor State Changed: {reason}", monitorOn ? "on" : "off");
-                if(!_locked)
+                if (!_locked)
                     RaiseSystemMainStateChanged(monitorOn ? SystemStateChange.MonitorOn : SystemStateChange.MonitorOff);
                 _prevMonitorOn = monitorOn;
             });
@@ -87,7 +87,6 @@ namespace Cobalt.Engine
             else if (e.Reason == SessionEndReasons.SystemShutdown)
                 RaiseSystemMainStateChanged(SystemStateChange.Shutdown);
         }
-
     }
 
     public class SystemStateChangedArgs : EventArgs

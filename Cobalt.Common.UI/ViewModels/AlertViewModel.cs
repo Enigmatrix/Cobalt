@@ -1,19 +1,15 @@
-﻿using Cobalt.Common.Data;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System;
+using Cobalt.Common.Data;
 
 namespace Cobalt.Common.UI.ViewModels
 {
     public class AlertViewModel : EntityViewModel
     {
         private AlertAction _alertAction;
-        private TimeSpan _maxDuration;
         private bool _isEnabled;
-        private TimeSpan _reminderOffset;
+        private TimeSpan _maxDuration;
         private AlertRange _range;
+        private TimeSpan _reminderOffset;
 
         public AlertViewModel(Alert alert) : base(alert)
         {

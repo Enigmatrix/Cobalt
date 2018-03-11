@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Windows;
@@ -17,9 +16,9 @@ namespace Cobalt.Common.UI.Controls
     /// </summary>
     public partial class AppDurationLegend : IChartLegend
     {
-        private List<SeriesViewModel> _series;
-        private BindableCollection<SeriesReference> _chartSeries;
         private Chart _chart;
+        private BindableCollection<SeriesReference> _chartSeries;
+        private List<SeriesViewModel> _series;
 
         public AppDurationLegend()
         {
@@ -40,16 +39,10 @@ namespace Cobalt.Common.UI.Controls
         public Chart Chart
         {
             get => _chart;
-            set { _chart = value;OnPropertyChanged(); }
-        }
-
-        public List<SeriesViewModel> Series
-        {
-            get => _series;
             set
             {
-                _series = value;
-                OnPropertyChanged(nameof(Series));
+                _chart = value;
+                OnPropertyChanged();
             }
         }
 
@@ -60,6 +53,16 @@ namespace Cobalt.Common.UI.Controls
             {
                 _chartSeries = value;
                 OnPropertyChanged(nameof(ChartSeries));
+            }
+        }
+
+        public List<SeriesViewModel> Series
+        {
+            get => _series;
+            set
+            {
+                _series = value;
+                OnPropertyChanged(nameof(Series));
             }
         }
 
@@ -81,35 +84,40 @@ namespace Cobalt.Common.UI.Controls
         public BindableCollection<SeriesReference> SyncedSeriesReferences(SeriesCollection coll)
         {
             var obs = new BindableCollection<SeriesReference>(coll.Cast<Series>().Select(x => new SeriesReference(x)));
-            coll.NoisyCollectionChanged += (_, __) => { obs.Clear(); obs.AddRange(coll.Cast<Series>().Select(x => new SeriesReference(x))); };
+            coll.NoisyCollectionChanged += (_, __) =>
+            {
+                obs.Clear();
+                obs.AddRange(coll.Cast<Series>().Select(x => new SeriesReference(x)));
+            };
             return obs;
         }
     }
-        public class SeriesReference : NotifyPropertyChanged
+
+    public class SeriesReference : NotifyPropertyChanged
+    {
+        private readonly Series _series;
+
+        public SeriesReference(Series series)
         {
-            private readonly Series _series;
-
-            public SeriesReference(Series series)
-            {
-                _series = series;
-            }
-
-            public string Title
-            {
-                get => _series.Title;
-                set => _series.Title = value;
-            }
-
-            public Brush Fill
-            {
-                get => _series.Fill;
-                set => _series.Fill = value;
-            }
-
-            public bool IsVisible
-            {
-                get => _series.Visibility == Visibility.Visible;
-                set => _series.Visibility = value ? Visibility.Visible : Visibility.Collapsed;
-            }
+            _series = series;
         }
+
+        public string Title
+        {
+            get => _series.Title;
+            set => _series.Title = value;
+        }
+
+        public Brush Fill
+        {
+            get => _series.Fill;
+            set => _series.Fill = value;
+        }
+
+        public bool IsVisible
+        {
+            get => _series.Visibility == Visibility.Visible;
+            set => _series.Visibility = value ? Visibility.Visible : Visibility.Collapsed;
+        }
+    }
 }

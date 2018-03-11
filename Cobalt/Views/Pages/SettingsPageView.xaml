@@ -32,25 +32,31 @@
             <StackPanel Orientation="Vertical">
                 <Grid Margin="5">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition/>
-                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition />
+                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Style="{DynamicResource MaterialDesignBody2TextBlock}"  VerticalAlignment="Center" Text="Dark Theme" HorizontalAlignment="Left" Foreground="{DynamicResource MaterialDesignBody}"/>
-                    <ToggleButton IsChecked="{Binding IsDark}" HorizontalAlignment="Right" Grid.Column="2"></ToggleButton>
+                    <TextBlock Style="{DynamicResource MaterialDesignBody2TextBlock}" VerticalAlignment="Center"
+                               Text="Dark Theme" HorizontalAlignment="Left"
+                               Foreground="{DynamicResource MaterialDesignBody}" />
+                    <ToggleButton IsChecked="{Binding IsDark}" HorizontalAlignment="Right" Grid.Column="2" />
                 </Grid>
                 <Grid Margin="5">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition/>
-                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition />
+                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Style="{DynamicResource MaterialDesignBody2TextBlock}" VerticalAlignment="Center" Text="Main" HorizontalAlignment="Left" Foreground="{DynamicResource MaterialDesignBody}"/>
+                    <TextBlock Style="{DynamicResource MaterialDesignBody2TextBlock}" VerticalAlignment="Center"
+                               Text="Main" HorizontalAlignment="Left" Foreground="{DynamicResource MaterialDesignBody}" />
                     <ComboBox Grid.Column="2" ItemsSource="{Binding MainHues}" SelectedItem="{Binding MainHue}">
                         <ComboBox.ItemTemplate>
                             <DataTemplate DataType="materialDesignColors:Hue">
-                                <Border VerticalAlignment="Stretch" HorizontalAlignment="Stretch" MinHeight="30" MinWidth="60">
-                                    <Border.Background><SolidColorBrush Color="{Binding}"/></Border.Background>
+                                <Border VerticalAlignment="Stretch" HorizontalAlignment="Stretch" MinHeight="30"
+                                        MinWidth="60">
+                                    <Border.Background>
+                                        <SolidColorBrush Color="{Binding}" />
+                                    </Border.Background>
                                 </Border>
                             </DataTemplate>
                         </ComboBox.ItemTemplate>
@@ -58,16 +64,21 @@
                 </Grid>
                 <Grid Margin="5">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition/>
-                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition />
+                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Style="{DynamicResource MaterialDesignBody2TextBlock}" VerticalAlignment="Center" Text="Accent" HorizontalAlignment="Left" Foreground="{DynamicResource MaterialDesignBody}"/>
+                    <TextBlock Style="{DynamicResource MaterialDesignBody2TextBlock}" VerticalAlignment="Center"
+                               Text="Accent" HorizontalAlignment="Left"
+                               Foreground="{DynamicResource MaterialDesignBody}" />
                     <ComboBox Grid.Column="2" ItemsSource="{Binding AccentHues}" SelectedItem="{Binding AccentHue}">
                         <ComboBox.ItemTemplate>
                             <DataTemplate DataType="materialDesignColors:Hue">
-                                <Border VerticalAlignment="Stretch" HorizontalAlignment="Stretch" MinHeight="30" MinWidth="60">
-                                    <Border.Background><SolidColorBrush Color="{Binding}"/></Border.Background>
+                                <Border VerticalAlignment="Stretch" HorizontalAlignment="Stretch" MinHeight="30"
+                                        MinWidth="60">
+                                    <Border.Background>
+                                        <SolidColorBrush Color="{Binding}" />
+                                    </Border.Background>
                                 </Border>
                             </DataTemplate>
                         </ComboBox.ItemTemplate>

@@ -1,10 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.Globalization;
-using System.IO;
 using System.Windows.Data;
-using Cobalt.Common.Data;
 using Cobalt.Common.UI.Util;
 using Cobalt.Common.UI.ViewModels;
 

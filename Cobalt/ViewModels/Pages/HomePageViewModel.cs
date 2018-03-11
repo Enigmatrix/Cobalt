@@ -14,12 +14,12 @@ namespace Cobalt.ViewModels.Pages
     public class HomePageViewModel : PageViewModel
     {
         private IObservable<AppDurationViewModel> _appDurations;
+        private IObservable<AppUsageViewModel> _appUsagesToday;
         private IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> _dayChunks;
         private IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> _hourlyChunks;
         private TimeSpan _hoursSpentDay;
         private TimeSpan _hoursSpentWeek;
         private IObservable<AppDurationViewModel> _weekAppDurations;
-        private IObservable<AppUsageViewModel> _appUsagesToday;
 
         public HomePageViewModel(IResourceScope scope) : base(scope)
         {
@@ -30,6 +30,7 @@ namespace Cobalt.ViewModels.Pages
             get => _appDurations;
             set => Set(ref _appDurations, value);
         }
+
         public IObservable<AppDurationViewModel> WeekAppDurations
         {
             get => _weekAppDurations;
@@ -39,7 +40,7 @@ namespace Cobalt.ViewModels.Pages
         public Func<double, string> HourFormatter => x => x / 600000000 + "min";
         public Func<double, string> DayFormatter => x => x == 0 ? "" : x / 36000000000 + "h";
         public Func<double, string> DayHourFormatter => x => (x % 12 == 0 ? 12 : x % 12) + (x >= 12 ? "p" : "a");
-        public Func<double, string> DayOfWeekFormatter => x => ((DayOfWeek)(int)x).ToString();
+        public Func<double, string> DayOfWeekFormatter => x => ((DayOfWeek) (int) x).ToString();
 
         public static DateTime WeekStart => DateTime.Today.StartOfWeek();
         public static DateTime WeekEnd => DateTime.Today.EndOfWeek();
@@ -49,8 +50,17 @@ namespace Cobalt.ViewModels.Pages
         public static DateTime DayEnd => DateTime.Today.AddDays(1);
         public static TimeSpan HourDuration => TimeSpan.FromHours(1);
 
-        public TimeSpan HoursSpentDay { get => _hoursSpentDay; set => Set(ref _hoursSpentDay, value); }
-        public TimeSpan HoursSpentWeek { get => _hoursSpentWeek; set => Set(ref _hoursSpentWeek, value); }
+        public TimeSpan HoursSpentDay
+        {
+            get => _hoursSpentDay;
+            set => Set(ref _hoursSpentDay, value);
+        }
+
+        public TimeSpan HoursSpentWeek
+        {
+            get => _hoursSpentWeek;
+            set => Set(ref _hoursSpentWeek, value);
+        }
 
         public IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> HourlyChunks
         {

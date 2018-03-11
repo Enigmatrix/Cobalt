@@ -229,9 +229,9 @@
                         </ItemsControl>
                     </Border>
                     <Grid Grid.Row="1">
-                        <TickBar Height="5" Fill="{DynamicResource MaterialDesignPaper}" Minimum="0" Maximum="24" TickFrequency="1"></TickBar>
-                        <Grid>
-                        </Grid>
+                        <TickBar Height="5" Fill="{DynamicResource MaterialDesignPaper}" Minimum="0" Maximum="24"
+                                 TickFrequency="1" />
+                        <Grid />
                     </Grid>
                 </Grid>
             </controls:DataCard>

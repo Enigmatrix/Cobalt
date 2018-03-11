@@ -18,16 +18,16 @@ namespace Cobalt.Common.UI.ViewModels
             Duration = span;
         }
 
-        public TimeSpan Duration
-        {
-            get => _duration;
-            set => Set(ref _duration, value);
-        }
-
         public TagViewModel Tag
         {
             get => _tag;
             set => Set(ref _tag, value);
+        }
+
+        public TimeSpan Duration
+        {
+            get => _duration;
+            set => Set(ref _duration, value);
         }
     }
 }

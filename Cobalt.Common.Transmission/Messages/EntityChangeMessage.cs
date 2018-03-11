@@ -1,15 +1,12 @@
 ﻿using Cobalt.Common.Data;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Cobalt.Common.Transmission.Messages
 {
     public enum ChangeType
     {
-        Add, Remove, Modify
+        Add,
+        Remove,
+        Modify
     }
 
     public class EntityChange<T> where T : Entity
@@ -19,6 +16,7 @@ namespace Cobalt.Common.Transmission.Messages
             AssociatedEntity = assocEntity;
             ChangeType = change;
         }
+
         public T AssociatedEntity { get; }
         public ChangeType ChangeType { get; }
     }
@@ -29,6 +27,7 @@ namespace Cobalt.Common.Transmission.Messages
         {
             Change = change;
         }
+
         public EntityChange<T> Change { get; set; }
     }
 }

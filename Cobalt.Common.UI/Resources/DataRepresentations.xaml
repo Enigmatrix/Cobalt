@@ -17,16 +17,16 @@
             Stretch="Fill">
             <Image.Height>
                 <MultiBinding Converter="{StaticResource SizeConverter}">
-                    <Binding Path="Point.Participation"/>
-                    <Binding Path="Point.ChartView.ActualHeight"/>
-                    <Binding Path="Point.ChartView.ActualWidth"/>
+                    <Binding Path="Point.Participation" />
+                    <Binding Path="Point.ChartView.ActualHeight" />
+                    <Binding Path="Point.ChartView.ActualWidth" />
                 </MultiBinding>
             </Image.Height>
             <Image.Width>
                 <MultiBinding Converter="{StaticResource SizeConverter}">
-                    <Binding Path="Point.Participation"/>
-                    <Binding Path="Point.ChartView.ActualHeight"/>
-                    <Binding Path="Point.ChartView.ActualWidth"/>
+                    <Binding Path="Point.Participation" />
+                    <Binding Path="Point.ChartView.ActualHeight" />
+                    <Binding Path="Point.ChartView.ActualWidth" />
                 </MultiBinding>
             </Image.Width>
         </Image>

@@ -11,10 +11,20 @@
                 xmlns:converters="clr-namespace:Cobalt.Views.Converters"
                 xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
                 xmlns:util="clr-namespace:Cobalt.Views.Util"
+                xmlns:wpf="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
+                xmlns:controls1="clr-namespace:Cobalt.Common.UI.Controls;assembly=Cobalt.Common.UI"
+                xmlns:converters1="clr-namespace:Cobalt.Common.UI.Converters;assembly=Cobalt.Common.UI"
+                xmlns:pages="clr-namespace:Cobalt.ViewModels.Pages"
                 mc:Ignorable="d" Title="Tags" x:Name="Page"
                 d:DesignHeight="300" d:DesignWidth="300">
     <local:PageView.Resources>
         <converters:TagsConverter x:Key="TagsConverter" />
+        <converters1:AppDurationSeriesConverter x:Key="AppDurationSeriesConverter" />
+        <!--TODO WTF CHANGE THESE TO NOT USE HOMEPAGEVIEW STATICS-->
+        <converters:ChunkedUsageConverter x:Key="HourlyUsageConverter"
+                                          Start="{x:Static pages:HomePageViewModel.DayStart}"
+                                          End="{x:Static pages:HomePageViewModel.DayEnd}"
+                                          Duration="{x:Static pages:HomePageViewModel.HourDuration}" />
     </local:PageView.Resources>
     <Grid>
         <ScrollViewer VerticalScrollBarVisibility="Auto">
@@ -54,7 +64,9 @@
                                     </Grid>
                                 </Expander.Header>
                                 <StackPanel Orientation="Vertical">
-                                    <TextBlock Text="Tagged Apps" Style="{DynamicResource MaterialDesignSubheadingTextBlock}" Margin="24,0,20,16" FontSize="13" FontWeight="Bold"/> 
+                                    <TextBlock Text="Tagged Apps"
+                                               Style="{DynamicResource MaterialDesignSubheadingTextBlock}"
+                                               Margin="24,0,20,16" FontSize="13" FontWeight="Bold" />
                                     <ItemsControl ItemsSource="{Binding TaggedApps}">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate DataType="viewModels:AppViewModel">
@@ -120,9 +132,58 @@
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>
 
-                                    <TextBlock Text="Statistics" Style="{DynamicResource MaterialDesignSubheadingTextBlock}" Margin="24,0,20,16" FontSize="13" FontWeight="Bold"/> 
+                                    <TextBlock Text="Statistics"
+                                               Style="{DynamicResource MaterialDesignSubheadingTextBlock}"
+                                               Margin="24,0,20,16" FontSize="13" FontWeight="Bold" />
                                     <Grid>
-
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition />
+                                            <ColumnDefinition Width="2*" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Margin="4">
+                                            <TextBlock Text="App Usage for Today" HorizontalAlignment="Center" />
+                                            <wpf:PieChart DisableAnimations="True" Height="300">
+                                                <wpf:PieChart.Series>
+                                                    <MultiBinding
+                                                        Converter="{StaticResource AppDurationSeriesConverter}">
+                                                        <Binding Path="TaggedAppDurationsToday" />
+                                                        <Binding Path="Resources" />
+                                                    </MultiBinding>
+                                                </wpf:PieChart.Series>
+                                                <wpf:PieChart.DataTooltip>
+                                                    <controls1:AppDurationTooltip />
+                                                </wpf:PieChart.DataTooltip>
+                                            </wpf:PieChart>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" Margin="4">
+                                            <TextBlock Text="App Usage per Hour for Today" HorizontalAlignment="Center" />
+                                            <wpf:CartesianChart DisableAnimations="True" Height="300">
+                                                <wpf:CartesianChart.Series>
+                                                    <MultiBinding Converter="{StaticResource HourlyUsageConverter}">
+                                                        <Binding Path="TaggedAppsHourlyChunks" />
+                                                        <Binding Path="Resources" />
+                                                    </MultiBinding>
+                                                </wpf:CartesianChart.Series>
+                                                <wpf:CartesianChart.AxisY>
+                                                    <wpf:Axis LabelFormatter="{x:Static pages:TagsPageViewModel.HourFormatter}"
+                                                              MaxValue="36000000000" Position="RightTop">
+                                                        <wpf:Axis.Separator>
+                                                            <wpf:Separator Step="6000000000" />
+                                                        </wpf:Axis.Separator>
+                                                    </wpf:Axis>
+                                                </wpf:CartesianChart.AxisY>
+                                                <wpf:CartesianChart.AxisX>
+                                                    <wpf:Axis LabelFormatter="{x:Static pages:TagsPageViewModel.DayHourFormatter}">
+                                                        <wpf:Axis.Separator>
+                                                            <wpf:Separator Step="1" />
+                                                        </wpf:Axis.Separator>
+                                                    </wpf:Axis>
+                                                </wpf:CartesianChart.AxisX>
+                                                <wpf:CartesianChart.DataTooltip>
+                                                    <controls1:AppDurationTooltip />
+                                                </wpf:CartesianChart.DataTooltip>
+                                            </wpf:CartesianChart>
+                                        </StackPanel>
                                     </Grid>
                                 </StackPanel>
                             </Expander>

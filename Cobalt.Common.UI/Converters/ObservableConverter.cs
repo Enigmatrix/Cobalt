@@ -3,7 +3,6 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
 using Cobalt.Common.IoC;
-using LiveCharts;
 
 namespace Cobalt.Common.UI.Converters
 {

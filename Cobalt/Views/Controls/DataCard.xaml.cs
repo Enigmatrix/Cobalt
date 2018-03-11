@@ -1,9 +1,5 @@
-﻿using System.Diagnostics;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using LiveCharts;
-using LiveCharts.Wpf;
 using LiveCharts.Wpf.Charts.Base;
 using MaterialDesignThemes.Wpf;
 
@@ -14,11 +10,6 @@ namespace Cobalt.Views.Controls
     /// </summary>
     public partial class DataCard
     {
-        public DataCard()
-        {
-            InitializeComponent();
-        }
-
         public static readonly DependencyProperty ExpandedProperty =
             DependencyProperty.RegisterAttached(
                 "Expanded",
@@ -26,6 +17,11 @@ namespace Cobalt.Views.Controls
                 typeof(DataCard),
                 new PropertyMetadata(false)
             );
+
+        public DataCard()
+        {
+            InitializeComponent();
+        }
 
         public static void SetExpanded(UIElement element, bool value)
         {
@@ -44,11 +40,11 @@ namespace Cobalt.Views.Controls
             var root = (Grid) GetTemplateChild("Root");
             var contentHolder = (ContentPresenter) GetTemplateChild("ContentHolder");
             var parent = (ContentControl) root.Parent;
-            var actualContent = (UIElement)contentHolder.Content;
+            var actualContent = (UIElement) contentHolder.Content;
             var chart = actualContent as Chart;
 
-            if(chart != null)
-                chart.Loaded += (_, __) => chart.Update(true,true);
+            if (chart != null)
+                chart.Loaded += (_, __) => chart.Update(true, true);
 
             parent.Content = null;
             container.Content = root;
@@ -58,7 +54,7 @@ namespace Cobalt.Views.Controls
                 SetExpanded(actualContent, true);
                 SetExpanded(root, true);
                 container.UpdateLayout();
-                chart?.Update(true,true);
+                chart?.Update(true, true);
             }, (o, ce) =>
             {
                 SetExpanded(actualContent, false);

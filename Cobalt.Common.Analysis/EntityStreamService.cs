@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reactive.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Cobalt.Common.Data;
 using Cobalt.Common.Data.Repository;
 using Cobalt.Common.Transmission;
@@ -17,13 +14,14 @@ namespace Cobalt.Common.Analysis
         IObservable<App> GetApps();
         IObservable<EntityChange<Alert>> GetAlertChanges();
     }
+
     public class EntityStreamService : StreamService, IEntityStreamService
     {
+        private readonly IEqualityComparer<App> _pathEquality = new SelectorEqualityComparer<App, string>(x => x.Path);
+
         public EntityStreamService(IDbRepository repo, ITransmissionClient client) : base(repo, client)
         {
         }
-
-        private readonly IEqualityComparer<App> _pathEquality = new SelectorEqualityComparer<App, string>(x => x.Path);
 
         public IObservable<App> GetApps()
         {
@@ -32,17 +30,17 @@ namespace Cobalt.Common.Analysis
                 .GroupBy(x => x, _pathEquality).Select(x => x.Key);
         }
 
-        private IObservable<App> ReceivedApps()
-        {
-            return ReceivedAppSwitches()
-                .SelectMany(e => new []{e.NewApp, e.PreviousAppUsage.App});
-        }
-
         public IObservable<EntityChange<Alert>> GetAlertChanges()
         {
             return Repository.GetAlerts()
                 .Select(x => new EntityChange<Alert>(x, ChangeType.Add))
                 .Concat(ReceivedAlertChanges());
+        }
+
+        private IObservable<App> ReceivedApps()
+        {
+            return ReceivedAppSwitches()
+                .SelectMany(e => new[] {e.NewApp, e.PreviousAppUsage.App});
         }
 
         private IObservable<EntityChange<Alert>> ReceivedAlertChanges()

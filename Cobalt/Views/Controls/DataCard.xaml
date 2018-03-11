@@ -9,7 +9,8 @@
                         xmlns:system="clr-namespace:System;assembly=mscorlib" x:Name="RootCard"
                         xmlns:f="http://metro.mahapps.com/winfx/xaml/controls"
                         xmlns:converters="clr-namespace:MaterialDesignThemes.Wpf.Converters;assembly=MaterialDesignThemes.Wpf"
-                        mc:Ignorable="d" Background="{DynamicResource MaterialDesignCardBackground}" Foreground="{DynamicResource MaterialDesignBody}"
+                        mc:Ignorable="d" Background="{DynamicResource MaterialDesignCardBackground}"
+                        Foreground="{DynamicResource MaterialDesignBody}"
                         d:DesignHeight="300" d:DesignWidth="300">
     <HeaderedContentControl.Resources>
         <converters:MathConverter x:Key="MathConverter" Operation="Subtract" />
@@ -19,8 +20,8 @@
             <ContentControl.ContentTemplate>
                 <DataTemplate>
                     <ContentPresenter Content="{Binding}"
-                             Height="{Binding ActualHeight, RelativeSource={RelativeSource FindAncestor, AncestorType=ContentControl}}"
-                                    Width="{Binding ActualWidth, RelativeSource={RelativeSource FindAncestor, AncestorType=ContentControl}}"/>
+                                      Height="{Binding ActualHeight, RelativeSource={RelativeSource FindAncestor, AncestorType=ContentControl}}"
+                                      Width="{Binding ActualWidth, RelativeSource={RelativeSource FindAncestor, AncestorType=ContentControl}}" />
 
                 </DataTemplate>
             </ContentControl.ContentTemplate>
@@ -53,7 +54,8 @@
                                             <util:TypedTemplateEntry Type="system:String">
                                                 <util:TypedTemplateEntry.Template>
                                                     <DataTemplate>
-                                                        <TextBlock Text="{Binding}" Foreground="{Binding Foreground, ElementName=RootCard}"
+                                                        <TextBlock Text="{Binding}"
+                                                                   Foreground="{Binding Foreground, ElementName=RootCard}"
                                                                    Style="{DynamicResource MaterialDesignTitleTextBlock}"
                                                                    FontSize="16" />
                                                     </DataTemplate>
@@ -69,7 +71,8 @@
                             PlacementMode="BottomAndAlignRightEdges" Foreground="{TemplateBinding Foreground}"
                             StaysOpen="False" HorizontalAlignment="Right" VerticalAlignment="Top">
                             <materialDesign:PopupBox.ToggleContent>
-                                <materialDesign:PackIcon Kind="DotsVertical" Margin="5,5" Foreground="{TemplateBinding Foreground}"/>
+                                <materialDesign:PackIcon Kind="DotsVertical" Margin="5,5"
+                                                         Foreground="{TemplateBinding Foreground}" />
                             </materialDesign:PopupBox.ToggleContent>
                             <StackPanel>
                                 <Button Content="Expand" Click="DataCardExpand" />

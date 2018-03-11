@@ -1,11 +1,7 @@
-﻿using Microsoft.Win32;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System;
 using System.Reactive.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Timers;
+using Microsoft.Win32;
 
 namespace Cobalt.Common.Util
 {
@@ -49,8 +45,8 @@ namespace Cobalt.Common.Util
 
         public static IObservable<DateTime> DayChanged()
         {
-                return Observable.FromEventPattern<EventArgs>(h => DayChangeEvent += h, h => DayChangeEvent-= h)
-                    .Select(x => DateTime.Today);
+            return Observable.FromEventPattern<EventArgs>(h => DayChangeEvent += h, h => DayChangeEvent -= h)
+                .Select(x => DateTime.Today);
         }
     }
 }

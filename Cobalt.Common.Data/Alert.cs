@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Cobalt.Common.Data
 {
@@ -11,6 +7,7 @@ namespace Cobalt.Common.Data
         Message,
         Kill
     }
+
     public enum RepeatType
     {
         Daily,
@@ -33,6 +30,7 @@ namespace Cobalt.Common.Data
     {
         public App App { get; set; }
     }
+
     public class TagAlert : Alert
     {
         public Tag Tag { get; set; }
@@ -47,6 +45,7 @@ namespace Cobalt.Common.Data
         public DateTime StartTimestamp { get; set; }
         public DateTime EndTimestamp { get; set; }
     }
+
     public class RepeatingAlertRange : AlertRange
     {
         public TimeSpan DailyStartOffset { get; set; }

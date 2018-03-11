@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using Cobalt.Common.Analysis.OutputTypes;
 using Cobalt.Common.Data;
@@ -19,44 +17,47 @@ using LiveCharts.Wpf;
 
 namespace Cobalt.Views.Converters
 {
-    public class ChunkedUsageConverter : ObservableConverter<Usage<(App App, DateTime Time, TimeSpan Duration)>, SeriesCollection>
+    public class ChunkedUsageConverter : ObservableConverter<Usage<(App App, DateTime Time, TimeSpan Duration)>,
+        SeriesCollection>
     {
+        public static readonly DependencyProperty StartProperty =
+            DependencyProperty.Register("Start", typeof(DateTime), typeof(ChunkedUsageConverter),
+                new PropertyMetadata(DateTime.Today));
+
+        public static readonly DependencyProperty EndProperty =
+            DependencyProperty.Register("End", typeof(DateTime), typeof(ChunkedUsageConverter),
+                new PropertyMetadata(DateTime.Today));
+
+        public static readonly DependencyProperty DurationProperty =
+            DependencyProperty.Register("Duration", typeof(TimeSpan), typeof(ChunkedUsageConverter),
+                new PropertyMetadata(TimeSpan.FromMilliseconds(1)));
+
         private static IEqualityComparer<App> PathEquality { get; }
             = new SelectorEqualityComparer<App, string>(a => a.Path);
 
 
-
         public DateTime Start
         {
-            get => (DateTime)GetValue(StartProperty);
+            get => (DateTime) GetValue(StartProperty);
             set => SetValue(StartProperty, value);
         }
 
-        public static readonly DependencyProperty StartProperty =
-            DependencyProperty.Register("Start", typeof(DateTime), typeof(ChunkedUsageConverter), new PropertyMetadata(DateTime.Today));
-
         public DateTime End
         {
-            get => (DateTime)GetValue(EndProperty);
+            get => (DateTime) GetValue(EndProperty);
             set => SetValue(EndProperty, value);
         }
 
-        public static readonly DependencyProperty EndProperty =
-            DependencyProperty.Register("End", typeof(DateTime), typeof(ChunkedUsageConverter), new PropertyMetadata(DateTime.Today));
-
         public TimeSpan Duration
         {
-            get => (TimeSpan)GetValue(DurationProperty);
+            get => (TimeSpan) GetValue(DurationProperty);
             set => SetValue(DurationProperty, value);
         }
 
-        public static readonly DependencyProperty DurationProperty =
-            DependencyProperty.Register("Duration", typeof(TimeSpan), typeof(ChunkedUsageConverter), new PropertyMetadata(TimeSpan.FromMilliseconds(1)));
-
-
 
         protected override SeriesCollection Convert(
-            IObservable<Usage<(App App, DateTime Time, TimeSpan Duration)>> coll, object parameter, IResourceScope manager)
+            IObservable<Usage<(App App, DateTime Time, TimeSpan Duration)>> coll, object parameter,
+            IResourceScope manager)
         {
             var (start, end, chunkDuration) = (Start, End, Duration);
             var count = (end - start).Ticks / chunkDuration.Ticks;
@@ -81,11 +82,11 @@ namespace Cobalt.Views.Converters
                     var stack = new StackedColumnSeries
                     {
                         Fill = AppResourceCache.Instance.GetColor(x.App.Path),
-                        Values = Enumerable.Range(0, (int)count).Select(t => new AppDurationViewModel(x.App))
+                        Values = Enumerable.Range(0, (int) count).Select(t => new AppDurationViewModel(x.App))
                             .AsChartValues(),
                         LabelPoint = cp => x.App.Path,
                         Title = x.App.Path,
-                        StrokeThickness = 0.3,
+                        StrokeThickness = 0.3
                         //DataLabelsTemplate = (DataTemplate) Application.Current.Resources["BarRepresentation"],
                     };
                     stack.SetResourceReference(Series.StrokeProperty, "MaterialDesignBody");
@@ -94,7 +95,8 @@ namespace Cobalt.Views.Converters
                 }
 
                 var chunk =
-                    ((ChartValues<AppDurationViewModel>) appMap[x.App].Values)[(int) ((x.Time-start).Ticks/chunkDuration.Ticks)];
+                    ((ChartValues<AppDurationViewModel>) appMap[x.App].Values)[
+                        (int) ((x.Time - start).Ticks / chunkDuration.Ticks)];
                 chunk.Duration += x.Duration;
                 //chunk.DurationIncrement(new Usage<TimeSpan>(justStarted:justStarted, value: x.Duration), incrementor);
             }).ManageUsing(manager);

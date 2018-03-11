@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Data;
 
 namespace Cobalt.Common.Data.Migration.Sqlite
 {
@@ -26,7 +21,6 @@ namespace Cobalt.Common.Data.Migration.Sqlite
                     Field("TagId", Integer()),
                     //0 for app alert, 1 for tag alert
                     Field("AlertType", Integer()),
-
                     Field("MaxDuration", Integer()),
                     //offset from end of maxduration to start alerting user
                     Field("ReminderOffset", Integer()),
@@ -41,7 +35,6 @@ namespace Cobalt.Common.Data.Migration.Sqlite
                     Field("End", Integer()),
                     //0 for once, 1 for daily, 2 for weekly, 3 for weekday, 4 for weekend, 5 for monthly
                     Field("RepeatType", Integer()),
-
                     ForeignKey("AppId", "App(Id)"),
                     ForeignKey("TagId", "Tag(Id)")));
         }

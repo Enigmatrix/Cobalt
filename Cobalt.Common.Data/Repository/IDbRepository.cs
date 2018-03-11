@@ -23,7 +23,6 @@ namespace Cobalt.Common.Data.Repository
         void RemoveTag(Tag tagEntity);
 
 
-
         //get
         IObservable<App> GetApps();
 
@@ -34,14 +33,20 @@ namespace Cobalt.Common.Data.Repository
         IObservable<TimeSpan> GetAppUsageTime(DateTime? start = null, DateTime? end = null);
 
         IObservable<AppUsage> GetAppUsages(DateTime? start = null, DateTime? end = null);
+        IObservable<AppUsage> GetAppUsages(Tag tag, DateTime? start = null, DateTime? end = null);
         IObservable<AppUsage> GetAppUsagesForApp(App app, DateTime? start = null, DateTime? end = null);
 
         IObservable<(App App, TimeSpan Duration)> GetAppDurations(DateTime? start = null, DateTime? end = null);
+
+        IObservable<(App App, TimeSpan Duration)>
+            GetAppDurations(Tag tag, DateTime? start = null, DateTime? end = null);
+
         IObservable<TimeSpan> GetAppDuration(App app, DateTime? start = null, DateTime? end = null);
         IObservable<(Tag Tag, TimeSpan Duration)> GetTagDurations(DateTime? start = null, DateTime? end = null);
 
         IObservable<(DateTime Start, DateTime End)> GetIdleDurations(TimeSpan minDuration, DateTime? start = null,
             DateTime? end = null);
+
         IObservable<Alert> GetAlerts();
 
         //update
@@ -51,5 +56,6 @@ namespace Cobalt.Common.Data.Repository
 
         //find
         long? FindAppIdByPath(string appPath);
+        bool DoesAppHaveTag(App app, Tag tag);
     }
 }

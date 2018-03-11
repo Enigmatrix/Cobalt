@@ -6,7 +6,6 @@ using Cobalt.Common.Analysis.OutputTypes;
 using Cobalt.Common.Data;
 using Cobalt.Common.Data.Repository;
 using Cobalt.Common.Transmission;
-using Cobalt.Common.Transmission.Messages;
 using Cobalt.Common.Util;
 
 namespace Cobalt.Common.Analysis
@@ -17,14 +16,20 @@ namespace Cobalt.Common.Analysis
             DateTime? end = null);
 
         IObservable<Usage<TimeSpan>> GetAppDuration(App app, DateTime start,
-            DateTime end, bool listen =  false);
+            DateTime end, bool listen = false);
 
         IObservable<(Tag Tag, IObservable<Usage<TimeSpan>> Duration)> GetTagDurations(DateTime start,
             DateTime? end = null);
 
         IObservable<Usage<AppUsage>> GetAppUsages(DateTime start, DateTime? end = null);
+
         IObservable<TimeSpan> GetAppUsageDuration(DateTime? start = null, DateTime? end = null);
+
         //IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> HourlyChunks();
+        IObservable<(App App, IObservable<Usage<TimeSpan>> Duration)> GetTaggedAppDurations(Tag tag, DateTime start,
+            DateTime? end = null);
+
+        IObservable<Usage<AppUsage>> GetAppUsages(Tag tag, DateTime start, DateTime? end = null);
     }
 
     public class AppStatsStreamService : StreamService, IAppStatsStreamService
@@ -52,6 +57,7 @@ namespace Cobalt.Common.Analysis
                 .GroupBy(x => x.App, PathEquality)
                 .Select(x => (x.Key, x.Select(y => y.Duration)));
         }
+
         public IObservable<Usage<TimeSpan>> GetAppDuration(App app, DateTime start,
             DateTime end, bool listen = false)
         {
@@ -63,7 +69,7 @@ namespace Cobalt.Common.Analysis
                 .Concat(ReceivedAppStartEnds(app)
                     .Select(x => new Usage<TimeSpan>(
                         x.Value.Item2.Min(end) - x.Value.Item1.Max(start), x.JustStarted)))
-                    .Where(x => x.JustStarted || x.Value >= TimeSpan.Zero);
+                .Where(x => x.JustStarted || x.Value >= TimeSpan.Zero);
         }
 
         public IObservable<(Tag Tag, IObservable<Usage<TimeSpan>> Duration)> GetTagDurations(DateTime start,
@@ -94,9 +100,32 @@ namespace Cobalt.Common.Analysis
             {
                 var period = TimeSpan.FromMilliseconds(300);
                 var timer = Observable.Timer(period, period);
-                tick = tick.CombineLatest(timer, (x, y) => x.Add(TimeSpan.FromMilliseconds(period.TotalMilliseconds*y)));
+                tick = tick.CombineLatest(timer,
+                    (x, y) => x.Add(TimeSpan.FromMilliseconds(period.TotalMilliseconds * y)));
             }
+
             return tick;
+        }
+
+        public IObservable<(App App, IObservable<Usage<TimeSpan>> Duration)> GetTaggedAppDurations(Tag tag,
+            DateTime start, DateTime? end = null)
+        {
+            if (end != null)
+                return Repository.GetAppDurations(tag, start, end)
+                    .Select(x => (x.App, Observable.Return(new Usage<TimeSpan>(x.Duration))));
+            return Repository.GetAppDurations(tag, start)
+                .Select(ToUsageAppDuration)
+                .Concat(ReceivedAppDurations().Where(x => Repository.DoesAppHaveTag(x.App, tag)))
+                .GroupBy(x => x.App, PathEquality)
+                .Select(x => (x.Key, x.Select(y => y.Duration)));
+        }
+
+        public IObservable<Usage<AppUsage>> GetAppUsages(Tag tag, DateTime start, DateTime? end = null)
+        {
+            if (end != null)
+                return Repository.GetAppUsages(tag, start, end).Select(ToUsageAppUsage);
+            return Repository.GetAppUsages(tag, start).Select(ToUsageAppUsage)
+                .Concat(ReceivedAppUsages().Where(x => Repository.DoesAppHaveTag(x.Value.App, tag)));
         }
 
         private static (App App, Usage<TimeSpan> Duration) ToUsageAppDuration((App, TimeSpan) x)
@@ -137,10 +166,12 @@ namespace Cobalt.Common.Analysis
                 {
                     //old app usage
                     (message.PreviousAppUsage.App,
-                    new Usage<(DateTime, DateTime)>((message.PreviousAppUsage.StartTimestamp, message.PreviousAppUsage.EndTimestamp))),
+                    new Usage<(DateTime, DateTime)>(
+                        (message.PreviousAppUsage.StartTimestamp, message.PreviousAppUsage.EndTimestamp))),
                     //new app
                     (message.NewApp,
-                    new Usage<(DateTime, DateTime)>((message.PreviousAppUsage.EndTimestamp, message.PreviousAppUsage.EndTimestamp),justStarted: true))
+                    new Usage<(DateTime, DateTime)>(
+                        (message.PreviousAppUsage.EndTimestamp, message.PreviousAppUsage.EndTimestamp), true))
                     //make sure the NewApp is not null
                 }.Where(x => x.Item1 != null));
         }

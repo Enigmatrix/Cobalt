@@ -1,13 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Cobalt.Common.Data;
+﻿using Cobalt.Common.Data;
 
 namespace Cobalt.Common.UI.ViewModels
 {
-
     public class EntityViewModel : ViewModelBase
     {
         private int _id;

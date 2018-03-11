@@ -1,15 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
 using System.Reactive.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Cobalt.Common.UI;
 using Cobalt.Common.Util;
 using Cobalt.Properties;
-using MahApps.Metro;
-using MaterialDesignColors;
 using MaterialDesignThemes.Wpf;
 
 namespace Cobalt.ViewModels.Utils
@@ -18,11 +12,12 @@ namespace Cobalt.ViewModels.Utils
     {
         bool IsDark { get; set; }
     }
+
     public class SettingsService : NotifyPropertyChanged, IDisposable, ISettingsService
     {
-        private readonly Settings _settings;
         private readonly PaletteHelper _palette;
         private readonly IDisposable _saveTracker;
+        private readonly Settings _settings;
 
         public SettingsService()
         {
@@ -37,6 +32,11 @@ namespace Cobalt.ViewModels.Utils
                 .Subscribe(x => _settings.Save());
         }
 
+        public void Dispose()
+        {
+            _saveTracker.Dispose();
+        }
+
         public bool IsDark
         {
             get => _settings.IsDark;
@@ -47,11 +47,5 @@ namespace Cobalt.ViewModels.Utils
                 NotifyOfPropertyChange();
             }
         }
-
-        public void Dispose()
-        {
-            _saveTracker.Dispose();
-        }
     }
-
 }

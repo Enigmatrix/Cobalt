@@ -3,7 +3,6 @@ using Cobalt.Common.Data;
 
 namespace Cobalt.Common.UI.ViewModels
 {
-
     public class AppUsageViewModel : EntityViewModel, IHasDuration
     {
         private AppViewModel _app;

@@ -18,25 +18,26 @@
             <ItemsControl.ItemTemplate>
                 <DataTemplate DataType="{x:Type wpf:DataPointViewModel}">
                     <Border Padding="4" x:Name="AppRoot">
-                    <Grid >
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="Auto" SharedSizeGroup="Title" />
-                            <ColumnDefinition Width="Auto" SharedSizeGroup="Duration" />
-                        </Grid.ColumnDefinitions>
-                        <Border Background="{DynamicResource MaterialDesignDivider}">
-                            <Image Width="16" Height="16"
-                                   Source="{Binding ChartPoint.Instance.App.Path, Converter={StaticResource ExePathToIconConverter}, IsAsync=True}" />
-                        </Border>
-                        <TextBlock Grid.Column="1"
-                                   Text="{Binding ChartPoint.Instance.App, Converter={StaticResource AppToExeNameConverter}}"
-                                   Margin="10 0 0 0" VerticalAlignment="Center"
-                                   Foreground="{DynamicResource BlackBrush}" x:Name="AppName"/>
-                        <TextBlock Grid.Column="2"
-                                   Text="{Binding ChartPoint.Instance.Duration, Converter={StaticResource HumanReadableTimeSpanConverter}}"
-                                   Margin="5 0 0 0" VerticalAlignment="Center" x:Name="AppDur"
-                                   Foreground="{DynamicResource PrimaryHueDarkBrush}"/>
-                    </Grid></Border>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" SharedSizeGroup="Title" />
+                                <ColumnDefinition Width="Auto" SharedSizeGroup="Duration" />
+                            </Grid.ColumnDefinitions>
+                            <Border Background="{DynamicResource MaterialDesignDivider}">
+                                <Image Width="16" Height="16"
+                                       Source="{Binding ChartPoint.Instance.App.Path, Converter={StaticResource ExePathToIconConverter}, IsAsync=True}" />
+                            </Border>
+                            <TextBlock Grid.Column="1"
+                                       Text="{Binding ChartPoint.Instance.App, Converter={StaticResource AppToExeNameConverter}}"
+                                       Margin="10 0 0 0" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource BlackBrush}" x:Name="AppName" />
+                            <TextBlock Grid.Column="2"
+                                       Text="{Binding ChartPoint.Instance.Duration, Converter={StaticResource HumanReadableTimeSpanConverter}}"
+                                       Margin="5 0 0 0" VerticalAlignment="Center" x:Name="AppDur"
+                                       Foreground="{DynamicResource PrimaryHueDarkBrush}" />
+                        </Grid>
+                    </Border>
                     <DataTemplate.Triggers>
                         <DataTrigger Value="true">
                             <DataTrigger.Binding>
@@ -46,11 +47,14 @@
                                 </MultiBinding>
                             </DataTrigger.Binding>
                             <DataTrigger.Setters>
-                                <Setter TargetName="AppRoot" Property="Background" Value="{DynamicResource SecondaryAccentBrush}"/>
-                                <Setter TargetName="AppName" Property="Foreground" Value="{DynamicResource SecondaryAccentForegroundBrush}"/>
-                                <Setter TargetName="AppDur" Property="Foreground" Value="{DynamicResource SecondaryAccentForegroundBrush}"/>
-                                <Setter TargetName="AppName" Property="FontWeight" Value="Bold"/>
-                                <Setter TargetName="AppDur" Property="FontWeight" Value="Bold"/>
+                                <Setter TargetName="AppRoot" Property="Background"
+                                        Value="{DynamicResource SecondaryAccentBrush}" />
+                                <Setter TargetName="AppName" Property="Foreground"
+                                        Value="{DynamicResource SecondaryAccentForegroundBrush}" />
+                                <Setter TargetName="AppDur" Property="Foreground"
+                                        Value="{DynamicResource SecondaryAccentForegroundBrush}" />
+                                <Setter TargetName="AppName" Property="FontWeight" Value="Bold" />
+                                <Setter TargetName="AppDur" Property="FontWeight" Value="Bold" />
                             </DataTrigger.Setters>
                         </DataTrigger>
                     </DataTemplate.Triggers>

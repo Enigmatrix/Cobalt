@@ -28,22 +28,23 @@
         <ListBox.ItemContainerStyle>
             <Style TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">
                 <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                <Setter Property="Padding" Value="0"/>
-                <Setter Property="Margin" Value="4,4,0,0"/>
+                <Setter Property="Padding" Value="0" />
+                <Setter Property="Margin" Value="4,4,0,0" />
             </Style>
         </ListBox.ItemContainerStyle>
         <ListBox.ItemTemplate>
             <DataTemplate DataType="viewModels:AppViewModel">
 
-                    <Grid Margin="4">
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
-                            <Image
-                                Source="{Binding Path, Converter={StaticResource ExePathToIconConverter}, IsAsync=True}"
-                                Width="24" Height="24" />
-                            <TextBlock Style="{DynamicResource MaterialDesignBody2TextBlock}" Margin="4,0"
-                                       Text="{Binding Converter={StaticResource AppToExeNameConverter}, IsAsync=True}" VerticalAlignment="Center"/>
-                        </StackPanel>
-                    </Grid>
+                <Grid Margin="4">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                        <Image
+                            Source="{Binding Path, Converter={StaticResource ExePathToIconConverter}, IsAsync=True}"
+                            Width="24" Height="24" />
+                        <TextBlock Style="{DynamicResource MaterialDesignBody2TextBlock}" Margin="4,0"
+                                   Text="{Binding Converter={StaticResource AppToExeNameConverter}, IsAsync=True}"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                </Grid>
 
             </DataTemplate>
         </ListBox.ItemTemplate>

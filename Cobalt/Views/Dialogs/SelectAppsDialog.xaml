@@ -76,13 +76,15 @@
             </ListView.ItemTemplate>
         </ListView>
         <StackPanel Orientation="Horizontal" Grid.Row="2" HorizontalAlignment="Right">
-            <Button IsCancel="True" Margin="8" Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}" CommandParameter="{x:Null}">
+            <Button IsCancel="True" Margin="8" Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}"
+                    CommandParameter="{x:Null}">
                 <StackPanel Orientation="Horizontal">
                     <materialDesign:PackIcon Kind="Cancel" VerticalAlignment="Center" />
                     <TextBlock Text="CANCEL" Margin="4,0" VerticalAlignment="Center" />
                 </StackPanel>
             </Button>
-            <Button IsDefault="True" Margin="8" Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}" CommandParameter="{Binding SelectedItems,ElementName=AppList}">
+            <Button IsDefault="True" Margin="8" Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}"
+                    CommandParameter="{Binding SelectedItems,ElementName=AppList}">
                 <StackPanel Orientation="Horizontal">
                     <materialDesign:PackIcon Kind="Check" VerticalAlignment="Center" />
                     <TextBlock Text="OK" Margin="4,0" VerticalAlignment="Center" />
