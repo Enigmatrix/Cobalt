@@ -105,6 +105,9 @@
     <Compile Include="Controls\AppDurationTooltip.xaml.cs">
       <DependentUpon>AppDurationTooltip.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Controls\TagDurationTooltip.xaml.cs">
+      <DependentUpon>TagDurationTooltip.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Converters\AppIconSizeConverter.cs" />
     <Compile Include="Converters\ExePathToColorConverter.cs" />
     <Compile Include="Converters\AppToExeNameConverter.cs" />
@@ -113,6 +116,7 @@
     <Compile Include="Converters\IsEqualToConverter.cs" />
     <Compile Include="Converters\AppDurationSeriesConverter.cs" />
     <Compile Include="Converters\ObservableConverter.cs" />
+    <Compile Include="Converters\TagDurationSeriesConverter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -174,6 +178,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Controls\AppDurationTooltip.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Controls\TagDurationTooltip.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

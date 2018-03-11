@@ -4,6 +4,7 @@ using System.Reactive.Linq;
 using Cobalt.Common.Analysis;
 using Cobalt.Common.Analysis.OutputTypes;
 using Cobalt.Common.Data;
+using Cobalt.Common.Data.Repository;
 using Cobalt.Common.IoC;
 using Cobalt.Common.UI.Util;
 using Cobalt.Common.UI.ViewModels;
@@ -19,6 +20,7 @@ namespace Cobalt.ViewModels.Pages
         private IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> _hourlyChunks;
         private TimeSpan _hoursSpentDay;
         private TimeSpan _hoursSpentWeek;
+        private IObservable<TagDurationViewModel> _tagDurations;
         private IObservable<AppDurationViewModel> _weekAppDurations;
 
         public HomePageViewModel(IResourceScope scope) : base(scope)
@@ -80,6 +82,12 @@ namespace Cobalt.ViewModels.Pages
             set => Set(ref _appUsagesToday, value);
         }
 
+        public IObservable<TagDurationViewModel> TagDurations
+        {
+            get => _tagDurations;
+            set => Set(ref _tagDurations, value);
+        }
+
         protected override void OnActivate(IResourceScope res)
         {
             var stats = res.Resolve<IAppStatsStreamService>();
@@ -122,6 +130,18 @@ namespace Cobalt.ViewModels.Pages
                 .Select(x =>
                 {
                     var appDur = new AppDurationViewModel(x.App);
+
+                    x.Duration
+                        .Subscribe(d => { appDur.DurationIncrement(d, appIncrementor); })
+                        .ManageUsing(res);
+
+                    return appDur;
+                });
+
+            TagDurations = stats.GetTagDurations(DateTime.Today)
+                .Select(x =>
+                {
+                    var appDur = new TagDurationViewModel(x.Tag);
 
                     x.Duration
                         .Subscribe(d => { appDur.DurationIncrement(d, appIncrementor); })

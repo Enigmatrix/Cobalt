@@ -24,6 +24,7 @@
                                            End="{x:Static pages:HomePageViewModel.WeekEnd}"
                                            Duration="{x:Static pages:HomePageViewModel.DayDuration}" />
         <converters:AppDurationSeriesConverter x:Key="AppDurationSeriesConverter" />
+        <converters:TagDurationSeriesConverter x:Key="TagDurationSeriesConverter" />
         <converters1:AppUsagesConverter x:Key="AppUsagesConverter" />
         <converters:ExePathToColorConverter x:Key="ExePathToColorConverter" />
         <converters1:BooleanToLegendLocation x:Key="BoolToLegendLocation" />
@@ -142,21 +143,21 @@
                 </wpf:CartesianChart>
             </controls:DataCard>
 
-            <controls:DataCard Height="300" Header="Today" x:Name="Pie" Grid.ColumnSpan="1" Grid.Row="2">
+            <controls:DataCard Height="300" Header="Per Tag, Today" x:Name="Pie" Grid.ColumnSpan="1" Grid.Row="2">
                 <wpf:PieChart DisableAnimations="True"
                               LegendLocation="{Binding Path=(controls:DataCard.Expanded), RelativeSource={RelativeSource Self}, Converter={StaticResource BoolToLegendLocation}}">
                     <wpf:PieChart.Series>
-                        <MultiBinding Converter="{StaticResource AppDurationSeriesConverter}">
-                            <Binding Path="AppDurations" />
+                        <MultiBinding Converter="{StaticResource TagDurationSeriesConverter}">
+                            <Binding Path="TagDurations" />
                             <Binding Path="Resources" />
                         </MultiBinding>
                     </wpf:PieChart.Series>
                     <wpf:PieChart.DataTooltip>
-                        <controls1:AppDurationTooltip />
+                        <controls1:TagDurationTooltip />
                     </wpf:PieChart.DataTooltip>
-                    <wpf:PieChart.ChartLegend>
+                    <!--<wpf:PieChart.ChartLegend>
                         <controls1:AppDurationLegend />
-                    </wpf:PieChart.ChartLegend>
+                    </wpf:PieChart.ChartLegend>-->
                 </wpf:PieChart>
             </controls:DataCard>
             <controls:DataCard Height="300" Header="Week" Grid.ColumnSpan="2" Grid.Column="1" Grid.Row="2">

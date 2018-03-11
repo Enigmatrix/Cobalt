@@ -290,10 +290,17 @@ namespace Cobalt.Common.Data.Repository
             return Get(@"select t.Id, t.Name, sum(
 											(case when EndTimestamp > @end then @end else EndTimestamp end)
 										-   (case when StartTimestamp < @start then @start else StartTimestamp end)) Duration
-										from AppUsage, App a, AppTag at, Tag t
-										where (StartTimestamp <= @end and EndTimestamp >= @start) and a.Id = AppId
-                                            and a.Id = at.AppId and t.Id = at.TagId
-										group by t.Id",
+										from AppUsage, Tag t
+										where (StartTimestamp <= @end and EndTimestamp >= @start)
+                                            and AppId in (select AppId from AppTag where TagId = t.Id)
+										group by t.Id
+                        union
+                        select -1, 'Untagged', sum(
+											(case when EndTimestamp > @end then @end else EndTimestamp end)
+										-   (case when StartTimestamp < @start then @start else StartTimestamp end)) Duration
+										from AppUsage
+										where (StartTimestamp <= @end and EndTimestamp >= @start)
+                                            and AppId not in (select AppId from AppTag)",
                 r => (TagMapper(r), TimeSpan.FromTicks(r.GetInt64(TagOffset))),
                 ("start", startTicks),
                 ("end", endTicks));
