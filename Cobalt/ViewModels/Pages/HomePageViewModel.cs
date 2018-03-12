@@ -97,6 +97,7 @@ namespace Cobalt.ViewModels.Pages
             var appDurationsStream = stats.GetAppDurations(DateTime.Today);
             var weekAppDurationsStream = stats.GetAppDurations(WeekStart);
             var appIncrementor = res.Resolve<IDurationIncrementor>();
+            var weekAppIncrementor = res.Resolve<IDurationIncrementor>();
 
             stats.GetAppUsageDuration(DateTime.Today)
                 .ObserveOnDispatcher()
@@ -132,7 +133,7 @@ namespace Cobalt.ViewModels.Pages
                     var appDur = new AppDurationViewModel(x.App);
 
                     x.Duration
-                        .Subscribe(d => { appDur.DurationIncrement(d, appIncrementor); })
+                        .Subscribe(d => { appDur.DurationIncrement(d, weekAppIncrementor); })
                         .ManageUsing(res);
 
                     return appDur;

@@ -74,7 +74,7 @@ namespace Cobalt.Common.IoC
                 .SingleInstance();
 
             builder
-                .Register(c => new GlobalClock(TimeSpan.FromMilliseconds(35)))
+                .Register(c => new GlobalClock(TimeSpan.FromMilliseconds(237)))
                 .As<IGlobalClock>()
                 .InstancePerLifetimeScope();
         }

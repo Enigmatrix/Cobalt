@@ -21,6 +21,7 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <materialDesign:ColorZone
+            Margin="4"
             Padding="8,4,8,4"
             Panel.ZIndex="1"
             materialDesign:ShadowAssist.ShadowDepth="Depth1"

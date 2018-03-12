@@ -7,7 +7,8 @@
     xmlns:controls="clr-namespace:Cobalt.Views.Controls"
     xmlns:util="clr-namespace:Cobalt.Views.Util"
     xmlns:pages="clr-namespace:Cobalt.Views.Pages"
-    xmlns:converters="http://metro.mahapps.com/winfx/xaml/shared">
+    xmlns:converters="http://metro.mahapps.com/winfx/xaml/shared"
+    xmlns:system="clr-namespace:System;assembly=mscorlib">
 
     <converters:MathConverter x:Key="SubtractMathConverter" Operation="Subtract" />
 
@@ -56,11 +57,40 @@
                                             <md:Card util:WindowUtils.DragMove="True" UniformCornerRadius="0"
                                                      md:ShadowAssist.ShadowDepth="Depth1" Grid.Row="0"
                                                      Background="{DynamicResource PrimaryHueDarkBrush}"
+                                                     Content="{Binding Title}" HorizontalContentAlignment="Stretch"
                                                      HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-                                                <TextBlock Foreground="{DynamicResource PrimaryHueDarkForegroundBrush}"
-                                                           Text="{Binding Title}" VerticalAlignment="Center"
-                                                           HorizontalAlignment="Left" FontSize="16" LineHeight="18"
-                                                           FontWeight="Medium" Margin="15,0,0,2" />
+                                                <md:Card.ContentTemplateSelector>
+                                                    <util:TypedTemplateSelector>
+                                                        <util:TypedTemplateSelector.Entries>
+                                                            <util:TypedTemplateEntries>
+                                                                <util:TypedTemplateEntry Type="UIElement">
+                                                                    <util:TypedTemplateEntry.Template>
+                                                                        <DataTemplate>
+                                                                            <ContentPresenter
+                                                                                VerticalAlignment="Center"
+                                                                                HorizontalAlignment="Stretch"
+                                                                                Content="{Binding}"
+                                                                                Margin="15,0,0,2" />
+                                                                        </DataTemplate>
+                                                                    </util:TypedTemplateEntry.Template>
+                                                                </util:TypedTemplateEntry>
+                                                                <util:TypedTemplateEntry Type="system:String">
+                                                                    <util:TypedTemplateEntry.Template>
+                                                                        <DataTemplate>
+                                                                            <TextBlock
+                                                                                Foreground="{DynamicResource PrimaryHueDarkForegroundBrush}"
+                                                                                Text="{Binding}"
+                                                                                VerticalAlignment="Center"
+                                                                                HorizontalAlignment="Left"
+                                                                                FontSize="16" LineHeight="18"
+                                                                                FontWeight="Medium" Margin="15,0,0,2" />
+                                                                        </DataTemplate>
+                                                                    </util:TypedTemplateEntry.Template>
+                                                                </util:TypedTemplateEntry>
+                                                            </util:TypedTemplateEntries>
+                                                        </util:TypedTemplateSelector.Entries>
+                                                    </util:TypedTemplateSelector>
+                                                </md:Card.ContentTemplateSelector>
                                             </md:Card>
 
                                             <!--this is the menu's shadow-->

@@ -6,11 +6,11 @@ namespace Cobalt.Views.Pages
     public class PageView : UserControl
     {
         public static readonly DependencyProperty TitleProperty =
-            DependencyProperty.Register("Title", typeof(string), typeof(PageView), new PropertyMetadata(""));
+            DependencyProperty.Register("Title", typeof(object), typeof(PageView), new PropertyMetadata(""));
 
-        public string Title
+        public object Title
         {
-            get => (string) GetValue(TitleProperty);
+            get => GetValue(TitleProperty);
             set => SetValue(TitleProperty, value);
         }
     }

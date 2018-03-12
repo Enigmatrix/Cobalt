@@ -9,10 +9,10 @@ namespace Cobalt.Views.Util
 
         public override DataTemplate SelectTemplate(object item, DependencyObject container)
         {
-            if (Entries == null)
+            if (Entries == null || item == null)
                 return base.SelectTemplate(item, container);
             foreach (var kv in Entries)
-                if (kv.Type == item?.GetType())
+                if (kv.Type.IsInstanceOfType(item))
                     return kv.Template;
             return base.SelectTemplate(item, container);
         }

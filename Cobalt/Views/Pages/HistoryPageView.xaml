@@ -7,18 +7,54 @@
                 xmlns:controls="clr-namespace:Cobalt.Views.Controls"
                 xmlns:converters="clr-namespace:Cobalt.Common.UI.Converters;assembly=Cobalt.Common.UI"
                 xmlns:wpf="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
-                xmlns:views="clr-namespace:Cobalt.Views"
-                xmlns:converters1="clr-namespace:Cobalt.Views.Converters"
                 xmlns:controls1="clr-namespace:Cobalt.Common.UI.Controls;assembly=Cobalt.Common.UI"
-                mc:Ignorable="d" Title="History" x:Name="Page"
+                xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+                mc:Ignorable="d" x:Name="Page"
                 d:DesignHeight="300" d:DesignWidth="300">
     <local:PageView.Resources>
         <converters:AppDurationSeriesConverter x:Key="AppDurationSeriesConverter" />
     </local:PageView.Resources>
+    <local:PageView.Title>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="100" />
+            </Grid.ColumnDefinitions>
+            <TextBlock
+                Foreground="{DynamicResource PrimaryHueDarkForegroundBrush}"
+                Text="Apps"
+                VerticalAlignment="Center"
+                HorizontalAlignment="Left"
+                FontSize="16" LineHeight="18"
+                FontWeight="Medium" />
+            <!--TODO include sort by here-->
+            <materialDesign:ColorZone
+                Padding="8,4,8,4" Margin="6"
+                Panel.ZIndex="1" Grid.Column="3"
+                materialDesign:ShadowAssist.ShadowDepth="Depth0"
+                CornerRadius="2"
+                Mode="PrimaryDark">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Button IsEnabled="False" VerticalAlignment="Center" Foreground="{DynamicResource PrimaryHueDarkForegroundBrush}"
+                            Style="{DynamicResource MaterialDesignToolButton}" Opacity="1">
+                        <materialDesign:PackIcon Kind="Magnify" Opacity="0.56" />
+                    </Button>
+                    <controls:DateRangePicker Grid.Column="1" VerticalAlignment="Center" FontSize="12"
+                                              Height="38" Background="Transparent" Foreground="{DynamicResource PrimaryHueDarkForegroundBrush}"
+                                              Start="{Binding RangeStart, Mode=OneWayToSource, UpdateSourceTrigger=PropertyChanged}"
+                                              End="{Binding RangeEnd, Mode=OneWayToSource, UpdateSourceTrigger=PropertyChanged}" />
+                </Grid>
+            </materialDesign:ColorZone>
+        </Grid>
+    </local:PageView.Title>
     <Grid>
-        <controls:DateRangePicker VerticalAlignment="Top" HorizontalAlignment="Right"
-                                  Start="{Binding RangeStart, Mode=OneWayToSource, UpdateSourceTrigger=PropertyChanged}"
-                                  End="{Binding RangeEnd, Mode=OneWayToSource, UpdateSourceTrigger=PropertyChanged}" />
         <StackPanel Orientation="Vertical" HorizontalAlignment="Left">
             <TextBlock Text="{Binding RangeStart}" />
             <TextBlock Text="{Binding RangeEnd}" />

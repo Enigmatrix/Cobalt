@@ -301,7 +301,7 @@ namespace Cobalt.Common.Data.Repository
 										from AppUsage
 										where (StartTimestamp <= @end and EndTimestamp >= @start)
                                             and AppId not in (select AppId from AppTag)",
-                r => (TagMapper(r), TimeSpan.FromTicks(r.GetInt64(TagOffset))),
+                r => (TagMapper(r), TimeSpan.FromTicks(r.IsDBNull(TagOffset) ? 0 : r.GetInt64(TagOffset))),
                 ("start", startTicks),
                 ("end", endTicks));
         }

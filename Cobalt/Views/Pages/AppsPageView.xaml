@@ -7,47 +7,113 @@
                 xmlns:converters="clr-namespace:Cobalt.Views.Converters"
                 xmlns:viewModels="clr-namespace:Cobalt.Common.UI.ViewModels;assembly=Cobalt.Common.UI"
                 xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-                mc:Ignorable="d" Title="Apps"
+                mc:Ignorable="d"
                 d:DesignHeight="300" d:DesignWidth="300">
     <local:PageView.Resources>
         <converters:AppsConverter x:Key="AppsConverter" />
     </local:PageView.Resources>
-
-    <ListBox VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling">
-        <ListBox.ItemsSource>
-            <MultiBinding Converter="{StaticResource AppsConverter}">
-                <Binding Path="Apps" />
-                <Binding Path="Resources" />
-            </MultiBinding>
-        </ListBox.ItemsSource>
-        <ListBox.ItemsPanel>
-            <ItemsPanelTemplate>
-                <VirtualizingStackPanel />
-            </ItemsPanelTemplate>
-        </ListBox.ItemsPanel>
-        <ListBox.ItemContainerStyle>
-            <Style TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">
-                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                <Setter Property="Padding" Value="0" />
-                <Setter Property="Margin" Value="4,4,0,0" />
-            </Style>
-        </ListBox.ItemContainerStyle>
-        <ListBox.ItemTemplate>
-            <DataTemplate DataType="viewModels:AppViewModel">
-
-                <Grid Margin="4">
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
-                        <Image
-                            Source="{Binding Path, Converter={StaticResource ExePathToIconConverter}, IsAsync=True}"
-                            Width="24" Height="24" />
-                        <TextBlock Style="{DynamicResource MaterialDesignBody2TextBlock}" Margin="4,0"
-                                   Text="{Binding Converter={StaticResource AppToExeNameConverter}, IsAsync=True}"
-                                   VerticalAlignment="Center" />
-                    </StackPanel>
+    <local:PageView.Title>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="100" />
+            </Grid.ColumnDefinitions>
+            <TextBlock
+                Foreground="{DynamicResource PrimaryHueDarkForegroundBrush}"
+                Text="Apps"
+                VerticalAlignment="Center"
+                HorizontalAlignment="Left"
+                FontSize="16" LineHeight="18"
+                FontWeight="Medium"/>
+            <!--TODO include sort by here-->
+            <materialDesign:ColorZone
+                Padding="8,4,8,4" Margin="6"
+                Panel.ZIndex="1" Grid.Column="3"
+                materialDesign:ShadowAssist.ShadowDepth="Depth0"
+                CornerRadius="2"
+                Mode="Standard">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Button IsEnabled="False"  VerticalAlignment="Center" Style="{DynamicResource MaterialDesignToolButton}" Opacity="1">
+                        <materialDesign:PackIcon Kind="Magnify" Opacity="0.56" />
+                    </Button>
+                    <TextBox
+                        Grid.Column="1"
+                        Margin="8,0,0,0" Width="200"
+                        VerticalAlignment="Center" Text="{Binding AppFilter, UpdateSourceTrigger=PropertyChanged}"
+                        materialDesign:HintAssist.Hint="Search Apps"
+                        materialDesign:TextFieldAssist.DecorationVisibility="Hidden"
+                        BorderThickness="0" />
                 </Grid>
+            </materialDesign:ColorZone>
+        </Grid>
+    </local:PageView.Title>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition />
+        </Grid.RowDefinitions>
 
-            </DataTemplate>
-        </ListBox.ItemTemplate>
-    </ListBox>
+
+        <ItemsControl VirtualizingPanel.IsVirtualizing="True" ScrollViewer.CanContentScroll="True"
+                      VirtualizingPanel.VirtualizationMode="Recycling" Grid.Row="1">
+            <ItemsControl.ItemsSource>
+                <MultiBinding Converter="{StaticResource AppsConverter}">
+                    <Binding Path="Apps" />
+                    <Binding Path="Resources" />
+                </MultiBinding>
+            </ItemsControl.ItemsSource>
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <VirtualizingStackPanel />
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemContainerStyle>
+                <Style TargetType="ContentPresenter">
+                    <Setter Property="HorizontalAlignment" Value="Stretch" />
+                    <Setter Property="Margin" Value="4,4,0,0" />
+                </Style>
+            </ItemsControl.ItemContainerStyle>
+            <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="viewModels:AppViewModel">
+
+                    <Grid Margin="4">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                            <Image
+                                Source="{Binding Path, Converter={StaticResource ExePathToIconConverter}, IsAsync=True}"
+                                Width="24" Height="24" />
+                            <TextBlock Style="{DynamicResource MaterialDesignBody2TextBlock}" Margin="4,0"
+                                       Text="{Binding Converter={StaticResource AppToExeNameConverter}, IsAsync=True}"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Grid>
+
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+            <ItemsControl.Template>
+                <ControlTemplate>
+                    <Border
+                        BorderThickness="{TemplateBinding Border.BorderThickness}"
+                        Padding="{TemplateBinding Control.Padding}"
+                        BorderBrush="{TemplateBinding Border.BorderBrush}"
+                        Background="{TemplateBinding Panel.Background}"
+                        SnapsToDevicePixels="True">
+                        <ScrollViewer
+                            Padding="{TemplateBinding Control.Padding}"
+                            Focusable="False">
+                            <ItemsPresenter
+                                SnapsToDevicePixels="{TemplateBinding UIElement.SnapsToDevicePixels}" />
+                        </ScrollViewer>
+                    </Border>
+                </ControlTemplate>
+            </ItemsControl.Template>
+        </ItemsControl>
+    </Grid>
 
 </local:PageView>

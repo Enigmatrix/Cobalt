@@ -15,9 +15,11 @@ An program to track how long an app is on the screen, and display useful statist
 
 ## Screenshots
 
+### Cobalt.TaskbarNotifier 
 ![Cobalt.TaskbarNotifier](./images/cobalt_taskbarnotifier.png "Cobalt.TaskbarNotifier")
 
-//TODO Cobalt
+### Cobalt (Dark theme)
+![Cobalt](./images/cobalt.png "Cobalt")
 
 <br />
 
