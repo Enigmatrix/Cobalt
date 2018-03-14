@@ -221,7 +221,7 @@
                                         <Setter.Value>
                                             <DataTemplate DataType="viewModels:AppUsageViewModel">
                                                 <Rectangle
-                                                    Fill="{Binding App.Path, Converter={StaticResource ExePathToColorConverter}}" />
+                                                    Fill="{Binding App, Converter={StaticResource ExePathToColorConverter}}" />
                                             </DataTemplate>
                                         </Setter.Value>
                                     </Setter>

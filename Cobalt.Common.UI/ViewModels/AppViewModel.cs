@@ -8,12 +8,15 @@ namespace Cobalt.Common.UI.ViewModels
     {
         private string _name;
         private string _path;
+        private string _color;
 
         public AppViewModel(App app) : base(app)
         {
             Name = app.Name;
             Path = app.Path;
+            Color = app.Color;
             Tags = app.Tags?.Select(t => new TagViewModel(t));
+            Icon = app.Icon;
         }
 
         public string Name
@@ -28,6 +31,13 @@ namespace Cobalt.Common.UI.ViewModels
             set => Set(ref _path, value);
         }
 
+        public string Color
+        {
+            get => _color;
+            set => Set(ref _color, value);
+        }
+
         public IObservable<TagViewModel> Tags { get; }
+        public IObservable<byte[]> Icon { get; }
     }
 }

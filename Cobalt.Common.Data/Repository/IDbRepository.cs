@@ -25,7 +25,7 @@ namespace Cobalt.Common.Data.Repository
 
         //get
         IObservable<App> GetApps();
-
+        IObservable<byte[]> GetAppIcon(App app);
         IObservable<Tag> GetTags();
         IObservable<Tag> GetTags(App newApp);
         IObservable<App> GetAppsWithTag(Tag tag);
@@ -55,7 +55,7 @@ namespace Cobalt.Common.Data.Repository
         void UpdateAlert(Alert alert);
 
         //find
-        long? FindAppIdByPath(string appPath);
+        App FindAppByPath(string appPath);
         bool DoesAppHaveTag(App app, Tag tag);
     }
 }

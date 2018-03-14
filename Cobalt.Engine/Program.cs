@@ -5,6 +5,7 @@ using Cobalt.Common.Data.Repository;
 using Cobalt.Common.IoC;
 using Cobalt.Common.Transmission;
 using Cobalt.Common.Transmission.Messages;
+using Cobalt.Common.Util;
 using Cobalt.Engine.Util;
 using Serilog;
 
@@ -37,6 +38,7 @@ namespace Cobalt.Engine
             var appWatcher = new AppWatcher(hookMgr);
             //var idleWatcher = new InteractionWatcher(hookMgr);
             var sysWatcher = new SystemWatcher(MessageWindow.Instance);
+            var appResource = new AppResource();
 
             appWatcher.ForegroundAppUsageObtained += (_, e) =>
             {
@@ -46,23 +48,33 @@ namespace Cobalt.Engine
                     var newApp = e.NewApp;
 
                     //check if the app path is already stored in the database
-                    var appId = repository.FindAppIdByPath(prevAppUsage.App.Path);
-                    if (appId == null)
+                    var app = repository.FindAppByPath(prevAppUsage.App.Path);
+                    if (app == null)
+                    {
                         //if not, add a new app with that path
-                        repository.AddApp(prevAppUsage.App);
+                        app = appResource.WithDetails(prevAppUsage.App.Path);
+                        repository.AddApp(app);
+                    }
                     else
                         //else use the previously existing app's identity
-                        prevAppUsage.App.Id = appId.Value;
+                        prevAppUsage.App = app;
+                    prevAppUsage.App.Icon = null;
+                    prevAppUsage.App.Tags = null;
 
                     //store the incoming app's path too - leads to the Exists check of the previous statements to be redundant
                     //but hey i prefer consistency over perf sometimes
                     if (newApp != null)
                     {
-                        var newappId = repository.FindAppIdByPath(newApp.Path);
-                        if (newappId == null)
+                        var newAppPath = newApp.Path;
+                        newApp = repository.FindAppByPath(newAppPath);
+                        if (newApp == null)
+                        {
+                            newApp = appResource.WithDetails(newAppPath);
                             repository.AddApp(newApp);
-                        else
-                            newApp.Id = newappId.Value;
+                        }
+
+                        newApp.Icon = null;
+                        newApp.Tags = null;
                     }
 
                     //broadcast foreground app switch to all clients

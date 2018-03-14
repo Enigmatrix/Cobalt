@@ -13,9 +13,7 @@ namespace Cobalt.Common.UI.Converters
             switch (value)
             {
                 case AppViewModel app:
-                    return app.Name ?? AppResourceCache.Instance.GetName(app.Path);
-                case string path:
-                    return AppResourceCache.Instance.GetName(path);
+                    return app.Name;
                 default: throw new ArgumentException();
             }
         }

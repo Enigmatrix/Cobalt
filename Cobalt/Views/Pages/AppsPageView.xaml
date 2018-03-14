@@ -86,7 +86,7 @@
                     <Grid Margin="4">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
                             <Image
-                                Source="{Binding Path, Converter={StaticResource ExePathToIconConverter}, IsAsync=True}"
+                                Source="{Binding Converter={StaticResource ExePathToIconConverter}, IsAsync=True}"
                                 Width="24" Height="24" />
                             <TextBlock Style="{DynamicResource MaterialDesignBody2TextBlock}" Margin="4,0"
                                        Text="{Binding Converter={StaticResource AppToExeNameConverter}, IsAsync=True}"

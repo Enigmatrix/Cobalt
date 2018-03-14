@@ -8,6 +8,7 @@
                 xmlns:cal="http://www.caliburnproject.org"
                 xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
                 xmlns:controls="clr-namespace:Cobalt.Views.Controls"
+                xmlns:viewModels="clr-namespace:Cobalt.Common.UI.ViewModels;assembly=Cobalt.Common.UI"
                 mc:Ignorable="d" Title="Alerts" DataContext="{x:Static vm:AlertsPageViewModel.Test}"
                 d:DesignHeight="800" d:DesignWidth="800">
     <Grid>
@@ -66,7 +67,7 @@
                                             <Grid>
                                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Top" Margin="8">
                                                     <Image
-                                                        Source="{Binding App.Path, Converter={StaticResource ExePathToIconConverter}, IsAsync=True}"
+                                                        Source="{Binding App, Converter={StaticResource ExePathToIconConverter}, IsAsync=True}"
                                                         Width="36" Height="36" />
                                                     <TextBlock Style="{DynamicResource MaterialDesignBody2TextBlock}"
                                                                Margin="8,0"

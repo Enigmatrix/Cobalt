@@ -2,7 +2,10 @@
 using System.Data;
 using System.Data.Common;
 using System.Data.SQLite;
+using System.IO;
 using System.Reactive.Linq;
+using System.Reactive.Threading.Tasks;
+using System.Threading.Tasks;
 using Cobalt.Common.Data.Migration;
 using Cobalt.Common.Util;
 
@@ -12,9 +15,16 @@ namespace Cobalt.Common.Data.Repository
     {
         #region Find
 
-        public long? FindAppIdByPath(string appPath)
+        public App FindAppByPath(string appPath)
         {
-            return ExecuteScalar<long?>("select Id from App where Path = @path", ("path", appPath));
+            var (cmd, reader) =
+                ExecuteReader("select Id,Name,Path,Color from App where Path = @path", ("path", appPath));
+
+            using (cmd)
+            using (reader)
+            {
+                return reader.Read() ? AppMapper(reader) : null;
+            }
         }
 
         public bool DoesAppHaveTag(App app, Tag tag)
@@ -27,7 +37,7 @@ namespace Cobalt.Common.Data.Repository
 
         #region Offsets
 
-        private const int AppOffset = 3;
+        private const int AppOffset = 4;
         private const int TagOffset = 2;
 
         #endregion
@@ -76,8 +86,8 @@ namespace Cobalt.Common.Data.Repository
 
         public void AddApp(App app)
         {
-            app.Id = Insert("insert into App(Id, Name, Path) values (?,?,?)",
-                null, app.Name, app.Path);
+            app.Id = Insert("insert into App(Id, Name, Path, Color, Icon) values (?,?,?,?,?)",
+                null, app.Name, app.Path, app.Color, app.Icon?.ToTask().Result);
         }
 
         public void AddTag(Tag tag)
@@ -152,8 +162,21 @@ namespace Cobalt.Common.Data.Repository
 
         public IObservable<App> GetApps()
         {
-            return Get(@"select a.Id, a.Name, a.Path from App a", r => AppMapper(r))
-                .Do(app => app.Tags = GetTags(app));
+            return Get(@"select a.Id, a.Name, a.Path, a.Color from App a", r => AppMapper(r));
+        }
+
+        public IObservable<byte[]> GetAppIcon(App app)
+        {
+            var lazy = new Lazy<Task<byte[]>>(async () =>
+            {
+                var (cmd,reader) = ExecuteReader("select Icon from App where Id = @appId", ("appId", app.Id));
+                using(cmd)
+                using (reader)
+                {
+                    return reader.Read() ? await GetBytes(reader, 0) : null;
+                }
+            }, true);
+            return Observable.FromAsync(() => lazy.Value);
         }
 
         public IObservable<Tag> GetTags()
@@ -164,11 +187,10 @@ namespace Cobalt.Common.Data.Repository
 
         public IObservable<App> GetAppsWithTag(Tag tag)
         {
-            return Get(@"select * from App
+            return Get(@"select Id,Name,Path,Color from App
 								where Id in (select AppId from AppTag
 									where TagId = (select Id from Tag 
-										where Name = @name))", r => AppMapper(r), ("name", tag.Name))
-                .Do(app => app.Tags = GetTags(app));
+										where Name = @name))", r => AppMapper(r), ("name", tag.Name));
         }
 
         public IObservable<TimeSpan> GetAppUsageTime(DateTime? start = null, DateTime? end = null)
@@ -188,23 +210,22 @@ namespace Cobalt.Common.Data.Repository
         {
             //TODO might cause high memory usage, implement cache
             var (startTicks, endTicks) = ToTickRange(start, end);
-            return Get(@"select a.Id, a.Name, a.Path, 
+            return Get(@"select a.Id, a.Name, a.Path, a.Color,
 								au.Id, au.AppId, au.UsageType, 
 								(case when au.StartTimestamp < @start then @start else au.StartTimestamp end),
                                 (case when au.EndTimestamp > @end then @end else au.EndTimestamp end), 
 								au.UsageStartReason, au.UsageEndReason  
 							from AppUsage au, App a
 							where StartTimestamp <= @end and EndTimestamp >= @start and au.AppId = a.Id",
-                    r => AppUsageMapper(r, AppOffset, AppMapper(r)),
-                    ("start", startTicks),
-                    ("end", endTicks))
-                .Do(appUsage => appUsage.App.Tags = GetTags(appUsage.App));
+                r => AppUsageMapper(r, AppOffset, AppMapper(r)),
+                ("start", startTicks),
+                ("end", endTicks));
         }
 
         public IObservable<AppUsage> GetAppUsages(Tag tag, DateTime? start = null, DateTime? end = null)
         {
             var (startTicks, endTicks) = ToTickRange(start, end);
-            return Get(@"select a.Id, a.Name, a.Path, 
+            return Get(@"select a.Id, a.Name, a.Path, a.Color,
 								au.Id, au.AppId, au.UsageType, 
 								(case when au.StartTimestamp < @start then @start else au.StartTimestamp end),
                                 (case when au.EndTimestamp > @end then @end else au.EndTimestamp end), 
@@ -212,62 +233,58 @@ namespace Cobalt.Common.Data.Repository
 							from AppUsage au, App a
 							where StartTimestamp <= @end and EndTimestamp >= @start and au.AppId = a.Id
                                 and AppId in (select AppId from AppTag where TagId=@tag)",
-                    r => AppUsageMapper(r, AppOffset, AppMapper(r)),
-                    ("start", startTicks),
-                    ("end", endTicks),
-                    ("tag", tag.Id))
-                .Do(appUsage => appUsage.App.Tags = GetTags(appUsage.App));
+                r => AppUsageMapper(r, AppOffset, AppMapper(r)),
+                ("start", startTicks),
+                ("end", endTicks),
+                ("tag", tag.Id));
         }
 
         public IObservable<AppUsage> GetAppUsagesForApp(App app, DateTime? start = null, DateTime? end = null)
         {
             //todo, can be more efficient, try on v1.0
             var (startTicks, endTicks) = ToTickRange(start, end);
-            return Get(@"select a.Id, a.Name, a.Path, 
+            return Get(@"select a.Id, a.Name, a.Path, a.Color,
 								au.Id, au.AppId, au.UsageType, 
 								(case when au.StartTimestamp < @start then @start else au.StartTimestamp end),
                                 (case when au.EndTimestamp > @end then @end else au.EndTimestamp end), 
 								au.UsageStartReason, au.UsageEndReason  
 							from AppUsage au, App a
 							where StartTimestamp <= @end and EndTimestamp >= @start where au.AppId = a.Id and a.Id = @id",
-                    r => AppUsageMapper(r, AppOffset, AppMapper(r)),
-                    ("start", startTicks),
-                    ("end", endTicks),
-                    ("id", app.Id))
-                .Do(appUsage => appUsage.App.Tags = GetTags(appUsage.App));
+                r => AppUsageMapper(r, AppOffset, AppMapper(r)),
+                ("start", startTicks),
+                ("end", endTicks),
+                ("id", app.Id));
         }
 
         public IObservable<(App App, TimeSpan Duration)> GetAppDurations(DateTime? start = null, DateTime? end = null)
         {
             var (startTicks, endTicks) = ToTickRange(start, end);
-            return Get(@"select AppId, a.Name, a.Path, sum(
+            return Get(@"select AppId, a.Name, a.Path, a.Color, sum(
 											(case when EndTimestamp > @end then @end else EndTimestamp end)
 										-   (case when StartTimestamp < @start then @start else StartTimestamp end)) Duration
 										from AppUsage, App a
 										where (StartTimestamp <= @end and EndTimestamp >= @start) and a.Id = AppId
 										group by AppId",
-                    r => (AppMapper(r), TimeSpan.FromTicks(r.GetInt64(AppOffset))),
-                    ("start", startTicks),
-                    ("end", endTicks))
-                .Do(appDur => appDur.Item1.Tags = GetTags(appDur.Item1));
+                r => (AppMapper(r), TimeSpan.FromTicks(r.GetInt64(AppOffset))),
+                ("start", startTicks),
+                ("end", endTicks));
         }
 
         public IObservable<(App App, TimeSpan Duration)> GetAppDurations(Tag tag, DateTime? start = null,
             DateTime? end = null)
         {
             var (startTicks, endTicks) = ToTickRange(start, end);
-            return Get(@"select AppId, a.Name, a.Path, sum(
+            return Get(@"select AppId, a.Name, a.Path, a.Color, sum(
 											(case when EndTimestamp > @end then @end else EndTimestamp end)
 										-   (case when StartTimestamp < @start then @start else StartTimestamp end)) Duration
 										from AppUsage, App a
 										where (StartTimestamp <= @end and EndTimestamp >= @start) and a.Id = AppId
                                             and AppId in (select AppId from AppTag where TagId=@tag)
 										group by AppId",
-                    r => (AppMapper(r), TimeSpan.FromTicks(r.GetInt64(AppOffset))),
-                    ("start", startTicks),
-                    ("end", endTicks),
-                    ("tag", tag.Id))
-                .Do(appDur => appDur.Item1.Tags = GetTags(appDur.Item1));
+                r => (AppMapper(r), TimeSpan.FromTicks(r.GetInt64(AppOffset))),
+                ("start", startTicks),
+                ("end", endTicks),
+                ("tag", tag.Id));
         }
 
         public IObservable<TimeSpan> GetAppDuration(App app, DateTime? start = null, DateTime? end = null)
@@ -317,7 +334,7 @@ namespace Cobalt.Common.Data.Repository
         {
             var (startTicks, endTicks) = ToTickRange(start, end);
             return Get(
-                @"select a1.Id, (case when a2.Id > @end then @ned else a2.Id end) from Interaction a1, Interaction a2 
+                @"select a1.Id, (case when a2.Id > @end then @end else a2.Id end) from Interaction a1, Interaction a2 
 							where a1.Id >= @start and a1.Id < @end and a2.rowid=a1.rowid+1 and (a2.Id-a1.Id)>=@minDur",
                 r => IdleMapper(r),
                 ("start", startTicks),
@@ -415,12 +432,16 @@ namespace Cobalt.Common.Data.Repository
 
         private App AppMapper(SQLiteDataReader reader, int offset = 0)
         {
-            return new App
+            var app = new App
             {
                 Id = reader.GetInt64(offset + 0),
                 Name = reader.IsDBNull(1) ? null : reader.GetString(offset + 1),
-                Path = reader.GetString(offset + 2)
+                Path = reader.GetString(offset + 2),
+                Color = reader.IsDBNull(offset + 3) ? null : reader.GetString(offset + 3)
             };
+            app.Icon = GetAppIcon(app);
+            app.Tags = GetTags(app);
+            return app;
         }
 
         private Tag TagMapper(SQLiteDataReader reader, int offset = 0)
@@ -479,9 +500,27 @@ namespace Cobalt.Common.Data.Repository
         }
 
         //returns a (start, end)
-        private (long, long) ToTickRange(DateTime? start, DateTime? end)
+        private static (long, long) ToTickRange(DateTime? start, DateTime? end)
         {
             return (start?.Ticks ?? DateTime.MinValue.Ticks, end?.Ticks ?? DateTime.MaxValue.Ticks);
+        }
+
+        private static async Task<byte[]> GetBytes(SQLiteDataReader reader, int fieldOffset)
+        {
+            const int chunkSize = 2 * 1024;
+            var buffer = new byte[chunkSize];
+            if (reader.IsDBNull(0)) return null;
+            using (var stream = new MemoryStream())
+            {
+                long bytesRead;
+                while ((bytesRead = reader.GetBytes(0, fieldOffset, buffer, 0, buffer.Length)) > 0)
+                {
+                    await stream.WriteAsync(buffer, 0, (int) bytesRead);
+                    fieldOffset += (int)bytesRead;
+                }
+
+                return stream.ToArray();
+            }
         }
 
         #endregion
@@ -490,7 +529,7 @@ namespace Cobalt.Common.Data.Repository
 
         public void UpdateApp(App app)
         {
-            Update("App", "Name = ?, Path = ?", app.Id, app.Name, app.Path);
+            Update("App", "Name = ?, Path = ?, Color = ?", app.Id, app.Name, app.Path, app.Color);
         }
 
         public void UpdateTag(Tag tag)

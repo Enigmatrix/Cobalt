@@ -58,7 +58,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Alert.cs" />
+    <Compile Include="AlertAction.cs" />
+    <Compile Include="AlertRange.cs" />
     <Compile Include="App.cs" />
+    <Compile Include="AppAlert.cs" />
     <Compile Include="AppUsage.cs" />
     <Compile Include="AppUsageEndReason.cs" />
     <Compile Include="AppUsageStartReason.cs" />
@@ -71,11 +74,16 @@
     <Compile Include="Migration\Sqlite\SqliteMigrationBase.cs" />
     <Compile Include="Migration\Sqlite\SqliteMigrationV1.cs" />
     <Compile Include="Migration\Sqlite\SqliteMigrationV2.cs" />
+    <Compile Include="Migration\Sqlite\SqliteMigrationV3.cs" />
     <Compile Include="Migration\Sqlite\SqliteMigrator.cs" />
+    <Compile Include="OnceAlertRange.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RepeatingAlertRange.cs" />
+    <Compile Include="RepeatType.cs" />
     <Compile Include="Repository\IDbRepository.cs" />
     <Compile Include="Repository\SqliteRepository.cs" />
     <Compile Include="Tag.cs" />
+    <Compile Include="TagAlert.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

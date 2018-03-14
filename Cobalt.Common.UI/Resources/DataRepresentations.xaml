@@ -16,7 +16,7 @@
     </DataTemplate>
     <DataTemplate x:Key="AppPieRepresentation" DataType="liveCharts:DataLabelViewModel">
         <Image
-            Source="{Binding Point.Instance.App.Path, Converter={StaticResource ExePathToIconConverter}, Mode=OneTime}"
+            Source="{Binding Point.Instance.App, Converter={StaticResource ExePathToIconConverter}, Mode=OneTime}"
             Stretch="Fill">
             <Image.Height>
                 <MultiBinding Converter="{StaticResource SizeConverter}">

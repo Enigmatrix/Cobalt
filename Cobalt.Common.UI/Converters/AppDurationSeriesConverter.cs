@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Reactive.Linq;
 using System.Windows;
+using Cobalt.Common.Data;
 using Cobalt.Common.IoC;
 using Cobalt.Common.UI.Util;
 using Cobalt.Common.UI.ViewModels;
@@ -27,7 +28,7 @@ namespace Cobalt.Common.UI.Converters
                 {
                     Title = newAppDur.App.Path,
                     StrokeThickness = .5,
-                    Fill = AppResourceCache.Instance.GetColor(newAppDur.App.Path),
+                    Fill = AppResourceCache.Instance.GetColor(newAppDur.App),
                     DataLabels = true,
                     LabelPoint = LabelPoint,
                     DataLabelsTemplate = (DataTemplate) Application.Current.Resources["AppPieRepresentation"],

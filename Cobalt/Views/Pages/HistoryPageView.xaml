@@ -25,7 +25,7 @@
             </Grid.ColumnDefinitions>
             <TextBlock
                 Foreground="{DynamicResource PrimaryHueDarkForegroundBrush}"
-                Text="Apps"
+                Text="History"
                 VerticalAlignment="Center"
                 HorizontalAlignment="Left"
                 FontSize="16" LineHeight="18"

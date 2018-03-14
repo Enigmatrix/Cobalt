@@ -26,7 +26,7 @@
                             </Grid.ColumnDefinitions>
                             <Border Background="{DynamicResource MaterialDesignDivider}">
                                 <Image Width="16" Height="16"
-                                       Source="{Binding ChartPoint.Instance.App.Path, Converter={StaticResource ExePathToIconConverter}, IsAsync=True}" />
+                                       Source="{Binding ChartPoint.Instance.App, Converter={StaticResource ExePathToIconConverter}, IsAsync=True}" />
                             </Border>
                             <TextBlock Grid.Column="1"
                                        Text="{Binding ChartPoint.Instance.App, Converter={StaticResource AppToExeNameConverter}}"

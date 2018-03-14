@@ -1,4 +1,5 @@
-﻿using System.Data;
+﻿using System;
+using System.Data;
 using System.Data.SQLite;
 using System.Linq;
 using Cobalt.Common.Util;
@@ -33,6 +34,32 @@ namespace Cobalt.Common.Data.Migration.Sqlite
                 s.ExecuteNonQuery();
                 s.Dispose();
                 transaction.Commit();
+            }
+        }
+
+        public void ExecuteSql(string sql, params (string, object)[] arg)
+        {
+            using (var transaction = Connection.BeginTransaction())
+            {
+                var s = new SQLiteCommand(sql, Connection);
+                foreach (var (n, o) in arg)
+                    s.Parameters.AddWithValue(n, o);
+                s.ExecuteNonQuery();
+                s.Dispose();
+                transaction.Commit();
+            }
+        }
+
+        public void ExecuteOnResult(string sql, Action<SQLiteDataReader> ac)
+        {
+            using (var s = new SQLiteCommand(sql, Connection))
+            {
+                var reader = s.ExecuteReader();
+                while (reader.Read())
+                {
+                    ac(reader);
+                }
+                reader.Dispose();
             }
         }
 

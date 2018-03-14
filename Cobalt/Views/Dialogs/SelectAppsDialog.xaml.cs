@@ -60,7 +60,7 @@ namespace Cobalt.Views.Dialogs
         {
             var app = (AppViewModel) obj;
             if (AppFilter == "") return true;
-            var name = app.Name ?? AppResourceCache.Instance.GetName(app.Path);
+            var name = app.Name;
             return StrContains(name, AppFilter) || StrContains(app.Path, AppFilter);
         }
 

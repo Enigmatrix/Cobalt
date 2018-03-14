@@ -81,7 +81,7 @@ namespace Cobalt.Views.Converters
                 {
                     var stack = new StackedColumnSeries
                     {
-                        Fill = AppResourceCache.Instance.GetColor(x.App.Path),
+                        Fill = AppResourceCache.Instance.GetColor(new AppViewModel(x.App)),
                         Values = Enumerable.Range(0, (int) count).Select(t => new AppDurationViewModel(x.App))
                             .AsChartValues(),
                         LabelPoint = cp => x.App.Path,
