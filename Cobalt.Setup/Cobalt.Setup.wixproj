@@ -99,7 +99,7 @@
     <PreBuildEvent>"$(WixExtDir)\heat" dir "$(SolutionDir)bin\$(Configuration)"  -dr INSTALLFOLDER -cg CobaltCombinedComponents -gg -g1 -sf -srd -var "var.Cobalt.TargetDir" -out "$(SolutionDir)Cobalt.Setup\CobaltCombined.wxs" -t "$(SolutionDir)Cobalt.Setup\CobaltCombinedTransform.xslt"</PreBuildEvent>
   </PropertyGroup>-->
   <Target Name="BeforeBuild">
-    <HeatDirectory OutputFile="$(SolutionDir)Cobalt.Setup\CobaltCombined.wxs" ToolPath="$(WixToolPath)" ComponentGroupName="CobaltCombinedComponents" Directory="$(SolutionDir)bin\$(Configuration)" DirectoryRefId="INSTALLFOLDER" PreprocessorVariable="var.Cobalt.TargetDir" GenerateGuidsNow="true" SuppressFragments="true" SuppressRootDirectory="true" Transforms="$(SolutionDir)Cobalt.Setup\CobaltCombinedTransform.xsl" />
+    <HeatDirectory OutputFile="$(SolutionDir)Cobalt.Setup\CobaltCombined.wxs" ToolPath="$(WixToolPath)" ComponentGroupName="CobaltCombinedComponents" Directory="$(SolutionDir)bin\$(Configuration)" DirectoryRefId="INSTALLFOLDER" PreprocessorVariable="var.Cobalt.TargetDir" GenerateGuidsNow="true" SuppressFragments="true" SuppressRootDirectory="true" Transforms="$(SolutionDir)Cobalt.Setup\CobaltCombinedTransform.xsl" SuppressRegistry="true"  />
   </Target>
   <Target Name="AfterBuild">
   </Target>
