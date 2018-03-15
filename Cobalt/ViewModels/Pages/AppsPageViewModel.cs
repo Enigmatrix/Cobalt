@@ -43,5 +43,10 @@ namespace Cobalt.ViewModels.Pages
                 .Subscribe(apps => Apps = apps)
                 .ManageUsing(resources);
         }
+
+        protected override void OnDeactivate(bool close, IResourceScope resources)
+        {
+            Apps = null;
+        }
     }
 }
