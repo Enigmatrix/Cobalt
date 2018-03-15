@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Reactive.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows.Data;
 using Cobalt.Common.IoC;
 using Cobalt.Common.UI.Util;
 using Cobalt.Common.UI.ViewModels;
+using Cobalt.Common.Util;
 
 namespace Cobalt.Views.Dialogs
 {
@@ -50,7 +52,7 @@ namespace Cobalt.Views.Dialogs
             var apps = (IObservable<AppViewModel>) args[0];
             var res = (IResourceScope) args[1];
             var appColl = new ObservableCollection<AppViewModel>();
-            apps.Subscribe(x => appColl.Add(x)).ManagedBy(res);
+            apps.ObserveOnDispatcher().Subscribe(x => appColl.Add(x)).ManagedBy(res);
             Apps = CollectionViewSource.GetDefaultView(appColl);
             Apps.Filter = AppMatch;
             DataContext = this;
@@ -61,12 +63,7 @@ namespace Cobalt.Views.Dialogs
             var app = (AppViewModel) obj;
             if (AppFilter == "") return true;
             var name = app.Name;
-            return StrContains(name, AppFilter) || StrContains(app.Path, AppFilter);
-        }
-
-        private bool StrContains(string n1, string n2)
-        {
-            return n1?.IndexOf(n2, StringComparison.OrdinalIgnoreCase) >= 0;
+            return name.StrContains(AppFilter) || app.Path.StrContains(AppFilter);
         }
 
         protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)

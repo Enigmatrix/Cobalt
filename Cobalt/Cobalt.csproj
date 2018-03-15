@@ -114,6 +114,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="ViewModels\Extended\ExtendedAppViewModel.cs" />
     <Compile Include="ViewModels\Extended\ExtendedTagViewModel.cs" />
     <Compile Include="ViewModels\Pages\AlertsPageViewModel.cs" />
     <Compile Include="ViewModels\Pages\HistoryPageViewModel.cs" />

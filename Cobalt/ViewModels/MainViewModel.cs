@@ -24,5 +24,6 @@ namespace Cobalt.ViewModels
         }
 
         public INavigationService NavigationService { get; }
+        public override string DisplayName { get; set; } = "Cobalt";
     }
 }

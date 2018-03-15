@@ -7,10 +7,21 @@
                 xmlns:converters="clr-namespace:Cobalt.Views.Converters"
                 xmlns:viewModels="clr-namespace:Cobalt.Common.UI.ViewModels;assembly=Cobalt.Common.UI"
                 xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-                mc:Ignorable="d"
+                xmlns:cal="http://www.caliburnproject.org"
+                xmlns:wpf="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
+                xmlns:pages="clr-namespace:Cobalt.ViewModels.Pages"
+                xmlns:controls="clr-namespace:Cobalt.Common.UI.Controls;assembly=Cobalt.Common.UI"
+                xmlns:extended="clr-namespace:Cobalt.ViewModels.Extended"
+                mc:Ignorable="d" x:Name="Page"
                 d:DesignHeight="300" d:DesignWidth="300">
     <local:PageView.Resources>
         <converters:AppsConverter x:Key="AppsConverter" />
+        <converters:TagsConverter x:Key="TagsConverter" />
+        <!--TODO WTF CHANGE THESE TO NOT USE HOMEPAGEVIEW STATICS-->
+        <converters:ChunkedUsageConverter x:Key="HourlyUsageConverter"
+                                          Start="{x:Static pages:HomePageViewModel.DayStart}"
+                                          End="{x:Static pages:HomePageViewModel.DayEnd}"
+                                          Duration="{x:Static pages:HomePageViewModel.HourDuration}" />
     </local:PageView.Resources>
     <local:PageView.Title>
         <Grid>
@@ -27,7 +38,7 @@
                 VerticalAlignment="Center"
                 HorizontalAlignment="Left"
                 FontSize="16" LineHeight="18"
-                FontWeight="Medium"/>
+                FontWeight="Medium" />
             <!--TODO include sort by here-->
             <materialDesign:ColorZone
                 Padding="8,4,8,4" Margin="6"
@@ -40,14 +51,18 @@
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <Button IsEnabled="False"  VerticalAlignment="Center" Style="{DynamicResource MaterialDesignToolButton}" Opacity="1">
+                    <Button IsEnabled="False" VerticalAlignment="Center"
+                            Style="{DynamicResource MaterialDesignToolButton}" Opacity="1">
                         <materialDesign:PackIcon Kind="Magnify" Opacity="0.56" />
                     </Button>
                     <TextBox
                         Grid.Column="1"
                         Margin="8,0,0,0" Width="200"
-                        VerticalAlignment="Center" Text="{Binding AppFilter, UpdateSourceTrigger=PropertyChanged}"
+                        VerticalAlignment="Center"
                         materialDesign:HintAssist.Hint="Search Apps"
+                        Text="{Binding DataContext.NavigationService.ActivePage.DataContext.AppFilter,
+                                                        RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Window}},
+                                                        Mode=OneWayToSource, UpdateSourceTrigger=PropertyChanged}"
                         materialDesign:TextFieldAssist.DecorationVisibility="Hidden"
                         BorderThickness="0" />
                 </Grid>
@@ -62,7 +77,7 @@
 
 
         <ItemsControl VirtualizingPanel.IsVirtualizing="True" ScrollViewer.CanContentScroll="True"
-                      VirtualizingPanel.VirtualizationMode="Recycling" Grid.Row="1">
+                      VirtualizingPanel.VirtualizationMode="Standard" Grid.Row="1">
             <ItemsControl.ItemsSource>
                 <MultiBinding Converter="{StaticResource AppsConverter}">
                     <Binding Path="Apps" />
@@ -77,22 +92,117 @@
             <ItemsControl.ItemContainerStyle>
                 <Style TargetType="ContentPresenter">
                     <Setter Property="HorizontalAlignment" Value="Stretch" />
-                    <Setter Property="Margin" Value="4,4,0,0" />
+                    <Setter Property="Margin" Value="0" />
                 </Style>
             </ItemsControl.ItemContainerStyle>
             <ItemsControl.ItemTemplate>
-                <DataTemplate DataType="viewModels:AppViewModel">
+                <DataTemplate DataType="extended:ExtendedAppViewModel">
+                    <materialDesign:Card Margin="4,4,4,0" Padding="0">
+                        <Expander x:Name="AppRoot" Margin="-5" Padding="0">
+                            <Expander.Header>
+                                <Grid HorizontalAlignment="Stretch">
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                                        <Image
+                                            Source="{Binding Converter={StaticResource ExePathToIconConverter}, IsAsync=True}"
+                                            Width="24" Height="24" />
+                                        <TextBlock Style="{DynamicResource MaterialDesignBody2TextBlock}" Margin="16,0"
+                                                   Text="{Binding Converter={StaticResource AppToExeNameConverter}, IsAsync=True}"
+                                                   VerticalAlignment="Center" />
+                                    </StackPanel>
 
-                    <Grid Margin="4">
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
-                            <Image
-                                Source="{Binding Converter={StaticResource ExePathToIconConverter}, IsAsync=True}"
-                                Width="24" Height="24" />
-                            <TextBlock Style="{DynamicResource MaterialDesignBody2TextBlock}" Margin="4,0"
-                                       Text="{Binding Converter={StaticResource AppToExeNameConverter}, IsAsync=True}"
-                                       VerticalAlignment="Center" />
-                        </StackPanel>
-                    </Grid>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                        <ItemsControl HorizontalAlignment="Right">
+                                            <ItemsControl.ItemsSource>
+                                                <MultiBinding
+                                                    Converter="{StaticResource TagsConverter}">
+                                                    <Binding Path="Tags" />
+                                                    <Binding Path="DataContext.Resources"
+                                                             ElementName="Page" />
+                                                </MultiBinding>
+                                            </ItemsControl.ItemsSource>
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <StackPanel Orientation="Horizontal" />
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate DataType="viewModels:TagViewModel">
+                                                    <materialDesign:Chip Height="24" Content="{Binding Name}" />
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+
+                                        <Button Style="{DynamicResource MaterialDesignToolButton}"
+                                                ToolTip="Add a tag">
+                                            <Grid Width="20" Height="20">
+                                                <materialDesign:PackIcon Kind="Tag" Width="15" Height="15"
+                                                                         HorizontalAlignment="Left"
+                                                                         VerticalAlignment="Bottom" />
+                                                <materialDesign:PackIcon Kind="Plus" Width="12" Height="12"
+                                                                         HorizontalAlignment="Right"
+                                                                         VerticalAlignment="Top" />
+                                            </Grid>
+                                        </Button>
+                                    </StackPanel>
+                                </Grid>
+                            </Expander.Header>
+                            <Grid VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Margin="24,0,20,16">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <TextBlock Text="Details" Grid.Row="0"
+                                           Style="{DynamicResource MaterialDesignSubheadingTextBlock}"
+                                           FontSize="13" FontWeight="Bold" />
+                                <WrapPanel Grid.Row="1" Margin="0,8,0,0">
+                                    <TextBox Margin="4,0" HorizontalAlignment="Left" VerticalAlignment="Top"
+                                             materialDesign:HintAssist.Hint="Name"
+                                             materialDesign:HintAssist.IsFloating="True" Text="{Binding Name}" />
+                                    <StackPanel Margin="4,0,4,0">
+                                        <TextBlock Text="Path" Opacity="0.5" FontSize="9.5" Margin="0,0,0,-4" />
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Path}" VerticalAlignment="Center" />
+                                            <Button Style="{DynamicResource MaterialDesignToolButton}"
+                                                    VerticalAlignment="Center">
+                                                <materialDesign:PackIcon Kind="ContentCopy" />
+                                            </Button>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </WrapPanel>
+                                <TextBlock Text="Statistics" Grid.Row="2"
+                                           Style="{DynamicResource MaterialDesignSubheadingTextBlock}"
+                                           Margin="0,8,0,0" FontSize="13" FontWeight="Bold" />
+                                <wpf:CartesianChart Grid.Row="3" DisableAnimations="True" Height="300">
+                                    <wpf:CartesianChart.Series>
+                                        <MultiBinding Converter="{StaticResource HourlyUsageConverter}">
+                                            <Binding Path="AppHourlyChunks" />
+                                            <Binding Path="Resources" />
+                                        </MultiBinding>
+                                    </wpf:CartesianChart.Series>
+                                    <wpf:CartesianChart.AxisY>
+                                        <wpf:Axis LabelFormatter="{x:Static pages:TagsPageViewModel.HourFormatter}"
+                                                  MaxValue="36000000000" Position="RightTop">
+                                            <wpf:Axis.Separator>
+                                                <wpf:Separator Step="6000000000" />
+                                            </wpf:Axis.Separator>
+                                        </wpf:Axis>
+                                    </wpf:CartesianChart.AxisY>
+                                    <wpf:CartesianChart.AxisX>
+                                        <wpf:Axis LabelFormatter="{x:Static pages:TagsPageViewModel.DayHourFormatter}">
+                                            <wpf:Axis.Separator>
+                                                <wpf:Separator Step="1" />
+                                            </wpf:Axis.Separator>
+                                        </wpf:Axis>
+                                    </wpf:CartesianChart.AxisX>
+                                    <wpf:CartesianChart.DataTooltip>
+                                        <controls:AppDurationTooltip />
+                                    </wpf:CartesianChart.DataTooltip>
+                                </wpf:CartesianChart>
+                            </Grid>
+                        </Expander>
+                    </materialDesign:Card>
 
                 </DataTemplate>
             </ItemsControl.ItemTemplate>

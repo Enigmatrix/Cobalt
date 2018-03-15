@@ -61,6 +61,7 @@
     <Compile Include="MidnightNotifier.cs" />
     <Compile Include="PropertyChangedEx.cs" />
     <Compile Include="SelectorEqualityComparer.cs" />
+    <Compile Include="StringEx.cs" />
     <Compile Include="Throw.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

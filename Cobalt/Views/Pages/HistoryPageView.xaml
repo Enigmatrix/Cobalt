@@ -48,8 +48,12 @@
                     </Button>
                     <controls:DateRangePicker Grid.Column="1" VerticalAlignment="Center" FontSize="12"
                                               Height="38" Background="Transparent" Foreground="{DynamicResource PrimaryHueDarkForegroundBrush}"
-                                              Start="{Binding RangeStart, Mode=OneWayToSource, UpdateSourceTrigger=PropertyChanged}"
-                                              End="{Binding RangeEnd, Mode=OneWayToSource, UpdateSourceTrigger=PropertyChanged}" />
+                                              Start="{Binding DataContext.NavigationService.ActivePage.DataContext.RangeStart,
+                                                        RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Window}},
+                                                        Mode=OneWayToSource, UpdateSourceTrigger=PropertyChanged}"
+                                              End="{Binding DataContext.NavigationService.ActivePage.DataContext.RangeEnd,
+                                                        RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Window}},
+                                                        Mode=OneWayToSource, UpdateSourceTrigger=PropertyChanged}"/>
                 </Grid>
             </materialDesign:ColorZone>
         </Grid>

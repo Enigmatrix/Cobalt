@@ -28,7 +28,14 @@ namespace Cobalt.Common.Analysis
 
         protected IObservable<AppSwitchMessage> ReceivedAppSwitches()
         {
-            return ReceivedMessages().OfType<AppSwitchMessage>();
+            return ReceivedMessages().OfType<AppSwitchMessage>()
+                .Do(x =>
+                {
+                    x.NewApp.Icon = Repository.GetAppIcon(x.NewApp);
+                    x.NewApp.Tags = Repository.GetTags(x.NewApp);
+                    x.PreviousAppUsage.App.Icon = Repository.GetAppIcon(x.PreviousAppUsage.App);
+                    x.PreviousAppUsage.App.Tags = Repository.GetTags(x.PreviousAppUsage.App);
+                });
         }
     }
 }
