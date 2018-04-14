@@ -11,7 +11,6 @@
                 xmlns:wpf="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
                 xmlns:pages="clr-namespace:Cobalt.ViewModels.Pages"
                 xmlns:controls="clr-namespace:Cobalt.Common.UI.Controls;assembly=Cobalt.Common.UI"
-                xmlns:extended="clr-namespace:Cobalt.ViewModels.Extended"
                 mc:Ignorable="d" x:Name="Page"
                 d:DesignHeight="300" d:DesignWidth="300">
     <local:PageView.Resources>
@@ -96,7 +95,7 @@
                 </Style>
             </ItemsControl.ItemContainerStyle>
             <ItemsControl.ItemTemplate>
-                <DataTemplate DataType="extended:ExtendedAppViewModel">
+                <DataTemplate DataType="viewModels:AppViewModel">
                     <materialDesign:Card Margin="4,4,4,0" Padding="0">
                         <Expander x:Name="AppRoot" Margin="-5" Padding="0">
                             <Expander.Header>

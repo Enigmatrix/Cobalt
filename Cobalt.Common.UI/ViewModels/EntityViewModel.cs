@@ -24,7 +24,7 @@ namespace Cobalt.Common.UI.ViewModels
         private IDbRepository _repository;
         private IAppStatsStreamService _appStats;
 
-        protected IResourceScope Resources => _resources ?? (_resources = IoCService.Instance.Resolve<IResourceScope>().Subscope());
+        public IResourceScope Resources => _resources ?? (_resources = IoCService.Instance.Resolve<IResourceScope>().Subscope());
 
         protected IDbRepository Repository => _repository ?? (_repository = Resources.Resolve<IDbRepository>());
         
