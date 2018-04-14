@@ -57,7 +57,10 @@ namespace Cobalt.Engine
                     }
                     else
                         //else use the previously existing app's identity
+                    {
                         prevAppUsage.App = app;
+                    }
+
                     prevAppUsage.App.Icon = null;
                     prevAppUsage.App.Tags = null;
 

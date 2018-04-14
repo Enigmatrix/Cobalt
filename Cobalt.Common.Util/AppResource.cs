@@ -4,34 +4,12 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
-using System.Reactive.Linq;
 using System.Xml.Linq;
 
 namespace Cobalt.Common.Util
 {
     public class AppResource
     {
-        public string GetAppName(string appPath)
-        {
-            try
-            {
-                return FileVersionInfo.GetVersionInfo(appPath).FileDescription;
-            }
-            catch (FileNotFoundException)
-            {
-                return null;
-            }
-        }
-
-        public (byte[], string) GetAppIconAndColor(string appPath)
-        {
-            var bytes = Get(appPath);
-            var rng = new Random();
-            var col = _colors[rng.Next(_colors.Length)];
-            return (bytes, col);
-        }
-
-
         private readonly string[] _colors =
         {
             //from https://flatuicolors.com/palette/es
@@ -72,6 +50,26 @@ namespace Cobalt.Common.Util
 
             Rgb(133, 153, 0)
         };
+
+        public string GetAppName(string appPath)
+        {
+            try
+            {
+                return FileVersionInfo.GetVersionInfo(appPath).FileDescription;
+            }
+            catch (FileNotFoundException)
+            {
+                return null;
+            }
+        }
+
+        public (byte[], string) GetAppIconAndColor(string appPath)
+        {
+            var bytes = Get(appPath);
+            var rng = new Random();
+            var col = _colors[rng.Next(_colors.Length)];
+            return (bytes, col);
+        }
 
 
         private static string Rgb(byte r, byte g, byte b)

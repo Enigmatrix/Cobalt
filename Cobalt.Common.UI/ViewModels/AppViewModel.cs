@@ -6,9 +6,9 @@ namespace Cobalt.Common.UI.ViewModels
 {
     public class AppViewModel : EntityViewModel
     {
+        private string _color;
         private string _name;
         private string _path;
-        private string _color;
 
         public AppViewModel(App app) : base(app)
         {

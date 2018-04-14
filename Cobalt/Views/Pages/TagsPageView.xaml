@@ -165,15 +165,17 @@
                                                     </MultiBinding>
                                                 </wpf:CartesianChart.Series>
                                                 <wpf:CartesianChart.AxisY>
-                                                    <wpf:Axis LabelFormatter="{x:Static pages:TagsPageViewModel.HourFormatter}"
-                                                              MaxValue="36000000000" Position="RightTop">
+                                                    <wpf:Axis
+                                                        LabelFormatter="{x:Static pages:TagsPageViewModel.HourFormatter}"
+                                                        MaxValue="36000000000" Position="RightTop">
                                                         <wpf:Axis.Separator>
                                                             <wpf:Separator Step="6000000000" />
                                                         </wpf:Axis.Separator>
                                                     </wpf:Axis>
                                                 </wpf:CartesianChart.AxisY>
                                                 <wpf:CartesianChart.AxisX>
-                                                    <wpf:Axis LabelFormatter="{x:Static pages:TagsPageViewModel.DayHourFormatter}">
+                                                    <wpf:Axis
+                                                        LabelFormatter="{x:Static pages:TagsPageViewModel.DayHourFormatter}">
                                                         <wpf:Axis.Separator>
                                                             <wpf:Separator Step="1" />
                                                         </wpf:Axis.Separator>

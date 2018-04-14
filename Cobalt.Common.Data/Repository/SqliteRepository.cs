@@ -169,8 +169,8 @@ namespace Cobalt.Common.Data.Repository
         {
             var lazy = new Lazy<Task<byte[]>>(async () =>
             {
-                var (cmd,reader) = ExecuteReader("select Icon from App where Id = @appId", ("appId", app.Id));
-                using(cmd)
+                var (cmd, reader) = ExecuteReader("select Icon from App where Id = @appId", ("appId", app.Id));
+                using (cmd)
                 using (reader)
                 {
                     return reader.Read() ? await GetBytes(reader, 0) : null;
@@ -516,7 +516,7 @@ namespace Cobalt.Common.Data.Repository
                 while ((bytesRead = reader.GetBytes(0, fieldOffset, buffer, 0, buffer.Length)) > 0)
                 {
                     await stream.WriteAsync(buffer, 0, (int) bytesRead);
-                    fieldOffset += (int)bytesRead;
+                    fieldOffset += (int) bytesRead;
                 }
 
                 return stream.ToArray();

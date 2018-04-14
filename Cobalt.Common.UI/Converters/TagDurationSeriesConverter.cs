@@ -3,7 +3,6 @@ using System.Linq;
 using System.Reactive.Linq;
 using System.Windows;
 using Cobalt.Common.IoC;
-using Cobalt.Common.UI.Util;
 using Cobalt.Common.UI.ViewModels;
 using LiveCharts;
 using LiveCharts.Configurations;

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Data;
-using System.Data.SQLite;
 using Cobalt.Common.Util;
 
 namespace Cobalt.Common.Data.Migration.Sqlite
@@ -35,11 +34,11 @@ namespace Cobalt.Common.Data.Migration.Sqlite
                     }
                     catch (Exception)
                     {
-                        return;
                     }
                 });
                 transaction.Commit();
             }
+
             ExecuteSql(
                 Update("Migrations", ("LatestMigration", 3)));
         }

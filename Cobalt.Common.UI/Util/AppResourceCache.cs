@@ -4,7 +4,6 @@ using System.IO;
 using System.Reactive.Threading.Tasks;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using Cobalt.Common.Data;
 using Cobalt.Common.UI.ViewModels;
 
 namespace Cobalt.Common.UI.Util
@@ -23,7 +22,9 @@ namespace Cobalt.Common.UI.Util
         {
             if (!_colorMapper.ContainsKey(app.Path))
                 _colorMapper[app.Path] =
-                    new SolidColorBrush(app.Color == null ? Colors.Transparent : (Color)ColorConverter.ConvertFromString(app.Color));
+                    new SolidColorBrush(app.Color == null
+                        ? Colors.Transparent
+                        : (Color) ColorConverter.ConvertFromString(app.Color));
             return _colorMapper[app.Path];
         }
 

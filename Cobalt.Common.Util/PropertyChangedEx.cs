@@ -13,9 +13,10 @@ namespace Cobalt.Common.Util
                     handler => handler.Invoke, h => npc.PropertyChanged += h, h => npc.PropertyChanged -= h)
                 .Select(x => x.EventArgs.PropertyName);
         }
+
         public static IObservable<Unit> PropertyChanges(this INotifyPropertyChanged npc, string prop)
         {
-            var changes =  Observable.FromEventPattern<PropertyChangedEventHandler, PropertyChangedEventArgs>(
+            var changes = Observable.FromEventPattern<PropertyChangedEventHandler, PropertyChangedEventArgs>(
                     handler => handler.Invoke, h => npc.PropertyChanged += h, h => npc.PropertyChanged -= h)
                 .Select(x => x.EventArgs.PropertyName)
                 .Where(x => x == prop)

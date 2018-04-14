@@ -55,10 +55,7 @@ namespace Cobalt.Common.Data.Migration.Sqlite
             using (var s = new SQLiteCommand(sql, Connection))
             {
                 var reader = s.ExecuteReader();
-                while (reader.Read())
-                {
-                    ac(reader);
-                }
+                while (reader.Read()) ac(reader);
                 reader.Dispose();
             }
         }

@@ -151,10 +151,10 @@ namespace Cobalt.Common.Analysis
                 {
                     //old app usage
                     (message.PreviousAppUsage.App,
-                    new Usage<TimeSpan>(message.PreviousAppUsage.Duration)),
+                        new Usage<TimeSpan>(message.PreviousAppUsage.Duration)),
                     //new app
                     (message.NewApp,
-                    new Usage<TimeSpan>(justStarted: true))
+                        new Usage<TimeSpan>(justStarted: true))
                     //make sure the NewApp is not null
                 }.Where(x => x.Item1 != null));
         }
@@ -166,12 +166,12 @@ namespace Cobalt.Common.Analysis
                 {
                     //old app usage
                     (message.PreviousAppUsage.App,
-                    new Usage<(DateTime, DateTime)>(
-                        (message.PreviousAppUsage.StartTimestamp, message.PreviousAppUsage.EndTimestamp))),
+                        new Usage<(DateTime, DateTime)>(
+                            (message.PreviousAppUsage.StartTimestamp, message.PreviousAppUsage.EndTimestamp))),
                     //new app
                     (message.NewApp,
-                    new Usage<(DateTime, DateTime)>(
-                        (message.PreviousAppUsage.EndTimestamp, message.PreviousAppUsage.EndTimestamp), true))
+                        new Usage<(DateTime, DateTime)>(
+                            (message.PreviousAppUsage.EndTimestamp, message.PreviousAppUsage.EndTimestamp), true))
                     //make sure the NewApp is not null
                 }.Where(x => x.Item1 != null));
         }

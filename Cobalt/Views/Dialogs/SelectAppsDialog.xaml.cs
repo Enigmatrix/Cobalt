@@ -5,7 +5,6 @@ using System.Reactive.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows.Data;
 using Cobalt.Common.IoC;
-using Cobalt.Common.UI.Util;
 using Cobalt.Common.UI.ViewModels;
 using Cobalt.Common.Util;
 

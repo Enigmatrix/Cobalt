@@ -4,7 +4,6 @@ using System.Reactive.Linq;
 using Cobalt.Common.Analysis;
 using Cobalt.Common.Analysis.OutputTypes;
 using Cobalt.Common.Data;
-using Cobalt.Common.Data.Repository;
 using Cobalt.Common.IoC;
 using Cobalt.Common.UI.Util;
 using Cobalt.Common.UI.ViewModels;

@@ -56,6 +56,12 @@ namespace Cobalt.ViewModels.Extended
             set => Set(ref _taggedAppDurationsToday, value);
         }
 
+        public IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> TaggedAppsHourlyChunks
+        {
+            get => _taggedAppsHourlyChunks;
+            set => Set(ref _taggedAppsHourlyChunks, value);
+        }
+
         private void SetStatistics(object sender, NotifyCollectionChangedEventArgs e)
         {
             var appIncrementor = Resources.Resolve<IDurationIncrementor>();
@@ -71,16 +77,10 @@ namespace Cobalt.ViewModels.Extended
                     return appDur;
                 });
 
-            var appUsagesStream = Statistics.GetAppUsages((Tag)Entity, DateTime.Today, DateTime.Now);
+            var appUsagesStream = Statistics.GetAppUsages((Tag) Entity, DateTime.Today, DateTime.Now);
 
             TaggedAppsHourlyChunks = appUsagesStream
                 .SelectMany(u => SplitUsageIntoChunks(u, TimeSpan.FromHours(1), d => d.Date.AddHours(d.Hour)));
-        }
-
-        public IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> TaggedAppsHourlyChunks
-        {
-            get => _taggedAppsHourlyChunks;
-            set => Set(ref _taggedAppsHourlyChunks, value);
         }
 
 

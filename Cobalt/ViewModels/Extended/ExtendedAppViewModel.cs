@@ -1,15 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reactive.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Cobalt.Common.Analysis;
 using Cobalt.Common.Analysis.OutputTypes;
 using Cobalt.Common.Data;
-using Cobalt.Common.Data.Repository;
 using Cobalt.Common.IoC;
-using Cobalt.Common.UI.Util;
 using Cobalt.Common.UI.ViewModels;
 
 namespace Cobalt.ViewModels.Extended

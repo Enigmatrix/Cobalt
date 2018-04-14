@@ -14,9 +14,6 @@ namespace Cobalt.ViewModels.Pages
 {
     public class AlertsPageViewModel : PageViewModel
     {
-        private BindableCollection<AppAlertViewModel> _appAlerts;
-        private BindableCollection<TagAlertViewModel> _tagAlerts;
-
         private readonly AppAlertViewModel mew =
             new AppAlertViewModel(new AppAlert
             {
@@ -31,6 +28,9 @@ namespace Cobalt.ViewModels.Pages
                     EndTimestamp = DateTime.Now.AddHours(1)
                 }
             });
+
+        private BindableCollection<AppAlertViewModel> _appAlerts;
+        private BindableCollection<TagAlertViewModel> _tagAlerts;
 
         public AlertsPageViewModel(IResourceScope scope, IDbRepository repo, INavigationService navSvc) : base(scope)
         {

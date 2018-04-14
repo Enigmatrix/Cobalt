@@ -42,18 +42,20 @@
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <Button IsEnabled="False" VerticalAlignment="Center" Foreground="{DynamicResource PrimaryHueDarkForegroundBrush}"
+                    <Button IsEnabled="False" VerticalAlignment="Center"
+                            Foreground="{DynamicResource PrimaryHueDarkForegroundBrush}"
                             Style="{DynamicResource MaterialDesignToolButton}" Opacity="1">
                         <materialDesign:PackIcon Kind="Magnify" Opacity="0.56" />
                     </Button>
                     <controls:DateRangePicker Grid.Column="1" VerticalAlignment="Center" FontSize="12"
-                                              Height="38" Background="Transparent" Foreground="{DynamicResource PrimaryHueDarkForegroundBrush}"
+                                              Height="38" Background="Transparent"
+                                              Foreground="{DynamicResource PrimaryHueDarkForegroundBrush}"
                                               Start="{Binding DataContext.NavigationService.ActivePage.DataContext.RangeStart,
                                                         RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Window}},
                                                         Mode=OneWayToSource, UpdateSourceTrigger=PropertyChanged}"
                                               End="{Binding DataContext.NavigationService.ActivePage.DataContext.RangeEnd,
                                                         RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Window}},
-                                                        Mode=OneWayToSource, UpdateSourceTrigger=PropertyChanged}"/>
+                                                        Mode=OneWayToSource, UpdateSourceTrigger=PropertyChanged}" />
                 </Grid>
             </materialDesign:ColorZone>
         </Grid>

@@ -2,7 +2,6 @@
 using System.Reactive.Linq;
 using Cobalt.Common.Analysis;
 using Cobalt.Common.IoC;
-using Cobalt.Common.UI.ViewModels;
 using Cobalt.Common.Util;
 using Cobalt.ViewModels.Extended;
 
