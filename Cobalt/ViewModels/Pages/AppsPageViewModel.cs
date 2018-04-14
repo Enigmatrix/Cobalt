@@ -2,21 +2,21 @@
 using System.Reactive.Linq;
 using Cobalt.Common.Analysis;
 using Cobalt.Common.IoC;
+using Cobalt.Common.UI.ViewModels;
 using Cobalt.Common.Util;
-using Cobalt.ViewModels.Extended;
 
 namespace Cobalt.ViewModels.Pages
 {
     public class AppsPageViewModel : PageViewModel
     {
         private string _appFilter;
-        private IObservable<ExtendedAppViewModel> _apps;
+        private IObservable<AppViewModel> _apps;
 
         public AppsPageViewModel(IResourceScope scope) : base(scope)
         {
         }
-
-        public IObservable<ExtendedAppViewModel> Apps
+        
+        public IObservable<AppViewModel> Apps
         {
             get => _apps;
             set => Set(ref _apps, value);
@@ -34,7 +34,7 @@ namespace Cobalt.ViewModels.Pages
             this.PropertyChanges(nameof(AppFilter))
                 .Select(_ =>
                 {
-                    return repo.GetApps().Select(x => new ExtendedAppViewModel(x, resources))
+                    return repo.GetApps().Select(x => new AppViewModel(x))
                         .Where(x => x.Name != null)
                         .Where(x => x.Name.StrContains(AppFilter))
                         .ObserveOnDispatcher();

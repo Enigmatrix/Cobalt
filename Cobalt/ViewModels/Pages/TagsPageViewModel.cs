@@ -7,7 +7,6 @@ using Cobalt.Common.Data;
 using Cobalt.Common.Data.Repository;
 using Cobalt.Common.IoC;
 using Cobalt.Common.UI.ViewModels;
-using Cobalt.ViewModels.Extended;
 using Cobalt.ViewModels.Utils;
 using Cobalt.Views.Dialogs;
 
@@ -15,7 +14,7 @@ namespace Cobalt.ViewModels.Pages
 {
     public class TagsPageViewModel : PageViewModel
     {
-        private ObservableCollection<ExtendedTagViewModel> _tags;
+        private ObservableCollection<TagViewModel> _tags;
 
         public TagsPageViewModel(IResourceScope scope, IEntityStreamService entities, IDbRepository repo,
             INavigationService svc) : base(scope)
@@ -30,7 +29,7 @@ namespace Cobalt.ViewModels.Pages
         public static Func<double, string> DayHourFormatter => x => (x % 12 == 0 ? 12 : x % 12) + (x >= 12 ? "p" : "a");
         public static Func<double, string> DayOfWeekFormatter => x => ((DayOfWeek) (int) x).ToString();
 
-        public ObservableCollection<ExtendedTagViewModel> Tags
+        public ObservableCollection<TagViewModel> Tags
         {
             get => _tags;
             set => Set(ref _tags, value);
@@ -45,11 +44,9 @@ namespace Cobalt.ViewModels.Pages
 
         protected override void OnActivate(IResourceScope res)
         {
-            Tags = new ObservableCollection<ExtendedTagViewModel>();
+            Tags = new ObservableCollection<TagViewModel>();
             Repository.GetTags()
-                .Select(x =>
-                    new ExtendedTagViewModel(x, Resources, res.Resolve<IAppStatsStreamService>(),
-                        res.Resolve<IDbRepository>()))
+                .Select(x => new TagViewModel(x))
                 .Subscribe(x => Tags.Add(x));
         }
 
@@ -66,17 +63,16 @@ namespace Cobalt.ViewModels.Pages
         {
             var tag = new Tag {Name = tagName};
             Repository.AddTag(tag);
-            Tags.Add(new ExtendedTagViewModel(tag, Resources, Resources.Resolve<IAppStatsStreamService>(),
-                Resources.Resolve<IDbRepository>()));
+            Tags.Add(new TagViewModel(tag));
         }
 
-        public void DeleteTag(ExtendedTagViewModel tag)
+        public void DeleteTag(TagViewModel tag)
         {
             Repository.RemoveTag((Tag) tag.Entity);
             Tags.Remove(tag);
         }
 
-        public async void AddAppsToTag(ExtendedTagViewModel tag)
+        public async void AddAppsToTag(TagViewModel tag)
         {
             var apps = EntityStreamService.GetApps().Select(x => new AppViewModel(x));
             var result = (IList) await NavigationService.ShowDialog<SelectAppsDialog>(apps, Resources);
@@ -84,13 +80,13 @@ namespace Cobalt.ViewModels.Pages
             foreach (var appViewModel in result) AddTagToApp(tag, (AppViewModel) appViewModel);
         }
 
-        public void AddTagToApp(ExtendedTagViewModel tag, AppViewModel app)
+        public void AddTagToApp(TagViewModel tag, AppViewModel app)
         {
             Repository.AddTagToApp((Tag) tag.Entity, (App) app.Entity);
             tag.TaggedApps.Add(app);
         }
 
-        public void RemoveTagFromApp(ExtendedTagViewModel tag, AppViewModel app)
+        public void RemoveTagFromApp(TagViewModel tag, AppViewModel app)
         {
             Repository.RemoveTagFromApp((Tag) tag.Entity, (App) app.Entity);
             tag.TaggedApps.Remove(app);

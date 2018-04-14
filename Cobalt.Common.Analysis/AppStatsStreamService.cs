@@ -30,6 +30,12 @@ namespace Cobalt.Common.Analysis
             DateTime? end = null);
 
         IObservable<Usage<AppUsage>> GetAppUsages(Tag tag, DateTime start, DateTime? end = null);
+
+        IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> GetChunkedAppDurations(
+            TimeSpan chunkDur, Func<DateTime, DateTime> startSelector, DateTime start, DateTime? end = null);
+
+        IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> GetChunkedAppDurations(
+            Tag tag, TimeSpan chunkDur, Func<DateTime, DateTime> startSelector, DateTime start, DateTime? end = null);
     }
 
     public class AppStatsStreamService : StreamService, IAppStatsStreamService
@@ -126,6 +132,43 @@ namespace Cobalt.Common.Analysis
                 return Repository.GetAppUsages(tag, start, end).Select(ToUsageAppUsage);
             return Repository.GetAppUsages(tag, start).Select(ToUsageAppUsage)
                 .Concat(ReceivedAppUsages().Where(x => Repository.DoesAppHaveTag(x.Value.App, tag)));
+        }
+
+        public IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> GetChunkedAppDurations(
+            TimeSpan chunkDur, Func<DateTime, DateTime> startSelector, DateTime start, DateTime? end)
+        {
+            return GetAppUsages(start, end)
+                .SelectMany(u => SplitUsageIntoChunks(u, chunkDur, startSelector));
+        }
+
+        public IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> GetChunkedAppDurations(Tag tag, TimeSpan chunkDur, Func<DateTime, DateTime> startSelector, DateTime start, DateTime? end)
+        {
+            return GetAppUsages(tag, start, end)
+                .SelectMany(u => SplitUsageIntoChunks(u, chunkDur, startSelector));
+        }
+
+        private IEnumerable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> SplitUsageIntoChunks(
+            Usage<AppUsage> usage, TimeSpan chunk, Func<DateTime, DateTime> startSelector)
+        {
+            var appUsage = usage.Value;
+            var start = appUsage.StartTimestamp;
+            var end = appUsage.EndTimestamp;
+            while (start < end)
+            {
+                var startHr = startSelector(start);
+                var endHr = Min(startHr + chunk, end);
+                if (!(endHr < end) && usage.JustStarted)
+                    yield return new Usage<(App, DateTime, TimeSpan)>(justStarted: true,
+                        value: (appUsage.App, startHr, TimeSpan.Zero));
+                else
+                    yield return new Usage<(App, DateTime, TimeSpan)>((appUsage.App, startHr, endHr - start));
+                start = endHr;
+            }
+        }
+
+        public T Min<T>(T a, T b) where T : IComparable<T>
+        {
+            return a.CompareTo(b) < 0 ? a : b;
         }
 
         private static (App App, Usage<TimeSpan> Duration) ToUsageAppDuration((App, TimeSpan) x)

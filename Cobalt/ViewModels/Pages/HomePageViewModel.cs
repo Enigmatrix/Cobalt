@@ -108,11 +108,11 @@ namespace Cobalt.ViewModels.Pages
             AppUsagesToday = stats.GetAppUsages(DateTime.Today).Select(x =>
                 /*TODO handle duration animation*/new AppUsageViewModel(x.Value));
 
-            HourlyChunks = appUsagesStream
-                .SelectMany(u => SplitUsageIntoChunks(u, TimeSpan.FromHours(1), d => d.Date.AddHours(d.Hour)));
+            HourlyChunks =
+                stats.GetChunkedAppDurations(TimeSpan.FromHours(1), d => d.Date.AddHours(d.Hour), DateTime.Today);
 
-            DayChunks = weekAppUsagesStream
-                .SelectMany(u => SplitUsageIntoChunks(u, TimeSpan.FromDays(1), d => d.Date));
+            DayChunks =
+                stats.GetChunkedAppDurations(TimeSpan.FromDays(1), d => d.Date, DateTime.Today.StartOfWeek(), DateTime.Today.EndOfWeek());
 
             AppDurations = appDurationsStream
                 .Select(x =>
@@ -149,32 +149,6 @@ namespace Cobalt.ViewModels.Pages
 
                     return appDur;
                 });
-        }
-
-        //TODO move this to common
-
-        private IEnumerable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> SplitUsageIntoChunks(
-            Usage<AppUsage> usage, TimeSpan chunk, Func<DateTime, DateTime> startSelector)
-        {
-            var appUsage = usage.Value;
-            var start = appUsage.StartTimestamp;
-            var end = appUsage.EndTimestamp;
-            while (start < end)
-            {
-                var startHr = startSelector(start);
-                var endHr = Min(startHr + chunk, end);
-                if (!(endHr < end) && usage.JustStarted)
-                    yield return new Usage<(App, DateTime, TimeSpan)>(justStarted: true,
-                        value: (appUsage.App, startHr, TimeSpan.Zero));
-                else
-                    yield return new Usage<(App, DateTime, TimeSpan)>((appUsage.App, startHr, endHr - start));
-                start = endHr;
-            }
-        }
-
-        public T Min<T>(T a, T b) where T : IComparable<T>
-        {
-            return a.CompareTo(b) < 0 ? a : b;
         }
 
         protected override void OnDeactivate(bool close, IResourceScope res)
