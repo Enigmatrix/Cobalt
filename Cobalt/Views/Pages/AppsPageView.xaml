@@ -152,24 +152,42 @@
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
-                                <TextBlock Text="Details" Grid.Row="0"
-                                           Style="{DynamicResource MaterialDesignSubheadingTextBlock}"
-                                           FontSize="13" FontWeight="Bold" />
-                                <WrapPanel Grid.Row="1" Margin="0,8,0,0">
-                                    <TextBox Margin="4,0" HorizontalAlignment="Left" VerticalAlignment="Top"
-                                             materialDesign:HintAssist.Hint="Name"
-                                             materialDesign:HintAssist.IsFloating="True" Text="{Binding Name}" />
-                                    <StackPanel Margin="4,0,4,0">
-                                        <TextBlock Text="Path" Opacity="0.5" FontSize="9.5" Margin="0,0,0,-4" />
-                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding Path}" VerticalAlignment="Center" />
-                                            <Button Style="{DynamicResource MaterialDesignToolButton}"
-                                                    VerticalAlignment="Center">
-                                                <materialDesign:PackIcon Kind="ContentCopy" />
-                                            </Button>
+                                <StackPanel Orientation="Horizontal" Grid.Row="0">
+                                    <TextBlock Text="Details"
+                                               Style="{DynamicResource MaterialDesignSubheadingTextBlock}"
+                                               FontSize="13" FontWeight="Bold" />
+                                    <!--<Button Padding="5,0" Height="20" Margin="10,0">
+                                        <TextBlock FontSize="10">SAVE</TextBlock>
+                                    </Button>-->
+                                </StackPanel>
+                                <Grid Grid.Row="1">
+                                    <WrapPanel Margin="0,8,0,0" VerticalAlignment="Center">
+
+                                        <StackPanel Margin="4,0,4,0" Orientation="Vertical">
+                                            <TextBlock Text="Color" Opacity="0.6" FontSize="8.5" Margin="0,0,0,-4" />
+                                            <!--TODO Attach ColorPicker here-->
+                                            <Grid HorizontalAlignment="Right" VerticalAlignment="Center"
+                                                  Background="Red" Height="28" Width="28" Margin="0,8">
+                                                <Image
+                                                    Source="{Binding Converter={StaticResource ExePathToIconConverter}, IsAsync=True}"
+                                                    Width="20" Height="20" />
+                                            </Grid>
                                         </StackPanel>
-                                    </StackPanel>
-                                </WrapPanel>
+                                        <TextBox Margin="4,0" HorizontalAlignment="Left" VerticalAlignment="Top"
+                                                 materialDesign:HintAssist.Hint="Name"
+                                                 materialDesign:HintAssist.IsFloating="True" Text="{Binding Name}" />
+                                        <StackPanel Margin="4,0,4,0">
+                                            <TextBlock Text="Path" Opacity="0.5" FontSize="9.5" Margin="0,0,0,-4" />
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding Path}" VerticalAlignment="Center" />
+                                                <Button Style="{DynamicResource MaterialDesignToolButton}"
+                                                        VerticalAlignment="Center">
+                                                    <materialDesign:PackIcon Kind="ContentCopy" />
+                                                </Button>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </WrapPanel>
+                                </Grid>
                                 <TextBlock Text="Statistics" Grid.Row="2"
                                            Style="{DynamicResource MaterialDesignSubheadingTextBlock}"
                                            Margin="0,8,0,0" FontSize="13" FontWeight="Bold" />
