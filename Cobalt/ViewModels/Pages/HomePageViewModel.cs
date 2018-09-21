@@ -90,8 +90,6 @@ namespace Cobalt.ViewModels.Pages
         protected override void OnActivate(IResourceScope res)
         {
             var stats = res.Resolve<IAppStatsStreamService>();
-            var appUsagesStream = stats.GetAppUsages(DateTime.Today, DateTime.Now); //.Publish();
-            var weekAppUsagesStream = stats.GetAppUsages(WeekStart, DateTime.Now);
 
             var appDurationsStream = stats.GetAppDurations(DateTime.Today);
             var weekAppDurationsStream = stats.GetAppDurations(WeekStart);

@@ -120,7 +120,7 @@ namespace Cobalt.ViewModels.Pages
 
         private void SaveAlert(object sender, PropertyChangedEventArgs e)
         {
-            //also transmit it to transmissionserver
+            //TODO also transmit it to transmissionserver
             Repository.UpdateAlert((Alert) sender);
         }
     }
