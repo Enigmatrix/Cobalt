@@ -11,9 +11,14 @@
                 xmlns:wpf="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
                 xmlns:pages="clr-namespace:Cobalt.ViewModels.Pages"
                 xmlns:controls="clr-namespace:Cobalt.Common.UI.Controls;assembly=Cobalt.Common.UI"
+                xmlns:controls1="clr-namespace:Cobalt.Views.Controls"
                 mc:Ignorable="d" x:Name="Page"
                 d:DesignHeight="300" d:DesignWidth="300">
     <local:PageView.Resources>
+
+        <converters:ColorFromStringConverter x:Key="ColorConverter" />
+        <converters:BrushFromStringConverter x:Key="SColorConverter" />
+
         <converters:AppsConverter x:Key="AppsConverter" />
         <converters:TagsConverter x:Key="TagsConverter" />
         <!--TODO WTF CHANGE THESE TO NOT USE HOMEPAGEVIEW STATICS-->
@@ -166,12 +171,22 @@
                                         <StackPanel Margin="4,0,4,0" Orientation="Vertical">
                                             <TextBlock Text="Color" Opacity="0.6" FontSize="8.5" Margin="0,0,0,-4" />
                                             <!--TODO Attach ColorPicker here-->
-                                            <Grid HorizontalAlignment="Right" VerticalAlignment="Center"
-                                                  Background="Red" Height="28" Width="28" Margin="0,8">
-                                                <Image
-                                                    Source="{Binding Converter={StaticResource ExePathToIconConverter}, IsAsync=True}"
-                                                    Width="20" Height="20" />
-                                            </Grid>
+                                            <materialDesign:PopupBox StaysOpen="True" Padding="0"
+                                                                     PlacementMode="RightAndAlignMiddles">
+                                                <materialDesign:PopupBox.PopupContent>
+                                                    <controls1:ColorPicker Height="200" Width="350"
+                                                                           Color="{Binding Color, Mode=TwoWay, Converter={StaticResource ColorConverter}}" />
+                                                </materialDesign:PopupBox.PopupContent>
+                                                <materialDesign:PopupBox.ToggleContent>
+                                                    <Grid HorizontalAlignment="Right" VerticalAlignment="Center"
+                                                          Background="{Binding Color, Converter={StaticResource SColorConverter}}"
+                                                          Height="28" Width="28" Margin="0,8">
+                                                        <Image
+                                                            Source="{Binding Converter={StaticResource ExePathToIconConverter}, IsAsync=True}"
+                                                            Width="20" Height="20" />
+                                                    </Grid>
+                                                </materialDesign:PopupBox.ToggleContent>
+                                            </materialDesign:PopupBox>
                                         </StackPanel>
                                         <TextBox Margin="4,0" HorizontalAlignment="Left" VerticalAlignment="Top"
                                                  materialDesign:HintAssist.Hint="Name"
