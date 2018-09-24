@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Reactive.Linq;
 using Cobalt.Common.Data;
+using Cobalt.Common.IoC;
+using Cobalt.Common.Util;
 
 namespace Cobalt.Common.UI.ViewModels
 {
