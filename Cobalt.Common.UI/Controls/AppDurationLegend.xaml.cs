@@ -16,9 +16,6 @@ namespace Cobalt.Common.UI.Controls
     /// </summary>
     public partial class AppDurationLegend : IChartLegend
     {
-        private Chart _chart;
-        private BindableCollection<SeriesReference> _chartSeries;
-        private List<SeriesViewModel> _series;
 
         public AppDurationLegend()
         {
@@ -36,35 +33,11 @@ namespace Cobalt.Common.UI.Controls
             };
         }
 
-        public Chart Chart
-        {
-            get => _chart;
-            set
-            {
-                _chart = value;
-                OnPropertyChanged();
-            }
-        }
+        public Chart Chart { get; set; }
 
-        public BindableCollection<SeriesReference> ChartSeries
-        {
-            get => _chartSeries;
-            set
-            {
-                _chartSeries = value;
-                OnPropertyChanged(nameof(ChartSeries));
-            }
-        }
+        public BindableCollection<SeriesReference> ChartSeries { get;set; }
 
-        public List<SeriesViewModel> Series
-        {
-            get => _series;
-            set
-            {
-                _series = value;
-                OnPropertyChanged(nameof(Series));
-            }
-        }
+        public List<SeriesViewModel> Series { get; set; }
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -73,12 +46,6 @@ namespace Cobalt.Common.UI.Controls
             var parent = element;
             while (!(parent is Chart)) parent = (UIElement) parent.GetParentObject();
             return (Chart) parent;
-        }
-
-        protected virtual void OnPropertyChanged(string propertyName = null)
-        {
-            if (PropertyChanged != null)
-                PropertyChanged.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
         public BindableCollection<SeriesReference> SyncedSeriesReferences(SeriesCollection coll)

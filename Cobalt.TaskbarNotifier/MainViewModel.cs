@@ -12,17 +12,6 @@ namespace Cobalt.TaskbarNotifier
 {
     public class MainViewModel : ViewModelBase
     {
-        private IObservable<AppDurationViewModel> _appDurations;
-
-        private bool _isPopupOpen;
-        private IResourceScope _resources;
-
-        private BindableCollection<TagDurationViewModel> _tagDurations =
-            new BindableCollection<TagDurationViewModel>();
-
-        private TimeSpan _totalDuration;
-
-
         public MainViewModel(IResourceScope res, AlertService alert)
         {
             Global = res;
@@ -31,35 +20,15 @@ namespace Cobalt.TaskbarNotifier
 
         private IResourceScope Global { get; }
 
-        public IResourceScope Resources
-        {
-            get => _resources;
-            set => Set(ref _resources, value);
-        }
+        public IResourceScope Resources { get; set; }
 
-        public bool IsPopupOpen
-        {
-            get => _isPopupOpen;
-            set => Set(ref _isPopupOpen, value);
-        }
+        public bool IsPopupOpen { get; set; }
 
-        public IObservable<AppDurationViewModel> AppDurations
-        {
-            get => _appDurations;
-            set => Set(ref _appDurations, value);
-        }
+        public IObservable<AppDurationViewModel> AppDurations { get; set; }
 
-        public BindableCollection<TagDurationViewModel> TagDurations
-        {
-            get => _tagDurations;
-            set => Set(ref _tagDurations, value);
-        }
+        public BindableCollection<TagDurationViewModel> TagDurations { get; set; }
 
-        public TimeSpan TotalDuration
-        {
-            get => _totalDuration;
-            set => Set(ref _totalDuration, value);
-        }
+        public TimeSpan TotalDuration { get; set; }
 
         public void PopupOpened()
         {

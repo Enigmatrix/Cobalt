@@ -9,24 +9,13 @@ namespace Cobalt.ViewModels.Pages
 {
     public class AppsPageViewModel : PageViewModel
     {
-        private string _appFilter;
-        private IObservable<AppViewModel> _apps;
-
         public AppsPageViewModel(IResourceScope scope) : base(scope)
         {
         }
         
-        public IObservable<AppViewModel> Apps
-        {
-            get => _apps;
-            set => Set(ref _apps, value);
-        }
+        public IObservable<AppViewModel> Apps { get;set; }
 
-        public string AppFilter
-        {
-            get => _appFilter;
-            set => Set(ref _appFilter, value);
-        }
+        public string AppFilter { get; set; }
 
         protected override void OnActivate(IResourceScope resources)
         {

@@ -5,9 +5,6 @@ namespace Cobalt.Common.UI.ViewModels
 {
     public class TagDurationViewModel : ViewModelBase, IHasDuration
     {
-        private TimeSpan _duration;
-        private TagViewModel _tag;
-
         public TagDurationViewModel(Tag tag) : this(tag, TimeSpan.Zero)
         {
         }
@@ -18,16 +15,8 @@ namespace Cobalt.Common.UI.ViewModels
             Duration = span;
         }
 
-        public TagViewModel Tag
-        {
-            get => _tag;
-            set => Set(ref _tag, value);
-        }
+        public TagViewModel Tag { get; set; }
 
-        public TimeSpan Duration
-        {
-            get => _duration;
-            set => Set(ref _duration, value);
-        }
+        public TimeSpan Duration { get; set; }
     }
 }

@@ -13,30 +13,14 @@ namespace Cobalt.ViewModels.Pages
 {
     public class HomePageViewModel : PageViewModel
     {
-        private IObservable<AppDurationViewModel> _appDurations;
-        private IObservable<AppUsageViewModel> _appUsagesToday;
-        private IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> _dayChunks;
-        private IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> _hourlyChunks;
-        private TimeSpan _hoursSpentDay;
-        private TimeSpan _hoursSpentWeek;
-        private IObservable<TagDurationViewModel> _tagDurations;
-        private IObservable<AppDurationViewModel> _weekAppDurations;
 
         public HomePageViewModel(IResourceScope scope) : base(scope)
         {
         }
 
-        public IObservable<AppDurationViewModel> AppDurations
-        {
-            get => _appDurations;
-            set => Set(ref _appDurations, value);
-        }
+        public IObservable<AppDurationViewModel> AppDurations { get; set; }
 
-        public IObservable<AppDurationViewModel> WeekAppDurations
-        {
-            get => _weekAppDurations;
-            set => Set(ref _weekAppDurations, value);
-        }
+        public IObservable<AppDurationViewModel> WeekAppDurations { get; set; }
 
         public Func<double, string> HourFormatter => x => x / 600000000 + "min";
         public Func<double, string> DayFormatter => x => x == 0 ? "" : x / 36000000000 + "h";
@@ -51,41 +35,17 @@ namespace Cobalt.ViewModels.Pages
         public static DateTime DayEnd => DateTime.Today.AddDays(1);
         public static TimeSpan HourDuration => TimeSpan.FromHours(1);
 
-        public TimeSpan HoursSpentDay
-        {
-            get => _hoursSpentDay;
-            set => Set(ref _hoursSpentDay, value);
-        }
+        public TimeSpan HoursSpentDay { get; set; }
 
-        public TimeSpan HoursSpentWeek
-        {
-            get => _hoursSpentWeek;
-            set => Set(ref _hoursSpentWeek, value);
-        }
+        public TimeSpan HoursSpentWeek { get; set; }
 
-        public IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> HourlyChunks
-        {
-            get => _hourlyChunks;
-            set => Set(ref _hourlyChunks, value);
-        }
+        public IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> HourlyChunks { get;set; }
 
-        public IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> DayChunks
-        {
-            get => _dayChunks;
-            set => Set(ref _dayChunks, value);
-        }
+        public IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> DayChunks { get; set; }
 
-        public IObservable<AppUsageViewModel> AppUsagesToday
-        {
-            get => _appUsagesToday;
-            set => Set(ref _appUsagesToday, value);
-        }
+        public IObservable<AppUsageViewModel> AppUsagesToday { get; set; }
 
-        public IObservable<TagDurationViewModel> TagDurations
-        {
-            get => _tagDurations;
-            set => Set(ref _tagDurations, value);
-        }
+        public IObservable<TagDurationViewModel> TagDurations { get; set; }
 
         protected override void OnActivate(IResourceScope res)
         {

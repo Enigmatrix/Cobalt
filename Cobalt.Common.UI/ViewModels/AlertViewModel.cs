@@ -5,12 +5,6 @@ namespace Cobalt.Common.UI.ViewModels
 {
     public class AlertViewModel : EntityViewModel
     {
-        private AlertAction _alertAction;
-        private bool _isEnabled;
-        private TimeSpan _maxDuration;
-        private AlertRange _range;
-        private TimeSpan _reminderOffset;
-
         public AlertViewModel(Alert alert) : base(alert)
         {
             AlertAction = alert.AlertAction;
@@ -20,34 +14,14 @@ namespace Cobalt.Common.UI.ViewModels
             Range = alert.Range;
         }
 
-        public AlertAction AlertAction
-        {
-            get => _alertAction;
-            set => Set(ref _alertAction, value);
-        }
+        public AlertAction AlertAction { get; set; }
 
-        public TimeSpan MaxDuration
-        {
-            get => _maxDuration;
-            set => Set(ref _maxDuration, value);
-        }
+        public TimeSpan MaxDuration { get; set; }
 
-        public bool IsEnabled
-        {
-            get => _isEnabled;
-            set => Set(ref _isEnabled, value);
-        }
+        public bool IsEnabled { get; set; }
 
-        public TimeSpan ReminderOffset
-        {
-            get => _reminderOffset;
-            set => Set(ref _reminderOffset, value);
-        }
+        public TimeSpan ReminderOffset { get; set; }
 
-        public AlertRange Range
-        {
-            get => _range;
-            set => Set(ref _range, value);
-        }
+        public AlertRange Range { get; set; }
     }
 }

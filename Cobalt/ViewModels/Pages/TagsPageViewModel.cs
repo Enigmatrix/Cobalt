@@ -14,7 +14,6 @@ namespace Cobalt.ViewModels.Pages
 {
     public class TagsPageViewModel : PageViewModel
     {
-        private ObservableCollection<TagViewModel> _tags;
 
         public TagsPageViewModel(IResourceScope scope, IEntityStreamService entities, IDbRepository repo,
             INavigationService svc) : base(scope)
@@ -29,11 +28,7 @@ namespace Cobalt.ViewModels.Pages
         public static Func<double, string> DayHourFormatter => x => (x % 12 == 0 ? 12 : x % 12) + (x >= 12 ? "p" : "a");
         public static Func<double, string> DayOfWeekFormatter => x => ((DayOfWeek) (int) x).ToString();
 
-        public ObservableCollection<TagViewModel> Tags
-        {
-            get => _tags;
-            set => Set(ref _tags, value);
-        }
+        public ObservableCollection<TagViewModel> Tags { get; set; }
 
         public INavigationService NavigationService { get; set; }
 

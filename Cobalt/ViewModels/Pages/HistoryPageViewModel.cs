@@ -9,36 +9,19 @@ namespace Cobalt.ViewModels.Pages
 {
     public class HistoryPageViewModel : PageViewModel
     {
-        private IObservable<AppDurationViewModel> _appDurations;
-
-        private DateTime? _rangeEnd;
-        private DateTime? _rangeStart;
 
         public HistoryPageViewModel(IResourceScope scope, IAppStatsStreamService stats) : base(scope)
         {
             Stats = stats;
         }
 
-        public IObservable<AppDurationViewModel> AppDurations
-        {
-            get => _appDurations;
-            set => Set(ref _appDurations, value);
-        }
+        public IObservable<AppDurationViewModel> AppDurations { get; set; }
 
         public IAppStatsStreamService Stats { get; set; }
 
-        public DateTime? RangeStart
-        {
-            get => _rangeStart;
-            set => Set(ref _rangeStart, value);
-        }
+        public DateTime? RangeStart { get; set; }
 
-        public DateTime? RangeEnd
-        {
-            get => _rangeEnd;
-            set => Set(ref _rangeEnd, value);
-        }
-
+        public DateTime? RangeEnd { get; set; }
 
         protected override void OnActivate(IResourceScope res)
         {

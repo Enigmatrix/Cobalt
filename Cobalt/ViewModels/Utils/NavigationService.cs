@@ -25,7 +25,6 @@ namespace Cobalt.ViewModels.Utils
         private readonly Cache<Type, PageViewModel> _existingViewModels;
         private readonly Cache<Type, PageView> _existingViews;
         private readonly IResourceScope _resolver;
-        private PageView _activePage;
 
         public NavigationService(IResourceScope resolver)
         {
@@ -36,15 +35,7 @@ namespace Cobalt.ViewModels.Utils
             ((IActivate) this).Activate();
         }
 
-        public PageView ActivePage
-        {
-            get => _activePage;
-            set
-            {
-                _activePage = value;
-                NotifyOfPropertyChange();
-            }
-        }
+        public PageView ActivePage { get; set; }
 
         public void NavigateTo<T>() where T : PageViewModel
         {
@@ -64,7 +55,7 @@ namespace Cobalt.ViewModels.Utils
             {
                 var vm = _resolver.Resolve<PageViewModel>(value);
                 ActivePage = (PageView) ViewLocator.LocateForModel(vm, null, null);
-                ViewModelBinder.Bind(vm, _activePage, null);
+                ViewModelBinder.Bind(vm, ActivePage, null);
                 ActivateItem(vm);
 
                 _existingViewModels.Add(value, vm);

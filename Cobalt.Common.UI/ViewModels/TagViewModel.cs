@@ -11,7 +11,6 @@ namespace Cobalt.Common.UI.ViewModels
     public class TagViewModel : EntityViewModel
     {
         private IDurationIncrementor _appIncrementor;
-        private string _name;
         private BindableCollection<AppViewModel> _taggedApps;
         private IObservable<AppDurationViewModel> _taggedAppsDurationsToday;
         private IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> _taggedAppsHourlyChunks;
@@ -21,11 +20,7 @@ namespace Cobalt.Common.UI.ViewModels
             Name = tag.Name;
         }
 
-        public string Name
-        {
-            get => _name;
-            set => Set(ref _name, value);
-        }
+        public string Name { get; set; }
 
         public BindableCollection<AppViewModel> TaggedApps
         {

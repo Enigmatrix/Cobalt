@@ -5,7 +5,6 @@ namespace Cobalt.ViewModels.Pages
 {
     public abstract class PageViewModel : ViewModelBase
     {
-        private IResourceScope _resources;
 
         protected PageViewModel(IResourceScope scope)
         {
@@ -14,11 +13,7 @@ namespace Cobalt.ViewModels.Pages
 
         public IResourceScope GlobalResources { get; set; }
 
-        public IResourceScope Resources
-        {
-            get => _resources;
-            set => Set(ref _resources, value);
-        }
+        public IResourceScope Resources { get; set; }
 
 
         protected override void OnActivate()

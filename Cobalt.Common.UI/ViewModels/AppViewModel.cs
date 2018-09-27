@@ -9,9 +9,6 @@ namespace Cobalt.Common.UI.ViewModels
 {
     public class AppViewModel : EntityViewModel
     {
-        private string _color;
-        private string _name;
-        private string _path;
         private IObservable<Usage<(App App, DateTime StartHour, TimeSpan Duration)>> _appHourlyChunks;
 
         public AppViewModel(App app) : base(app)
@@ -23,23 +20,11 @@ namespace Cobalt.Common.UI.ViewModels
             Icon = app.Icon;
         }
 
-        public string Name
-        {
-            get => _name;
-            set => Set(ref _name, value);
-        }
+        public string Name { get; set; }
 
-        public string Path
-        {
-            get => _path;
-            set => Set(ref _path, value);
-        }
+        public string Path { get; set; }
 
-        public string Color
-        {
-            get => _color;
-            set => Set(ref _color, value);
-        }
+        public string Color { get; set; }
 
         public IObservable<TagViewModel> Tags { get; }
         public IObservable<byte[]> Icon { get; }

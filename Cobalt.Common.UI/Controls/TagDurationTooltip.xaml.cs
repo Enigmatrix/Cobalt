@@ -14,8 +14,6 @@ namespace Cobalt.Common.UI.Controls
     public partial class TagDurationTooltip : IChartTooltip
     {
         private TooltipData _data;
-        private string _selectedPath;
-        private List<DataPointViewModel> _sortedPoints;
 
         public TagDurationTooltip()
         {
@@ -23,18 +21,9 @@ namespace Cobalt.Common.UI.Controls
             DataContext = this;
         }
 
-        public List<DataPointViewModel> SortedPoints
-        {
-            get =>
-                _sortedPoints;
-            set => Set(ref _sortedPoints, value);
-        }
+        public List<DataPointViewModel> SortedPoints { get; set; }
 
-        public string SelectedPath
-        {
-            get => _selectedPath;
-            set => Set(ref _selectedPath, value);
-        }
+        public string SelectedPath { get; set; }
 
         public event PropertyChangedEventHandler PropertyChanged;
 

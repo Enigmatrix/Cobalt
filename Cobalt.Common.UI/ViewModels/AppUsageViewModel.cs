@@ -8,16 +8,10 @@ namespace Cobalt.Common.UI.ViewModels
 {
     public class AppUsageViewModel : EntityViewModel, IHasDuration
     {
-        private AppViewModel _app;
-        private DateTime _endTimestamp;
-        private DateTime _startTimestamp;
-        private AppUsageEndReason _usageEndReason;
-        private AppUsageStartReason _usageStartReason;
-        private AppUsageType _usageType;
 
         public AppUsageViewModel(AppUsage au) : base(au)
         {
-            _app = new AppViewModel(au.App);
+            App = new AppViewModel(au.App);
             EndTimestamp = au.EndTimestamp;
             StartTimestamp = au.StartTimestamp;
             UsageStartReason = au.UsageStartReason;
@@ -25,49 +19,17 @@ namespace Cobalt.Common.UI.ViewModels
             UsageType = au.UsageType;
         }
 
-        public AppViewModel App
-        {
-            get => _app;
-            set => Set(ref _app, value);
-        }
+        public AppViewModel App { get; set; }
 
-        public AppUsageType UsageType
-        {
-            get => _usageType;
-            set => Set(ref _usageType, value);
-        }
+        public AppUsageType UsageType { get; set; }
 
-        public AppUsageEndReason UsageEndReason
-        {
-            get => _usageEndReason;
-            set => Set(ref _usageEndReason, value);
-        }
+        public AppUsageEndReason UsageEndReason { get; set; }
 
-        public AppUsageStartReason UsageStartReason
-        {
-            get => _usageStartReason;
-            set => Set(ref _usageStartReason, value);
-        }
+        public AppUsageStartReason UsageStartReason { get;set; }
 
-        public DateTime StartTimestamp
-        {
-            get => _startTimestamp;
-            set
-            {
-                Set(ref _startTimestamp, value);
-                NotifyOfPropertyChange(() => Duration);
-            }
-        }
+        public DateTime StartTimestamp { get; set; }
 
-        public DateTime EndTimestamp
-        {
-            get => _endTimestamp;
-            set
-            {
-                Set(ref _endTimestamp, value);
-                NotifyOfPropertyChange(() => Duration);
-            }
-        }
+        public DateTime EndTimestamp { get; set; }
 
         public TimeSpan Duration
         {
