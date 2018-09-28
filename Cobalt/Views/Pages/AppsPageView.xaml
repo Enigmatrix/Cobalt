@@ -157,14 +157,22 @@
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
-                                <StackPanel Orientation="Horizontal" Grid.Row="0">
-                                    <TextBlock Text="Details"
+                                <Grid Grid.Row="0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Details" Grid.Column="0"
                                                Style="{DynamicResource MaterialDesignSubheadingTextBlock}"
                                                FontSize="13" FontWeight="Bold" />
-                                    <!--<Button Padding="5,0" Height="20" Margin="10,0">
-                                        <TextBlock FontSize="10">SAVE</TextBlock>
-                                    </Button>-->
-                                </StackPanel>
+                                    <Button cal:Message.Attach="Update" Padding="5,0" Height="32" Width="72" Margin="10,0" Grid.Column="2" IsEnabled="{Binding IsDirty}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="SAVE" VerticalAlignment="Center"/>
+                                            <materialDesign:PackIcon Kind="ContentSave" VerticalAlignment="Center" Margin="5,0,0,0" IsEnabled="{Binding IsDirty}"/>
+                                        </StackPanel>
+                                    </Button>
+                                </Grid>
                                 <Grid Grid.Row="1">
                                     <WrapPanel Margin="0,8,0,0" VerticalAlignment="Center">
 
@@ -190,7 +198,7 @@
                                         </StackPanel>
                                         <TextBox Margin="4,0" HorizontalAlignment="Left" VerticalAlignment="Top"
                                                  materialDesign:HintAssist.Hint="Name"
-                                                 materialDesign:HintAssist.IsFloating="True" Text="{Binding Name}" />
+                                                 materialDesign:HintAssist.IsFloating="True" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                                         <StackPanel Margin="4,0,4,0">
                                             <TextBlock Text="Path" Opacity="0.5" FontSize="9.5" Margin="0,0,0,-4" />
                                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">

@@ -1,10 +1,24 @@
-﻿using Cobalt.Common.Analysis;
+﻿using System;
+using System.Reactive.Linq;
+using Cobalt.Common.Analysis;
 using Cobalt.Common.Data;
 using Cobalt.Common.Data.Repository;
 using Cobalt.Common.IoC;
+using Cobalt.Common.Util;
 
 namespace Cobalt.Common.UI.ViewModels
 {
+    public class EntityViewModel<T> : EntityViewModel
+        where T : Entity
+    {
+        public new T Entity { get; set; }
+
+        public EntityViewModel(T entity) : base(entity)
+        {
+            Entity = entity;
+        }
+    }
+
     public class EntityViewModel : ViewModelBase
     {
         public EntityViewModel(Entity entity)

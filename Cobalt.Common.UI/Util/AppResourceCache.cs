@@ -10,7 +10,6 @@ namespace Cobalt.Common.UI.Util
 {
     public class AppResourceCache
     {
-        private readonly Dictionary<string, SolidColorBrush> _colorMapper = new Dictionary<string, SolidColorBrush>();
         private readonly Dictionary<string, ImageSource> _iconMapper = new Dictionary<string, ImageSource>();
 
 
@@ -20,12 +19,9 @@ namespace Cobalt.Common.UI.Util
 
         public SolidColorBrush GetColor(AppViewModel app)
         {
-            if (!_colorMapper.ContainsKey(app.Path))
-                _colorMapper[app.Path] =
-                    new SolidColorBrush(app.Color == null
-                        ? Colors.Transparent
-                        : (Color) ColorConverter.ConvertFromString(app.Color));
-            return _colorMapper[app.Path];
+            return new SolidColorBrush(app.Color == null
+                ? Colors.Transparent
+                : (Color) ColorConverter.ConvertFromString(app.Color));
         }
 
         public ImageSource GetIcon(AppViewModel app)

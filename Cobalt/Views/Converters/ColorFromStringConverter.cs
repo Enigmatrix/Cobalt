@@ -26,7 +26,7 @@ namespace Cobalt.Views.Converters
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
             var color = (Color) value;
-            return $"#{color.A:X2}{color.R:X2}{color.G:X2}{color.B:X2}";
+            return color.A == 255 ? $"#{color.R:x2}{color.G:x2}{color.B:x2}" : $"#{color.A:x2}{color.R:x2}{color.G:x2}{color.B:x2}";
         }
     }
 }
