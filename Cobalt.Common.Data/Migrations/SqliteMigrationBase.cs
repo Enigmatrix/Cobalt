@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.SQLite;
+using System.Linq;
+using System.Reflection;
 using System.Text;
+using Dapper;
 
 namespace Cobalt.Common.Data.Migrations
 {
@@ -10,45 +13,11 @@ namespace Cobalt.Common.Data.Migrations
         protected SqliteMigrationBase(SQLiteConnection conn)
         {
             Connection = conn;
+            Sql = new StatementCollection();
         }
-
-        public TableMeta Table(string name)
+        public override void Run()
         {
-            return new TableMeta(name);
-        }
-
-        public class ExecMeta
-        {
-            public List<TableMeta> CreatingTables { get; }
-            public List<IndexMeta> CreatingIndexes { get; }
-
-            public ExecMeta()
-            {
-                CreatingTables = new List<TableMeta>();
-                CreatingIndexes = new List<IndexMeta>();
-            }
-
-            public ExecMeta Create(TableMeta table){
-                CreatingTables.Add(table);
-                return this;
-            }
-
-            public ExecMeta Create(IndexMeta index)
-            {
-                CreatingIndexes.Add(index);
-                return this;
-            }
-
-            public ExecMeta Insert<T>(string table, T value)
-            {
-                
-
-                return this;
-            }
-
-            public void Run(){
-
-            }
+            Sql.Execute(Connection);
         }
 
         public enum Delete
@@ -57,119 +26,152 @@ namespace Cobalt.Common.Data.Migrations
             SetNull
         }
 
-        public class TableMeta
-        {
-            public string Name { get; set; }
-            public List<Field> Fields { get; set; }
-            public List<Constraint> Constraints { get; set; }
-
-            public TableMeta Field(string name, string type, string ext = null)
-            {
-                Fields.Add(new Field(name, type, ext));
-                return this;
-            }
-
-            public TableMeta Field<T>(string name, string ext = null) where T: SqliteType {
-                return Field(name, typeof(T).Name, ext);
-            }
-
-            public TableMeta PkAutoInc(string name)
-            {
-                return Field<Integer>(name, "primary key autoincrement");
-            }
-
-            public TableMeta ForeignKey(string fkName, string tblName, string tblKey, Delete del = Delete.SetNull)
-            {
-                Constraints.Add(new ForeignKey(fkName, tblName, tblKey, del));
-                return this;
-            }
-
-            public TableMeta Keys(params string[] names)
-            {
-                Constraints.Add(new Keys(names));
-                return this;
-            }
-
-            public TableMeta(string name)
-            {
-                Name = name;
-            }
-        }
-
-        public class Field
-        {
-            public string Name { get; }
-            public string Type { get; }
-            public string Extension { get; }
-
-            public Field(string name, string type, string ext)
-            {
-                Name = name;
-                Type = type;
-                Extension = ext;
-            }
-
-
-            public override string ToString()
-            {
-                return $"{Name} {Type} {Extension ?? ""},";
-            }
-        }
-
-        public IndexMeta Index(string name, string table, params string[] fields)
-        {
-            return new IndexMeta(name, table, fields);
-        }
-
-        public class IndexMeta
-        {
-            public string Name { get; set; }
-            public string Table { get; set; }
-
-            public string[] Fields { get; set; }
-
-            public Index(string name, string tbl, string[] flds)
-            {
-                Name = name;
-                Table = tbl;
-                Fields = flds;
-            }
-        }
-
-        public class SqliteType { }
+        public abstract class SqliteType { }
         public class Text : SqliteType { }
         public class Integer : SqliteType { }
         public class Blob : SqliteType { }
 
-        public class Constraint {}
-
-        public class ForeignKey : Constraint
-        {
-            public string FkName { get; set; }
-            public string TableName { get; set; }
-            public string TableKey { get; set; }
-
-            public Delete DeleteMode { get; set; }
-
-            public ForeignKey(string fkName, string tblName, string tblKey, Delete deleteMode)
-            {
-                FkName = fkName;
-                TableName = tblName;
-                TableKey = tblKey;
-                DeleteMode = deleteMode;
-            }
-        }
-
-        public class Keys : Constraint
-        {
-            public string[] Names { get; set; }
-
-            public Keys(string[] names)
-            {
-                Names = names;
-            }
-        }
 
         protected SQLiteConnection Connection { get; }
+        public StatementCollection Sql { get; }
+
+        public class StatementCollection
+        {
+            private List<Statement> Statements { get; }
+
+            public StatementCollection()
+            {
+                Statements = new List<Statement>();
+            }
+
+            public void Add(Statement stmt)
+            {
+                Statements.Add(stmt);
+            }
+
+            public void Execute(SQLiteConnection connection)
+            {
+                connection.Execute(string.Join(";", Statements.Select(x => x.ToSql())));
+            }
+        }
+
+        public abstract class Statement
+        {
+            public abstract string ToSql();
+        }
+
+        public class TableStatement : Statement
+        {
+            private StringBuilder Innards = new StringBuilder();
+            public string Name { get; }
+            public TableStatement(string name)
+            {
+                Name = name;
+            }
+
+            public TableStatement Field(string name, string type, string extra = "")
+            {
+                Innards.Append($"`{name}` {type} {extra},");
+                return this;
+            }
+
+            public TableStatement Field<T>(string name, string extra = "")
+                where T : SqliteType
+            {
+                return Field(name, typeof(T).Name, extra);
+            }
+
+            public TableStatement PkAutoInc(string name = "Id")
+            {
+                return Field<Integer>(name, "primary key autoincrement");
+            }
+
+            public TableStatement ForeignKey(string fld, string otbl, string ofld = "Id", Delete? delMode = null)
+            {
+                var delStr = "";
+                switch (delMode)
+                {
+                    case Delete.SetNull:
+                        delStr = "on delete set null";
+                        break;
+                    case Delete.Cascade:
+                        delStr = "on delete cascade";
+                        break;
+                    default:
+                        break;
+                }
+                Innards.Append($"foreign key({fld}) references {otbl}({ofld}) {delStr},");
+                return this;
+            }
+
+            public TableStatement Keys(params string[] flds)
+            {
+                Innards.Append($"primary key ({string.Join(",", flds)}),");
+                return this;
+            }
+
+            public override string ToSql()
+            {
+                return $"create table ({Innards})";
+            }
+        }
+
+        public class IndexStatement : Statement
+        {
+            private readonly string Inner;
+
+            public IndexStatement(string name, string tbl, string[] flds)
+            {
+                Inner = $"create index {name} on {tbl}({string.Join(",", flds)})";
+            }
+
+            public override string ToSql() => Inner;
+        }
+
+        public class InsertStatement<T> : Statement
+        {
+            public InsertStatement(string name, T obj)
+            {
+                Name = name;
+                Object = obj;
+            }
+
+            private string Name { get; }
+            private T Object { get; }
+
+            public override string ToSql()
+            {
+                var props = Props(Object).ToList();
+                var names = string.Join(",", props.Select(x => x.Name));
+                var values = string.Join(",", props.Select(x => x.Value));
+                return $"insert into {Name}({names}) values ({values})";
+            }
+        }
+
+        private static IEnumerable<(string Name, object Value)> Props(object t)
+        {
+            return t.GetType().GetProperties().Select(x => (x.Name, x.GetValue(t)));
+        }
+
+        public TableStatement Table(string name)
+        {
+            var stmt = new TableStatement(name);
+            Sql.Add(stmt);
+            return stmt;
+        }
+
+        public IndexStatement Index(string name, string tbl, string[] flds)
+        {
+            var stmt = new IndexStatement(name, tbl, flds);
+            Sql.Add(stmt);
+            return stmt;
+        }
+
+        public InsertStatement<T> Insert<T>(string tbl, T obj)
+        {
+            var stmt = new InsertStatement<T>(tbl, obj);
+            Sql.Add(stmt);
+            return stmt;
+        }
     }
 }

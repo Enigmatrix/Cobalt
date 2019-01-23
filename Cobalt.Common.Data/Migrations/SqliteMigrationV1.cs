@@ -14,37 +14,41 @@ namespace Cobalt.Common.Data.Migrations
 
         public override void Run()
         {
-            new ExecMeta()
-            .Create(Table("Migration")
-                .Field<Integer>("Version"))
-            .Create(Table("App")
-                .PkAutoInc("Id")
+            Table("Migration")
+                .Field<Integer>("Version");
+
+            Table("App")
+                .PkAutoInc()
                 .Field<Text>("Name")
                 .Field<Text>("Color")
                 .Field<Text>("Path")
-                .Field<Blob>("Icon"))
-            .Create(Table("AppUsage")
-                .PkAutoInc("Id")
+                .Field<Blob>("Icon");
+
+            Table("AppUsage")
+                .PkAutoInc()
                 .Field<Integer>("AppId")
                 .Field<Integer>("Start")
                 .Field<Integer>("End")
                 .Field<Integer>("StartReason")
                 .Field<Integer>("EndReason")
                 .Field<Integer>("UsageType")
-                .ForeignKey("AppId", "App", "Id"))
-            .Create(Table("Tag")
-                .PkAutoInc("Id")
+                .ForeignKey("AppId", "App");
+
+            Table("Tag")
+                .PkAutoInc()
                 .Field<Text>("Name")
                 .Field<Text>("ForegroundColor")
-                .Field<Text>("BackgroundColor"))
-            .Create(Table("AppTag")
+                .Field<Text>("BackgroundColor");
+
+            Table("AppTag")
                 .Field<Integer>("AppId")
                 .Field<Integer>("TagId")
                 .Keys("AppId", "TagId")
-                .ForeignKey("AppId", "App", "Id", Delete.Cascade)
-                .ForeignKey("TagId", "Tag", "Id", Delete.Cascade))
-            .Create(Table("Alert")
-                .PkAutoInc("Id")
+                .ForeignKey("AppId", "App", delMode: Delete.Cascade)
+                .ForeignKey("TagId", "Tag", delMode: Delete.Cascade);
+
+            Table("Alert")
+                .PkAutoInc()
                 .Field<Integer>("AppId")
                 .Field<Integer>("TagId")
                 .Field<Integer>("MaxDuration")
@@ -54,20 +58,22 @@ namespace Cobalt.Common.Data.Migrations
                 .Field<Integer>("TimeRangeType")
                 .Field<Text>("TimeRangeParam1")
                 .Field<Text>("TimeRangeParam2")
-                .ForeignKey("AppId", "App", "Id", Delete.Cascade)
-                .ForeignKey("TagId", "Tag", "Id", Delete.Cascade))
-            .Create(Table("Reminder")
-                .PkAutoInc("Id")
+                .ForeignKey("AppId", "App", delMode: Delete.Cascade)
+                .ForeignKey("TagId", "Tag", delMode: Delete.Cascade);
+
+            Table("Reminder")
+                .PkAutoInc()
                 .Field<Integer>("AlertId")
                 .Field<Integer>("Offset")
                 .Field<Integer>("ActionType")
                 .Field<Text>("ActionParam")
-                .ForeignKey("AlertId", "Alert", "Id", Delete.Cascade))
-            .Create(Index("AppPathIdx", "App", "Path"))
-            .Create(Index("StartTimestampIdx", "AppUsage", "Start", "End"))
-            .Create(Index("EndTimestampIdx", "AppUsage", "End", "Start"))
-            .Insert("Migration", new { Current = 1 })
-            .Run();
+                .ForeignKey("AlertId", "Alert", delMode: Delete.Cascade);
+
+            Index("AppPathIdx", "App", new[] { "Path" });
+            Index("StartTimestampIdx", "AppUsage", new[] { "Start", "End" });
+            Index("EndTimestampIdx", "AppUsage", new[] { "End", "Start" });
+
+            Insert("Migration", new { Current = 1 });
         }
     }
 }
