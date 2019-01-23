@@ -38,12 +38,14 @@ namespace Cobalt.Common.Transmission
             //_pipe.ReadMode = PipeTransmissionMode.Message;
             _keepAlive = true;
 
-            Serializer.Deserialize<MessageBase>(_pipe);
-
             _listeningThread = new Thread(() =>
             {
                 while (_keepAlive)
-                    _messages.OnNext(Serializer.Deserialize<MessageBase>(_pipe));
+                {
+                    Serializer.NonGeneric.TryDeserializeWithLengthPrefix(_pipe, PrefixStyle.Base128,
+                        MessageBase.MessageTypeResolver, out var msg);
+                    _messages.OnNext((MessageBase)msg);
+                }
             });
             _listeningThread.Start();
         }

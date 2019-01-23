@@ -34,7 +34,8 @@ namespace Cobalt.Common.Transmission
                     var writer = _broadcastingPipes[i];
                     try
                     {
-                        Serializer.Serialize(writer, message);
+                        Serializer.NonGeneric.SerializeWithLengthPrefix(
+                            writer, message, PrefixStyle.Base128, MessageBase.Index(message));
                         writer.Flush();
                     }
                     catch (Exception)

@@ -19,7 +19,7 @@ namespace Cobalt.Common.Transmission.Messages
     }
 
     [ProtoContract]
-    public abstract class EntityChangeMessage : MessageBase
+    public class EntityChangeMessage : MessageBase
     {
         [ProtoMember(1)]
         public ChangeType ChangeType { get; set; }

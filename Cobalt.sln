@@ -9,11 +9,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cobalt.Common.IoC", "Cobalt
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cobalt.Common.Data", "Cobalt.Common.Data\Cobalt.Common.Data.csproj", "{7C21F97E-2792-4613-9D3C-6663635BD874}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cobalt.Tests", "Cobalt.Tests\Cobalt.Tests.csproj", "{7CD00787-8E43-443D-8776-706AE9AD8423}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cobalt.Tests", "Cobalt.Tests\Cobalt.Tests.csproj", "{7CD00787-8E43-443D-8776-706AE9AD8423}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cobalt.Engine", "Cobalt.Engine\Cobalt.Engine.csproj", "{3483623D-83A9-43DF-87EC-6F7E620C30B3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cobalt.Common.Transmission", "Cobalt.Common.Transmission\Cobalt.Common.Transmission.csproj", "{A330DDE1-7A2B-446B-9EDB-2C3742C4C30F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cobalt.Common.Transmission", "Cobalt.Common.Transmission\Cobalt.Common.Transmission.csproj", "{A330DDE1-7A2B-446B-9EDB-2C3742C4C30F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
