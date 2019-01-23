@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="protobuf-net" Version="3.0.0-alpha.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Cobalt.Common.Data\Cobalt.Common.Data.csproj" />
+    <ProjectReference Include="..\Cobalt.Common.Util\Cobalt.Common.Util.csproj" />
+  </ItemGroup>
+
+</Project>

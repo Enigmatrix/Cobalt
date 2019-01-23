@@ -58,6 +58,7 @@ namespace Cobalt.Common.Data.Migrations
                 .Field<Integer>("TimeRangeType")
                 .Field<Text>("TimeRangeParam1")
                 .Field<Text>("TimeRangeParam2")
+                .Field<Integer>("UsageType")
                 .ForeignKey("AppId", "App", delMode: Delete.Cascade)
                 .ForeignKey("TagId", "Tag", delMode: Delete.Cascade);
 
