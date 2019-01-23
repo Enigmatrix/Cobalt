@@ -15,8 +15,12 @@ namespace Cobalt.Common.Data.Migrations
             Connection = conn;
             Sql = new StatementCollection();
         }
+
+        protected abstract void Build();
+
         public override void Run()
         {
+            Build();
             Sql.Execute(Connection);
         }
 
@@ -51,7 +55,8 @@ namespace Cobalt.Common.Data.Migrations
 
             public void Execute(SQLiteConnection connection)
             {
-                connection.Execute(string.Join(";", Statements.Select(x => x.ToSql())));
+                var sql = string.Join(";", Statements.Select(x => x.ToSql()));
+                connection.Execute(sql);
             }
         }
 
@@ -62,7 +67,7 @@ namespace Cobalt.Common.Data.Migrations
 
         public class TableStatement : Statement
         {
-            private StringBuilder Innards = new StringBuilder();
+            private readonly List<string> _innards = new List<string>();
             public string Name { get; }
             public TableStatement(string name)
             {
@@ -71,7 +76,7 @@ namespace Cobalt.Common.Data.Migrations
 
             public TableStatement Field(string name, string type, string extra = "")
             {
-                Innards.Append($"`{name}` {type} {extra},");
+                _innards.Add($"`{name}` {type} {extra}");
                 return this;
             }
 
@@ -100,19 +105,19 @@ namespace Cobalt.Common.Data.Migrations
                     default:
                         break;
                 }
-                Innards.Append($"foreign key({fld}) references {otbl}({ofld}) {delStr},");
+                _innards.Add($"foreign key({fld}) references {otbl}({ofld}) {delStr}");
                 return this;
             }
 
             public TableStatement Keys(params string[] flds)
             {
-                Innards.Append($"primary key ({string.Join(",", flds)}),");
+                _innards.Add($"primary key ({string.Join(",", flds)})");
                 return this;
             }
 
             public override string ToSql()
             {
-                return $"create table ({Innards})";
+                return $"create table `{Name}`({string.Join(",",_innards)})";
             }
         }
 

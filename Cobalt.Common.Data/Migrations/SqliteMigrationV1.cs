@@ -12,7 +12,7 @@ namespace Cobalt.Common.Data.Migrations
 
         public override long Version { get; } = 1;
 
-        public override void Run()
+        protected override void Build()
         {
             Table("Migration")
                 .Field<Integer>("Version");
@@ -73,7 +73,7 @@ namespace Cobalt.Common.Data.Migrations
             Index("StartTimestampIdx", "AppUsage", new[] { "Start", "End" });
             Index("EndTimestampIdx", "AppUsage", new[] { "End", "Start" });
 
-            Insert("Migration", new { Current = 1 });
+            Insert("Migration", new { Version = 1 });
         }
     }
 }
