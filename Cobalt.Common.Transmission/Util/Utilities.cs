@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Cobalt.Common.Transmission.Util
+﻿namespace Cobalt.Common.Transmission.Util
 {
-
     public static class Utilities
     {
         public static readonly string LocalComputer = ".";

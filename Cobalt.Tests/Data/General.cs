@@ -1,4 +1,3 @@
-using System;
 using System.Data.SQLite;
 using Cobalt.Common.Data.Migrations;
 using Xunit;

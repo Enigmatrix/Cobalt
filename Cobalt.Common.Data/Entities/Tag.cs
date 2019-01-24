@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Cobalt.Common.Data.Entities
+﻿namespace Cobalt.Common.Data.Entities
 {
     public class Tag : Entity
     {

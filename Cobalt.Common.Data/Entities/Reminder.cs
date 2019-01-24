@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Cobalt.Common.Data.Entities
 {
@@ -10,9 +8,13 @@ namespace Cobalt.Common.Data.Entities
         public ReminderAction Action { get; set; }
     }
 
-    public abstract class ReminderAction { }
+    public abstract class ReminderAction
+    {
+    }
 
-    public class WarnReminderAction : ReminderAction { }
+    public class WarnReminderAction : ReminderAction
+    {
+    }
 
     public class ScriptReminderAction : ReminderAction
     {
@@ -23,5 +25,4 @@ namespace Cobalt.Common.Data.Entities
     {
         public string Warning { get; set; }
     }
-
 }

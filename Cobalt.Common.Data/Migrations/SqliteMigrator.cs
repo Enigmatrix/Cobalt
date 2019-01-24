@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Data.SQLite;
-using System.Text;
 using Dapper;
 
 namespace Cobalt.Common.Data.Migrations
@@ -26,10 +24,10 @@ namespace Cobalt.Common.Data.Migrations
             {
                 return Connection.ExecuteScalar<long>("select Version from MigrationInfo");
             }
-            catch(SQLiteException e) when (e.Message.Contains("no such table: MigrationInfo"))
+            catch (SQLiteException e) when (e.Message.Contains("no such table: MigrationInfo"))
             {
                 return 0;
             }
         }
-   }
+    }
 }

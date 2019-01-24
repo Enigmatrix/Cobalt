@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Cobalt.Common.Data.Entities
 {
@@ -10,7 +8,7 @@ namespace Cobalt.Common.Data.Entities
         public bool Enabled { get; set; }
         public RunAction Action { get; set; }
         public TimeRange TimeRange { get; set; }
-        public AppUsageType UsageType { get;set; }
+        public AppUsageType UsageType { get; set; }
     }
 
     public class AppAlert : Alert
@@ -23,10 +21,17 @@ namespace Cobalt.Common.Data.Entities
         public Tag Tag { get; set; }
     }
 
-    public abstract class RunAction {}
+    public abstract class RunAction
+    {
+    }
 
-    public class MessageRunAction : RunAction { }
-    public class KillRunAction : RunAction { }
+    public class MessageRunAction : RunAction
+    {
+    }
+
+    public class KillRunAction : RunAction
+    {
+    }
 
     public class CustomMessageRunAction : RunAction
     {
@@ -38,7 +43,9 @@ namespace Cobalt.Common.Data.Entities
         public string Script { get; set; }
     }
 
-    public abstract class TimeRange { }
+    public abstract class TimeRange
+    {
+    }
 
     public class OnceTimeRange : TimeRange
     {
@@ -57,5 +64,4 @@ namespace Cobalt.Common.Data.Entities
         Weekly = 1L,
         Monthly = 2L
     }
-
 }

@@ -1,14 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data.SQLite;
-using System.Text;
-using Dapper;
+﻿using System.Data.SQLite;
 
 namespace Cobalt.Common.Data.Migrations
 {
     public class SqliteMigrationV1 : SqliteMigrationBase
     {
-        public SqliteMigrationV1(SQLiteConnection conn) : base(conn) { }
+        public SqliteMigrationV1(SQLiteConnection conn) : base(conn)
+        {
+        }
 
         public override long Version { get; } = 1;
 
@@ -70,11 +68,11 @@ namespace Cobalt.Common.Data.Migrations
                 .Field<Text>("ActionParam")
                 .ForeignKey("AlertId", "Alert", delMode: Delete.Cascade);
 
-            Index("AppPathIdx", "App", new[] { "Path" });
-            Index("StartTimestampIdx", "AppUsage", new[] { "Start", "End" });
-            Index("EndTimestampIdx", "AppUsage", new[] { "End", "Start" });
+            Index("AppPathIdx", "App", new[] {"Path"});
+            Index("StartTimestampIdx", "AppUsage", new[] {"Start", "End"});
+            Index("EndTimestampIdx", "AppUsage", new[] {"End", "Start"});
 
-            Insert("Migration", new { Version = 1 });
+            Insert("Migration", new {Version = 1});
         }
     }
 }

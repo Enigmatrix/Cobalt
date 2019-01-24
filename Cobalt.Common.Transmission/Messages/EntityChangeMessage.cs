@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using ProtoBuf;
+﻿using ProtoBuf;
 
 namespace Cobalt.Common.Transmission.Messages
 {
@@ -21,13 +18,10 @@ namespace Cobalt.Common.Transmission.Messages
     [ProtoContract]
     public class EntityChangeMessage : MessageBase
     {
-        [ProtoMember(1)]
-        public ChangeType ChangeType { get; set; }
+        [ProtoMember(1)] public ChangeType ChangeType { get; set; }
 
-        [ProtoMember(2)]
-        public long EntityId { get; set; }
+        [ProtoMember(2)] public long EntityId { get; set; }
 
-        [ProtoMember(3)]
-        public EntityType EntityType { get; set; }
+        [ProtoMember(3)] public EntityType EntityType { get; set; }
     }
 }

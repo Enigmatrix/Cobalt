@@ -1,20 +1,27 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Data.SQLite;
 using System.Linq;
-using System.Reflection;
-using System.Text;
 using Dapper;
 
 namespace Cobalt.Common.Data.Migrations
 {
     public abstract class SqliteMigrationBase : MigrationBase
     {
+        public enum Delete
+        {
+            Cascade,
+            SetNull
+        }
+
         protected SqliteMigrationBase(SQLiteConnection conn)
         {
             Connection = conn;
             Sql = new StatementCollection();
         }
+
+
+        protected SQLiteConnection Connection { get; }
+        public StatementCollection Sql { get; }
 
         protected abstract void Build();
 
@@ -24,29 +31,56 @@ namespace Cobalt.Common.Data.Migrations
             Sql.Execute(Connection);
         }
 
-        public enum Delete
+        private static IEnumerable<(string Name, object Value)> Props(object t)
         {
-            Cascade,
-            SetNull
+            return t.GetType().GetProperties().Select(x => (x.Name, x.GetValue(t)));
         }
 
-        public abstract class SqliteType { }
-        public class Text : SqliteType { }
-        public class Integer : SqliteType { }
-        public class Blob : SqliteType { }
+        public TableStatement Table(string name)
+        {
+            var stmt = new TableStatement(name);
+            Sql.Add(stmt);
+            return stmt;
+        }
 
+        public IndexStatement Index(string name, string tbl, string[] flds)
+        {
+            var stmt = new IndexStatement(name, tbl, flds);
+            Sql.Add(stmt);
+            return stmt;
+        }
 
-        protected SQLiteConnection Connection { get; }
-        public StatementCollection Sql { get; }
+        public InsertStatement<T> Insert<T>(string tbl, T obj)
+        {
+            var stmt = new InsertStatement<T>(tbl, obj);
+            Sql.Add(stmt);
+            return stmt;
+        }
+
+        public abstract class SqliteType
+        {
+        }
+
+        public class Text : SqliteType
+        {
+        }
+
+        public class Integer : SqliteType
+        {
+        }
+
+        public class Blob : SqliteType
+        {
+        }
 
         public class StatementCollection
         {
-            private List<Statement> Statements { get; }
-
             public StatementCollection()
             {
                 Statements = new List<Statement>();
             }
+
+            private List<Statement> Statements { get; }
 
             public void Add(Statement stmt)
             {
@@ -68,11 +102,13 @@ namespace Cobalt.Common.Data.Migrations
         public class TableStatement : Statement
         {
             private readonly List<string> _innards = new List<string>();
-            public string Name { get; }
+
             public TableStatement(string name)
             {
                 Name = name;
             }
+
+            public string Name { get; }
 
             public TableStatement Field(string name, string type, string extra = "")
             {
@@ -105,6 +141,7 @@ namespace Cobalt.Common.Data.Migrations
                     default:
                         break;
                 }
+
                 _innards.Add($"foreign key({fld}) references {otbl}({ofld}) {delStr}");
                 return this;
             }
@@ -117,7 +154,7 @@ namespace Cobalt.Common.Data.Migrations
 
             public override string ToSql()
             {
-                return $"create table `{Name}`({string.Join(",",_innards)})";
+                return $"create table `{Name}`({string.Join(",", _innards)})";
             }
         }
 
@@ -130,7 +167,10 @@ namespace Cobalt.Common.Data.Migrations
                 Inner = $"create index {name} on {tbl}({string.Join(",", flds)})";
             }
 
-            public override string ToSql() => Inner;
+            public override string ToSql()
+            {
+                return Inner;
+            }
         }
 
         public class InsertStatement<T> : Statement
@@ -151,32 +191,6 @@ namespace Cobalt.Common.Data.Migrations
                 var values = string.Join(",", props.Select(x => x.Value));
                 return $"insert into {Name}({names}) values ({values})";
             }
-        }
-
-        private static IEnumerable<(string Name, object Value)> Props(object t)
-        {
-            return t.GetType().GetProperties().Select(x => (x.Name, x.GetValue(t)));
-        }
-
-        public TableStatement Table(string name)
-        {
-            var stmt = new TableStatement(name);
-            Sql.Add(stmt);
-            return stmt;
-        }
-
-        public IndexStatement Index(string name, string tbl, string[] flds)
-        {
-            var stmt = new IndexStatement(name, tbl, flds);
-            Sql.Add(stmt);
-            return stmt;
-        }
-
-        public InsertStatement<T> Insert<T>(string tbl, T obj)
-        {
-            var stmt = new InsertStatement<T>(tbl, obj);
-            Sql.Add(stmt);
-            return stmt;
         }
     }
 }

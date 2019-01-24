@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
-using ProtoBuf;
 
 namespace Cobalt.Common.Transmission.Messages
 {
@@ -12,6 +10,7 @@ namespace Cobalt.Common.Transmission.Messages
             [1] = typeof(AppUsageEndMessage),
             [2] = typeof(EntityChangeMessage)
         };
+
         private static readonly IDictionary<string, int> MessageIndexLookup = new Dictionary<string, int>
         {
             [typeof(AppUsageEndMessage).Name] = 1,

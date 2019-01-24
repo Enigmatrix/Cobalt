@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.IO;
 using System.IO.Pipes;
 using System.Reactive.Subjects;
-using System.Text;
 using System.Threading;
 using Cobalt.Common.Transmission.Messages;
 using Cobalt.Common.Transmission.Util;
@@ -11,7 +8,6 @@ using ProtoBuf;
 
 namespace Cobalt.Common.Transmission
 {
-
     public interface ITransmissionClient : IDisposable
     {
         IObservable<MessageBase> Messages { get; }
@@ -20,11 +16,9 @@ namespace Cobalt.Common.Transmission
     public class TransmissionClient : ITransmissionClient
     {
         private readonly Thread _listeningThread;
-        private readonly NamedPipeClientStream _pipe;
         private readonly Subject<MessageBase> _messages;
+        private readonly NamedPipeClientStream _pipe;
         private bool _keepAlive;
-
-        public IObservable<MessageBase> Messages => _messages;
 
         public TransmissionClient()
         {
@@ -44,15 +38,18 @@ namespace Cobalt.Common.Transmission
                 {
                     Serializer.NonGeneric.TryDeserializeWithLengthPrefix(_pipe, PrefixStyle.Base128,
                         MessageBase.MessageTypeResolver, out var msg);
-                    _messages.OnNext((MessageBase)msg);
+                    _messages.OnNext((MessageBase) msg);
                 }
             });
             _listeningThread.Start();
         }
+
+        public IObservable<MessageBase> Messages => _messages;
 
         public void Dispose()
         {
             _keepAlive = false;
             _pipe.Dispose();
         }
-    }}
+    }
+}

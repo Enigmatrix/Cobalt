@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.IO.Pipes;
 using Cobalt.Common.Transmission.Messages;
 using Cobalt.Common.Transmission.Util;
@@ -8,7 +7,6 @@ using ProtoBuf;
 
 namespace Cobalt.Common.Transmission
 {
-
     public interface ITransmissionServer
     {
         void Send(MessageBase message);
@@ -46,7 +44,6 @@ namespace Cobalt.Common.Transmission
                         }
                         catch (Exception e)
                         {
-                            
                         }
 
                         _broadcastingPipes[i].Dispose();
@@ -85,4 +82,5 @@ namespace Cobalt.Common.Transmission
 
             SetupPipeForConnection();
         }
-    }}
+    }
+}
