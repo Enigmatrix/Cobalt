@@ -1,5 +1,4 @@
-﻿using Cobalt.Common.Data.Entities;
-using ProtoBuf;
+﻿using ProtoBuf;
 
 namespace Cobalt.Common.Transmission.Messages
 {

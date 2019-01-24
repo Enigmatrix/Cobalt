@@ -12,9 +12,6 @@ namespace Cobalt.Tests.Data
 {
     public class General : IDisposable
     {
-        private readonly SQLiteConnection _conn;
-        private readonly IDbRepository _repo;
-
         public General()
         {
             File.Delete("test.db");
@@ -28,6 +25,9 @@ namespace Cobalt.Tests.Data
             _repo.Dispose();
         }
 
+        private readonly SQLiteConnection _conn;
+        private readonly IDbRepository _repo;
+
         [Fact]
         public void InsertApp()
         {
@@ -35,7 +35,7 @@ namespace Cobalt.Tests.Data
             {
                 Name = "123",
                 Color = "red",
-                Icon = new Lazy<byte[]>(() => new byte[]{1, 3, 3, 7}),
+                Icon = new Lazy<byte[]>(() => new byte[] {1, 3, 3, 7}),
                 Path = "s:/tr8/to/my/ass"
             };
             _repo.Insert(app);
@@ -44,7 +44,7 @@ namespace Cobalt.Tests.Data
             Assert.Single(apps);
             Assert.Equal("123", apps[0].Name);
             Assert.Equal("red", apps[0].Color);
-            Assert.Equal(new byte[]{1, 3, 3, 7}, apps[0].Icon);
+            Assert.Equal(new byte[] {1, 3, 3, 7}, apps[0].Icon);
             Assert.Equal("s:/tr8/to/my/ass", apps[0].Path);
         }
 
@@ -55,7 +55,7 @@ namespace Cobalt.Tests.Data
             {
                 Name = "123",
                 Color = "red",
-                Icon = new Lazy<byte[]>(() => new byte[]{1, 3, 3, 7}),
+                Icon = new Lazy<byte[]>(() => new byte[] {1, 3, 3, 7}),
                 Path = "s:/tr8/to/my/ass"
             };
             _repo.Insert(app);

@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Data.SQLite;
 using System.Reactive.Linq;
-using System.Text;
 using Cobalt.Common.Data.Entities;
 using Cobalt.Common.Data.Migrations;
 using Dapper;
@@ -11,13 +9,13 @@ namespace Cobalt.Common.Data.Repositories
 {
     public class SqliteRepository : IDbRepository
     {
-        private SQLiteConnection Connection { get; }
-
         public SqliteRepository(SQLiteConnection connection, IDbMigrator migrator)
         {
             migrator.Run();
             Connection = connection;
         }
+
+        private SQLiteConnection Connection { get; }
 
         public void Dispose()
         {
@@ -59,7 +57,8 @@ namespace Cobalt.Common.Data.Repositories
             throw new NotImplementedException();
         }
 
-        public IObservable<(App App, TimeSpan Duration)> GetAppDurationsForTag(Tag tag, DateTime? start = null, DateTime? end = null)
+        public IObservable<(App App, TimeSpan Duration)> GetAppDurationsForTag(Tag tag, DateTime? start = null,
+            DateTime? end = null)
         {
             throw new NotImplementedException();
         }
@@ -72,36 +71,36 @@ namespace Cobalt.Common.Data.Repositories
         public void Insert(App obj)
         {
             obj.Id = Insert("insert into App (Name, Color, Path, Icon)" +
-                               "values (@Name, @Color, @Path, @Icon)", new
+                            "values (@Name, @Color, @Path, @Icon)", new
             {
                 obj.Name,
                 obj.Color,
                 obj.Path,
-                Icon = obj.Icon.Value,
+                Icon = obj.Icon.Value
             });
         }
 
         public void Insert(Tag obj)
         {
             obj.Id = Insert("insert into Tag (Name, BackgroundColor, ForegroundColor)" +
-                               "values (@Name, @BackgroundColor, @ForegroundColor)", new
+                            "values (@Name, @BackgroundColor, @ForegroundColor)", new
             {
                 obj.Name,
                 obj.BackgroundColor,
-                obj.ForegroundColor,
+                obj.ForegroundColor
             });
         }
 
         public void Insert(AppUsage obj)
         {
             obj.Id = Insert("insert into AppUsage (AppId, Start, End, StartReason, EndReason)" +
-                               "values (@AppId, @Start, @End, @StartReason, @EndReason)", new
+                            "values (@AppId, @Start, @End, @StartReason, @EndReason)", new
             {
                 AppId = obj.App.Id,
                 Start = obj.Start.Ticks,
                 End = obj.End.Ticks,
                 obj.StartReason,
-                obj.EndReason,
+                obj.EndReason
             });
         }
 
@@ -109,8 +108,8 @@ namespace Cobalt.Common.Data.Repositories
         {
             obj.Id = Insert("insert into Alert (AppId, TagId, MaxDuration, Enabled, ActionType, ActionParam," +
                             "TimeRangeType, TimeRangeParam1, TimeRangeParam2)" +
-                               "values (@AppId, @TagId, @MaxDuration, @Enabled, @ActionType, @ActionParam," +
-                                "@TimeRangeType, @TimeRangeParam1, @TimeRangeParam2)", AlertObj(obj));
+                            "values (@AppId, @TagId, @MaxDuration, @Enabled, @ActionType, @ActionParam," +
+                            "@TimeRangeType, @TimeRangeParam1, @TimeRangeParam2)", AlertObj(obj));
         }
 
         public void Insert(Reminder obj)
@@ -194,8 +193,12 @@ namespace Cobalt.Common.Data.Repositories
 
         private object AlertObj(Alert a)
         {
-            long? appId = null, tagId = null, actionType = 0, timeRangeType = 0,
-                timeRangeParam1 = null, timeRangeParam2 = null;
+            long? appId = null,
+                tagId = null,
+                actionType = 0,
+                timeRangeType = 0,
+                timeRangeParam1 = null,
+                timeRangeParam2 = null;
             string actionParam = null;
             switch (a)
             {
@@ -221,7 +224,7 @@ namespace Cobalt.Common.Data.Repositories
                     actionType = 2;
                     break;
                 case MessageRunAction _:
-                    actionType =3;
+                    actionType = 3;
                     break;
             }
 
@@ -234,7 +237,7 @@ namespace Cobalt.Common.Data.Repositories
                     break;
                 case RepeatingTimeRange o:
                     timeRangeType = 1;
-                    timeRangeParam1 = (long)o.Type;
+                    timeRangeParam1 = (long) o.Type;
                     break;
             }
 
@@ -248,7 +251,7 @@ namespace Cobalt.Common.Data.Repositories
                 ActionParam = actionParam,
                 TimeRangeType = timeRangeType,
                 TimeRangeParam1 = timeRangeParam1,
-                TimeRangeParam2 = timeRangeParam2,
+                TimeRangeParam2 = timeRangeParam2
             };
         }
 
@@ -270,6 +273,7 @@ namespace Cobalt.Common.Data.Repositories
                     actionType = 2;
                     break;
             }
+
             return new
             {
                 AlertId = r.Alert.Id,
