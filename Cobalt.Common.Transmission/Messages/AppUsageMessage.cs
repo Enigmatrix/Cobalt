@@ -8,8 +8,6 @@ namespace Cobalt.Common.Transmission.Messages
     {
         [ProtoMember(1)] public long AppUsageId { get; set; }
 
-        [ProtoMember(2)] public long[] ActiveAppIds { get; set; }
-
-        [ProtoMember(3)] public AppUsageType UsageType { get; set; }
+        [ProtoMember(2)] public long ActiveAppUsageId { get; set; }
     }
 }

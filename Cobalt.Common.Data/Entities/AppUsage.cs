@@ -19,12 +19,6 @@ namespace Cobalt.Common.Data.Entities
         MonitorOff = 4L
     }
 
-    public enum AppUsageType : long
-    {
-        Focus = 0L,
-        InView = 1L
-    }
-
     public class AppUsage : Entity
     {
         public App App { get; set; }
@@ -32,6 +26,5 @@ namespace Cobalt.Common.Data.Entities
         public DateTime End { get; set; }
         public AppUsageStartReason StartReason { get; set; }
         public AppUsageEndReason EndReason { get; set; }
-        public AppUsageType UsageType { get; set; }
     }
 }

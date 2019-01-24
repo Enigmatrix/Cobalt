@@ -29,7 +29,6 @@ namespace Cobalt.Common.Data.Migrations
                 .Field<Integer>("End")
                 .Field<Integer>("StartReason")
                 .Field<Integer>("EndReason")
-                .Field<Integer>("UsageType")
                 .ForeignKey("AppId", "App");
 
             Table("Tag")
