@@ -8,5 +8,6 @@ namespace Cobalt.Common.Data.Entities
         public string Color { get; set; }
         public string Path { get; set; }
         public Lazy<byte[]> Icon { get; set; }
+        public IObservable<Tag> Tags { get; set; }
     }
 }

@@ -8,7 +8,7 @@ namespace Cobalt.Common.Data.Entities
         public bool Enabled { get; set; }
         public RunAction Action { get; set; }
         public TimeRange TimeRange { get; set; }
-        public AppUsageType UsageType { get; set; }
+        public IObservable<Reminder> Reminders { get; set; }
     }
 
     public class AppAlert : Alert
