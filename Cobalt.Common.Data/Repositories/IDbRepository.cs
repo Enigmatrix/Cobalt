@@ -1,13 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using Cobalt.Common.Data.Entities;
 
 namespace Cobalt.Common.Data.Repositories
 {
     public interface IDbRepository : IDisposable
     {
-        IObservable<T> Get<T>();
+        IObservable<T> Get<T>() where T : Entity;
         IObservable<TimeSpan> GetAppUsageTime(DateTime? start = null, DateTime? end = null);
         IObservable<AppUsage> GetAppUsages(DateTime? start = null, DateTime? end = null);
         IObservable<AppUsage> GetAppUsagesForTag(Tag tag, DateTime? start = null, DateTime? end = null);

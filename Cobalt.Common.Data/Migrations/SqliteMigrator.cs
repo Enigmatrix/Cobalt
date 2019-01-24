@@ -22,9 +22,9 @@ namespace Cobalt.Common.Data.Migrations
         {
             try
             {
-                return Connection.ExecuteScalar<long>("select Version from MigrationInfo");
+                return Connection.ExecuteScalar<long>("select Version from Migration");
             }
-            catch (SQLiteException e) when (e.Message.Contains("no such table: MigrationInfo"))
+            catch (SQLiteException e) when (e.Message.Contains("no such table: Migration"))
             {
                 return 0;
             }

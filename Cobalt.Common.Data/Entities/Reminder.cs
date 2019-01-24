@@ -6,6 +6,7 @@ namespace Cobalt.Common.Data.Entities
     {
         public TimeSpan Offset { get; set; }
         public ReminderAction Action { get; set; }
+        public Alert Alert { get; set; }
     }
 
     public abstract class ReminderAction
