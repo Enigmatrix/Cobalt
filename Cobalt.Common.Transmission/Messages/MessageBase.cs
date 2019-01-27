@@ -7,13 +7,13 @@ namespace Cobalt.Common.Transmission.Messages
     {
         private static readonly IDictionary<int, Type> MessageTypeLookup = new Dictionary<int, Type>
         {
-            [1] = typeof(AppUsageEndMessage),
+            [1] = typeof(AppSwitchMessage),
             [2] = typeof(EntityChangeMessage)
         };
 
         private static readonly IDictionary<string, int> MessageIndexLookup = new Dictionary<string, int>
         {
-            [typeof(AppUsageEndMessage).Name] = 1,
+            [typeof(AppSwitchMessage).Name] = 1,
             [typeof(EntityChangeMessage).Name] = 2
         };
 

@@ -76,7 +76,7 @@ namespace Cobalt.Common.Data.Repositories
                 obj.Name,
                 obj.Color,
                 obj.Path,
-                Icon = obj.Icon.Value
+                Icon = obj.Icon?.Value
             });
         }
 
@@ -184,6 +184,14 @@ namespace Cobalt.Common.Data.Repositories
                 AppId = app.Id,
                 TagId = tag.Id
             });
+        }
+
+        public bool AppIdByPath(App app)
+        {
+            var existing = Connection.QuerySingleOrDefault<App>("select * from App where Path = @Path", new { app.Path });
+            if (existing == null) return false;
+            app.Id = existing.Id;
+            return true;
         }
 
         private long Insert(string sql, object obj)

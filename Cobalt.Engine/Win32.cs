@@ -1,5 +1,6 @@
 ﻿// ReSharper disable InconsistentNaming
 // ReSharper disable MemberCanBePrivate.Global
+
 using System;
 using System.ComponentModel;
 using System.Drawing;
@@ -32,7 +33,7 @@ namespace Cobalt.Engine
 
             public int Size => Marshal.SizeOf(typeof(PROCESS_BASIC_INFORMATION));
         }
-        
+
         [StructLayout(LayoutKind.Sequential)]
         public struct MSG
         {
@@ -48,35 +49,22 @@ namespace Cobalt.Engine
         [StructLayout(LayoutKind.Explicit, Size = 0x40)]
         public struct PEB
         {
-            [FieldOffset(0x000)]
-            public byte InheritedAddressSpace;
-            [FieldOffset(0x001)]
-            public byte ReadImageFileExecOptions;
-            [FieldOffset(0x002)]
-            public byte BeingDebugged;
-            [FieldOffset(0x003)]
-
-            public byte Spare;
-            [FieldOffset(0x008)]
-            public IntPtr Mutant;
-            [FieldOffset(0x010)]
-            public IntPtr ImageBaseAddress;     // (PVOID) 
-            [FieldOffset(0x018)]
-            public IntPtr Ldr;                  // (PPEB_LDR_DATA)
-            [FieldOffset(0x020)]
-            public IntPtr ProcessParameters;    // (PRTL_USER_PROCESS_PARAMETERS)
-            [FieldOffset(0x028)]
-            public IntPtr SubSystemData;        // (PVOID) 
-            [FieldOffset(0x030)]
-            public IntPtr ProcessHeap;          // (PVOID) 
-            [FieldOffset(0x038)]
-            public IntPtr FastPebLock;          // (PRTL_CRITICAL_SECTION)
+            [FieldOffset(0x000)] public byte InheritedAddressSpace;
+            [FieldOffset(0x001)] public byte ReadImageFileExecOptions;
+            [FieldOffset(0x002)] public byte BeingDebugged;
+            [FieldOffset(0x003)] public byte Spare;
+            [FieldOffset(0x008)] public IntPtr Mutant;
+            [FieldOffset(0x010)] public IntPtr ImageBaseAddress; // (PVOID) 
+            [FieldOffset(0x018)] public IntPtr Ldr; // (PPEB_LDR_DATA)
+            [FieldOffset(0x020)] public IntPtr ProcessParameters; // (PRTL_USER_PROCESS_PARAMETERS)
+            [FieldOffset(0x028)] public IntPtr SubSystemData; // (PVOID) 
+            [FieldOffset(0x030)] public IntPtr ProcessHeap; // (PVOID) 
+            [FieldOffset(0x038)] public IntPtr FastPebLock; // (PRTL_CRITICAL_SECTION)
         }
 
-        [StructLayout(LayoutKind.Explicit, Size = 0xa0)]
+        [StructLayout(LayoutKind.Sequential)]
         public struct RTL_USER_PROCESS_PARAMETERS
         {
-            /*
             public uint MaximumLength;
             public uint Length;
             public uint Flags;
@@ -89,11 +77,10 @@ namespace Cobalt.Engine
             public UNICODE_STRING CurrentDirectoryPath;
             public IntPtr CurrentDirectoryHandle;
             public UNICODE_STRING DllPath;
-            public UNICODE_STRING ImagePathName;*/
-            [FieldOffset(0x70)]
+            public UNICODE_STRING ImagePathName;
             public UNICODE_STRING CommandLine;
         }
-        
+
         [StructLayout(LayoutKind.Sequential)]
         public struct UNICODE_STRING
         {
@@ -182,7 +169,7 @@ namespace Cobalt.Engine
             OUTOFCONTEXT = 0x0000, // Events are ASYNC
             SKIPOWNTHREAD = 0x0001, // Don't call back for events on installer's thread
             SKIPOWNPROCESS = 0x0002, // Don't call back for events on installer's process
-            INCONTEXT = 0x0004, // Events are SYNC, this causes your dll to be injected into every process
+            INCONTEXT = 0x0004 // Events are SYNC, this causes your dll to be injected into every process
         }
 
         public enum WinEvent : uint
@@ -234,7 +221,9 @@ namespace Cobalt.Engine
             OBJECT_HIDE = 0x8003, // hwnd ID idChild is hidden item
             OBJECT_REORDER = 0x8004, // hwnd ID idChild is parent of zordering children
             OBJECT_FOCUS = 0x8005, // hwnd ID idChild is focused item,
-            OBJECT_SELECTION = 0x8006, // hwnd ID idChild is selected item (if only one), or idChild is OBJID_WINDOW if complex,
+
+            OBJECT_SELECTION =
+                0x8006, // hwnd ID idChild is selected item (if only one), or idChild is OBJID_WINDOW if complex,
             OBJECT_SELECTIONADD = 0x8007, // hwnd ID idChild is item added,
             OBJECT_SELECTIONREMOVE = 0x8008, // hwnd ID idChild is item removed,
             OBJECT_SELECTIONWITHIN = 0x8009, // hwnd ID idChild is parent of changed selected items,
@@ -253,7 +242,7 @@ namespace Cobalt.Engine
             SYSTEM_ARRANGMENTPREVIEW = 0x8016,
             OBJECT_END = 0x80FF,
             AIA_START = 0xA000,
-            AIA_END = 0xAFFF,
+            AIA_END = 0xAFFF
         }
 
         [Flags]
@@ -274,6 +263,64 @@ namespace Cobalt.Engine
             Synchronize = 0x00100000
         }
 
+        public enum GetWindowType : uint
+        {
+            /// <summary>
+            ///     The retrieved handle identifies the window of the same type that is highest in the Z order.
+            ///     <para />
+            ///     If the specified window is a topmost window, the handle identifies a topmost window.
+            ///     If the specified window is a top-level window, the handle identifies a top-level window.
+            ///     If the specified window is a child window, the handle identifies a sibling window.
+            /// </summary>
+            GW_HWNDFIRST = 0,
+
+            /// <summary>
+            ///     The retrieved handle identifies the window of the same type that is lowest in the Z order.
+            ///     <para />
+            ///     If the specified window is a topmost window, the handle identifies a topmost window.
+            ///     If the specified window is a top-level window, the handle identifies a top-level window.
+            ///     If the specified window is a child window, the handle identifies a sibling window.
+            /// </summary>
+            GW_HWNDLAST = 1,
+
+            /// <summary>
+            ///     The retrieved handle identifies the window below the specified window in the Z order.
+            ///     <para />
+            ///     If the specified window is a topmost window, the handle identifies a topmost window.
+            ///     If the specified window is a top-level window, the handle identifies a top-level window.
+            ///     If the specified window is a child window, the handle identifies a sibling window.
+            /// </summary>
+            GW_HWNDNEXT = 2,
+
+            /// <summary>
+            ///     The retrieved handle identifies the window above the specified window in the Z order.
+            ///     <para />
+            ///     If the specified window is a topmost window, the handle identifies a topmost window.
+            ///     If the specified window is a top-level window, the handle identifies a top-level window.
+            ///     If the specified window is a child window, the handle identifies a sibling window.
+            /// </summary>
+            GW_HWNDPREV = 3,
+
+            /// <summary>
+            ///     The retrieved handle identifies the specified window's owner window, if any.
+            /// </summary>
+            GW_OWNER = 4,
+
+            /// <summary>
+            ///     The retrieved handle identifies the child window at the top of the Z order,
+            ///     if the specified window is a parent window; otherwise, the retrieved handle is NULL.
+            ///     The function examines only child windows of the specified window. It does not examine descendant windows.
+            /// </summary>
+            GW_CHILD = 5,
+
+            /// <summary>
+            ///     The retrieved handle identifies the enabled popup window owned by the specified window (the
+            ///     search uses the first such window found using GW_HWNDNEXT); otherwise, if there are no enabled
+            ///     popup windows, the retrieved handle is that of the specified window.
+            /// </summary>
+            GW_ENABLEDPOPUP = 6
+        }
+
         #endregion
 
         #region Functions
@@ -287,7 +334,7 @@ namespace Cobalt.Engine
                 hmodWinEventProc, WinEventDelegate lpfnWinEventProc, uint idProcess,
             uint idThread, HookFlags dwFlags);
 
-        
+
         /// <summary>
         ///     Enumerates all top-level windows on the screen by passing the handle to each window, in turn, to an
         ///     application-defined callback function. <see cref="EnumWindows" /> continues until the last top-level window is
@@ -326,10 +373,43 @@ namespace Cobalt.Engine
         [DllImport("user32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
+        
+        [DllImport("user32.Dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool EnumChildWindows(IntPtr parentHandle, EnumWindowsProc callback, IntPtr lParam);
 
         [DllImport("user32.dll", SetLastError = true)]
         public static extern IntPtr GetForegroundWindow();
+
+        [DllImport("user32.dll")]
+        public static extern IntPtr GetTopWindow(IntPtr hWnd);
+
+        /// <summary>
+        ///     Retrieves a handle to a window that has the specified relationship (Z-Order or owner) to the specified window.
+        /// </summary>
+        /// <remarks>
+        ///     The EnumChildWindows function is more reliable than calling GetWindow in a loop. An application that
+        ///     calls GetWindow to perform this task risks being caught in an infinite loop or referencing a handle to a window
+        ///     that has been destroyed.
+        /// </remarks>
+        /// <param name="hWnd">
+        ///     A handle to a window. The window handle retrieved is relative to this window, based on the
+        ///     value of the uCmd parameter.
+        /// </param>
+        /// <param name="uCmd">
+        ///     The relationship between the specified window and the window whose handle is to be
+        ///     retrieved.
+        /// </param>
+        /// <returns>
+        ///     If the function succeeds, the return value is a window handle. If no window exists with the specified relationship
+        ///     to the specified window, the return value is NULL. To get extended error information, call GetLastError.
+        /// </returns>
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern IntPtr GetWindow(IntPtr hWnd, GetWindowType uCmd);
         
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern bool IsWindowVisible(IntPtr hwnd);
+
         [DllImport("user32.dll", SetLastError = true)]
         public static extern uint GetWindowThreadProcessId(IntPtr hwnd, out uint lpdwProcessId);
 
@@ -347,21 +427,29 @@ namespace Cobalt.Engine
             ProcessAccessFlags processAccess,
             bool bInheritHandle,
             uint processId
-        );        
+        );
+        
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern bool CloseHandle(IntPtr hHandle);
 
-        
         [DllImport("kernel32.dll", SetLastError = true)]
-        private static extern bool ReadProcessMemory(IntPtr hProcess, IntPtr lpBaseAddress, IntPtr lpBuffer, int dwSize, out uint lpNumberOfBytesRead);
-        
+        private static extern bool ReadProcessMemory(IntPtr hProcess, IntPtr lpBaseAddress, IntPtr lpBuffer, int dwSize,
+            out uint lpNumberOfBytesRead);
+
         [DllImport("kernel32.dll", SetLastError = true)]
-        private static extern bool ReadProcessMemory(IntPtr hProcess, IntPtr lpBaseAddress, [MarshalAs(UnmanagedType.LPWStr)] string lpBuffer, uint dwSize, out uint lpNumberOfBytesRead);
+        private static extern bool ReadProcessMemory(IntPtr hProcess, IntPtr lpBaseAddress,
+            [MarshalAs(UnmanagedType.LPWStr)] string lpBuffer, uint dwSize, out uint lpNumberOfBytesRead);
+
+        [DllImport("shell32.dll", SetLastError = true)]
+        public static extern IntPtr CommandLineToArgvW(
+            [MarshalAs(UnmanagedType.LPWStr)] string lpCmdLine, out int pNumArgs);
 
         #endregion
 
         #region Derived
 
         public static T ReadProcessMemory<T>(IntPtr hProcess, IntPtr lpBaseAddress)
-            where T: struct
+            where T : struct
         {
             var rsz = Marshal.SizeOf<T>();
             var pnt = Marshal.AllocHGlobal(rsz);
@@ -370,6 +458,22 @@ namespace Cobalt.Engine
             var ret = Marshal.PtrToStructure<T>(pnt);
             Marshal.FreeHGlobal(pnt);
             return ret;
+        }
+
+        public static void Handled(this bool o)
+        {
+            if (!o) throw new Win32Exception(Marshal.GetLastWin32Error());
+        }
+
+        public static void Handled(this int hr)
+        {
+            if (hr != 0) throw new Win32Exception(hr);
+        }
+
+        public static IntPtr Handled(this IntPtr ptr)
+        {
+            if (ptr == IntPtr.Zero) throw new Win32Exception(Marshal.GetLastWin32Error());
+            return ptr;
         }
 
         #endregion
