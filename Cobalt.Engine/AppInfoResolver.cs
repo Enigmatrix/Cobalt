@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Runtime.InteropServices;
 using Cobalt.Common.Data.Entities;
@@ -35,6 +36,7 @@ namespace Cobalt.Engine
                 var pre = Array.IndexOf(args, "-jar");
                 path = args[pre + 1];
             }
+
             CloseHandle(proc);
 
             //Windows Store Apps => Magic
@@ -48,9 +50,9 @@ namespace Cobalt.Engine
             return path;
         }
 
-        private (RTL_USER_PROCESS_PARAMETERS , IntPtr) WindowPathInfo(uint pid)
+        private (RTL_USER_PROCESS_PARAMETERS, IntPtr) WindowPathInfo(uint pid)
         {
-            var proc = OpenProcess(ProcessAccessFlags.QueryInformation|ProcessAccessFlags.VirtualMemoryRead,
+            var proc = OpenProcess(ProcessAccessFlags.QueryInformation | ProcessAccessFlags.VirtualMemoryRead,
                 false, pid).Handled();
 
             var pbi = new PROCESS_BASIC_INFORMATION();
@@ -72,7 +74,7 @@ namespace Cobalt.Engine
             return app;
         }
 
-        
+
         private uint GetModernAppProcessId(IntPtr hwnd, uint pid)
         {
             //now this is a bit tricky. Modern apps are hosted inside ApplicationFrameHost process, so we need to find
@@ -123,12 +125,12 @@ namespace Cobalt.Engine
 
             return true;
         }
-        
+
         public static string[] CommandLineToArgs(string commandLine)
         {
-            var argv = CommandLineToArgvW(commandLine, out int argc);
+            var argv = CommandLineToArgvW(commandLine, out var argc);
             if (argv == IntPtr.Zero)
-                throw new System.ComponentModel.Win32Exception();
+                throw new Win32Exception();
             try
             {
                 var args = new string[argc];

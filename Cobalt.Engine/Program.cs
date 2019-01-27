@@ -37,7 +37,7 @@ namespace Cobalt.Engine
 
                 server.Send(new AppSwitchMessage
                 {
-                    AppUsageId = x.Previous.Id, 
+                    AppUsageId = x.Previous.Id,
                     ActiveAppId = x.Active.Id
                 });
             });

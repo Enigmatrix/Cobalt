@@ -8,7 +8,6 @@ using System.Xml.Linq;
 
 namespace Cobalt.Common.Util
 {
-
     public class AppResource
     {
         private static readonly string[] _colors =
@@ -152,4 +151,5 @@ namespace Cobalt.Common.Util
                 return ms.ToArray();
             }
         }
-    }}
+    }
+}

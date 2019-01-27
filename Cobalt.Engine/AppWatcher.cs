@@ -7,10 +7,10 @@ namespace Cobalt.Engine
 {
     public class AppWatcher
     {
-        private readonly Subject<(AppUsage, App)> _switches;
-        private readonly AppInfoResolver _resolver;
         private readonly object _appUsageLock = new object();
         private readonly WinEventDelegate _foregroundWindowChangedCallback;
+        private readonly AppInfoResolver _resolver;
+        private readonly Subject<(AppUsage, App)> _switches;
 
         private AppUsageEndReason _endReason;
         private AppUsage _prev;
@@ -18,7 +18,7 @@ namespace Cobalt.Engine
         private string _prevPath;
         private bool _recording;
         private AppUsageStartReason _startReason = AppUsageStartReason.Start;
-        
+
         public AppWatcher(AppInfoResolver resolver)
         {
             _resolver = resolver;
@@ -33,11 +33,10 @@ namespace Cobalt.Engine
 
         public void Start()
         {
-
             var hook = SetWinEventHook(WinEvent.SYSTEM_FOREGROUND, WinEvent.SYSTEM_FOREGROUND,
                 IntPtr.Zero, _foregroundWindowChangedCallback, 0, 0, HookFlags.OUTOFCONTEXT).Handled();
         }
-        
+
         public void StartRecordingWith(AppUsageStartReason reason)
         {
             lock (_appUsageLock)
@@ -80,7 +79,7 @@ namespace Cobalt.Engine
                 EndReason = _endReason
             };
         }
-        
+
         private void RecordForegroundAppUsage(string path, DateTime endTime)
         {
             //Sometimes the duration is negative, but only by a few nanoseconds.

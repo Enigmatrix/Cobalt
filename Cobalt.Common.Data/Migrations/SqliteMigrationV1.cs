@@ -18,8 +18,8 @@ namespace Cobalt.Common.Data.Migrations
             Table("App")
                 .PkAutoInc()
                 .Field<Text>("Name")
-                .Field<Text>("Color")
                 .Field<Text>("Path")
+                .Field<Text>("Color")
                 .Field<Blob>("Icon");
 
             Table("AppUsage")

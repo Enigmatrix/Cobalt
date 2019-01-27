@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Data;
 using System.Data.SQLite;
+using System.IO;
 using System.Reactive.Linq;
 using Cobalt.Common.Data.Entities;
 using Cobalt.Common.Data.Migrations;
@@ -34,7 +36,20 @@ namespace Cobalt.Common.Data.Repositories
 
         public IObservable<AppUsage> GetAppUsages(DateTime? start = null, DateTime? end = null)
         {
-            throw new NotImplementedException();
+            var (startTicks, endTicks) = ToTickRange(start, end);
+            return Query(
+                @"select a.Id, a.Name, a.Path, a.Color,
+								au.Id, au.AppId, 
+								(case when au.Start < @start then @start else au.Start end),
+                                (case when au.End > @end then @end else au.End end), 
+								au.StartReason, au.EndReason  
+							from AppUsage au, App a
+							where Start <= @end and End >= @start and au.AppId = a.Id",
+                r => AppUsageMapper(r, AppOffset, AppMapper(r)), new
+                {
+                    start = startTicks,
+                    end = endTicks
+                });
         }
 
         public IObservable<AppUsage> GetAppUsagesForTag(Tag tag, DateTime? start = null, DateTime? end = null)
@@ -188,7 +203,7 @@ namespace Cobalt.Common.Data.Repositories
 
         public bool AppIdByPath(App app)
         {
-            var existing = Connection.QuerySingleOrDefault<App>("select * from App where Path = @Path", new { app.Path });
+            var existing = Connection.QuerySingleOrDefault<App>("select * from App where Path = @Path", new {app.Path});
             if (existing == null) return false;
             app.Id = existing.Id;
             return true;
@@ -196,15 +211,26 @@ namespace Cobalt.Common.Data.Repositories
 
         public AppUsage AppUsageById(long id)
         {
-            throw new NotImplementedException();
+            return QuerySingle("select a.Id, a.Name, a.Path, a.Icon," +
+                               "au.Id, au.AppId, au.Start, au.End, au.StartReason, au.EndReason " +
+                               "from AppUsage au, App a where au.Id = @Id and au.AppId = a.Id",
+                r => AppUsageMapper(r, AppOffset, AppMapper(r)), new {Id = id});
         }
 
         public App AppById(long id)
         {
-            throw new NotImplementedException();
+            return QuerySingle("select * from App where Id = @Id",
+                r => AppMapper(r), new {Id = id});
         }
 
+        #region Offsets
 
+        private const int AppOffset = 4;
+        private const int TagOffset = 2;
+
+        #endregion
+
+        #region Utils
 
         private long Insert(string sql, object obj)
         {
@@ -302,5 +328,122 @@ namespace Cobalt.Common.Data.Repositories
                 ActionParam = actionParam
             };
         }
+
+
+        //returns a (start, end)
+        private static (long, long) ToTickRange(DateTime? start, DateTime? end)
+        {
+            return (start?.Ticks ?? DateTime.MinValue.Ticks, end?.Ticks ?? DateTime.MaxValue.Ticks);
+        }
+
+        private static byte[] GetBytes(IDataReader reader, int fieldOffset)
+        {
+            const int chunkSize = 2 * 1024;
+            var buffer = new byte[chunkSize];
+            if (reader.IsDBNull(0)) return null;
+            using (var stream = new MemoryStream())
+            {
+                long bytesRead;
+                while ((bytesRead = reader.GetBytes(0, fieldOffset, buffer, 0, buffer.Length)) > 0)
+                {
+                    stream.Write(buffer, 0, (int) bytesRead);
+                    fieldOffset += (int) bytesRead;
+                }
+
+                return stream.ToArray();
+            }
+        }
+
+        public Lazy<byte[]> GetAppIcon(App app)
+        {
+            var lazy = new Lazy<byte[]>(() =>
+            {
+                var reader = Connection.ExecuteReader("select Icon from App where Id = @Id", app);
+                using (reader)
+                {
+                    return reader.Read() ? GetBytes(reader, 0) : null;
+                }
+            }, true);
+            return lazy;
+        }
+
+        public IObservable<Tag> GetTags(App app)
+        {
+            return Query("select * from Tag where Id in (select TagId from AppTag where AppId = @Id)",
+                r => TagMapper(r), app);
+        }
+
+        public IObservable<T> Query<T>(string sql, Func<IDataReader, T> fun, object pp = null)
+        {
+            return Observable.Create<T>(obs =>
+            {
+                var reader = Connection.ExecuteReader(sql, pp);
+                using (reader)
+                {
+                    while (reader.Read())
+                        obs.OnNext(fun(reader));
+                    obs.OnCompleted();
+                }
+
+                return () => { };
+            });
+        }
+
+        public T QuerySingle<T>(string sql, Func<IDataReader, T> fun, object pp = null)
+        {
+            var reader = Connection.ExecuteReader(sql, pp);
+            var dat = default(T);
+            if (!reader.Read()) return dat;
+            using (reader)
+            {
+                dat = fun(reader);
+            }
+
+            return dat;
+        }
+
+        #endregion
+
+        #region Mapper
+
+        private App AppMapper(IDataReader reader, int offset = 0)
+        {
+            var app = new App
+            {
+                Id = reader.GetInt64(offset + 0),
+                Name = reader.IsDBNull(offset + 1) ? null : reader.GetString(offset + 1),
+                Path = reader.GetString(offset + 2),
+                Color = reader.IsDBNull(offset + 3) ? null : reader.GetString(offset + 3)
+            };
+            app.Icon = GetAppIcon(app);
+            app.Tags = GetTags(app);
+            return app;
+        }
+
+        private Tag TagMapper(IDataReader reader, int offset = 0)
+        {
+            return new Tag
+            {
+                Id = reader.GetInt64(offset + 0),
+                Name = reader.IsDBNull(offset + 1) ? null : reader.GetString(offset + 1),
+                ForegroundColor = reader.IsDBNull(offset + 2) ? null : reader.GetString(offset + 2),
+                BackgroundColor = reader.IsDBNull(offset + 3) ? null : reader.GetString(offset + 3)
+            };
+        }
+
+        private AppUsage AppUsageMapper(IDataReader reader, int offset = 0, App app = null)
+        {
+            return new AppUsage
+            {
+                Id = reader.GetInt64(offset + 0),
+                App = app ?? new App {Id = reader.GetInt64(offset + 1)},
+                Start = new DateTime(reader.GetInt64(offset + 2)),
+                End = new DateTime(reader.GetInt64(offset + 3)),
+                StartReason = (AppUsageStartReason) reader.GetInt32(offset + 4),
+                EndReason = (AppUsageEndReason) reader.GetInt32(offset + 5)
+            };
+        }
+
+        #endregion
     }
 }

@@ -1,29 +1,27 @@
-﻿using Cobalt.Common.IoC;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System;
+using System.Reactive.Linq;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+using Cobalt.Common.IoC;
 
 namespace Cobalt
 {
     /// <summary>
-    /// Interaction logic for MainWindow.xaml
+    ///     Interaction logic for MainWindow.xaml
     /// </summary>
     public partial class MainWindow : Window
     {
         public MainWindow()
         {
             InitializeComponent();
+            Loaded += OnLoaded;
+        }
+
+        private void OnLoaded(object sender, RoutedEventArgs e)
+        {
+            var svc = IoCService.Instance.Resolve<Service>();
+            svc.Switches()
+                .ObserveOnDispatcher()
+                .Subscribe(x => { Usages.Items.Add(x.Previous.App.Path); });
         }
     }
 }

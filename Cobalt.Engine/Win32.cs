@@ -373,7 +373,7 @@ namespace Cobalt.Engine
         [DllImport("user32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
-        
+
         [DllImport("user32.Dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool EnumChildWindows(IntPtr parentHandle, EnumWindowsProc callback, IntPtr lParam);
@@ -406,7 +406,7 @@ namespace Cobalt.Engine
         /// </returns>
         [DllImport("user32.dll", SetLastError = true)]
         public static extern IntPtr GetWindow(IntPtr hWnd, GetWindowType uCmd);
-        
+
         [DllImport("user32.dll", SetLastError = true)]
         public static extern bool IsWindowVisible(IntPtr hwnd);
 
@@ -428,7 +428,7 @@ namespace Cobalt.Engine
             bool bInheritHandle,
             uint processId
         );
-        
+
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool CloseHandle(IntPtr hHandle);
 
