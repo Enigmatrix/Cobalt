@@ -194,6 +194,18 @@ namespace Cobalt.Common.Data.Repositories
             return true;
         }
 
+        public AppUsage AppUsageById(long id)
+        {
+            throw new NotImplementedException();
+        }
+
+        public App AppById(long id)
+        {
+            throw new NotImplementedException();
+        }
+
+
+
         private long Insert(string sql, object obj)
         {
             return Connection.ExecuteScalar<long>(sql + ";select last_insert_rowid()", obj);

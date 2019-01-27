@@ -38,5 +38,7 @@ namespace Cobalt.Common.Data.Repositories
         void RemoveTagFromApp(Tag tag, App app);
 
         bool AppIdByPath(App active);
+        AppUsage AppUsageById(long id);
+        App AppById(long id);
     }
 }

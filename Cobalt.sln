@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cobalt.Engine", "Cobalt.Eng
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cobalt.Common.Transmission", "Cobalt.Common.Transmission\Cobalt.Common.Transmission.csproj", "{A330DDE1-7A2B-446B-9EDB-2C3742C4C30F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cobalt", "Cobalt\Cobalt.csproj", "{CECE7FC7-D633-404F-96F8-14C72EAA4196}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,6 +47,10 @@ Global
 		{A330DDE1-7A2B-446B-9EDB-2C3742C4C30F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A330DDE1-7A2B-446B-9EDB-2C3742C4C30F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A330DDE1-7A2B-446B-9EDB-2C3742C4C30F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CECE7FC7-D633-404F-96F8-14C72EAA4196}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CECE7FC7-D633-404F-96F8-14C72EAA4196}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CECE7FC7-D633-404F-96F8-14C72EAA4196}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CECE7FC7-D633-404F-96F8-14C72EAA4196}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
