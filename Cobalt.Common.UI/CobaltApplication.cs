@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Reflection;
-using System.Text;
+﻿using System.Reflection;
 using System.Windows;
 using Cobalt.Common.IoC;
 using Splat;
@@ -10,7 +7,7 @@ namespace Cobalt.Common.UI
 {
     public class CobaltApplication : Application
     {
-        public CobaltApplication() 
+        public CobaltApplication()
         {
             IoCService.Instance = new IoCService(x =>
                 x.RegisterForReactiveUI(Assembly.GetEntryAssembly()));

@@ -1,10 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Cobalt.Common.Data.Entities;
-using DynamicData;
 using ReactiveUI;
 
 namespace Cobalt
@@ -12,7 +7,7 @@ namespace Cobalt
     public class AppUsageViewModel : ReactiveObject
     {
         //TODO add Cobalt.Common.UI with a custom Application
-        private AppUsage au;
+        private readonly AppUsage au;
 
         public AppUsageViewModel(AppUsage au)
         {
@@ -28,6 +23,7 @@ namespace Cobalt
                 this.RaisePropertyChanged();
             }
         }
+
         public Lazy<byte[]> Image => au.App.Icon;
     }
 }

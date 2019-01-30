@@ -17,7 +17,9 @@ namespace Cobalt.Common.UI
             _container = container;
         }
 
-        public void Dispose() { }
+        public void Dispose()
+        {
+        }
 
         public object GetService(Type serviceType, string contract = null)
         {
@@ -38,10 +40,10 @@ namespace Cobalt.Common.UI
             try
             {
                 var enumerableType = typeof(IEnumerable<>).MakeGenericType(serviceType);
-                object instance = string.IsNullOrEmpty(contract)
+                var instance = string.IsNullOrEmpty(contract)
                     ? _container.Resolve(enumerableType)
                     : _container.ResolveNamed(contract, enumerableType);
-                return ((IEnumerable)instance).Cast<object>();
+                return ((IEnumerable) instance).Cast<object>();
             }
             catch (DependencyResolutionException)
             {
@@ -53,13 +55,9 @@ namespace Cobalt.Common.UI
         {
             var builder = new ContainerBuilder();
             if (string.IsNullOrEmpty(contract))
-            {
                 builder.Register(x => factory()).As(serviceType).AsImplementedInterfaces();
-            }
             else
-            {
                 builder.Register(x => factory()).Named(contract, serviceType).AsImplementedInterfaces();
-            }
             builder.Update(_container);
         }
 
@@ -78,4 +76,5 @@ namespace Cobalt.Common.UI
             // this method is not used by RxUI
             throw new NotImplementedException();
         }
-    }}
+    }
+}

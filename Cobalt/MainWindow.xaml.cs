@@ -1,7 +1,4 @@
-﻿using System;
-using System.Reactive.Disposables;
-using System.Reactive.Linq;
-using System.Windows;
+﻿using System.Reactive.Disposables;
 using Cobalt.Common.IoC;
 using ReactiveUI;
 
@@ -20,7 +17,6 @@ namespace Cobalt
             {
                 this.OneWayBind(ViewModel, vm => vm.AppUsages, v => v.Usages.ItemsSource)
                     .DisposeWith(regs);
-
             });
         }
     }

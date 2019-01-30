@@ -44,7 +44,6 @@ namespace Cobalt.Common.Transmission
                         }
                         catch (Exception)
                         {
-
                         }
 
                         _broadcastingPipes[i].Dispose();

@@ -1,7 +1,4 @@
-﻿using System.Windows;
-using Cobalt.Common.UI;
-
-namespace Cobalt
+﻿namespace Cobalt
 {
     /// <summary>
     ///     Interaction logic for App.xaml
