@@ -5,6 +5,7 @@ namespace Cobalt.Common.Data.Repositories
 {
     public interface IDbRepository : IDisposable
     {
+        //TODO remove this generic shit
         IObservable<T> Get<T>() where T : Entity;
         IObservable<TimeSpan> GetAppUsageTime(DateTime? start = null, DateTime? end = null);
         IObservable<AppUsage> GetAppUsages(DateTime? start = null, DateTime? end = null);
@@ -36,11 +37,15 @@ namespace Cobalt.Common.Data.Repositories
         void Delete(Alert obj);
         void Delete(Reminder obj);
 
+        IObservable<Tag> GetTagsForApp(App app);
+        IObservable<Reminder> GetRemindersForAlert(Alert alert);
+
         void AddTagToApp(Tag tag, App app);
         void RemoveTagFromApp(Tag tag, App app);
 
         bool AppIdByPath(App active);
         AppUsage AppUsageById(long id);
         App AppById(long id);
+        Reminder ReminderById(long argEntityId);
     }
 }

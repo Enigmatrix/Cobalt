@@ -12,7 +12,8 @@ namespace Cobalt.Common.Transmission.Messages
     public enum EntityType
     {
         Alert,
-        App
+        App,
+        Reminder
     }
 
     [ProtoContract]

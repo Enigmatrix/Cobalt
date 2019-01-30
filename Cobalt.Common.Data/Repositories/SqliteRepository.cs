@@ -183,6 +183,16 @@ namespace Cobalt.Common.Data.Repositories
             throw new NotImplementedException();
         }
 
+        public IObservable<Tag> GetTagsForApp(App app)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IObservable<Reminder> GetRemindersForAlert(Alert alert)
+        {
+            throw new NotImplementedException();
+        }
+
         public void AddTagToApp(Tag tag, App app)
         {
             Insert("insert into AppTag(AppId, TagId) values (@AppId, @TagId)", new
@@ -221,6 +231,11 @@ namespace Cobalt.Common.Data.Repositories
         {
             return QuerySingle("select * from App where Id = @Id",
                 r => AppMapper(r), new {Id = id});
+        }
+
+        public Reminder ReminderById(long id)
+        {
+            throw new NotImplementedException();
         }
 
         #region Offsets
