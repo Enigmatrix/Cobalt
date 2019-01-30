@@ -1,27 +1,27 @@
 ﻿using System;
+using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Windows;
 using Cobalt.Common.IoC;
+using ReactiveUI;
 
 namespace Cobalt
 {
     /// <summary>
     ///     Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class MainWindow : ReactiveWindow<MainViewModel>
     {
         public MainWindow()
         {
             InitializeComponent();
-            Loaded += OnLoaded;
-        }
+            ViewModel = IoCService.Instance.Resolve<MainViewModel>();
+            this.WhenActivated(regs =>
+            {
+                this.OneWayBind(ViewModel, vm => vm.AppUsages, v => v.Usages.ItemsSource)
+                    .DisposeWith(regs);
 
-        private void OnLoaded(object sender, RoutedEventArgs e)
-        {
-            var svc = IoCService.Instance.Resolve<Service>();
-            svc.Switches()
-                .ObserveOnDispatcher()
-                .Subscribe(x => { Usages.Items.Add(x.Previous.App.Path); });
+            });
         }
     }
 }

@@ -23,16 +23,12 @@ namespace Cobalt.Common.IoC
                 .CreateLogger();
         }
 
-        public IoCService()
+        public IoCService(Action<ContainerBuilder> register = null)
         {
             var builder = new ContainerBuilder();
             RegisterDependencies(builder);
+            register?.Invoke(builder);
             Container = builder.Build();
-        }
-
-        public IoCService(IContainer container)
-        {
-            Container = container;
         }
 
         public IContainer Container { get; }

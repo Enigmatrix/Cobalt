@@ -66,6 +66,9 @@
       <HintPath>..\packages\System.Data.SQLite.Core.1.0.109.2\lib\net46\System.Data.SQLite.dll</HintPath>
     </Reference>
     <Reference Include="System.Drawing" />
+    <Reference Include="System.Drawing.Common, Version=4.0.1.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Drawing.Common.4.6.0-preview.18571.3\lib\net461\System.Drawing.Common.dll</HintPath>
+    </Reference>
     <Reference Include="System.Memory, Version=4.0.1.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Memory.4.5.1\lib\netstandard2.0\System.Memory.dll</HintPath>
     </Reference>
@@ -110,19 +113,19 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Cobalt.Common.Data\Cobalt.Common.Data.csproj">
-      <Project>{7c21f97e-2792-4613-9d3c-6663635bd874}</Project>
+      <Project>{22a0be6d-9e51-466e-b743-96882b9b3100}</Project>
       <Name>Cobalt.Common.Data</Name>
     </ProjectReference>
     <ProjectReference Include="..\Cobalt.Common.IoC\Cobalt.Common.IoC.csproj">
-      <Project>{1863929C-3C99-4E17-898D-D233B61753A8}</Project>
+      <Project>{601e6c5b-cc4e-4b5b-9349-08a5e48ff8cf}</Project>
       <Name>Cobalt.Common.IoC</Name>
     </ProjectReference>
     <ProjectReference Include="..\Cobalt.Common.Transmission\Cobalt.Common.Transmission.csproj">
-      <Project>{a330dde1-7a2b-446b-9edb-2c3742c4c30f}</Project>
+      <Project>{2e51859b-090a-4711-9a87-6121f4e215cb}</Project>
       <Name>Cobalt.Common.Transmission</Name>
     </ProjectReference>
     <ProjectReference Include="..\Cobalt.Common.Util\Cobalt.Common.Util.csproj">
-      <Project>{6BADE70D-8496-4ABA-AD82-EB800AA450D5}</Project>
+      <Project>{0dfa1b01-a516-4282-b850-c1cf8354a006}</Project>
       <Name>Cobalt.Common.Util</Name>
     </ProjectReference>
   </ItemGroup>

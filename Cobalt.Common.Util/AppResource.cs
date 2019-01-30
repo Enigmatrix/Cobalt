@@ -8,6 +8,7 @@ using System.Xml.Linq;
 
 namespace Cobalt.Common.Util
 {
+    //TODO move this into Engine
     public class AppResource
     {
         private static readonly string[] _colors =
@@ -55,7 +56,8 @@ namespace Cobalt.Common.Util
         {
             try
             {
-                return FileVersionInfo.GetVersionInfo(appPath).FileDescription;
+                var info = FileVersionInfo.GetVersionInfo(appPath);
+                return info.FileDescription ?? Path.GetFileName(appPath);
             }
             catch (FileNotFoundException)
             {

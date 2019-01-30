@@ -7,7 +7,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Dapper" Version="1.50.5" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.9.0" />
+    <PackageReference Include="System.Data.SQLite.Core" Version="1.0.109.2" />
     <PackageReference Include="System.Reactive" Version="4.2.0-preview.63" />
     <PackageReference Include="xunit" Version="2.4.0" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.0" />
@@ -15,6 +17,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Cobalt.Common.Data\Cobalt.Common.Data.csproj" />
+    <ProjectReference Include="..\Cobalt.Common.IoC\Cobalt.Common.IoC.csproj" />
+    <ProjectReference Include="..\Cobalt.Common.Transmission\Cobalt.Common.Transmission.csproj" />
+    <ProjectReference Include="..\Cobalt.Common.UI\Cobalt.Common.UI.csproj" />
+    <ProjectReference Include="..\Cobalt.Common.Util\Cobalt.Common.Util.csproj" />
   </ItemGroup>
 
 </Project>

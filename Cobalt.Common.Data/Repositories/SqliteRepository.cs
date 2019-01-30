@@ -203,7 +203,7 @@ namespace Cobalt.Common.Data.Repositories
 
         public bool AppIdByPath(App app)
         {
-            var existing = Connection.QuerySingleOrDefault<App>("select * from App where Path = @Path", new {app.Path});
+            var existing = QuerySingle("select * from App where Path = @Path", r => AppMapper(r), new {app.Path});
             if (existing == null) return false;
             app.Id = existing.Id;
             return true;
