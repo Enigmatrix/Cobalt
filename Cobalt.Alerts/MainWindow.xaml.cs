@@ -1,18 +1,44 @@
 ﻿using System;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
+using System.Windows;
 using Cobalt.Common.Data.Entities;
 using Cobalt.Common.IoC;
 using Cobalt.Common.Services;
 using DynamicData;
 using Serilog;
+using ToastNotifications;
+using ToastNotifications.Core;
+using ToastNotifications.Lifetime;
+using ToastNotifications.Messages;
+using ToastNotifications.Position;
 
 namespace Cobalt.Alerts
 {
-    public class Program
+    /// <summary>
+    ///     Interaction logic for MainWindow.xaml
+    /// </summary>
+    public partial class MainWindow
     {
-        public static void Main(string[] args)
+        public MainWindow()
         {
+            InitializeComponent();
+            Loaded += (o, e) => OnLoaded();
+            //OnLoaded();
+        }
+
+        private static readonly Notifier Notifier = new Notifier(cfg =>
+        {
+            cfg.PositionProvider = new PrimaryScreenPositionProvider(Corner.BottomRight, 5, 5);
+            cfg.LifetimeSupervisor = new TimeAndCountBasedLifetimeSupervisor(
+                TimeSpan.FromSeconds(5),
+                MaximumNotificationCount.UnlimitedNotifications());
+            cfg.Dispatcher = Application.Current.Dispatcher;
+        });
+
+        private void OnLoaded()
+        {
+            Notifier.ShowInformation("BHUTANESE PASSPORT");
             try
             {
                 Run();
@@ -37,8 +63,10 @@ namespace Cobalt.Alerts
                     case TagAlert ta:
                         return statsSvc.GetTagDuration(ta.Tag, start, end);
                 }
+
                 throw new Exception("Alert neither TagAlert nor AppAlert");
             }
+
 
             entitySvc.GetAlerts()
                 .Filter(x => x.Enabled)
@@ -62,15 +90,10 @@ namespace Cobalt.Alerts
 
                     return new CompositeDisposable(durations.Connect(), reminderWatchers);
                 })
-                .DisposeMany()
-                .Subscribe();
-
-            while (true)
-            {
-            }
+                .DisposeMany();
         }
 
-        public static (DateTime? Start, DateTime? End) GetStartEnd(TimeRange time)
+        private static (DateTime? Start, DateTime? End) GetStartEnd(TimeRange time)
         {
             switch (time)
             {
@@ -79,6 +102,7 @@ namespace Cobalt.Alerts
                 case RepeatingTimeRange repeat:
                     throw new NotImplementedException();
             }
+
             throw new Exception("TimeRange neither OnceTimeRange nor RepeatingTimeRange");
         }
 
@@ -91,7 +115,7 @@ namespace Cobalt.Alerts
                 switch (alert.Action)
                 {
                     case MessageRunAction ra:
-                        
+                        Notifier.ShowInformation("Seems");
                         break;
                     case CustomMessageRunAction ra:
                         break;
