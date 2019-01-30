@@ -11,7 +11,7 @@ using Serilog;
 
 namespace Cobalt.Common.IoC
 {
-    public class IoCService
+    public class IoCService : IDisposable
     {
         private static IoCService _instance;
 
@@ -93,6 +93,11 @@ namespace Cobalt.Common.IoC
         public object Resolve(Type t)
         {
             return Container.Resolve(t);
+        }
+
+        public void Dispose()
+        {
+            Container.Dispose();
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System.Reactive.Disposables;
+using System.Windows;
 using Cobalt.Common.IoC;
 using ReactiveUI;
 
@@ -18,6 +19,11 @@ namespace Cobalt
                 this.OneWayBind(ViewModel, vm => vm.AppUsages, v => v.Usages.ItemsSource)
                     .DisposeWith(regs);
             });
+        }
+
+        private void Throw(object sender, RoutedEventArgs e)
+        {
+            throw new System.NotImplementedException();
         }
     }
 }

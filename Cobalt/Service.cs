@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Runtime.CompilerServices;
 using Cobalt.Common.Data.Entities;
 using Cobalt.Common.Data.Repositories;
 using Cobalt.Common.Transmission;
 using Cobalt.Common.Transmission.Messages;
+using DynamicData;
 
 namespace Cobalt
 {
@@ -20,12 +22,16 @@ namespace Cobalt
 
         private ITransmissionClient Client { get; }
 
-        public IObservable<(AppUsage Previous, Common.Data.Entities.App Active)> Switches()
+        public IObservable<IChangeSet<(AppUsage Previous, Common.Data.Entities.App Active)>> Switches()
         {
-            return Repository.GetAppUsages(DateTime.Today)
-                .Select(Wrap)
-                .Concat(Client.Messages.OfType<AppSwitchMessage>().Select(x =>
-                    (Repository.AppUsageById(x.AppUsageId), Repository.AppById(x.ActiveAppId))));
+            return ObservableChangeSet.Create<(AppUsage, Common.Data.Entities.App)>(obs =>
+                {
+                    obs.AddRange(Repository.GetAppUsages(DateTime.Today).Select(Wrap).ToEnumerable());
+                    var dis = Client.Messages<AppSwitchMessage>().Select(x =>
+                            (Repository.AppUsageById(x.AppUsageId), Repository.AppById(x.ActiveAppId)))
+                        .Subscribe(obs.Add);
+                    return new CompositeDisposable(dis);
+                });
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
