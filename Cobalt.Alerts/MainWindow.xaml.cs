@@ -10,7 +10,6 @@ using Cobalt.Common.Util;
 using DynamicData;
 using Serilog;
 using ToastNotifications;
-using ToastNotifications.Core;
 using ToastNotifications.Lifetime;
 using ToastNotifications.Messages;
 using ToastNotifications.Position;
@@ -22,11 +21,6 @@ namespace Cobalt.Alerts
     /// </summary>
     public partial class MainWindow
     {
-        public MainWindow()
-        {
-            InitializeComponent();
-        }
-
         private static readonly Notifier Notifier = new Notifier(cfg =>
         {
             cfg.PositionProvider = new PrimaryScreenPositionProvider(Corner.BottomRight, 5, 5);
@@ -35,6 +29,11 @@ namespace Cobalt.Alerts
                 MaximumNotificationCount.UnlimitedNotifications());
             cfg.Dispatcher = Application.Current.Dispatcher;
         });
+
+        public MainWindow()
+        {
+            InitializeComponent();
+        }
 
         private static void Run()
         {
@@ -50,6 +49,7 @@ namespace Cobalt.Alerts
                     case TagAlert ta:
                         return statsSvc.GetTagDuration(ta.Tag, start, end);
                 }
+
                 return Throw.Unreachable<IObservable<TimeSpan>>();
             }
 
@@ -70,12 +70,13 @@ namespace Cobalt.Alerts
                             return durations.FirstAsync(dur => dur >= reminderDur)
                                 .Subscribe(_ => ActOnReminder(alert, r));
                         })
-                        .DisposeMany()
-                        .Subscribe();
+                        .DisposeMany() /*;
+                        .Subscribe()*/;
 
-                    return new CompositeDisposable(durations.Connect(), reminderWatchers);
+                    return new CompositeDisposable(durations.Connect() /*, reminderWatchers*/);
                 })
-                .DisposeMany();
+                .DisposeMany() /*
+                .Subscribe()*/;
         }
 
         private static (DateTime? Start, DateTime? End) GetStartEnd(TimeRange time)
@@ -94,8 +95,10 @@ namespace Cobalt.Alerts
                         case RepeatingTimeRangeType.Monthly:
                             return (DateTime.Today.StartOfMonth(), DateTime.Today.EndOfMonth());
                     }
+
                     break;
             }
+
             return Throw.Unreachable<(DateTime, DateTime)>();
         }
 
@@ -117,6 +120,7 @@ namespace Cobalt.Alerts
                                 entityMessage = $"Tag {a.Tag.Name}";
                                 break;
                         }
+
                         Notifier.ShowError($"Time is up for {entityMessage}!");
                         break;
                     case CustomMessageRunAction ra:
@@ -160,6 +164,7 @@ namespace Cobalt.Alerts
                                 entityMessage = a.Tag.Name;
                                 break;
                         }
+
                         Notifier.ShowInformation($"Reminder for {entityMessage} ({reminder.Offset})");
                         break;
                 }

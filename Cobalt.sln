@@ -23,6 +23,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cobalt.Common.Services", "C
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cobalt.Alerts", "Cobalt.Alerts\Cobalt.Alerts.csproj", "{605946FD-06A6-450D-AD97-4A6D476BDFFA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cobalt.TaskbarNotifier", "Cobalt.TaskbarNotifier\Cobalt.TaskbarNotifier.csproj", "{FFA9BE0B-5878-44A4-BD91-609B2935E8A4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -69,6 +71,10 @@ Global
 		{605946FD-06A6-450D-AD97-4A6D476BDFFA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{605946FD-06A6-450D-AD97-4A6D476BDFFA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{605946FD-06A6-450D-AD97-4A6D476BDFFA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FFA9BE0B-5878-44A4-BD91-609B2935E8A4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FFA9BE0B-5878-44A4-BD91-609B2935E8A4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FFA9BE0B-5878-44A4-BD91-609B2935E8A4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FFA9BE0B-5878-44A4-BD91-609B2935E8A4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

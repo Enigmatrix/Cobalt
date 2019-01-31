@@ -1,16 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Cobalt.Common.Data.Entities;
 using Cobalt.Common.Data.Repositories;
 using Cobalt.Common.Transmission;
 using Cobalt.Common.Transmission.Messages;
 using DynamicData;
-using ChangeType = Cobalt.Common.Transmission.Messages.ChangeType;
 
 namespace Cobalt.Common.Services
 {
@@ -22,14 +17,14 @@ namespace Cobalt.Common.Services
 
     public class EntityService : IEntityService
     {
-        private ITransmissionClient Client { get; }
-        private IDbRepository Repository { get; }
-
         public EntityService(ITransmissionClient client, IDbRepository repo)
         {
             Client = client;
             Repository = repo;
         }
+
+        private ITransmissionClient Client { get; }
+        private IDbRepository Repository { get; }
 
         public IObservable<IChangeSet<Alert>> GetAlerts()
         {

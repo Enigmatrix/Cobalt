@@ -8,9 +8,9 @@
                            mc:Ignorable="d"
                            Title="MainWindow" Height="450" Width="800">
     <StackPanel Orientation="Vertical">
-        <Button Content="THROW" Click="Throw"/>
+        <Button Content="THROW" Click="Throw" />
         <ScrollViewer>
-            <ListBox x:Name="Usages"  />
+            <ListBox x:Name="Usages" />
         </ScrollViewer>
     </StackPanel>
 </reactiveUi:ReactiveWindow>

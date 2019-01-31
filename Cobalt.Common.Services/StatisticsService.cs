@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Cobalt.Common.Data.Entities;
 using Cobalt.Common.Data.Repositories;
 using Cobalt.Common.Transmission;
@@ -17,14 +13,14 @@ namespace Cobalt.Common.Services
 
     public class StatisticsService : IStatisticsService
     {
-        private ITransmissionClient Client { get; }
-        private IDbRepository Repository { get; }
-
         public StatisticsService(ITransmissionClient client, IDbRepository repo)
         {
             Client = client;
             Repository = repo;
         }
+
+        private ITransmissionClient Client { get; }
+        private IDbRepository Repository { get; }
 
 
         public IObservable<TimeSpan> GetAppDuration(App app, DateTime? start = null, DateTime? end = null)

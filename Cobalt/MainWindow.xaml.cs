@@ -1,4 +1,5 @@
-﻿using System.Reactive.Disposables;
+﻿using System;
+using System.Reactive.Disposables;
 using System.Windows;
 using Cobalt.Common.IoC;
 using ReactiveUI;
@@ -23,7 +24,7 @@ namespace Cobalt
 
         private void Throw(object sender, RoutedEventArgs e)
         {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
     }
 }

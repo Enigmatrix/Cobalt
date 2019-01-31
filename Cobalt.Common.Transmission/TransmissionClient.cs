@@ -38,23 +38,24 @@ namespace Cobalt.Common.Transmission
             _listeningThread = new Thread(() =>
             {
                 while (_keepAlive)
-                {
                     try
                     {
                         if (Serializer.NonGeneric.TryDeserializeWithLengthPrefix(_pipe, PrefixStyle.Base128,
                             MessageBase.MessageTypeResolver, out var msg))
                             _messages.OnNext((MessageBase) msg);
                     }
-                    catch(Exception e)
+                    catch (Exception e)
                     {
                         Log.Fatal(e, "Pipe read exception");
                     }
-                }
             });
             _listeningThread.Start();
         }
 
-        public IObservable<MessageBase> Messages() => _messages;
+        public IObservable<MessageBase> Messages()
+        {
+            return _messages;
+        }
 
         public IObservable<T> Messages<T>()
             where T : MessageBase

@@ -39,6 +39,11 @@ namespace Cobalt.Common.IoC
             set => _instance = value;
         }
 
+        public void Dispose()
+        {
+            Container.Dispose();
+        }
+
         public static Assembly[] AllAssemblies()
         {
             var a = Assembly.GetEntryAssembly().GetReferencedAssemblies()
@@ -93,11 +98,6 @@ namespace Cobalt.Common.IoC
         public object Resolve(Type t)
         {
             return Container.Resolve(t);
-        }
-
-        public void Dispose()
-        {
-            Container.Dispose();
         }
     }
 }
