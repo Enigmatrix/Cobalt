@@ -44,7 +44,9 @@
   <ItemGroup>
     <Compile Include="AppResource.cs" />
     <Compile Include="CobaltException.cs" />
+    <Compile Include="DateTimeEx.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Throw.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

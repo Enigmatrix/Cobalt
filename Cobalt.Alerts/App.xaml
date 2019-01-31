@@ -1,15 +1,15 @@
-﻿<Application x:Class="Cobalt.Alerts.App"
+﻿<ui:CobaltApplication x:Class="Cobalt.Alerts.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:Cobalt.Alerts"
              xmlns:ui="clr-namespace:Cobalt.Common.UI;assembly=Cobalt.Common.UI"
              StartupUri="MainWindow.xaml">
-    <Application.Resources>
+    <ui:CobaltApplication.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="pack://application:,,,/ToastNotifications.Messages;component/Themes/Default.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
-    </Application.Resources>
-</Application>
+    </ui:CobaltApplication.Resources>
+</ui:CobaltApplication>
 

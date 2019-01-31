@@ -143,6 +143,10 @@
       <Project>{E5120D8E-EDC0-41AD-86DA-8700361C7A3C}</Project>
       <Name>Cobalt.Common.UI</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Cobalt.Common.Util\Cobalt.Common.Util.csproj">
+      <Project>{0DFA1B01-A516-4282-B850-C1CF8354A006}</Project>
+      <Name>Cobalt.Common.Util</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\System.Data.SQLite.Core.1.0.109.2\build\net46\System.Data.SQLite.Core.targets" Condition="Exists('..\packages\System.Data.SQLite.Core.1.0.109.2\build\net46\System.Data.SQLite.Core.targets')" />

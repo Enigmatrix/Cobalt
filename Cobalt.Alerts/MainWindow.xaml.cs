@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Windows;
 using Cobalt.Common.Data.Entities;
 using Cobalt.Common.IoC;
 using Cobalt.Common.Services;
+using Cobalt.Common.Util;
 using DynamicData;
 using Serilog;
 using ToastNotifications;
@@ -48,8 +50,7 @@ namespace Cobalt.Alerts
                     case TagAlert ta:
                         return statsSvc.GetTagDuration(ta.Tag, start, end);
                 }
-
-                throw new Exception("Alert neither TagAlert nor AppAlert");
+                return Throw.Unreachable<IObservable<TimeSpan>>();
             }
 
             entitySvc.GetAlerts()
@@ -84,10 +85,18 @@ namespace Cobalt.Alerts
                 case OnceTimeRange once:
                     return (once.Start, once.End);
                 case RepeatingTimeRange repeat:
-                    throw new NotImplementedException();
+                    switch (repeat.Type)
+                    {
+                        case RepeatingTimeRangeType.Daily:
+                            return (DateTime.Today, DateTime.Today.AddDays(1));
+                        case RepeatingTimeRangeType.Weekly:
+                            return (DateTime.Today.StartOfWeek(), DateTime.Today.EndOfWeek());
+                        case RepeatingTimeRangeType.Monthly:
+                            return (DateTime.Today.StartOfMonth(), DateTime.Today.EndOfMonth());
+                    }
+                    break;
             }
-
-            throw new Exception("TimeRange neither OnceTimeRange nor RepeatingTimeRange");
+            return Throw.Unreachable<(DateTime, DateTime)>();
         }
 
         private static void ActOnAlert(Alert alert)
@@ -95,17 +104,29 @@ namespace Cobalt.Alerts
             Log.Information("Firing RunAction for {@alert}", alert);
             try
             {
-                //TODO
                 switch (alert.Action)
                 {
-                    case MessageRunAction ra:
-                        Notifier.ShowInformation("Seems");
+                    case MessageRunAction _:
+                        var entityMessage = "";
+                        switch (alert)
+                        {
+                            case AppAlert a:
+                                entityMessage = $"App {a.App.Name}";
+                                break;
+                            case TagAlert a:
+                                entityMessage = $"Tag {a.Tag.Name}";
+                                break;
+                        }
+                        Notifier.ShowError($"Time is up for {entityMessage}!");
                         break;
                     case CustomMessageRunAction ra:
+                        Notifier.ShowError(ra.Message);
                         break;
-                    case KillRunAction ra:
+                    case KillRunAction _:
+                        //TODO make a thread for keep on killing process of that path
                         break;
                     case ScriptMessageRunAction ra:
+                        RunScript(ra.Script);
                         break;
                 }
             }
@@ -120,14 +141,26 @@ namespace Cobalt.Alerts
             Log.Information("Firing ReminderAction for {@reminder}", reminder);
             try
             {
-                //TODO
                 switch (reminder.Action)
                 {
                     case CustomWarnReminderAction ra:
+                        Notifier.ShowInformation(ra.Warning);
                         break;
                     case ScriptReminderAction ra:
+                        RunScript(ra.Script);
                         break;
-                    case WarnReminderAction ra:
+                    case WarnReminderAction _:
+                        var entityMessage = "";
+                        switch (alert)
+                        {
+                            case AppAlert a:
+                                entityMessage = a.App.Name;
+                                break;
+                            case TagAlert a:
+                                entityMessage = a.Tag.Name;
+                                break;
+                        }
+                        Notifier.ShowInformation($"Reminder for {entityMessage} ({reminder.Offset})");
                         break;
                 }
             }
@@ -137,9 +170,26 @@ namespace Cobalt.Alerts
             }
         }
 
+        private static void RunScript(string script)
+        {
+            try
+            {
+                var startInfo = new ProcessStartInfo
+                {
+                    Arguments = script,
+                    UseShellExecute = true
+                };
+                var proc = Process.Start(startInfo);
+                proc.Start();
+            }
+            catch (Exception e)
+            {
+                Log.Fatal(e, "Error when running Script {script}", script);
+            }
+        }
+
         private void OnInit(object sender, EventArgs _)
         {
-            Notifier.ShowInformation("BHUTANESE PASSPORT");
             try
             {
                 Run();
