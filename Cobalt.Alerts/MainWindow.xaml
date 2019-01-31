@@ -3,8 +3,9 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:Cobalt.Alerts" Height="380" Width="560">
-        <!--AllowsTransparency="True" ShowInTaskbar="False"
+        xmlns:local="clr-namespace:Cobalt.Alerts" Initialized="OnInit"
+        AllowsTransparency="True" ShowInTaskbar="False"
         mc:Ignorable="d" Visibility="Hidden" ShowActivated="False" WindowStyle="None"
-        Title="HostWindow" Height="0" Width="0">-->
+        Title="HostWindow" Height="0" Width="0">
+
 </Window>

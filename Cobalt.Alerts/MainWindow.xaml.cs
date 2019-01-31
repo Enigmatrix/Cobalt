@@ -23,8 +23,6 @@ namespace Cobalt.Alerts
         public MainWindow()
         {
             InitializeComponent();
-            Loaded += (o, e) => OnLoaded();
-            //OnLoaded();
         }
 
         private static readonly Notifier Notifier = new Notifier(cfg =>
@@ -35,19 +33,6 @@ namespace Cobalt.Alerts
                 MaximumNotificationCount.UnlimitedNotifications());
             cfg.Dispatcher = Application.Current.Dispatcher;
         });
-
-        private void OnLoaded()
-        {
-            Notifier.ShowInformation("BHUTANESE PASSPORT");
-            try
-            {
-                Run();
-            }
-            catch (Exception e)
-            {
-                Log.Fatal(e, "General Error");
-            }
-        }
 
         private static void Run()
         {
@@ -66,7 +51,6 @@ namespace Cobalt.Alerts
 
                 throw new Exception("Alert neither TagAlert nor AppAlert");
             }
-
 
             entitySvc.GetAlerts()
                 .Filter(x => x.Enabled)
@@ -150,6 +134,19 @@ namespace Cobalt.Alerts
             catch (Exception e)
             {
                 Log.Fatal(e, "Error when running ReminderAction");
+            }
+        }
+
+        private void OnInit(object sender, EventArgs _)
+        {
+            Notifier.ShowInformation("BHUTANESE PASSPORT");
+            try
+            {
+                Run();
+            }
+            catch (Exception e)
+            {
+                Log.Fatal(e, "General Error");
             }
         }
     }
