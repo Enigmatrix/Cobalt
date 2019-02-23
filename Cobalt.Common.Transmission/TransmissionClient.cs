@@ -5,6 +5,7 @@ using System.Threading;
 using Cobalt.Common.Transmission.Messages;
 using Cobalt.Common.Transmission.Util;
 using Newtonsoft.Json;
+using Serilog;
 
 namespace Cobalt.Common.Transmission
 {
@@ -37,11 +38,18 @@ namespace Cobalt.Common.Transmission
 
             _listeningThread = new Thread(() =>
             {
-                while (_keepAlive)
-                    using (var reader = new JsonTextReader(streamReader) {CloseInput = false})
-                    {
-                        SingalMessageReceived(serializer.Deserialize<MessageBase>(reader));
-                    }
+                try
+                {
+                    while (_keepAlive)
+                        using (var reader = new JsonTextReader(streamReader) {CloseInput = false})
+                        {
+                            SingalMessageReceived(serializer.Deserialize<MessageBase>(reader));
+                        }
+                }
+                catch (Exception e)
+                {
+                    Log.Error(e, "Error on client listener thread: ");
+                }
             });
             _listeningThread.Start();
         }
