@@ -7,6 +7,7 @@ using Cobalt.Common.Data.Migrations;
 using Cobalt.Common.Data.Repositories;
 using Dapper;
 using Xunit;
+using App1 = Cobalt.Common.Data.Entities.App;
 
 namespace Cobalt.Tests.Data
 {
@@ -31,7 +32,8 @@ namespace Cobalt.Tests.Data
         [Fact]
         public void InsertApp()
         {
-            var app = new App
+            
+            var app = new App1
             {
                 Name = "123",
                 Color = "red",
@@ -51,7 +53,7 @@ namespace Cobalt.Tests.Data
         [Fact]
         public void InsertAppUsage()
         {
-            var app = new App
+            var app = new App1
             {
                 Name = "123",
                 Color = "red",

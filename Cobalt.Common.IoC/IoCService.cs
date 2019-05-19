@@ -21,6 +21,9 @@ namespace Cobalt.Common.IoC
                 .WriteTo.File($"./Logs/{Assembly.GetEntryAssembly().GetName().Name}-.log",
                     rollingInterval: RollingInterval.Day, shared: true)
                 .CreateLogger();
+            var folder = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            DbPath = Path.Combine(folder, "Cobalt.db");
+
         }
 
         public IoCService(Action<ContainerBuilder> register = null)
@@ -52,6 +55,8 @@ namespace Cobalt.Common.IoC
             return a.ToArray();
         }
 
+        public static string DbPath { get; private set; }
+
         public static void RegisterDependencies(ContainerBuilder builder)
         {
             builder.RegisterAssemblyTypes(AllAssemblies())
@@ -62,11 +67,8 @@ namespace Cobalt.Common.IoC
                 .AsImplementedInterfaces()
                 .InstancePerDependency();
 
-            var folder = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            var path = Path.Combine(folder, "Cobalt.db");
-
             builder
-                .Register(c => new SQLiteConnection($"Data Source={path}").OpenAndReturn())
+                .Register(c => new SQLiteConnection($"Data Source={DbPath}").OpenAndReturn())
                 .As<SQLiteConnection>()
                 .SingleInstance();
 

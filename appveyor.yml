@@ -8,6 +8,10 @@ artifacts:
     name: Cobalt.Setup
 build:
   verbosity: minimal
+test:
+  categories:
+    except:
+      - Integration
 deploy:
   release: $(APPVEYOR_REPO_TAG_NAME)
   description: 'Release Description'
