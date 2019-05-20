@@ -11,6 +11,8 @@ using System.Data.SQLite;
 using Dapper;
 using System.IO;
 using System.Threading;
+using System.Runtime.InteropServices;
+using System.Windows.Forms;
 
 namespace Cobalt.Tests.Integration
 {
@@ -19,7 +21,7 @@ namespace Cobalt.Tests.Integration
 
         public EngineTest()
         {
-            
+
         }
 
         public void Dispose()
@@ -30,22 +32,24 @@ namespace Cobalt.Tests.Integration
         [Fact, Trait("Category", "Integration")]
         public void EngineRuns()
         {
-            using var db = new DbUtil();
-            using var _ = new TaskServiceUtil(TaskName.CobaltEngine);
-            Thread.Sleep(20_000);
-
-            Process.Start(new ProcessStartInfo
+            using (var db = new DbUtil())
             {
-                FileName = "NOTEPAD.EXE"
-            });
-            Process.Start(new ProcessStartInfo
-            {
-                FileName = "explorer.exe",
-            });
-
-            var list = db.Connection.Query("select * from AppUsage").AsList();
-
-            Assert.Single(list);
+                using (var proc = new ProcessUtil("WINVER.EXE", "NOTEPAD.EXE"))
+                {
+                    proc.SetFgInternal("WINVER.EXE");
+                    using (var _ = new TaskServiceUtil(TaskName.CobaltEngine))
+                    {
+                        Thread.Sleep(3_000);
+                        //SendKeys.SendWait("%{Tab}");
+                        proc.SetFgInternal("NOTEPAD.EXE");
+                        Thread.Sleep(1_000);
+                        //SendKeys.SendWait("%{Tab}");
+                    }
+                }
+                var list = db.Connection.Query("select * from AppUsage").AsList();
+                Assert.Single(list);
+                Thread.Sleep(1000);
+            }
         }
     }
 }

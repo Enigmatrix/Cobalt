@@ -18,7 +18,7 @@ namespace Cobalt.Common.IoC
         static IoCService()
         {
             Log.Logger = new LoggerConfiguration()
-                .WriteTo.File($"./Logs/{Assembly.GetEntryAssembly().GetName().Name}-.log",
+                .WriteTo.File($"./Logs/{EntryAssembly.GetName()?.Name}-.log",
                     rollingInterval: RollingInterval.Day, shared: true)
                 .CreateLogger();
             var folder = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
@@ -47,11 +47,14 @@ namespace Cobalt.Common.IoC
             Container.Dispose();
         }
 
+        private static Lazy<Assembly> _entryAssembly = new Lazy<Assembly>(() => Assembly.GetEntryAssembly() ?? Assembly.Load("Cobalt.Tests"));
+        private static Assembly EntryAssembly => _entryAssembly.Value;
+
         public static Assembly[] AllAssemblies()
         {
-            var a = Assembly.GetEntryAssembly().GetReferencedAssemblies()
+            var a = EntryAssembly.GetReferencedAssemblies()
                 .Where(x => x.Name.Contains("Cobalt")).Select(Assembly.Load).ToList();
-            a.Add(Assembly.GetEntryAssembly());
+            a.Add(EntryAssembly);
             return a.ToArray();
         }
 

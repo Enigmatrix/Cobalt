@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Reactive.Subjects;
 using Cobalt.Common.Data.Entities;
+using Serilog;
 using static Cobalt.Engine.Win32;
 
 namespace Cobalt.Engine
@@ -100,6 +101,7 @@ namespace Cobalt.Engine
             IntPtr hwineventhook, WinEvent eventtype, IntPtr hwnd, int idobject, int idchild, uint dweventthread,
             uint dwmseventtime)
         {
+            Log.Information("Switch received");
             var dwmsTimestamp = DateTime.Now.AddMilliseconds(dwmseventtime - Environment.TickCount);
 
             lock (_appUsageLock)

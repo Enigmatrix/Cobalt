@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Security.Principal;
+using Cobalt.Common.IoC;
 using Microsoft.Win32.TaskScheduler;
 
 namespace Cobalt.Tests.Integration
@@ -26,12 +27,18 @@ namespace Cobalt.Tests.Integration
 
         public TaskServiceUtil(params TaskName[] names)
         {
+            { 
+                var includeTypes = new [] { typeof(Engine.Program), typeof(Cobalt.App), typeof(Cobalt.TaskbarNotifier.App) };
+            }
             Tasks = new List<Task>();
             TaskService = new TaskService();
-            InstallLocation = Path.GetDirectoryName(Assembly.GetAssembly(GetType()).Location);
+            InstallLocation = Path.GetDirectoryName(Assembly.GetAssembly(typeof(Engine.Program)).Location);
+            Console.WriteLine(InstallLocation);
+            //InstallLocation = Path.GetDirectoryName(@"F:\Code\Personal\Cobalt\Cobalt.Tests\bin\Debug\");
             foreach (var taskName in names)
             {
-                var task = InstallTask(ToStringName(taskName));
+                var strName = ToStringName(taskName);
+                var task = InstallTask(strName);
                 Tasks.Add(task);
                 LaunchTask(task);
             }
@@ -81,7 +88,7 @@ namespace Cobalt.Tests.Integration
 
         private void LaunchTask(Task task)
         {
-            //task.Run();
+            task.Run();
         }
 
         private static string ToStringName(TaskName task)

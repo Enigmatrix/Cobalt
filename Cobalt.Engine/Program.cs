@@ -35,6 +35,7 @@ namespace Cobalt.Engine
 
                 x.Active = InsertWithDetailsOrRetreive(x.Active);
 
+                Log.Information($"Switch {x.Previous.App.Path} -> {x.Active.Path}");
                 server.Send(new AppSwitchMessage
                 {
                     AppUsageId = x.Previous.Id,

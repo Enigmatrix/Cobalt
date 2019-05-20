@@ -15,7 +15,10 @@ namespace Cobalt.Tests.Integration
         public DbUtil()
         {
             var file = IoCService.DbPath;
-            File.Move(file, file+".backup");
+            if (File.Exists(file))
+            {
+                File.Move(file, file+".backup");
+            }
             conn = IoCService.Instance.Resolve<SQLiteConnection>();
         }
 
@@ -24,9 +27,21 @@ namespace Cobalt.Tests.Integration
         public void Dispose()
         {
             var file = conn.FileName;
+            var backup = file + ".backup";
             conn.Dispose();
-            File.Delete(file);
-            File.Move(file+".backup", file);
+            delagain:
+            try
+            {
+                File.Delete(file);
+            }
+            catch
+            {
+                goto delagain;
+            }
+            if (File.Exists(backup))
+            {
+                File.Move(backup, file);
+            }
         }
     }
 }
