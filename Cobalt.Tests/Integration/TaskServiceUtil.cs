@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Security.Principal;
 using Cobalt.Common.IoC;
@@ -40,7 +41,11 @@ namespace Cobalt.Tests.Integration
                 var strName = ToStringName(taskName);
                 var task = InstallTask(strName);
                 Tasks.Add(task);
+                var befStart = DateTime.UtcNow;
                 LaunchTask(task);
+                var logFilePath = Path.Combine(InstallLocation, $"Logs\\{strName}-{DateTime.Now:yyyyMMdd}.log");
+                while (!File.Exists(logFilePath)) { }
+                //while (!File.ReadAllText(logFilePath).Contains("Started")) { }
             }
         }
 

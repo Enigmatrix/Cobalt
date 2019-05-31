@@ -39,10 +39,10 @@ namespace Cobalt.Tests.Integration
                     proc.SetFgInternal("WINVER.EXE");
                     using (var _ = new TaskServiceUtil(TaskName.CobaltEngine))
                     {
-                        Thread.Sleep(3_000);
+                        Thread.Sleep(10_000);
                         //SendKeys.SendWait("%{Tab}");
                         proc.SetFgInternal("NOTEPAD.EXE");
-                        Thread.Sleep(1_000);
+                        Thread.Sleep(5_000);
                         //SendKeys.SendWait("%{Tab}");
                     }
                 }
