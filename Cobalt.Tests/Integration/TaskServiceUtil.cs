@@ -25,6 +25,7 @@ namespace Cobalt.Tests.Integration
         public string InstallLocation { get; }
 
         public List<Task> Tasks { get; }
+        private Dictionary<Task, string> name = new Dictionary<Task, string>();
 
         public TaskServiceUtil(params TaskName[] names)
         {
@@ -41,12 +42,47 @@ namespace Cobalt.Tests.Integration
                 var strName = ToStringName(taskName);
                 var task = InstallTask(strName);
                 Tasks.Add(task);
-                var befStart = DateTime.UtcNow;
+                var befStart = DateTime.Now;
                 LaunchTask(task);
-                var logFilePath = Path.Combine(InstallLocation, $"Logs\\{strName}-{DateTime.Now:yyyyMMdd}.log");
-                while (!File.Exists(logFilePath)) { }
-                //while (!File.ReadAllText(logFilePath).Contains("Started")) { }
+                name[task] = strName;
+                //var logFilePath = Path.Combine(InstallLocation, $"Logs\\{strName}-{DateTime.Now:yyyyMMdd}.log");
+                //logFile[task] = logFilePath;
+                //while (!File.Exists(logFilePath)) { }
+                while(!IsRunning(strName)) { }
+                
             }
+        }
+
+        private bool IsRunning(string name)
+        {
+            var procs = Process.GetProcessesByName(name);
+            return procs.Length != 0;
+        }
+
+        protected bool IsFileLocked(string path)
+        {
+            FileStream stream = null;
+
+            try
+            {
+                stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.None);
+            }
+            catch (IOException)
+            {
+                //the file is unavailable because it is:
+                //still being written to
+                //or being processed by another thread
+                //or does not exist (has already been processed)
+                return true;
+            }
+            finally
+            {
+                if (stream != null)
+                    stream.Close();
+            }
+
+            //file is not locked
+            return false;
         }
 
         private Task InstallTask(string prog)
@@ -89,6 +125,7 @@ namespace Cobalt.Tests.Integration
         {
             //Util.StopCobalt();
             task.Stop();
+            while(IsRunning(name[task])) { }
         }
 
         private void LaunchTask(Task task)

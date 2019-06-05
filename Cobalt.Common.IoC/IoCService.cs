@@ -19,7 +19,7 @@ namespace Cobalt.Common.IoC
         {
             Log.Logger = new LoggerConfiguration()
                 .WriteTo.File($"./Logs/{EntryAssembly.GetName()?.Name}-.log",
-                    rollingInterval: RollingInterval.Day, shared: true)
+                    rollingInterval: RollingInterval.Day, shared: true, flushToDiskInterval: TimeSpan.FromMilliseconds(200))
                 .CreateLogger();
             var folder = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
             DbPath = Path.Combine(folder, "Cobalt.db");
