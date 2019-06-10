@@ -45,10 +45,9 @@ namespace Cobalt.Tests.Integration
                 var befStart = DateTime.Now;
                 LaunchTask(task);
                 name[task] = strName;
-                //var logFilePath = Path.Combine(InstallLocation, $"Logs\\{strName}-{DateTime.Now:yyyyMMdd}.log");
-                //logFile[task] = logFilePath;
-                //while (!File.Exists(logFilePath)) { }
-                while(!IsRunning(strName)) { }
+                var logFilePath = Path.Combine(InstallLocation, $"Logs\\{strName}-{DateTime.Now:yyyyMMdd}.log");
+                while (!File.Exists(logFilePath)) { }
+                while(!IsFileLocked(logFilePath)) { }
                 
             }
         }
