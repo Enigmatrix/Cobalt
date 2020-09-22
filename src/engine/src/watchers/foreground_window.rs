@@ -23,7 +23,7 @@ pub fn title(hwnd: wintypes::HWND) -> String {
 impl<'a> ForegroundWindowWatcher<'a> {
     pub fn new() -> Result<Self, error::WinError> {
 
-        let (mut tx, rx) = mpsc::unbounded_channel::<WindowSwitch>(); // TODO
+        let (tx, rx) = mpsc::unbounded_channel::<WindowSwitch>(); // TODO
 
         let _hook = WinEventHook::new(
             WinEvent::SystemForeground,
@@ -37,14 +37,14 @@ impl<'a> ForegroundWindowWatcher<'a> {
                 _id_event_thread: wintypes::DWORD,
                 dwms_event_time: wintypes::DWORD |
                 {
-                     if unsafe { winuser::IsWindow(hwnd) == 0 || winuser::IsWindowVisible(hwnd) == 0 } {
-                         return;
-                     }
+                    if unsafe { winuser::IsWindow(hwnd) == 0 || winuser::IsWindowVisible(hwnd) == 0 } {
+                        return;
+                    }
                     let title = title(hwnd);
                     println!("normal: {}", title);
 
-                     tx.send(WindowSwitch { title }).unwrap(); // TODO
-                 })?;
+                    tx.send(WindowSwitch { title }).unwrap(); // TODO
+                })?;
 
         Ok(ForegroundWindowWatcher { _hook, stream: rx })
     }
