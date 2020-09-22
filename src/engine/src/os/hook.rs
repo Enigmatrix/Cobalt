@@ -95,23 +95,33 @@ impl EventLoop {
     }
 }
 
+impl EventLoop {
+    pub fn step(&mut self) -> Option<usize> {
+        while unsafe {
+            winuser::PeekMessageW(&mut self.msg, ptr::null_mut(), 0, 0, winuser::PM_REMOVE)
+        } != 0
+        {
+            if self.msg.message == winuser::WM_QUIT {
+                return Some(self.msg.wParam);
+            }
+            unsafe { winuser::TranslateMessage(&mut self.msg as *mut _) };
+            unsafe { winuser::DispatchMessageW(&mut self.msg as *mut _) };
+        }
+        None
+    }
+}
+
 impl Future for EventLoop {
     type Output = usize;
     fn poll(
         mut self: std::pin::Pin<&mut Self>,
         cx: &mut Context<'_>,
     ) -> Poll<<Self as Future>::Output> {
-        while unsafe {
-            winuser::PeekMessageW(&mut self.msg, ptr::null_mut(), 0, 0, winuser::PM_REMOVE)
-        } != 0
-        {
-            if self.msg.message == winuser::WM_QUIT {
-                return Poll::Ready(self.msg.wParam);
-            }
-            unsafe { winuser::TranslateMessage(&mut self.msg as *mut _) };
-            unsafe { winuser::DispatchMessageW(&mut self.msg as *mut _) };
+        if let Some(exit) = self.step() {
+            Poll::Ready(exit)
+        } else {
+            cx.waker().wake_by_ref(); // yield to scheduler
+            Poll::Pending
         }
-        cx.waker().wake_by_ref(); // yield to scheduler
-        Poll::Pending
     }
 }

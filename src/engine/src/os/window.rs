@@ -1,11 +1,19 @@
 use crate::os::*;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct Window(HWND);
 
 impl PartialEq<Window> for Window {
     fn eq(&self, other: &Window) -> bool {
         self.0 == other.0
+    }
+}
+
+impl Eq for Window {}
+
+impl PartialEq<HWND> for Window {
+    fn eq(&self, other: &HWND) -> bool {
+        self.0 == *other
     }
 }
 
@@ -37,9 +45,12 @@ impl Window {
         } else {
             use std::os::windows::ffi::OsStringExt;
 
-            let mut buf = vec![0u16; len as usize];
-            unsafe { winuser::GetWindowTextW(self.0, buf.as_mut_ptr(), len + 1) }; // TODO this could error out
-            Ok(std::ffi::OsString::from_wide(&buf).to_string_lossy().into())
+            let mut buf = vec![0u16; len as usize + 1];
+            let written =
+                expect!(true: winuser::GetWindowTextW(self.0, buf.as_mut_ptr(), len + 1))? as usize;
+            Ok(std::ffi::OsString::from_wide(&buf[..written])
+                .to_string_lossy()
+                .into())
         }
     }
 }

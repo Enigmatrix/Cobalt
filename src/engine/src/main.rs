@@ -1,34 +1,58 @@
 #![feature(trait_alias)]
-// use tokio::prelude::*;
+#![feature(async_closure)]
 
+mod data;
 mod os;
+mod watchers;
+
 use os::*;
+use std::cell::UnsafeCell;
+use tokio::prelude::*;
+use tokio::stream::StreamExt;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    println!("Started!");
+    println!("[LIFECYCLE] Started!");
+
+    let closes = UnsafeCell::new(watchers::WindowClosedWatcher::new());
+    let closes_ptr = closes.get(); // dirty tricks
 
     let ev = hook::EventLoop::new();
-    let hook = hook::WinEventHook::new(
+    let _hook = hook::WinEventHook::new(
         hook::Type::Single(hook::Event::SystemForeground),
         hook::Locality::Global,
         move |_win_event_hook: HWINEVENTHOOK,
               _event: DWORD,
               handle: HWND,
-              _id_object: LONG,
+              id_object: LONG,
               _id_child: LONG,
               _id_event_thread: DWORD,
               dwms_event_time: DWORD| {
-            if unsafe { winuser::IsWindow(handle) == 0 || winuser::IsWindowVisible(handle) == 0 } {
+            // test visibility of window as well?
+            if id_object != winuser::OBJID_WINDOW {
                 return;
             }
             let window = Window::new(handle);
-            println!("switched to {}", window.title().unwrap());
+            let time = Timestamp::from_ticks(dwms_event_time);
+            println!(
+                "[SWITCH] at ({}): {}",
+                time,
+                window
+                    .title()
+                    .unwrap_or_else(|e| format!("Unable to get title for {:?}: {}", window, e))
+            );
+            unsafe { &*closes_ptr }.watch(window).unwrap();
         },
     )?;
 
-    ev.await;
+    let watch = async move {
+        while let Some(item) = unsafe { &mut *closes_ptr }.recver.next().await {
+            println!("[CLOSED]: {:?}", item.title());
+        }
+    };
 
-    println!("Exited!");
+    tokio::join!(ev, watch);
+
+    println!("[LIFECYCLE] Exited!");
     Ok(())
 }
