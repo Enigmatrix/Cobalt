@@ -1,6 +1,0 @@
-syntax = "proto3";
-package communication;
-
-service Engine {
-    // rpc GetWindowSwitches() returns (stream WindowSwitch);
-}

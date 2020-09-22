@@ -1,19 +1,11 @@
-use std::fmt::*;
-
 #[derive(Ord, PartialOrd, Eq, PartialEq, Debug)]
-pub enum WinError {
+pub enum Error {
     Win32(i32),
     HResult(i32),
     NtStatus(i32),
 }
 
-impl WinError {
-    pub fn last_win32() -> Self {
-        WinError::Win32(unsafe { crate::windows::errhandlingapi::GetLastError() as i32 })
-    }
-}
-
-impl std::fmt::Display for WinError {
+impl std::fmt::Display for Error {
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
         match self {
             Self::Win32(r) => write!(fmt, "Win32 ({})", r),
@@ -23,21 +15,35 @@ impl std::fmt::Display for WinError {
     }
 }
 
-impl std::error::Error for WinError {}
+impl std::error::Error for Error {}
+
+impl Error {
+    pub fn last_win32() -> Self {
+        Error::Win32(unsafe { crate::os::errhandlingapi::GetLastError() as i32 })
+    }
+
+    pub fn successful(&self) -> bool {
+        match self {
+            &Self::Win32(r) => r == 0,
+            Self::HResult(_) => todo!(),
+            Self::NtStatus(_) => todo!(),
+        }
+    }
+}
 
 macro_rules! expect {
     (true: $e: expr) => {{
         let val = unsafe { $e };
         if val == 0 {
-            Err($crate::windows::WinError::last_win32())
+            Err($crate::os::error::Error::last_win32())
         } else {
             Ok(val)
         }
     }};
     (non_null: $e: expr) => {{
         let val = unsafe { $e };
-        if val == std::ptr::null_mut() {
-            Err($crate::windows::WinError::last_win32())
+        if val.is_null() {
+            Err($crate::os::error::Error::last_win32())
         } else {
             Ok(val)
         }
@@ -49,7 +55,7 @@ macro_rules! hresult {
     ($e: expr) => {{
         let val = unsafe { $e };
         if val < 0 {
-            Err($crate::windows::WinError::HResult(val))
+            Err($crate::os::error::Error::HResult(val))
         } else {
             Ok(val)
         }
@@ -60,7 +66,7 @@ macro_rules! ntstatus {
     ($e: expr) => {{
         let val = unsafe { $e };
         if val < 0 {
-            Err($crate::windows::WinError::NtStatus(val))
+            Err($crate::os::error::Error::NtStatus(val))
         } else {
             Ok(val)
         }
