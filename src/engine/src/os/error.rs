@@ -1,4 +1,4 @@
-#[derive(Ord, PartialOrd, Eq, PartialEq, Debug)]
+#[derive(Ord, PartialOrd, Eq, PartialEq)]
 pub enum Error {
     Win32(i32),
     HResult(i32),
@@ -8,10 +8,20 @@ pub enum Error {
 impl std::fmt::Display for Error {
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
         match self {
-            Self::Win32(r) => write!(fmt, "Win32 ({})", r),
+            Self::Win32(r) => {
+                let err = std::io::Error::from_raw_os_error(*r);
+                let desc = err.to_string();
+                write!(fmt, "Win32 ({}): {}", r, desc)
+            }
             Self::HResult(r) => write!(fmt, "HResult ({})", r),
             Self::NtStatus(r) => write!(fmt, "NtStatus ({})", r),
         }
+    }
+}
+
+impl std::fmt::Debug for Error {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
+        std::fmt::Display::fmt(self, fmt)
     }
 }
 

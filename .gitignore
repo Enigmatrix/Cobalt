@@ -255,6 +255,7 @@ paket-files/
 
 # Visual Studio Code
 .vscode/
+.ionide/
 
 # Benchmark.Dotnet
 **/BenchmarkDotNet.Artifacts/

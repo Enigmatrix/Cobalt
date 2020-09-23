@@ -1,5 +1,6 @@
 #![feature(trait_alias)]
 #![feature(async_closure)]
+#![feature(default_free_fn)]
 
 mod data;
 mod os;
@@ -29,19 +30,30 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
               _id_event_thread: DWORD,
               dwms_event_time: DWORD| {
             // test visibility of window as well?
-            if id_object != winuser::OBJID_WINDOW {
+            if id_object != winuser::OBJID_WINDOW || unsafe { winuser::IsWindow(handle) == 0 } {
                 return;
             }
-            let window = Window::new(handle);
+            let window = match Window::new(handle) {
+                Ok(window) => window,
+                Err(e) => { dbg!("Invalid window {}: {}", handle, e); return; }
+            };
+            unsafe { &*closes_ptr }
+                .watch(window)
+                .expect(format!("unable to watch for window close for window {:?}", window).as_str());
+
             let time = Timestamp::from_ticks(dwms_event_time);
             println!(
-                "[SWITCH] at ({}): {}",
+                "[SWITCH] at ({}) for {}, title: {}",
                 time,
+                if window.is_uwp().expect(format!("getting path/uwp for {:?}", window).as_str()) {
+                    format!("UWP ({})", window.aumid().expect("aumid is readable"))
+                } else {
+                    "Win32".to_owned()
+                },
                 window
                     .title()
                     .unwrap_or_else(|e| format!("Unable to get title for {:?}: {}", window, e))
             );
-            unsafe { &*closes_ptr }.watch(window).unwrap();
         },
     )?;
 

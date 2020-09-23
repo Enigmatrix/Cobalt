@@ -1,5 +1,4 @@
 use crate::os::*;
-use std::cell::*;
 use std::collections::HashMap;
 use std::sync::*;
 use tokio::sync::mpsc::*;
@@ -23,9 +22,12 @@ impl<'a> WindowClosedWatcher<'a> {
 
     pub fn watch(&'a self, win: Window) -> Result<(), crate::os::Error> {
         let sender = self.sender.clone();
+        let (pid, tid) = win.pid_tid()?;
+        dbg!("watching...");
+        dbg!(pid, tid);
         let hook = hook::WinEventHook::new(
             hook::Type::Single(hook::Event::ObjectDestroyed),
-            hook::Locality::ProcessThread { pid: 0, tid: 0 },
+            hook::Locality::ProcessThread { pid, tid },
             move |_win_event_hook: HWINEVENTHOOK,
                   _event: DWORD,
                   handle: HWND,
@@ -39,12 +41,14 @@ impl<'a> WindowClosedWatcher<'a> {
                 }
             },
         )?;
+        dbg!("hook");
         let mut windows = self.windows.lock().unwrap();
         // Don't check whether this is Some or None, because you can watch
         // the same window multiple times. Not that multiple notifications
         // will be sent, of course, only the latest hook registration will
         // be used to get the event
         let _ = windows.insert(win, hook);
+        dbg!("end");
         Ok(())
     }
 

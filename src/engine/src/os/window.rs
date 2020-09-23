@@ -27,8 +27,10 @@ impl std::hash::Hash for Window {
 }
 
 impl Window {
-    pub fn new(handle: HWND) -> Window {
-        Window(handle)
+    pub fn new(handle: HWND) -> Result<Window, crate::os::Error> {
+        let window = Window(handle);
+        let _ = window.pid_tid()?;
+        Ok(window)
     }
 
     pub fn title(&self) -> Result<String, crate::os::Error> {
@@ -43,14 +45,63 @@ impl Window {
                 Err(err)
             }
         } else {
-            use std::os::windows::ffi::OsStringExt;
-
-            let mut buf = vec![0u16; len as usize + 1];
+            let mut buf = string_buffer!(len + 1);
             let written =
                 expect!(true: winuser::GetWindowTextW(self.0, buf.as_mut_ptr(), len + 1))? as usize;
-            Ok(std::ffi::OsString::from_wide(&buf[..written])
-                .to_string_lossy()
-                .into())
+            Ok(string_from_buffer!(buf, written))
         }
+    }
+
+    pub fn pid_tid(&self) -> Result<(u32, u32), crate::os::Error> {
+        let mut pid = 0;
+        let tid = unsafe { winuser::GetWindowThreadProcessId(self.0, &mut pid) };
+        if pid == 0 || tid == 0 {
+            Err(Error::last_win32())
+        } else {
+            Ok((pid, tid))
+        }
+    }
+
+    pub fn is_uwp(&self) -> Result<bool, crate::os::Error> {
+        let (pid, _) = self.pid_tid()?;
+        dbg!("uwp...");
+        dbg!(pid);
+        let proc = Process::new(pid, default())?;
+        dbg!(&proc);
+        if unsafe { winuser::IsImmersiveProcess(proc.handle()) } != 0 {
+            let path = proc.path_fast()?;
+            dbg!(&path);
+            Ok(path.eq_ignore_ascii_case("C:\\Windows\\System32\\ApplicationFrameHost.exe"))
+        } else {
+            Ok(false)
+        }
+    }
+
+    pub fn aumid(&self) -> Result<String, crate::os::Error> {
+        let mut property_store: *mut propsys::IPropertyStore = ptr::null_mut();
+        hresult!({
+            shellapi::SHGetPropertyStoreForWindow(
+                self.0,
+                &uuid::IID_IPropertyStore as *const _ as *const _,
+                &mut property_store as *mut _ as *mut *mut c_void,
+            )
+        })?;
+
+        let mut prop: propidl::PROPVARIANT = default();
+        hresult!((*property_store).GetValue(&propkey::PKEY_AppUserModel_ID as *const _, &mut prop))?;
+
+        let aumid_ptr = unsafe { *prop.data.pwszVal() }; // TODO check
+        let mut aumid_len = 0;
+        loop {
+            if unsafe { *aumid_ptr.offset(aumid_len) == 0 } {
+                break;
+            }
+            aumid_len += 1;
+        }
+
+        Ok(string_from_buffer!(unsafe {
+            std::slice::from_raw_parts(aumid_ptr, aumid_len as usize)
+        }))
+        //Ok(unsafe { ffi::NulString::from_raw(aumid_ptr).to_ustring() })
     }
 }

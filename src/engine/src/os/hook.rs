@@ -89,9 +89,7 @@ pub struct EventLoop {
 
 impl EventLoop {
     pub fn new() -> EventLoop {
-        EventLoop {
-            msg: Default::default(),
-        }
+        EventLoop { msg: default() }
     }
 }
 
