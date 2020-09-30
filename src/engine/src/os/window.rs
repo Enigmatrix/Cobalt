@@ -28,9 +28,7 @@ impl std::hash::Hash for Window {
 
 impl Window {
     pub fn new(handle: HWND) -> Result<Window, crate::os::error::Error> {
-        let window = Window(handle);
-        let _ = window.pid_tid()?;
-        Ok(window)
+        Ok(Window(handle))
     }
 
     pub fn title(&self) -> Result<String, crate::os::error::Error> {
@@ -64,13 +62,9 @@ impl Window {
 
     pub fn is_uwp(&self) -> Result<bool, crate::os::error::Error> {
         let (pid, _) = self.pid_tid()?;
-        dbg!("uwp...");
-        dbg!(pid);
         let proc = Process::new(pid, default())?;
-        dbg!(&proc);
         if unsafe { winuser::IsImmersiveProcess(proc.handle()) } != 0 {
             let path = proc.path_fast()?;
-            dbg!(&path);
             Ok(path.eq_ignore_ascii_case("C:\\Windows\\System32\\ApplicationFrameHost.exe"))
         } else {
             Ok(false)

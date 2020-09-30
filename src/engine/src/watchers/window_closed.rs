@@ -2,9 +2,9 @@ use crate::os::prelude::*;
 use std::collections::HashMap;
 use std::sync::*;
 use tokio::sync::mpsc::*;
-/*
+
 pub struct WindowClosedWatcher<'a> {
-    windows: Mutex<HashMap<Window, hook::WinEventHook<'a>>>,
+    windows: Mutex<HashMap<Window, hook::WinEventHook<(&'a WindowClosedWatcher<'a>, UnboundedSender<Window>, Window)>>>,
     pub recver: UnboundedReceiver<Window>,
     sender: UnboundedSender<Window>,
 }
@@ -25,22 +25,16 @@ impl<'a> WindowClosedWatcher<'a> {
         let (pid, tid) = win.pid_tid()?;
         dbg!("watching...");
         dbg!(pid, tid);
-        todo!()
+
         let hook = hook::WinEventHook::new(
-            hook::Range::Single(hook::Event::ObjectDestroyed),
-            hook::Locality::ProcessThread { pid, tid },
-            move |_win_event_hook: HWINEVENTHOOK,
-                  _event: DWORD,
-                  handle: HWND,
-                  id_object: LONG,
-                  _id_child: LONG,
-                  _id_event_thread: DWORD,
-                  _dwms_event_time: DWORD| {
-                if id_object == winuser::OBJID_WINDOW && win == handle {
-                    sender.send(win).unwrap();
-                    self.unwatch(win);
-                }
-            },
+            hook::Range::Single(hook::Event::SystemForeground),
+            hook::Locality::Global,
+            &(self, sender, win),
+            |(s, sender, win), args| {
+                sender.send(*win).unwrap();
+                s.unwatch(*win);
+                Ok(())
+            }
         )?;
         dbg!("hook");
         let mut windows = self.windows.lock().unwrap();
@@ -61,4 +55,3 @@ impl<'a> WindowClosedWatcher<'a> {
         }
     }
 }
-*/

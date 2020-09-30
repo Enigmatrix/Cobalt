@@ -22,38 +22,38 @@ pub enum Locality {
 
 #[derive(Debug)]
 pub struct EventArgs {
-    win_event_hook: HWINEVENTHOOK,
-    event: DWORD,
-    hwnd: HWND,
-    id_object: LONG,
-    id_child: LONG,
-    id_event_thread: DWORD,
-    dwms_event_time: DWORD,
+    pub win_event_hook: HWINEVENTHOOK,
+    pub event: DWORD,
+    pub hwnd: HWND,
+    pub id_object: LONG,
+    pub id_child: LONG,
+    pub id_event_thread: DWORD,
+    pub dwms_event_time: DWORD,
 }
 
 pub struct WinEventHook<C> {
     hook: HWINEVENTHOOK,
-    _context: std::marker::PhantomData<C>
+    _context: std::marker::PhantomData<C>,
 }
 
 type EventContexts = HashMap<HWINEVENTHOOK, (fn() -> (), *const ())>;
 
-static mut WIN_EVENT_HOOK_CONTEXTS: Option<EventContexts> = None;
+static mut WIN_EVENT_HOOK_CONTEXTS: mem::MaybeUninit<EventContexts> = mem::MaybeUninit::uninit();
+
+pub fn init_contexts() {
+    unsafe { WIN_EVENT_HOOK_CONTEXTS = mem::MaybeUninit::new(HashMap::new()); }
+}
 
 unsafe fn contexts() -> &'static mut EventContexts {
-    if WIN_EVENT_HOOK_CONTEXTS.is_none() {
-        WIN_EVENT_HOOK_CONTEXTS = Some(HashMap::new());
-    }
-    WIN_EVENT_HOOK_CONTEXTS.as_mut().unwrap()
+    WIN_EVENT_HOOK_CONTEXTS.assume_init_mut()
 }
 
 impl<C> WinEventHook<C> {
-
     pub fn new(
         ev: Range,
         locality: Locality,
         context: &C,
-        handler: fn(&C, EventArgs) -> Result<(), crate::os::error::Error>
+        handler: fn(&C, EventArgs) -> Result<(), crate::os::error::Error>,
     ) -> Result<Self, crate::os::error::Error> {
         let (event_min, event_max) = match ev {
             Range::Single(e) => (e as u32, e as u32),
@@ -75,8 +75,15 @@ impl<C> WinEventHook<C> {
                 winuser::WINEVENT_OUTOFCONTEXT,
             )
         })?;
-        unsafe { contexts().insert(hook, mem::transmute((handler, context))).expect_none("Hook already exists") };
-        Ok(WinEventHook { hook, _context: std::marker::PhantomData })
+        unsafe {
+            contexts()
+                .insert(hook, mem::transmute((handler, context)))
+                .expect_none("Hook already exists")
+        };
+        Ok(WinEventHook {
+            hook,
+            _context: std::marker::PhantomData,
+        })
     }
 
     unsafe extern "system" fn handler(
@@ -86,25 +93,34 @@ impl<C> WinEventHook<C> {
         id_object: LONG,
         id_child: LONG,
         id_event_thread: DWORD,
-        dwms_event_time: DWORD
+        dwms_event_time: DWORD,
     ) {
         let ret = contexts().get(&win_event_hook).unwrap();
-        let (handler, context): &(fn(&C, EventArgs) -> Result<(), crate::os::error::Error>, &C) = mem::transmute(ret);
-        (handler)(context, EventArgs {
-            win_event_hook,
-            event,
-            hwnd,
-            id_object,
-            id_child,
-            id_event_thread,
-            dwms_event_time,
-        }).expect("Handler threw error");
+        let (handler, context): &(fn(&C, EventArgs) -> Result<(), crate::os::error::Error>, &C) =
+            mem::transmute(ret);
+        (handler)(
+            context,
+            EventArgs {
+                win_event_hook,
+                event,
+                hwnd,
+                id_object,
+                id_child,
+                id_event_thread,
+                dwms_event_time,
+            },
+        )
+        .expect("Handler threw error");
     }
 }
 
 impl<C> Drop for WinEventHook<C> {
     fn drop(&mut self) {
-        unsafe { contexts().remove(&self.hook).expect("Handler and Context should already exist") };
+        unsafe {
+            contexts()
+                .remove(&self.hook)
+                .expect("Handler and Context should already exist")
+        };
         expect!(true: winuser::UnhookWinEvent(self.hook)).unwrap();
     }
 }
