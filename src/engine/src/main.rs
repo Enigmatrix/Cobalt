@@ -24,9 +24,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let _hook = hook::WinEventHook::new(
         hook::Range::Single(hook::Event::SystemForeground),
         hook::Locality::Global,
-        (1, 2),
-        |c, args| {
-            println!("Switch: {:?}", c);
+        &(1, 2),
+        |(i, _x), args| {
+            println!("Switch: {}, {:?}", i, args);
             Ok(())
         }
     )?;
