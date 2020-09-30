@@ -1,4 +1,4 @@
-use crate::os::*;
+use crate::os::prelude::*;
 
 #[derive(Debug, Ord, PartialOrd, Eq, PartialEq)]
 pub struct Timestamp(u64);

@@ -1,4 +1,4 @@
-use crate::os::*;
+use crate::os::prelude::*;
 
 #[derive(Debug, Copy, Clone)]
 pub struct Window(HWND);
@@ -27,13 +27,13 @@ impl std::hash::Hash for Window {
 }
 
 impl Window {
-    pub fn new(handle: HWND) -> Result<Window, crate::os::Error> {
+    pub fn new(handle: HWND) -> Result<Window, crate::os::error::Error> {
         let window = Window(handle);
         let _ = window.pid_tid()?;
         Ok(window)
     }
 
-    pub fn title(&self) -> Result<String, crate::os::Error> {
+    pub fn title(&self) -> Result<String, crate::os::error::Error> {
         // TODO String or WideString (os::String)
         let len = unsafe { winuser::GetWindowTextLengthW(self.0) };
         // fails if len == 0 && !Error::last_win32().successful()
@@ -52,7 +52,7 @@ impl Window {
         }
     }
 
-    pub fn pid_tid(&self) -> Result<(u32, u32), crate::os::Error> {
+    pub fn pid_tid(&self) -> Result<(u32, u32), crate::os::error::Error> {
         let mut pid = 0;
         let tid = unsafe { winuser::GetWindowThreadProcessId(self.0, &mut pid) };
         if pid == 0 || tid == 0 {
@@ -62,7 +62,7 @@ impl Window {
         }
     }
 
-    pub fn is_uwp(&self) -> Result<bool, crate::os::Error> {
+    pub fn is_uwp(&self) -> Result<bool, crate::os::error::Error> {
         let (pid, _) = self.pid_tid()?;
         dbg!("uwp...");
         dbg!(pid);
@@ -77,7 +77,7 @@ impl Window {
         }
     }
 
-    pub fn aumid(&self) -> Result<String, crate::os::Error> {
+    pub fn aumid(&self) -> Result<String, crate::os::error::Error> {
         let mut property_store: *mut propsys::IPropertyStore = ptr::null_mut();
         hresult!({
             shellapi::SHGetPropertyStoreForWindow(

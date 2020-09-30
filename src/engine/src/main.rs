@@ -1,12 +1,14 @@
 #![feature(trait_alias)]
 #![feature(async_closure)]
 #![feature(default_free_fn)]
+#![feature(option_expect_none)]
+
 
 mod data;
 mod os;
 mod watchers;
 
-use os::*;
+use os::prelude::*;
 use std::cell::UnsafeCell;
 use tokio::prelude::*;
 use tokio::stream::StreamExt;
@@ -15,12 +17,26 @@ use tokio::stream::StreamExt;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("[LIFECYCLE] Started!");
 
-    let closes = UnsafeCell::new(watchers::WindowClosedWatcher::new());
-    let closes_ptr = closes.get(); // dirty tricks
+    //let closes = UnsafeCell::new(watchers::WindowClosedWatcher::new());
+    //let closes_ptr = closes.get(); // dirty tricks
 
     let ev = hook::EventLoop::new();
     let _hook = hook::WinEventHook::new(
-        hook::Type::Single(hook::Event::SystemForeground),
+        hook::Range::Single(hook::Event::SystemForeground),
+        hook::Locality::Global,
+        (1, 2),
+        |c, args| {
+            println!("Switch: {:?}", c);
+            Ok(())
+        }
+    )?;
+    println!("[LIFECYCLE] Set!");
+
+    ev.await;
+    Ok(())
+    /*
+    let _hook = hook::WinEventHook::new(
+        hook::Range::Single(hook::Event::SystemForeground),
         hook::Locality::Global,
         move |_win_event_hook: HWINEVENTHOOK,
               _event: DWORD,
@@ -66,5 +82,5 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tokio::join!(ev, watch);
 
     println!("[LIFECYCLE] Exited!");
-    Ok(())
+    Ok(())*/
 }

@@ -29,7 +29,7 @@ impl std::error::Error for Error {}
 
 impl Error {
     pub fn last_win32() -> Self {
-        Error::Win32(unsafe { crate::os::errhandlingapi::GetLastError() as i32 })
+        Error::Win32(unsafe { crate::os::api::errhandlingapi::GetLastError() as i32 })
     }
 
     pub fn successful(&self) -> bool {

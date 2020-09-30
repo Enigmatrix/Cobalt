@@ -1,5 +1,8 @@
-use crate::os::*;
-use libffi::high::*;
+use crate::os::prelude::*;
+use once_cell::sync::OnceCell;
+use std::any::Any;
+use std::cell::RefCell;
+use std::collections::HashMap;
 use std::future::*;
 use std::task::{Context, Poll};
 
@@ -10,9 +13,9 @@ pub enum Event {
     ObjectDestroyed = winuser::EVENT_OBJECT_DESTROY,
 }
 
-pub enum Type {
+pub enum Range {
     Single(Event),
-    Range { min: Event, max: Event },
+    MinMax { min: Event, max: Event },
 }
 
 pub enum Locality {
@@ -20,65 +23,96 @@ pub enum Locality {
     ProcessThread { pid: u32, tid: u32 },
 }
 
-pub trait WinEventCallbackFn = Fn(HWINEVENTHOOK, DWORD, HWND, LONG, LONG, DWORD, DWORD);
-
-struct Callback<'a> {
-    _closure: Box<dyn WinEventCallbackFn + 'a>,
-    _ffi: Closure7<'a, HWINEVENTHOOK, DWORD, HWND, LONG, LONG, DWORD, DWORD, ()>,
+pub struct EventArgs {
+    win_event_hook: HWINEVENTHOOK,
+    event: DWORD,
+    hwnd: HWND,
+    id_object: LONG,
+    id_child: LONG,
+    id_event_thread: DWORD,
+    dwms_event_time: DWORD,
 }
 
-impl<'a> Callback<'a> {
-    fn new<F>(closure: F) -> Callback<'a>
-    where
-        F: 'a + WinEventCallbackFn,
-    {
-        let _closure = Box::new(closure);
-        let _ffi = Closure7::new::<F>(unsafe { mem::transmute(&*_closure) });
-        Callback { _closure, _ffi }
-    }
-
-    fn ptr(&self) -> winuser::WINEVENTPROC {
-        Some(unsafe { mem::transmute(*self._ffi.code_ptr()) })
-    }
-}
-
-pub struct WinEventHook<'a> {
+pub struct WinEventHook<C> {
     hook: HWINEVENTHOOK,
-    _callback: Callback<'a>,
+    handler: fn(&C, EventArgs) -> Result<(), crate::os::error::Error>,
+    context: C
 }
 
-impl<'a> WinEventHook<'a> {
-    pub fn new<F>(ev: Type, locality: Locality, handler: F) -> Result<Self, crate::os::error::Error>
-    where
-        F: 'a + WinEventCallbackFn,
-    {
+type EventContexts = HashMap<HWINEVENTHOOK, *const c_void>;
+
+static mut WIN_EVENT_HOOK_CONTEXTS: Option<EventContexts> = None;
+
+unsafe fn contexts() -> &'static mut EventContexts {
+    if WIN_EVENT_HOOK_CONTEXTS.is_none() {
+        WIN_EVENT_HOOK_CONTEXTS = Some(HashMap::new());
+    }
+    WIN_EVENT_HOOK_CONTEXTS.as_mut().unwrap()
+}
+
+impl<C> WinEventHook<C> {
+
+    pub fn new(
+        ev: Range,
+        locality: Locality,
+        context: C,
+        handler: fn(&C, EventArgs) -> Result<(), crate::os::error::Error>
+    ) -> Result<Box<Self>, crate::os::error::Error> {
         let (event_min, event_max) = match ev {
-            Type::Single(e) => (e as u32, e as u32),
-            Type::Range { min, max } => (min as u32, max as u32),
+            Range::Single(e) => (e as u32, e as u32),
+            Range::MinMax { min, max } => (min as u32, max as u32),
         };
         let (id_process, id_thread) = match locality {
             Locality::Global => (0, 0),
             Locality::ProcessThread { pid, tid } => (pid, tid),
         };
-        let _callback = Callback::new(handler);
 
         let hook = expect!(non_null: {
             winuser::SetWinEventHook(
                 event_min,
                 event_max,
                 ptr::null_mut(),
-                _callback.ptr(),
+                Some(WinEventHook::<C>::handler),
                 id_process,
                 id_thread,
                 winuser::WINEVENT_OUTOFCONTEXT,
             )
         })?;
-        Ok(WinEventHook { hook, _callback })
+        let ret = Box::new(WinEventHook { hook, handler, context });
+
+        unsafe { contexts().insert(hook, &*ret as *const _ as *const c_void).expect_none("Hook already exists") };
+        Ok(ret)
+    }
+
+    pub fn handle(&self, args: EventArgs) {
+        (self.handler)(&self.context, args).expect("Handler threw error");
+    }
+
+    unsafe extern "system" fn handler(
+        win_event_hook: HWINEVENTHOOK,
+        event: DWORD,
+        hwnd: HWND,
+        id_object: LONG,
+        id_child: LONG,
+        id_event_thread: DWORD,
+        dwms_event_time: DWORD
+    ) {
+        let hook = &*(contexts().get(&win_event_hook).unwrap() as *const _ as *const Box<WinEventHook<C>>);
+        hook.handle(EventArgs {
+            win_event_hook,
+            event,
+            hwnd,
+            id_object,
+            id_child,
+            id_event_thread,
+            dwms_event_time,
+        });
     }
 }
 
-impl<'a> Drop for WinEventHook<'a> {
+impl<C> Drop for WinEventHook<C> {
     fn drop(&mut self) {
+        unsafe { contexts().remove(&self.hook).expect("Handler and Context should already exist") };
         expect!(true: winuser::UnhookWinEvent(self.hook)).unwrap();
     }
 }

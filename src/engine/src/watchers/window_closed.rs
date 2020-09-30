@@ -1,8 +1,8 @@
-use crate::os::*;
+use crate::os::prelude::*;
 use std::collections::HashMap;
 use std::sync::*;
 use tokio::sync::mpsc::*;
-
+/*
 pub struct WindowClosedWatcher<'a> {
     windows: Mutex<HashMap<Window, hook::WinEventHook<'a>>>,
     pub recver: UnboundedReceiver<Window>,
@@ -20,13 +20,14 @@ impl<'a> WindowClosedWatcher<'a> {
         }
     }
 
-    pub fn watch(&'a self, win: Window) -> Result<(), crate::os::Error> {
+    pub fn watch(&'a self, win: Window) -> Result<(), crate::os::error::Error> {
         let sender = self.sender.clone();
         let (pid, tid) = win.pid_tid()?;
         dbg!("watching...");
         dbg!(pid, tid);
+        todo!()
         let hook = hook::WinEventHook::new(
-            hook::Type::Single(hook::Event::ObjectDestroyed),
+            hook::Range::Single(hook::Event::ObjectDestroyed),
             hook::Locality::ProcessThread { pid, tid },
             move |_win_event_hook: HWINEVENTHOOK,
                   _event: DWORD,
@@ -60,3 +61,4 @@ impl<'a> WindowClosedWatcher<'a> {
         }
     }
 }
+*/
