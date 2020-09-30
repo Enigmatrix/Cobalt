@@ -41,7 +41,9 @@ type EventContexts = HashMap<HWINEVENTHOOK, (fn() -> (), *const ())>;
 static mut WIN_EVENT_HOOK_CONTEXTS: mem::MaybeUninit<EventContexts> = mem::MaybeUninit::uninit();
 
 pub fn init_contexts() {
-    unsafe { WIN_EVENT_HOOK_CONTEXTS = mem::MaybeUninit::new(HashMap::new()); }
+    unsafe {
+        WIN_EVENT_HOOK_CONTEXTS = mem::MaybeUninit::new(HashMap::new());
+    }
 }
 
 unsafe fn contexts() -> &'static mut EventContexts {

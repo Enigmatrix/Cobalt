@@ -9,11 +9,11 @@ mod os;
 mod watchers;
 
 use os::prelude::*;
+use std::cell::RefCell;
 use std::cell::UnsafeCell;
+use std::rc::Rc;
 use tokio::prelude::*;
 use tokio::stream::StreamExt;
-use std::rc::Rc;
-use std::cell::RefCell;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -41,28 +41,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     return Ok(());
                 }
             };
-            //let mut re: &mut watchers::WindowClosedWatcher = unsafe { mem::transmute(closes_ptr) };
+            let uwp = if window
+                .is_uwp()
+                .expect(format!("getting path/uwp for {:?}", window).as_str())
             {
-                let closes = closes.borrow_mut();
-                closes.watch(window)
-                    .expect(format!("unable to watch for window close for window {:?}", window).as_str());
-            }
-
-            println!(
-                "[SWITCH] at ({}) for {}, title: {}",
-                time,
-                if window
-                    .is_uwp()
-                    .expect(format!("getting path/uwp for {:?}", window).as_str())
-                {
-                    format!("UWP ({})", window.aumid().expect("aumid is readable"))
-                } else {
-                    "Win32".to_owned()
-                },
-                window
-                    .title()
-                    .unwrap_or_else(|e| format!("Unable to get title for {:?}: {}", window, e))
+                format!("UWP ({})", window.aumid().expect("aumid is readable"))
+            } else {
+                "Win32".to_owned()
+            };
+            let title = window
+                .title()
+                .unwrap_or_else(|e| format!("Unable to get title for {:?}: {}", window, e));
+            watchers::WindowClosedWatcher::watch(closes, window).expect(
+                format!("unable to watch for window close for window {:?}", window).as_str(),
             );
+
+            println!("[SWITCH] at ({}) for {}, title: {}", time, uwp, title);
             Ok(())
         },
     )?;
