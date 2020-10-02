@@ -31,12 +31,12 @@ pub struct EventArgs {
     pub dwms_event_time: DWORD,
 }
 
-pub struct WinEventHook<C> {
-    hook: HWINEVENTHOOK,
-    _context: std::marker::PhantomData<C>,
+pub struct WinEventHook {
+    hook: HWINEVENTHOOK
 }
 
-type EventContexts = HashMap<HWINEVENTHOOK, (fn() -> (), *const ())>;
+trait EventHandler = Fn(EventArgs) -> Result<(), crate::os::error::Error>;
+type EventContexts = HashMap<HWINEVENTHOOK, &'static dyn EventHandler>;
 
 static mut WIN_EVENT_HOOK_CONTEXTS: mem::MaybeUninit<EventContexts> = mem::MaybeUninit::uninit();
 
@@ -50,12 +50,11 @@ unsafe fn contexts() -> &'static mut EventContexts {
     WIN_EVENT_HOOK_CONTEXTS.assume_init_mut()
 }
 
-impl<C> WinEventHook<C> {
+impl WinEventHook {
     pub fn new(
         ev: Range,
         locality: Locality,
-        context: &C,
-        handler: fn(&C, EventArgs) -> Result<(), crate::os::error::Error>,
+        handler: & dyn EventHandler
     ) -> Result<Self, crate::os::error::Error> {
         let (event_min, event_max) = match ev {
             Range::Single(e) => (e as u32, e as u32),
@@ -71,21 +70,20 @@ impl<C> WinEventHook<C> {
                 event_min,
                 event_max,
                 ptr::null_mut(),
-                Some(WinEventHook::<C>::handler),
+                Some(WinEventHook::handler),
                 id_process,
                 id_thread,
                 winuser::WINEVENT_OUTOFCONTEXT,
             )
         })?;
         unsafe {
-            contexts()
-                .insert(hook, mem::transmute((handler, context)))
-                .expect_none("Hook already exists")
-        };
-        Ok(WinEventHook {
-            hook,
-            _context: std::marker::PhantomData,
-        })
+            match contexts()
+                .insert(hook, mem::transmute(handler)) {
+                    Some(_) => Err(crate::os::error::Error::HResult(1)),
+                    _ => Ok(())
+                }
+        }?;
+        Ok(WinEventHook { hook })
     }
 
     unsafe extern "system" fn handler(
@@ -98,10 +96,8 @@ impl<C> WinEventHook<C> {
         dwms_event_time: DWORD,
     ) {
         let ret = contexts().get(&win_event_hook).unwrap();
-        let (handler, context): &(fn(&C, EventArgs) -> Result<(), crate::os::error::Error>, &C) =
-            mem::transmute(ret);
+        let handler: &&dyn EventHandler = mem::transmute(ret);
         (handler)(
-            context,
             EventArgs {
                 win_event_hook,
                 event,
@@ -116,7 +112,7 @@ impl<C> WinEventHook<C> {
     }
 }
 
-impl<C> Drop for WinEventHook<C> {
+impl Drop for WinEventHook {
     fn drop(&mut self) {
         unsafe {
             contexts()

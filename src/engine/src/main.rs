@@ -21,13 +21,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     hook::init_contexts();
 
     let closes = Rc::new(RefCell::new(watchers::WindowClosedWatcher::new()));
+    let closes2 = Rc::clone(&closes);
 
     let ev = hook::EventLoop::new();
     let _hook = hook::WinEventHook::new(
         hook::Range::Single(hook::Event::SystemForeground),
         hook::Locality::Global,
-        &(Rc::clone(&closes)),
-        |(closes), args| {
+        &move |args| {
             let time = Timestamp::from_ticks(args.dwms_event_time); // get time first!
             if args.id_object != winuser::OBJID_WINDOW
                 || unsafe { winuser::IsWindow(args.hwnd) == 0 }
@@ -52,7 +52,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             let title = window
                 .title()
                 .unwrap_or_else(|e| format!("Unable to get title for {:?}: {}", window, e));
-            watchers::WindowClosedWatcher::watch(closes, window).expect(
+
+            watchers::WindowClosedWatcher::watch(&closes2, window).expect(
                 format!("unable to watch for window close for window {:?}", window).as_str(),
             );
 
@@ -61,18 +62,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         },
     )?;
 
-    ev.await;
-    Ok(())
+    let main = tokio::task::LocalSet::new();
 
-    /*
-    let watch = async move {
-        while let Some(item) = unsafe { &mut *closes_ptr }.recver.next().await {
-            println!("[CLOSED]: {:?}", item.title());
+    let closes_watch = Rc::clone(&closes);
+    /*main.spawn_local(async move {
+        loop {
+            let next = watchers::WindowClosedWatcher::next_close(&closes_watch);
+            if let Some(item) = next.await {
+                println!("[CLOSED]: {:?}", item.title());
+            }
         }
-    };
+    });*/
 
-    tokio::join!(ev, watch);
+    main.run_until(ev).await;
 
     println!("[LIFECYCLE] Exited!");
-    Ok(())*/
+    Ok(())
 }
