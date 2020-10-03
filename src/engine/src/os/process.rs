@@ -1,4 +1,5 @@
 use crate::os::prelude::*;
+use crate::errors::*;
 
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Process(HANDLE);
@@ -20,7 +21,7 @@ impl Default for ProcessOptions {
 }
 
 impl Process {
-    pub fn new(pid: u32, opts: ProcessOptions) -> Result<Self, crate::os::error::Error> {
+    pub fn new(pid: u32, opts: ProcessOptions) -> Result<Self> {
         let handle = expect! (non_null: {
             processthreadsapi::OpenProcess(
                 if opts.readable { winnt::PROCESS_VM_READ } else {0} |
@@ -40,7 +41,7 @@ impl Process {
     pub fn read_process_memory<T: Default>(
         &self,
         addr: *mut T,
-    ) -> Result<T, crate::os::error::Error> {
+    ) -> Result<T> {
         let mut ret: T = default();
         expect!(true: {
             memoryapi::ReadProcessMemory(
@@ -57,7 +58,7 @@ impl Process {
     pub fn read_string_from_process_memory(
         &self,
         s: ntdef::UNICODE_STRING,
-    ) -> Result<String, crate::os::error::Error> {
+    ) -> Result<String> {
         let mut buf_len = (s.Length / 2) as usize;
         let mut buf = string_buffer!(buf_len);
         expect!(true: {
@@ -72,7 +73,7 @@ impl Process {
         Ok(string_from_buffer!(buf, buf_len))
     }
 
-    pub fn path_fast(&self) -> Result<String, crate::os::error::Error> {
+    pub fn path_fast(&self) -> Result<String> {
         let mut len = 1024u32; // TODO macro this pattern
         let buf = loop {
             let mut buf = string_buffer!(len);

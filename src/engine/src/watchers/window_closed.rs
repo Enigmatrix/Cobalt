@@ -1,4 +1,5 @@
 use crate::os::prelude::*;
+use crate::errors::*;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -22,7 +23,7 @@ impl WindowClosedWatcher {
         }
     }
 
-    pub fn watch(dis: &Rc<RefCell<Self>>, win: Window) -> Result<(), crate::os::error::Error> {
+    pub fn watch(dis: &Rc<RefCell<Self>>, win: Window) -> Result<()> {
         let sender = dis.borrow_mut().sender.clone();
         let (pid, tid) = win.pid_tid()?;
         let dis2 = Rc::clone(&dis);

@@ -15,4 +15,7 @@ ntapi = { version = "0.3", features = ["user", "impl-default"] }
 uuid-sys = "0.1"
 
 tracing = "0.1"
-tracing-subscriber = "0.2"
+tracing-subscriber = { version = "0.2", features = ["fmt"] }
+tracing-futures = "0.2"
+
+error-chain = "0.12"

@@ -1,4 +1,5 @@
 use crate::os::prelude::*;
+use crate::errors::*;
 use std::collections::HashMap;
 use std::future::*;
 use std::task::{Context, Poll};
@@ -35,7 +36,7 @@ pub struct WinEventHook {
     hook: HWINEVENTHOOK
 }
 
-trait EventHandler = Fn(EventArgs) -> Result<(), crate::os::error::Error>;
+trait EventHandler = Fn(EventArgs) -> Result<()>;
 type EventContexts = HashMap<HWINEVENTHOOK, &'static dyn EventHandler>;
 
 static mut WIN_EVENT_HOOK_CONTEXTS: mem::MaybeUninit<EventContexts> = mem::MaybeUninit::uninit();
@@ -55,7 +56,7 @@ impl WinEventHook {
         ev: Range,
         locality: Locality,
         handler: & dyn EventHandler
-    ) -> Result<Self, crate::os::error::Error> {
+    ) -> Result<Self> {
         let (event_min, event_max) = match ev {
             Range::Single(e) => (e as u32, e as u32),
             Range::MinMax { min, max } => (min as u32, max as u32),
@@ -79,10 +80,10 @@ impl WinEventHook {
         unsafe {
             match contexts()
                 .insert(hook, mem::transmute(handler)) {
-                    Some(_) => Err(crate::os::error::Error::HResult(1)),
-                    _ => Ok(())
+                    Some(_) => panic!("Hook already exists"),
+                    _ => ()
                 }
-        }?;
+        };
         Ok(WinEventHook { hook })
     }
 

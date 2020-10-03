@@ -1,4 +1,5 @@
 use crate::os::prelude::*;
+use crate::errors::*;
 
 #[derive(Debug, Copy, Clone)]
 pub struct Window(HWND);
@@ -27,17 +28,17 @@ impl std::hash::Hash for Window {
 }
 
 impl Window {
-    pub fn new(handle: HWND) -> Result<Window, crate::os::error::Error> {
+    pub fn new(handle: HWND) -> Result<Window> {
         Ok(Window(handle))
     }
 
-    pub fn title(&self) -> Result<String, crate::os::error::Error> {
+    pub fn title(&self) -> Result<String> {
         // TODO String or WideString (os::String)
         let len = unsafe { winuser::GetWindowTextLengthW(self.0) };
         // fails if len == 0 && !Error::last_win32().successful()
         if len == 0 {
-            let err = Error::last_win32();
-            if err.successful() {
+            let err = last_win32_error();
+            if let Error(ErrorKind::Win32(0), _) = err {
                 Ok(String::new())
             } else {
                 Err(err)
@@ -50,28 +51,28 @@ impl Window {
         }
     }
 
-    pub fn pid_tid(&self) -> Result<(u32, u32), crate::os::error::Error> {
+    pub fn pid_tid(&self) -> Result<(u32, u32)> {
         let mut pid = 0;
         let tid = unsafe { winuser::GetWindowThreadProcessId(self.0, &mut pid) };
         if pid == 0 || tid == 0 {
-            Err(Error::last_win32())
+            Err(last_win32_error())
         } else {
             Ok((pid, tid))
         }
     }
 
-    pub fn is_uwp(&self) -> Result<bool, crate::os::error::Error> {
+    pub fn is_uwp(&self) -> Result<bool> {
         let (pid, _) = self.pid_tid()?;
-        let proc = Process::new(pid, default())?;
-        if unsafe { winuser::IsImmersiveProcess(proc.handle()) } != 0 {
-            let path = proc.path_fast()?;
+        let process = Process::new(pid, default())?;
+        if unsafe { winuser::IsImmersiveProcess(process.handle()) } != 0 {
+            let path = process.path_fast()?;
             Ok(path.eq_ignore_ascii_case("C:\\Windows\\System32\\ApplicationFrameHost.exe"))
         } else {
             Ok(false)
         }
     }
 
-    pub fn aumid(&self) -> Result<String, crate::os::error::Error> {
+    pub fn aumid(&self) -> Result<String> {
         let mut property_store: *mut propsys::IPropertyStore = ptr::null_mut();
         hresult!({
             shellapi::SHGetPropertyStoreForWindow(
@@ -96,6 +97,5 @@ impl Window {
         Ok(string_from_buffer!(unsafe {
             std::slice::from_raw_parts(aumid_ptr, aumid_len as usize)
         }))
-        //Ok(unsafe { ffi::NulString::from_raw(aumid_ptr).to_ustring() })
     }
 }

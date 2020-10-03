@@ -1,5 +1,4 @@
 pub use crate::os::api::*;
-pub use crate::os::error::Error;
 pub use crate::os::hook;
 pub use crate::os::process::*;
 pub use crate::os::time::*;

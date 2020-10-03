@@ -4,67 +4,78 @@
 #![feature(option_expect_none)]
 #![feature(maybe_uninit_ref)]
 
+#![recursion_limit = "1024"]
+
 mod data;
 mod os;
+mod utils;
+mod errors;
 mod watchers;
 
 use os::prelude::*;
-use std::cell::RefCell;
-use std::cell::UnsafeCell;
-use std::rc::Rc;
-use tokio::prelude::*;
-use tokio::stream::StreamExt;
+use tokio::*;
+use tracing::*;
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    println!("[LIFECYCLE] Started!");
+fn init() -> Result<(runtime::Runtime, Span), Box<dyn std::error::Error>> {
+    tracing::subscriber::set_global_default(tracing_subscriber::fmt()
+        .with_max_level(Level::TRACE)
+        // .with_thread_ids(true)
+        // .compact()
+        .finish())?;
+
+    let runtime = runtime::Builder::new()
+        .threaded_scheduler()
+        .enable_all()
+        .thread_name("cobalt-worker")
+        .build()?;
+
+    let span = info_span!("main");
+
     hook::init_contexts();
 
-    let closes = Rc::new(RefCell::new(watchers::WindowClosedWatcher::new()));
-    let closes2 = Rc::clone(&closes);
+    Ok((runtime, span))
+}
 
-    let ev = hook::EventLoop::new();
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let (mut runtime, span) = init()?;
+    let _enter = span.enter();
+
+    info!("Start");
+
+    let events = hook::EventLoop::new();
+
     let _hook = hook::WinEventHook::new(
         hook::Range::Single(hook::Event::SystemForeground),
         hook::Locality::Global,
         &move |args| {
             let time = Timestamp::from_ticks(args.dwms_event_time); // get time first!
+
             if args.id_object != winuser::OBJID_WINDOW
                 || unsafe { winuser::IsWindow(args.hwnd) == 0 }
             {
                 return Ok(()); // normal response
             }
-            let window = match Window::new(args.hwnd) {
-                Ok(window) => window,
-                Err(e) => {
-                    dbg!("Invalid window {}: {}", args.hwnd, e);
-                    return Ok(());
-                }
-            };
-            let uwp = if window
-                .is_uwp()
-                .expect(format!("getting path/uwp for {:?}", window).as_str())
-            {
-                format!("UWP ({})", window.aumid().expect("aumid is readable"))
-            } else {
-                "Win32".to_owned()
-            };
-            let title = window
-                .title()
-                .unwrap_or_else(|e| format!("Unable to get title for {:?}: {}", window, e));
 
-            watchers::WindowClosedWatcher::watch(&closes2, window).expect(
-                format!("unable to watch for window close for window {:?}", window).as_str(),
-            );
+            let span = trace_span!("fg_chg");
+            let _enter  = span.enter();
 
-            println!("[SWITCH] at ({}) for {}, title: {}", time, uwp, title);
+            let window = Window::new(args.hwnd)?;
+            let uwp = window.is_uwp().and_then(|is_uwp| {
+                Ok(if is_uwp {
+                    format!("UWP ({})", window.aumid()?)
+                } else {
+                    "Win32".to_owned()
+                })
+            });
+            let title = window.title().unwrap_or_else(|e| format!("Unable to get title for {:?}: {}", window, e));
+
+            trace!("[{}] switch to ({:?}), title: {:?}", time, uwp, title);
             Ok(())
         },
     )?;
 
     let main = tokio::task::LocalSet::new();
 
-    let closes_watch = Rc::clone(&closes);
     /*main.spawn_local(async move {
         loop {
             let next = watchers::WindowClosedWatcher::next_close(&closes_watch);
@@ -74,8 +85,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });*/
 
-    main.run_until(ev).await;
+    runtime.block_on(main.run_until(events));
 
-    println!("[LIFECYCLE] Exited!");
+    info!("Exited");
     Ok(())
 }
