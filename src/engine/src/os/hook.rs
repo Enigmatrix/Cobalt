@@ -1,5 +1,5 @@
-use crate::os::prelude::*;
 use crate::errors::*;
+use crate::os::prelude::*;
 use std::collections::HashMap;
 use std::future::*;
 use std::task::{Context, Poll};
@@ -32,12 +32,13 @@ pub struct EventArgs {
     pub dwms_event_time: DWORD,
 }
 
+#[derive(Debug)]
 pub struct WinEventHook {
-    hook: HWINEVENTHOOK
+    hook: HWINEVENTHOOK,
 }
 
 trait EventHandler = Fn(EventArgs) -> Result<()>;
-type EventContexts = HashMap<HWINEVENTHOOK, &'static dyn EventHandler>;
+type EventContexts = HashMap<HWINEVENTHOOK, Box<dyn EventHandler>>;
 
 static mut WIN_EVENT_HOOK_CONTEXTS: mem::MaybeUninit<EventContexts> = mem::MaybeUninit::uninit();
 
@@ -47,16 +48,13 @@ pub fn init_contexts() {
     }
 }
 
+#[allow(clippy::mutable_key_type)]
 unsafe fn contexts() -> &'static mut EventContexts {
     WIN_EVENT_HOOK_CONTEXTS.assume_init_mut()
 }
 
 impl WinEventHook {
-    pub fn new(
-        ev: Range,
-        locality: Locality,
-        handler: & dyn EventHandler
-    ) -> Result<Self> {
+    pub fn new(ev: Range, locality: Locality, handler: Box<dyn EventHandler>) -> Result<Self> {
         let (event_min, event_max) = match ev {
             Range::Single(e) => (e as u32, e as u32),
             Range::MinMax { min, max } => (min as u32, max as u32),
@@ -77,13 +75,10 @@ impl WinEventHook {
                 winuser::WINEVENT_OUTOFCONTEXT,
             )
         })?;
-        unsafe {
-            match contexts()
-                .insert(hook, mem::transmute(handler)) {
-                    Some(_) => panic!("Hook already exists"),
-                    _ => ()
-                }
-        };
+
+        if unsafe { contexts().insert(hook, handler).is_some() } {
+            panic!("Hook already exists");
+        }
         Ok(WinEventHook { hook })
     }
 
@@ -97,19 +92,18 @@ impl WinEventHook {
         dwms_event_time: DWORD,
     ) {
         let ret = contexts().get(&win_event_hook).unwrap();
-        let handler: &&dyn EventHandler = mem::transmute(ret);
-        (handler)(
-            EventArgs {
-                win_event_hook,
-                event,
-                hwnd,
-                id_object,
-                id_child,
-                id_event_thread,
-                dwms_event_time,
-            },
-        )
-        .expect("Handler threw error");
+        let handler = ret;
+        (handler)(EventArgs {
+            win_event_hook,
+            event,
+            hwnd,
+            id_object,
+            id_child,
+            id_event_thread,
+            dwms_event_time,
+        })
+        .chain_err(|| "Handler threw error")
+        .unwrap();
     }
 }
 

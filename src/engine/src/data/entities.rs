@@ -1,44 +1,50 @@
 use crate::os::time::Timestamp;
 pub type Color = String;
 
+#[derive(Debug)]
 pub struct App {
-    id: u64,
-    name: String,
-    description: String,
+    pub id: u64,
+    pub name: String,
+    pub description: String,
     // icon: Blob,
-    background: Color,
-    identification: AppIdentification,
+    pub background: Color,
+    pub identification: AppIdentification,
 }
 
+#[derive(Debug)]
 pub enum AppIdentification {
     Win32 { path: String },
     Uwp { aumid: String },
     Java { jar: String },
 }
 
+#[derive(Debug)]
 pub struct Tag {
-    id: u64,
-    name: String,
-    description: String,
-    background: Color,
+    pub id: u64,
+    pub name: String,
+    pub description: String,
+    pub background: Color,
 }
 
+#[derive(Debug)]
 pub struct AppTag {
-    app_id: u64,
-    tag_id: u64,
+    pub app_id: u64,
+    pub tag_id: u64,
 }
 
+#[derive(Debug)]
 pub struct Session {
-    id: u64,
-    app_id: u64,
-    arguments: String,
-    title: String,
+    pub id: u64,
+    pub app_id: u64,
+    pub arguments: String,
+    pub title: String,
 }
 
+#[derive(Debug)]
 pub struct Usage {
-    id: u64,
-    start: Timestamp,
-    end: Timestamp,
-    during_idle: bool,
-    session_id: u64,
+    pub id: u64,
+    pub start: Timestamp,
+    pub end: Timestamp,
+    pub during_idle: bool,
+    pub session_id: u64,
 }

@@ -1,8 +1,8 @@
-use crate::os::prelude::*;
 use crate::errors::*;
+use crate::os::prelude::*;
 
 #[derive(Debug, Copy, Clone)]
-pub struct Window(HWND);
+pub struct Window(pub HWND);
 
 impl PartialEq<Window> for Window {
     fn eq(&self, other: &Window) -> bool {

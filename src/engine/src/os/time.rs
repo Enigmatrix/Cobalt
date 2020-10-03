@@ -1,6 +1,6 @@
 use crate::os::prelude::*;
 
-#[derive(Debug, Ord, PartialOrd, Eq, PartialEq)]
+#[derive(Debug, Ord, PartialOrd, Eq, PartialEq, Copy, Clone)]
 pub struct Timestamp(u64);
 
 impl Timestamp {

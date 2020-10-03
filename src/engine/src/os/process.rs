@@ -1,5 +1,5 @@
-use crate::os::prelude::*;
 use crate::errors::*;
+use crate::os::prelude::*;
 
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Process(HANDLE);
@@ -38,10 +38,7 @@ impl Process {
         self.0
     }
 
-    pub fn read_process_memory<T: Default>(
-        &self,
-        addr: *mut T,
-    ) -> Result<T> {
+    pub fn read_process_memory<T: Default>(&self, addr: *mut T) -> Result<T> {
         let mut ret: T = default();
         expect!(true: {
             memoryapi::ReadProcessMemory(
@@ -55,10 +52,7 @@ impl Process {
         Ok(ret)
     }
 
-    pub fn read_string_from_process_memory(
-        &self,
-        s: ntdef::UNICODE_STRING,
-    ) -> Result<String> {
+    pub fn read_string_from_process_memory(&self, s: ntdef::UNICODE_STRING) -> Result<String> {
         let mut buf_len = (s.Length / 2) as usize;
         let mut buf = string_buffer!(buf_len);
         expect!(true: {
