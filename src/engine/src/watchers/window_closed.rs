@@ -1,57 +1,36 @@
-/*use crate::errors::*;
+use crate::errors::*;
 use crate::os::prelude::*;
-use std::cell::RefCell;
-use std::collections::HashMap;
-use std::rc::Rc;
-use std::sync::*;
-use tokio::sync::mpsc::*;
+use crate::processor::*;
+use tracing::*;
 
+#[derive(Debug)]
 pub struct WindowClosedWatcher {
-    windows: HashMap<Window, hook::WinEventHook>,
-    sender: UnboundedSender<Window>
-}
-
-pub struct WindowClosedWatcherSink {
-    recver: UnboundedReceiver<Window>,
+    _hook: hook::WinEventHook,
 }
 
 impl WindowClosedWatcher {
-    pub fn new() -> (WindowClosedWatcher, WindowClosedWatcherSink) {
-        let (sender, recver) = unbounded_channel();
-        let windows = HashMap::new();
-        (WindowClosedWatcher {
-            windows,
-            sender
-        }, WindowClosedWatcherSink {
-           recver
-        })
-    }
+    pub fn new(processor: Processor, window: Window) -> Result<Self> {
+        let (pid, tid) = match window.pid_tid() {
+            Err(Error(ErrorKind::Win32(1400), _)) => {
+                warn!("early return (pid/tid) inaccessible for {:?}", window);
+                return Err(ErrorKind::WindowAlreadyClosed(window).into());
+            }
+            x => x,
+        }
+        .chain_err(|| format!("Unable to get pid/tid for {:?}", window))?;
 
-    pub fn watch(&mut self, win: Window) -> Result<()> {
-        let (pid, tid) = win.pid_tid()?;
-        let hook = hook::WinEventHook::new(
-            hook::Range::Single(hook::Event::SystemForeground),
+        let _hook = hook::WinEventHook::new(
+            hook::Range::Single(hook::Event::ObjectDestroyed),
             hook::Locality::ProcessThread { pid, tid },
-            &move |args| {
-                if win == args.hwnd {
-                    sender.send(win).unwrap();
-                    // dis2.borrow_mut().unwatch(win);
+            Box::new(move |args| {
+                if window == args.hwnd {
+                    processor.process(Message::WindowClosed(window))?;
                 }
                 Ok(())
-            },
-        )?;
-        let _ = self.windows.insert(win, hook);
-        Ok(())
-    }
+            }),
+        )
+        .chain_err(|| format!("Unable to set window closed hook for {:?}", window))?;
 
-    pub fn next_close(dis: &Rc<RefCell<Self>>) -> CloseFuture {
-        CloseFuture { watcher: dis }
+        Ok(WindowClosedWatcher { _hook })
     }
-
-    fn unwatch(&mut self, win: Window) {
-        let existing = self.windows.remove_entry(&win);
-        if existing.is_none() {
-            panic!("Key {:?} is not pre-existing", win);
-        }
-    }
-}*/
+}

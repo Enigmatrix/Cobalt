@@ -110,9 +110,9 @@ impl WinEventHook {
 impl Drop for WinEventHook {
     fn drop(&mut self) {
         unsafe {
-            contexts()
+            let _ = contexts()
                 .remove(&self.hook)
-                .expect("Handler and Context should already exist")
+                .expect("Handler and Context should already exist");
         };
         expect!(true: winuser::UnhookWinEvent(self.hook)).unwrap();
     }

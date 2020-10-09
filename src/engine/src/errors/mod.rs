@@ -8,6 +8,7 @@ error_chain! {
         }
         HResult(res: i32) {}
         NtStatus(res: i32) {}
+        WindowAlreadyClosed(window: crate::os::window::Window) {}
     }
 }
 

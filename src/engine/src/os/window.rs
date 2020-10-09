@@ -3,6 +3,8 @@ use crate::os::prelude::*;
 
 #[derive(Debug, Copy, Clone)]
 pub struct Window(pub HWND);
+unsafe impl Send for Window {}
+unsafe impl Sync for Window {}
 
 impl PartialEq<Window> for Window {
     fn eq(&self, other: &Window) -> bool {
