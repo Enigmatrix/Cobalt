@@ -5,7 +5,7 @@ use crate::os::prelude::*;
 
 pub type ProcessId = u32;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Process(HANDLE);
 
 impl Hash for Process {
@@ -32,7 +32,7 @@ impl Default for ProcessOptions {
         Self {
             readable: true,
             query_information: true,
-            sync: false,
+            sync: true,
         }
     }
 }
@@ -87,7 +87,7 @@ impl Process {
                 &mut buf_len,
             )
         })?;
-        Ok(string_from_buffer!(buf, buf_len))
+        Ok(string_from_buffer!(buf, buf_len/2))
     }
 
     pub fn path_fast(&self) -> Result<String> {
@@ -103,6 +103,27 @@ impl Process {
             len *= 2;
         };
         Ok(buf)
+    }
+
+    pub fn path_and_cmdline(&self) -> Result<(String, String)> {
+        let mut info: ntpsapi::PROCESS_BASIC_INFORMATION = default();
+        let mut info_len = 0u32;
+        ntstatus!({
+            ntpsapi::NtQueryInformationProcess(
+                self.0,
+                0,
+                &mut info as *mut _ as *mut c_void,
+                mem::size_of::<ntpsapi::PROCESS_BASIC_INFORMATION>() as u32,
+                &mut info_len as &mut u32,
+            )
+        })?;
+
+        let peb = self.read_process_memory(info.PebBaseAddress)?;
+        let user_params = self.read_process_memory(peb.ProcessParameters)?;
+
+        let path = self.read_string_from_process_memory(user_params.ImagePathName)?;
+        let cmdline = self.read_string_from_process_memory(user_params.CommandLine)?;
+        Ok((path, cmdline))
     }
 }
 

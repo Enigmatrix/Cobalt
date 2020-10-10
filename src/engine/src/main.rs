@@ -15,6 +15,8 @@ mod watchers;
 
 use os::prelude::*;
 use tokio::*;
+use tokio::sync::*;
+use processor::*;
 use tracing::*;
 use watchers::*;
 
@@ -23,7 +25,7 @@ fn init() -> Result<(runtime::Runtime, Span), Box<dyn std::error::Error>> {
         tracing_subscriber::fmt()
             .with_max_level(Level::TRACE)
             // .with_thread_ids(true)
-            // .compact()
+            .compact()
             .finish(),
     )?;
 
@@ -46,22 +48,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     info!("Start");
 
-    let events = hook::EventLoop::new();
-    let processor = processor::Processor::new()?;
-
-    let processor_pump = processor.share();
-    let _fg_watcher = ForegroundWindowSwitches::watch(processor_pump)?;
-
     let main = tokio::task::LocalSet::new();
 
-    /*main.spawn_local(async move {
-        loop {
-            let next = watchers::WindowClosedWatcher::next_close(&closes_watch);
-            if let Some(item) = next.await {
-                println!("[CLOSED]: {:?}", item.title());
-            }
-        }
-    });*/
+    let events = hook::EventLoop::new();
+    let processor = processor::Processor::new(&main)?;
+
+    let copy1 = processor.share();
+    let _fg_watcher = ForegroundWindowSwitches::watch(copy1)?;
 
     runtime.block_on(main.run_until(events));
 

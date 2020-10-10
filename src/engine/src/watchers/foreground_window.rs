@@ -40,16 +40,21 @@ impl ForegroundWindowSwitches {
 
                 let uwp = window.is_uwp().and_then(|is_uwp| {
                     Ok(if is_uwp {
-                        format!("UWP ({})", window.aumid()?)
+                        crate::data::entities::AppIdentification::Uwp {
+                            aumid: window.aumid()?
+                        }
                     } else {
-                        "Win32".to_owned()
+                        let (pid, _) = window.pid_tid()?;
+                        crate::data::entities::AppIdentification::Win32 {
+                            path: Process::new(pid, default())?.path_fast()?
+                        }
                     })
                 })?;
                 let title = window
                     .title()
                     .unwrap_or_else(|e| format!("Unable to get title for {:?}: {}", window, e));
 
-                trace!("[{}] switch to ({:?}), title: {:?}", time, uwp, title);
+                trace!("SWITCH {} APP({:?} | title: {:?})", time, uwp, title);
 
                 Ok(())
             }),

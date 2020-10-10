@@ -4,3 +4,4 @@ pub use std::ptr;
 pub use winapi::km::*;
 pub use winapi::shared::*;
 pub use winapi::um::*;
+pub use ntapi::*;

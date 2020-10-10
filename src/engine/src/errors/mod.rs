@@ -22,10 +22,10 @@ pub fn last_win32_error() -> Error {
     err
 }
 
-pub fn clear_win32_error() {
+fn clear_win32_error() {
     unsafe { crate::os::api::errhandlingapi::SetLastError(0) }
 }
 
-pub fn last_win32() -> i32 {
+fn last_win32() -> i32 {
     unsafe { crate::os::api::errhandlingapi::GetLastError() as i32 }
 }
