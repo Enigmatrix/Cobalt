@@ -1,4 +1,4 @@
-use thiserror::Error as Error;
+use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum AppError {
@@ -9,7 +9,7 @@ pub enum AppError {
     #[error("NtStatus (0x{:x})", .0)]
     NtStatus(i32),
     #[error("{:?} already closed", .0)]
-    WindowAlreadyClosed(crate::os::window::Window)
+    WindowAlreadyClosed(crate::os::window::Window),
 }
 
 pub use anyhow::*;

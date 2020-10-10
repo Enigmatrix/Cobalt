@@ -21,7 +21,8 @@ impl Database {
         Ok(())
     }
 
-    pub fn app_id_by_app_identification( // TODO use this instead of just re-getting the app everytime!
+    pub fn app_id_by_app_identification(
+        // TODO use this instead of just re-getting the app everytime!
         &mut self,
         _identification: &AppIdentification,
     ) -> Option<u64> {

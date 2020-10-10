@@ -10,7 +10,9 @@ pub struct ProcessExit {
 impl ProcessExit {
     pub fn watch(process: &Process, sender: mpsc::UnboundedSender<ProcessId>) -> Result<Self> {
         let pid = process.pid()?;
-        let mut ret = ProcessExit { wait: ptr::null_mut() };
+        let mut ret = ProcessExit {
+            wait: ptr::null_mut(),
+        };
         let dat = Box::into_raw(Box::new((sender, pid)));
         win32!(non_zero: { winbase::RegisterWaitForSingleObject(
             &mut ret.wait,

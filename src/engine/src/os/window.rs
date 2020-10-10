@@ -47,12 +47,8 @@ impl Window {
             }
         } else {
             let mut buf = string_buffer!(len + 1);
-            let written =
-                /*
-                    NOTE: https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getwindowtextw
-                    The target MUST not be a hanged window, else this call will hang as well
-                */
-                win32!(non_zero: { winuser::GetWindowTextW(self.0, buf.as_mut_ptr(), len + 1)})? as usize;
+            let written = win32!(non_zero: { winuser::GetWindowTextW(self.0, buf.as_mut_ptr(), len + 1)})?
+                as usize;
             Ok(string_from_buffer!(buf, written))
         }
     }
@@ -69,9 +65,7 @@ impl Window {
         let tid = unsafe { winuser::GetWindowThreadProcessId(self.0, &mut pid) };
         if pid == 0 || tid == 0 {
             match last_win32_error() {
-                AppError::Win32(1400) => {
-                    Err(AppError::WindowAlreadyClosed(*self).into())
-                }
+                AppError::Win32(1400) => Err(AppError::WindowAlreadyClosed(*self).into()),
                 x => Err(Error::new(x)),
             }
         } else {
@@ -101,7 +95,9 @@ impl Window {
         })?;
 
         let mut prop: propidl::PROPVARIANT = default();
-        hresult!({ (*property_store).GetValue(&propkey::PKEY_AppUserModel_ID as *const _, &mut prop) })?;
+        hresult!({
+            (*property_store).GetValue(&propkey::PKEY_AppUserModel_ID as *const _, &mut prop)
+        })?;
 
         let aumid_ptr = unsafe { *prop.data.pwszVal() }; // TODO check
         let mut aumid_len = 0;

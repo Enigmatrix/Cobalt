@@ -37,19 +37,18 @@ pub struct AppData {
     exit_watcher: ProcessExit,
     process: Process,
     app: App,
-    arguments: String
+    arguments: String,
 }
 
 #[derive(Debug)]
 pub enum Message {
     Switch(WindowSwitch),
     WindowClosed(Window),
-    ProcessExit(ProcessId)
+    ProcessExit(ProcessId),
 }
 
 impl Processor {
     pub fn new(taskset: &tokio::task::LocalSet) -> Result<Self> {
-
         let processor = Processor {
             state: Rc::new(RefCell::new(ProcessorState {
                 windows: HashMap::new(),
@@ -66,7 +65,10 @@ impl Processor {
         let _join_handle = taskset.spawn_local(async move {
             loop {
                 let msg = {
-                    let ProcessorState { process_exits: (_, recver), ..} = &mut *copy.state.borrow_mut();
+                    let ProcessorState {
+                        process_exits: (_, recver),
+                        ..
+                    } = &mut *copy.state.borrow_mut();
                     recver.try_recv()
                 };
                 match msg {
@@ -92,31 +94,45 @@ impl Processor {
 }
 
 impl ProcessorState {
-
-    fn get_app_identification(&mut self, window: Window, _process: &Process, path: &String, _cmdline: &String) -> Result<AppIdentification> {
+    fn get_app_identification(
+        &mut self,
+        window: Window,
+        _process: &Process,
+        path: &String,
+        _cmdline: &String,
+    ) -> Result<AppIdentification> {
         let ret = if window.is_uwp()? {
             AppIdentification::Uwp {
-                aumid: window.aumid()?
+                aumid: window.aumid()?,
             }
         } else {
-            AppIdentification::Win32 {
-                path: path.clone()
-            }
+            AppIdentification::Win32 { path: path.clone() }
         }; // TODO check for Java Apps here
         Ok(ret)
     }
 
-    fn create_app(&mut self, _: &Processor, window: Window, process: &Process, path: &String, cmdline: &String) -> Result<App> {
+    fn create_app(
+        &mut self,
+        _: &Processor,
+        window: Window,
+        process: &Process,
+        path: &String,
+        cmdline: &String,
+    ) -> Result<App> {
         Ok(App {
             id: 0,
-            background: String::new(), // TODO
+            background: String::new(),  // TODO
             description: String::new(), // TODO
-            name: String::new(), // TODO
-            identification: self.get_app_identification(window, process, path, cmdline)?
+            name: String::new(),        // TODO
+            identification: self.get_app_identification(window, process, path, cmdline)?,
         })
     }
 
-    fn create_session(&mut self, processor: &Processor, window: Window /*, app: &AppData*/) -> Result<Session> {
+    fn create_session(
+        &mut self,
+        processor: &Processor,
+        window: Window, /*, app: &AppData*/
+    ) -> Result<Session> {
         let (pid, _) = window.pid_tid()?;
 
         if self.processes.get(&pid).is_none() {
@@ -130,12 +146,12 @@ impl ProcessorState {
                 exit_watcher,
                 process,
                 app,
-                arguments: cmdline
+                arguments: cmdline,
             };
             self.processes.insert(pid, appdata);
         }
 
-        let AppData {app, arguments, ..} = self.processes.get(&pid).unwrap();
+        let AppData { app, arguments, .. } = self.processes.get(&pid).unwrap();
 
         Ok(Session {
             id: 0,

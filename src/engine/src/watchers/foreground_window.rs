@@ -41,12 +41,12 @@ impl ForegroundWindowSwitches {
                 let uwp = window.is_uwp().and_then(|is_uwp| {
                     Ok(if is_uwp {
                         crate::data::entities::AppIdentification::Uwp {
-                            aumid: window.aumid()?
+                            aumid: window.aumid()?,
                         }
                     } else {
                         let (pid, _) = window.pid_tid()?;
                         crate::data::entities::AppIdentification::Win32 {
-                            path: Process::new(pid, default())?.path_fast()?
+                            path: Process::new(pid, default())?.path_fast()?,
                         }
                     })
                 })?;

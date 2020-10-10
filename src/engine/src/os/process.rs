@@ -87,7 +87,7 @@ impl Process {
                 &mut buf_len,
             )
         })?;
-        Ok(string_from_buffer!(buf, buf_len/2))
+        Ok(string_from_buffer!(buf, buf_len / 2))
     }
 
     pub fn path_fast(&self) -> Result<String> {
