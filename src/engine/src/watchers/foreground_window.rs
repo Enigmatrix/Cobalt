@@ -26,10 +26,10 @@ impl ForegroundWindowSwitches {
                     || unsafe { winuser::IsWindow(args.hwnd) == 0 }
                     || {
                         let cls = window.class_name()?;
-                        cls == "ForegroundStaging" ||
-                        cls == "LauncherTipWnd" ||
-                        cls == "MultitaskingViewFrame" ||
-                        cls == "ApplicationManager_DesktopShellWindow"
+                        cls == "ForegroundStaging"
+                            || cls == "LauncherTipWnd"
+                            || cls == "MultitaskingViewFrame"
+                            || cls == "ApplicationManager_DesktopShellWindow"
                     }
                 {
                     return Ok(()); // normal response
@@ -44,7 +44,7 @@ impl ForegroundWindowSwitches {
                     } else {
                         "Win32".to_owned()
                     })
-                });
+                })?;
                 let title = window
                     .title()
                     .unwrap_or_else(|e| format!("Unable to get title for {:?}: {}", window, e));

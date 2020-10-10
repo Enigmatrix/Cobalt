@@ -64,7 +64,7 @@ impl WinEventHook {
             Locality::ProcessThread { pid, tid } => (pid, tid),
         };
 
-        let hook = expect!(non_null: {
+        let hook = win32!(non_null: {
             winuser::SetWinEventHook(
                 event_min,
                 event_max,
@@ -93,7 +93,7 @@ impl WinEventHook {
     ) {
         let ret = contexts().get(&win_event_hook).unwrap();
         let handler = ret;
-        (handler)(EventArgs {
+        let res = (handler)(EventArgs {
             win_event_hook,
             event,
             hwnd,
@@ -102,8 +102,27 @@ impl WinEventHook {
             id_event_thread,
             dwms_event_time,
         })
-        .chain_err(|| "Handler threw error")
-        .unwrap();
+        .chain_err(|| "Handler threw error");
+
+        if let Err(ref e) = res {
+            use std::io::Write;
+            let out = &mut ::std::io::stdout();
+            let errmsg = "Error writing to out";
+
+            writeln!(out, "error: {}", e).expect(errmsg);
+
+            for e in e.iter().skip(1) {
+                writeln!(out, "caused by: {}", e).expect(errmsg);
+            }
+
+            // The backtrace is not always generated. Try to run this example
+            // with `RUST_BACKTRACE=1`.
+            if let Some(backtrace) = e.backtrace() {
+                writeln!(out, "backtrace: {:?}", backtrace).expect(errmsg);
+            }
+
+            ::std::process::exit(1);
+        }
     }
 }
 
@@ -114,7 +133,7 @@ impl Drop for WinEventHook {
                 .remove(&self.hook)
                 .expect("Handler and Context should already exist");
         };
-        expect!(true: winuser::UnhookWinEvent(self.hook)).unwrap();
+        win32!(non_zero: { winuser::UnhookWinEvent(self.hook) }).unwrap();
     }
 }
 

@@ -1,7 +1,7 @@
 mod foreground_window;
-mod window_closed;
 mod process_exit;
+mod window_closed;
 
 pub use foreground_window::*;
-pub use window_closed::*;
 pub use process_exit::*;
+pub use window_closed::*;

@@ -39,7 +39,7 @@ impl Default for ProcessOptions {
 
 impl Process {
     pub fn new(pid: ProcessId, opts: ProcessOptions) -> Result<Self> {
-        let handle = expect! (non_null: {
+        let handle = win32!(non_null: {
             processthreadsapi::OpenProcess(
                 if opts.readable { winnt::PROCESS_VM_READ } else {0} |
                 if opts.readable { winnt::PROCESS_QUERY_INFORMATION } else {0} |
@@ -56,14 +56,14 @@ impl Process {
     }
 
     pub fn pid(&self) -> Result<ProcessId> {
-        expect!(true: {
+        win32!(non_zero: {
             processthreadsapi::GetProcessId(self.0)
         })
     }
 
     pub fn read_process_memory<T: Default>(&self, addr: *mut T) -> Result<T> {
         let mut ret: T = default();
-        expect!(true: {
+        win32!(non_zero: {
             memoryapi::ReadProcessMemory(
                 self.0,
                 addr as *mut _ as *mut c_void,
@@ -78,7 +78,7 @@ impl Process {
     pub fn read_string_from_process_memory(&self, s: ntdef::UNICODE_STRING) -> Result<String> {
         let mut buf_len = (s.Length / 2) as usize;
         let mut buf = string_buffer!(buf_len);
-        expect!(true: {
+        win32!(non_zero: {
             memoryapi::ReadProcessMemory(
                 self.0,
                 s.Buffer as *mut _ as *mut winapi::ctypes::c_void,
@@ -108,6 +108,6 @@ impl Process {
 
 impl Drop for Process {
     fn drop(&mut self) {
-        expect!(true: handleapi::CloseHandle(self.0)).unwrap();
+        win32!(non_zero: { handleapi::CloseHandle(self.0) }).unwrap();
     }
 }

@@ -20,20 +20,23 @@ pub struct ProcessorState {
     processes: HashMap<ProcessId, AppData>,
     db: Database,
     prev_switch: WindowSwitch,
-    process_exits: (mpsc::UnboundedSender<ProcessId>, mpsc::UnboundedReceiver<ProcessId>)
+    process_exits: (
+        mpsc::UnboundedSender<ProcessId>,
+        mpsc::UnboundedReceiver<ProcessId>,
+    ),
 }
 
 #[derive(Debug)]
 pub struct SessionData {
     closed_watcher: WindowClosed,
-    session: Session
+    session: Session,
 }
 
 #[derive(Debug)]
 pub struct AppData {
     exit_watcher: ProcessExit,
     process: Process,
-    app: App
+    app: App,
 }
 
 #[derive(Debug)]
@@ -53,7 +56,7 @@ impl Processor {
                     window: Window::new(unsafe { winuser::GetForegroundWindow() })?, // TODO should be current fg window
                     time: Timestamp::from_ticks(0), // TODO should be current time
                 },
-                process_exits: mpsc::unbounded_channel()
+                process_exits: mpsc::unbounded_channel(),
             })),
         })
     }
@@ -71,8 +74,7 @@ impl Processor {
 }
 
 impl ProcessorState {
-
-    fn create_session(&mut self, window: Window/*, app: &AppData*/) -> Result<Session> {
+    fn create_session(&mut self, window: Window /*, app: &AppData*/) -> Result<Session> {
         Ok(Session {
             // TODO get this from somewhere
             id: 0,
@@ -87,21 +89,31 @@ impl ProcessorState {
         match msg {
             Message::Switch(curr_switch) => {
                 if self.windows.get(&curr_switch.window).is_none() {
-                    trace!("saving session for window {:?} with class {}", curr_switch.window, curr_switch.window.class_name().unwrap_or("WTFCLAASS".to_string()));
-                    let closed_watcher = match WindowClosed::watch(processor.share(), curr_switch.window) {
-                        Err(Error(ErrorKind::WindowAlreadyClosed(_), _)) => {
-                            return Ok(()); // don't save the current session
-                        }
-                        x => x,
-                    }?;
+                    info!(
+                        "saving session for window {:?} with class {}",
+                        curr_switch.window,
+                        curr_switch
+                            .window
+                            .class_name()
+                            .unwrap_or("WTFCLAASS".to_string())
+                    );
+                    let closed_watcher =
+                        WindowClosed::watch(processor.share(), curr_switch.window)?;
                     self.create_session(curr_switch.window)?;
 
                     let mut session = self.create_session(curr_switch.window)?;
                     self.db.insert_session(&mut session)?;
-                    self.windows.insert(curr_switch.window, SessionData { session, closed_watcher });
+                    self.windows.insert(
+                        curr_switch.window,
+                        SessionData {
+                            session,
+                            closed_watcher,
+                        },
+                    );
                 }
 
-                let SessionData { session, ..} = self.windows.get_mut(&curr_switch.window).unwrap();
+                let SessionData { session, .. } =
+                    self.windows.get_mut(&curr_switch.window).unwrap();
 
                 let mut usage = Usage {
                     id: 0,
@@ -113,14 +125,10 @@ impl ProcessorState {
                 self.db.insert_usage(&mut usage)?;
                 // TODO push to grpc system
 
-
                 self.prev_switch = curr_switch;
             }
             Message::WindowClosed(window) => {
-                warn!(
-                    "window closed: {}",
-                    window.title().unwrap_or("NOT_FOUND".to_string())
-                );
+                info!("Window Closing...");
                 self.windows.remove(&window);
             }
         }

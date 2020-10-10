@@ -48,7 +48,7 @@ impl Window {
         } else {
             let mut buf = string_buffer!(len + 1);
             let written =
-                expect!(true: winuser::GetWindowTextW(self.0, buf.as_mut_ptr(), len + 1))? as usize;
+                win32!(non_zero: { winuser::GetWindowTextW(self.0, buf.as_mut_ptr(), len + 1)})? as usize;
             Ok(string_from_buffer!(buf, written))
         }
     }
@@ -56,7 +56,7 @@ impl Window {
     pub fn class_name(&self) -> Result<String> {
         let len = 512;
         let mut buf = string_buffer!(len);
-        let written = expect!(true: winuser::GetClassNameW(self.0, buf.as_mut_ptr(), len))?;
+        let written = win32!(non_zero: { winuser::GetClassNameW(self.0, buf.as_mut_ptr(), len) })?;
         Ok(string_from_buffer!(buf, written))
     }
 
@@ -64,7 +64,12 @@ impl Window {
         let mut pid = 0;
         let tid = unsafe { winuser::GetWindowThreadProcessId(self.0, &mut pid) };
         if pid == 0 || tid == 0 {
-            Err(last_win32_error())
+            match last_win32_error() {
+                Error(ErrorKind::Win32(1400), _) => {
+                    Err(ErrorKind::WindowAlreadyClosed(*self).into())
+                }
+                x => Err(x),
+            }
         } else {
             Ok((pid, tid))
         }
@@ -92,7 +97,7 @@ impl Window {
         })?;
 
         let mut prop: propidl::PROPVARIANT = default();
-        hresult!((*property_store).GetValue(&propkey::PKEY_AppUserModel_ID as *const _, &mut prop))?;
+        hresult!({ (*property_store).GetValue(&propkey::PKEY_AppUserModel_ID as *const _, &mut prop) })?;
 
         let aumid_ptr = unsafe { *prop.data.pwszVal() }; // TODO check
         let mut aumid_len = 0;

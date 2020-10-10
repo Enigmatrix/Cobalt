@@ -1,12 +1,12 @@
-use crate::os::prelude::*;
 use crate::errors::*;
+use crate::os::prelude::*;
 use tokio::sync::mpsc;
 
 #[derive(Debug)]
 pub struct ProcessExit {
     pid: ProcessId,
     wait: *mut c_void,
-    sender: mpsc::UnboundedSender<ProcessId>
+    sender: mpsc::UnboundedSender<ProcessId>,
 }
 
 impl ProcessExit {
@@ -14,16 +14,16 @@ impl ProcessExit {
         let mut ret = ProcessExit {
             pid: process.pid()?,
             wait: ptr::null_mut(),
-            sender
+            sender,
         };
-        expect!(true: winbase::RegisterWaitForSingleObject(
+        win32!(non_zero: { winbase::RegisterWaitForSingleObject(
             &mut ret.wait,
             process.handle(),
             Some(ProcessExit::handler),
             &mut ret as *mut _ as *mut c_void,
             winbase::INFINITE,
             winnt::WT_EXECUTEONLYONCE,
-        ))?;
+        )})?;
         Ok(ret)
     }
 
@@ -31,7 +31,7 @@ impl ProcessExit {
         self.sender.send(self.pid).unwrap();
     }
 
-    pub unsafe extern "system" fn handler(dat: *mut c_void, _: u8) {
+    unsafe extern "system" fn handler(dat: *mut c_void, _: u8) {
         let inst = (dat as *mut ProcessExit).as_mut().unwrap();
         inst.signal();
     }

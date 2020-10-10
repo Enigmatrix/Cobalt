@@ -1,7 +1,6 @@
 use crate::errors::*;
 use crate::os::prelude::*;
 use crate::processor::*;
-use tracing::*;
 
 #[derive(Debug)]
 pub struct WindowClosed {
@@ -10,15 +9,7 @@ pub struct WindowClosed {
 
 impl WindowClosed {
     pub fn watch(processor: Processor, window: Window) -> Result<Self> {
-        let (pid, tid) = match window.pid_tid() {
-            Err(Error(ErrorKind::Win32(1400), _)) => {
-                warn!("early return (pid/tid) inaccessible for {:?}", window);
-                return Err(ErrorKind::WindowAlreadyClosed(window).into());
-            }
-            x => x,
-        }
-        .chain_err(|| format!("Unable to get pid/tid for {:?}", window))?;
-
+        let (pid, tid) = window.pid_tid()?;
         let _hook = hook::WinEventHook::new(
             hook::Range::Single(hook::Event::ObjectDestroyed),
             hook::Locality::ProcessThread { pid, tid },

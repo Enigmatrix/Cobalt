@@ -1,5 +1,5 @@
-macro_rules! expect {
-    (true: $e: expr) => {{
+macro_rules! win32 {
+    (non_zero: $e: block) => {{
         let val = unsafe { $e };
         if val == 0 {
             Err($crate::errors::last_win32_error())
@@ -7,7 +7,7 @@ macro_rules! expect {
             Ok(val)
         }
     }};
-    (non_null: $e: expr) => {{
+    (non_null: $e: block) => {{
         let val = unsafe { $e };
         if val.is_null() {
             Err($crate::errors::last_win32_error())
@@ -19,7 +19,7 @@ macro_rules! expect {
 
 // TODO 0 is not the only successful error code! refer to the SUCCESS macro
 macro_rules! hresult {
-    ($e: expr) => {{
+    ($e: block) => {{
         let val = unsafe { $e };
         if val < 0 {
             Err(Error::from_kind($crate::errors::ErrorKind::HResult(val)))
@@ -30,7 +30,7 @@ macro_rules! hresult {
 }
 
 macro_rules! ntstatus {
-    ($e: expr) => {{
+    ($e: block) => {{
         let val = unsafe { $e };
         if val < 0 {
             Err(Error::from_kind($crate::errors::ErrorKind::NtStatus(val)))
