@@ -1,8 +1,25 @@
+use std::hash::Hash;
+
 use crate::errors::*;
 use crate::os::prelude::*;
 
-#[derive(Debug, Eq, PartialEq, Ord, PartialOrd)]
+pub type ProcessId = u32;
+
+#[derive(Debug)]
 pub struct Process(HANDLE);
+
+impl Hash for Process {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        state.write_u32(self.pid().unwrap());
+    }
+}
+
+impl PartialEq<Process> for Process {
+    fn eq(&self, other: &Process) -> bool {
+        self.pid().unwrap() == other.pid().unwrap()
+    }
+}
+impl Eq for Process {}
 
 pub struct ProcessOptions {
     pub readable: bool,
@@ -21,7 +38,7 @@ impl Default for ProcessOptions {
 }
 
 impl Process {
-    pub fn new(pid: u32, opts: ProcessOptions) -> Result<Self> {
+    pub fn new(pid: ProcessId, opts: ProcessOptions) -> Result<Self> {
         let handle = expect! (non_null: {
             processthreadsapi::OpenProcess(
                 if opts.readable { winnt::PROCESS_VM_READ } else {0} |
@@ -36,6 +53,12 @@ impl Process {
 
     pub fn handle(&self) -> HANDLE {
         self.0
+    }
+
+    pub fn pid(&self) -> Result<ProcessId> {
+        expect!(true: {
+            processthreadsapi::GetProcessId(self.0)
+        })
     }
 
     pub fn read_process_memory<T: Default>(&self, addr: *mut T) -> Result<T> {

@@ -7,6 +7,7 @@
 
 mod data;
 mod errors;
+#[macro_use]
 mod os;
 mod processor;
 mod utils;
@@ -49,7 +50,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let processor = processor::Processor::new()?;
 
     let processor_pump = processor.share();
-    let _fg_watcher = ForegroundWindowWatcher::new(processor_pump)?;
+    let _fg_watcher = ForegroundWindowSwitches::watch(processor_pump)?;
 
     let main = tokio::task::LocalSet::new();
 

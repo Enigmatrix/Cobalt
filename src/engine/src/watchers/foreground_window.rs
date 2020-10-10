@@ -3,7 +3,7 @@ use crate::os::prelude::*;
 use crate::processor::*;
 use tracing::*;
 
-pub struct ForegroundWindowWatcher {
+pub struct ForegroundWindowSwitches {
     _hook: hook::WinEventHook,
 }
 
@@ -13,8 +13,8 @@ pub struct WindowSwitch {
     pub window: Window,
 }
 
-impl ForegroundWindowWatcher {
-    pub fn new(processor: Processor) -> Result<Self> {
+impl ForegroundWindowSwitches {
+    pub fn watch(processor: Processor) -> Result<Self> {
         let _hook = hook::WinEventHook::new(
             hook::Range::Single(hook::Event::SystemForeground),
             hook::Locality::Global,
@@ -48,6 +48,6 @@ impl ForegroundWindowWatcher {
                 Ok(())
             }),
         )?;
-        Ok(ForegroundWindowWatcher { _hook })
+        Ok(ForegroundWindowSwitches { _hook })
     }
 }

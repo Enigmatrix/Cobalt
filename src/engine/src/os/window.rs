@@ -53,7 +53,7 @@ impl Window {
         }
     }
 
-    pub fn pid_tid(&self) -> Result<(u32, u32)> {
+    pub fn pid_tid(&self) -> Result<(ProcessId, u32)> {
         let mut pid = 0;
         let tid = unsafe { winuser::GetWindowThreadProcessId(self.0, &mut pid) };
         if pid == 0 || tid == 0 {

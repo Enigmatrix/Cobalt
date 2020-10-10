@@ -4,12 +4,12 @@ use crate::processor::*;
 use tracing::*;
 
 #[derive(Debug)]
-pub struct WindowClosedWatcher {
+pub struct WindowClosed {
     _hook: hook::WinEventHook,
 }
 
-impl WindowClosedWatcher {
-    pub fn new(processor: Processor, window: Window) -> Result<Self> {
+impl WindowClosed {
+    pub fn watch(processor: Processor, window: Window) -> Result<Self> {
         let (pid, tid) = match window.pid_tid() {
             Err(Error(ErrorKind::Win32(1400), _)) => {
                 warn!("early return (pid/tid) inaccessible for {:?}", window);
@@ -31,6 +31,6 @@ impl WindowClosedWatcher {
         )
         .chain_err(|| format!("Unable to set window closed hook for {:?}", window))?;
 
-        Ok(WindowClosedWatcher { _hook })
+        Ok(WindowClosed { _hook })
     }
 }

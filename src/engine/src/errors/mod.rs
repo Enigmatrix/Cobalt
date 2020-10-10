@@ -17,7 +17,13 @@ fn win32_err(err: i32) -> String {
 }
 
 pub fn last_win32_error() -> Error {
-    ErrorKind::Win32(last_win32()).into()
+    let err = ErrorKind::Win32(last_win32()).into();
+    clear_win32_error();
+    err
+}
+
+pub fn clear_win32_error() {
+    unsafe { crate::os::api::errhandlingapi::SetLastError(0) }
 }
 
 pub fn last_win32() -> i32 {

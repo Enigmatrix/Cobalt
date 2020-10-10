@@ -18,7 +18,7 @@ pub enum Range {
 
 pub enum Locality {
     Global,
-    ProcessThread { pid: u32, tid: u32 },
+    ProcessThread { pid: ProcessId, tid: u32 },
 }
 
 #[derive(Debug)]
