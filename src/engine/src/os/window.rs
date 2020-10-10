@@ -40,14 +40,18 @@ impl Window {
         // fails if len == 0 && !Error::last_win32().successful()
         if len == 0 {
             let err = last_win32_error();
-            if let Error(ErrorKind::Win32(0), _) = err {
+            if let AppError::Win32(0) = err {
                 Ok(String::new())
             } else {
-                Err(err)
+                Err(Error::new(err))
             }
         } else {
             let mut buf = string_buffer!(len + 1);
             let written =
+                /*
+                    NOTE: https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getwindowtextw
+                    The target MUST not be a hanged window, else this call will hang as well
+                */
                 win32!(non_zero: { winuser::GetWindowTextW(self.0, buf.as_mut_ptr(), len + 1)})? as usize;
             Ok(string_from_buffer!(buf, written))
         }
@@ -65,10 +69,10 @@ impl Window {
         let tid = unsafe { winuser::GetWindowThreadProcessId(self.0, &mut pid) };
         if pid == 0 || tid == 0 {
             match last_win32_error() {
-                Error(ErrorKind::Win32(1400), _) => {
-                    Err(ErrorKind::WindowAlreadyClosed(*self).into())
+                AppError::Win32(1400) => {
+                    Err(AppError::WindowAlreadyClosed(*self).into())
                 }
-                x => Err(x),
+                x => Err(Error::new(x)),
             }
         } else {
             Ok((pid, tid))

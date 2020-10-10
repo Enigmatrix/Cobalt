@@ -13,7 +13,7 @@ pub enum Event {
 
 pub enum Range {
     Single(Event),
-    MinMax { min: Event, max: Event },
+    // MinMax { min: Event, max: Event },
 }
 
 pub enum Locality {
@@ -57,7 +57,7 @@ impl WinEventHook {
     pub fn new(ev: Range, locality: Locality, handler: Box<dyn EventHandler>) -> Result<Self> {
         let (event_min, event_max) = match ev {
             Range::Single(e) => (e as u32, e as u32),
-            Range::MinMax { min, max } => (min as u32, max as u32),
+            // Range::MinMax { min, max } => (min as u32, max as u32),
         };
         let (id_process, id_thread) = match locality {
             Locality::Global => (0, 0),
@@ -91,9 +91,8 @@ impl WinEventHook {
         id_event_thread: DWORD,
         dwms_event_time: DWORD,
     ) {
-        let ret = contexts().get(&win_event_hook).unwrap();
-        let handler = ret;
-        let res = (handler)(EventArgs {
+        let handler = contexts().get(&win_event_hook).unwrap();
+        (handler)(EventArgs {
             win_event_hook,
             event,
             hwnd,
@@ -102,27 +101,7 @@ impl WinEventHook {
             id_event_thread,
             dwms_event_time,
         })
-        .chain_err(|| "Handler threw error");
-
-        if let Err(ref e) = res {
-            use std::io::Write;
-            let out = &mut ::std::io::stdout();
-            let errmsg = "Error writing to out";
-
-            writeln!(out, "error: {}", e).expect(errmsg);
-
-            for e in e.iter().skip(1) {
-                writeln!(out, "caused by: {}", e).expect(errmsg);
-            }
-
-            // The backtrace is not always generated. Try to run this example
-            // with `RUST_BACKTRACE=1`.
-            if let Some(backtrace) = e.backtrace() {
-                writeln!(out, "backtrace: {:?}", backtrace).expect(errmsg);
-            }
-
-            ::std::process::exit(1);
-        }
+        .expect("Handler threw error");
     }
 }
 

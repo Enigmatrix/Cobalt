@@ -93,7 +93,7 @@ impl Processor {
 
 impl ProcessorState {
 
-    fn get_app_identification(&mut self, window: Window, process: &Process, path: &String, cmdline: &String) -> Result<AppIdentification> {
+    fn get_app_identification(&mut self, window: Window, _process: &Process, path: &String, _cmdline: &String) -> Result<AppIdentification> {
         let ret = if window.is_uwp()? {
             AppIdentification::Uwp {
                 aumid: window.aumid()?

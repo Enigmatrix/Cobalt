@@ -18,4 +18,5 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.2", features = ["fmt"] }
 tracing-futures = "0.2"
 
-error-chain = "0.12"
+anyhow = "1.0"
+thiserror = "1.0"

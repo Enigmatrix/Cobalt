@@ -1,6 +1,7 @@
 use crate::errors::*;
 use crate::os::prelude::*;
 use crate::processor::*;
+use anyhow::Context;
 
 #[derive(Debug)]
 pub struct WindowClosed {
@@ -20,7 +21,7 @@ impl WindowClosed {
                 Ok(())
             }),
         )
-        .chain_err(|| format!("Unable to set window closed hook for {:?}", window))?;
+        .with_context(|| format!("Unable to set window closed hook for {:?}", window))?;
 
         Ok(WindowClosed { _hook })
     }

@@ -15,7 +15,7 @@ pub struct App {
 pub enum AppIdentification {
     Win32 { path: String },
     Uwp { aumid: String },
-    Java { jar: String },
+    // Java { jar: String },
 }
 
 #[derive(Debug)]

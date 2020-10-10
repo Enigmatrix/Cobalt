@@ -2,7 +2,7 @@ macro_rules! win32 {
     (non_zero: $e: block) => {{
         let val = unsafe { $e };
         if val == 0 {
-            Err($crate::errors::last_win32_error())
+            Err(anyhow::Error::new($crate::errors::last_win32_error()))
         } else {
             Ok(val)
         }
@@ -22,7 +22,7 @@ macro_rules! hresult {
     ($e: block) => {{
         let val = unsafe { $e };
         if val < 0 {
-            Err(Error::from_kind($crate::errors::ErrorKind::HResult(val)))
+            Err(anyhow::Error::new($crate::errors::AppError::HResult(val)))
         } else {
             Ok(val)
         }
@@ -33,7 +33,7 @@ macro_rules! ntstatus {
     ($e: block) => {{
         let val = unsafe { $e };
         if val < 0 {
-            Err(Error::from_kind($crate::errors::ErrorKind::NtStatus(val)))
+            Err(anyhow::Error::new($crate::errors::AppError::NtStatus(val)))
         } else {
             Ok(val)
         }

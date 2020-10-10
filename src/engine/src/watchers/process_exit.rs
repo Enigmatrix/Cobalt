@@ -1,6 +1,5 @@
 use crate::errors::*;
 use crate::os::prelude::*;
-use crate::processor::*;
 use tokio::sync::mpsc;
 
 #[derive(Debug)]

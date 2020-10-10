@@ -15,8 +15,6 @@ mod watchers;
 
 use os::prelude::*;
 use tokio::*;
-use tokio::sync::*;
-use processor::*;
 use tracing::*;
 use watchers::*;
 
