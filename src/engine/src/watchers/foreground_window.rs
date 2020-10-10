@@ -20,14 +20,20 @@ impl ForegroundWindowSwitches {
             hook::Locality::Global,
             Box::new(move |args| {
                 let time = Timestamp::from_ticks(args.dwms_event_time); // get time first!
+                let window = Window::new(args.hwnd)?;
 
                 if args.id_object != winuser::OBJID_WINDOW
                     || unsafe { winuser::IsWindow(args.hwnd) == 0 }
+                    || {
+                        let cls = window.class_name()?;
+                        cls == "ForegroundStaging" ||
+                        cls == "LauncherTipWnd" ||
+                        cls == "MultitaskingViewFrame" ||
+                        cls == "ApplicationManager_DesktopShellWindow"
+                    }
                 {
                     return Ok(()); // normal response
                 }
-
-                let window = Window::new(args.hwnd)?;
                 let switch = WindowSwitch { time, window };
 
                 processor.process(Message::Switch(switch))?;

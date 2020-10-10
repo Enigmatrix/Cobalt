@@ -78,7 +78,7 @@ impl ProcessorState {
             id: 0,
             app_id: 0,
             arguments: String::new(),
-            title: String::new(),
+            title: window.title()?,
         })
     }
 
@@ -87,15 +87,17 @@ impl ProcessorState {
         match msg {
             Message::Switch(curr_switch) => {
                 if self.windows.get(&curr_switch.window).is_none() {
-                    let mut session = self.create_session(curr_switch.window)?;
-                    self.db.insert_session(&mut session)?;
-
+                    trace!("saving session for window {:?} with class {}", curr_switch.window, curr_switch.window.class_name().unwrap_or("WTFCLAASS".to_string()));
                     let closed_watcher = match WindowClosed::watch(processor.share(), curr_switch.window) {
                         Err(Error(ErrorKind::WindowAlreadyClosed(_), _)) => {
-                            return Ok(());
+                            return Ok(()); // don't save the current session
                         }
                         x => x,
                     }?;
+                    self.create_session(curr_switch.window)?;
+
+                    let mut session = self.create_session(curr_switch.window)?;
+                    self.db.insert_session(&mut session)?;
                     self.windows.insert(curr_switch.window, SessionData { session, closed_watcher });
                 }
 

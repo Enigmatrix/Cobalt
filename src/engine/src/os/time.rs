@@ -1,6 +1,7 @@
 use crate::os::prelude::*;
+use std::fmt;
 
-#[derive(Debug, Ord, PartialOrd, Eq, PartialEq, Copy, Clone)]
+#[derive(Ord, PartialOrd, Eq, PartialEq, Copy, Clone)]
 pub struct Timestamp(u64);
 
 impl Timestamp {
@@ -13,8 +14,8 @@ impl Timestamp {
     }
 }
 
-impl std::fmt::Display for Timestamp {
-    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
+impl fmt::Display for Timestamp {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         let mut sys: SYSTEMTIME = default();
         unsafe {
             timezoneapi::FileTimeToSystemTime(
@@ -27,5 +28,11 @@ impl std::fmt::Display for Timestamp {
             "{:04}-{:02}-{:02} {:02}:{:02}:{:02}.{:03}Z",
             sys.wYear, sys.wMonth, sys.wDay, sys.wHour, sys.wMinute, sys.wSecond, sys.wMilliseconds
         )
+    }
+}
+
+impl fmt::Debug for Timestamp {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+        fmt::Display::fmt(self, fmt)
     }
 }

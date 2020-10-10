@@ -53,6 +53,13 @@ impl Window {
         }
     }
 
+    pub fn class_name(&self) -> Result<String> {
+        let len = 512;
+        let mut buf = string_buffer!(len);
+        let written = expect!(true: winuser::GetClassNameW(self.0, buf.as_mut_ptr(), len))?;
+        Ok(string_from_buffer!(buf, written))
+    }
+
     pub fn pid_tid(&self) -> Result<(ProcessId, u32)> {
         let mut pid = 0;
         let tid = unsafe { winuser::GetWindowThreadProcessId(self.0, &mut pid) };
