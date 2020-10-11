@@ -1,8 +1,13 @@
+mod app_data;
+mod session_data;
+
 use crate::data::db::*;
 use crate::data::entities::*;
 use crate::errors::*;
 use crate::os::prelude::*;
 use crate::watchers::*;
+use app_data::*;
+use session_data::*;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -10,14 +15,14 @@ use tokio::sync::mpsc;
 use tracing::*;
 
 #[derive(Debug)]
-pub struct Processor {
-    state: Rc<RefCell<ProcessorState>>,
+pub struct Reactor {
+    state: Rc<RefCell<State>>,
 }
 
 #[derive(Debug)]
-pub struct ProcessorState {
-    windows: HashMap<Window, SessionData>,
-    processes: HashMap<ProcessId, AppData>,
+pub struct State {
+    sessions: HashMap<Window, SessionData>,
+    apps: HashMap<ProcessId, AppData>,
     db: Database,
     prev_switch: WindowSwitch,
     process_exits: (
@@ -27,32 +32,18 @@ pub struct ProcessorState {
 }
 
 #[derive(Debug)]
-pub struct SessionData {
-    closed_watcher: WindowClosed,
-    session: Session,
-}
-
-#[derive(Debug)]
-pub struct AppData {
-    exit_watcher: ProcessExit,
-    process: Process,
-    app: App,
-    arguments: String,
-}
-
-#[derive(Debug)]
 pub enum Message {
     Switch(WindowSwitch),
     WindowClosed(Window),
     ProcessExit(ProcessId),
 }
 
-impl Processor {
+impl Reactor {
     pub fn new(taskset: &tokio::task::LocalSet) -> Result<Self> {
-        let processor = Processor {
-            state: Rc::new(RefCell::new(ProcessorState {
-                windows: HashMap::new(),
-                processes: HashMap::new(),
+        let reactor = Reactor {
+            state: Rc::new(RefCell::new(State {
+                sessions: HashMap::new(),
+                apps: HashMap::new(),
                 db: Database::new(),
                 prev_switch: WindowSwitch {
                     window: Window::new(unsafe { winuser::GetForegroundWindow() })?, // TODO should be current fg window
@@ -61,11 +52,11 @@ impl Processor {
                 process_exits: mpsc::unbounded_channel(),
             })),
         };
-        let copy = processor.share();
+        let copy = reactor.share();
         let _join_handle = taskset.spawn_local(async move {
             loop {
                 let msg = {
-                    let ProcessorState {
+                    let State {
                         process_exits: (_, recver),
                         ..
                     } = &mut *copy.state.borrow_mut();
@@ -78,7 +69,7 @@ impl Processor {
                 }
             }
         });
-        Ok(processor)
+        Ok(reactor)
     }
 
     pub fn share(&self) -> Self {
@@ -93,7 +84,7 @@ impl Processor {
     }
 }
 
-impl ProcessorState {
+impl State {
     fn get_app_identification(
         &mut self,
         window: Window,
@@ -113,45 +104,35 @@ impl ProcessorState {
 
     fn create_app(
         &mut self,
-        _: &Processor,
+        _: &Reactor,
         window: Window,
         process: &Process,
         path: &String,
         cmdline: &String,
     ) -> Result<App> {
-        Ok(App {
-            id: 0,
-            background: String::new(),  // TODO
-            description: String::new(), // TODO
-            name: String::new(),        // TODO
-            identification: self.get_app_identification(window, process, path, cmdline)?,
-        })
+        let identification = self.get_app_identification(window, process, path, cmdline)?;
+        let app = self
+            .db
+            .app_by_app_identification(&identification)
+            .unwrap_or_else(|| App {
+                id: 0,
+                background: String::new(),  // TODO
+                description: String::new(), // TODO
+                name: String::new(),        // TODO
+                identification,
+            });
+        Ok(app)
     }
 
-    fn create_session(
-        &mut self,
-        processor: &Processor,
-        window: Window, /*, app: &AppData*/
-    ) -> Result<Session> {
+    fn create_session(&mut self, reactor: &Reactor, window: Window) -> Result<Session> {
         let (pid, _) = window.pid_tid()?;
 
-        if self.processes.get(&pid).is_none() {
-            let process = Process::new(pid, default())?;
-            let exit_watcher = ProcessExit::watch(&process, self.process_exits.0.clone())?;
-            let (path, cmdline) = process.path_and_cmdline()?;
-            let mut app = self.create_app(processor, window, &process, &path, &cmdline)?;
-            info!("New App: {:?}", app);
-            self.db.insert_app(&mut app)?;
-            let appdata = AppData {
-                exit_watcher,
-                process,
-                app,
-                arguments: cmdline,
-            };
-            self.processes.insert(pid, appdata);
+        if !self.apps.contains_key(&pid) {
+            let appdata = AppData::create(self, reactor, window, pid)?;
+            self.apps.insert(pid, appdata);
         }
 
-        let AppData { app, arguments, .. } = self.processes.get(&pid).unwrap();
+        let AppData { app, arguments, .. } = self.apps.get(&pid).unwrap();
 
         Ok(Session {
             id: 0,
@@ -161,28 +142,17 @@ impl ProcessorState {
         })
     }
 
-    #[instrument(skip(self, processor))]
-    pub fn process(&mut self, msg: Message, processor: &Processor) -> Result<()> {
+    #[instrument(skip(self, reactor))]
+    pub fn process(&mut self, msg: Message, reactor: &Reactor) -> Result<()> {
         match msg {
             Message::Switch(curr_switch) => {
-                if self.windows.get(&curr_switch.window).is_none() {
-                    let closed_watcher =
-                        WindowClosed::watch(processor.share(), curr_switch.window)?;
-
-                    let mut session = self.create_session(processor, curr_switch.window)?;
-                    info!("New Session: {:?}", session);
-                    self.db.insert_session(&mut session)?;
-                    self.windows.insert(
-                        curr_switch.window,
-                        SessionData {
-                            session,
-                            closed_watcher,
-                        },
-                    );
+                if !self.sessions.contains_key(&curr_switch.window) {
+                    let data = SessionData::create(self, reactor, curr_switch.window)?;
+                    self.sessions.insert(curr_switch.window, data);
                 }
 
                 let SessionData { session, .. } =
-                    self.windows.get_mut(&curr_switch.window).unwrap();
+                    self.sessions.get_mut(&curr_switch.window).unwrap();
 
                 let mut usage = Usage {
                     id: 0,
@@ -198,11 +168,11 @@ impl ProcessorState {
             }
             Message::WindowClosed(window) => {
                 info!("Window Closed");
-                self.windows.remove(&window);
+                self.sessions.remove(&window);
             }
             Message::ProcessExit(pid) => {
                 info!("Process Exited");
-                self.processes.remove(&pid);
+                self.apps.remove(&pid);
             }
         }
         Ok(())

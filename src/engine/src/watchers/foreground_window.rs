@@ -1,6 +1,6 @@
 use crate::errors::*;
 use crate::os::prelude::*;
-use crate::processor::*;
+use crate::reactor::*;
 use tracing::*;
 
 pub struct ForegroundWindowSwitches {
@@ -14,7 +14,7 @@ pub struct WindowSwitch {
 }
 
 impl ForegroundWindowSwitches {
-    pub fn watch(processor: Processor) -> Result<Self> {
+    pub fn watch(reactor: Reactor) -> Result<Self> {
         let _hook = hook::WinEventHook::new(
             hook::Range::Single(hook::Event::SystemForeground),
             hook::Locality::Global,
@@ -36,7 +36,7 @@ impl ForegroundWindowSwitches {
                 }
                 let switch = WindowSwitch { time, window };
 
-                processor.process(Message::Switch(switch))?;
+                reactor.process(Message::Switch(switch))?;
 
                 let uwp = window.is_uwp().and_then(|is_uwp| {
                     Ok(if is_uwp {

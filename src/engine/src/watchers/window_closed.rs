@@ -1,6 +1,6 @@
 use crate::errors::*;
 use crate::os::prelude::*;
-use crate::processor::*;
+use crate::reactor::*;
 use anyhow::Context;
 
 #[derive(Debug)]
@@ -9,14 +9,14 @@ pub struct WindowClosed {
 }
 
 impl WindowClosed {
-    pub fn watch(processor: Processor, window: Window) -> Result<Self> {
+    pub fn watch(reactor: Reactor, window: Window) -> Result<Self> {
         let (pid, tid) = window.pid_tid()?;
         let _hook = hook::WinEventHook::new(
             hook::Range::Single(hook::Event::ObjectDestroyed),
             hook::Locality::ProcessThread { pid, tid },
             Box::new(move |args| {
                 if window == args.hwnd {
-                    processor.process(Message::WindowClosed(window))?;
+                    reactor.process(Message::WindowClosed(window))?;
                 }
                 Ok(())
             }),

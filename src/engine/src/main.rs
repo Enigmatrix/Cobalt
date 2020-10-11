@@ -9,7 +9,7 @@ mod data;
 mod errors;
 #[macro_use]
 mod os;
-mod processor;
+mod reactor;
 mod utils;
 mod watchers;
 
@@ -49,10 +49,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let main = tokio::task::LocalSet::new();
 
     let events = hook::EventLoop::new();
-    let processor = processor::Processor::new(&main)?;
+    let reactor = reactor::Reactor::new(&main)?;
 
-    let copy1 = processor.share();
-    let _fg_watcher = ForegroundWindowSwitches::watch(copy1)?;
+    let copy = reactor.share();
+    let _fg_watcher = ForegroundWindowSwitches::watch(copy)?;
 
     runtime.block_on(main.run_until(events));
 
