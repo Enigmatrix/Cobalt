@@ -25,7 +25,7 @@ impl ForegroundWindowSwitches {
                 if args.id_object != winuser::OBJID_WINDOW
                     || unsafe { winuser::IsWindow(args.hwnd) == 0 }
                     || {
-                        let cls = window.class_name()?;
+                        let cls = window.class_name()?; // TODO check if htis can be forged
                         cls == "ForegroundStaging"
                             || cls == "LauncherTipWnd"
                             || cls == "MultitaskingViewFrame"

@@ -13,6 +13,7 @@ tonic = "0.3"
 winapi = { version = "0.3", features = ["everything", "impl-default", "impl-debug"] }
 ntapi = { version = "0.3", features = ["user", "impl-default"] }
 uuid-sys = "0.1"
+pelite = "0.9"
 
 tracing = "0.1"
 tracing-subscriber = { version = "0.2", features = ["fmt"] }

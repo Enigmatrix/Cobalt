@@ -3,6 +3,7 @@ pub mod error;
 #[macro_use]
 pub mod string;
 pub mod api;
+pub mod file_info;
 pub mod hook;
 pub mod prelude;
 pub mod process;

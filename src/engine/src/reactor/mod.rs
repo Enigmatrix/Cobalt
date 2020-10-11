@@ -111,17 +111,19 @@ impl State {
         cmdline: &String,
     ) -> Result<App> {
         let identification = self.get_app_identification(window, process, path, cmdline)?;
-        let app = self
-            .db
-            .app_by_app_identification(&identification)
-            .unwrap_or_else(|| App {
+        let existing_app = self.db.app_by_app_identification(&identification);
+        Ok(if let Some(app) = existing_app {
+            app
+        } else {
+            let file = FileInfo::new(&path)?;
+            App {
                 id: 0,
-                background: String::new(),  // TODO
-                description: String::new(), // TODO
-                name: String::new(),        // TODO
+                background: String::new(),     // TODO
+                description: file.description, // TODO handle UWP/Java
+                name: file.name,               // TODO handle UWP/Java
                 identification,
-            });
-        Ok(app)
+            }
+        })
     }
 
     fn create_session(&mut self, reactor: &Reactor, window: Window) -> Result<Session> {

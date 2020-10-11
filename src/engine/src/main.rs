@@ -1,7 +1,5 @@
 #![feature(trait_alias)]
-#![feature(async_closure)]
 #![feature(default_free_fn)]
-#![feature(option_expect_none)]
 #![feature(maybe_uninit_ref)]
 #![recursion_limit = "1024"]
 
