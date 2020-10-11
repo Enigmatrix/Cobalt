@@ -1,7 +1,6 @@
 use crate::errors::*;
 use crate::os::prelude::*;
 use crate::reactor::*;
-use tracing::*;
 
 pub struct ForegroundWindowSwitches {
     _hook: hook::WinEventHook,
@@ -38,7 +37,7 @@ impl ForegroundWindowSwitches {
 
                 reactor.process(Message::Switch(switch))?;
 
-                let uwp = window.is_uwp().and_then(|is_uwp| {
+                /*let uwp = window.is_uwp().and_then(|is_uwp| {
                     Ok(if is_uwp {
                         crate::data::entities::AppIdentification::Uwp {
                             aumid: window.aumid()?,
@@ -54,7 +53,7 @@ impl ForegroundWindowSwitches {
                     .title()
                     .unwrap_or_else(|e| format!("Unable to get title for {:?}: {}", window, e));
 
-                trace!("SWITCH {} APP({:?} | title: {:?})", time, uwp, title);
+                trace!("SWITCH {} APP({:?} | title: {:?})", time, uwp, title);*/
 
                 Ok(())
             }),

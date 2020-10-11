@@ -148,6 +148,11 @@ impl State {
     pub fn process(&mut self, msg: Message, reactor: &Reactor) -> Result<()> {
         match msg {
             Message::Switch(curr_switch) => {
+                // check if this window is the same as the previous window
+                if curr_switch.window == self.prev_switch.window {
+                    return Ok(());
+                }
+
                 if !self.sessions.contains_key(&curr_switch.window) {
                     let data = SessionData::create(self, reactor, curr_switch.window)?;
                     self.sessions.insert(curr_switch.window, data);
@@ -165,6 +170,7 @@ impl State {
                 };
                 self.db.insert_usage(&mut usage)?;
                 // TODO push to grpc system
+                trace!("\n\t{:?}\n\t{:?}", usage, session);
 
                 self.prev_switch = curr_switch;
             }

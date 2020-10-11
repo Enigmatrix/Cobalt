@@ -1,5 +1,4 @@
 use crate::errors::*;
-use crate::os::prelude::*;
 use pelite::resources::version_info::{Language, VersionInfo};
 use pelite::{FileMap, PeFile};
 use std::iter::once;
