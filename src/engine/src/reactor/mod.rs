@@ -47,7 +47,7 @@ impl Reactor {
                 db: Database::new(),
                 prev_switch: WindowSwitch {
                     window: Window::new(unsafe { winuser::GetForegroundWindow() })?, // TODO should be current fg window
-                    time: Timestamp::from_ticks(0), // TODO should be current time
+                    time: Timestamp::now()
                 },
                 process_exits: mpsc::unbounded_channel(),
             })),
@@ -170,7 +170,7 @@ impl State {
                 };
                 self.db.insert_usage(&mut usage)?;
                 // TODO push to grpc system
-                trace!("\n\t{:?}\n\t{:?}", usage, session);
+                trace!("\n{:#?}\n{:#?}", usage, session);
 
                 self.prev_switch = curr_switch;
             }

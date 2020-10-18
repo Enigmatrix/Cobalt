@@ -6,11 +6,19 @@ pub struct Timestamp(u64);
 
 impl Timestamp {
     pub fn from_ticks(ticks: DWORD) -> Timestamp {
+        let millis_diff = ticks as i64 - unsafe { sysinfoapi::GetTickCount64() } as i64;
+        Timestamp::now().offset(millis_diff * 10_000)
+    }
+
+    pub fn now() -> Timestamp {
         let mut ft: minwindef::FILETIME = default();
         unsafe { sysinfoapi::GetSystemTimePreciseAsFileTime(&mut ft) };
-        let millis_diff = ticks as i64 - unsafe { sysinfoapi::GetTickCount64() } as i64;
-        let ticks = unsafe { *(&mut ft as *mut _ as *mut i64) };
-        Timestamp((ticks + millis_diff * 10_000) as u64)
+        let ticks = unsafe { *(&mut ft as *mut _ as *mut u64) };
+        Timestamp(ticks)
+    }
+
+    fn offset(self, amt: i64) -> Timestamp {
+        Timestamp((self.0 as i64 + amt) as u64)
     }
 }
 

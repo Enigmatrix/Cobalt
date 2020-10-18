@@ -1,7 +1,6 @@
 #![feature(trait_alias)]
 #![feature(default_free_fn)]
 #![feature(maybe_uninit_ref)]
-#![recursion_limit = "1024"]
 
 mod data;
 mod errors;
@@ -21,7 +20,7 @@ fn init() -> Result<(runtime::Runtime, Span), Box<dyn std::error::Error>> {
         tracing_subscriber::fmt()
             .with_max_level(Level::TRACE)
             // .with_thread_ids(true)
-            .compact()
+            // .compact()
             .finish(),
     )?;
 
