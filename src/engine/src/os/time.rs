@@ -22,6 +22,14 @@ impl Timestamp {
     }
 }
 
+impl rusqlite::ToSql for Timestamp {
+    fn to_sql(&self) -> rusqlite::Result<rusqlite::types::ToSqlOutput<'_>> {
+        Ok(rusqlite::types::ToSqlOutput::Owned(
+            rusqlite::types::Value::Integer(self.0 as i64),
+        ))
+    }
+}
+
 impl fmt::Display for Timestamp {
     fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         let mut sys: SYSTEMTIME = default();

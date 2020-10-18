@@ -111,7 +111,7 @@ impl State {
         cmdline: &String,
     ) -> Result<App> {
         let identification = self.get_app_identification(window, process, path, cmdline)?;
-        let existing_app = self.db.app_by_app_identification(&identification);
+        let existing_app = self.db.app_by_app_identification(&identification)?;
         Ok(if let Some(app) = existing_app {
             app
         } else {
