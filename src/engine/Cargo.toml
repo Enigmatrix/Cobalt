@@ -21,3 +21,5 @@ tracing-futures = "0.2"
 
 anyhow = "1.0"
 thiserror = "1.0"
+
+rusqlite = { version = "0.24",features = ["trace", "blob", "bundled"] }

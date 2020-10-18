@@ -44,10 +44,10 @@ impl Reactor {
             state: Rc::new(RefCell::new(State {
                 sessions: HashMap::new(),
                 apps: HashMap::new(),
-                db: Database::new(),
+                db: Database::new()?,
                 prev_switch: WindowSwitch {
                     window: Window::new(unsafe { winuser::GetForegroundWindow() })?, // TODO should be current fg window
-                    time: Timestamp::now()
+                    time: Timestamp::now(),
                 },
                 process_exits: mpsc::unbounded_channel(),
             })),

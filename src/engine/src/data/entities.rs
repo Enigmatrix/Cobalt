@@ -3,7 +3,7 @@ pub type Color = String;
 
 #[derive(Debug)]
 pub struct App {
-    pub id: u64,
+    pub id: i64,
     pub name: String,
     pub description: String,
     // icon: Blob,
@@ -20,7 +20,7 @@ pub enum AppIdentification {
 
 #[derive(Debug)]
 pub struct Tag {
-    pub id: u64,
+    pub id: i64,
     pub name: String,
     pub description: String,
     pub background: Color,
@@ -28,23 +28,23 @@ pub struct Tag {
 
 #[derive(Debug)]
 pub struct AppTag {
-    pub app_id: u64,
-    pub tag_id: u64,
+    pub app_id: i64,
+    pub tag_id: i64,
 }
 
 #[derive(Debug)]
 pub struct Session {
-    pub id: u64,
-    pub app_id: u64,
+    pub id: i64,
+    pub app_id: i64,
     pub arguments: String,
     pub title: String,
 }
 
 #[derive(Debug)]
 pub struct Usage {
-    pub id: u64,
+    pub id: i64,
     pub start: Timestamp,
     pub end: Timestamp,
     pub during_idle: bool,
-    pub session_id: u64,
+    pub session_id: i64,
 }
