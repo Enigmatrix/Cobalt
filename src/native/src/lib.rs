@@ -11,3 +11,7 @@ pub mod error;
 pub mod buffer;
 pub mod com;
 pub mod wrappers;
+
+pub fn setup() {
+    wrappers::Timestamp::calculate_boot_time();
+}

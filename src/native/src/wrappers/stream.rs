@@ -268,16 +268,3 @@ fn default_stream() -> IStreamVtbl {
         Clone,
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn write_works() {
-        let wut = Stream::from(1);
-        unsafe {
-            // wut.stream().Revert();
-        }
-    }
-}
