@@ -1,0 +1,8 @@
+[workspace]
+
+members = [
+    "src/engine",
+    "src/native",
+
+    "tests/integration_tests"
+]
