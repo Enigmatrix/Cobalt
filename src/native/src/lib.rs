@@ -3,7 +3,7 @@
 #![feature(maybe_uninit_slice)]
 #![feature(min_const_generics)]
 #![feature(maybe_uninit_uninit_array)]
-#![feature(test)]
+#![feature(maybe_uninit_ref)]
 
 pub mod raw;
 #[macro_use]
@@ -14,4 +14,5 @@ pub mod wrappers;
 
 pub fn setup() {
     wrappers::Timestamp::calculate_boot_time();
+    wrappers::winevent::init_contexts();
 }

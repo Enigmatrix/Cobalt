@@ -154,7 +154,7 @@ mod tests {
 
         hresult!(CoInitializeEx(NULL, COINITBASE_MULTITHREADED)).unwrap();
 
-        let path = "C:\\WINDOWS\\system32\\notepad.exe";
+        // let path = "C:\\WINDOWS\\system32\\notepad.exe";
         let path = "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe";
         // assert!(FileInfo::from_classic_app(path).is_err());
 
