@@ -2,7 +2,7 @@ use crate::raw::*;
 use crate::wrappers::*;
 use crate::error::*;
 use std::collections::HashMap;
-use std::mem::MaybeUninit;
+use std::mem::{MaybeUninit, transmute};
 use std::ptr;
 
 pub mod winevent {
@@ -126,11 +126,27 @@ pub mod winevent {
 pub mod windows_hook {
     use super::*;
 
-    #[repr(i32)]
-    #[derive(Clone, Copy)]
-    pub enum Event {
-        KeyBoardLL = winuser::WH_KEYBOARD_LL,
-        MouseLL = winuser::WH_MOUSE_LL,
+    pub trait WindowsHookEvent {
+        type WParam;
+        type LParam;
+
+        fn event() -> i32;
+    }
+
+    pub struct LowLevelKeyboard;
+    impl WindowsHookEvent for LowLevelKeyboard {
+        type LParam = &'static mut winuser::KBDLLHOOKSTRUCT;
+        type WParam = usize;
+
+        fn event() -> i32 { winuser::WH_KEYBOARD_LL }
+    }
+
+    pub struct LowLevelMouse;
+    impl WindowsHookEvent for LowLevelMouse {
+        type LParam = &'static mut winuser::MSLLHOOKSTRUCT;
+        type WParam = usize;
+
+        fn event() -> i32 { winuser::WH_MOUSE_LL }
     }
 
     pub struct Hook {
@@ -143,14 +159,16 @@ pub mod windows_hook {
     }
 
     impl Hook {
-        pub fn new(ev: Event, locality: Locality, cb: winuser::HOOKPROC) -> Result<Hook, Win32Err> {
+        pub fn new<E: WindowsHookEvent>(locality: Locality, cb: fn(i32, E::WParam, E::LParam) -> isize) -> Result<Hook, Win32Err> {
             let tid = match locality {
                 Locality::Thread(x) => x,
                 Locality::Global => 0
             };
-            let hook = win32!(non_null: winuser::SetWindowsHookExW(ev as i32, cb, ptr::null_mut(), tid))?;
+            let hook = win32!(non_null: winuser::SetWindowsHookExW(E::event(), Some(transmute(cb)), ptr::null_mut(), tid))?;
             Ok(Hook { hook })
         }
+
+
     }
 
     impl Drop for Hook {

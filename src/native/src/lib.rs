@@ -5,7 +5,7 @@
 #![feature(maybe_uninit_uninit_array)]
 #![feature(maybe_uninit_ref)]
 
-pub mod raw;
+mod raw;
 #[macro_use]
 pub mod error;
 pub mod buffer;
