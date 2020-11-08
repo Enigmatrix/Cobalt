@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package controllable;
+
+// option csharp_namespace = "Controllable.Common";
+
+service Controllable {
+	rpc SetForeground (HwndValue) returns (Empty);
+	rpc SetTitle (StringValue) returns (Empty);
+	rpc SetNtPath (StringValue) returns (Empty);
+	rpc SetNtCmdLine (StringValue) returns (Empty);
+	rpc GetHandle (Empty) returns (HwndValue);
+}
+
+message HwndValue {
+	uint64 hwnd = 1;
+}
+
+message StringValue {
+	string inner = 1;
+}
+
+message Empty {}

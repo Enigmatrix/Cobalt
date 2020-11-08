@@ -1,8 +1,9 @@
+use crate::error::*;
 use crate::raw::*;
 use crate::wrappers::*;
-use crate::error::*;
 use std::collections::HashMap;
-use std::mem::{MaybeUninit, transmute};
+use std::default::default;
+use std::mem::{transmute, MaybeUninit};
 use std::ptr;
 
 pub mod winevent {
@@ -50,7 +51,8 @@ pub mod winevent {
 
     pub fn init_contexts() {
         unsafe {
-            WIN_EVENT_HOOK_CONTEXTS = MaybeUninit::new(HashMap::with_capacity(WINEVENT_CONTEXT_INIT));
+            WIN_EVENT_HOOK_CONTEXTS =
+                MaybeUninit::new(HashMap::with_capacity(WINEVENT_CONTEXT_INIT));
         }
     }
 
@@ -138,7 +140,9 @@ pub mod windows_hook {
         type LParam = &'static mut winuser::KBDLLHOOKSTRUCT;
         type WParam = usize;
 
-        fn event() -> i32 { winuser::WH_KEYBOARD_LL }
+        fn event() -> i32 {
+            winuser::WH_KEYBOARD_LL
+        }
     }
 
     pub struct LowLevelMouse;
@@ -146,34 +150,91 @@ pub mod windows_hook {
         type LParam = &'static mut winuser::MSLLHOOKSTRUCT;
         type WParam = usize;
 
-        fn event() -> i32 { winuser::WH_MOUSE_LL }
+        fn event() -> i32 {
+            winuser::WH_MOUSE_LL
+        }
     }
 
     pub struct Hook {
-        hook: HHOOK
+        hook: HHOOK,
     }
 
     pub enum Locality {
         Global,
-        Thread(u32)
+        Thread(u32),
     }
 
     impl Hook {
-        pub fn new<E: WindowsHookEvent>(locality: Locality, cb: fn(i32, E::WParam, E::LParam) -> isize) -> Result<Hook, Win32Err> {
+        pub fn new<E: WindowsHookEvent>(
+            locality: Locality,
+            cb: fn(i32, E::WParam, E::LParam) -> isize,
+        ) -> Result<Hook, Win32Err> {
             let tid = match locality {
                 Locality::Thread(x) => x,
-                Locality::Global => 0
+                Locality::Global => 0,
             };
-            let hook = win32!(non_null: winuser::SetWindowsHookExW(E::event(), Some(transmute(cb)), ptr::null_mut(), tid))?;
+            let hook = win32!(
+                non_null:
+                    winuser::SetWindowsHookExW(
+                        E::event(),
+                        Some(transmute(cb)),
+                        ptr::null_mut(),
+                        tid,
+                    )
+            )?;
             Ok(Hook { hook })
         }
-
-
     }
 
     impl Drop for Hook {
         fn drop(&mut self) {
             win32!(non_zero: winuser::UnhookWindowsHookEx(self.hook)).unwrap();
         }
+    }
+
+    // TODO callnexthookex definition here
+}
+
+pub struct EventLoop {
+    msg: winuser::MSG,
+}
+
+impl EventLoop {
+    pub fn new() -> EventLoop {
+        EventLoop { msg: default() }
+    }
+}
+
+impl EventLoop {
+    pub fn step_peek(&mut self) -> Option<usize> {
+        while unsafe {
+            winuser::PeekMessageW(&mut self.msg, ptr::null_mut(), 0, 0, winuser::PM_REMOVE)
+        } != 0
+        {
+            if self.msg.message == winuser::WM_QUIT {
+                return Some(self.msg.wParam);
+            }
+            unsafe { winuser::TranslateMessage(&mut self.msg as *mut _) };
+            unsafe { winuser::DispatchMessageW(&mut self.msg as *mut _) };
+        }
+        None
+    }
+
+    pub fn step(&mut self) -> Option<usize> {
+        if unsafe { winuser::GetMessageW(&mut self.msg, ptr::null_mut(), 0, 0) } != 0 {
+            if self.msg.message == winuser::WM_QUIT {
+                return Some(self.msg.wParam);
+            }
+            unsafe { winuser::TranslateMessage(&mut self.msg as *mut _) };
+            unsafe { winuser::DispatchMessageW(&mut self.msg as *mut _) };
+        }
+        None
+    }
+
+    pub fn run(&mut self) -> Option<usize> {
+        while let Some(ex) = self.step() {
+            return Some(ex);
+        }
+        None
     }
 }
