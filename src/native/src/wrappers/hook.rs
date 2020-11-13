@@ -62,7 +62,11 @@ pub mod winevent {
     }
 
     impl Hook {
-        pub fn new(ev: Range, locality: Locality, handler: EventHandler) -> Result<Self, Win32Err> {
+        pub fn new<'a>(
+            ev: Range,
+            locality: Locality,
+            handler: Box<dyn 'a + Fn(EventArgs) -> anyhow::Result<()>>,
+        ) -> Result<Self, Win32Err> {
             let (event_min, event_max) = match ev {
                 Range::Single(e) => (e as u32, e as u32),
                 // Range::MinMax { min, max } => (min as u32, max as u32),
@@ -84,7 +88,7 @@ pub mod winevent {
                 )
             })?;
 
-            if unsafe { contexts().insert(hook, handler).is_some() } {
+            if unsafe { contexts().insert(hook, transmute(handler)).is_some() } {
                 panic!("Hook already exists");
             }
             Ok(Hook { hook })
