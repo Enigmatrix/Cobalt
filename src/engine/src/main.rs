@@ -3,7 +3,7 @@ use native::watchers::*;
 use native::wrappers::*;
 
 fn main() -> Result<()> {
-    native::setup();
+    native::setup()?;
 
     let mut event_loop = EventLoop::new();
 

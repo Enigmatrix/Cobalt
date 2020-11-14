@@ -4,5 +4,7 @@ members = [
     "src/engine",
     "src/native",
 
+    "tests/experiments/monitor",
+
     "tests/integration_tests"
 ]

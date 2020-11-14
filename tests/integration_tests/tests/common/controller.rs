@@ -1,5 +1,5 @@
+use native::wrappers::Window as NativeWindow;
 use std::path::Path;
-use native::wrappers::{Window as NativeWindow};
 
 /*
 pub struct Controller {
@@ -8,7 +8,7 @@ pub struct Controller {
 
 impl Controller {
     pub fn new() -> Controller { Controller { apps: Vec::new() } }
-    pub fn spawn_app<'a, P: AsRef<Path>>(&mut self, path: P) -> AppRef<'a> { 
+    pub fn spawn_app<'a, P: AsRef<Path>>(&mut self, path: P) -> AppRef<'a> {
         let app = App::start(path).unwrap();
         let idx = self.apps.push(value)
         AppRef { controller: self, index: idx }

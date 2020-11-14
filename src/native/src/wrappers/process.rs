@@ -95,4 +95,18 @@ impl Process {
         })?;
         Ok(buf.with_length(buf_len / 2).to_string_lossy())
     }
+
+    pub fn path(&self) -> Result<String, Win32Err> {
+        let mut buf_len: u32 = 1024;
+        let mut buf = buffer::alloc(buf_len as usize);
+        while 0
+            == unsafe {
+                winbase::QueryFullProcessImageNameW(self.0, 0, buf.as_mut_ptr(), &mut buf_len)
+            }
+        {
+            buf_len *= 2;
+            buf = buffer::alloc(buf_len as usize);
+        }
+        Ok(buf.with_length((buf_len + 1) as usize).to_string_lossy())
+    }
 }

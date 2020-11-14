@@ -33,18 +33,21 @@ impl FileInfo {
         let version_info = resources
             .version_info()
             .with_context(|| "Unable to open VersionInfo from resources")?;
-        let default_lang = version_info.translation()[0];
+        let default_lang = version_info.translation().first();
 
-        for lang in FileInfo::languages(default_lang) {
+        for lang in FileInfo::languages(default_lang.cloned()) {
             let name = version_info.value(lang, "ProductName");
             let desc = version_info.value(lang, "FileDescription");
             match (name, desc) {
                 (Some(name), Some(description)) => {
+                    let buffer = crate::wrappers::stream::HugeExtensibleBuffer::new();
+                    let buffer = FileInfo::write_icon_from_path(path, buffer)?;
+                    let icon = image::load_from_memory(&buffer.consume()[..])?;
                     return Ok(FileInfo {
                         name,
                         description,
-                        icon: FileInfo::icon(&resources)?,
-                    })
+                        icon,
+                    });
                 }
                 _ => continue,
             }
@@ -117,10 +120,14 @@ impl FileInfo {
             .with_context(|| "Unable to find any valid icons")
     }
 
-    fn languages(default: Language) -> impl Iterator<Item = Language> {
-        use std::iter::once;
+    fn languages(default: Option<Language>) -> impl Iterator<Item = Language> {
+        use std::iter::*;
 
-        once(default).chain(FALLBACK_LANGS.iter().map(|lang| FileInfo::language(lang)))
+        let e: Box<dyn Iterator<Item = Language>> = match default {
+            Some(x) => Box::new(once(x)),
+            None => Box::new(empty()),
+        };
+        e.chain(FALLBACK_LANGS.iter().map(|lang| FileInfo::language(lang)))
     }
 
     fn language(lang: &'static str) -> Language {

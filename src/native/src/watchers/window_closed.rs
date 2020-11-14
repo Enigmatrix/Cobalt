@@ -18,7 +18,9 @@ impl Watcher {
             Range::Single(Event::ObjectDestroyed),
             Locality::ProcessThread { pid, tid },
             Box::new(|args| {
-                if args.id_object != winuser::OBJID_WINDOW || unsafe { winuser::IsWindow(args.hwnd) != 0 } {
+                if args.id_object != winuser::OBJID_WINDOW
+                    || unsafe { winuser::IsWindow(args.hwnd) != 0 }
+                {
                     return Ok(());
                 }
                 let window = Window::new(args.hwnd)?;

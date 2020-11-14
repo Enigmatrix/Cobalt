@@ -1,5 +1,5 @@
-mod setup;
 mod controller;
+mod setup;
 
-pub use setup::*;
 pub use controller::*;
+pub use setup::*;

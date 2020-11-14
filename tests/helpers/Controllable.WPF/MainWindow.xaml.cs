@@ -12,6 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using Controllable.Common;
 
 namespace Controllable.WPF
 {
@@ -23,6 +24,16 @@ namespace Controllable.WPF
         public MainWindow()
         {
             InitializeComponent();
+        }
+
+        private void ButtonBase_OnClick(object sender, RoutedEventArgs e)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void MainWindow_OnLoaded(object sender, RoutedEventArgs e)
+        {
+            this.CmdLine.Text = ControllableBase.GetImagePath();
         }
     }
 }

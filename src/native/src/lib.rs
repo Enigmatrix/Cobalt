@@ -14,7 +14,15 @@ pub mod com;
 pub mod watchers;
 pub mod wrappers;
 
-pub fn setup() {
+pub fn setup() -> anyhow::Result<()> {
+    use crate::raw::combaseapi::*;
+    use crate::raw::objbase::*;
+
     wrappers::Timestamp::calculate_boot_time();
     wrappers::winevent::init_contexts();
+    hresult!(CoInitializeEx(
+        std::ptr::null_mut(),
+        COINIT_APARTMENTTHREADED
+    ))?;
+    Ok(())
 }

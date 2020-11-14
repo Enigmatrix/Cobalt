@@ -2,9 +2,9 @@ syntax = "proto3";
 
 package controllable;
 
-// option csharp_namespace = "Controllable.Common";
+option csharp_namespace = "Controllable.Common";
 
-service Controllable {
+service ControllableService {
 	rpc SetForeground (HwndValue) returns (Empty);
 	rpc SetTitle (StringValue) returns (Empty);
 	rpc SetNtPath (StringValue) returns (Empty);

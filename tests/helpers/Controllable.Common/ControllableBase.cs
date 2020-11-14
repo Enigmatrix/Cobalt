@@ -8,8 +8,26 @@ using Vanara.PInvoke;
 
 namespace Controllable.Common
 {
-    public abstract class ControllableBase : Controllable.ControllableBase
+    public abstract class ControllableBase : ControllableService.ControllableServiceBase
     {
+        public static NtDll.RTL_USER_PROCESS_PARAMETERS GetUserProcessParameters()
+        {
+            var process = (HPROCESS)Process.GetCurrentProcess().Handle;
+            var pbi = NtDll.NtQueryInformationProcess<NtDll.PROCESS_BASIC_INFORMATION>(process,
+                NtDll.PROCESSINFOCLASS.ProcessBasicInformation);
+
+            var peb = pbi.AsRef().PebBaseAddress.ToStructure<NtDll.PEB>();
+            return peb.ProcessParameters.ToStructure<NtDll.RTL_USER_PROCESS_PARAMETERS>();
+        }
+
+        public static string GetImagePath()
+        {
+            var process = (HPROCESS)Process.GetCurrentProcess().Handle;
+            var p = NtDll.NtQueryInformationProcess<NtDll.UNICODE_STRING>(process,
+                NtDll.PROCESSINFOCLASS.ProcessImageFileName);
+            return p.Value.Buffer.ToString();
+        }
+
         public override Task<Empty> SetNtPath(StringValue request, ServerCallContext context)
         {
             var process = (HPROCESS)Process.GetCurrentProcess().Handle;
