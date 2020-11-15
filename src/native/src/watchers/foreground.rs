@@ -4,6 +4,7 @@ use crate::wrappers::winevent::*;
 use crate::wrappers::*;
 use anyhow::*;
 
+#[derive(Debug)]
 pub struct Watcher {
     _hook: Hook,
 }

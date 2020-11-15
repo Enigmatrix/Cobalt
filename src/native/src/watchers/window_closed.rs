@@ -4,6 +4,7 @@ use crate::wrappers::winevent::*;
 use crate::wrappers::*;
 use anyhow::*;
 
+#[derive(Debug)]
 pub struct Watcher {
     _hook: Hook,
 }
@@ -18,13 +19,11 @@ impl Watcher {
             Range::Single(Event::ObjectDestroyed),
             Locality::ProcessThread { pid, tid },
             Box::new(move |args| {
-                if args.id_object != winuser::OBJID_WINDOW
-                    || unsafe { winuser::IsWindow(args.hwnd) != 0 }
+                if window != args.hwnd /*|| unsafe { winuser::IsWindow(args.hwnd) == 0 } || (pid, tid) != window.pid_tid().unwrap_or((0, 0))*/
                 {
                     return Ok(());
                 }
-                let window = Window::new(args.hwnd)?;
-                callback(window)
+                callback(window.clone())
             }),
         )?;
         Ok(Watcher { _hook })

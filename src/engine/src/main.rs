@@ -1,6 +1,7 @@
 use anyhow::*;
 use native::watchers::*;
 use native::wrappers::*;
+use tokio::task;
 
 mod processor;
 use processor::*;
@@ -19,13 +20,15 @@ async fn main() -> Result<()> {
         fg_msger.send(Message::ForegroundChanged { window, timestamp })
     })?;
 
-    tokio::spawn(async move {
+    let local = task::LocalSet::new();
+
+    local.spawn_local(async move {
         processor
             .process_messages()
             .await
             .with_context(|| "Error in processing message")
             .unwrap();
     });
-    event_loop.await;
+    local.run_until(event_loop).await;
     Ok(())
 }

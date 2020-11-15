@@ -44,6 +44,8 @@ pub mod winevent {
     pub struct Hook {
         hook: HWINEVENTHOOK,
     }
+    unsafe impl Send for Hook {}
+    unsafe impl Sync for Hook {}
 
     type EventHandler = Box<dyn Fn(EventArgs) -> anyhow::Result<()>>;
     type EventContexts = HashMap<HWINEVENTHOOK, EventHandler>;
@@ -165,6 +167,8 @@ pub mod windows_hook {
     pub struct Hook {
         hook: HHOOK,
     }
+    unsafe impl Send for Hook {}
+    unsafe impl Sync for Hook {}
 
     pub enum Locality {
         Global,
