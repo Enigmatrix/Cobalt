@@ -9,11 +9,13 @@ pub struct Watcher {
 }
 
 impl Watcher {
-    pub fn new(callback: impl Fn(Window, Timestamp) -> Result<()>) -> Result<Watcher, Win32Err> {
+    pub fn new(
+        mut callback: impl FnMut(Window, Timestamp) -> Result<()>,
+    ) -> Result<Watcher, Win32Err> {
         let _hook = Hook::new(
             Range::Single(Event::SystemForeground),
             Locality::Global,
-            Box::new(|args| {
+            Box::new(move |args| {
                 if args.id_object != winuser::OBJID_WINDOW
                     || unsafe { winuser::GetForegroundWindow() != args.hwnd }
                 {

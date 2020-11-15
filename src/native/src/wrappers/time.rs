@@ -51,6 +51,12 @@ impl fmt::Display for Timestamp {
     }
 }
 
+impl fmt::Debug for Timestamp {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+        fmt::Display::fmt(self, fmt)
+    }
+}
+
 impl Add<Duration> for Timestamp {
     type Output = Timestamp;
     fn add(self, rhs: Duration) -> Self::Output {

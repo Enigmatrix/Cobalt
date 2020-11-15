@@ -105,21 +105,6 @@ impl FileInfo {
         Ok(stream.inner())
     }
 
-    fn icon(resources: &Resources) -> Result<image::DynamicImage> {
-        resources
-            .icons()
-            .filter_map(Result::ok)
-            .flat_map(|(_, icons)| {
-                icons
-                    .entries()
-                    .iter()
-                    .filter_map(move |entry| icons.image(entry.nId).ok()) // get all accessible images
-                    .filter_map(|icon| image::load_from_memory(icon).ok()) // get all valid images
-            })
-            .next()
-            .with_context(|| "Unable to find any valid icons")
-    }
-
     fn languages(default: Option<Language>) -> impl Iterator<Item = Language> {
         use std::iter::*;
 

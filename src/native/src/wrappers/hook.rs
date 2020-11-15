@@ -3,8 +3,11 @@ use crate::raw::*;
 use crate::wrappers::*;
 use std::collections::HashMap;
 use std::default::default;
+use std::future::Future;
 use std::mem::{transmute, MaybeUninit};
+use std::pin::Pin;
 use std::ptr;
+use std::task::{Context, Poll};
 
 pub mod winevent {
     use super::*;
@@ -65,7 +68,7 @@ pub mod winevent {
         pub fn new<'a>(
             ev: Range,
             locality: Locality,
-            handler: Box<dyn 'a + Fn(EventArgs) -> anyhow::Result<()>>,
+            handler: Box<dyn 'a + FnMut(EventArgs) -> anyhow::Result<()>>,
         ) -> Result<Self, Win32Err> {
             let (event_min, event_max) = match ev {
                 Range::Single(e) => (e as u32, e as u32),
@@ -240,5 +243,18 @@ impl EventLoop {
             return Some(ex);
         }
         None
+    }
+}
+
+impl Future for EventLoop {
+    type Output = usize;
+
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<usize> {
+        if let Some(exit) = self.step_peek() {
+            Poll::Ready(exit)
+        } else {
+            cx.waker().wake_by_ref(); // yield to scheduler
+            Poll::Pending
+        }
     }
 }

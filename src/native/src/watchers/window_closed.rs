@@ -11,13 +11,13 @@ pub struct Watcher {
 impl Watcher {
     pub fn new(
         window: Window,
-        callback: impl Fn(Window) -> Result<()>,
+        mut callback: impl FnMut(Window) -> Result<()>,
     ) -> Result<Watcher, Win32Err> {
         let (pid, tid) = window.pid_tid()?;
         let _hook = Hook::new(
             Range::Single(Event::ObjectDestroyed),
             Locality::ProcessThread { pid, tid },
-            Box::new(|args| {
+            Box::new(move |args| {
                 if args.id_object != winuser::OBJID_WINDOW
                     || unsafe { winuser::IsWindow(args.hwnd) != 0 }
                 {

@@ -10,6 +10,8 @@ pub type ProcessId = u32;
 
 #[derive(Debug, Clone)]
 pub struct Process(HANDLE);
+unsafe impl Sync for Process {}
+unsafe impl Send for Process {}
 
 impl hash::Hash for Process {
     fn hash<H: hash::Hasher>(&self, state: &mut H) {
@@ -28,6 +30,7 @@ pub struct ProcessOptions {
     pub readable: bool,
     pub query_information: bool,
     pub sync: bool,
+    pub writable: bool,
 }
 
 impl Default for ProcessOptions {
@@ -36,6 +39,7 @@ impl Default for ProcessOptions {
             readable: true,
             query_information: true,
             sync: true,
+            writable: false,
         }
     }
 }
@@ -46,7 +50,8 @@ impl Process {
             processthreadsapi::OpenProcess(
                 if opts.readable { winnt::PROCESS_VM_READ } else {0} |
                 if opts.readable { winnt::PROCESS_QUERY_INFORMATION } else {0} |
-                if opts.sync     { winnt::SYNCHRONIZE } else { 0 },
+                if opts.sync     { winnt::SYNCHRONIZE } else { 0 } |
+                if opts.writable { winnt::PROCESS_VM_WRITE | winnt::PROCESS_VM_OPERATION } else { 0 },
                 0,
                 pid,
             )

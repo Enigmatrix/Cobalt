@@ -47,7 +47,12 @@ impl AppInfo {
         }
     }
 
-    fn user_params(&self) -> Result<(ntrtl::RTL_USER_PROCESS_PARAMETERS, *mut ntrtl::RTL_USER_PROCESS_PARAMETERS)> {
+    fn user_params(
+        &self,
+    ) -> Result<(
+        ntrtl::RTL_USER_PROCESS_PARAMETERS,
+        *mut ntrtl::RTL_USER_PROCESS_PARAMETERS,
+    )> {
         let mut info = ntpsapi::PROCESS_BASIC_INFORMATION::default();
         let mut info_len = 0u32;
         unsafe {
@@ -91,7 +96,8 @@ impl AppInfo {
                 std::mem::size_of_val(&new_value),
                 &mut written as *mut _ as *mut _,
             )
-        } == 0 {
+        } == 0
+        {
             panic!("wroite failed {:?}", std::io::Error::last_os_error());
         }
     }

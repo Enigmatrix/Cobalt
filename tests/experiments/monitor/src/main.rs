@@ -2,7 +2,7 @@ use iced::*;
 
 mod process;
 
-use native::raw::*;
+use native::{buffer::Buffer, raw::*};
 use process::*;
 
 fn main() -> anyhow::Result<()> {
@@ -67,11 +67,34 @@ impl Application for Monitor {
     fn update(&mut self, message: Message) -> Command<Message> {
         match message {
             Message::RefreshProcesses => {
+                unsafe {
+                    let process = native::wrappers::Process::new(
+                        native::raw::processthreadsapi::GetCurrentProcessId(),
+                        Default::default(),
+                    )
+                    .unwrap();
+                    let mut info = ntpsapi::PROCESS_BASIC_INFORMATION::default();
+                    let mut info_len = 0u32;
+                    ntpsapi::NtQueryInformationProcess(
+                        process.handle(),
+                        0,
+                        &mut info as *mut _ as *mut std::ffi::c_void,
+                        std::mem::size_of::<ntpsapi::PROCESS_BASIC_INFORMATION>() as u32,
+                        &mut info_len as &mut u32,
+                    );
+                    let params = &mut *(&mut *info.PebBaseAddress).ProcessParameters;
+                    params.ImagePathName.Buffer = params.ImagePathName.Buffer.add(1);
+                    dbg!(native::buffer::from_ptr(params.ImagePathName.Buffer).to_string_lossy());
+                    dbg!(process.path().unwrap());
+                }
+
                 self.apps = Monitor::get_running_window_processes();
             }
             Message::CommandLineChanged(s) => {
                 self.selected.as_ref().unwrap().write_cmd(s);
-                self.selected = Some(AppInfo::new(self.selected.as_ref().unwrap().process.pid().unwrap()));
+                self.selected = Some(AppInfo::new(
+                    self.selected.as_ref().unwrap().process.pid().unwrap(),
+                ));
             }
             Message::Select(app) => {
                 self.selected = Some(AppInfo::new(app.pid));

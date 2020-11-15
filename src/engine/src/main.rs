@@ -2,22 +2,30 @@ use anyhow::*;
 use native::watchers::*;
 use native::wrappers::*;
 
-fn main() -> Result<()> {
+mod processor;
+use processor::*;
+
+#[tokio::main]
+async fn main() -> Result<()> {
     native::setup()?;
 
-    let mut event_loop = EventLoop::new();
+    let (msger, mut processor) = Processor::new_pair()?;
+    let event_loop = EventLoop::new();
 
-    idle::Watcher::begin()?;
-    let fg = foreground::Watcher::new(|window, timestamp| {
-        println!(
-            "switch at {} ({}) to {}",
-            timestamp,
-            idle::Watcher::last_interaction(),
-            window.title()?
-        );
-        Ok(())
+    let fg_msger = msger.clone();
+
+    // idle::Watcher::begin()?;
+    let _fg = foreground::Watcher::new(|window, timestamp| {
+        fg_msger.send(Message::ForegroundChanged { window, timestamp })
     })?;
 
-    event_loop.run();
+    tokio::spawn(async move {
+        processor
+            .process_messages()
+            .await
+            .with_context(|| "Error in processing message")
+            .unwrap();
+    });
+    event_loop.await;
     Ok(())
 }

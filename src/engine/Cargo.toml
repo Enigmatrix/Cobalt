@@ -9,6 +9,8 @@ edition = "2018"
 [dependencies]
 tokio = { version = "0.3", features = ["full", "tracing"] }
 tonic = "0.3"
+flume = "0.9"
+crossbeam-channel = "0.5"
 
 tracing = "0.1"
 tracing-subscriber = { version = "0.2", features = ["fmt"] }
