@@ -1,6 +1,7 @@
 use crate::buffer::{self, Buffer};
 use crate::error::*;
 use crate::raw::*;
+use anyhow::*;
 use std::default::default;
 use std::hash;
 use std::mem;
@@ -59,6 +60,12 @@ impl Process {
         Ok(Process(handle))
     }
 
+    pub fn current() -> Result<Process, Win32Err> {
+        Ok(Process(win32!(
+            non_null: processthreadsapi::GetCurrentProcess()
+        )?))
+    }
+
     pub fn handle(&self) -> HANDLE {
         self.0
     }
@@ -113,5 +120,22 @@ impl Process {
             buf = buffer::alloc(buf_len as usize);
         }
         Ok(buf.with_length((buf_len + 1) as usize).to_string_lossy())
+    }
+
+    pub fn cmd(&self) -> Result<String> {
+        let mut info = ntpsapi::PROCESS_BASIC_INFORMATION::default();
+        let mut info_len = 0u32;
+        ntstatus!(ntpsapi::NtQueryInformationProcess(
+            self.handle(),
+            0,
+            &mut info as *mut _ as *mut c_void,
+            std::mem::size_of::<ntpsapi::PROCESS_BASIC_INFORMATION>() as u32,
+            &mut info_len as &mut u32,
+        ))
+        .with_context(|| "Get process information")?;
+
+        let peb = self.read_process_memory(info.PebBaseAddress)?;
+        let params = self.read_process_memory(peb.ProcessParameters)?;
+        Ok(self.read_string_from_process_memory(params.CommandLine)?)
     }
 }

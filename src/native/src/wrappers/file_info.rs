@@ -23,16 +23,16 @@ pub struct FileInfo {
 
 impl FileInfo {
     pub fn from_classic_app<P: AsRef<Path>>(path: P) -> Result<FileInfo> {
-        let file_map = FileMap::open(path.as_ref()).with_context(|| "Unable to open file map")?;
-        let image = PeFile::from_bytes(file_map.as_ref())
-            .with_context(|| "Unable to open PeFile from file_map")?;
+        let file_map = FileMap::open(path.as_ref()).with_context(|| "Opening FileMap")?;
+        let image =
+            PeFile::from_bytes(file_map.as_ref()).with_context(|| "Ppen PeFile from FileMap")?;
 
         let resources = image
             .resources()
-            .with_context(|| "Unable to open resource section")?;
+            .with_context(|| "Open Resource section from PeFile")?;
         let version_info = resources
             .version_info()
-            .with_context(|| "Unable to open VersionInfo from resources")?;
+            .with_context(|| "Open VersionInfo from Resources")?;
         let default_lang = version_info.translation().first();
 
         for lang in FileInfo::languages(default_lang.cloned()) {
@@ -62,19 +62,19 @@ impl FileInfo {
         let mut id = 0u16;
         let icon = win32!(non_null:
             shellapi::ExtractAssociatedIconW(ptr::null_mut(), bufpath.as_mut_ptr(), &mut id as *mut _))
-            .with_context(|| "Unable to retrieve HICON handle")?;
+            .with_context(|| "Retrieve HICON handle")?;
         // let icon = win32!(non_null: shellapi::DuplicateIcon(ptr::null_mut(), icon))?;
 
         let stream = Stream::from(writer).writeable();
 
         let factory = unsafe {
             Com::<wincodec::IWICImagingFactory2>::create(wincodec::CLSID_WICImagingFactory2)
-                .with_context(|| "Unable to create instance of IWICImagingFactory2")?
+                .with_context(|| "Create instance of IWICImagingFactory2")?
         };
 
         let bitmap = unsafe {
             Com::from_fn(|bitmap| factory.CreateBitmapFromHICON(icon, bitmap))
-                .with_context(|| "Unable to create bitmap from HICON")?
+                .with_context(|| "Create bitmap from HICON")?
                 .unwrap()
         };
 
@@ -82,23 +82,23 @@ impl FileInfo {
             Com::from_fn(|encoder| {
                 factory.CreateEncoder(&wincodec::GUID_ContainerFormatPng, ptr::null_mut(), encoder)
             })
-            .with_context(|| "Unable to create PNG encoder")?
+            .with_context(|| "Create PNG encoder")?
             .unwrap()
         };
 
         hresult!(encoder.Initialize(&stream.as_istream(), wincodec::WICBitmapEncoderNoCache))
-            .with_context(|| "Unable to set writer as output stream")?;
+            .with_context(|| "Set writer as output stream")?;
 
         let frame = unsafe {
             Com::from_fn(|frame| encoder.CreateNewFrame(frame, ptr::null_mut()))
-                .with_context(|| "Unable to create new frame for encoder")?
+                .with_context(|| "Create new frame for encoder")?
                 .unwrap()
         };
         hresult!(frame.Initialize(ptr::null_mut()))?;
         hresult!(frame.WriteSource(&*bitmap as *const _ as *const _, ptr::null_mut()))?;
 
         hresult!(frame.Commit())?;
-        hresult!(encoder.Commit()).with_context(|| "Unable to save bitmap to writer")?;
+        hresult!(encoder.Commit()).with_context(|| "Save bitmap to writer")?;
 
         // win32!(non_zero: winuser::DestroyIcon(icon))?;
 

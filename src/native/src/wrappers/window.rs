@@ -1,7 +1,7 @@
 use crate::buffer::{self, Buffer};
 use crate::error::*;
 use crate::raw::*;
-use crate::wrappers::process::ProcessId;
+use crate::wrappers::process::*;
 use std::default::default;
 use std::hash;
 use std::ptr;
@@ -39,6 +39,10 @@ impl Window {
         Ok(Window(handle))
     }
 
+    pub fn foreground() -> Result<Window, Win32Err> {
+        Window::new(win32!(non_null: winuser::GetForegroundWindow())?)
+    }
+
     pub fn title(&self) -> Result<String, Win32Err> {
         let len = unsafe { winuser::GetWindowTextLengthW(self.0) };
         // fails if len == 0 && !Win32Code::from_last().is_success()
@@ -65,6 +69,11 @@ impl Window {
         } else {
             Ok((pid, tid))
         }
+    }
+
+    pub fn is_uwp(&self, process: &Process, path: &str) -> bool {
+        (unsafe { winuser::IsImmersiveProcess(process.handle()) != 0 })
+            && path.eq_ignore_ascii_case("C:\\Windows\\System32\\ApplicationFrameHost.exe")
     }
 
     pub fn aumid(&self) -> Result<String, HResult> {

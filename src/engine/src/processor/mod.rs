@@ -1,3 +1,4 @@
+use crate::data::db::Database;
 use anyhow::*;
 use native::watchers::*;
 use native::wrappers::*;
@@ -10,9 +11,14 @@ mod session_info;
 use app_info::*;
 use session_info::*;
 
+pub type SessionCache = HashMap<Window, SessionInfo>;
+pub type AppCache = HashMap<ProcessId, AppInfo>;
+
 pub struct Processor {
-    sessions: HashMap<Window, SessionInfo>,
-    apps: HashMap<ProcessId, AppInfo>,
+    sessions: SessionCache,
+    apps: AppCache,
+
+    db: Database,
 
     msger: Messenger,
     recv: flume::Receiver<Message>,
@@ -53,6 +59,8 @@ impl Processor {
             sessions: HashMap::new(),
             apps: HashMap::new(),
 
+            db: Database::new().with_context(|| "Creating database")?,
+
             msger: msger.clone(),
             recv: rx,
         };
@@ -69,26 +77,17 @@ impl Processor {
     pub fn process(&mut self, msg: Message) -> Result<()> {
         match dbg!(msg) {
             Message::ForegroundChanged { window, timestamp } => {
-                let session_info = match self.sessions.entry(window.clone()) {
-                    Occupied(occupied) => occupied.into_mut(),
-                    Vacant(vacant) => {
-                        let msger = self.msger.clone();
-                        vacant.insert(
-                            SessionInfo::new(
-                                window.clone(),
-                                window_closed::Watcher::new(window.clone(), move |window| {
-                                    msger
-                                        .send(Message::WindowClosed { window })
-                                        .with_context(|| "Unable to send WindowClosed message")
-                                })
-                                .with_context(|| {
-                                    "Unable to create Window closed watcher for new SessionInfo"
-                                })?,
-                            )
-                            .with_context(|| "Unable to create new SessionInfo")?,
-                        )
-                    }
-                };
+                let (session_info, app_info) = SessionInfo::get(
+                    &window,
+                    &self.msger,
+                    &mut self.db,
+                    &mut self.sessions,
+                    &mut self.apps,
+                )
+                .with_context(|| "Getting SessionInfo & AppInfo")?;
+
+                dbg!(session_info);
+                dbg!(app_info);
             }
             Message::WindowClosed { window } => {
                 self.sessions

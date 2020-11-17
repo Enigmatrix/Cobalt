@@ -60,6 +60,27 @@ impl HResult {
 
 pub struct NtStatus(i32);
 
+impl NtStatus {
+    pub fn new(code: i32) -> NtStatus {
+        NtStatus(code)
+    }
+}
+
+impl fmt::Display for NtStatus {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let err = std::io::Error::from_raw_os_error(self.0).to_string();
+        write!(f, "NtStatus(0x{:x}): {}", self.0, err)
+    }
+}
+
+impl fmt::Debug for NtStatus {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Display::fmt(self, f)
+    }
+}
+
+impl Error for NtStatus {}
+
 macro_rules! win32 {
     (non_zero: $e: expr) => {{
         let val = unsafe { $e };
@@ -87,6 +108,17 @@ macro_rules! hresult {
         } else if val != 0 {
             tracing::warn!("HRESULT WARN 0x{:0x}", val);
             Ok(())
+        } else {
+            Ok(())
+        }
+    }};
+}
+
+macro_rules! ntstatus {
+    ($e: expr) => {{
+        let val = unsafe { $e } as i32;
+        if val != 0 {
+            Err($crate::error::NtStatus::new(val))
         } else {
             Ok(())
         }
