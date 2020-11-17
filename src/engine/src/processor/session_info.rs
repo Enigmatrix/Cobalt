@@ -51,14 +51,14 @@ impl SessionInfo {
         let app_info = AppInfo::get(window, msger, db, apps).with_context(|| "Getting AppInfo")?;
 
         // always create a new session, no need to access db.
-        let session = model::Session {
+        let session = db.insert_session(model::Session {
             id: 0,
             app_id: app_info.app.id,
             arguments: app_info.arguments.clone(),
             title: window
                 .title()
                 .with_context(|| "Get title of Window for Session")?,
-        };
+        })?;
 
         Ok((
             SessionInfo {

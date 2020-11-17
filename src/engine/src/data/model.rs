@@ -12,7 +12,7 @@ pub struct App {
     pub color: Color,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, Ord, PartialOrd, PartialEq, Hash)]
 pub enum AppIdentity {
     Win32 { path: String },
     UWP { aumid: String },

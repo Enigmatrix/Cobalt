@@ -53,16 +53,27 @@ impl AppInfo {
         process: &Process,
         db: &mut Database,
     ) -> Result<model::App> {
-        // TODO FOR TESTING PURPOSES
-        Ok(model::App {
-            id: 0,
-            name: "dummy_name".to_string(),
-            description: "dummy_description".to_string(),
-            color: "red".to_string(),
-            identity: model::AppIdentity::Win32 {
-                path: "Some Win32 Path".to_string(),
+        let identity = AppInfo::get_identity(window, process)
+            .with_context(|| "Getting AppIdentity of Process")?;
+        match db
+            .app_by_identity(&identity)
+            .with_context(|| "Find existing App by AppIdentity")?
+        {
+            Some(app) => Ok(app),
+            None => {
+                todo!("Create App based on AppIdentity");
+                // let file_info = FileInfo::from_classic_app(path)
+                db.insert_app(model::App {
+                    id: 0,
+                    name: "dummy_name".to_string(),
+                    description: "dummy_description".to_string(),
+                    color: "red".to_string(),
+                    identity: model::AppIdentity::Win32 {
+                        path: "Some Win32 Path".to_string(),
+                    },
+                })
             },
-        })
+        }
     }
 
     fn get_identity(window: &Window, process: &Process) -> Result<model::AppIdentity> {
