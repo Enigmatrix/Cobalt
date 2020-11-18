@@ -13,16 +13,16 @@ impl Database {
         Ok(Database { conn })
     }
 
-    pub fn insert_app(&mut self, mut app: model::App) -> Result<model::App> {
-        Ok(app)
+    pub fn insert_app(&mut self, app: &mut model::App) -> Result<()> {
+        Ok(())
     }
 
-    pub fn insert_session(&mut self, session: model::Session) -> Result<model::Session> {
-        Ok(session)
+    pub fn insert_session(&mut self, session: &mut model::Session) -> Result<()> {
+        Ok(())
     }
 
-    pub fn insert_usage(&mut self, usage: model::Usage) -> Result<model::Usage> {
-        Ok(usage)
+    pub fn insert_usage(&mut self, usage: &mut model::Usage) -> Result<()> {
+        Ok(())
     }
 
     pub fn app_by_identity(&mut self, identity: &model::AppIdentity) -> Result<Option<model::App>> {

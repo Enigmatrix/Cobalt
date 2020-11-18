@@ -1,4 +1,5 @@
 use crate::data::db::Database;
+use crate::data::model;
 use anyhow::*;
 use native::watchers::*;
 use native::wrappers::*;
@@ -19,6 +20,8 @@ pub struct Processor {
 
     msger: Messenger,
     recv: flume::Receiver<Message>,
+
+    current_usage: model::Usage,
 }
 
 #[derive(Clone)]
@@ -50,16 +53,38 @@ impl Messenger {
 impl Processor {
     pub fn new_pair() -> Result<(Messenger, Processor)> {
         let (tx, rx) = flume::unbounded();
-
         let msger = Messenger { sender: tx };
-        let processor = Processor {
-            sessions: HashMap::new(),
-            apps: HashMap::new(),
 
-            db: Database::new().with_context(|| "Creating database")?,
+        let mut sessions = HashMap::new();
+        let mut apps = HashMap::new();
+
+        let mut db = Database::new().with_context(|| "Creating database")?;
+
+        let now = Timestamp::now();
+        let sess_id = {
+            let fg = Window::foreground().with_context(|| "Get foreground window")?;
+            let (sess_info, _) = Info::get(&fg, &msger, &mut db, &mut sessions, &mut apps)
+                .with_context(|| "Get SessionInfo for current foreground window")?;
+            sess_info.session.id
+        };
+        let current_usage = model::Usage {
+            id: 0,
+            sess_id,
+            start: now,
+            end: now,
+            idle: false,
+        };
+
+        let processor = Processor {
+            sessions,
+            apps,
+
+            db,
 
             msger: msger.clone(),
             recv: rx,
+
+            current_usage,
         };
         Ok((msger, processor))
     }
@@ -74,17 +99,41 @@ impl Processor {
     pub fn process(&mut self, msg: Message) -> Result<()> {
         match dbg!(msg) {
             Message::ForegroundChanged { window, timestamp } => {
-                let (session_info, app_info) = Info::get(
-                    &window,
-                    &self.msger,
-                    &mut self.db,
-                    &mut self.sessions,
-                    &mut self.apps,
-                )
-                .with_context(|| "Getting SessionInfo & AppInfo")?;
+                let sess_id = {
+                    let (session_info, app_info) = Info::get(
+                        &window,
+                        &self.msger,
+                        &mut self.db,
+                        &mut self.sessions,
+                        &mut self.apps,
+                    )
+                    .with_context(|| "Getting SessionInfo & AppInfo")?;
 
-                dbg!(session_info);
-                dbg!(app_info);
+                    dbg!(&session_info);
+                    dbg!(&app_info);
+
+                    let sess_id = session_info.session.id;
+                    if sess_id == self.current_usage.sess_id {
+                        // skip processing the rest, as the window hasn't changed
+                        return Ok(());
+                    }
+
+                    sess_id
+                };
+
+                self.current_usage.end = timestamp;
+                self.db
+                    .insert_usage(&mut self.current_usage)
+                    .with_context(|| "Save Usage to Database")?;
+                dbg!(&self.current_usage);
+
+                self.current_usage = model::Usage {
+                    id: 0,
+                    sess_id,
+                    start: timestamp,
+                    end: timestamp,
+                    idle: false, // TODO idle watcher
+                };
             }
             Message::WindowClosed { window } => {
                 self.sessions
@@ -92,6 +141,8 @@ impl Processor {
                     .with_context(|| "Pre-existing SessionInfo not found for window")?;
             }
             Message::ProcessExit { pid } => {
+                // maybe all Sessions associated with this Process/AppInfo can be removed as well.
+
                 self.apps
                     .remove(&pid)
                     .with_context(|| "Pre-existing AppInfo not found for process")?;

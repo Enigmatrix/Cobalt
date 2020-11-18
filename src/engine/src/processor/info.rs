@@ -62,14 +62,16 @@ impl Info {
             Info::get_app_info(window, msger, db, apps).with_context(|| "Getting AppInfo")?;
 
         // always create a new session, no need to access db.
-        let session = db.insert_session(model::Session {
+        let mut session = model::Session {
             id: 0,
             app_id: app_info.app.id,
             arguments: app_info.arguments.clone(),
             title: window
                 .title()
                 .with_context(|| "Get title of Window for Session")?,
-        })?;
+        };
+        db.insert_session(&mut session)
+            .with_context(|| "Saving Session to Database")?;
 
         Ok((
             SessionInfo {
@@ -143,10 +145,10 @@ impl Info {
             None => {
                 let identity = Info::get_identity(window, process)
                     .with_context(|| "Get Identity of Process and Window")?;
-                let app = match &identity {
+                let mut app = match &identity {
                     model::AppIdentity::Win32 { path } => {
                         let file = FileInfo::from_classic_app(path)
-                            .with_context(|| "Retreive file info of Win32 .exe")?;
+                            .with_context(|| "Retreive file info of Win32 executable")?;
                         model::App {
                             id: 0,
                             name: file.name,
@@ -158,7 +160,9 @@ impl Info {
                     }
                     model::AppIdentity::UWP { aumid } => todo!("Construct UWP App for {}", aumid),
                 };
-                db.insert_app(app)
+                db.insert_app(&mut app)
+                    .with_context(|| "Saving App to Database")?;
+                Ok(app)
             }
         }
     }

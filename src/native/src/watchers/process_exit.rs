@@ -31,8 +31,8 @@ impl Watcher {
     }
 
     unsafe extern "system" fn handler<F: FnMut(ProcessId) -> Result<()>>(dat: *mut c_void, _: u8) {
-        let mut data = Box::from_raw(dat.cast::<(ProcessId, F)>());
-        data.1(data.0)
+        let (pid, mut callback) = *Box::from_raw(dat.cast::<(ProcessId, F)>());
+        callback(pid)
             .with_context(|| "Error in process exit callback")
             .unwrap();
     }
