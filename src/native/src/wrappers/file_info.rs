@@ -3,10 +3,8 @@ use crate::raw::*;
 use crate::wrappers::stream::Stream;
 use anyhow::*;
 use pelite::resources::version_info::Language;
-use pelite::resources::Resources;
 use pelite::{FileMap, PeFile};
 use std::io::Write;
-use std::path::Path;
 use std::ptr;
 
 pub static FALLBACK_LANGS: &[&str] = &[
@@ -22,8 +20,8 @@ pub struct FileInfo {
 }
 
 impl FileInfo {
-    pub fn from_classic_app<P: AsRef<Path>>(path: P) -> Result<FileInfo> {
-        let file_map = FileMap::open(path.as_ref()).with_context(|| "Opening FileMap")?;
+    pub fn from_classic_app(path: &str) -> Result<FileInfo> {
+        let file_map = FileMap::open(path).with_context(|| "Opening FileMap")?;
         let image =
             PeFile::from_bytes(file_map.as_ref()).with_context(|| "Ppen PeFile from FileMap")?;
 
@@ -55,10 +53,10 @@ impl FileInfo {
         Err(anyhow!("Unable to find file info in available languages"))
     }
 
-    pub fn write_icon_from_path<W: Write>(path: impl AsRef<Path>, writer: W) -> Result<W> {
+    pub fn write_icon_from_path<W: Write>(path: &str, writer: W) -> Result<W> {
         use std::os::windows::ffi::OsStrExt;
 
-        let mut bufpath: Vec<_> = path.as_ref().as_os_str().encode_wide().collect();
+        let mut bufpath: Vec<_> = std::ffi::OsString::from(path).encode_wide().collect();
         let mut id = 0u16;
         let icon = win32!(non_null:
             shellapi::ExtractAssociatedIconW(ptr::null_mut(), bufpath.as_mut_ptr(), &mut id as *mut _))
@@ -67,10 +65,9 @@ impl FileInfo {
 
         let stream = Stream::from(writer).writeable();
 
-        let factory = unsafe {
+        let factory =
             Com::<wincodec::IWICImagingFactory2>::create(wincodec::CLSID_WICImagingFactory2)
-                .with_context(|| "Create instance of IWICImagingFactory2")?
-        };
+                .with_context(|| "Create instance of IWICImagingFactory2")?;
 
         let bitmap = unsafe {
             Com::from_fn(|bitmap| factory.CreateBitmapFromHICON(icon, bitmap))

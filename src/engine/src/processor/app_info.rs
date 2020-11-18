@@ -61,18 +61,24 @@ impl AppInfo {
         {
             Some(app) => Ok(app),
             None => {
-                todo!("Create App based on AppIdentity");
-                // let file_info = FileInfo::from_classic_app(path)
-                db.insert_app(model::App {
-                    id: 0,
-                    name: "dummy_name".to_string(),
-                    description: "dummy_description".to_string(),
-                    color: "red".to_string(),
-                    identity: model::AppIdentity::Win32 {
-                        path: "Some Win32 Path".to_string(),
-                    },
-                })
-            },
+                let identity = AppInfo::get_identity(window, process)
+                    .with_context(|| "Get Identity of Process and Window")?;
+                let app = match &identity {
+                    model::AppIdentity::Win32 { path } => {
+                        let file = FileInfo::from_classic_app(path)
+                            .with_context(|| "Retreive file info of Win32 .exe")?;
+                        model::App {
+                            id: 0,
+                            name: file.name,
+                            description: file.description,
+                            color: "SOME RANDOM COLOR".to_string(), // TODO
+                            identity,
+                        }
+                    }
+                    model::AppIdentity::UWP { aumid } => todo!("Construct UWP App"),
+                };
+                db.insert_app(app)
+            }
         }
     }
 

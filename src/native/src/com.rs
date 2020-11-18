@@ -10,6 +10,8 @@ use std::ptr::{null_mut, NonNull};
 pub struct Com<T>(NonNull<T>);
 
 impl<T> Com<T> {
+    /// # Safety
+    /// Ensure `ptr` points to a valid Com object, or NULL
     pub unsafe fn new(ptr: *mut T) -> Option<Com<T>>
     where
         T: Interface,
@@ -17,6 +19,8 @@ impl<T> Com<T> {
         NonNull::new(ptr).map(Com)
     }
 
+    /// # Safety
+    /// Ensure `ptr` points to a valid Com object
     pub unsafe fn from_raw(ptr: *mut T) -> Com<T>
     where
         T: Interface,
@@ -24,24 +28,24 @@ impl<T> Com<T> {
         Com(NonNull::new(ptr).expect("ptr should not be null"))
     }
 
-    pub unsafe fn create(clsid: guiddef::CLSID) -> Result<Com<T>, HResult>
+    pub fn create(clsid: guiddef::CLSID) -> Result<Com<T>, HResult>
     where
         T: Interface,
     {
         Com::<T>::from_fn(|instance| {
-            combaseapi::CoCreateInstance(
+            unsafe { combaseapi::CoCreateInstance(
                 &clsid,
                 std::ptr::null_mut(),
                 wtypesbase::CLSCTX_INPROC_SERVER,
                 &T::uuidof(),
                 instance as *mut _ as *mut _,
-            )
+            ) }
         })
         .transpose()
         .unwrap()
     }
 
-    pub unsafe fn from_fn(
+    pub fn from_fn(
         fun: impl FnOnce(&mut *mut T) -> HRESULT,
     ) -> Result<Option<Com<T>>, HResult>
     where
@@ -49,7 +53,7 @@ impl<T> Com<T> {
     {
         let mut ptr = null_mut();
         let val = fun(&mut ptr);
-        let com = Com::new(ptr);
+        let com = unsafe { Com::new(ptr) };
 
         if val < 0 {
             if com.is_some() {

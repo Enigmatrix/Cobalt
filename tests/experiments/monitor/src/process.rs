@@ -119,7 +119,7 @@ impl App {
     pub fn new(pid: u32) -> Result<App> {
         let process = Process::new(pid, ProcessOptions::default())?;
         let path = process.path()?;
-        let file = FileInfo::from_classic_app(path.clone())?;
+        let file = FileInfo::from_classic_app(&path)?;
         Ok(App {
             pid,
             name: file.name,

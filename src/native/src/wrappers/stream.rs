@@ -13,6 +13,12 @@ pub struct HugeExtensibleBuffer {
     inner: Vec<u8>,
 }
 
+impl Default for HugeExtensibleBuffer {
+    fn default() -> Self {
+        HugeExtensibleBuffer::new()
+    }
+}
+
 impl HugeExtensibleBuffer {
     pub fn new() -> HugeExtensibleBuffer {
         HugeExtensibleBuffer {

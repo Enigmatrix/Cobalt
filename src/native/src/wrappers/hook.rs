@@ -210,6 +210,12 @@ pub struct EventLoop {
     msg: winuser::MSG,
 }
 
+impl Default for EventLoop {
+    fn default() -> Self {
+        EventLoop::new()
+    }
+}
+
 impl EventLoop {
     pub fn new() -> EventLoop {
         EventLoop { msg: default() }
@@ -243,10 +249,11 @@ impl EventLoop {
     }
 
     pub fn run(&mut self) -> Option<usize> {
-        while let Some(ex) = self.step() {
-            return Some(ex);
+        loop {
+            if let Some(ex) = self.step() {
+                return Some(ex);
+            }
         }
-        None
     }
 }
 
