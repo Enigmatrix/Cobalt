@@ -5,6 +5,7 @@ use crate::wrappers::process::*;
 use std::default::default;
 use std::hash;
 use std::ptr;
+use anyhow::*;
 
 #[derive(Debug, Clone)]
 pub struct Window(pub HWND);
@@ -76,7 +77,7 @@ impl Window {
             && path.eq_ignore_ascii_case("C:\\Windows\\System32\\ApplicationFrameHost.exe")
     }
 
-    pub fn aumid(&self) -> Result<String, HResult> {
+    pub fn aumid(&self) -> Result<String> {
         let mut property_store: *mut propsys::IPropertyStore = ptr::null_mut();
         hresult!({
             shellapi::SHGetPropertyStoreForWindow(
@@ -89,8 +90,11 @@ impl Window {
         let mut prop: propidl::PROPVARIANT = default();
         hresult!((*property_store).GetValue(&propkey::PKEY_AppUserModel_ID as *const _, &mut prop))?;
 
-        let aumid_ptr = unsafe { *prop.data.pwszVal() }; // TODO check
-
-        Ok(buffer::from_ptr(aumid_ptr).to_string_lossy())
+        let aumid_ptr = unsafe { *prop.data.pwszVal() };
+        if aumid_ptr.is_null() {
+            Err(anyhow!("AUMID is null or not a string"))
+        } else {
+            Ok(buffer::from_ptr(aumid_ptr).to_string_lossy())
+        }
     }
 }

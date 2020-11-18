@@ -189,7 +189,7 @@ fn default_stream() -> IStreamVtbl {
         cb: ULONG,
         pcbRead: *mut ULONG,
     ) -> HRESULT {
-        todo!("Read")
+        unimplemented!("Read")
     }
     unsafe extern "system" fn Write(
         This: *mut ISequentialStream,
@@ -197,7 +197,7 @@ fn default_stream() -> IStreamVtbl {
         cb: ULONG,
         pcbWritten: *mut ULONG,
     ) -> HRESULT {
-        todo!("Write")
+        unimplemented!("Write")
     }
     unsafe extern "system" fn Seek(
         This: *mut IStream,
@@ -205,10 +205,10 @@ fn default_stream() -> IStreamVtbl {
         dwOrigin: DWORD,
         plibNewPosition: *mut ULARGE_INTEGER,
     ) -> HRESULT {
-        todo!("Seek")
+        unimplemented!("Seek")
     }
     unsafe extern "system" fn SetSize(This: *mut IStream, libNewSize: ULARGE_INTEGER) -> HRESULT {
-        todo!("SetSize")
+        unimplemented!("SetSize")
     }
     unsafe extern "system" fn CopyTo(
         This: *mut IStream,
@@ -217,14 +217,14 @@ fn default_stream() -> IStreamVtbl {
         pcbRead: *mut ULARGE_INTEGER,
         pcbWritten: *mut ULARGE_INTEGER,
     ) -> HRESULT {
-        todo!("CopyTo")
+        unimplemented!("CopyTo")
     }
     unsafe extern "system" fn Commit(This: *mut IStream, grfCommitFlags: DWORD) -> HRESULT {
         tracing::warn!("COMMIT!!");
-        todo!("Commit")
+        unimplemented!("Commit")
     }
     unsafe extern "system" fn Revert(This: *mut IStream) -> HRESULT {
-        todo!("Revert")
+        unimplemented!("Revert")
     }
     unsafe extern "system" fn LockRegion(
         This: *mut IStream,
@@ -232,7 +232,7 @@ fn default_stream() -> IStreamVtbl {
         cb: ULARGE_INTEGER,
         dwLockType: DWORD,
     ) -> HRESULT {
-        todo!("LockRegion")
+        unimplemented!("LockRegion")
     }
     unsafe extern "system" fn UnlockRegion(
         This: *mut IStream,
@@ -240,17 +240,17 @@ fn default_stream() -> IStreamVtbl {
         cb: ULARGE_INTEGER,
         dwLockType: DWORD,
     ) -> HRESULT {
-        todo!("UnlockRegion")
+        unimplemented!("UnlockRegion")
     }
     unsafe extern "system" fn Stat(
         This: *mut IStream,
         pstatstg: *mut STATSTG,
         grfStatFlag: DWORD,
     ) -> HRESULT {
-        todo!("Stat")
+        unimplemented!("Stat")
     }
     unsafe extern "system" fn Clone(This: *mut IStream, ppstm: *mut *mut IStream) -> HRESULT {
-        todo!("Clone")
+        unimplemented!("Clone")
     }
 
     IStreamVtbl {
