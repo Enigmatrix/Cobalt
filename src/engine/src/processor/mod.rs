@@ -5,11 +5,8 @@ use native::wrappers::*;
 use std::collections::hash_map::Entry::*;
 use std::collections::HashMap;
 
-mod app_info;
-mod session_info;
-
-use app_info::*;
-use session_info::*;
+mod info;
+use info::*;
 
 pub type SessionCache = HashMap<Window, SessionInfo>;
 pub type AppCache = HashMap<ProcessId, AppInfo>;
@@ -77,7 +74,7 @@ impl Processor {
     pub fn process(&mut self, msg: Message) -> Result<()> {
         match dbg!(msg) {
             Message::ForegroundChanged { window, timestamp } => {
-                let (session_info, app_info) = SessionInfo::get(
+                let (session_info, app_info) = Info::get(
                     &window,
                     &self.msger,
                     &mut self.db,

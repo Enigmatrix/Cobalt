@@ -10,8 +10,77 @@ pub struct AppInfo {
     pub app: model::App,
 }
 
-impl AppInfo {
+#[derive(Debug)]
+pub struct SessionInfo {
+    pub closed_watcher: window_closed::Watcher,
+    pub session: model::Session,
+    pub pid: ProcessId,
+}
+
+pub struct Info;
+
+impl Info {
     pub fn get<'a>(
+        window: &'a Window,
+        msger: &'a Messenger,
+        db: &'a mut Database,
+        sessions: &'a mut SessionCache,
+        apps: &'a mut AppCache,
+    ) -> Result<(&'a mut SessionInfo, &'a mut AppInfo)> {
+        Ok(match sessions.entry(window.clone()) {
+            Occupied(occ) => {
+                let session_info = occ.into_mut();
+                let app_info = apps.get_mut(&session_info.pid).unwrap(); // if the session exists, the app for it exists.
+                (session_info, app_info)
+            }
+            Vacant(vac) => {
+                let (session_info, app_info) = Info::new(window, msger, db, apps)
+                    .with_context(|| "Create new SessionInfo")?;
+                let session_info = vac.insert(session_info);
+                (session_info, app_info)
+            }
+        })
+    }
+
+    fn new<'a>(
+        window: &'a Window,
+        msger: &'a Messenger,
+        db: &'a mut Database,
+        apps: &'a mut AppCache,
+    ) -> Result<(SessionInfo, &'a mut AppInfo)> {
+        let (pid, _) = window.pid_tid()?;
+
+        let _msger = msger.clone();
+        let closed_watcher = window_closed::Watcher::new(window, move |window| {
+            _msger
+                .send(Message::WindowClosed { window })
+                .with_context(|| "Send WindowClosed message")
+        })
+        .with_context(|| "Create Window closed watcher for new SessionInfo")?;
+
+        let app_info = Info::get_app_info(window, msger, db, apps).with_context(|| "Getting AppInfo")?;
+
+        // always create a new session, no need to access db.
+        let session = db.insert_session(model::Session {
+            id: 0,
+            app_id: app_info.app.id,
+            arguments: app_info.arguments.clone(),
+            title: window
+                .title()
+                .with_context(|| "Get title of Window for Session")?,
+        })?;
+
+        Ok((
+            SessionInfo {
+                closed_watcher,
+                session,
+                pid,
+            },
+            app_info,
+        ))
+    }
+
+    pub fn get_app_info<'a>(
         window: &Window,
         msger: &Messenger,
         db: &mut Database,
@@ -21,7 +90,7 @@ impl AppInfo {
         Ok(match apps.entry(pid) {
             Occupied(occ) => occ.into_mut(),
             Vacant(vac) => vac.insert(
-                AppInfo::new(
+                Info::new_app_info(
                     window,
                     msger,
                     Process::new(pid, ProcessOptions::default())?,
@@ -32,14 +101,14 @@ impl AppInfo {
         })
     }
 
-    fn new(
+    fn new_app_info(
         window: &Window,
         msger: &Messenger,
         process: Process,
         db: &mut Database,
     ) -> Result<AppInfo> {
         let arguments = process.cmd().ok();
-        let app = AppInfo::find_or_create_app(window, &process, db)
+        let app = Info::find_or_create_app(window, &process, db)
             .with_context(|| "Find/creating App for process")?;
         Ok(AppInfo {
             process,
@@ -48,12 +117,14 @@ impl AppInfo {
         })
     }
 
+
+    // TODO maybe extract this & get_identity out?
     fn find_or_create_app(
         window: &Window,
         process: &Process,
         db: &mut Database,
     ) -> Result<model::App> {
-        let identity = AppInfo::get_identity(window, process)
+        let identity = Info::get_identity(window, process)
             .with_context(|| "Getting AppIdentity of Process")?;
         match db
             .app_by_identity(&identity)
@@ -61,7 +132,7 @@ impl AppInfo {
         {
             Some(app) => Ok(app),
             None => {
-                let identity = AppInfo::get_identity(window, process)
+                let identity = Info::get_identity(window, process)
                     .with_context(|| "Get Identity of Process and Window")?;
                 let app = match &identity {
                     model::AppIdentity::Win32 { path } => {
