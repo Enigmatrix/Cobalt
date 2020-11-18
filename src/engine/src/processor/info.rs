@@ -4,7 +4,7 @@ use crate::data::model;
 
 #[derive(Debug)]
 pub struct AppInfo {
-    // exited_watcher: process_exit::Watcher,
+    pub exited_watcher: process_exit::Watcher,
     pub process: Process,
     pub arguments: Option<String>,
     pub app: model::App,
@@ -111,7 +111,16 @@ impl Info {
         let arguments = process.cmd().ok();
         let app = Info::find_or_create_app(window, &process, db)
             .with_context(|| "Find/creating App for process")?;
+
+        let exited_watcher = process_exit::Watcher::new(&process, move |pid| {
+            msger
+                .send(Message::ProcessExit { pid })
+                .with_context(|| "Send ProcessExit message")
+        })
+        .with_context(|| "Creating process exit watcher for AppInfo")?;
+
         Ok(AppInfo {
+            exited_watcher,
             process,
             arguments,
             app,

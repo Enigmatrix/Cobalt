@@ -36,7 +36,7 @@ pub enum Message {
         window: Window,
     },
     ProcessExit {
-        process: Process,
+        pid: ProcessId,
     },
 }
 
@@ -91,9 +91,9 @@ impl Processor {
                     .remove(&window)
                     .with_context(|| "Pre-existing SessionInfo not found for window")?;
             }
-            Message::ProcessExit { process } => {
+            Message::ProcessExit { pid } => {
                 self.apps
-                    .remove(&process.pid()?)
+                    .remove(&pid)
                     .with_context(|| "Pre-existing AppInfo not found for process")?;
             }
         }

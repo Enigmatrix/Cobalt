@@ -21,6 +21,10 @@ impl Database {
         Ok(session)
     }
 
+    pub fn insert_usage(&mut self, usage: model::Usage) -> Result<model::Usage> {
+        Ok(usage)
+    }
+
     pub fn app_by_identity(&mut self, identity: &model::AppIdentity) -> Result<Option<model::App>> {
         Ok(None)
     }
