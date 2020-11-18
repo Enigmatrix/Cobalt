@@ -119,7 +119,7 @@ impl Process {
             buf_len *= 2;
             buf = buffer::alloc(buf_len as usize);
         }
-        Ok(buf.with_length((buf_len + 1) as usize).to_string_lossy())
+        Ok(buf.with_length((buf_len) as usize).to_string_lossy())
     }
 
     pub fn cmd(&self) -> Result<String> {

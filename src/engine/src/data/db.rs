@@ -1,31 +1,20 @@
 use super::model;
-use anyhow::*;
-use std::collections::HashMap;
-
-static mut APPID: u64 = 1;
-
-// TODO PLACEHOLDER, IN-MEMORY REPRESENTATION
+use anyhow::{Result, *};
+use rusqlite::*;
 
 pub struct Database {
-    apps: HashMap<model::AppIdentity, model::App>,
+    conn: Connection,
 }
 
 impl Database {
     pub fn new() -> Result<Database> {
-        Ok(Database {
-            apps: HashMap::new(),
-        })
+        let conn =
+            Connection::open_in_memory().with_context(|| "Opening connection to database")?;
+        Ok(Database { conn })
     }
 
     pub fn insert_app(&mut self, mut app: model::App) -> Result<model::App> {
-        unsafe {
-            APPID += 1;
-            app.id = APPID;
-        }
-        let app1 = app.clone();
-        let app2 = app.clone();
-        self.apps.insert(app.identity, app2);
-        Ok(app1)
+        Ok(app)
     }
 
     pub fn insert_session(&mut self, session: model::Session) -> Result<model::Session> {
@@ -33,6 +22,6 @@ impl Database {
     }
 
     pub fn app_by_identity(&mut self, identity: &model::AppIdentity) -> Result<Option<model::App>> {
-        Ok(self.apps.get(identity).cloned())
+        Ok(None)
     }
 }

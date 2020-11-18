@@ -38,6 +38,7 @@ impl FileInfo {
             let desc = version_info.value(lang, "FileDescription");
             match (name, desc) {
                 (Some(name), Some(description)) => {
+                    // FIXME don't load the entire image in memory, try to stream it...
                     let buffer = crate::wrappers::stream::HugeExtensibleBuffer::new();
                     let buffer = FileInfo::write_icon_from_path(path, buffer)?;
                     let icon = image::load_from_memory(&buffer.consume()[..])?;

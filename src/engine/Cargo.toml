@@ -17,6 +17,10 @@ tracing-futures = "0.2"
 
 anyhow = "1.0"
 
+image = "0.23"
+color-thief = "0.2"
+hsl = "0.1"
+
 rusqlite = { version = "0.24",features = ["trace", "blob", "bundled"] }
 
 native = { path = "../native" }

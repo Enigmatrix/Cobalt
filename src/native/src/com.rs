@@ -32,22 +32,20 @@ impl<T> Com<T> {
     where
         T: Interface,
     {
-        Com::<T>::from_fn(|instance| {
-            unsafe { combaseapi::CoCreateInstance(
+        Com::<T>::from_fn(|instance| unsafe {
+            combaseapi::CoCreateInstance(
                 &clsid,
                 std::ptr::null_mut(),
                 wtypesbase::CLSCTX_INPROC_SERVER,
                 &T::uuidof(),
                 instance as *mut _ as *mut _,
-            ) }
+            )
         })
         .transpose()
         .unwrap()
     }
 
-    pub fn from_fn(
-        fun: impl FnOnce(&mut *mut T) -> HRESULT,
-    ) -> Result<Option<Com<T>>, HResult>
+    pub fn from_fn(fun: impl FnOnce(&mut *mut T) -> HRESULT) -> Result<Option<Com<T>>, HResult>
     where
         T: Interface,
     {

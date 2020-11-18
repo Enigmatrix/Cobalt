@@ -34,7 +34,7 @@ impl Info {
                 (session_info, app_info)
             }
             Vacant(vac) => {
-                let (session_info, app_info) = Info::new(window, msger, db, apps)
+                let (session_info, app_info) = Info::new_session_info(window, msger, db, apps)
                     .with_context(|| "Create new SessionInfo")?;
                 let session_info = vac.insert(session_info);
                 (session_info, app_info)
@@ -42,7 +42,7 @@ impl Info {
         })
     }
 
-    fn new<'a>(
+    fn new_session_info<'a>(
         window: &'a Window,
         msger: &'a Messenger,
         db: &'a mut Database,
@@ -58,7 +58,8 @@ impl Info {
         })
         .with_context(|| "Create Window closed watcher for new SessionInfo")?;
 
-        let app_info = Info::get_app_info(window, msger, db, apps).with_context(|| "Getting AppInfo")?;
+        let app_info =
+            Info::get_app_info(window, msger, db, apps).with_context(|| "Getting AppInfo")?;
 
         // always create a new session, no need to access db.
         let session = db.insert_session(model::Session {
@@ -117,7 +118,6 @@ impl Info {
         })
     }
 
-
     // TODO maybe extract this & get_identity out?
     fn find_or_create_app(
         window: &Window,
@@ -142,15 +142,30 @@ impl Info {
                             id: 0,
                             name: file.name,
                             description: file.description,
-                            color: "SOME RANDOM COLOR".to_string(), // TODO
+                            color: Info::find_contrasting_color(&file.icon)
+                                .with_context(|| "Finding contrasting color of image")?,
                             identity,
                         }
                     }
-                    model::AppIdentity::UWP { aumid } => todo!("Construct UWP App"),
+                    model::AppIdentity::UWP { aumid } => todo!("Construct UWP App for {}", aumid),
                 };
                 db.insert_app(app)
             }
         }
+    }
+
+    fn find_contrasting_color(image: &image::DynamicImage) -> Result<String> {
+        let colfmt = match image.color() {
+            image::ColorType::Rgb8 => color_thief::ColorFormat::Rgb,
+            image::ColorType::Rgba8 => color_thief::ColorFormat::Rgba,
+            _ => unreachable!(),
+        };
+        let colors = color_thief::get_palette(&image.to_bytes(), colfmt, 1, 3)?;
+        let dominant = colors[0];
+        let mut contrasting = hsl::HSL::from_rgb(&[dominant.r, dominant.g, dominant.b]);
+        contrasting.h = (contrasting.h + 180.0) % 360.0;
+        let (r, g, b) = contrasting.to_rgb();
+        Ok(format!("#{:02x}{:02x}{:02x}", r, g, b))
     }
 
     fn get_identity(window: &Window, process: &Process) -> Result<model::AppIdentity> {

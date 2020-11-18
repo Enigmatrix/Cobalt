@@ -2,10 +2,10 @@ use crate::buffer::{self, Buffer};
 use crate::error::*;
 use crate::raw::*;
 use crate::wrappers::process::*;
+use anyhow::*;
 use std::default::default;
 use std::hash;
 use std::ptr;
-use anyhow::*;
 
 #[derive(Debug, Clone)]
 pub struct Window(pub HWND);
