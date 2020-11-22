@@ -61,12 +61,10 @@ impl Processor {
         let mut db = Database::new().with_context(|| "Creating database")?;
 
         let now = Timestamp::now();
-        let sess_id = {
-            let fg = Window::foreground().with_context(|| "Get foreground window")?;
-            let (sess_info, _) = Info::get(&fg, &msger, &mut db, &mut sessions, &mut apps)
-                .with_context(|| "Get SessionInfo for current foreground window")?;
-            sess_info.session.id
-        };
+        let fg = Window::foreground().with_context(|| "Get foreground window")?;
+        let sess_id = Info::session_id(&fg, &msger, &mut db, &mut sessions, &mut apps)
+            .with_context(|| "Get Session id")?;
+
         let current_usage = model::Usage {
             id: 0,
             sess_id,
@@ -99,27 +97,19 @@ impl Processor {
     pub fn process(&mut self, msg: Message) -> Result<()> {
         match dbg!(msg) {
             Message::ForegroundChanged { window, timestamp } => {
-                let sess_id = {
-                    let (session_info, app_info) = Info::get(
-                        &window,
-                        &self.msger,
-                        &mut self.db,
-                        &mut self.sessions,
-                        &mut self.apps,
-                    )
-                    .with_context(|| "Getting SessionInfo & AppInfo")?;
+                let sess_id = Info::session_id(
+                    &window,
+                    &self.msger,
+                    &mut self.db,
+                    &mut self.sessions,
+                    &mut self.apps,
+                )
+                .with_context(|| "Getting Session id")?;
 
-                    dbg!(&session_info);
-                    dbg!(&app_info);
-
-                    let sess_id = session_info.session.id;
-                    if sess_id == self.current_usage.sess_id {
-                        // skip processing the rest, as the window hasn't changed
-                        return Ok(());
-                    }
-
-                    sess_id
-                };
+                if sess_id == self.current_usage.sess_id {
+                    // skip processing the rest, as the window hasn't changed
+                    return Ok(());
+                }
 
                 self.current_usage.end = timestamp;
                 self.db

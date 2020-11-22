@@ -81,6 +81,25 @@ impl fmt::Debug for NtStatus {
 
 impl Error for NtStatus {}
 
+#[derive(Debug)]
+pub struct WinRt(winrt::Error);
+unsafe impl Send for WinRt {}
+unsafe impl Sync for WinRt {}
+
+impl fmt::Display for WinRt {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Debug::fmt(self, f)
+    }
+}
+
+impl From<winrt::Error> for WinRt {
+    fn from(x: winrt::Error) -> Self {
+        Self(x)
+    }
+}
+
+impl Error for WinRt {}
+
 macro_rules! win32 {
     (non_zero: $e: expr) => {{
         let val = unsafe { $e };

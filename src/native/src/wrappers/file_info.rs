@@ -1,4 +1,5 @@
 use crate::com::*;
+use crate::error::*;
 use crate::raw::*;
 use crate::wrappers::stream::Stream;
 use anyhow::*;
@@ -20,6 +21,44 @@ pub struct FileInfo {
 }
 
 impl FileInfo {
+    pub fn from_uwp(aumid: &str) -> Result<FileInfo> {
+        use crate::raw::uwp::windows::application_model::AppInfo;
+        use crate::raw::uwp::windows::foundation::Size;
+
+        let app_info = AppInfo::get_from_app_user_model_id(aumid)
+            .map_err(WinRt::from)
+            .with_context(|| "Get UWP AppInfo from WinRT API")?;
+        let display_info = app_info
+            .display_info()
+            .map_err(WinRt::from)
+            .with_context(|| "DisplayInfo for UWP AppInfo")?;
+        let name = display_info
+            .display_name()
+            .map_err(WinRt::from)
+            .with_context(|| "Get name from DisplayInfo")?
+            .to_string();
+        let description = display_info
+            .description()
+            .map_err(WinRt::from)
+            .with_context(|| "Get description from DisplayInfo")?
+            .to_string();
+        let logo = display_info
+            .get_logo(Size {
+                width: 32.0,
+                height: 32.0,
+            })
+            .map_err(WinRt::from)
+            .with_context(|| "Get 32x32 logo from DisplayInfo")?;
+        Ok(FileInfo {
+            name,
+            description,
+            icon: todo!(
+                "Get icon from the RandomAccessStreamReference of `logo` {:?}",
+                logo
+            ),
+        })
+    }
+
     pub fn from_classic_app(path: &str) -> Result<FileInfo> {
         let file_map = FileMap::open(path).with_context(|| "Opening FileMap")?;
         let image =

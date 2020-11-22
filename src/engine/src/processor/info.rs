@@ -20,34 +20,34 @@ pub struct SessionInfo {
 pub struct Info;
 
 impl Info {
-    pub fn get<'a>(
+    pub fn session_id(
+        window: &Window,
+        msger: &Messenger,
+        db: &mut Database,
+        sessions: &mut SessionCache,
+        apps: &mut AppCache,
+    ) -> Result<crate::data::model::Id> {
+        let (sess_info, _) = Info::session_info(window, msger, db, sessions, apps)
+            .with_context(|| "Get SessionInfo & AppInfo")?;
+        Ok(sess_info.session.id)
+    }
+
+    fn session_info<'a>(
         window: &'a Window,
         msger: &'a Messenger,
         db: &'a mut Database,
         sessions: &'a mut SessionCache,
         apps: &'a mut AppCache,
     ) -> Result<(&'a mut SessionInfo, &'a mut AppInfo)> {
-        Ok(match sessions.entry(window.clone()) {
+        let vac = match sessions.entry(window.clone()) {
             Occupied(occ) => {
                 let session_info = occ.into_mut();
                 let app_info = apps.get_mut(&session_info.pid).unwrap(); // if the session exists, the app for it exists.
-                (session_info, app_info)
+                return Ok((session_info, app_info));
             }
-            Vacant(vac) => {
-                let (session_info, app_info) = Info::new_session_info(window, msger, db, apps)
-                    .with_context(|| "Create new SessionInfo")?;
-                let session_info = vac.insert(session_info);
-                (session_info, app_info)
-            }
-        })
-    }
+            Vacant(vac) => vac,
+        };
 
-    fn new_session_info<'a>(
-        window: &'a Window,
-        msger: &'a Messenger,
-        db: &'a mut Database,
-        apps: &'a mut AppCache,
-    ) -> Result<(SessionInfo, &'a mut AppInfo)> {
         let (pid, _) = window.pid_tid()?;
 
         let _msger = msger.clone();
@@ -59,7 +59,7 @@ impl Info {
         .with_context(|| "Create Window closed watcher for new SessionInfo")?;
 
         let app_info =
-            Info::get_app_info(window, msger, db, apps).with_context(|| "Getting AppInfo")?;
+            Info::app_info(window, msger, db, apps).with_context(|| "Getting AppInfo")?;
 
         // always create a new session, no need to access db.
         let mut session = model::Session {
@@ -70,46 +70,33 @@ impl Info {
                 .title()
                 .with_context(|| "Get title of Window for Session")?,
         };
+
         db.insert_session(&mut session)
             .with_context(|| "Saving Session to Database")?;
+        let sess_info = vac.insert(SessionInfo {
+            closed_watcher,
+            session,
+            pid,
+        });
 
-        Ok((
-            SessionInfo {
-                closed_watcher,
-                session,
-                pid,
-            },
-            app_info,
-        ))
+        Ok((sess_info, app_info))
     }
 
-    pub fn get_app_info<'a>(
+    pub fn app_info<'a>(
         window: &Window,
         msger: &Messenger,
         db: &mut Database,
         apps: &'a mut AppCache,
     ) -> Result<&'a mut AppInfo> {
         let (pid, _) = window.pid_tid()?;
-        Ok(match apps.entry(pid) {
-            Occupied(occ) => occ.into_mut(),
-            Vacant(vac) => vac.insert(
-                Info::new_app_info(
-                    window,
-                    msger,
-                    Process::new(pid, ProcessOptions::default())?,
-                    db,
-                )
-                .with_context(|| "Create new AppInfo")?,
-            ),
-        })
-    }
 
-    fn new_app_info(
-        window: &Window,
-        msger: &Messenger,
-        process: Process,
-        db: &mut Database,
-    ) -> Result<AppInfo> {
+        let vac = match apps.entry(pid) {
+            Occupied(occ) => return Ok(occ.into_mut()),
+            Vacant(vac) => vac,
+        };
+
+        let process =
+            Process::new(pid, ProcessOptions::default()).with_context(|| "Create Process")?;
         let arguments = process.cmd().ok();
         let app = Info::find_or_create_app(window, &process, db)
             .with_context(|| "Find/creating App for process")?;
@@ -121,12 +108,14 @@ impl Info {
         })
         .with_context(|| "Creating process exit watcher for AppInfo")?;
 
-        Ok(AppInfo {
+        let app_info = vac.insert(AppInfo {
             exited_watcher,
             process,
             arguments,
             app,
-        })
+        });
+
+        Ok(app_info)
     }
 
     // TODO maybe extract this & get_identity out?
@@ -145,6 +134,7 @@ impl Info {
             None => {
                 let identity = Info::get_identity(window, process)
                     .with_context(|| "Get Identity of Process and Window")?;
+
                 let mut app = match &identity {
                     model::AppIdentity::Win32 { path } => {
                         let file = FileInfo::from_classic_app(path)
@@ -158,7 +148,18 @@ impl Info {
                             identity,
                         }
                     }
-                    model::AppIdentity::UWP { aumid } => todo!("Construct UWP App for {}", aumid),
+                    model::AppIdentity::UWP { aumid } => {
+                        let file = FileInfo::from_uwp(aumid)
+                            .with_context(|| "Retrieve file info of UWP app")?;
+                        model::App {
+                            id: 0,
+                            name: file.name,
+                            description: file.description,
+                            color: Info::find_contrasting_color(&file.icon)
+                                .with_context(|| "Finding contrasting color of image")?,
+                            identity,
+                        }
+                    }
                 };
                 db.insert_app(&mut app)
                     .with_context(|| "Saving App to Database")?;

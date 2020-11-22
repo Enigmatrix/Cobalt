@@ -10,3 +10,12 @@ pub use winapi::shared::minwindef::*;
 pub use winapi::shared::ntdef::*;
 pub use winapi::shared::windef::*;
 pub use winapi::um::minwinbase::*;
+
+pub mod uwp {
+    ::winrt::import!(
+        dependencies
+            os
+        types
+            windows::applicationmodel::*
+    );
+}
