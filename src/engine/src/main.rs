@@ -1,14 +1,19 @@
+#![feature(never_type)]
+
 use native::watchers::*;
 use native::wrappers::*;
-use util::*;
+use util::{*, log::Instrument};
 
 mod data;
 mod processor;
 
 use processor::*;
 
-fn main() -> Result<()> {
-    native::setup()?;
+fn main() -> Result<!> {
+    util::setup().with_context(|| "Setup utils")?;
+    native::setup().with_context(|| "Setup native dependencies")?;
+
+    log::info!("🚀 Starting engine");
 
     let (msger, mut processor) = Processor::new_pair().with_context(|| "Create Processor")?;
     let event_loop = EventLoop::new();
@@ -29,13 +34,15 @@ fn main() -> Result<()> {
             .await
             .with_context(|| "Error in processing message")
             .unwrap();
-    });
+    }.instrument(log::trace_span!("processing loop")));
 
-    futures::runtime::Builder::new_current_thread()
+    let exit = futures::runtime::Builder::new_current_thread()
         .enable_all()
         .build()
-        .unwrap()
+        .with_context(|| "Tokio runtime initialization")?
         .block_on(local.run_until(event_loop));
 
-    Ok(())
+    log::info!(exit, "engine exiting");
+
+    std::process::exit(exit as i32)
 }

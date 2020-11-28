@@ -20,6 +20,7 @@ pub struct SessionInfo {
 pub struct Info;
 
 impl Info {
+    #[log::instrument(skip(window, msger, db, sessions, apps))]
     pub fn session_id(
         window: &Window,
         msger: &Messenger,
@@ -27,11 +28,12 @@ impl Info {
         sessions: &mut SessionCache,
         apps: &mut AppCache,
     ) -> Result<crate::data::model::Id> {
-        let (sess_info, _) = dbg!(Info::session_info(window, msger, db, sessions, apps)
-            .with_context(|| "Get SessionInfo & AppInfo")?); // TODO remove
+        let (sess_info, _) = Info::session_info(window, msger, db, sessions, apps)
+            .with_context(|| "Get SessionInfo & AppInfo")?;
         Ok(sess_info.session.id)
     }
 
+    #[log::instrument(skip(window, msger, db, sessions, apps))]
     fn session_info<'a>(
         window: &'a Window,
         msger: &'a Messenger,
@@ -41,9 +43,10 @@ impl Info {
     ) -> Result<(&'a mut SessionInfo, &'a mut AppInfo)> {
         let vac = match sessions.entry(window.clone()) {
             Occupied(occ) => {
-                let session_info = occ.into_mut();
-                let app_info = apps.get_mut(&session_info.pid).unwrap(); // if the session exists, the app for it exists.
-                return Ok((session_info, app_info));
+                let sess_info = occ.into_mut();
+                let app_info = apps.get_mut(&sess_info.pid).unwrap(); // if the session exists, the app for it exists.
+                log::trace!(?sess_info, "using pre-existing SessionInfo from SessionCache");
+                return Ok((sess_info, app_info));
             }
             Vacant(vac) => vac,
         };
@@ -79,9 +82,12 @@ impl Info {
             pid,
         });
 
+        log::trace!(?sess_info, "newly created SessionInfo");
+
         Ok((sess_info, app_info))
     }
 
+    #[log::instrument(skip(window, msger, db, apps))]
     pub fn app_info<'a>(
         window: &Window,
         msger: &Messenger,
@@ -91,7 +97,11 @@ impl Info {
         let (pid, _) = window.pid_tid()?;
 
         let vac = match apps.entry(pid) {
-            Occupied(occ) => return Ok(occ.into_mut()),
+            Occupied(occ) => {
+                let app_info = occ.into_mut();
+                log::trace!(?app_info, "using pre-existing AppInfo from AppCache");
+                return Ok(app_info)
+            },
             Vacant(vac) => vac,
         };
 
@@ -114,6 +124,8 @@ impl Info {
             arguments,
             app,
         });
+
+        log::trace!(?app_info, "newly found AppInfo");
 
         Ok(app_info)
     }

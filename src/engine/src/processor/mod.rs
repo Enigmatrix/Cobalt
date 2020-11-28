@@ -94,8 +94,10 @@ impl Processor {
         Ok(())
     }
 
+    #[log::instrument(skip(self))]
     pub fn process(&mut self, msg: Message) -> Result<()> {
-        match dbg!(msg) {
+        log::trace!("processing...");
+        match msg {
             Message::ForegroundChanged { window, timestamp } => {
                 let sess_id = Info::session_id(
                     &window,
@@ -108,6 +110,7 @@ impl Processor {
 
                 if sess_id == self.current_usage.sess_id {
                     // skip processing the rest, as the window hasn't changed
+                    log::trace!("repeated window");
                     return Ok(());
                 }
 
