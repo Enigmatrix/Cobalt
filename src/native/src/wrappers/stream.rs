@@ -58,6 +58,27 @@ impl Write for HugeExtensibleBuffer {
     }
 }
 
+pub struct WinRTStream {
+    stream: IRandomAccessStream
+}
+
+impl WinRTStream {
+    pub fn size(&self) -> Result<u64> {
+        Ok(self.stream.size().map_err(WinRt::from)?)
+    }
+}
+
+impl<T: Into<IRandomAccessStream>> From<T> for WinRTStream {
+    fn from(stream: T) -> Self {
+        WinRTStream { stream: stream.into() }
+    }
+}
+
+pub struct ByteBuffer<'a> {
+    bytes: &'a mut [u8],
+    len: u64
+}
+
 pub struct WinRTStreamToRustAdapter<'a> {
     stream: &'a IRandomAccessStreamWithContentType,
 }

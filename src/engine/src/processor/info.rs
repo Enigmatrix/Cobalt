@@ -27,8 +27,8 @@ impl Info {
         sessions: &mut SessionCache,
         apps: &mut AppCache,
     ) -> Result<crate::data::model::Id> {
-        let (sess_info, _) = Info::session_info(window, msger, db, sessions, apps)
-            .with_context(|| "Get SessionInfo & AppInfo")?;
+        let (sess_info, _) = dbg!(Info::session_info(window, msger, db, sessions, apps)
+            .with_context(|| "Get SessionInfo & AppInfo")?); // TODO remove
         Ok(sess_info.session.id)
     }
 
