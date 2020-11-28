@@ -1,8 +1,11 @@
+use crate::error::WinRt;
 use crate::raw::objidlbase::{
     ISequentialStream, ISequentialStreamVtbl, IStream, IStreamVtbl, STATSTG,
 };
 use crate::raw::unknwnbase::IUnknown;
+use crate::raw::uwp::windows::storage::streams::*;
 use crate::raw::*;
+use anyhow::*;
 use std::io::{Read, Seek, SeekFrom, Write};
 use std::mem;
 use winapi::shared::guiddef::{IsEqualIID, REFIID};
@@ -55,14 +58,49 @@ impl Write for HugeExtensibleBuffer {
     }
 }
 
-pub struct Stream<T> {
+pub struct WinRTStreamToRustAdapter<'a> {
+    stream: &'a IRandomAccessStreamWithContentType,
+}
+
+impl<'a> WinRTStreamToRustAdapter<'a> {
+    pub fn from(stream: &'a IRandomAccessStreamWithContentType) -> WinRTStreamToRustAdapter<'a> {
+        WinRTStreamToRustAdapter { stream }
+    }
+
+    // try benchamrking this with a `Read` implementation
+    pub fn read_all(&self) -> Result<Vec<u8>> {
+        let sz = self
+            .stream
+            .size()
+            .map_err(WinRt::from)
+            .with_context(|| "Get length of stream")?;
+        let mut out = vec![0u8; sz as usize]; // TODO use uninit
+        let reader = DataReader::create_data_reader(self.stream)
+            .map_err(WinRt::from)
+            .with_context(|| "Create DataReader")?;
+        reader
+            .load_async(sz as u32)
+            .map_err(WinRt::from)
+            .with_context(|| "Load data from stream")?
+            .get()
+            .map_err(WinRt::from)
+            .with_context(|| "Run loading of data from stream in a blocking manner")?;
+        reader
+            .read_bytes(&mut out)
+            .map_err(WinRt::from)
+            .with_context(|| "Read bytes out of DataReader")?;
+        Ok(out)
+    }
+}
+
+pub struct RustToWin32StreamAdapter<T> {
     vt: IStreamVtbl,
     inner: T,
 }
 
-impl<T> Stream<T> {
-    pub fn from(inner: T) -> Stream<T> {
-        Stream {
+impl<T> RustToWin32StreamAdapter<T> {
+    pub fn from(inner: T) -> RustToWin32StreamAdapter<T> {
+        RustToWin32StreamAdapter {
             inner,
             vt: default_stream(),
         }
@@ -77,14 +115,14 @@ impl<T> Stream<T> {
     }
 
     unsafe fn get_inner<'a>(stream_ptr: *mut IStream) -> &'a mut T {
-        let this: &mut Stream<T> = mem::transmute(stream_ptr.read());
+        let this: &mut RustToWin32StreamAdapter<T> = mem::transmute(stream_ptr.read());
         &mut this.inner
     }
 }
 
-impl<T: Write> Stream<T> {
+impl<T: Write> RustToWin32StreamAdapter<T> {
     pub fn writeable(mut self) -> Self {
-        self.vt.parent.Write = Stream::<T>::write;
+        self.vt.parent.Write = RustToWin32StreamAdapter::<T>::write;
         self
     }
 
@@ -94,15 +132,15 @@ impl<T: Write> Stream<T> {
         len: ULONG,
         out_len: *mut ULONG,
     ) -> HRESULT {
-        let writer = Stream::<T>::get_inner(this_ptr.cast::<IStream>());
+        let writer = RustToWin32StreamAdapter::<T>::get_inner(this_ptr.cast::<IStream>());
         let buffer = std::slice::from_raw_parts(ptr.cast::<u8>(), len as usize);
         io_result_to_hresult(writer.write(buffer), |val| *out_len = val as u32)
     }
 }
 
-impl<T: Read> Stream<T> {
+impl<T: Read> RustToWin32StreamAdapter<T> {
     pub fn readable(mut self) -> Self {
-        self.vt.parent.Read = Stream::<T>::read;
+        self.vt.parent.Read = RustToWin32StreamAdapter::<T>::read;
         self
     }
 
@@ -112,15 +150,15 @@ impl<T: Read> Stream<T> {
         len: ULONG,
         out_len: *mut ULONG,
     ) -> HRESULT {
-        let reader = Stream::<T>::get_inner(this_ptr.cast::<IStream>());
+        let reader = RustToWin32StreamAdapter::<T>::get_inner(this_ptr.cast::<IStream>());
         let buffer = std::slice::from_raw_parts_mut(ptr.cast::<u8>(), len as usize);
         io_result_to_hresult(reader.read(buffer), |val| *out_len = val as u32)
     }
 }
 
-impl<T: Seek> Stream<T> {
+impl<T: Seek> RustToWin32StreamAdapter<T> {
     pub fn seekable(mut self) -> Self {
-        self.vt.Seek = Stream::<T>::seek;
+        self.vt.Seek = RustToWin32StreamAdapter::<T>::seek;
         self
     }
 
@@ -130,7 +168,7 @@ impl<T: Seek> Stream<T> {
         origin: DWORD,
         pos: *mut ULARGE_INTEGER,
     ) -> HRESULT {
-        let seeker = Stream::<T>::get_inner(this_ptr);
+        let seeker = RustToWin32StreamAdapter::<T>::get_inner(this_ptr);
         match origin {
             objidlbase::STREAM_SEEK_SET => {
                 let pos = pos.cast::<u64>();

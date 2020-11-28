@@ -1,7 +1,7 @@
 use crate::com::*;
 use crate::error::*;
 use crate::raw::*;
-use crate::wrappers::stream::Stream;
+use crate::wrappers::stream::{RustToWin32StreamAdapter, WinRTStreamToRustAdapter};
 use anyhow::*;
 use pelite::resources::version_info::Language;
 use pelite::{FileMap, PeFile};
@@ -49,13 +49,22 @@ impl FileInfo {
             })
             .map_err(WinRt::from)
             .with_context(|| "Get 32x32 logo from DisplayInfo")?;
+        let stream = logo
+            .open_read_async()
+            .map_err(WinRt::from)
+            .with_context(|| "Open read the RandomAccessStreamReference")?
+            .get()
+            .map_err(WinRt::from)
+            .with_context(|| "Blocking `get` of underlying RandomAccessStream")?;
+        let mut icon_bytes = WinRTStreamToRustAdapter::from(&stream)
+            .read_all()
+            .with_context(|| "Read bytes out of logo stream")?;
+        let icon = image::load_from_memory(&mut icon_bytes)
+            .with_context(|| "Load icon bytes as a image")?;
         Ok(FileInfo {
             name,
             description,
-            icon: todo!(
-                "Get icon from the RandomAccessStreamReference of `logo` {:?}",
-                logo
-            ),
+            icon,
         })
     }
 
@@ -103,7 +112,7 @@ impl FileInfo {
             .with_context(|| "Retrieve HICON handle")?;
         // let icon = win32!(non_null: shellapi::DuplicateIcon(ptr::null_mut(), icon))?;
 
-        let stream = Stream::from(writer).writeable();
+        let stream = RustToWin32StreamAdapter::from(writer).writeable();
 
         let factory =
             Com::<wincodec::IWICImagingFactory2>::create(wincodec::CLSID_WICImagingFactory2)

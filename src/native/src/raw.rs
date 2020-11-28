@@ -17,5 +17,6 @@ pub mod uwp {
             os
         types
             windows::applicationmodel::*
+            windows::storage::streams::*
     );
 }
