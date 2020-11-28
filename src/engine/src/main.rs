@@ -1,28 +1,27 @@
-use anyhow::*;
 use native::watchers::*;
 use native::wrappers::*;
-use tokio::task;
+use util::*;
 
 mod data;
 mod processor;
 
 use processor::*;
 
-#[tokio::main]
-async fn main() -> Result<()> {
+fn main() -> Result<()> {
     native::setup()?;
 
-    let (msger, mut processor) = Processor::new_pair()?;
+    let (msger, mut processor) = Processor::new_pair().with_context(|| "Create Processor")?;
     let event_loop = EventLoop::new();
 
-    let fg_msger = msger.clone();
-
     // idle::Watcher::begin()?;
+
+    let fg_msger = msger.clone();
     let _fg = foreground::Watcher::new(|window, timestamp| {
         fg_msger.send(Message::ForegroundChanged { window, timestamp })
-    })?;
+    })
+    .with_context(|| "Create foreground watcher")?;
 
-    let local = task::LocalSet::new();
+    let local = futures::task::LocalSet::new();
 
     local.spawn_local(async move {
         processor
@@ -31,6 +30,12 @@ async fn main() -> Result<()> {
             .with_context(|| "Error in processing message")
             .unwrap();
     });
-    local.run_until(event_loop).await;
+
+    futures::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .unwrap()
+        .block_on(local.run_until(event_loop));
+
     Ok(())
 }

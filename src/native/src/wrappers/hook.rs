@@ -47,7 +47,7 @@ pub mod winevent {
     unsafe impl Send for Hook {}
     unsafe impl Sync for Hook {}
 
-    type EventHandler = Box<dyn Fn(EventArgs) -> anyhow::Result<()>>;
+    type EventHandler = Box<dyn Fn(EventArgs) -> util::Result<()>>;
     type EventContexts = HashMap<HWINEVENTHOOK, EventHandler>;
 
     static mut WIN_EVENT_HOOK_CONTEXTS: MaybeUninit<EventContexts> = MaybeUninit::uninit();
@@ -70,7 +70,7 @@ pub mod winevent {
         pub fn new<'a>(
             ev: Range,
             locality: Locality,
-            handler: Box<dyn 'a + FnMut(EventArgs) -> anyhow::Result<()>>,
+            handler: Box<dyn 'a + FnMut(EventArgs) -> util::Result<()>>,
         ) -> Result<Self, Win32Err> {
             let (event_min, event_max) = match ev {
                 Range::Single(e) => (e as u32, e as u32),

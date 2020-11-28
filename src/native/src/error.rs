@@ -125,7 +125,7 @@ macro_rules! hresult {
         if val < 0 {
             Err($crate::error::HResult::new(val))
         } else if val != 0 {
-            tracing::warn!("HRESULT WARN 0x{:0x}", val);
+            util::log::warn!("HRESULT WARN 0x{:0x}", val);
             Ok(())
         } else {
             Ok(())

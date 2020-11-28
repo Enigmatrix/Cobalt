@@ -14,16 +14,10 @@ pelite = "0.9"
 image = "0.23"
 winrt = "0.7.2"
 
-tracing = "0.1"
-
-anyhow = "1.0"
-
+util = { path = "../util" }
 
 [build-dependencies]
 winrt = "0.7.2"
-
-[dev-dependencies]
-tracing-subscriber = "0.2"
 
 [package.metadata.winrt.dependencies]
 "Microsoft.Windows.SDK.Contracts" = "10.0.19041.1"

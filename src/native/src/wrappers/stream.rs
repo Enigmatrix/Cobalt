@@ -5,9 +5,9 @@ use crate::raw::objidlbase::{
 use crate::raw::unknwnbase::IUnknown;
 use crate::raw::uwp::windows::storage::streams::*;
 use crate::raw::*;
-use anyhow::*;
 use std::io::{Read, Seek, SeekFrom, Write};
 use std::mem;
+use util::*;
 use winapi::shared::guiddef::{IsEqualIID, REFIID};
 
 const BUFFER_SIZE: usize = 4096;
@@ -59,7 +59,7 @@ impl Write for HugeExtensibleBuffer {
 }
 
 pub struct WinRTStream {
-    stream: IRandomAccessStream
+    stream: IRandomAccessStream,
 }
 
 impl WinRTStream {
@@ -70,13 +70,15 @@ impl WinRTStream {
 
 impl<T: Into<IRandomAccessStream>> From<T> for WinRTStream {
     fn from(stream: T) -> Self {
-        WinRTStream { stream: stream.into() }
+        WinRTStream {
+            stream: stream.into(),
+        }
     }
 }
 
 pub struct ByteBuffer<'a> {
     bytes: &'a mut [u8],
-    len: u64
+    len: u64,
 }
 
 pub struct WinRTStreamToRustAdapter<'a> {
@@ -279,7 +281,6 @@ fn default_stream() -> IStreamVtbl {
         unimplemented!("CopyTo")
     }
     unsafe extern "system" fn Commit(This: *mut IStream, grfCommitFlags: DWORD) -> HRESULT {
-        tracing::warn!("COMMIT!!");
         unimplemented!("Commit")
     }
     unsafe extern "system" fn Revert(This: *mut IStream) -> HRESULT {

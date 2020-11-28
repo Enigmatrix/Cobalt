@@ -2,11 +2,11 @@ use crate::com::*;
 use crate::error::*;
 use crate::raw::*;
 use crate::wrappers::stream::{RustToWin32StreamAdapter, WinRTStreamToRustAdapter};
-use anyhow::*;
 use pelite::resources::version_info::Language;
 use pelite::{FileMap, PeFile};
 use std::io::Write;
 use std::ptr;
+use util::*;
 
 pub static FALLBACK_LANGS: &[&str] = &[
     "040904B0", // US English + CP_UNICODE
@@ -196,7 +196,7 @@ mod tests {
         let reader = DataReader::create_data_reader(thumb).unwrap();
         reader.load_async(sz as u32).unwrap().get().unwrap();
         reader.read_bytes(&mut out).unwrap();
-        let img  = image::load_from_memory(&out).unwrap();
+        let img = image::load_from_memory(&out).unwrap();
         img.save("C:\\Users\\enigm\\Desktop\\what2.png").unwrap();
         assert_ne!(0, out.len());
     }

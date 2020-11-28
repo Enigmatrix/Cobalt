@@ -1,7 +1,7 @@
 use crate::error::Win32Err;
 use crate::wrappers::winevent::*;
 use crate::wrappers::*;
-use anyhow::*;
+use util::*;
 
 #[derive(Debug)]
 pub struct Watcher {

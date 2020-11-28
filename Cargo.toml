@@ -3,6 +3,7 @@
 members = [
     "src/engine",
     "src/native",
+    "src/util",
 
     "tests/experiments/monitor",
 

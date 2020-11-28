@@ -1,8 +1,8 @@
 use crate::error::Win32Err;
 use crate::raw::*;
 use crate::wrappers::*;
-use anyhow::*;
 use std::ptr;
+use util::*;
 
 #[derive(Debug)]
 pub struct Watcher {

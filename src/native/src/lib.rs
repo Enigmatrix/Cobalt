@@ -15,7 +15,7 @@ pub mod com;
 pub mod watchers;
 pub mod wrappers;
 
-pub fn setup() -> anyhow::Result<()> {
+pub fn setup() -> util::Result<()> {
     use crate::raw::combaseapi::*;
     use crate::raw::objbase::*;
 

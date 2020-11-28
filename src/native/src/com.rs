@@ -55,11 +55,11 @@ impl<T> Com<T> {
 
         if val < 0 {
             if com.is_some() {
-                tracing::warn!("ComPtr::from_fn had an initialized COM pointer despite the function returning an error")
+                util::log::warn!("ComPtr::from_fn had an initialized COM pointer despite the function returning an error")
             }
             return Err(HResult::new(val));
         } else if val != 0 {
-            tracing::warn!("HRESULT WARN 0x{:0x}", val);
+            util::log::warn!("HRESULT WARN 0x{:0x}", val);
         }
         Ok(com)
     }

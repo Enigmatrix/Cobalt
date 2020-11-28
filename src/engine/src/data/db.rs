@@ -1,6 +1,6 @@
 use super::model;
-use anyhow::{Result, *};
 use rusqlite::*;
+use util::{Result, *};
 
 pub struct Database {
     conn: Connection,
