@@ -34,7 +34,7 @@ impl Watcher {
         let (pid, mut callback) = *Box::from_raw(dat.cast::<(ProcessId, F)>());
         callback(pid)
             .with_context(|| "Error in process exit callback")
-            .unwrap();
+            .unwrap_or_exit();
     }
 }
 

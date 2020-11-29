@@ -18,7 +18,7 @@ impl Watcher {
             Range::Single(Event::ObjectDestroyed),
             Locality::ProcessThread { pid, tid },
             Box::new(move |args| {
-                if window != &args.hwnd
+                if window != &args.hwnd // TODO find the correct combination to detect when the Window actually closed.
                 /*|| unsafe { winuser::IsWindow(args.hwnd) == 0 } || (pid, tid) != window.pid_tid().unwrap_or((0, 0))*/
                 {
                     return Ok(());

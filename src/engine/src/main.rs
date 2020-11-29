@@ -34,7 +34,7 @@ fn main() -> Result<!> {
                 .process_messages()
                 .await
                 .with_context(|| "Error in processing message")
-                .unwrap();
+                .unwrap_or_exit();
         }
         .instrument(log::trace_span!("processing loop")),
     );

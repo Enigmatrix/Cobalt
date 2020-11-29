@@ -1,7 +1,6 @@
 use crate::error::*;
 
 pub use tracing::*;
-// TODO setup tracing functions
 
 pub fn setup_log() -> Result<()> {
     tracing::subscriber::set_global_default(

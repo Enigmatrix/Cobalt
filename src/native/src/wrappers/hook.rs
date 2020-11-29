@@ -8,6 +8,7 @@ use std::mem::{transmute, MaybeUninit};
 use std::pin::Pin;
 use std::ptr;
 use std::task::{Context, Poll};
+use util::*;
 
 pub mod winevent {
     use super::*;
@@ -108,7 +109,7 @@ pub mod winevent {
             id_event_thread: DWORD,
             dwms_event_time: DWORD,
         ) {
-            let handler = contexts().get(&win_event_hook).unwrap();
+            let handler = contexts().get(&win_event_hook).expect("Context found for Hook");
             (handler)(EventArgs {
                 win_event_hook,
                 event,
@@ -118,7 +119,7 @@ pub mod winevent {
                 id_event_thread,
                 dwms_event_time,
             })
-            .expect("Handler threw error");
+            .unwrap_or_exit();
         }
     }
 
@@ -199,7 +200,7 @@ pub mod windows_hook {
 
     impl Drop for Hook {
         fn drop(&mut self) {
-            win32!(non_zero: winuser::UnhookWindowsHookEx(self.hook)).unwrap();
+            win32!(non_zero: winuser::UnhookWindowsHookEx(self.hook)).unwrap_or_exit();
         }
     }
 
