@@ -2,7 +2,7 @@
 
 use native::watchers::*;
 use native::wrappers::*;
-use util::{*, log::Instrument};
+use util::{log::Instrument, *};
 
 mod data;
 mod processor;
@@ -28,13 +28,16 @@ fn main() -> Result<!> {
 
     let local = futures::task::LocalSet::new();
 
-    local.spawn_local(async move {
-        processor
-            .process_messages()
-            .await
-            .with_context(|| "Error in processing message")
-            .unwrap();
-    }.instrument(log::trace_span!("processing loop")));
+    local.spawn_local(
+        async move {
+            processor
+                .process_messages()
+                .await
+                .with_context(|| "Error in processing message")
+                .unwrap();
+        }
+        .instrument(log::trace_span!("processing loop")),
+    );
 
     let exit = futures::runtime::Builder::new_current_thread()
         .enable_all()

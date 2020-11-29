@@ -8,6 +8,9 @@ use std::io::Write;
 use std::ptr;
 use util::*;
 
+use crate::raw::uwp::windows::storage::file_properties::ThumbnailMode;
+use crate::raw::uwp::windows::storage::*;
+
 pub static FALLBACK_LANGS: &[&str] = &[
     "040904B0", // US English + CP_UNICODE
     "040904E4", // US English + CP_USASCII
@@ -26,36 +29,29 @@ impl FileInfo {
         use crate::raw::uwp::windows::foundation::Size;
 
         let app_info = AppInfo::get_from_app_user_model_id(aumid)
-            .map_err(WinRt::from)
-            .with_context(|| "Get UWP AppInfo from WinRT API")?;
+            .winrt_with_context(|| "Get UWP AppInfo from WinRT API")?;
         let display_info = app_info
             .display_info()
-            .map_err(WinRt::from)
-            .with_context(|| "DisplayInfo for UWP AppInfo")?;
+            .winrt_with_context(|| "DisplayInfo for UWP AppInfo")?;
         let name = display_info
             .display_name()
-            .map_err(WinRt::from)
-            .with_context(|| "Get name from DisplayInfo")?
+            .winrt_with_context(|| "Get name from DisplayInfo")?
             .to_string();
         let description = display_info
             .description()
-            .map_err(WinRt::from)
-            .with_context(|| "Get description from DisplayInfo")?
+            .winrt_with_context(|| "Get description from DisplayInfo")?
             .to_string();
         let logo = display_info
             .get_logo(Size {
                 width: 32.0,
                 height: 32.0,
             })
-            .map_err(WinRt::from)
-            .with_context(|| "Get 32x32 logo from DisplayInfo")?;
+            .winrt_with_context(|| "Get 32x32 logo from DisplayInfo")?;
         let stream = logo
             .open_read_async()
-            .map_err(WinRt::from)
-            .with_context(|| "Open read the RandomAccessStreamReference")?
+            .winrt_with_context(|| "Open read the RandomAccessStreamReference")?
             .get()
-            .map_err(WinRt::from)
-            .with_context(|| "Blocking `get` of underlying RandomAccessStream")?;
+            .winrt_with_context(|| "Blocking `get` of underlying RandomAccessStream")?;
         let mut icon_bytes = WinRTStreamToRustAdapter::from(&stream)
             .read_all()
             .with_context(|| "Read bytes out of logo stream")?;
@@ -167,6 +163,18 @@ impl FileInfo {
 
         let buf: Vec<_> = OsString::from(lang).encode_wide().collect();
         Language::parse(&buf[..]).expect("Cannot parse language")
+    }
+
+    pub async fn from_win32(path: &str) -> ::winrt::Result<FileInfo> {
+        let exe = StorageFile::get_file_from_path_async(path)?.await?;
+        let thumb = exe
+            .get_thumbnail_async_overload_default_size_default_options(ThumbnailMode::SingleItem)?
+            .await?;
+        let thumb_sz = thumb.size()?;
+        let props = exe.get_basic_properties_async()?.await?;
+        // props.retrieve_properties_async();
+
+        todo!()
     }
 }
 

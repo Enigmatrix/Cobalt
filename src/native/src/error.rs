@@ -1,6 +1,7 @@
 use crate::raw::errhandlingapi::{GetLastError, SetLastError};
 use std::error::Error;
 use std::fmt;
+use util::*;
 
 pub struct Win32Err(i32);
 
@@ -81,6 +82,7 @@ impl fmt::Debug for NtStatus {
 
 impl Error for NtStatus {}
 
+/// Wrap winrt::Error and make it Send and Sync (actually safe)
 #[derive(Debug)]
 pub struct WinRt(winrt::Error);
 unsafe impl Send for WinRt {}
@@ -99,6 +101,34 @@ impl From<winrt::Error> for WinRt {
 }
 
 impl Error for WinRt {}
+
+pub trait WinRtExt<T> {
+    fn winrt_context<C>(self, context: C) -> Result<T, util::Error>
+    where
+        C: fmt::Display + Send + Sync + 'static;
+    fn winrt_with_context<C, F>(self, f: F) -> Result<T, util::Error>
+    where
+        C: fmt::Display + Send + Sync + 'static,
+        F: FnOnce() -> C;
+}
+
+impl<T> WinRtExt<T> for Result<T, winrt::Error> {
+    fn winrt_context<C>(self, context: C) -> Result<T, util::Error>
+    where
+        C: fmt::Display + Send + Sync + 'static,
+    {
+        self.map_err(|error| WinRt::from(error)).context(context)
+    }
+
+    fn winrt_with_context<C, F>(self, context: F) -> Result<T, util::Error>
+    where
+        C: fmt::Display + Send + Sync + 'static,
+        F: FnOnce() -> C,
+    {
+        self.map_err(|error| WinRt::from(error))
+            .with_context(context)
+    }
+}
 
 macro_rules! win32 {
     (non_zero: $e: expr) => {{

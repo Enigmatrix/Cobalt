@@ -10,5 +10,6 @@ pub fn setup_log() -> Result<()> {
             // .with_thread_ids(true)
             // .compact()
             .finish(),
-    ).with_context(|| "Setup global tracing subscriber")
+    )
+    .with_context(|| "Setup global tracing subscriber")
 }

@@ -118,7 +118,8 @@ impl Processor {
                 self.db
                     .insert_usage(&mut self.current_usage)
                     .with_context(|| "Save Usage to Database")?;
-                dbg!(&self.current_usage);
+
+                log::trace!(?self.current_usage, "recorded usage");
 
                 self.current_usage = model::Usage {
                     id: 0,

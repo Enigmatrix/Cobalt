@@ -45,7 +45,10 @@ impl Info {
             Occupied(occ) => {
                 let sess_info = occ.into_mut();
                 let app_info = apps.get_mut(&sess_info.pid).unwrap(); // if the session exists, the app for it exists.
-                log::trace!(?sess_info, "using pre-existing SessionInfo from SessionCache");
+                log::trace!(
+                    ?sess_info,
+                    "using pre-existing SessionInfo from SessionCache"
+                );
                 return Ok((sess_info, app_info));
             }
             Vacant(vac) => vac,
@@ -100,8 +103,8 @@ impl Info {
             Occupied(occ) => {
                 let app_info = occ.into_mut();
                 log::trace!(?app_info, "using pre-existing AppInfo from AppCache");
-                return Ok(app_info)
-            },
+                return Ok(app_info);
+            }
             Vacant(vac) => vac,
         };
 
