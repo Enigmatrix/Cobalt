@@ -109,7 +109,9 @@ pub mod winevent {
             id_event_thread: DWORD,
             dwms_event_time: DWORD,
         ) {
-            let handler = contexts().get(&win_event_hook).expect("Context found for Hook");
+            let handler = contexts()
+                .get(&win_event_hook)
+                .expect("Context found for Hook");
             (handler)(EventArgs {
                 win_event_hook,
                 event,
@@ -200,7 +202,9 @@ pub mod windows_hook {
 
     impl Drop for Hook {
         fn drop(&mut self) {
-            win32!(non_zero: winuser::UnhookWindowsHookEx(self.hook)).with_context(|| "Unhooking").unwrap_or_exit();
+            win32!(non_zero: winuser::UnhookWindowsHookEx(self.hook))
+                .with_context(|| "Unhooking")
+                .unwrap_or_exit();
         }
     }
 

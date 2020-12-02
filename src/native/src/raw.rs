@@ -12,11 +12,5 @@ pub use winapi::shared::windef::*;
 pub use winapi::um::minwinbase::*;
 
 pub mod uwp {
-    ::winrt::import!(
-        dependencies
-            os
-        types
-            windows::applicationmodel::*
-            windows::storage::streams::*
-    );
+    winrt::include_bindings!();
 }
