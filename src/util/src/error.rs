@@ -1,7 +1,5 @@
 pub use anyhow::*;
 
-// TODO better unwrap of Result
-
 pub trait ResultExt2 {
     fn unwrap_or_exit(self);
 }

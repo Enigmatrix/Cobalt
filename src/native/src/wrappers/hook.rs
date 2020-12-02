@@ -7,7 +7,7 @@ use std::future::Future;
 use std::mem::{transmute, MaybeUninit};
 use std::pin::Pin;
 use std::ptr;
-use std::task::{Context, Poll};
+use std::task::{Context as FutContext, Poll};
 use util::*;
 
 pub mod winevent {
@@ -200,7 +200,7 @@ pub mod windows_hook {
 
     impl Drop for Hook {
         fn drop(&mut self) {
-            win32!(non_zero: winuser::UnhookWindowsHookEx(self.hook)).unwrap_or_exit();
+            win32!(non_zero: winuser::UnhookWindowsHookEx(self.hook)).with_context(|| "Unhooking").unwrap_or_exit();
         }
     }
 
@@ -261,7 +261,7 @@ impl EventLoop {
 impl Future for EventLoop {
     type Output = usize;
 
-    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<usize> {
+    fn poll(mut self: Pin<&mut Self>, cx: &mut FutContext<'_>) -> Poll<usize> {
         if let Some(exit) = self.step_peek() {
             Poll::Ready(exit)
         } else {
