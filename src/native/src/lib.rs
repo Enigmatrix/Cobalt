@@ -6,6 +6,7 @@
 #![feature(maybe_uninit_uninit_array)]
 #![feature(maybe_uninit_ref)]
 #![feature(associated_type_bounds)]
+#![feature(seek_convenience)]
 
 pub mod raw;
 #[macro_use]

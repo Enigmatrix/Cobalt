@@ -1,10 +1,10 @@
 use crate::com::*;
 use crate::error::*;
 use crate::raw::*;
-use crate::wrappers::stream::WinRTStreamToRustAdapter;
+use crate::wrappers::stream::WinRTImageStream;
 use pelite::resources::version_info::Language;
 use pelite::{FileMap, PeFile};
-use std::io::Write;
+use std::io::{BufReader, Write};
 use std::ptr;
 use util::*;
 
@@ -18,7 +18,7 @@ pub struct FileInfo {
 }
 
 impl FileInfo {
-    pub fn from_uwp(aumid: &str) -> Result<FileInfo> {
+    pub async fn from_uwp(aumid: &str) -> Result<FileInfo> {
         use crate::raw::uwp::windows::application_model::AppInfo;
         use crate::raw::uwp::windows::foundation::Size;
 
@@ -37,19 +37,20 @@ impl FileInfo {
             .to_string();
         let logo = display_info
             .get_logo(Size {
-                width: 32.0,
-                height: 32.0,
+                width: 150.0,
+                height: 150.0,
             })
             .winrt_with_context(|| "Get 32x32 logo from DisplayInfo")?;
         let stream = logo
             .open_read_async()
             .winrt_with_context(|| "Open read the RandomAccessStreamReference")?
-            .get()
+            .await
             .winrt_with_context(|| "Blocking `get` of underlying RandomAccessStream")?;
-        let mut icon_bytes = WinRTStreamToRustAdapter::from(&stream)
-            .read_all()
-            .with_context(|| "Read bytes out of logo stream")?;
-        let icon = image::load_from_memory(&mut icon_bytes)
+        let stream = WinRTImageStream::from(stream);
+        let icon = image::io::Reader::new(BufReader::new(stream))
+            .with_guessed_format()
+            .with_context(|| "Guess format of image")?
+            .decode()
             .with_context(|| "Load icon bytes as a image")?;
         Ok(FileInfo {
             name,
@@ -104,5 +105,15 @@ mod tests {
         let img = image::load_from_memory(&out).unwrap();
         img.save("C:\\Users\\enigm\\Desktop\\what2.png").unwrap();
         assert_ne!(0, out.len());
+    }
+
+    #[test]
+    fn uwp_test() {
+        let aumid = "Microsoft.ZuneVideo_8wekyb3d8bbwe!Microsoft.ZuneVideo";
+        let file_info = tokio_test::block_on(FileInfo::from_uwp(aumid)).unwrap();
+        file_info
+            .icon
+            .save("C:\\Users\\enigm\\Desktop\\what3.png")
+            .unwrap();
     }
 }

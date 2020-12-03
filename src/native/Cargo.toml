@@ -19,5 +19,8 @@ util = { path = "../util" }
 [build-dependencies]
 winrt = { git = "https://github.com/microsoft/winrt-rs", rev = "a3eae9e1454de33e6ea55389bd0eb59fd587ee96" }
 
+[dev-dependencies]
+tokio-test = "0.3"
+
 [package.metadata.winrt.dependencies]
 "Microsoft.Windows.SDK.Contracts" = "10.0.19041.1"

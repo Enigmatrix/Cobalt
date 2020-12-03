@@ -164,8 +164,8 @@ impl Info {
                         }
                     }
                     model::AppIdentity::UWP { aumid } => {
-                        let file = FileInfo::from_uwp(aumid)
-                            .with_context(|| "Retrieve file info of UWP app")?;
+                        let file: FileInfo = todo!();                        /*FileInfo::from_uwp(aumid))
+                            .with_context(|| "Retrieve file info of UWP app")?*/
                         model::App {
                             id: 0,
                             name: file.name,
