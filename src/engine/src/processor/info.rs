@@ -2,8 +2,6 @@ use super::*;
 use crate::data::db::Database;
 use crate::data::model;
 use util::futures::task;
-use util::log::Instrument;
-use util::*;
 
 #[derive(Debug)]
 pub struct AppInfo {

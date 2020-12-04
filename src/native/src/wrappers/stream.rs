@@ -5,6 +5,7 @@ mod windows {
     pub use crate::raw::uwp::windows::*;
 }
 
+use windows::security::cryptography::CryptographicBuffer;
 use windows::storage::streams::*;
 
 #[derive(Debug)]
@@ -32,16 +33,10 @@ impl<T: Into<IRandomAccessStreamWithContentType>> From<T> for WinRTImageStream {
 
 impl Read for WinRTImageStream {
     fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
-        let buffer =
-            windows::security::cryptography::CryptographicBuffer::create_from_byte_array(buf)
-                .unwrap();
+        let buffer = CryptographicBuffer::create_from_byte_array(buf).unwrap();
         let written = self
             .stream
-            .read_async(
-                IBuffer::from(buffer),
-                buf.len() as u32,
-                InputStreamOptions::None,
-            )
+            .read_async(buffer, buf.len() as u32, InputStreamOptions::None)
             .to_std()?
             .get()
             .to_std()?;

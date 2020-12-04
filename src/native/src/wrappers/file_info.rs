@@ -9,7 +9,7 @@ use crate::raw::uwp::windows::storage::*;
 
 use std::future::Future;
 
-pub trait UnsafeFutureExt {
+trait UnsafeFutureExt {
     fn wrap_unsafe<U>(self) -> UnsafeFuture<Self, U>
     where
         Self: Future<Output = U> + Unpin + Sized;

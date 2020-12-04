@@ -10,10 +10,6 @@ edition = "2018"
 tonic = "0.3"
 flume = "0.9"
 
-image = "0.23"
-color-thief = "0.2"
-hsl = "0.1"
-
 rusqlite = { version = "0.24",features = ["trace", "blob", "bundled"] }
 
 native = { path = "../native" }

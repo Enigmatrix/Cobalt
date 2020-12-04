@@ -118,7 +118,7 @@ impl<T> WinRtExt<T> for Result<T, winrt::Error> {
     where
         C: fmt::Display + Send + Sync + 'static,
     {
-        self.map_err(|error| WinRt::from(error)).context(context)
+        self.map_err(WinRt::from).context(context)
     }
 
     fn winrt_with_context<C, F>(self, context: F) -> Result<T, util::Error>
@@ -126,8 +126,7 @@ impl<T> WinRtExt<T> for Result<T, winrt::Error> {
         C: fmt::Display + Send + Sync + 'static,
         F: FnOnce() -> C,
     {
-        self.map_err(|error| WinRt::from(error))
-            .with_context(context)
+        self.map_err(WinRt::from).with_context(context)
     }
 
     fn to_std(self) -> std::io::Result<T> {
