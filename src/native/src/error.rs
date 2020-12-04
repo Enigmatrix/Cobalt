@@ -110,6 +110,7 @@ pub trait WinRtExt<T> {
     where
         C: fmt::Display + Send + Sync + 'static,
         F: FnOnce() -> C;
+    fn to_std(self) -> std::io::Result<T>;
 }
 
 impl<T> WinRtExt<T> for Result<T, winrt::Error> {
@@ -127,6 +128,10 @@ impl<T> WinRtExt<T> for Result<T, winrt::Error> {
     {
         self.map_err(|error| WinRt::from(error))
             .with_context(context)
+    }
+
+    fn to_std(self) -> std::io::Result<T> {
+        self.map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, WinRt::from(e)))
     }
 }
 

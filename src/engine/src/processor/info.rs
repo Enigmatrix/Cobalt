@@ -1,6 +1,9 @@
 use super::*;
 use crate::data::db::Database;
 use crate::data::model;
+use util::futures::task;
+use util::log::Instrument;
+use util::*;
 
 #[derive(Debug)]
 pub struct AppInfo {
@@ -133,7 +136,25 @@ impl Info {
         Ok(app_info)
     }
 
-    // TODO maybe extract this & get_identity out?
+    // TODO maybe extract all of the below out into a struct like AppInformation?
+    // #[log::instrument]
+    async fn get_app_file_info(appid: model::Id, identity: model::AppIdentity) -> Result<()> {
+        let file_info: FileInfo = match &identity {
+            model::AppIdentity::Win32 { path } => FileInfo::from_win32(path)
+                .await
+                .with_context(|| "Retrieve FileInfo from Win32 path")?,
+            model::AppIdentity::UWP { aumid } => FileInfo::from_uwp(aumid)
+                .await
+                .with_context(|| "Retrieve FileInfo from UWP aumid")?,
+        };
+        log::trace!(?file_info, "Found file info!");
+
+        // TODO save this file_info to the database
+        // also send the new update app id to clients
+
+        Ok(())
+    }
+
     fn find_or_create_app(
         window: &Window,
         process: &Process,
@@ -150,51 +171,21 @@ impl Info {
                 let identity = Info::get_identity(window, process)
                     .with_context(|| "Get Identity of Process and Window")?;
 
-                let mut app = match &identity {
-                    model::AppIdentity::Win32 { path } => {
-                        let file = FileInfo::from_classic_app(path)
-                            .with_context(|| "Retreive file info of Win32 executable")?;
-                        model::App {
-                            id: 0,
-                            name: file.name,
-                            description: file.description,
-                            color: Info::find_contrasting_color(&file.icon)
-                                .with_context(|| "Finding contrasting color of image")?,
-                            identity,
-                        }
-                    }
-                    model::AppIdentity::UWP { aumid } => {
-                        let file: FileInfo = todo!();                        /*FileInfo::from_uwp(aumid))
-                            .with_context(|| "Retrieve file info of UWP app")?*/
-                        model::App {
-                            id: 0,
-                            name: file.name,
-                            description: file.description,
-                            color: Info::find_contrasting_color(&file.icon)
-                                .with_context(|| "Finding contrasting color of image")?,
-                            identity,
-                        }
-                    }
+                let mut app = model::App {
+                    id: 0,
+                    name: String::new(), // TODO find better default such as using Option
+                    description: String::new(),
+                    color: "#EEEEEE".to_string(),
+                    identity: identity.clone(),
                 };
                 db.insert_app(&mut app)
                     .with_context(|| "Saving App to Database")?;
+
+                task::spawn(Info::get_app_file_info(app.id, identity));
+
                 Ok(app)
             }
         }
-    }
-
-    fn find_contrasting_color(image: &image::DynamicImage) -> Result<String> {
-        let colfmt = match image.color() {
-            image::ColorType::Rgb8 => color_thief::ColorFormat::Rgb,
-            image::ColorType::Rgba8 => color_thief::ColorFormat::Rgba,
-            _ => unreachable!(),
-        };
-        let colors = color_thief::get_palette(&image.to_bytes(), colfmt, 1, 3)?;
-        let dominant = colors[0];
-        let mut contrasting = hsl::HSL::from_rgb(&[dominant.r, dominant.g, dominant.b]);
-        contrasting.h = (contrasting.h + 180.0) % 360.0;
-        let (r, g, b) = contrasting.to_rgb();
-        Ok(format!("#{:02x}{:02x}{:02x}", r, g, b))
     }
 
     fn get_identity(window: &Window, process: &Process) -> Result<model::AppIdentity> {

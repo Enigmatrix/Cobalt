@@ -1,7 +1,9 @@
 #![feature(never_type)]
+#![feature(async_closure)]
 
 use native::watchers::*;
 use native::wrappers::*;
+use util::futures as tokio;
 use util::{log::Instrument, *};
 
 mod data;
@@ -9,7 +11,8 @@ mod processor;
 
 use processor::*;
 
-fn main() -> Result<!> {
+#[futures::main]
+async fn main() -> Result<!> {
     util::setup().with_context(|| "Setup utils")?;
     native::setup().with_context(|| "Setup native dependencies")?;
 
@@ -39,11 +42,7 @@ fn main() -> Result<!> {
         .instrument(log::trace_span!("processing loop")),
     );
 
-    let exit = futures::runtime::Builder::new_current_thread()
-        .enable_all()
-        .build()
-        .with_context(|| "Tokio runtime initialization")?
-        .block_on(local.run_until(event_loop));
+    let exit = local.run_until(event_loop).await;
 
     log::info!(exit, "engine exiting");
 

@@ -5,7 +5,7 @@ pub type Id = u64;
 #[derive(Clone, Debug)]
 pub struct App {
     pub id: Id,
-    pub name: String,
+    pub name: String, // make these nullable?
     pub description: String,
     // pub icon: Blob,
     pub identity: AppIdentity,
