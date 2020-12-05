@@ -41,7 +41,7 @@ impl Watcher {
             if code == 0 && ev.flags & 0x1 == 0 {
                 LATEST_INTERACTION.fetch_max(ev.time, Ordering::SeqCst);
             }
-            winuser::CallNextHookEx(ptr::null_mut(), code, transmute(typ), transmute(ev))
+            LowLevelMouse::call_next_hook(code, typ, ev)
         }
     }
 
@@ -54,7 +54,7 @@ impl Watcher {
             if code == 0 && ev.flags & 0x1 == 0 {
                 LATEST_INTERACTION.fetch_max(ev.time, Ordering::SeqCst);
             }
-            winuser::CallNextHookEx(ptr::null_mut(), code, transmute(typ), transmute(ev))
+            LowLevelKeyboard::call_next_hook(code, typ, ev)
         }
     }
 }

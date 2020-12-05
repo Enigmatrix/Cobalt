@@ -5,11 +5,11 @@ pub type Id = u64;
 #[derive(Clone, Debug)]
 pub struct App {
     pub id: Id,
-    pub name: String, // make these nullable?
-    pub description: String,
+    pub name: Option<String>,
+    pub description: Option<String>,
     // pub icon: Blob,
+    pub color: Option<Color>,
     pub identity: AppIdentity,
-    pub color: Color,
 }
 
 #[derive(Clone, Debug, Eq, Ord, PartialOrd, PartialEq, Hash)]

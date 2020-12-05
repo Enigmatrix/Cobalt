@@ -171,9 +171,9 @@ impl Info {
 
                 let mut app = model::App {
                     id: 0,
-                    name: String::new(), // TODO find better default such as using Option
-                    description: String::new(),
-                    color: "#EEEEEE".to_string(),
+                    name: None,
+                    description: None,
+                    color: Some("#EEEEEE".to_string()),
                     identity: identity.clone(),
                 };
                 db.insert_app(&mut app)

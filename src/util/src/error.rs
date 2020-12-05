@@ -6,6 +6,9 @@ pub trait ResultExt2 {
 
 impl<T> ResultExt2 for Result<T> {
     fn unwrap_or_exit(self) {
-        self.unwrap(); // TODO better representation.
+        if self.is_err() {
+            self.expect("chain of errors:");
+            std::process::exit(1);
+        }
     }
 }

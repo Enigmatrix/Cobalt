@@ -1,3 +1,5 @@
+#![feature(backtrace)]
+
 pub mod error;
 pub mod futures;
 pub mod log;

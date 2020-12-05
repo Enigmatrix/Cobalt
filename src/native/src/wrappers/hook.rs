@@ -138,6 +138,8 @@ pub mod winevent {
 }
 
 pub mod windows_hook {
+    use _core::mem::transmute_copy;
+
     use super::*;
 
     pub trait WindowsHookEvent {
@@ -145,6 +147,20 @@ pub mod windows_hook {
         type LParam;
 
         fn event() -> i32;
+        fn call_next_hook(
+            code: i32,
+            typ: <Self as WindowsHookEvent>::WParam,
+            ev: <Self as WindowsHookEvent>::LParam,
+        ) -> isize {
+            unsafe {
+                winuser::CallNextHookEx(
+                    std::ptr::null_mut(),
+                    code,
+                    transmute_copy(&typ),
+                    transmute_copy(&ev),
+                )
+            }
+        }
     }
 
     pub struct LowLevelKeyboard;
@@ -207,8 +223,6 @@ pub mod windows_hook {
                 .unwrap_or_exit();
         }
     }
-
-    // TODO callnexthookex definition here
 }
 
 pub struct EventLoop {
