@@ -4,7 +4,7 @@ pub trait ResultExt2 {
     fn unwrap_or_exit(self);
 }
 
-impl<T> ResultExt2 for Result<T> {
+impl<T, E: std::fmt::Debug> ResultExt2 for Result<T, E> {
     fn unwrap_or_exit(self) {
         if self.is_err() {
             self.expect("chain of errors:");

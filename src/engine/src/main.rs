@@ -21,7 +21,14 @@ async fn main() -> Result<!> {
     let (msger, mut processor) = Processor::new_pair().with_context(|| "Create Processor")?;
     let event_loop = EventLoop::new();
 
-    // idle::Watcher::begin()?;
+    idle::Watcher::begin().with_context(|| "Begin monitoring for mouse and keyboard events")?;
+
+    let idle_dur = Duration::from_millis(5_000); // TODO read this from config
+    let _idle = idle::Watcher::new(idle_dur, |idle| {
+        log::warn!(?idle);
+        Ok(())
+    })
+    .with_context(|| "Create idle watcher")?;
 
     let fg_msger = msger.clone();
     let _fg = foreground::Watcher::new(|window, timestamp| {
