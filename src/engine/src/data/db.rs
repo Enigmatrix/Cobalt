@@ -1,6 +1,7 @@
 use super::model;
 use rusqlite::*;
 use util::{Result, *};
+use crate::data::migrations::Migrator;
 
 pub struct Database {
     conn: Connection,
@@ -8,8 +9,9 @@ pub struct Database {
 
 impl Database {
     pub fn new() -> Result<Database> {
-        let conn =
+        let mut conn =
             Connection::open_in_memory().with_context(|| "Opening connection to database")?;
+        Migrator::migrate(&mut conn).with_context(|| "Run migrations on database")?;
         Ok(Database { conn })
     }
 
