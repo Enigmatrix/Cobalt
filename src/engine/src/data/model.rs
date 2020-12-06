@@ -1,6 +1,6 @@
 pub type Timestamp = native::wrappers::Timestamp;
 pub type Color = String;
-pub type Id = u64;
+pub type Id = i64;
 
 #[derive(Clone, Debug)]
 pub struct App {

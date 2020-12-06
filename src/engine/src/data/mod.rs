@@ -1,5 +1,5 @@
 pub mod db;
-pub mod model;
 pub mod migrations;
+pub mod model;
 
 pub use db::*;

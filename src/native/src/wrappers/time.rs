@@ -40,6 +40,10 @@ impl Timestamp {
     pub fn from_event_millis(millis: u32) -> Timestamp {
         unsafe { BOOT_TIME.assume_init() + Duration::from_millis(millis as i64) }
     }
+
+    pub fn to_i64(&self) -> i64 {
+        self.0 as i64
+    }
 }
 
 impl fmt::Display for Timestamp {

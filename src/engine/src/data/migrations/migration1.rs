@@ -2,7 +2,8 @@ use rusqlite::*;
 use util::{Result, *};
 
 pub fn run(conn: &mut Connection) -> Result<()> {
-    conn.execute_batch("begin;
+    conn.execute_batch(
+        "begin;
         create table Migrations (
             Version integer not null
         );
@@ -11,6 +12,7 @@ pub fn run(conn: &mut Connection) -> Result<()> {
             Id integer primary key autoincrement,
             Name text,
             Description text,
+            Icon blob,
             Color text,
             Identity_Tag integer not null,
             Identity_Text1 text not null,
@@ -57,5 +59,7 @@ pub fn run(conn: &mut Connection) -> Result<()> {
         create unique index AppIdentity on Apps (Identity_Tag, Identity_Text1);
         
         insert into Migrations values (1);
-    commit;").with_context(|| "Executing SQLite batch statement")
+    commit;",
+    )
+    .with_context(|| "Executing SQLite batch statement")
 }
