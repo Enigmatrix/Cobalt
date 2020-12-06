@@ -12,8 +12,8 @@ pub struct Database {
 impl Database {
     pub fn new() -> Result<Database> {
         // TODO read connection string from config
-        let mut conn =
-            Connection::open("C:\\Users\\enigm\\Desktop\\NANI.db").with_context(|| "Opening connection to database")?;
+        let mut conn = Connection::open("C:\\Users\\enigm\\Desktop\\NANI.db")
+            .with_context(|| "Opening connection to database")?;
         Migrator::migrate(&mut conn).with_context(|| "Run migrations on database")?;
         Ok(Database { conn })
     }

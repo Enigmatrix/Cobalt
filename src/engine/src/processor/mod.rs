@@ -38,6 +38,9 @@ pub enum Message {
     WindowClosed {
         window: Window,
     },
+    WindowTitleChanged {
+        window: Window,
+    },
     ProcessExit {
         pid: ProcessId,
     },
@@ -138,8 +141,13 @@ impl Processor {
                     .remove(&window)
                     .with_context(|| "Pre-existing SessionInfo not found for window")?;
             }
+            Message::WindowTitleChanged { window } => {
+                todo!("action when the Window {:?} title changed", window)
+            }
             Message::ProcessExit { pid } => {
-                // maybe all Sessions associated with this Process/AppInfo can be removed as well.
+                // TODO maybe all Sessions associated with this Process/AppInfo can
+                // be removed as well? just in case, even thought by right they should
+                // be removed since WindowClosed will be fired as well.
 
                 self.apps
                     .remove(&pid)
