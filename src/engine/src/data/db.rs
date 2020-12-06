@@ -2,6 +2,7 @@ use super::model;
 use crate::data::migrations::Migrator;
 use blob::ZeroBlob;
 use rusqlite::*;
+use std::io::{copy, Read, Seek};
 use util::{Result, *};
 
 pub struct Database {
@@ -12,7 +13,7 @@ impl Database {
     pub fn new() -> Result<Database> {
         // TODO read connection string from config
         let mut conn =
-            Connection::open_in_memory().with_context(|| "Opening connection to database")?;
+            Connection::open("C:\\Users\\enigm\\Desktop\\NANI.db").with_context(|| "Opening connection to database")?;
         Migrator::migrate(&mut conn).with_context(|| "Run migrations on database")?;
         Ok(Database { conn })
     }
@@ -60,11 +61,7 @@ impl Database {
             .with_context(|| "Get cached Session insert statement")?;
 
         session.id = stmt
-            .insert(params![
-                session.title,
-                session.arguments,
-                session.app_id
-            ])
+            .insert(params![session.title, session.arguments, session.app_id])
             .with_context(|| "Insert Session")?;
 
         Ok(())
@@ -95,6 +92,47 @@ impl Database {
         Ok(())
     }
 
+    pub fn update_app(
+        &mut self,
+        app_id: model::Id,
+        name: String,
+        description: String,
+        mut icon: impl Read + Seek,
+    ) -> Result<()> {
+        let mut stmt = self
+            .conn
+            .prepare_cached(
+                "
+            update Apps set
+                Name = ?1,
+                Description = ?2,
+                Icon = ?3
+            where Id = ?4
+            ",
+            )
+            .with_context(|| "Get cached Session insert statement")?;
+
+        let stream_len = icon
+            .stream_len()
+            .with_context(|| "Get length of icon stream")?;
+
+        stmt.execute(params![
+            name,
+            description,
+            ZeroBlob(stream_len as i32),
+            app_id
+        ])
+        .with_context(|| "Update App with extra information")?;
+
+        let mut blob = self
+            .conn
+            .blob_open(DatabaseName::Main, "Apps", "Icon", app_id, false)
+            .with_context(|| "Open icon blob for writing")?;
+        copy(&mut icon, &mut blob).with_context(|| "Copy icon to blob")?; // TODO check buffering
+
+        Ok(())
+    }
+
     pub fn app_by_identity(&mut self, identity: &model::AppIdentity) -> Result<Option<model::App>> {
         let mut stmt = self
             .conn
@@ -111,19 +149,20 @@ impl Database {
             )
             .with_context(|| "Get cached find App by AppIdentity statement")?;
         let (identity_tag, identity_text1) = Database::unwrap_app_identity(identity);
-        let app = stmt.query_row(params![identity_tag, identity_text1], |q| {
-            Ok(model::App {
-                id: q.get(0)?,
-                name: q.get(1)?,
-                description: q.get(2)?,
-                color: q.get(3)?,
-                identity: model::AppIdentity::UWP {
-                    aumid: String::new(),
-                },
+        let app = stmt
+            .query_row(params![identity_tag, identity_text1], |q| {
+                Ok(model::App {
+                    id: q.get(0)?,
+                    name: q.get(1)?,
+                    description: q.get(2)?,
+                    color: q.get(3)?,
+                    identity: model::AppIdentity::UWP {
+                        aumid: String::new(),
+                    },
+                })
             })
-        })
-        .optional()
-        .with_context(|| "Query App by AppIdentity")?;
+            .optional()
+            .with_context(|| "Query App by AppIdentity")?;
 
         Ok(app)
     }

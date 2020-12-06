@@ -48,12 +48,14 @@ pub static FALLBACK_LANGS: &[&str] = &[
     "04090000", // US English + unknown codepage
 ];
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct FileInfo {
     pub name: String,
     pub description: String,
     pub icon: WinRTImageStream,
 }
+unsafe impl Send for FileInfo {}
+unsafe impl Sync for FileInfo {}
 
 impl FileInfo {
     pub async fn from_uwp(aumid: &str) -> Result<FileInfo> {

@@ -8,7 +8,7 @@ mod windows {
 use windows::security::cryptography::CryptographicBuffer;
 use windows::storage::streams::*;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct WinRTImageStream {
     stream: IRandomAccessStreamWithContentType,
 }

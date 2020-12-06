@@ -112,7 +112,7 @@ impl Info {
         let process =
             Process::new(pid, ProcessOptions::default()).with_context(|| "Create Process")?;
         let arguments = process.cmd().ok();
-        let app = Info::find_or_create_app(window, &process, db)
+        let app = Info::find_or_create_app(window, &process, db, msger)
             .with_context(|| "Find/creating App for process")?;
 
         let exited_watcher = process_exit::Watcher::new(&process, move |pid| {
@@ -135,8 +135,11 @@ impl Info {
     }
 
     // TODO maybe extract all of the below out into a struct like AppInformation?
-    // #[log::instrument]
-    async fn get_app_file_info(appid: model::Id, identity: model::AppIdentity) -> Result<()> {
+    async fn get_app_file_info(
+        app_id: model::Id,
+        msger: Messenger,
+        identity: model::AppIdentity,
+    ) -> Result<()> {
         let file_info: FileInfo = match &identity {
             model::AppIdentity::Win32 { path } => FileInfo::from_win32(path)
                 .await
@@ -145,10 +148,10 @@ impl Info {
                 .await
                 .with_context(|| "Retrieve FileInfo from UWP aumid")?,
         };
-        log::trace!(?file_info, "Found file info!");
 
-        // TODO save this file_info to the database
-        // also send the new update app id to clients
+        msger
+            .send(Message::AppUpdate { app_id, file_info })
+            .with_context(|| "Send AppUpdated message")?;
 
         Ok(())
     }
@@ -157,6 +160,7 @@ impl Info {
         window: &Window,
         process: &Process,
         db: &mut Database,
+        msger: &Messenger,
     ) -> Result<model::App> {
         let identity = Info::get_identity(window, process)
             .with_context(|| "Getting AppIdentity of Process")?;
@@ -179,7 +183,8 @@ impl Info {
                 db.insert_app(&mut app)
                     .with_context(|| "Saving App to Database")?;
 
-                task::spawn(Info::get_app_file_info(app.id, identity));
+                // TODO find better way to extend the lifetime of the mutable db reference
+                task::spawn(Info::get_app_file_info(app.id, msger.clone(), identity));
 
                 Ok(app)
             }

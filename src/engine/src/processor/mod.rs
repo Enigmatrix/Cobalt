@@ -41,6 +41,10 @@ pub enum Message {
     ProcessExit {
         pid: ProcessId,
     },
+    AppUpdate {
+        app_id: model::Id,
+        file_info: FileInfo,
+    },
 }
 
 impl Messenger {
@@ -140,6 +144,18 @@ impl Processor {
                 self.apps
                     .remove(&pid)
                     .with_context(|| "Pre-existing AppInfo not found for process")?;
+            }
+            Message::AppUpdate { app_id, file_info } => {
+                self.db
+                    .update_app(
+                        app_id,
+                        file_info.name,
+                        file_info.description,
+                        file_info.icon,
+                    )
+                    .with_context(|| "Update App information in the Database")?;
+
+                // TODO send the new update app id to clients
             }
         }
         Ok(())

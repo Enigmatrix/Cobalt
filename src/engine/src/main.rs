@@ -1,5 +1,6 @@
 #![feature(never_type)]
 #![feature(async_closure)]
+#![feature(seek_convenience)]
 
 use native::watchers::*;
 use native::wrappers::*;
