@@ -1,4 +1,3 @@
-use crate::error::Win32Err;
 use crate::raw::*;
 use crate::wrappers::winevent::*;
 use crate::wrappers::*;
@@ -10,9 +9,7 @@ pub struct Watcher {
 }
 
 impl Watcher {
-    pub fn new(
-        mut callback: impl FnMut(Window, Timestamp) -> Result<()>,
-    ) -> Result<Watcher, Win32Err> {
+    pub fn new(mut callback: impl FnMut(Window, Timestamp) -> Result<()>) -> Result<Watcher> {
         let _hook = Hook::new(
             Range::Single(Event::SystemForeground),
             Locality::Global,

@@ -1,71 +1,106 @@
 use crate::raw::*;
-use std::future::Future;
-use std::pin::Pin;
+use std::mem;
 use std::ptr;
-use std::task::{Context as FutContext, Poll};
+use std::thread;
+use util::*;
 
-pub struct EventLoop {
-    msg: winuser::MSG,
-}
+const WM_RUN_IN_CONTEXT: u32 = winuser::WM_USER + 0x1;
 
-impl Default for EventLoop {
-    fn default() -> Self {
-        EventLoop::new()
+static mut GLOBAL_EVENT_LOOP: mem::MaybeUninit<GlobalEventLoop> = mem::MaybeUninit::uninit();
+
+type ExecFn<'a, T> = &'a mut dyn FnMut() -> Result<T>;
+
+struct Waiter(i64);
+
+impl Waiter {
+    pub fn new() -> Waiter {
+        Waiter(0)
+    }
+
+    pub fn wait(&mut self) -> Result<(), crate::error::Win32Err> {
+        let mut ans: u64 = 0;
+        win32!(non_zero: synchapi::WaitOnAddress(self as *mut _ as *mut _, &mut ans as *mut _ as *mut _, 8, winbase::INFINITE))?;
+        Ok(())
+    }
+
+    pub fn signal(&mut self) {
+        self.0 = -1;
+        unsafe { synchapi::WakeByAddressAll(self as *mut _ as *mut _) }
     }
 }
 
-impl EventLoop {
-    pub fn new() -> EventLoop {
-        EventLoop {
-            msg: winuser::MSG::default(),
-        }
-    }
+pub struct GlobalEventLoop {
+    tid: u32,
 }
 
-impl EventLoop {
-    pub fn step_peek(&mut self) -> Option<usize> {
-        while unsafe {
-            winuser::PeekMessageW(&mut self.msg, ptr::null_mut(), 0, 0, winuser::PM_REMOVE)
-        } != 0
-        {
-            if self.msg.message == winuser::WM_QUIT {
-                return Some(self.msg.wParam);
+impl GlobalEventLoop {
+    fn new() -> GlobalEventLoop {
+        use std::os::windows::io::AsRawHandle;
+
+        let hdl = thread::spawn(|| loop {
+            // TODO communicate the exit code to the main exit process
+            if let Some(exit) = unsafe { GlobalEventLoop::step() } {
+                break Some(exit);
             }
-            unsafe { winuser::TranslateMessage(&mut self.msg as *mut _) };
-            unsafe { winuser::DispatchMessageW(&mut self.msg as *mut _) };
+        });
+
+        let tid = unsafe { processthreadsapi::GetThreadId(hdl.as_raw_handle()) };
+
+        GlobalEventLoop { tid }
+    }
+
+    pub fn init() {
+        unsafe { GLOBAL_EVENT_LOOP.write(GlobalEventLoop::new()) };
+    }
+
+    pub fn get() -> &'static mut Self {
+        unsafe { GLOBAL_EVENT_LOOP.assume_init_mut() }
+    }
+
+    pub fn exec<'a, T>(mut f: ExecFn<'a, T>) -> Result<T> {
+        let sel = GlobalEventLoop::get();
+        let mut waiter = Waiter::new();
+
+        let mut res: Option<T> = None;
+        let resp = &mut res;
+
+        let mut cb: ExecFn<()> = &mut move || -> util::Result<()> {
+            *resp = Some(f().with_context(|| "Calling inner function for evloop")?);
+            Ok(())
+        };
+
+        win32!(non_zero: winuser::PostThreadMessageW(
+            sel.tid,
+            WM_RUN_IN_CONTEXT,
+            &mut waiter as *mut _ as usize,
+            &mut cb as *mut _ as isize))
+        .with_context(|| "Post callback to thread")?;
+
+        waiter
+            .wait()
+            .with_context(|| "Error in waiting for signal to fire")?;
+        res.with_context(|| "Callback was not called!")
+    }
+
+    #[inline(always)]
+    unsafe fn step() -> Option<usize> {
+        let mut msg = winuser::MSG::default();
+        if winuser::GetMessageW(&mut msg, ptr::null_mut(), 0, 0) != 0 {
+            if msg.message == winuser::WM_QUIT {
+                return Some(msg.wParam);
+            }
+
+            if msg.message == WM_RUN_IN_CONTEXT {
+                let waiter = &mut *(msg.wParam as *mut Waiter);
+                let execf = &mut *(msg.lParam as *mut ExecFn<'static, ()>);
+                execf().unwrap_or_exit();
+                waiter.signal();
+                return None;
+            }
+
+            winuser::TranslateMessage(&mut msg as *mut _);
+            winuser::DispatchMessageW(&mut msg as *mut _);
         }
         None
-    }
-
-    pub fn step(&mut self) -> Option<usize> {
-        if unsafe { winuser::GetMessageW(&mut self.msg, ptr::null_mut(), 0, 0) } != 0 {
-            if self.msg.message == winuser::WM_QUIT {
-                return Some(self.msg.wParam);
-            }
-            unsafe { winuser::TranslateMessage(&mut self.msg as *mut _) };
-            unsafe { winuser::DispatchMessageW(&mut self.msg as *mut _) };
-        }
-        None
-    }
-
-    pub fn run(&mut self) -> Option<usize> {
-        loop {
-            if let Some(ex) = self.step() {
-                return Some(ex);
-            }
-        }
-    }
-}
-
-impl Future for EventLoop {
-    type Output = usize;
-
-    fn poll(mut self: Pin<&mut Self>, cx: &mut FutContext<'_>) -> Poll<usize> {
-        if let Some(exit) = self.step_peek() {
-            Poll::Ready(exit)
-        } else {
-            cx.waker().wake_by_ref(); // yield to scheduler
-            Poll::Pending
-        }
     }
 }

@@ -1,4 +1,3 @@
-use crate::error::Win32Err;
 use crate::wrappers::windows_hook::*;
 use crate::wrappers::*;
 use std::mem::MaybeUninit;
@@ -44,7 +43,7 @@ impl Watcher {
         Ok(Watcher(timer))
     }
 
-    pub fn begin() -> Result<(), Win32Err> {
+    pub fn begin() -> Result<()> {
         unsafe {
             MOUSE_HOOK.write(Hook::new::<LowLevelMouse>(
                 Locality::Global,

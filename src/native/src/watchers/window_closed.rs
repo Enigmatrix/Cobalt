@@ -1,4 +1,3 @@
-use crate::error::Win32Err;
 use crate::wrappers::winevent::*;
 use crate::wrappers::*;
 use util::*;
@@ -9,10 +8,7 @@ pub struct Watcher {
 }
 
 impl Watcher {
-    pub fn new(
-        window: &Window,
-        mut callback: impl FnMut(Window) -> Result<()>,
-    ) -> Result<Watcher, Win32Err> {
+    pub fn new(window: &Window, mut callback: impl FnMut(Window) -> Result<()>) -> Result<Watcher> {
         let (pid, tid) = window.pid_tid()?;
         let _hook = Hook::new(
             Range::Single(Event::ObjectDestroyed),

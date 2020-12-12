@@ -7,6 +7,7 @@
 #![feature(maybe_uninit_ref)]
 #![feature(associated_type_bounds)]
 #![feature(seek_convenience)]
+#![feature(thread_id_value)]
 
 pub mod raw;
 #[macro_use]

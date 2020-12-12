@@ -1,4 +1,3 @@
-use crate::error::*;
 use crate::raw::*;
 use crate::wrappers::*;
 use std::collections::HashMap;
@@ -68,7 +67,7 @@ pub mod winevent {
             ev: Range,
             locality: Locality,
             handler: Box<dyn 'a + FnMut(EventArgs) -> util::Result<()>>,
-        ) -> Result<Self, Win32Err> {
+        ) -> util::Result<Self> {
             let (event_min, event_max) = match ev {
                 Range::Single(e) => (e as u32, e as u32),
                 // Range::MinMax { min, max } => (min as u32, max as u32),
@@ -78,21 +77,27 @@ pub mod winevent {
                 Locality::ProcessThread { pid, tid } => (pid, tid),
             };
 
-            let hook = win32!(non_null: {
-                winuser::SetWinEventHook(
-                    event_min,
-                    event_max,
-                    ptr::null_mut(),
-                    Some(Hook::handler),
-                    id_process,
-                    id_thread,
-                    winuser::WINEVENT_OUTOFCONTEXT,
+            let hook = GlobalEventLoop::exec(&mut move || {
+                win32!(
+                    non_null:
+                        winuser::SetWinEventHook(
+                            event_min,
+                            event_max,
+                            ptr::null_mut(),
+                            Some(Hook::handler),
+                            id_process,
+                            id_thread,
+                            winuser::WINEVENT_OUTOFCONTEXT,
+                        )
                 )
-            })?;
+                .with_context(|| "Run SetWindowsEventHook inside GEL")
+            })
+            .with_context(|| "Send winevent hook closure to GEL")?;
 
             if unsafe { contexts().insert(hook, transmute(handler)).is_some() } {
                 panic!("Hook already exists");
             }
+
             Ok(Hook { hook })
         }
 
@@ -128,7 +133,13 @@ pub mod winevent {
                     .remove(&self.hook)
                     .expect("Handler and Context should already exist");
             };
-            win32!(non_zero: winuser::UnhookWinEvent(self.hook)).unwrap();
+
+            GlobalEventLoop::exec(&mut || {
+                win32!(non_zero: winuser::UnhookWinEvent(self.hook))
+                    .with_context(|| "Run UnhookWinEvent in GEL")
+            })
+            .with_context(|| "Send winevent drop closure to GEL")
+            .unwrap_or_exit();
         }
     }
 }
@@ -194,29 +205,36 @@ pub mod windows_hook {
         pub fn new<E: WindowsHookEvent>(
             locality: Locality,
             cb: fn(i32, E::WParam, E::LParam) -> isize,
-        ) -> Result<Hook, Win32Err> {
+        ) -> Result<Hook, util::Error> {
             let tid = match locality {
                 Locality::Thread(x) => x,
                 Locality::Global => 0,
             };
-            let hook = win32!(
-                non_null:
-                    winuser::SetWindowsHookExW(
-                        E::event(),
-                        Some(transmute(cb)),
-                        ptr::null_mut(),
-                        tid,
-                    )
-            )?;
+            let hook = GlobalEventLoop::exec(&mut || {
+                win32!(
+                    non_null:
+                        winuser::SetWindowsHookExW(
+                            E::event(),
+                            Some(transmute(cb)),
+                            ptr::null_mut(),
+                            tid,
+                        )
+                )
+                .with_context(|| "Run SetWindowsHookEx inside GEL")
+            })
+            .with_context(|| "Send hook closure to GEL")?;
             Ok(Hook { hook })
         }
     }
 
     impl Drop for Hook {
         fn drop(&mut self) {
-            win32!(non_zero: winuser::UnhookWindowsHookEx(self.hook))
-                .with_context(|| "Unhooking")
-                .unwrap_or_exit();
+            GlobalEventLoop::exec(&mut || {
+                win32!(non_zero: winuser::UnhookWindowsHookEx(self.hook))
+                    .with_context(|| "Run UnhookWindowsHookEx inside GEL")
+            })
+            .with_context(|| "Send drop closure to GEL")
+            .unwrap_or_exit();
         }
     }
 }
