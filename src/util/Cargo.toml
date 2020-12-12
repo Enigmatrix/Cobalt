@@ -12,3 +12,4 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.2", features = ["fmt"] }
 tracing-futures = "0.2"
 anyhow = "1.0"
+flume = "0.9"

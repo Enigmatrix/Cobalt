@@ -8,7 +8,6 @@ edition = "2018"
 
 [dependencies]
 tonic = "0.3"
-flume = "0.9"
 
 rusqlite = { version = "0.24",features = ["trace", "blob", "bundled"] }
 

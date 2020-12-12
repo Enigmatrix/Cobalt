@@ -19,14 +19,14 @@ pub struct Processor {
     db: Database,
 
     msger: Messenger,
-    recv: flume::Receiver<Message>,
+    recv: channel::Receiver<Message>,
 
     current_usage: model::Usage,
 }
 
 #[derive(Clone)]
 pub struct Messenger {
-    sender: flume::Sender<Message>,
+    sender: channel::Sender<Message>,
 }
 
 #[derive(Debug, Clone)]
@@ -59,7 +59,7 @@ impl Messenger {
 
 impl Processor {
     pub fn new_pair() -> Result<(Messenger, Processor)> {
-        let (tx, rx) = flume::unbounded();
+        let (tx, rx) = channel::unbounded();
         let msger = Messenger { sender: tx };
 
         let mut sessions = HashMap::new();

@@ -4,8 +4,7 @@
 
 use native::watchers::*;
 use native::wrappers::*;
-use util::futures as tokio;
-use util::{log::Instrument, *};
+use util::*;
 
 mod data;
 mod processor;
