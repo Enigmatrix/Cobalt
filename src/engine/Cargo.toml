@@ -8,8 +8,12 @@ edition = "2018"
 
 [dependencies]
 tonic = "0.3"
+prost = "0.6"
 
 rusqlite = { version = "0.24",features = ["trace", "blob", "bundled"] }
 
 native = { path = "../native" }
 util = { path = "../util" }
+
+[build-dependencies]
+tonic-build = "0.3"

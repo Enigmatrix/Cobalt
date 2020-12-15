@@ -8,6 +8,7 @@ use util::*;
 
 mod data;
 mod processor;
+mod server;
 
 use processor::*;
 

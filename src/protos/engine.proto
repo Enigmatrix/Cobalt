@@ -1,0 +1,22 @@
+syntax = "proto3";
+package engine;
+
+service Engine {
+    rpc OngoingUsageChanges (Empty) returns (stream UsageSwitch);
+    rpc AppUpdates (Empty) returns (stream AppRepr);
+}
+
+message Empty {}
+
+message UsageSwitch {
+    int64 prev_usage_id = 1;
+    int64 prev_session_id = 2;
+    int64 prev_appid_id = 3;
+
+    int64 new_session_id = 4;
+    int64 new_app_id = 5;
+}
+
+message AppRepr {
+    int64 app_id = 1;
+}

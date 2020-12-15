@@ -57,7 +57,7 @@ impl GlobalEventLoop {
         unsafe { GLOBAL_EVENT_LOOP.assume_init_mut() }
     }
 
-    pub fn exec<'a, T>(mut f: ExecFn<'a, T>) -> Result<T> {
+    pub fn exec<T>(mut f: ExecFn<T>) -> Result<T> {
         let sel = GlobalEventLoop::get();
         let mut waiter = Waiter::new();
 
