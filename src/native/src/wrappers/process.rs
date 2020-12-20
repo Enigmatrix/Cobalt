@@ -32,6 +32,7 @@ pub struct ProcessOptions {
     pub query_information: bool,
     pub sync: bool,
     pub writable: bool,
+    pub terminate: bool,
 }
 
 impl Default for ProcessOptions {
@@ -41,6 +42,7 @@ impl Default for ProcessOptions {
             query_information: true,
             sync: true,
             writable: false,
+            terminate: false,
         }
     }
 }
@@ -50,9 +52,10 @@ impl Process {
         let handle = win32!(non_null: {
             processthreadsapi::OpenProcess(
                 if opts.readable { winnt::PROCESS_VM_READ } else {0} |
-                if opts.readable { winnt::PROCESS_QUERY_INFORMATION } else {0} |
+                if opts.query_information { winnt::PROCESS_QUERY_INFORMATION } else {0} |
                 if opts.sync     { winnt::SYNCHRONIZE } else { 0 } |
-                if opts.writable { winnt::PROCESS_VM_WRITE | winnt::PROCESS_VM_OPERATION } else { 0 },
+                if opts.writable { winnt::PROCESS_VM_WRITE | winnt::PROCESS_VM_OPERATION } else { 0 } |
+                if opts.terminate { winnt::PROCESS_TERMINATE } else { 0 },
                 0,
                 pid,
             )
@@ -74,6 +77,13 @@ impl Process {
         win32!(non_zero: {
             processthreadsapi::GetProcessId(self.0)
         })
+    }
+
+    pub fn terminate(&self) -> Result<(), Win32Err> {
+        win32!(non_zero: {
+            processthreadsapi::TerminateProcess(self.0, 0)
+        })?;
+        Ok(())
     }
 
     pub fn read_process_memory<T: Default>(&self, addr: *mut T) -> Result<T, Win32Err> {

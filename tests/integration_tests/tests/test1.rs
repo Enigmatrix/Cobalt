@@ -1,35 +1,43 @@
+use std::cell::RefCell;
+
+use native::watchers::*;
 use native::wrappers::*;
-use std::sync::atomic::*;
-use std::thread;
+use std::rc::Rc;
 
 mod common;
 
-static mut KB: AtomicU32 = AtomicU32::new(0);
+use common::*;
+
 #[test]
 fn it_works() {
-    native::setup();
+    native::setup().unwrap();
+    GlobalEventLoop::init();
+    pause(); // give some time for the first GetMessage() to be called
 
-    fn cb(c: i32, w: usize, lparam: &'static mut native::raw::winuser::KBDLLHOOKSTRUCT) -> isize {
-        unsafe {
-            KB.fetch_add(1, Ordering::SeqCst);
-            native::raw::winuser::CallNextHookEx(
-                std::ptr::null_mut(),
-                c,
-                w,
-                std::mem::transmute(lparam),
-            )
-        }
-    }
+    let switches = Rc::new(RefCell::new(Vec::new()));
+    let notepad = "C:\\Windows\\system32\\notepad.exe";
+    let mail = "microsoft.windowscommunicationsapps_8wekyb3d8bbwe!microsoft.windowslive.mail";
 
-    let _evthread = thread::spawn(|| {
-        let mut ev = EventLoop::new();
-        let _hook = windows_hook::Hook::new::<windows_hook::LowLevelKeyboard>(
-            windows_hook::Locality::Global,
-            cb,
-        )
-        .unwrap();
-        ev.run()
-    });
+    let mail = uwp::App::spawn(mail);
+    let notepad = win32::App::spawn(notepad);
 
-    assert_ne!(0, unsafe { KB.load(Ordering::SeqCst) });
+    let _fgw = {
+        let switches = Rc::clone(&switches);
+        foreground::Watcher::new(|window, _| {
+            switches.borrow_mut().push(window);
+            Ok(())
+        })
+        .unwrap()
+    };
+
+    bring_to_foreground(&mail);
+    assert_eq!(switches.borrow().last(), main_window(&mail).as_ref());
+
+    bring_to_foreground(&notepad);
+    assert_eq!(switches.borrow().last(), main_window(&notepad).as_ref());
+
+    bring_to_foreground(&mail);
+    assert_eq!(switches.borrow().last(), main_window(&mail).as_ref());
+
+    assert_eq!(switches.borrow().len(), 3);
 }
