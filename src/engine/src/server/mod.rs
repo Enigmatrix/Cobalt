@@ -1,7 +1,7 @@
 mod raw;
 
 use raw::engine_server::{Engine, EngineServer};
-use raw::{AppRepr, Empty, UsageSwitch};
+pub use raw::{AppRepr, Empty, UsageSwitch};
 use tonic::*;
 use util::futures::sync::{broadcast, mpsc};
 use util::*;

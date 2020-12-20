@@ -12,6 +12,12 @@ use info::*;
 pub type SessionCache = HashMap<Window, SessionInfo>;
 pub type AppCache = HashMap<ProcessId, AppInfo>;
 
+#[derive(Debug)]
+pub struct UsageInfo {
+    usage: model::Usage,
+    info: Info,
+}
+
 pub struct Processor {
     sessions: SessionCache,
     apps: AppCache,
@@ -21,7 +27,7 @@ pub struct Processor {
     msger: Messenger,
     recv: channel::Receiver<Message>,
 
-    current_usage: model::Usage,
+    current: UsageInfo,
 }
 
 #[derive(Clone)]
@@ -69,12 +75,12 @@ impl Processor {
 
         let now = Timestamp::now();
         let fg = Window::foreground().with_context(|| "Get foreground window")?;
-        let sess_id = Info::session_id(&fg, &msger, &mut db, &mut sessions, &mut apps)
+        let info = Info::from(&fg, &msger, &mut db, &mut sessions, &mut apps)
             .with_context(|| "Get Session id")?;
 
-        let current_usage = model::Usage {
+        let usage = model::Usage {
             id: 0,
-            sess_id,
+            sess_id: info.sess_id,
             start: now,
             end: now,
             idle: false,
@@ -89,7 +95,7 @@ impl Processor {
             msger: msger.clone(),
             recv: rx,
 
-            current_usage,
+            current: UsageInfo { usage, info },
         };
         Ok((msger, processor))
     }
@@ -106,7 +112,7 @@ impl Processor {
         log::trace!("processing...");
         match msg {
             Message::ForegroundChanged { window, timestamp } => {
-                let sess_id = Info::session_id(
+                let info = Info::from(
                     &window,
                     &self.msger,
                     &mut self.db,
@@ -115,25 +121,37 @@ impl Processor {
                 )
                 .with_context(|| "Getting Session id")?;
 
-                if sess_id == self.current_usage.sess_id {
+                if info.sess_id == self.current.usage.sess_id {
                     // skip processing the rest, as the window hasn't changed
                     log::trace!("repeated window");
                     return Ok(());
                 }
 
-                self.current_usage.end = timestamp;
+                self.current.usage.end = timestamp;
                 self.db
-                    .insert_usage(&mut self.current_usage)
+                    .insert_usage(&mut self.current.usage)
                     .with_context(|| "Save Usage to Database")?;
+                
+                let usage_switch = crate::server::UsageSwitch { // TODO send this to the server
+                    prev_app_id: self.current.info.app_id,
+                    prev_sess_id: self.current.info.sess_id,
+                    prev_usage_id: self.current.usage.id,
 
-                log::trace!(?self.current_usage, "recorded usage");
+                    new_app_id: info.app_id,
+                    new_sess_id: info.sess_id,
+                };
 
-                self.current_usage = model::Usage {
-                    id: 0,
-                    sess_id,
-                    start: timestamp,
-                    end: timestamp,
-                    idle: false, // TODO idle watcher
+                log::trace!(?self.current, ?usage_switch, "recorded usage");
+
+                self.current = UsageInfo {
+                    usage: model::Usage {
+                        id: 0,
+                        sess_id: info.sess_id,
+                        start: timestamp,
+                        end: timestamp,
+                        idle: false, // TODO idle watcher
+                    },
+                    info,
                 };
             }
             Message::WindowClosed { window } => {

@@ -8,7 +8,7 @@ mod common;
 use common::*;
 
 #[test]
-fn it_works() {
+fn switch_window() {
     native::setup().unwrap();
     pause(); // give some time for the first GetMessage() to be called
 

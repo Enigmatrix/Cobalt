@@ -18,20 +18,27 @@ pub struct SessionInfo {
     pub pid: ProcessId,
 }
 
-pub struct Info;
+#[derive(Debug)]
+pub struct Info {
+    pub sess_id: model::Id,
+    pub app_id: model::Id,
+}
 
 impl Info {
     #[log::instrument(skip(window, msger, db, sessions, apps))]
-    pub fn session_id(
+    pub fn from(
         window: &Window,
         msger: &Messenger,
         db: &mut Database,
         sessions: &mut SessionCache,
         apps: &mut AppCache,
-    ) -> Result<crate::data::model::Id> {
-        let (sess_info, _) = Info::session_info(window, msger, db, sessions, apps)
+    ) -> Result<Info> {
+        let (sess_info, app_info) = Info::session_info(window, msger, db, sessions, apps)
             .with_context(|| "Get SessionInfo & AppInfo")?;
-        Ok(sess_info.session.id)
+        Ok(Info {
+            sess_id: sess_info.session.id,
+            app_id: app_info.app.id,
+        })
     }
 
     #[log::instrument(skip(window, msger, db, sessions, apps))]
