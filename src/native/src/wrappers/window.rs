@@ -62,6 +62,21 @@ impl Window {
         }
     }
 
+    pub fn class(&self) -> Result<String, Win32Err> {
+        let mut buf_len: i32 = 256;
+        let mut buf = buffer::alloc(buf_len as usize);
+        loop {
+            let read = unsafe { winuser::GetClassNameW(self.0, buf.as_mut_ptr(), buf_len) };
+            if read != 0 {
+                buf_len = read;
+                break;
+            }
+            buf_len *= 2;
+            buf = buffer::alloc(buf_len as usize);
+        }
+        Ok(buf.with_length((buf_len) as usize).to_string_lossy())
+    }
+
     pub fn pid_tid(&self) -> Result<(ProcessId, u32), Win32Err> {
         let mut pid = 0;
         let tid = unsafe { winuser::GetWindowThreadProcessId(self.0, &mut pid) };
@@ -74,7 +89,7 @@ impl Window {
 
     pub fn is_uwp(&self, process: &Process, path: &str) -> bool {
         (unsafe { winuser::IsImmersiveProcess(process.handle()) != 0 })
-            && path.eq_ignore_ascii_case("C:\\Windows\\System32\\ApplicationFrameHost.exe")
+            && (path.eq_ignore_ascii_case("C:\\Windows\\System32\\ApplicationFrameHost.exe"))
     }
 
     pub fn aumid(&self) -> Result<String> {

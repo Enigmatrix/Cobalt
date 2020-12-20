@@ -10,6 +10,7 @@ use crate::raw::uwp::windows::storage::*;
 use std::future::Future;
 
 trait UnsafeFutureExt {
+    // TODO use better pattern!
     fn wrap_unsafe<U>(self) -> UnsafeFuture<Self, U>
     where
         Self: Future<Output = U> + Unpin + Sized;
@@ -77,8 +78,8 @@ impl FileInfo {
             .to_string();
         let logo = display_info
             .get_logo(Size {
-                width: 150.0,
-                height: 150.0,
+                width: 44.0,
+                height: 44.0,
             })
             .winrt_with_context(|| "Get 32x32 logo from DisplayInfo")?;
         let stream = logo

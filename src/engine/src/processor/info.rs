@@ -63,6 +63,9 @@ impl Info {
         };
 
         let (pid, _) = window.pid_tid()?;
+        let title = window
+            .title()
+            .with_context(|| "Get title of Window for Session")?;
 
         let _msger = msger.clone();
         let closed_watcher = window_closed::Watcher::new(window, move |window| {
@@ -80,10 +83,9 @@ impl Info {
             id: 0,
             app_id: app_info.app.id,
             arguments: app_info.arguments.clone(),
-            title: window
-                .title()
-                .with_context(|| "Get title of Window for Session")?,
+            title,
         };
+        log::trace!(?session, "newly created Session");
 
         db.insert_session(&mut session)
             .with_context(|| "Saving Session to Database")?;

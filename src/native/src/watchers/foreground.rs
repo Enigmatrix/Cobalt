@@ -1,4 +1,6 @@
-use crate::raw::*;
+use crate::{buffer::Buffer, raw::*};
+use crate::error::*;
+use std::ptr;
 use crate::wrappers::winevent::*;
 use crate::wrappers::*;
 use util::*;

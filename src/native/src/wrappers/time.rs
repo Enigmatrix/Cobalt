@@ -120,6 +120,6 @@ impl Timer {
 
 impl Drop for Timer {
     fn drop(&mut self) {
-        win32!(non_zero: synchapi::CancelWaitableTimer(self.inner)).unwrap_or_exit();
+        win32!(non_zero: threadpoollegacyapiset::DeleteTimerQueueTimer(ptr::null_mut(), self.inner, ptr::null_mut())).unwrap_or_exit();
     }
 }

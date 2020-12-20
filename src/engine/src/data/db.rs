@@ -156,9 +156,7 @@ impl Database {
                     name: q.get(1)?,
                     description: q.get(2)?,
                     color: q.get(3)?,
-                    identity: model::AppIdentity::UWP {
-                        aumid: String::new(),
-                    },
+                    identity: Database::wrap_app_identity(q.get(4)?, q.get(5)?),
                 })
             })
             .optional()
@@ -171,6 +169,14 @@ impl Database {
         match identity {
             model::AppIdentity::Win32 { path } => (0, path),
             model::AppIdentity::UWP { aumid } => (1, aumid),
+        }
+    }
+
+    fn wrap_app_identity(tag: i64, text1: String) -> model::AppIdentity {
+        match tag {
+            0 => model::AppIdentity::Win32 { path: text1 },
+            1 => model::AppIdentity::UWP { aumid: text1 },
+            _ => unreachable!(),
         }
     }
 }

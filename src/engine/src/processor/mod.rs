@@ -50,6 +50,9 @@ pub enum Message {
     ProcessExit {
         pid: ProcessId,
     },
+    IdleChanged {
+        status: idle::IdleStatus,
+    },
     AppUpdate {
         app_id: model::Id,
         file_info: FileInfo,
@@ -131,8 +134,9 @@ impl Processor {
                 self.db
                     .insert_usage(&mut self.current.usage)
                     .with_context(|| "Save Usage to Database")?;
-                
-                let usage_switch = crate::server::UsageSwitch { // TODO send this to the server
+
+                let usage_switch = crate::server::UsageSwitch {
+                    // TODO send this to the server
                     prev_app_id: self.current.info.app_id,
                     prev_sess_id: self.current.info.sess_id,
                     prev_usage_id: self.current.usage.id,
@@ -170,6 +174,9 @@ impl Processor {
                 self.apps
                     .remove(&pid)
                     .with_context(|| "Pre-existing AppInfo not found for process")?;
+            }
+            Message::IdleChanged { status } => {
+                // TODO split self.current
             }
             Message::AppUpdate { app_id, file_info } => {
                 self.db
