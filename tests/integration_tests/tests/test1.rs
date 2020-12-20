@@ -1,7 +1,6 @@
 use std::cell::RefCell;
 
 use native::watchers::*;
-use native::wrappers::*;
 use std::rc::Rc;
 
 mod common;
@@ -11,7 +10,6 @@ use common::*;
 #[test]
 fn it_works() {
     native::setup().unwrap();
-    GlobalEventLoop::init();
     pause(); // give some time for the first GetMessage() to be called
 
     let switches = Rc::new(RefCell::new(Vec::new()));

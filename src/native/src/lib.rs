@@ -27,5 +27,6 @@ pub fn setup() -> util::Result<()> {
         std::ptr::null_mut(),
         COINIT_APARTMENTTHREADED
     ))?;
+    wrappers::GlobalEventLoop::init();
     Ok(())
 }

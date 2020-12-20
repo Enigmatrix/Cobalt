@@ -16,7 +16,6 @@ use processor::*;
 async fn main() -> Result<!> {
     util::setup().with_context(|| "Setup utils")?;
     native::setup().with_context(|| "Setup native dependencies")?;
-    GlobalEventLoop::init();
 
     log::info!("🚀 Starting engine");
 
