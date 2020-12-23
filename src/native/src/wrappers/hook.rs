@@ -113,7 +113,7 @@ pub mod winevent {
         ) {
             let handler = contexts()
                 .get(&win_event_hook)
-                .expect("Context found for Hook");
+                .unwrap_or_else(|| panic!("Cannot find handler context for Hook {:p}", win_event_hook));
             (handler)(EventArgs {
                 win_event_hook,
                 event,

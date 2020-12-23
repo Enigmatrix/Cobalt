@@ -11,11 +11,12 @@ pub struct Watcher {
 impl Watcher {
     pub fn new(window: &Window, mut callback: impl FnMut(Window) -> Result<()>) -> Result<Watcher> {
         let (pid, tid) = window.pid_tid()?;
+        let window = window.clone();
         let _hook = Hook::new(
             Range::Single(Event::ObjectDestroyed),
             Locality::ProcessThread { pid, tid },
             Box::new(move |args| {
-                if window != &args.hwnd
+                if window.0 != args.hwnd
                     || args.id_object != winuser::OBJID_WINDOW
                     || args.id_child != winuser::CHILDID_SELF
                 // TODO find the correct combination to detect when the Window actually closed.
