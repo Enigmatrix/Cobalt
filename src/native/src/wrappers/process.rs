@@ -115,7 +115,7 @@ impl Process {
                 &mut buf_len,
             )
         })?;
-        Ok(buf.with_length(buf_len / 2).to_string_lossy())
+        Ok(buf.with_length(buf_len / 2).as_string_lossy())
     }
 
     pub fn path(&self) -> Result<String, Win32Err> {
@@ -129,7 +129,7 @@ impl Process {
             buf_len *= 2;
             buf = buffer::alloc(buf_len as usize);
         }
-        Ok(buf.with_length((buf_len) as usize).to_string_lossy())
+        Ok(buf.with_length((buf_len) as usize).as_string_lossy())
     }
 
     pub fn cmd(&self) -> Result<String> {

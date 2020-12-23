@@ -27,8 +27,12 @@ impl Win32Err {
 
     pub fn last_err() -> Win32Err {
         let err = Win32Err(unsafe { GetLastError() } as i32);
-        unsafe { SetLastError(0) };
+        Win32Err::clear_last_err();
         err
+    }
+
+    pub fn clear_last_err() {
+        unsafe { SetLastError(0) };
     }
 
     pub fn is_success(&self) -> bool {
@@ -110,7 +114,7 @@ pub trait WinRtExt<T> {
     where
         C: fmt::Display + Send + Sync + 'static,
         F: FnOnce() -> C;
-    fn to_std(self) -> std::io::Result<T>;
+    fn into_std(self) -> std::io::Result<T>;
 }
 
 impl<T> WinRtExt<T> for Result<T, winrt::Error> {
@@ -129,7 +133,7 @@ impl<T> WinRtExt<T> for Result<T, winrt::Error> {
         self.map_err(WinRt::from).with_context(context)
     }
 
-    fn to_std(self) -> std::io::Result<T> {
+    fn into_std(self) -> std::io::Result<T> {
         self.map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, WinRt::from(e)))
     }
 }

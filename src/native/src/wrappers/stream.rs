@@ -37,11 +37,11 @@ impl Read for WinRTImageStream {
         let written = self
             .stream
             .read_async(buffer, buf.len() as u32, InputStreamOptions::None)
-            .to_std()?
+            .into_std()?
             .get()
-            .to_std()?;
+            .into_std()?;
 
-        let written_sz = WinRTImageStream::read_from_buffer(&written, buf).to_std()?;
+        let written_sz = WinRTImageStream::read_from_buffer(&written, buf).into_std()?;
 
         Ok(written_sz)
     }
@@ -57,15 +57,15 @@ impl Seek for WinRTImageStream {
             }
             SeekFrom::Current(pos) => (self.stream_position()? as i64 + pos) as u64,
         };
-        self.stream.seek(pos).to_std()?;
+        self.stream.seek(pos).into_std()?;
         Ok(pos)
     }
 
     fn stream_len(&mut self) -> std::io::Result<u64> {
-        self.stream.size().to_std()
+        self.stream.size().into_std()
     }
 
     fn stream_position(&mut self) -> std::io::Result<u64> {
-        self.stream.position().to_std()
+        self.stream.position().into_std()
     }
 }

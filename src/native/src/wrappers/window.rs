@@ -45,6 +45,7 @@ impl Window {
     }
 
     pub fn title(&self) -> Result<String, Win32Err> {
+        Win32Err::clear_last_err(); // yes, actually important!
         let len = unsafe { winuser::GetWindowTextLengthW(self.0) };
         // fails if len == 0 && !Win32Code::from_last().is_success()
         if len == 0 {
@@ -58,7 +59,7 @@ impl Window {
             let mut buf = buffer::alloc(len as usize + 1);
             let written =
                 win32!(non_zero: winuser::GetWindowTextW(self.0, buf.as_mut_ptr(), len + 1))?;
-            Ok(buf.with_length(written as usize).to_string_lossy())
+            Ok(buf.with_length(written as usize).as_string_lossy())
         }
     }
 
@@ -74,7 +75,7 @@ impl Window {
             buf_len *= 2;
             buf = buffer::alloc(buf_len as usize);
         }
-        Ok(buf.with_length((buf_len) as usize).to_string_lossy())
+        Ok(buf.with_length((buf_len) as usize).as_string_lossy())
     }
 
     pub fn pid_tid(&self) -> Result<(ProcessId, u32), Win32Err> {
@@ -109,7 +110,7 @@ impl Window {
         if aumid_ptr.is_null() {
             Err(anyhow!("AUMID is null or not a string"))
         } else {
-            Ok(buffer::from_ptr(aumid_ptr).to_string_lossy())
+            Ok(buffer::from_ptr(aumid_ptr).as_string_lossy())
         }
     }
 }

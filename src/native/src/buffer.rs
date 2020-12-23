@@ -11,20 +11,20 @@ pub trait Buffer {
         self.as_bytes().as_mut_ptr()
     }
 
-    fn to_os_string(&mut self) -> OsString {
+    fn as_os_string(&mut self) -> OsString {
         use std::os::windows::ffi::OsStringExt;
         OsString::from_wide(self.as_bytes())
     }
 
-    fn to_string(&mut self) -> Result<String, OsString> {
-        self.to_os_string().into_string()
+    fn as_string(&mut self) -> Result<String, OsString> {
+        self.as_os_string().into_string()
     }
 
-    fn to_string_lossy(&mut self) -> String {
-        self.to_os_string().to_string_lossy().to_string()
+    fn as_string_lossy(&mut self) -> String {
+        self.as_os_string().to_string_lossy().to_string()
     }
 
-    fn with_length(self, len: usize) -> WithLength<Self>
+    fn with_length(&mut self, len: usize) -> WithLength<Self>
     where
         Self: Sized,
     {
@@ -32,12 +32,12 @@ pub trait Buffer {
     }
 }
 
-pub struct WithLength<T: Buffer> {
-    inner: T,
+pub struct WithLength<'a, T: Buffer> {
+    inner: &'a mut T,
     len: usize,
 }
 
-impl<T: Buffer> Buffer for WithLength<T> {
+impl<'a, T: Buffer> Buffer for WithLength<'a, T> {
     fn as_bytes(&mut self) -> &mut [WBYTE] {
         &mut self.inner.as_bytes()[..self.len]
     }
@@ -102,7 +102,7 @@ impl<const N: usize> Buffer for Local<N> {
     }
 }
 
-pub fn local<const N: usize>() -> impl Buffer {
+pub fn local<const N: usize>() -> Local<N> {
     Local::<N> {
         inner: MaybeUninit::uninit_array::<N>(),
     }

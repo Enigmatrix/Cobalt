@@ -159,9 +159,7 @@ impl Processor {
                 };
             }
             Message::WindowClosed { window } => {
-                self.sessions
-                    .remove(&window)
-                    .with_context(|| "Pre-existing SessionInfo not found for window")?;
+                self.sessions.remove(&window);
             }
             Message::WindowTitleChanged { window } => {
                 todo!("action when the Window {:?} title changed", window)
@@ -171,11 +169,9 @@ impl Processor {
                 // be removed as well? just in case, even thought by right they should
                 // be removed since WindowClosed will be fired as well.
 
-                self.apps
-                    .remove(&pid)
-                    .with_context(|| "Pre-existing AppInfo not found for process")?;
+                self.apps.remove(&pid);
             }
-            Message::IdleChanged { status } => {
+            Message::IdleChanged { status: _ } => {
                 // TODO split self.current
             }
             Message::AppUpdate { app_id, file_info } => {

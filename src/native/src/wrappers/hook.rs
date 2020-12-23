@@ -13,6 +13,7 @@ pub mod winevent {
     pub enum Event {
         SystemForeground = winuser::EVENT_SYSTEM_FOREGROUND,
         ObjectDestroyed = winuser::EVENT_OBJECT_DESTROY,
+        ObjectNameChange = winuser::EVENT_OBJECT_NAMECHANGE,
     }
 
     pub enum Range {
