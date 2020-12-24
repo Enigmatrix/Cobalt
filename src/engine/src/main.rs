@@ -8,7 +8,7 @@ use util::*;
 
 mod data;
 mod processor;
-mod server;
+mod services;
 
 use processor::*;
 
@@ -19,9 +19,9 @@ async fn main() -> Result<!> {
 
     log::info!("🚀 Starting engine");
 
-    let (engine_tx, engine) = server::EngineWorker::new();
-    let (msger, mut processor) =
-        Processor::new_pair(engine_tx).with_context(|| "Create Processor")?;
+    let (relay_tx, relay) = services::RelayService::new();
+    let (processor_tx, mut processor) =
+        Processor::new_pair(relay_tx).with_context(|| "Create Processor")?;
 
     idle::Watcher::begin().with_context(|| "Begin monitoring for mouse and keyboard events")?;
 
@@ -33,13 +33,12 @@ async fn main() -> Result<!> {
     .with_context(|| "Create idle watcher")?;
 
     let _fg = foreground::Watcher::new({
-        let msger = msger.clone();
-        move |window, timestamp|
-            msger.send(Message::ForegroundChanged { window, timestamp })
+        let processor_tx = processor_tx.clone();
+        move |window, timestamp| processor_tx.send(Message::ForegroundChanged { window, timestamp })
     })
     .with_context(|| "Create foreground watcher")?;
 
-    futures::spawn(engine.serve());
+    futures::spawn(relay.serve());
 
     processor
         .process_messages()

@@ -1,6 +1,6 @@
 use crate::data::db::Database;
 use crate::data::model;
-use crate::server;
+use crate::services;
 use native::watchers::*;
 use native::wrappers::*;
 use std::collections::hash_map::Entry::*;
@@ -25,15 +25,15 @@ pub struct Processor {
 
     db: Database,
 
-    msger: Messenger,
+    tx: ProcessorTx,
     recv: channel::Receiver<Message>,
-    engine_tx: server::EngineMessenger,
+    engine_tx: services::RelayServiceTx,
 
     current: UsageInfo,
 }
 
 #[derive(Clone)]
-pub struct Messenger {
+pub struct ProcessorTx {
     sender: channel::Sender<Message>,
 }
 
@@ -61,7 +61,7 @@ pub enum Message {
     },
 }
 
-impl Messenger {
+impl ProcessorTx {
     pub fn send(&self, msg: Message) -> Result<()> {
         self.sender.send(msg)?;
         Ok(())
@@ -69,9 +69,9 @@ impl Messenger {
 }
 
 impl Processor {
-    pub fn new_pair(engine_tx: server::EngineMessenger) -> Result<(Messenger, Processor)> {
+    pub fn new_pair(engine_tx: services::RelayServiceTx) -> Result<(ProcessorTx, Processor)> {
         let (tx, rx) = channel::unbounded();
-        let msger = Messenger { sender: tx };
+        let msger = ProcessorTx { sender: tx };
 
         let mut sessions = HashMap::new();
         let mut apps = HashMap::new();
@@ -97,7 +97,7 @@ impl Processor {
 
             db,
 
-            msger: msger.clone(),
+            tx: msger.clone(),
             recv: rx,
             engine_tx,
 
@@ -120,7 +120,7 @@ impl Processor {
             Message::ForegroundChanged { window, timestamp } => {
                 let info = Info::from(
                     &window,
-                    &self.msger,
+                    &self.tx,
                     &mut self.db,
                     &mut self.sessions,
                     &mut self.apps,
@@ -138,7 +138,7 @@ impl Processor {
                     .insert_usage(&mut self.current.usage)
                     .with_context(|| "Save Usage to Database")?;
 
-                let usage_switch = crate::server::UsageSwitch {
+                let usage_switch = services::dto::UsageSwitch {
                     // TODO send this to the server
                     prev_app_id: self.current.info.app_id,
                     prev_sess_id: self.current.info.sess_id,

@@ -1,9 +1,9 @@
 syntax = "proto3";
-package engine;
+package relay;
 
-service Engine {
-    rpc OngoingUsageChanges (Empty) returns (stream UsageSwitch);
-    rpc AppUpdates (Empty) returns (stream AppRepr);
+service Relay {
+    rpc Usages (Empty) returns (stream UsageSwitch);
+    rpc AppUpdates (Empty) returns (stream AppId);
 }
 
 message Empty {}
@@ -17,6 +17,6 @@ message UsageSwitch {
     int64 new_app_id = 5;
 }
 
-message AppRepr {
+message AppId {
     int64 app_id = 1;
 }

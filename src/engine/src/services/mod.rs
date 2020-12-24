@@ -1,23 +1,27 @@
 mod raw;
 
-use raw::engine_server::{Engine, EngineServer};
-pub use raw::{AppRepr, Empty, UsageSwitch};
+pub mod dto {
+    pub use super::raw::{AppId, Empty, UsageSwitch};
+}
+
+use dto::*;
+use raw::relay_server::{Relay, RelayServer};
 use tonic::*;
 use util::futures::sync::{broadcast, mpsc};
 use util::*;
 
 #[derive(Debug)]
-pub struct EngineMessenger {
+pub struct RelayServiceTx {
     usage_switches_tx: broadcast::Sender<UsageSwitch>,
 }
 
 #[derive(Debug)]
-pub struct EngineWorker {
+pub struct RelayService {
     usage_switches_tx: broadcast::Sender<UsageSwitch>,
     usage_switches_rx: broadcast::Receiver<UsageSwitch>,
 }
 
-impl EngineMessenger {
+impl RelayServiceTx {
     pub fn push_usage_switch(&self, us: UsageSwitch) -> Result<()> {
         self.usage_switches_tx
             .send(us)
@@ -27,13 +31,13 @@ impl EngineMessenger {
     }
 }
 
-impl EngineWorker {
-    pub fn new() -> (EngineMessenger, EngineWorker) {
+impl RelayService {
+    pub fn new() -> (RelayServiceTx, RelayService) {
         let (usage_switches_tx, usage_switches_rx) = broadcast::channel(1);
         let usage_switches_tx2 = usage_switches_tx.clone();
         (
-            EngineMessenger { usage_switches_tx },
-            EngineWorker {
+            RelayServiceTx { usage_switches_tx },
+            RelayService {
                 usage_switches_tx: usage_switches_tx2,
                 usage_switches_rx,
             },
@@ -44,7 +48,7 @@ impl EngineWorker {
         let addr = "[::1]:50051".parse()?;
 
         transport::Server::builder()
-            .add_service(EngineServer::new(self))
+            .add_service(RelayServer::new(self))
             .serve(addr)
             .await
             .with_context(|| "Serving EngineWorker")?;
@@ -54,14 +58,14 @@ impl EngineWorker {
 }
 
 #[tonic::async_trait]
-impl Engine for EngineWorker {
-    type OngoingUsageChangesStream = mpsc::Receiver<Result<UsageSwitch, Status>>;
-    type AppUpdatesStream = mpsc::Receiver<Result<AppRepr, Status>>;
+impl Relay for RelayService {
+    type UsagesStream = mpsc::Receiver<Result<UsageSwitch, Status>>;
+    type AppUpdatesStream = mpsc::Receiver<Result<AppId, Status>>;
 
-    async fn ongoing_usage_changes(
+    async fn usages(
         &self,
         _: Request<Empty>,
-    ) -> Result<Response<Self::OngoingUsageChangesStream>, Status> {
+    ) -> Result<Response<Self::UsagesStream>, Status> {
         let (mut tx, rx) = mpsc::channel(1);
         let mut recver = self.usage_switches_tx.subscribe();
 
