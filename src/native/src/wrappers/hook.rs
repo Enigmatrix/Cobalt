@@ -111,9 +111,9 @@ pub mod winevent {
             id_event_thread: DWORD,
             dwms_event_time: DWORD,
         ) {
-            let handler = contexts()
-                .get(&win_event_hook)
-                .unwrap_or_else(|| panic!("Cannot find handler context for Hook {:p}", win_event_hook));
+            let handler = contexts().get(&win_event_hook).unwrap_or_else(|| {
+                panic!("Cannot find handler context for Hook {:p}", win_event_hook)
+            });
             (handler)(EventArgs {
                 win_event_hook,
                 event,

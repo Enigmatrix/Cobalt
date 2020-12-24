@@ -19,7 +19,9 @@ async fn main() -> Result<!> {
 
     log::info!("🚀 Starting engine");
 
-    let (msger, mut processor) = Processor::new_pair().with_context(|| "Create Processor")?;
+    let (engine_tx, engine) = server::EngineWorker::new();
+    let (msger, mut processor) =
+        Processor::new_pair(engine_tx).with_context(|| "Create Processor")?;
 
     idle::Watcher::begin().with_context(|| "Begin monitoring for mouse and keyboard events")?;
 
@@ -30,11 +32,14 @@ async fn main() -> Result<!> {
     })
     .with_context(|| "Create idle watcher")?;
 
-    let fg_msger = msger.clone();
-    let _fg = foreground::Watcher::new(|window, timestamp| {
-        fg_msger.send(Message::ForegroundChanged { window, timestamp })
+    let _fg = foreground::Watcher::new({
+        let msger = msger.clone();
+        move |window, timestamp|
+            msger.send(Message::ForegroundChanged { window, timestamp })
     })
     .with_context(|| "Create foreground watcher")?;
+
+    futures::spawn(engine.serve());
 
     processor
         .process_messages()

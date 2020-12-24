@@ -1,5 +1,6 @@
 use crate::data::db::Database;
 use crate::data::model;
+use crate::server;
 use native::watchers::*;
 use native::wrappers::*;
 use std::collections::hash_map::Entry::*;
@@ -26,6 +27,7 @@ pub struct Processor {
 
     msger: Messenger,
     recv: channel::Receiver<Message>,
+    engine_tx: server::EngineMessenger,
 
     current: UsageInfo,
 }
@@ -67,7 +69,7 @@ impl Messenger {
 }
 
 impl Processor {
-    pub fn new_pair() -> Result<(Messenger, Processor)> {
+    pub fn new_pair(engine_tx: server::EngineMessenger) -> Result<(Messenger, Processor)> {
         let (tx, rx) = channel::unbounded();
         let msger = Messenger { sender: tx };
 
@@ -97,6 +99,7 @@ impl Processor {
 
             msger: msger.clone(),
             recv: rx,
+            engine_tx,
 
             current: UsageInfo { usage, info },
         };
@@ -144,6 +147,9 @@ impl Processor {
                     new_app_id: info.app_id,
                     new_sess_id: info.sess_id,
                 };
+                self.engine_tx
+                    .push_usage_switch(usage_switch.clone())
+                    .with_context(|| "Push usage switch to worker")?;
 
                 log::trace!(?self.current, ?usage_switch, "recorded usage");
 

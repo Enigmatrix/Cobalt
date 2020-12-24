@@ -7,32 +7,35 @@ use util::futures::sync::{broadcast, mpsc};
 use util::*;
 
 #[derive(Debug)]
-struct EngineMessenger {
+pub struct EngineMessenger {
     usage_switches_tx: broadcast::Sender<UsageSwitch>,
 }
 
 #[derive(Debug)]
-struct EngineWorker {
+pub struct EngineWorker {
     usage_switches_tx: broadcast::Sender<UsageSwitch>,
+    usage_switches_rx: broadcast::Receiver<UsageSwitch>,
 }
 
 impl EngineMessenger {
     pub fn push_usage_switch(&self, us: UsageSwitch) -> Result<()> {
         self.usage_switches_tx
             .send(us)
-            .with_context(|| "Send Usage Switch")?;
+            //.with_context(|| "Send Usage Switch")?;
+            .unwrap(); // TODO better result!
         Ok(())
     }
 }
 
 impl EngineWorker {
     pub fn new() -> (EngineMessenger, EngineWorker) {
-        let (usage_switches_tx, _usage_switches_rx) = broadcast::channel(1);
+        let (usage_switches_tx, usage_switches_rx) = broadcast::channel(1);
         let usage_switches_tx2 = usage_switches_tx.clone();
         (
             EngineMessenger { usage_switches_tx },
             EngineWorker {
                 usage_switches_tx: usage_switches_tx2,
+                usage_switches_rx,
             },
         )
     }
@@ -59,7 +62,7 @@ impl Engine for EngineWorker {
         &self,
         _: Request<Empty>,
     ) -> Result<Response<Self::OngoingUsageChangesStream>, Status> {
-        let (tx, rx) = mpsc::channel(1);
+        let (mut tx, rx) = mpsc::channel(1);
         let mut recver = self.usage_switches_tx.subscribe();
 
         futures::spawn(async move {
@@ -68,7 +71,11 @@ impl Engine for EngineWorker {
                     .recv()
                     .await
                     .map_err(|e| Status::internal(e.to_string()));
-                tx.send(us).await.unwrap(); // TODO
+
+                if let Err(_) = tx.send(us).await {
+                    log::warn!("ending task.."); // TODO better agnostics
+                    break;
+                }
             }
         });
 
