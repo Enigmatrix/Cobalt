@@ -4,6 +4,7 @@ pub mod channel;
 pub mod error;
 pub mod futures;
 pub mod log;
+pub mod config;
 
 pub use futures as tokio;
 pub use log as tracing;

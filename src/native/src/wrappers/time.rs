@@ -90,6 +90,12 @@ impl Sub<Timestamp> for Timestamp {
     }
 }
 
+impl From<std::time::Duration> for Duration {
+    fn from(dur: std::time::Duration) -> Self {
+        Duration::from_millis(dur.as_millis() as u64)
+    }
+}
+
 impl Duration {
     pub fn from_millis(millis: i64) -> Duration {
         Duration(millis * 10_000)
