@@ -1,10 +1,10 @@
 #![feature(backtrace)]
 
 pub mod channel;
+pub mod config;
 pub mod error;
 pub mod futures;
 pub mod log;
-pub mod config;
 
 pub use futures as tokio;
 pub use log as tracing;

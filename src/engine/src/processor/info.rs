@@ -18,7 +18,7 @@ pub struct SessionInfo {
     pub pid: ProcessId,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Info {
     pub sess_id: model::Id,
     pub app_id: model::Id,

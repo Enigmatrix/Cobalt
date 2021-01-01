@@ -13,7 +13,7 @@ use info::*;
 pub type SessionCache = HashMap<Window, SessionInfo>;
 pub type AppCache = HashMap<ProcessId, AppInfo>;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct UsageInfo {
     usage: model::Usage,
     info: Info,
@@ -30,6 +30,7 @@ pub struct Processor {
     engine_tx: services::RelayServiceTx,
 
     current: UsageInfo,
+    now_idle: bool,
 }
 
 #[derive(Clone)]
@@ -102,6 +103,7 @@ impl Processor {
             engine_tx,
 
             current: UsageInfo { usage, info },
+            now_idle: false,
         };
         Ok((msger, processor))
     }
@@ -110,6 +112,31 @@ impl Processor {
         while let Ok(msg) = self.recv.recv_async().await {
             self.process(msg)?
         }
+        Ok(())
+    }
+
+    pub fn switch_usage(&mut self, new_usage_info: UsageInfo) -> Result<()> {
+        self.db
+            .insert_usage(&mut self.current.usage)
+            .with_context(|| "Save Usage to Database")?;
+
+        let usage_switch = services::dto::UsageSwitch {
+            prev_app_id: self.current.info.app_id,
+            prev_sess_id: self.current.info.sess_id,
+            prev_usage_id: self.current.usage.id,
+
+            new_app_id: new_usage_info.info.app_id,
+            new_sess_id: new_usage_info.info.sess_id,
+        };
+
+        log::trace!(?self.current, ?usage_switch, "recorded usage");
+
+        self.engine_tx
+            .push_usage_switch(usage_switch)
+            .with_context(|| "Push usage switch to worker")?;
+
+        self.current = new_usage_info;
+
         Ok(())
     }
 
@@ -134,35 +161,17 @@ impl Processor {
                 }
 
                 self.current.usage.end = timestamp;
-                self.db
-                    .insert_usage(&mut self.current.usage)
-                    .with_context(|| "Save Usage to Database")?;
-
-                let usage_switch = services::dto::UsageSwitch {
-                    // TODO send this to the server
-                    prev_app_id: self.current.info.app_id,
-                    prev_sess_id: self.current.info.sess_id,
-                    prev_usage_id: self.current.usage.id,
-
-                    new_app_id: info.app_id,
-                    new_sess_id: info.sess_id,
-                };
-                self.engine_tx
-                    .push_usage_switch(usage_switch.clone())
-                    .with_context(|| "Push usage switch to worker")?;
-
-                log::trace!(?self.current, ?usage_switch, "recorded usage");
-
-                self.current = UsageInfo {
+                self.switch_usage(UsageInfo {
                     usage: model::Usage {
                         id: 0,
                         sess_id: info.sess_id,
                         start: timestamp,
                         end: timestamp,
-                        idle: false, // TODO idle watcher
+                        idle: self.now_idle
                     },
                     info,
-                };
+                })
+                .with_context(|| "Switch Usage to new Usage")?;
             }
             Message::WindowClosed { window } => {
                 self.sessions.remove(&window);
@@ -177,8 +186,26 @@ impl Processor {
 
                 self.apps.remove(&pid);
             }
-            Message::IdleChanged { status: _ } => {
-                // TODO split self.current
+            Message::IdleChanged { status } => {
+                self.now_idle = match status {
+                    idle::IdleStatus::Idle => true,
+                    idle::IdleStatus::Active => false,
+                };
+
+                let now = Timestamp::now(); // TODO maybe get this as Timestamp::last_idle() + Idleduration
+
+                self.current.usage.end = now;
+                self.switch_usage(UsageInfo {
+                    usage: model::Usage {
+                        id: 0,
+                        sess_id: self.current.info.sess_id,
+                        start: now,
+                        end: now,
+                        idle: self.now_idle
+                    },
+                    info: self.current.info.clone(),
+                })
+                .with_context(|| "Switch Usage to new Usage")?;
             }
             Message::AppUpdate { app_id, file_info } => {
                 self.db

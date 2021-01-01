@@ -62,10 +62,7 @@ impl Relay for RelayService {
     type UsagesStream = mpsc::Receiver<Result<UsageSwitch, Status>>;
     type AppUpdatesStream = mpsc::Receiver<Result<AppId, Status>>;
 
-    async fn usages(
-        &self,
-        _: Request<Empty>,
-    ) -> Result<Response<Self::UsagesStream>, Status> {
+    async fn usages(&self, _: Request<Empty>) -> Result<Response<Self::UsagesStream>, Status> {
         let (mut tx, rx) = mpsc::channel(1);
         let mut recver = self.usage_switches_tx.subscribe();
 

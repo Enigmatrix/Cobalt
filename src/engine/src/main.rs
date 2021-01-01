@@ -26,9 +26,12 @@ async fn main() -> Result<!> {
     idle::Watcher::begin().with_context(|| "Begin monitoring for mouse and keyboard events")?;
 
     let idle_dur = config::Config::instance().idle_timeout;
-    let _idle = idle::Watcher::new(idle_dur.into(), |idle| {
-        log::warn!(?idle);
-        Ok(())
+    let _idle = idle::Watcher::new(idle_dur.into(), {
+        let processor_tx = processor_tx.clone();
+        move |idle| {
+            log::warn!(?idle);
+            processor_tx.send(Message::IdleChanged { status: idle })
+        }
     })
     .with_context(|| "Create idle watcher")?;
 

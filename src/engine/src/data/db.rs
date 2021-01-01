@@ -3,7 +3,7 @@ use crate::data::migrations::Migrator;
 use blob::ZeroBlob;
 use rusqlite::*;
 use std::io::{copy, Read, Seek};
-use util::{Result, config::Config, *};
+use util::{config::Config, Result, *};
 
 pub struct Database {
     conn: Connection,
@@ -12,8 +12,8 @@ pub struct Database {
 impl Database {
     pub fn new() -> Result<Database> {
         let conn_str = Config::instance().db_connection;
-        let mut conn = Connection::open(conn_str)
-            .with_context(|| "Opening connection to database")?;
+        let mut conn =
+            Connection::open(conn_str).with_context(|| "Opening connection to database")?;
         Migrator::migrate(&mut conn).with_context(|| "Run migrations on database")?;
         Ok(Database { conn })
     }
