@@ -1,33 +1,16 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
-    <EmbeddedResource Remove="Entities\**" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Compile Include="Entities.fs" />
-    <Compile Include="Migrations\Meta.fs" />
-    <Compile Include="Migrations\Migration1.fs" />
-    <Compile Include="Migrations\Migrator.fs" />
-    <Compile Include="Repository\Materializers.fs" />
-    <Compile Include="Repository\DbRepository.fs" />
+    <Compile Include="Database.fs" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Dapper" Version="2.0.35" />
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="5.0.0-preview.3.20181.2" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Cobalt.Common.Utils\Cobalt.Common.Utils.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Update="FSharp.Core" Version="4.7.1" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="5.0.1" />
   </ItemGroup>
 
 </Project>

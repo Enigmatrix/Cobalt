@@ -1,35 +1,39 @@
-namespace Cobalt.Common.Data.Entities
+﻿namespace Cobalt.Common.Data.Entites
 
 open System
 open System.IO
 
-type AppIdentification =
+type AppIdentity =
     | Win32 of Path: string
     | UWP of AUMID: string
-    | Java of MainJar: string
+    // | Java of MainJar: string
+
+type Ref<'a> =
+    | Loaded of Value: 'a
+    | Unloaded of Id: int64
 
 [<CLIMutable>]
 type App = {
     Id: int64;
-    Name: string;
-    Identification: AppIdentification;
-    Background: string;
-    Icon: Stream
-    Tags: Lazy<Tag seq>;
+    Name: string voption;
+    Description: string voption;
+    Color: string voption;
+    Identity: AppIdentity;
+    Icon: Ref<Stream>
 }
 and [<CLIMutable>] Tag = {
     Id: int64;
     Name: string;
+    Description: string;
     Color: string;
-    Apps: Lazy<App seq>;
 }
 
 [<CLIMutable>]
 type Session = {
     Id: int64;
     Title: string;
-    CmdLine: string;
-    App: App;
+    Arguments: string voption;
+    App: Ref<App>;
 }
 
 [<CLIMutable>]
@@ -37,10 +41,11 @@ type Usage = {
     Id: int64;
     Start: DateTime;
     End: DateTime;
-    Session: Session;
+    DuringIdle: bool;
+    Session: Ref<Session>;
 }
 
-type SystemEventKind = Logon = 0L | Logoff = 1L | Active = 2L | Idle = 3L
+(*type SystemEventKind = Logon = 0L | Logoff = 1L | Active = 2L | Idle = 3L
 
 [<CLIMutable>]
 type SystemEvent = {
@@ -68,3 +73,4 @@ type Alert = {
     UsageLimit: TimeSpan;
     ExceededReaction: Reaction;
 }
+*)

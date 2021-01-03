@@ -1,19 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="5.0.0-preview.3.20215.2" />
-    <PackageReference Include="Serilog.AspNetCore" Version="3.4.0-dev-00167" />
-    <PackageReference Include="Serilog.Exceptions" Version="5.4.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Cobalt.Common.Communication\Cobalt.Common.Communication.csproj" />
-    <ProjectReference Include="..\Cobalt.Common.Data\Cobalt.Common.Data.fsproj" />
-    <ProjectReference Include="..\Cobalt.Common.Utils\Cobalt.Common.Utils.csproj" />
-  </ItemGroup>
 
 </Project>

@@ -4,6 +4,7 @@ pub mod dto {
     pub use super::raw::{AppId, Empty, UsageSwitch};
 }
 
+use config::Config;
 use dto::*;
 use raw::relay_server::{Relay, RelayServer};
 use tonic::*;
@@ -63,7 +64,7 @@ impl RelayService {
     }
 
     pub async fn serve(self) -> Result<()> {
-        let addr = "[::1]:50051".parse()?;
+        let addr = Config::instance().service_addr.parse()?;
 
         transport::Server::builder()
             .add_service(RelayServer::new(self))

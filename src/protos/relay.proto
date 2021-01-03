@@ -1,5 +1,6 @@
 syntax = "proto3";
 package relay;
+option csharp_namespace = "Cobalt.Common.Communication.Raw";
 
 service Relay {
     rpc Usages (Empty) returns (stream UsageSwitch);

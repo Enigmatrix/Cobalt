@@ -3,17 +3,17 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29306.81
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cobalt.Common.Utils", "src\Cobalt.Common.Utils\Cobalt.Common.Utils.csproj", "{5A34BAE3-DC4E-4F38-AA4C-14232CF4E815}"
-EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Cobalt.Common.Data", "src\Cobalt.Common.Data\Cobalt.Common.Data.fsproj", "{AE91C34A-C565-4266-82EE-A33BF5A4A57C}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cobalt.Common.Communication", "src\Cobalt.Common.Communication\Cobalt.Common.Communication.csproj", "{3B69BCE3-960F-42B9-9EBD-EFDCD25899B6}"
-EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Cobalt.Tests", "tests\Cobalt.Tests\Cobalt.Tests.fsproj", "{6A266004-19B7-4B90-9B12-EF6B1F6D9879}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cobalt.Tests.Benchmarks", "tests\Cobalt.Tests.Benchmarks\Cobalt.Tests.Benchmarks.csproj", "{318754C8-6B45-4BD5-B4C9-2EE37FD2A7B1}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cobalt.Common.Infrastructure", "src\Cobalt.Common.Infrastructure\Cobalt.Common.Infrastructure.csproj", "{0D34B25B-900E-480E-831A-69F79D04C729}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Cobalt.Tests", "tests\Cobalt.Tests\Cobalt.Tests.fsproj", "{6764D261-5654-4085-B5CF-52A539A0200E}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cobalt.Common.Utils", "src\Cobalt.Common.Utils\Cobalt.Common.Utils.csproj", "{E3005AA7-26D9-4318-B22C-DA1434866FF6}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cobalt.Common.Infrastructure", "src\Cobalt.Common.Infrastructure\Cobalt.Common.Infrastructure.csproj", "{230282C3-3471-4397-9565-B4FE04E79DFD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cobalt.Common.Communication", "src\Cobalt.Common.Communication\Cobalt.Common.Communication.csproj", "{7338ACF1-5A72-4A23-987F-0E571620FCB8}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Cobalt.Common.Data", "src\Cobalt.Common.Data\Cobalt.Common.Data.fsproj", "{696E579B-DD26-4F5B-BCCC-1006E43E1B98}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,30 +21,30 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{5A34BAE3-DC4E-4F38-AA4C-14232CF4E815}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5A34BAE3-DC4E-4F38-AA4C-14232CF4E815}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{5A34BAE3-DC4E-4F38-AA4C-14232CF4E815}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{5A34BAE3-DC4E-4F38-AA4C-14232CF4E815}.Release|Any CPU.Build.0 = Release|Any CPU
-		{AE91C34A-C565-4266-82EE-A33BF5A4A57C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{AE91C34A-C565-4266-82EE-A33BF5A4A57C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{AE91C34A-C565-4266-82EE-A33BF5A4A57C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{AE91C34A-C565-4266-82EE-A33BF5A4A57C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{3B69BCE3-960F-42B9-9EBD-EFDCD25899B6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{3B69BCE3-960F-42B9-9EBD-EFDCD25899B6}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{3B69BCE3-960F-42B9-9EBD-EFDCD25899B6}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{3B69BCE3-960F-42B9-9EBD-EFDCD25899B6}.Release|Any CPU.Build.0 = Release|Any CPU
-		{6A266004-19B7-4B90-9B12-EF6B1F6D9879}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6A266004-19B7-4B90-9B12-EF6B1F6D9879}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6A266004-19B7-4B90-9B12-EF6B1F6D9879}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6A266004-19B7-4B90-9B12-EF6B1F6D9879}.Release|Any CPU.Build.0 = Release|Any CPU
 		{318754C8-6B45-4BD5-B4C9-2EE37FD2A7B1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{318754C8-6B45-4BD5-B4C9-2EE37FD2A7B1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{318754C8-6B45-4BD5-B4C9-2EE37FD2A7B1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{318754C8-6B45-4BD5-B4C9-2EE37FD2A7B1}.Release|Any CPU.Build.0 = Release|Any CPU
-		{0D34B25B-900E-480E-831A-69F79D04C729}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0D34B25B-900E-480E-831A-69F79D04C729}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0D34B25B-900E-480E-831A-69F79D04C729}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0D34B25B-900E-480E-831A-69F79D04C729}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6764D261-5654-4085-B5CF-52A539A0200E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6764D261-5654-4085-B5CF-52A539A0200E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6764D261-5654-4085-B5CF-52A539A0200E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6764D261-5654-4085-B5CF-52A539A0200E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E3005AA7-26D9-4318-B22C-DA1434866FF6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E3005AA7-26D9-4318-B22C-DA1434866FF6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E3005AA7-26D9-4318-B22C-DA1434866FF6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E3005AA7-26D9-4318-B22C-DA1434866FF6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{230282C3-3471-4397-9565-B4FE04E79DFD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{230282C3-3471-4397-9565-B4FE04E79DFD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{230282C3-3471-4397-9565-B4FE04E79DFD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{230282C3-3471-4397-9565-B4FE04E79DFD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7338ACF1-5A72-4A23-987F-0E571620FCB8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7338ACF1-5A72-4A23-987F-0E571620FCB8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7338ACF1-5A72-4A23-987F-0E571620FCB8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7338ACF1-5A72-4A23-987F-0E571620FCB8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{696E579B-DD26-4F5B-BCCC-1006E43E1B98}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{696E579B-DD26-4F5B-BCCC-1006E43E1B98}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{696E579B-DD26-4F5B-BCCC-1006E43E1B98}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{696E579B-DD26-4F5B-BCCC-1006E43E1B98}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
