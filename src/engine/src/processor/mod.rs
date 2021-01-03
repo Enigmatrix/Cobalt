@@ -115,7 +115,8 @@ impl Processor {
         Ok(())
     }
 
-    pub fn switch_usage(&mut self, new_usage_info: UsageInfo) -> Result<()> {
+    pub fn switch_usage(&mut self, end_at: Timestamp, info: Info) -> Result<()> {
+        self.current.usage.end = end_at;
         self.db
             .insert_usage(&mut self.current.usage)
             .with_context(|| "Save Usage to Database")?;
@@ -125,8 +126,8 @@ impl Processor {
             prev_sess_id: self.current.info.sess_id,
             prev_usage_id: self.current.usage.id,
 
-            new_app_id: new_usage_info.info.app_id,
-            new_sess_id: new_usage_info.info.sess_id,
+            new_app_id: info.app_id,
+            new_sess_id: info.sess_id,
         };
 
         log::trace!(?self.current, ?usage_switch, "recorded usage");
@@ -135,7 +136,16 @@ impl Processor {
             .push_usage_switch(usage_switch)
             .with_context(|| "Push usage switch to worker")?;
 
-        self.current = new_usage_info;
+        self.current = UsageInfo {
+            usage: model::Usage {
+                id: 0,
+                sess_id: info.sess_id,
+                start: end_at,
+                end: end_at,
+                idle: self.now_idle,
+            },
+            info,
+        };
 
         Ok(())
     }
@@ -160,18 +170,8 @@ impl Processor {
                     return Ok(());
                 }
 
-                self.current.usage.end = timestamp;
-                self.switch_usage(UsageInfo {
-                    usage: model::Usage {
-                        id: 0,
-                        sess_id: info.sess_id,
-                        start: timestamp,
-                        end: timestamp,
-                        idle: self.now_idle
-                    },
-                    info,
-                })
-                .with_context(|| "Switch Usage to new Usage")?;
+                self.switch_usage(timestamp, info)
+                    .with_context(|| "Switch to new Usage")?;
             }
             Message::WindowClosed { window } => {
                 self.sessions.remove(&window);
@@ -192,20 +192,8 @@ impl Processor {
                     idle::IdleStatus::Active => false,
                 };
 
-                let now = Timestamp::now(); // TODO maybe get this as Timestamp::last_idle() + Idleduration
-
-                self.current.usage.end = now;
-                self.switch_usage(UsageInfo {
-                    usage: model::Usage {
-                        id: 0,
-                        sess_id: self.current.info.sess_id,
-                        start: now,
-                        end: now,
-                        idle: self.now_idle
-                    },
-                    info: self.current.info.clone(),
-                })
-                .with_context(|| "Switch Usage to new Usage")?;
+                self.switch_usage(Timestamp::now(), self.current.info.clone())
+                    .with_context(|| "Switch to new Usage")?;
             }
             Message::AppUpdate { app_id, file_info } => {
                 self.db
@@ -217,7 +205,7 @@ impl Processor {
                     )
                     .with_context(|| "Update App information in the Database")?;
 
-                // TODO send the new update app id to clients
+                self.engine_tx.push_app_update(app_id).with_context(|| "Push App Update")?;
             }
         }
         Ok(())

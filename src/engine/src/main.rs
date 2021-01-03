@@ -3,7 +3,6 @@
 #![feature(seek_convenience)]
 
 use native::watchers::*;
-use native::wrappers::*;
 use util::*;
 
 mod data;

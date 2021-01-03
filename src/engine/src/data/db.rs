@@ -14,6 +14,7 @@ impl Database {
         let conn_str = Config::instance().db_connection;
         let mut conn =
             Connection::open(conn_str).with_context(|| "Opening connection to database")?;
+        conn.pragma_update(None, "journal_mode", &"wal")?;
         Migrator::migrate(&mut conn).with_context(|| "Run migrations on database")?;
         Ok(Database { conn })
     }

@@ -13,7 +13,7 @@ impl Config {
         Self {
             idle_timeout: Duration::from_secs(5),
             db_connection: "C:\\Users\\enigm\\NANI.db".to_string(),
-            log_level: Level::INFO,
+            log_level: Level::TRACE,
         }
     }
 }

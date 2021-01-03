@@ -2,7 +2,6 @@
 #![feature(new_uninit)]
 #![feature(maybe_uninit_slice)]
 #![feature(maybe_uninit_extra)]
-#![feature(min_const_generics)]
 #![feature(maybe_uninit_uninit_array)]
 #![feature(maybe_uninit_ref)]
 #![feature(associated_type_bounds)]

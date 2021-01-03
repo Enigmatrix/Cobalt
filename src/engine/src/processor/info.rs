@@ -193,7 +193,6 @@ impl Info {
                 db.insert_app(&mut app)
                     .with_context(|| "Saving App to Database")?;
 
-                // TODO find better way to extend the lifetime of the mutable db reference
                 task::spawn(Info::get_app_file_info(app.id, tx.clone(), identity));
 
                 Ok(app)
