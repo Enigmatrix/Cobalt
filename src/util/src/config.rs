@@ -13,7 +13,7 @@ impl Config {
     pub fn instance() -> Self {
         Self {
             idle_timeout: Duration::from_secs(5),
-            db_connection: "C:\\Users\\enigm\\NANI.db".to_string(),
+            db_connection: "C:\\Users\\enigm\\Desktop\\NANI.db".to_string(),
             service_addr: "[::1]:10691".to_string(),
             log_level: Level::TRACE,
         }

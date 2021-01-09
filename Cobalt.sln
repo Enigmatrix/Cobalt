@@ -11,9 +11,18 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cobalt.Common.Utils", "src\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cobalt.Common.Infrastructure", "src\Cobalt.Common.Infrastructure\Cobalt.Common.Infrastructure.csproj", "{230282C3-3471-4397-9565-B4FE04E79DFD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cobalt.Common.Communication", "src\Cobalt.Common.Communication\Cobalt.Common.Communication.csproj", "{7338ACF1-5A72-4A23-987F-0E571620FCB8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cobalt.Common.Communication", "src\Cobalt.Common.Communication\Cobalt.Common.Communication.csproj", "{7338ACF1-5A72-4A23-987F-0E571620FCB8}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Cobalt.Common.Data", "src\Cobalt.Common.Data\Cobalt.Common.Data.fsproj", "{696E579B-DD26-4F5B-BCCC-1006E43E1B98}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Cobalt.Common.Data", "src\Cobalt.Common.Data\Cobalt.Common.Data.fsproj", "{5ADF2D4E-382A-4047-9DBC-2E84B2BEBF41}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cobalt.Alerts", "src\Cobalt.Alerts\Cobalt.Alerts.csproj", "{A17C3C54-E4B6-4E0F-B4A4-F9CCD22EB498}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cobalt.Common.ViewModels", "src\Cobalt.Common.ViewModels\Cobalt.Common.ViewModels.csproj", "{AD54A014-9C10-4B8C-8812-38B7096C9F6C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{B6AB252C-643A-409D-9D50-D506C951FEBB}"
+	ProjectSection(SolutionItems) = preProject
+		FodyWeavers.xml = FodyWeavers.xml
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -41,10 +50,18 @@ Global
 		{7338ACF1-5A72-4A23-987F-0E571620FCB8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7338ACF1-5A72-4A23-987F-0E571620FCB8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7338ACF1-5A72-4A23-987F-0E571620FCB8}.Release|Any CPU.Build.0 = Release|Any CPU
-		{696E579B-DD26-4F5B-BCCC-1006E43E1B98}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{696E579B-DD26-4F5B-BCCC-1006E43E1B98}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{696E579B-DD26-4F5B-BCCC-1006E43E1B98}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{696E579B-DD26-4F5B-BCCC-1006E43E1B98}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5ADF2D4E-382A-4047-9DBC-2E84B2BEBF41}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5ADF2D4E-382A-4047-9DBC-2E84B2BEBF41}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5ADF2D4E-382A-4047-9DBC-2E84B2BEBF41}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5ADF2D4E-382A-4047-9DBC-2E84B2BEBF41}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A17C3C54-E4B6-4E0F-B4A4-F9CCD22EB498}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A17C3C54-E4B6-4E0F-B4A4-F9CCD22EB498}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A17C3C54-E4B6-4E0F-B4A4-F9CCD22EB498}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A17C3C54-E4B6-4E0F-B4A4-F9CCD22EB498}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AD54A014-9C10-4B8C-8812-38B7096C9F6C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AD54A014-9C10-4B8C-8812-38B7096C9F6C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AD54A014-9C10-4B8C-8812-38B7096C9F6C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AD54A014-9C10-4B8C-8812-38B7096C9F6C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

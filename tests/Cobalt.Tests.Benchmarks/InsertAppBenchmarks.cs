@@ -18,19 +18,16 @@ namespace Cobalt.Tests.Benchmarks
         [Benchmark(Baseline = true)]
         public void AddAppUsingRaw2()
         {
-
         }
 
         [Benchmark]
         public void AddAppUsingDapper()
         {
-
         }
 
         [Benchmark]
         public void AddAppUsingRepo()
         {
-
         }
     }
 }

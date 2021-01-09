@@ -1,11 +1,20 @@
 module Data
 
-open System
 open Xunit
 open Swensen.Unquote
-open Cobalt.Common.Data.Entites;
+open Microsoft.Data.Sqlite
+open Cobalt.Common.Data
+open Cobalt.Common.Data.Entities
+
+let createDb () =
+    let conn = new SqliteConnection("Data Source=C:\\Users\\enigm\\Desktop\\NANI.db")
+    conn.Open()
+    (new SqliteCommand("PRAGMA journal_mode='wal'", conn)).ExecuteNonQuery() |> ignore
+    new Database(conn)
 
 [<Fact>]
 let ``Can create AppIdentities`` () =
-    let appid = AppIdentity.UWP "ur mam";
-    test <@ 1 = 1@>
+    use db = createDb()
+    let app = db.FindApp 1L
+    test <@ app = db.Find<App> 1L @>
+    test <@ app = Unchecked.defaultof<App> @>

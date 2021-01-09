@@ -1,16 +1,29 @@
 ﻿namespace Cobalt.Common.Data
 
-open Cobalt.Common.Data.Entites
+open System.Data
 open Microsoft.Data.Sqlite
+open Cobalt.Common.Data.Entities
+open Cobalt.Common.Data.Materializers
+open Helpers
+open System
 
-type IDatabase = 
-    inherit System.IDisposable
-    abstract member Find<'a> : int64 -> 'a
+type IDatabase =
+    inherit IDisposable
+    abstract member FindApp : Id -> App
+    abstract member FindTag : Id -> Tag
+    abstract member FindSession : Id -> Session
+    abstract member FindUsage : Id -> Usage
+    abstract member Find<'a> : Id -> 'a
 
-    abstract member FindAppByIdentification: AppIdentity -> App voption
+type Database(conn: SqliteConnection) =
+    let mats = Materializers(conn)
 
-    abstract member AddTagToApp : App -> Tag -> unit
-    abstract member RemoveTagToApp : App -> Tag -> unit
+    interface IDatabase with
+        member _.Find id = mats.Materializer().Find id
 
-type Database (conn: SqliteConnection) =
-    let cmd sql = new SqliteCommand(sql, conn)
+        member _.FindApp id = mats.App.Find id
+        member _.FindSession id = mats.Session.Find id
+        member _.FindTag id = mats.Tag.Find id
+        member _.FindUsage id = mats.Usage.Find id
+
+        member _.Dispose() = conn.Dispose()
