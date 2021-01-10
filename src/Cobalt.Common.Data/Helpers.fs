@@ -2,6 +2,8 @@
 
 open System.Data
 open Microsoft.Data.Sqlite
+open System.Reactive.Linq
+open System
 
 let cmd sql conn = new SqliteCommand(sql, conn)
 
@@ -22,9 +24,10 @@ let single (cmd: SqliteCommand) fn =
     else
         failwithf "No rows returned for query: %s" cmd.CommandText
 
-let reader (cmd: SqliteCommand) fn =
-    use reader = cmd.ExecuteReader()
-    seq {
+let reader<'a> (cmd: SqliteCommand) (fn: SqliteDataReader -> 'a) : IObservable<'a> =
+    Observable.Create<'a>(fun (obs: IObserver<'a>) ->
+        let reader = cmd.ExecuteReader()
         while reader.Read() do
-            yield (fn reader)
-    }
+            obs.OnNext(fn reader)
+        obs.OnCompleted()
+        Action(fun () -> reader.Dispose()));

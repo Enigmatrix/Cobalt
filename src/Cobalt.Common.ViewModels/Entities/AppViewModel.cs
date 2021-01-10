@@ -1,4 +1,5 @@
-﻿using Cobalt.Common.Data;
+﻿using System.Reactive.Linq;
+using Cobalt.Common.Data;
 using Cobalt.Common.Data.Entities;
 using Microsoft.FSharp.Core;
 using ReactiveUI.Fody.Helpers;
@@ -19,6 +20,8 @@ namespace Cobalt.Common.ViewModels.Entities
         [Reactive] public string? Description { get; set; }
 
         [Reactive] public string? Color { get; set; }
+
+        // TODO Icon
 
         public AppIdentity Identity { get; }
 
