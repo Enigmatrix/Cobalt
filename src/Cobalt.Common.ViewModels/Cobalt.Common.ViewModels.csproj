@@ -15,6 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Cobalt.Common.Communication\Cobalt.Common.Communication.csproj" />
     <ProjectReference Include="..\Cobalt.Common.Data\Cobalt.Common.Data.fsproj" />
     <ProjectReference Include="..\Cobalt.Common.Infrastructure\Cobalt.Common.Infrastructure.csproj" />
     <ProjectReference Include="..\Cobalt.Common.Utils\Cobalt.Common.Utils.csproj" />

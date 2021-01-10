@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="Util.fs" />
     <Compile Include="Data.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
@@ -28,7 +29,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Cobalt.Common.Communication\Cobalt.Common.Communication.csproj" />
     <ProjectReference Include="..\..\src\Cobalt.Common.Data\Cobalt.Common.Data.fsproj" />
+    <ProjectReference Include="..\..\src\Cobalt.Common.Infrastructure\Cobalt.Common.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Cobalt.Common.Utils\Cobalt.Common.Utils.csproj" />
+    <ProjectReference Include="..\..\src\Cobalt.Common.ViewModels\Cobalt.Common.ViewModels.csproj" />
   </ItemGroup>
 
 </Project>

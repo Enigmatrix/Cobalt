@@ -7,7 +7,13 @@ using Grpc.Net.Client;
 
 namespace Cobalt.Common.Communication
 {
-    public class Client
+    public interface IClient
+    {
+        IObservable<UsageSwitch> Usages();
+        IObservable<UpdatedEntity> EntityUpdates();
+    }
+
+    public class Client : IClient
     {
         private readonly Relay.RelayClient _inner;
 
@@ -26,13 +32,12 @@ namespace Cobalt.Common.Communication
         }
 
 
-        public IObservable<long> AppUpdates()
+        public IObservable<UpdatedEntity> EntityUpdates()
         {
-            return _inner.AppUpdates(new Empty(), new CallOptions())
+            return _inner.EntityUpdates(new Empty(), new CallOptions())
                 .ResponseStream
                 .ReadAllAsync()
-                .ToObservable()
-                .Select(x => x.AppId_);
+                .ToObservable();
         }
     }
 }

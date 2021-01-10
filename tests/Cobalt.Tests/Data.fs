@@ -10,7 +10,7 @@ let createDb () =
     let conn = new SqliteConnection("Data Source=C:\\Users\\enigm\\Desktop\\NANI.db")
     conn.Open()
     (new SqliteCommand("PRAGMA journal_mode='wal'", conn)).ExecuteNonQuery() |> ignore
-    new Database(conn)
+    new Database(conn) :> IDatabase
 
 [<Fact>]
 let ``Can create AppIdentities`` () =

@@ -4,7 +4,7 @@ option csharp_namespace = "Cobalt.Common.Communication.Raw";
 
 service Relay {
     rpc Usages (Empty) returns (stream UsageSwitch);
-    rpc AppUpdates (Empty) returns (stream AppId);
+    rpc EntityUpdates (Empty) returns (stream UpdatedEntity);
 }
 
 message Empty {}
@@ -18,6 +18,12 @@ message UsageSwitch {
     int64 new_app_id = 5;
 }
 
-message AppId {
-    int64 app_id = 1;
+message UpdatedEntity {
+    int64 id = 1;
+    enum EntityType {
+        APP = 0;
+        TAG = 1;
+        ALERT = 2;
+    }
+    EntityType etype = 2;
 }

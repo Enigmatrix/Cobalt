@@ -9,9 +9,7 @@ namespace Cobalt.Common.ViewModels.Entities
         public AppViewModel(App app, IEntityManager mgr) : base(mgr)
         {
             Id = app.Id;
-            Name = ValueOption.ToObj(app.Name);
-            Description = ValueOption.ToObj(app.Description);
-            Color = ValueOption.ToObj(app.Color);
+            Update(app);
             Identity = app.Identity;
         }
 
@@ -22,5 +20,12 @@ namespace Cobalt.Common.ViewModels.Entities
         [Reactive] public string? Color { get; set; }
 
         public AppIdentity Identity { get; }
+
+        public void Update(App app)
+        {
+            Name = ValueOption.ToObj(app.Name);
+            Description = ValueOption.ToObj(app.Description);
+            Color = ValueOption.ToObj(app.Color);
+        }
     }
 }
