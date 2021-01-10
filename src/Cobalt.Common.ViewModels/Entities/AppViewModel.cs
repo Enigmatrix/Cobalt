@@ -1,15 +1,16 @@
-﻿using Cobalt.Common.Data.Entities;
+﻿using Cobalt.Common.Data;
+using Cobalt.Common.Data.Entities;
 using Microsoft.FSharp.Core;
 using ReactiveUI.Fody.Helpers;
 
 namespace Cobalt.Common.ViewModels.Entities
 {
-    public class AppViewModel : EntityViewModelBase<App>
+    public class AppViewModel : MutableEntityViewModelBase<App>
     {
-        public AppViewModel(App app, IEntityManager mgr) : base(mgr)
+        public AppViewModel(App app, IEntityManager manager, IDatabase db) : base(app, manager, db)
         {
             Id = app.Id;
-            Update(app);
+            UpdateFromEntity(app);
             Identity = app.Identity;
         }
 
@@ -21,11 +22,17 @@ namespace Cobalt.Common.ViewModels.Entities
 
         public AppIdentity Identity { get; }
 
-        public void Update(App app)
+        public sealed override void UpdateFromEntity(App app)
         {
             Name = ValueOption.ToObj(app.Name);
             Description = ValueOption.ToObj(app.Description);
             Color = ValueOption.ToObj(app.Color);
+        }
+
+        public override void Save()
+        {
+            // TODO Save to database
+            Manager.InformAppUpdate(Id);
         }
     }
 }

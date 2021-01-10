@@ -5,7 +5,7 @@ namespace Cobalt.Common.ViewModels.Entities
 {
     public class SessionViewModel : EntityViewModelBase<Session>
     {
-        public SessionViewModel(Session session, IEntityManager mgr) : base(mgr)
+        public SessionViewModel(Session session, IEntityManager manager) : base(session, manager)
         {
             Id = session.Id;
             Title = session.Title;
@@ -16,6 +16,6 @@ namespace Cobalt.Common.ViewModels.Entities
         public string Title { get; }
         public string? Arguments { get; }
         public long AppId { get; }
-        public AppViewModel App => _mgr.GetApp(AppId);
+        public AppViewModel App => Manager.GetApp(AppId);
     }
 }

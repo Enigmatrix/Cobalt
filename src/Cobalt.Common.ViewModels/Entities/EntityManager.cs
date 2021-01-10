@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Text.RegularExpressions;
+using System.Collections.Generic;
 using Cobalt.Common.Communication;
 using Cobalt.Common.Communication.Raw;
 using Cobalt.Common.Data;
@@ -12,7 +12,7 @@ namespace Cobalt.Common.ViewModels.Entities
     {
         public override string Message => $"Entity of type {typeof(T)} not found in operation";
     }
-    
+
     public interface IEntityManager : IDisposable
     {
         AppViewModel GetApp(long id);
@@ -23,16 +23,27 @@ namespace Cobalt.Common.ViewModels.Entities
         TagViewModel GetTag(Tag tag);
         SessionViewModel GetSession(Session session);
         UsageViewModel GetUsage(Usage usage);
+
+        void InformAppUpdate(long id);
+        void InformTagUpdate(long id);
+        void InformAlertUpdate(long id);
     }
 
     public class EntityManager : IEntityManager
     {
+        private readonly IClient _client;
         private readonly IDatabase _db;
         private readonly IDisposable _entityUpdatesSub;
+
+        private readonly HashSet<long> _updatedAlerts = new();
+        // TODO alerts
+        private readonly HashSet<long> _updatedApps = new();
+        private readonly HashSet<long> _updatedTags = new();
 
         public EntityManager(IDatabase db, IClient client)
         {
             _db = db;
+            _client = client;
 
             _entityUpdatesSub = client.EntityUpdates()
                 .Subscribe(entity =>
@@ -40,11 +51,15 @@ namespace Cobalt.Common.ViewModels.Entities
                     switch (entity.Etype)
                     {
                         case UpdatedEntity.Types.EntityType.App:
-                            Apps.Get(entity.Id)?.Update(_db.FindApp(entity.Id));
+                            if (!_updatedApps.Remove(entity.Id)) break;
+                            Apps.Get(entity.Id)?.UpdateFromEntity(_db.FindApp(entity.Id));
                             break;
                         case UpdatedEntity.Types.EntityType.Tag:
-                            throw new NotImplementedException();
+                            if (!_updatedTags.Remove(entity.Id)) break;
+                            Tags.Get(entity.Id)?.UpdateFromEntity(_db.FindTag(entity.Id));
+                            break;
                         case UpdatedEntity.Types.EntityType.Alert:
+                            if (!_updatedAlerts.Remove(entity.Id)) break;
                             throw new NotImplementedException();
                         default:
                             throw new ArgumentOutOfRangeException(nameof(entity.Etype));
@@ -99,7 +114,7 @@ namespace Cobalt.Common.ViewModels.Entities
 
         public AppViewModel GetApp(App app)
         {
-            var vm = new AppViewModel(app, this);
+            var vm = new AppViewModel(app, this, _db);
             Apps.Set(app.Id, vm);
 
             return vm;
@@ -107,9 +122,8 @@ namespace Cobalt.Common.ViewModels.Entities
 
         public TagViewModel GetTag(Tag tag)
         {
-            var vm = new TagViewModel(tag, this);
+            var vm = new TagViewModel(tag, this, _db);
             Tags.Set(tag.Id, vm);
-
             return vm;
         }
 
@@ -127,6 +141,24 @@ namespace Cobalt.Common.ViewModels.Entities
             Usages.Set(usage.Id, vm);
 
             return vm;
+        }
+
+        public void InformAppUpdate(long id)
+        {
+            _updatedApps.Add(id);
+            _client.InformEntityUpdate(new UpdatedEntity {Etype = UpdatedEntity.Types.EntityType.App, Id = id});
+        }
+
+        public void InformTagUpdate(long id)
+        {
+            _updatedTags.Add(id);
+            _client.InformEntityUpdate(new UpdatedEntity {Etype = UpdatedEntity.Types.EntityType.Tag, Id = id});
+        }
+
+        public void InformAlertUpdate(long id)
+        {
+            _updatedAlerts.Add(id);
+            _client.InformEntityUpdate(new UpdatedEntity {Etype = UpdatedEntity.Types.EntityType.Alert, Id = id});
         }
 
         public void Dispose()

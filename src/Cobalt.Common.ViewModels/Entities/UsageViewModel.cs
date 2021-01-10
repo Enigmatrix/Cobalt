@@ -5,7 +5,7 @@ namespace Cobalt.Common.ViewModels.Entities
 {
     public class UsageViewModel : EntityViewModelBase<Usage>
     {
-        public UsageViewModel(Usage usage, IEntityManager mgr) : base(mgr)
+        public UsageViewModel(Usage usage, IEntityManager manager) : base(usage, manager)
         {
             Id = usage.Id;
             Start = usage.Start;
@@ -18,6 +18,6 @@ namespace Cobalt.Common.ViewModels.Entities
         public DateTime End { get; }
         public bool DuringIdle { get; }
         public long SessionId { get; }
-        public SessionViewModel Session => _mgr.GetSession(SessionId);
+        public SessionViewModel Session => Manager.GetSession(SessionId);
     }
 }

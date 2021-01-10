@@ -133,4 +133,10 @@ impl Relay for RelayService {
 
         Ok(Response::new(rx))
     }
+
+    async fn inform_entity_update(&self, req: Request<UpdatedEntity>) -> Result<Response<Empty>, Status> {
+        self.entity_updates_tx.send(req.get_ref().clone())
+            .map(|_| Response::new(Empty {}))
+            .map_err(|_| Status::internal("Failed to send EntityUpdate to tx"))
+    }
 }

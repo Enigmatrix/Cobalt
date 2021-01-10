@@ -5,6 +5,7 @@ option csharp_namespace = "Cobalt.Common.Communication.Raw";
 service Relay {
     rpc Usages (Empty) returns (stream UsageSwitch);
     rpc EntityUpdates (Empty) returns (stream UpdatedEntity);
+    rpc InformEntityUpdate (UpdatedEntity) returns (Empty);
 }
 
 message Empty {}

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using System.Reactive.Linq;
 using Cobalt.Common.Communication.Raw;
 using Grpc.Core;
 using Grpc.Net.Client;
@@ -11,6 +10,7 @@ namespace Cobalt.Common.Communication
     {
         IObservable<UsageSwitch> Usages();
         IObservable<UpdatedEntity> EntityUpdates();
+        void InformEntityUpdate(UpdatedEntity entity);
     }
 
     public class Client : IClient
@@ -38,6 +38,11 @@ namespace Cobalt.Common.Communication
                 .ResponseStream
                 .ReadAllAsync()
                 .ToObservable();
+        }
+
+        public void InformEntityUpdate(UpdatedEntity entity)
+        {
+            _inner.InformEntityUpdate(entity);
         }
     }
 }
