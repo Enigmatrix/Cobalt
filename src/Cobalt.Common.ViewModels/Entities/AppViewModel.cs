@@ -1,5 +1,4 @@
-﻿using System.Reactive.Linq;
-using Cobalt.Common.Data;
+﻿using Cobalt.Common.Data;
 using Cobalt.Common.Data.Entities;
 using Microsoft.FSharp.Core;
 using ReactiveUI.Fody.Helpers;

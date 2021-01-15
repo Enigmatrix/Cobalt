@@ -13,6 +13,7 @@ let createDb () =
     conn.Open()
     (new SqliteCommand("PRAGMA journal_mode='wal'", conn)).ExecuteNonQuery() |> ignore
     new Database(conn) :> IDatabase
+    // TODO create filled and unfilled version of the database and keep it in memory
 
 [<Fact>]
 let ``Can create AppIdentities`` () =
@@ -24,5 +25,11 @@ let ``Can create AppIdentities`` () =
 [<Fact>]
 let ``Get AppDurations stream`` () =
     use db = createDb()
-    let durs = db.AppDurations (ValueNone, ValueNone)
+    let durs = db.AppDurations { Start = Unbounded; End = Unbounded }
     test <@ durs.ToEnumerable() <> Enumerable.Empty() @>
+
+[<Fact>]
+let ``Get Usages stream`` () =
+    use db = createDb()
+    let usages = db.Usages({ Start = Unbounded; End = Unbounded }, Irrelevant)
+    test <@ usages.ToEnumerable() <> Enumerable.Empty() @>

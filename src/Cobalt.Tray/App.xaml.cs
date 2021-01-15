@@ -1,6 +1,6 @@
 ﻿using System.Windows;
 
-namespace Cobalt.Alerts
+namespace Cobalt.Tray
 {
     /// <summary>
     ///     Interaction logic for App.xaml

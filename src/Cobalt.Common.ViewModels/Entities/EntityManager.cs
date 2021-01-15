@@ -36,6 +36,7 @@ namespace Cobalt.Common.ViewModels.Entities
         private readonly IDisposable _entityUpdatesSub;
 
         private readonly HashSet<long> _updatedAlerts = new();
+
         // TODO alerts
         private readonly HashSet<long> _updatedApps = new();
         private readonly HashSet<long> _updatedTags = new();

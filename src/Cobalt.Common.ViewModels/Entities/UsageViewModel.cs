@@ -3,7 +3,7 @@ using Cobalt.Common.Data.Entities;
 
 namespace Cobalt.Common.ViewModels.Entities
 {
-    public class UsageViewModel : EntityViewModelBase<Usage>
+    public class UsageViewModel : EntityViewModelBase<Usage>, IHasDuration
     {
         public UsageViewModel(Usage usage, IEntityManager manager) : base(usage, manager)
         {
@@ -19,5 +19,7 @@ namespace Cobalt.Common.ViewModels.Entities
         public bool DuringIdle { get; }
         public long SessionId { get; }
         public SessionViewModel Session => Manager.GetSession(SessionId);
+
+        public TimeSpan Duration => End - Start;
     }
 }
