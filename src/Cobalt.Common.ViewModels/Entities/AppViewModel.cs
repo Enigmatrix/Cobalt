@@ -1,4 +1,5 @@
-﻿using Cobalt.Common.Data;
+﻿using System.IO;
+using Cobalt.Common.Data;
 using Cobalt.Common.Data.Entities;
 using Microsoft.FSharp.Core;
 using ReactiveUI.Fody.Helpers;
@@ -20,7 +21,7 @@ namespace Cobalt.Common.ViewModels.Entities
 
         [Reactive] public string? Color { get; set; }
 
-        // TODO Icon
+        [Reactive] public byte[]? Icon { get; set; }
 
         public AppIdentity Identity { get; }
 
@@ -29,6 +30,11 @@ namespace Cobalt.Common.ViewModels.Entities
             Name = ValueOption.ToObj(app.Name);
             Description = ValueOption.ToObj(app.Description);
             Color = ValueOption.ToObj(app.Color);
+
+            using var icon = Database.AppIcon(Id);
+            using var mem = new MemoryStream(new byte[icon.Length]);
+            icon.CopyTo(mem);
+            Icon = mem.GetBuffer();
         }
 
         public override void Save()
