@@ -33,7 +33,14 @@ namespace Cobalt.Common.ViewModels.Entities
 
         public override void Save()
         {
-            // TODO Save to database
+            Database.UpdateApp(new App
+            {
+                Id = Id,
+                Color = ValueOption.OfObj(Color),
+                Name = ValueOption.OfObj(Name),
+                Description = ValueOption.OfObj(Description),
+                Identity = Identity
+            });
             Manager.InformAppUpdate(Id);
         }
     }

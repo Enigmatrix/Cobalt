@@ -19,10 +19,12 @@ namespace Cobalt.Common.ViewModels.Entities
         TagViewModel GetTag(long id);
         SessionViewModel GetSession(long id);
         UsageViewModel GetUsage(long id);
+        AlertViewModel GetAlert(long id);
         AppViewModel GetApp(App app);
         TagViewModel GetTag(Tag tag);
         SessionViewModel GetSession(Session session);
         UsageViewModel GetUsage(Usage usage);
+        AlertViewModel GetAlert(Alert alert);
 
         void InformAppUpdate(long id);
         void InformTagUpdate(long id);
@@ -36,8 +38,6 @@ namespace Cobalt.Common.ViewModels.Entities
         private readonly IDisposable _entityUpdatesSub;
 
         private readonly HashSet<long> _updatedAlerts = new();
-
-        // TODO alerts
         private readonly HashSet<long> _updatedApps = new();
         private readonly HashSet<long> _updatedTags = new();
 
@@ -61,13 +61,15 @@ namespace Cobalt.Common.ViewModels.Entities
                             break;
                         case UpdatedEntity.Types.EntityType.Alert:
                             if (!_updatedAlerts.Remove(entity.Id)) break;
-                            throw new NotImplementedException();
+                            Alerts.Get(entity.Id)?.UpdateFromEntity(_db.FindAlert(entity.Id));
+                            break;
                         default:
                             throw new ArgumentOutOfRangeException(nameof(entity.Etype));
                     }
                 });
         }
 
+        public WeakValueCache<long, AlertViewModel> Alerts { get; } = new();
         public WeakValueCache<long, AppViewModel> Apps { get; } = new();
         public WeakValueCache<long, SessionViewModel> Sessions { get; } = new();
         public WeakValueCache<long, UsageViewModel> Usages { get; } = new();
@@ -113,6 +115,16 @@ namespace Cobalt.Common.ViewModels.Entities
             return GetUsage(m);
         }
 
+        public AlertViewModel GetAlert(long id)
+        {
+            var vm = Alerts[id];
+            if (vm != null) return vm;
+
+            var m = _db.FindAlert(id) ?? throw new EntityNotFoundException<Alert>();
+
+            return GetAlert(m);
+        }
+
         public AppViewModel GetApp(App app)
         {
             var vm = new AppViewModel(app, this, _db);
@@ -140,6 +152,14 @@ namespace Cobalt.Common.ViewModels.Entities
         {
             var vm = new UsageViewModel(usage, this);
             Usages.Set(usage.Id, vm);
+
+            return vm;
+        }
+
+        public AlertViewModel GetAlert(Alert alert)
+        {
+            var vm = new AlertViewModel(alert, this, _db);
+            Alerts.Set(alert.Id, vm);
 
             return vm;
         }

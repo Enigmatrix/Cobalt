@@ -3,6 +3,7 @@ using System;
 using Cobalt.Common.Data;
 using Cobalt.Common.Data.Entities;
 using ReactiveUI.Fody.Helpers;
+using DataTarget = Cobalt.Common.Data.Entities.Target;
 
 namespace Cobalt.Common.ViewModels.Entities
 {
@@ -48,7 +49,7 @@ namespace Cobalt.Common.ViewModels.Entities
             {
                 Target.App app => new TargetViewModel.App(Manager.GetApp(app.AppId)),
                 Target.Tag tag => new TargetViewModel.Tag(Manager.GetTag(tag.TagId)),
-                _ => throw new ArgumentOutOfRangeException(nameof(alert))
+                _ => throw new ArgumentOutOfRangeException(nameof(alert.Target))
             };
             TimeFrame = alert.TimeFrame;
             UsageLimit = alert.UsageLimit;
@@ -57,7 +58,20 @@ namespace Cobalt.Common.ViewModels.Entities
 
         public override void Save()
         {
-            // TODO
+            Database.UpdateAlert(new Alert
+            {
+                Id = Id,
+                Target = Target switch
+                {
+                    TargetViewModel.App app => DataTarget.NewApp(app.Value.Id),
+                    TargetViewModel.Tag tag => DataTarget.NewTag(tag.Value.Id),
+                    _ => throw new ArgumentOutOfRangeException(nameof(Target))
+                },
+                TimeFrame = TimeFrame,
+                UsageLimit = UsageLimit,
+                ExceededReaction = ExceededReaction
+            });
+            Manager.InformAlertUpdate(Id);
         }
     }
 }

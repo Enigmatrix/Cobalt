@@ -26,7 +26,13 @@ namespace Cobalt.Common.ViewModels.Entities
 
         public override void Save()
         {
-            // TODO Save to database
+            Database.UpdateTag(new Tag
+            {
+                Id = Id,
+                Color = Color,
+                Name = Name,
+                Description = Description,
+            });
             Manager.InformTagUpdate(Id);
         }
     }
