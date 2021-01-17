@@ -27,6 +27,13 @@ namespace Cobalt.Common.ViewModels.Entities
         }
     }
 
+    public class TagDurationViewModel : WithDuration<TagViewModel>
+    {
+        public TagDurationViewModel(TagViewModel vm) : base(vm)
+        {
+        }
+    }
+
     public class SessionDurationViewModel : WithDuration<SessionViewModel>
     {
         public SessionDurationViewModel(SessionViewModel vm) : base(vm)

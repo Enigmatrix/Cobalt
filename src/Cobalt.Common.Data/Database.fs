@@ -35,7 +35,15 @@ type IDatabase =
     abstract member FindTag : Id -> Tag
     abstract member FindSession : Id -> Session
     abstract member FindUsage : Id -> Usage
+    abstract member FindAlert : Id -> Alert
     abstract member Find<'a> : Id -> 'a
+    
+    abstract member InsertTag: Tag -> unit
+    abstract member InsertAlert: Alert -> unit
+
+    abstract member UpdateApp: App -> unit
+    abstract member UpdateTag: Tag -> unit
+    abstract member UpdateAlert: Alert-> unit
 
     abstract member AppDurations : DateTimeRange -> IObservable<struct (TimeSpan * App)>
     abstract member SessionsDurations : DateTimeRange * IdleOptions -> IObservable<struct (TimeSpan * Session)>
@@ -44,11 +52,6 @@ type IDatabase =
 type Database(conn: SqliteConnection) =
     let mats = Materializers(conn)
 
-    let timeRange (start: DateTime voption) (endt: DateTime voption) =
-        let toFt (x: DateTime) = x.ToFileTime()
-        (start |> ValueOption.map toFt |> ValueOption.defaultValue 0L,
-            endt |> ValueOption.map toFt |> ValueOption.defaultValue Int64.MaxValue)
-
     interface IDatabase with
         member _.Find id = mats.Materializer().Find id
 
@@ -56,6 +59,14 @@ type Database(conn: SqliteConnection) =
         member _.FindSession id = mats.Session.Find id
         member _.FindTag id = mats.Tag.Find id
         member _.FindUsage id = mats.Usage.Find id
+        member _.FindAlert id = mats.Alert.Find id
+
+        member _.InsertAlert alert = alert.Id <- mats.Alert.Insert alert
+        member _.InsertTag tag = tag.Id <- mats.Tag.Insert tag
+
+        member _.UpdateAlert alert = mats.Alert.Update alert
+        member _.UpdateApp app = mats.App.Update app
+        member _.UpdateTag tag = mats.Tag.Update tag
 
         member _.AppDurations range = 
             let (start, endt) = range.Bounds()
@@ -77,7 +88,7 @@ type Database(conn: SqliteConnection) =
                             min(End, @end) End,
                             DuringIdle,
                             SessionId
-                        from Usage { idle.map (sprintf "where DuringIdle = %b and") "" }
+                        from Usages { idle.map (sprintf "where DuringIdle = %b and") "" }
                         where (Start <= @end and End >= @start)
                         """ conn
                     |> param "start" start

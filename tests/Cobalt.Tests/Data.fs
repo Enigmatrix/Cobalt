@@ -16,7 +16,6 @@ let createDb () =
     (new SqliteCommand("PRAGMA journal_mode='wal'", conn)).ExecuteNonQuery() |> ignore
     (new SqliteCommand(File.ReadAllText("generate.sql"), conn)).ExecuteNonQuery() |> ignore
     new Database(conn) :> IDatabase
-    // TODO create filled and unfilled version of the database and keep it in memory
 
 [<Fact>]
 let ``Can create AppIdentities`` () =

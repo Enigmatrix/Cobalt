@@ -55,7 +55,25 @@ pub fn run(conn: &mut Connection) -> Result<()> {
             foreign key (SessionId) references Sessions (Id)
         );
 
+        create table Alerts (
+            Id integer primary key autoincrement,
+            Target_Type integer not null,
+            Target_AppId integer,
+            Target_TagId integer,
+            TimeFrame_Type integer not null,
+            TimeFrame_Integer1 integer not null,
+            TimeFrame_Integer2 integer not null,
+            TimeFrame_Integer3 integer,
+            UsageLimit integer not null,
+            ExceededReaction_Type integer not null,
+            ExceededReaction_Text1 text
+
+            foreign key (Target_AppId) references App(Id),
+            foreign key (Target_TagId) references Tag(Id)
+        );
+
         create index UsageStartEnd on Usages (Start, End);
+        create index UsageEndStart on Usages (End, Start);
         create unique index AppIdentity on Apps (Identity_Tag, Identity_Text1);
         
         insert into Migrations values (1);

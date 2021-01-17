@@ -6,7 +6,7 @@
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="/Cobalt.Common.Views;component/Common.xaml"/>
+                <ResourceDictionary Source="/Cobalt.Common.Views;component/Common.xaml" />
                 <ui:IntellisenseResources Source="/ModernWpf;component/DesignTime/DesignTimeResources.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>

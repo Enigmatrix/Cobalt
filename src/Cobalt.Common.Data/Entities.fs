@@ -10,7 +10,7 @@ type AppIdentity =
 
 [<CLIMutable>]
 type App = {
-    Id: Id;
+    mutable Id: Id;
     Name: string voption;
     Description: string voption;
     Color: string voption;
@@ -18,7 +18,7 @@ type App = {
 }
 
 and [<CLIMutable>] Tag = {
-    Id: Id;
+    mutable Id: Id;
     Name: string;
     Description: string;
     Color: string;
@@ -26,7 +26,7 @@ and [<CLIMutable>] Tag = {
 
 [<CLIMutable>]
 type Session = {
-    Id: Id;
+    mutable Id: Id;
     Title: string;
     Arguments: string voption;
     AppId: Id;
@@ -34,19 +34,19 @@ type Session = {
 
 [<CLIMutable>]
 type Usage = {
-    Id: Id;
+    mutable Id: Id;
     Start: DateTime;
     End: DateTime;
     DuringIdle: bool;
     SessionId: Id;
 }
 
-type Target = App of App: App | Tag of Tag: Tag
+type Target = App of AppId: Id | Tag of TagId: Id
 
 type TimeFrame =
     | Once of Start: DateTime * End: DateTime
     | Repeated of Type: RepeatType * StartOfDay: TimeSpan * EndOfDay: TimeSpan
-and RepeatType = Daily | Weekly | Monthly
+and RepeatType = Daiy = 0 | Weeky = 1 | Monthy = 2
 
 type Reaction =
     | Kill
@@ -54,7 +54,7 @@ type Reaction =
 
 [<CLIMutable>]
 type Alert = {
-    Id: Id;
+    mutable Id: Id;
     Target: Target;
     TimeFrame: TimeFrame;
     UsageLimit: TimeSpan;
