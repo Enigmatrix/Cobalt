@@ -1,0 +1,31 @@
+﻿<UserControl x:Class="Cobalt.Tray.TrayView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:Cobalt.Tray"
+             xmlns:ui="http://schemas.modernwpf.com/2019"
+             mc:Ignorable="d" Width="450" Height="450"
+             d:DesignHeight="450" d:DesignWidth="450">
+    <ui:ThemeShadowChrome IsShadowEnabled="True" Depth="8">
+        <Grid Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
+            <TabControl>
+                <TabItem Header="Summary">
+
+                </TabItem>
+                <TabItem Header="Alerts">
+
+                </TabItem>
+
+                <ui:TabControlHelper.TabStripFooter>
+                    <ui:HyperlinkButton VerticalAlignment="Center" HorizontalAlignment="Right" Margin="16,0" FontWeight="Bold">
+                        <ui:SimpleStackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="OPEN COBALT"/>
+                            <TextBlock Text="&#xE143;" FontFamily="Segoe MDL2 Assets" VerticalAlignment="Center"/>
+                        </ui:SimpleStackPanel>
+                    </ui:HyperlinkButton>
+                </ui:TabControlHelper.TabStripFooter>
+            </TabControl>
+        </Grid>
+    </ui:ThemeShadowChrome>
+</UserControl>
