@@ -6,12 +6,15 @@ open Microsoft.Data.Sqlite
 open Cobalt.Common.Data
 open Cobalt.Common.Data.Entities
 open System.Reactive.Linq
+open System.IO
 open System.Linq
 
+
 let createDb () =
-    let conn = new SqliteConnection("Data Source=C:\\Users\\enigm\\Desktop\\NANI.db")
+    let conn = new SqliteConnection("Data Source=:memory:")
     conn.Open()
     (new SqliteCommand("PRAGMA journal_mode='wal'", conn)).ExecuteNonQuery() |> ignore
+    (new SqliteCommand(File.ReadAllText("generate.sql"), conn)).ExecuteNonQuery() |> ignore
     new Database(conn) :> IDatabase
     // TODO create filled and unfilled version of the database and keep it in memory
 
@@ -33,3 +36,4 @@ let ``Get Usages stream`` () =
     use db = createDb()
     let usages = db.Usages({ Start = Unbounded; End = Unbounded }, Irrelevant)
     test <@ usages.ToEnumerable() <> Enumerable.Empty() @>
+

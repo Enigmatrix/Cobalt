@@ -40,3 +40,23 @@ type Usage = {
     DuringIdle: bool;
     SessionId: Id;
 }
+
+type Target = App of App: App | Tag of Tag: Tag
+
+type TimeFrame =
+    | Once of Start: DateTime * End: DateTime
+    | Repeated of Type: RepeatType * StartOfDay: TimeSpan * EndOfDay: TimeSpan
+and RepeatType = Daily | Weekly | Monthly
+
+type Reaction =
+    | Kill
+    | Message of Message: string
+
+[<CLIMutable>]
+type Alert = {
+    Id: Id;
+    Target: Target;
+    TimeFrame: TimeFrame;
+    UsageLimit: TimeSpan;
+    ExceededReaction: Reaction
+}
