@@ -20,6 +20,7 @@ namespace Cobalt.Common.ViewModels.Entities
         SessionViewModel GetSession(long id);
         UsageViewModel GetUsage(long id);
         AlertViewModel GetAlert(long id);
+
         AppViewModel GetApp(App app);
         TagViewModel GetTag(Tag tag);
         SessionViewModel GetSession(Session session);

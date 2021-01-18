@@ -7,7 +7,7 @@
         ShowInTaskbar="False" ShowActivated="False" AllowsTransparency="True">
     <tb:TaskbarIcon x:Name="Tray">
         <tb:TaskbarIcon.TrayPopup>
-            <local:TrayView />
+            <local:TrayView Width="450" Height="450"/>
         </tb:TaskbarIcon.TrayPopup>
     </tb:TaskbarIcon>
 </Window>

@@ -19,7 +19,7 @@ namespace Cobalt.Common.Communication
 
         public Client()
         {
-            var channel = GrpcChannel.ForAddress("http://locahost:10691");
+            var channel = GrpcChannel.ForAddress("http://[::1]:10691");
             _inner = new Relay.RelayClient(channel);
         }
 

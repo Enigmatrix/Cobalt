@@ -47,8 +47,8 @@ namespace Cobalt.Common.ViewModels.Entities
         {
             Target = alert.Target switch
             {
-                Target.App app => new TargetViewModel.App(Manager.GetApp(app.AppId)),
-                Target.Tag tag => new TargetViewModel.Tag(Manager.GetTag(tag.TagId)),
+                DataTarget.App app => new TargetViewModel.App(Manager.GetApp(app.AppId)),
+                DataTarget.Tag tag => new TargetViewModel.Tag(Manager.GetTag(tag.TagId)),
                 _ => throw new ArgumentOutOfRangeException(nameof(alert.Target))
             };
             TimeFrame = alert.TimeFrame;

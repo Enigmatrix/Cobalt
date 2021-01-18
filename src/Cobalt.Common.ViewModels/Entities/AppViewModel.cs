@@ -34,7 +34,7 @@ namespace Cobalt.Common.ViewModels.Entities
             using var icon = Database.AppIcon(Id);
             using var mem = new MemoryStream(new byte[icon.Length]);
             icon.CopyTo(mem);
-            Icon = mem.GetBuffer();
+            Icon = mem.ToArray();
         }
 
         public override void Save()

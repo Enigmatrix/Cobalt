@@ -4,13 +4,34 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:ui="http://schemas.modernwpf.com/2019"
-             mc:Ignorable="d" Width="450" Height="450"
+             xmlns:sf="http://schemas.syncfusion.com/wpf"
+             xmlns:entities="clr-namespace:Cobalt.Common.Views.Entities;assembly=Cobalt.Common.Views"
+             mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="450">
     <ui:ThemeShadowChrome IsShadowEnabled="True" Depth="8">
         <Grid Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
             <TabControl>
-                <TabItem Header="Summary" />
-                <TabItem Header="Alerts" />
+                <TabItem Header="Summary">
+                    <Grid>
+                        <sf:SfChart>
+                            <sf:SfChart.Series>
+                                <sf:PieSeries></sf:PieSeries>
+                            </sf:SfChart.Series>
+                        </sf:SfChart>
+                    </Grid>
+                </TabItem>
+                <TabItem Header="Alerts">
+                    <Grid>
+                        <ListView>
+                            <ListViewItem HorizontalContentAlignment="Stretch">
+                                <entities:AppView Height="80" x:Name="TestApp"></entities:AppView>
+                            </ListViewItem>
+                            <ListViewItem HorizontalContentAlignment="Stretch">
+                                <entities:AppView Height="80"></entities:AppView>
+                            </ListViewItem>
+                        </ListView>
+                    </Grid>
+                </TabItem>
 
                 <ui:TabControlHelper.TabStripFooter>
                     <ui:HyperlinkButton VerticalAlignment="Center" HorizontalAlignment="Right" Margin="16,0"
