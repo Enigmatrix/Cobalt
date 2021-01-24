@@ -3,11 +3,17 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:tb="http://www.hardcodet.net/taskbar"
         xmlns:local="clr-namespace:Cobalt.Tray"
+        xmlns:fluentWpf="clr-namespace:SourceChord.FluentWPF;assembly=FluentWPF"
+        xmlns:ui="http://schemas.modernwpf.com/2019"
         WindowState="Minimized" WindowStyle="None"
-        ShowInTaskbar="False" ShowActivated="False" AllowsTransparency="True">
+        ShowInTaskbar="False" ShowActivated="False" AllowsTransparency="True" Margin="0" x:Name="Checker">
     <tb:TaskbarIcon x:Name="Tray">
         <tb:TaskbarIcon.TrayPopup>
-            <local:TrayView Width="450" Height="450"/>
+            <fluentWpf:AcrylicPopup Height="400" Width="400">
+                <local:CustomGrid>
+                    <local:TrayView></local:TrayView>
+                </local:CustomGrid>
+            </fluentWpf:AcrylicPopup>
         </tb:TaskbarIcon.TrayPopup>
     </tb:TaskbarIcon>
 </Window>
