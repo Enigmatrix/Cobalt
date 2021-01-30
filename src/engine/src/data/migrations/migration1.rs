@@ -66,7 +66,7 @@ pub fn run(conn: &mut Connection) -> Result<()> {
             TimeFrame_Integer3 integer,
             UsageLimit integer not null,
             ExceededReaction_Type integer not null,
-            ExceededReaction_Text1 text
+            ExceededReaction_Text1 text,
 
             foreign key (Target_AppId) references App(Id),
             foreign key (Target_TagId) references Tag(Id)

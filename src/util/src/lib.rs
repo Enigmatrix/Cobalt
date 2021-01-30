@@ -1,4 +1,5 @@
 #![feature(backtrace)]
+#![feature(once_cell)]
 
 pub mod channel;
 pub mod config;

@@ -4,6 +4,8 @@ pub mod dto {
     pub use super::raw::{UpdatedEntity, Empty, UsageSwitch};
 }
 
+use std::net::{IpAddr, Ipv6Addr, SocketAddr};
+
 use config::Config;
 use dto::*;
 use raw::relay_server::{Relay, RelayServer};
@@ -72,7 +74,7 @@ impl RelayService {
     }
 
     pub async fn serve(self) -> Result<()> {
-        let addr = Config::instance().service_addr.parse()?;
+        let addr = SocketAddr::new(IpAddr::V6(Ipv6Addr::LOCALHOST), Config::instance().service.port);
 
         transport::Server::builder()
             .add_service(RelayServer::new(self))
