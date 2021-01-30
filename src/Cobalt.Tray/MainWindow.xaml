@@ -9,7 +9,7 @@
         ShowInTaskbar="False" ShowActivated="False" AllowsTransparency="True" Margin="0" x:Name="Checker">
     <tb:TaskbarIcon x:Name="Tray">
         <tb:TaskbarIcon.TrayPopup>
-            <fluentWpf:AcrylicPopup Height="400" Width="400">
+            <fluentWpf:AcrylicPopup Height="400" Width="400" StaysOpen="False">
                 <local:CustomGrid>
                     <local:TrayView></local:TrayView>
                 </local:CustomGrid>
