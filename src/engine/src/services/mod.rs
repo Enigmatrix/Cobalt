@@ -1,25 +1,25 @@
 mod raw;
 
 pub mod dto {
-    pub use super::raw::{UpdatedEntity, Empty, UsageSwitch};
+    pub use super::raw::{Empty, UpdatedEntity, UsageSwitch};
 }
 
 use std::net::{IpAddr, Ipv6Addr, SocketAddr};
 
+use crate::data::model;
 use config::Config;
 use dto::*;
+use prost::Enumeration;
 use raw::relay_server::{Relay, RelayServer};
 use tonic::*;
 use util::futures::sync::{broadcast, mpsc};
 use util::*;
-use crate::data::model;
-use prost::Enumeration;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Enumeration)]
 pub enum EntityType {
     App = 0,
     Tag = 1,
-    Alert = 2
+    Alert = 2,
 }
 
 #[derive(Debug)]
@@ -47,7 +47,10 @@ impl RelayServiceTx {
 
     pub fn push_app_update(&self, id: model::Id) -> Result<()> {
         self.entity_updates_tx
-            .send(UpdatedEntity { etype: EntityType::App as i32, id })
+            .send(UpdatedEntity {
+                etype: EntityType::App as i32,
+                id,
+            })
             //.with_context(|| "Send App Update")?;
             .unwrap(); // TODO better result!
         Ok(())
@@ -63,7 +66,10 @@ impl RelayService {
         let entity_updates_tx2 = entity_updates_tx.clone();
 
         (
-            RelayServiceTx { usage_switches_tx, entity_updates_tx },
+            RelayServiceTx {
+                usage_switches_tx,
+                entity_updates_tx,
+            },
             RelayService {
                 usage_switches_tx: usage_switches_tx2,
                 usage_switches_rx,
@@ -74,7 +80,10 @@ impl RelayService {
     }
 
     pub async fn serve(self) -> Result<()> {
-        let addr = SocketAddr::new(IpAddr::V6(Ipv6Addr::LOCALHOST), Config::instance().service.port);
+        let addr = SocketAddr::new(
+            IpAddr::V6(Ipv6Addr::LOCALHOST),
+            Config::instance().service.port,
+        );
 
         transport::Server::builder()
             .add_service(RelayServer::new(self))
@@ -136,8 +145,12 @@ impl Relay for RelayService {
         Ok(Response::new(rx))
     }
 
-    async fn inform_entity_update(&self, req: Request<UpdatedEntity>) -> Result<Response<Empty>, Status> {
-        self.entity_updates_tx.send(req.get_ref().clone())
+    async fn inform_entity_update(
+        &self,
+        req: Request<UpdatedEntity>,
+    ) -> Result<Response<Empty>, Status> {
+        self.entity_updates_tx
+            .send(req.get_ref().clone())
             .map(|_| Response::new(Empty {}))
             .map_err(|_| Status::internal("Failed to send EntityUpdate to tx"))
     }

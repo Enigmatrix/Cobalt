@@ -6,6 +6,7 @@ open Cobalt.Common.Data.Materializers
 open Helpers
 open System
 open System.IO
+open Cobalt.Common.Native
 
 type DateTimeBound =
     | Unbounded
@@ -53,6 +54,13 @@ type IDatabase =
 
 type Database(conn: SqliteConnection) =
     let mats = Materializers(conn)
+
+    let migrated =
+        let err = Ffi.String()
+        Data.migrate(conn.Handle.DangerousGetHandle(), ref err)
+        let migrated = err.Buffer <> nativeint 0
+        if not migrated then failwith "Migration failed"
+
 
     interface IDatabase with
         member _.AppIcon id = new SqliteBlob(conn, "Apps", "Icon", id, false) :> Stream

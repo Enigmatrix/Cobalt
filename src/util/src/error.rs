@@ -11,7 +11,7 @@ impl<T, E: std::fmt::Debug> ResultExt2<T> for Result<T, E> {
                 self.expect("chain of errors");
                 std::process::exit(1);
             }
-            Ok(x) => x
+            Ok(x) => x,
         }
     }
 }

@@ -1,6 +1,7 @@
 #![feature(never_type)]
 #![feature(async_closure)]
 #![feature(seek_convenience)]
+#![feature(linkage)]
 
 use native::watchers::*;
 use util::*;

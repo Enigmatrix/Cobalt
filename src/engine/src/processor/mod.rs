@@ -205,7 +205,9 @@ impl Processor {
                     )
                     .with_context(|| "Update App information in the Database")?;
 
-                self.engine_tx.push_app_update(app_id).with_context(|| "Push App Update")?;
+                self.engine_tx
+                    .push_app_update(app_id)
+                    .with_context(|| "Push App Update")?;
             }
         }
         Ok(())

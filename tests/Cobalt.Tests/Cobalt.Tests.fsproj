@@ -16,8 +16,6 @@
     <Compile Include="Program.fs" />
   </ItemGroup>
 
-  <ItemGroup />
-
   <ItemGroup>
     <PackageReference Include="FsUnit.xUnit" Version="4.0.2" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.7.1" />
@@ -37,6 +35,7 @@
     <ProjectReference Include="..\..\src\Cobalt.Common.Communication\Cobalt.Common.Communication.csproj" />
     <ProjectReference Include="..\..\src\Cobalt.Common.Data\Cobalt.Common.Data.fsproj" />
     <ProjectReference Include="..\..\src\Cobalt.Common.Infrastructure\Cobalt.Common.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Cobalt.Common.Native\Cobalt.Common.Native.csproj" />
     <ProjectReference Include="..\..\src\Cobalt.Common.Utils\Cobalt.Common.Utils.csproj" />
     <ProjectReference Include="..\..\src\Cobalt.Common.ViewModels\Cobalt.Common.ViewModels.csproj" />
   </ItemGroup>

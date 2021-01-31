@@ -11,7 +11,9 @@ pub struct Database {
 
 impl Database {
     pub fn new() -> Result<Database> {
-        let conn_str = Config::data_dir().with_context(|| "Find data directory of App")?.join("data.db");
+        let conn_str = Config::data_dir()
+            .with_context(|| "Find data directory of App")?
+            .join("data.db");
         let mut conn =
             Connection::open(conn_str).with_context(|| "Opening connection to database")?;
         conn.pragma_update(None, "journal_mode", &"wal")?;
