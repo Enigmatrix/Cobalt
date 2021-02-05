@@ -1,12 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net5.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="ReactiveUI" Version="13.0.27" />
+    <PackageReference Include="ReactiveUI" Version="13.1.1" />
     <PackageReference Include="ReactiveUI.Fody" Version="13.0.27" />
   </ItemGroup>
 

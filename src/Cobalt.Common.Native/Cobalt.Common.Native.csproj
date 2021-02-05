@@ -5,9 +5,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ContentWithTargetPath Include="../../target/$(Configuration)/engine.exe">
+    <ContentWithTargetPath Include="../../target/$(Configuration)/exports.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <TargetPath>engine.exe</TargetPath>
+      <TargetPath>exports.dll</TargetPath>
     </ContentWithTargetPath>
   </ItemGroup>
 

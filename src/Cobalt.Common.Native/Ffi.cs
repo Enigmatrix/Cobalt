@@ -5,7 +5,25 @@ namespace Cobalt.Common.Native
 {
     public static class Ffi
     {
-        public const string Library = "engine.exe";
+        public const string Library = "exports.dll";
+
+        [StructLayout(LayoutKind.Explicit)]
+        public struct Result
+        {
+            [FieldOffset(0)] public long Tag;
+            [FieldOffset(8)] public long Ok;
+            [FieldOffset(8)] public String Error;
+
+            public long Value()
+            {
+                if (Tag != 0)
+                {
+                    throw new SEHException(Error.ToString());
+                }
+
+                return Ok;
+            }
+        }
 
         [StructLayout(LayoutKind.Sequential)]
         public readonly struct String
@@ -16,7 +34,7 @@ namespace Cobalt.Common.Native
 
             public override string ToString()
             {
-                return Marshal.PtrToStringUni(Buffer, Length.ToInt32());
+                return Marshal.PtrToStringUTF8(Buffer, Length.ToInt32());
             }
         }
     }

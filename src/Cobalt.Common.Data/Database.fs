@@ -55,11 +55,7 @@ type IDatabase =
 type Database(conn: SqliteConnection) =
     let mats = Materializers(conn)
 
-    let migrated =
-        let err = Ffi.String()
-        Data.migrate(conn.Handle.DangerousGetHandle(), ref err)
-        let migrated = err.Buffer <> nativeint 0
-        if not migrated then failwith "Migration failed"
+    do Data.migrate(conn.DataSource).Value() |> ignore
 
 
     interface IDatabase with

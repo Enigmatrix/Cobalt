@@ -9,15 +9,6 @@ open System.Reactive.Linq
 open System.IO
 open System.Linq
 
-[<Fact>]
-let ``hello`` () =
-    let o = Cobalt.Common.Native.Ffi.String();
-    Cobalt.Common.Native.Data.migrate(nativeint 0, ref o);
-    let what = ref o
-    test <@ what.Value.Buffer = nativeint 0 @>
-    test <@ what.Value.Capacity = nativeint 0 @>
-    test <@ what.Value.Length = nativeint 0 @>
-
 let createDb () =
     let conn = new SqliteConnection("Data Source=:memory:")
     conn.Open()
