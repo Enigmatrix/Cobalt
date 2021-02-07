@@ -17,6 +17,16 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: '5.0.100'
+    - name: Install latest nightly
+      uses: actions-rs/toolchain@v1
+      with:
+          toolchain: nightly
+          override: true
+          components: rustfmt, clippy
+    - name: Clean
+      run: |
+        dotnet clean --configuration Release 
+        dotnet nuget locals all --clear
     - name: Install dependencies
       run: dotnet restore
     - name: Build
