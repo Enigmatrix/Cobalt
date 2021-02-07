@@ -28,7 +28,6 @@ async fn main() -> Result<!> {
     let _idle = idle::Watcher::new(idle_dur.into(), {
         let processor_tx = processor_tx.clone();
         move |idle| {
-            log::warn!(?idle);
             processor_tx.send(Message::IdleChanged { status: idle })
         }
     })
