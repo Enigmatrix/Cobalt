@@ -4,7 +4,6 @@ using System.Reactive.Disposables;
 using System.Windows;
 using System.Windows.Media.Imaging;
 using Cobalt.Common.Data.Entities;
-using Cobalt.Common.ViewModels.Entities;
 using ReactiveUI;
 
 namespace Cobalt.Common.Views.Entities

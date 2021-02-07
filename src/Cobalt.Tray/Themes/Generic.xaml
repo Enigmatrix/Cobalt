@@ -4,6 +4,5 @@
     xmlns:local="clr-namespace:Cobalt.Tray">
 
 
-    <Style TargetType="{x:Type local:CustomGrid}">
-    </Style>
+    <Style TargetType="{x:Type local:CustomGrid}" />
 </ResourceDictionary>

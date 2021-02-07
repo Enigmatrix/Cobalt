@@ -31,7 +31,7 @@ namespace Cobalt.Common.ViewModels.Entities
                 Id = Id,
                 Color = Color,
                 Name = Name,
-                Description = Description,
+                Description = Description
             });
             Manager.InformTagUpdate(Id);
         }

@@ -1,9 +1,5 @@
-﻿using System.Windows;
-using System.Windows.Controls;
-using Cobalt.Common.Communication;
-using Cobalt.Common.Data;
-using Cobalt.Common.ViewModels.Entities;
-using Microsoft.Data.Sqlite;
+﻿using System.Reactive.Disposables;
+using ReactiveUI;
 
 namespace Cobalt.Tray
 {
@@ -15,6 +11,16 @@ namespace Cobalt.Tray
         public TrayView()
         {
             InitializeComponent();
+
+            this.WhenActivated(regs =>
+            {
+                this.OneWayBind(ViewModel, 
+                    vm => vm.AppDurations, 
+                    v => v.Data.ItemsSource)
+                    .DisposeWith(regs);
+
+                this.Data.ListenPropertyChange = true;
+            });
         }
     }
 }

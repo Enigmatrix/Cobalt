@@ -1,4 +1,6 @@
 ﻿using System.Windows;
+using Cobalt.Common.ViewModels;
+using Splat;
 
 namespace Cobalt.Tray
 {
@@ -11,5 +13,8 @@ namespace Cobalt.Tray
         {
             InitializeComponent();
         }
+
+        public static TrayViewModel InnerViewModel =>
+            Locator.Current.GetService<TrayViewModel>();
     }
 }

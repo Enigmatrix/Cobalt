@@ -1,42 +1,47 @@
 ﻿using System;
+using System.Reactive.Linq;
+using ReactiveUI;
 using ReactiveUI.Fody.Helpers;
 
 namespace Cobalt.Common.ViewModels.Entities
 {
-    public interface IHasDuration
+    public abstract class WithDuration<T> : ViewModelBase where T : EntityViewModelBase
     {
-        TimeSpan Duration { get; }
-    }
-
-    public abstract class WithDuration<T> : ViewModelBase, IHasDuration where T : EntityViewModelBase
-    {
-        protected WithDuration(T vm)
+        protected WithDuration(T vm, IObservable<TimeSpan> durations)
         {
             Inner = vm;
+            Durations = durations;
+            durations
+                .Select(x => x.Ticks)
+                .Scan((x, y) => x + y)
+                .ObserveOnDispatcher()
+                .ToPropertyEx(this, x => x.TotalDurationTicks);
         }
 
         public T Inner { get; }
 
-        [Reactive] public TimeSpan Duration { get; set; }
+        public IObservable<TimeSpan> Durations { get; set; }
+
+        [ObservableAsProperty] public long TotalDurationTicks { get; }
     }
 
     public class AppDurationViewModel : WithDuration<AppViewModel>
     {
-        public AppDurationViewModel(AppViewModel vm) : base(vm)
+        public AppDurationViewModel(AppViewModel vm, IObservable<TimeSpan> durations) : base(vm, durations)
         {
         }
     }
 
     public class TagDurationViewModel : WithDuration<TagViewModel>
     {
-        public TagDurationViewModel(TagViewModel vm) : base(vm)
+        public TagDurationViewModel(TagViewModel vm, IObservable<TimeSpan> durations) : base(vm, durations)
         {
         }
     }
 
     public class SessionDurationViewModel : WithDuration<SessionViewModel>
     {
-        public SessionDurationViewModel(SessionViewModel vm) : base(vm)
+        public SessionDurationViewModel(SessionViewModel vm, IObservable<TimeSpan> durations) : base(vm, durations)
         {
         }
     }

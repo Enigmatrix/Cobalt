@@ -23,6 +23,17 @@ with member this.Bounds() =
             | { Start = Unbounded   ; End = Bound endt } -> (0L                , endt.ToFileTime())
             | { Start = Bound start ; End = Bound endt } -> (start.ToFileTime(), endt.ToFileTime())
 
+type WithDuration<'a> = {
+    Inner: 'a;
+    Duration: TimeSpan
+}
+with
+member this.Map<'b> (f: System.Func<'a, 'b>) = { Inner = f.Invoke(this.Inner); Duration = this.Duration }
+static member From (mapper: MaterializerBase<'a>) (r: SqliteDataReader) = 
+    { Duration = TimeSpan.FromTicks(r.GetInt64(0)); Inner = mapper.MaterializeWithOffset 1 r }
+end
+    
+
 type IdleOptions =
     | Idle of IsIdle: bool
     | Irrelevant
@@ -48,9 +59,10 @@ type IDatabase =
     abstract member UpdateTag: Tag -> unit
     abstract member UpdateAlert: Alert-> unit
 
-    abstract member AppDurations : DateTimeRange -> IObservable<struct (TimeSpan * App)>
-    abstract member SessionsDurations : DateTimeRange * IdleOptions -> IObservable<struct (TimeSpan * Session)>
+    abstract member AppDurations : DateTimeRange -> IObservable<WithDuration<App>>
+    abstract member SessionsDurations : DateTimeRange * IdleOptions -> IObservable<WithDuration<Session>>
     abstract member Usages : DateTimeRange * IdleOptions -> IObservable<Usage>
+    abstract member Alerts: unit -> IObservable<Alert>
 
 type Database(conn: SqliteConnection) =
     let mats = Materializers(conn)
@@ -59,7 +71,7 @@ type Database(conn: SqliteConnection) =
 
 
     interface IDatabase with
-        member _.AppIcon id = new SqliteBlob(conn, "Apps", "Icon", id, false) :> Stream
+        member _.AppIcon id = new SqliteBlob(conn, "Apps", "Icon", id, true) :> Stream
 
         member _.Find id = mats.Materializer().Find id
 
@@ -86,7 +98,7 @@ type Database(conn: SqliteConnection) =
                         group by a.Id" conn
                     |> param "start" start
                     |> param "end" endt)
-                (fun r -> struct (TimeSpan.FromTicks(r.GetInt64(0)), mats.App.MaterializeWithOffset 1 r ))
+                    (WithDuration.From mats.App)
 
         member _.Usages(range, idle) =
             let (start, endt) = range.Bounds()
@@ -114,6 +126,11 @@ type Database(conn: SqliteConnection) =
                         group by s.Id""" conn
                     |> param "start" start
                     |> param "end" endt)
-                (fun r -> struct (TimeSpan.FromTicks(r.GetInt64(0)), mats.Session.MaterializeWithOffset 1 r ))
+                    (WithDuration.From mats.Session)
+
+        member _.Alerts() =
+            reader
+                (cmd "select * from Alerts" conn)
+                (mats.Alert.MaterializeWithOffset 0)
 
         member _.Dispose() = conn.Dispose()

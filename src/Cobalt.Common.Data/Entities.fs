@@ -1,8 +1,11 @@
 ﻿namespace Cobalt.Common.Data.Entities
 
-open System;
+open System
 
 type Id = int64
+
+type IEntity =
+    abstract Id: Id
 
 type AppIdentity =
     | Win32 of Path: string
@@ -16,13 +19,18 @@ type App = {
     Color: string voption;
     Identity: AppIdentity;
 }
+with interface IEntity with
+        member x.Id = x.Id
 
-and [<CLIMutable>] Tag = {
+[<CLIMutable>]
+type Tag = {
     mutable Id: Id;
     Name: string;
     Description: string;
     Color: string;
 }
+with interface IEntity with
+        member x.Id = x.Id
 
 [<CLIMutable>]
 type Session = {
@@ -31,6 +39,8 @@ type Session = {
     Arguments: string voption;
     AppId: Id;
 }
+with interface IEntity with
+        member x.Id = x.Id
 
 [<CLIMutable>]
 type Usage = {
@@ -40,6 +50,8 @@ type Usage = {
     DuringIdle: bool;
     SessionId: Id;
 }
+with interface IEntity with
+        member x.Id = x.Id
 
 type Target = App of AppId: Id | Tag of TagId: Id
 
@@ -60,3 +72,5 @@ type Alert = {
     UsageLimit: TimeSpan;
     ExceededReaction: Reaction
 }
+with interface IEntity with
+        member x.Id = x.Id

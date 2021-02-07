@@ -1,63 +1,46 @@
 ﻿using System;
+using System.IO;
 using System.Windows;
+using Cobalt.Common.Communication;
+using Cobalt.Common.Data;
+using Cobalt.Common.ViewModels;
+using Cobalt.Common.ViewModels.Entities;
+using Cobalt.Common.ViewModels.Statistics;
+using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using ReactiveUI;
-using Splat;
-using Splat.Microsoft.Extensions.DependencyInjection;
-using Splat.Microsoft.Extensions.Logging;
 
 namespace Cobalt.Tray
 {
     /// <summary>
     ///     Interaction logic for App.xaml
     /// </summary>
-    public partial class App : Application
+    public partial class App
     {
-        private readonly IHost _host;
-
-        public App()
+        protected override void ConfigureServices(IConfiguration configuration, IServiceCollection services)
         {
-            _host = Host.CreateDefaultBuilder()
-                .ConfigureServices((ctx, svcs) =>
-                {
-                    svcs.UseMicrosoftDependencyResolver();
-                    var resolver = Locator.CurrentMutable;
-                    Splat.LogHost.Default.Info("Starting");
-                    resolver.InitializeSplat();
-                    resolver.InitializeReactiveUI();
+            // TODO move this to a common location
+            services.AddSingleton(_ =>
+            {
+                var appdata = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+                var conn = new SqliteConnection($"Data Source={Path.Join(appdata, "Cobalt", "data.db")}");
+                conn.Open();
+                new SqliteCommand("PRAGMA journal_mode='wal'", conn).ExecuteNonQuery();
+                return conn;
+            });
+            services.AddSingleton<IDatabase, Database>();
+            services.AddSingleton<IClient, Client>();
+            services.AddSingleton<IQueries, Queries>();
+            services.AddSingleton<IEntityManager, EntityManager>();
 
-                    ConfigureServices(ctx.Configuration, svcs);
-                })
-                .ConfigureLogging(log =>
-                {
-                    // log.AddSplat();
-                })
-                .Build();
-        }
-
-        private void ConfigureServices(IConfiguration configuration,
-            IServiceCollection services)
-        {
             services.AddSingleton<MainWindow>();
+            services.AddSingleton<TrayViewModel>();
         }
 
-        protected override async void OnStartup(StartupEventArgs e)
+        protected override void HostStartup(StartupEventArgs e)
         {
-            await _host.StartAsync();
-
-            var mainWindow = _host.Services.GetRequiredService<MainWindow>();
+            var mainWindow = Host.Services.GetRequiredService<MainWindow>();
             mainWindow.Show();
-
-            base.OnStartup(e);
-        }
-
-        protected override async void OnExit(ExitEventArgs e)
-        {
-            await _host.StopAsync(TimeSpan.FromSeconds(5));
-            _host.Dispose();
-            base.OnExit(e);
         }
     }
 }

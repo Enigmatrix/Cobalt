@@ -16,10 +16,7 @@ namespace Cobalt.Common.Native
 
             public long Value()
             {
-                if (Tag != 0)
-                {
-                    throw new SEHException(Error.ToString());
-                }
+                if (Tag != 0) throw new SEHException(Error.ToString());
 
                 return Ok;
             }

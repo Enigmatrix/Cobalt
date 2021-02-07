@@ -68,8 +68,8 @@ pub fn run(conn: &mut Connection) -> Result<()> {
             ExceededReaction_Type integer not null,
             ExceededReaction_Text1 text,
 
-            foreign key (Target_AppId) references App(Id),
-            foreign key (Target_TagId) references Tag(Id)
+            foreign key (Target_AppId) references Apps(Id),
+            foreign key (Target_TagId) references Tags(Id)
         );
 
         create index UsageStartEnd on Usages (Start, End);

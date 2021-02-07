@@ -26,7 +26,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cobalt.Tray", "src\Cobalt.T
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cobalt.Common.Views", "src\Cobalt.Common.Views\Cobalt.Common.Views.csproj", "{1C94A539-F2C1-4F60-93B1-4512769019EA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cobalt.Common.Native", "src\Cobalt.Common.Native\Cobalt.Common.Native.csproj", "{E8D05B98-B805-4A63-B681-B9CA7021431A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cobalt.Common.Native", "src\Cobalt.Common.Native\Cobalt.Common.Native.csproj", "{E8D05B98-B805-4A63-B681-B9CA7021431A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

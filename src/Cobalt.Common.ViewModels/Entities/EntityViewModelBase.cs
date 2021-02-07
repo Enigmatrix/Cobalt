@@ -19,6 +19,16 @@ namespace Cobalt.Common.ViewModels.Entities
         protected EntityViewModelBase(T entity, IEntityManager manager) : base(manager)
         {
         }
+
+        public override int GetHashCode()
+        {
+            return Id.GetHashCode();
+        }
+
+        public override bool Equals(object? obj)
+        {
+            return (obj as EntityViewModelBase<T>)?.Id == Id;
+        }
     }
 
     public abstract class MutableEntityViewModelBase<T> : EntityViewModelBase<T>

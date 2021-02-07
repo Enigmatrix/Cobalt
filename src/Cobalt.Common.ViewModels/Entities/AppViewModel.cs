@@ -31,6 +31,8 @@ namespace Cobalt.Common.ViewModels.Entities
             Description = ValueOption.ToObj(app.Description);
             Color = ValueOption.ToObj(app.Color);
 
+            if (Name == null || Description == null || Color == null) return;
+
             using var icon = Database.AppIcon(Id);
             using var mem = new MemoryStream(new byte[icon.Length]);
             icon.CopyTo(mem);

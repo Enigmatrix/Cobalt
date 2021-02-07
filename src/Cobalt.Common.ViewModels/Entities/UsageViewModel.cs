@@ -3,7 +3,7 @@ using Cobalt.Common.Data.Entities;
 
 namespace Cobalt.Common.ViewModels.Entities
 {
-    public class UsageViewModel : EntityViewModelBase<Usage>, IHasDuration
+    public class UsageViewModel : EntityViewModelBase<Usage>
     {
         public UsageViewModel(Usage usage, IEntityManager manager) : base(usage, manager)
         {

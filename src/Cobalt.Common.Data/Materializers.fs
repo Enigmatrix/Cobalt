@@ -134,7 +134,7 @@ type AlertMaterializer(conn) =
     inherit MaterializerBase<Alert>(conn)
     let find =  cmd "select * from Alerts where Id = @id" conn |> prepare
     let update =  cmd """
-                    update Alerts
+                    update Alerts set
                         Id = @Id,
                         Target_Type = @Target_Type,
                         Target_AppId = @Target_AppId,
@@ -157,7 +157,8 @@ type AlertMaterializer(conn) =
                         TimeFrame_Integer2,
                         TimeFrame_Integer3,
                         UsageLimit,
-                        ExceededReaction_Type)
+                        ExceededReaction_Type,
+                        ExceededReaction_Text1)
                         values (
                         @Target_Type,
                         @Target_AppId,

@@ -1,6 +1,4 @@
-﻿
-using System;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 
 namespace Cobalt.Common.Native
 {
@@ -8,6 +6,7 @@ namespace Cobalt.Common.Native
     {
         [DllImport(Ffi.Library)]
         public static extern Ffi.Result migrate(string conn);
+
         [DllImport(Ffi.Library)]
         public static extern long add(long a, long b, ref Ffi.Result result);
     }
