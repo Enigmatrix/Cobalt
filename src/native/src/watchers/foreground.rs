@@ -16,7 +16,8 @@ impl Watcher {
             Box::new(move |args| {
                 if args.id_object != winuser::OBJID_WINDOW
                     || args.id_child != winuser::CHILDID_SELF
-                    || unsafe { winuser::GetForegroundWindow() != args.hwnd }
+                    || unsafe { winuser::IsWindow(args.hwnd) == 0 }
+                    /* || unsafe { winuser::GetForegroundWindow() != args.hwnd  } */
                 {
                     return Ok(());
                 }

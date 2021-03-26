@@ -1,6 +1,6 @@
 #![feature(never_type)]
 #![feature(async_closure)]
-#![feature(seek_convenience)]
+#![feature(seek_stream_len)]
 
 use native::watchers::*;
 use util::*;

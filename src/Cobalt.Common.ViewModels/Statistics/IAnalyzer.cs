@@ -7,18 +7,18 @@ using Splat;
 
 namespace Cobalt.Common.ViewModels.Statistics
 {
-    public interface IQueries
+    public interface IAnalyzer
     {
         IObservable<AppDurationViewModel> AppDurations(DateTimeRange range, IdleOptions opts);
     }
 
-    public class Queries : IQueries, IEnableLogger
+    public class Analyzer : IAnalyzer, IEnableLogger
     {
         private readonly IClient _client;
         private readonly IDatabase _db;
         private readonly IEntityManager _mgr;
 
-        public Queries(IClient client, IDatabase db, IEntityManager mgr)
+        public Analyzer(IClient client, IDatabase db, IEntityManager mgr)
         {
             _client = client;
             _db = db;

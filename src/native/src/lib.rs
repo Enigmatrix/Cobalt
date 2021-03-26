@@ -5,7 +5,7 @@
 #![feature(maybe_uninit_uninit_array)]
 #![feature(maybe_uninit_ref)]
 #![feature(associated_type_bounds)]
-#![feature(seek_convenience)]
+#![feature(seek_stream_len)]
 #![feature(thread_id_value)]
 
 pub mod raw;

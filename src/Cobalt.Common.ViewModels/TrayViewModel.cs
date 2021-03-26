@@ -17,9 +17,9 @@ namespace Cobalt.Common.ViewModels
         private readonly IDisposable _appDurationsBinding;
 
 
-        public TrayViewModel(IQueries query, IDatabase db, IEntityManager mgr)
+        public TrayViewModel(IAnalyzer analyzer, IDatabase db, IEntityManager mgr)
         {
-            _appDurationsBinding = query.AppDurations(
+            _appDurationsBinding = analyzer.AppDurations(
                     new DateTimeRange(DateTimeBound.NewBound(DateTime.Today), DateTimeBound.Unbounded),
                     IdleOptions.Irrelevant)
                 .Select(x =>

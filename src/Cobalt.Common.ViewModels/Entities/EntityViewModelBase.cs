@@ -1,4 +1,5 @@
 ﻿using Cobalt.Common.Data;
+using Cobalt.Common.Data.Entities;
 
 namespace Cobalt.Common.ViewModels.Entities
 {
@@ -14,10 +15,11 @@ namespace Cobalt.Common.ViewModels.Entities
         public long Id { get; protected set; }
     }
 
-    public abstract class EntityViewModelBase<T> : EntityViewModelBase
+    public abstract class EntityViewModelBase<T> : EntityViewModelBase where T : IEntity
     {
         protected EntityViewModelBase(T entity, IEntityManager manager) : base(manager)
         {
+            Id = entity.Id;
         }
 
         public override int GetHashCode()
@@ -31,7 +33,7 @@ namespace Cobalt.Common.ViewModels.Entities
         }
     }
 
-    public abstract class MutableEntityViewModelBase<T> : EntityViewModelBase<T>
+    public abstract class MutableEntityViewModelBase<T> : EntityViewModelBase<T> where T : IEntity
     {
         protected readonly IDatabase Database;
 

@@ -1,6 +1,6 @@
 ﻿namespace Cobalt.Common.ViewModels.Pages
 {
-    public class HomePageViewModel : ViewModelBase
+    public class HomePageViewModel : PageViewModelBase
     {
     }
 }

@@ -30,7 +30,7 @@ namespace Cobalt.Tray
             });
             services.AddSingleton<IDatabase, Database>();
             services.AddSingleton<IClient, Client>();
-            services.AddSingleton<IQueries, Queries>();
+            services.AddSingleton<IAnalyzer, IAnalyzer>();
             services.AddSingleton<IEntityManager, EntityManager>();
 
             services.AddSingleton<MainWindow>();

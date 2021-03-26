@@ -11,11 +11,11 @@ namespace Cobalt.Common.ViewModels.Entities
         {
             Inner = vm;
             Durations = durations;
-            durations
+
+            Durations
                 .Select(x => x.Ticks)
                 .Scan((x, y) => x + y)
-                .ObserveOnDispatcher()
-                .ToPropertyEx(this, x => x.TotalDurationTicks);
+                .ToPropertyEx(this, x => x.TotalDurationTicks, scheduler: RxApp.MainThreadScheduler);
         }
 
         public T Inner { get; }

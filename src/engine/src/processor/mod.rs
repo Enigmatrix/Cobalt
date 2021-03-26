@@ -115,6 +115,7 @@ impl Processor {
         Ok(())
     }
 
+    #[log::instrument(skip(self))]
     pub fn switch_usage(&mut self, end_at: Timestamp, info: Info) -> Result<()> {
         self.current.usage.end = end_at;
         self.db

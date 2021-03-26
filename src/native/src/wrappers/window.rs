@@ -5,12 +5,23 @@ use crate::wrappers::process::*;
 use std::default::default;
 use std::hash;
 use std::ptr;
+use std::fmt;
 use util::*;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Window(pub HWND);
 unsafe impl Send for Window {}
 unsafe impl Sync for Window {}
+
+impl fmt::Debug for Window {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Window")
+            .field("hwnd", &self.0)
+            .field("title", &self.title())
+            .field("class", &self.class())
+            .finish()
+    }
+}
 
 impl PartialEq<Window> for Window {
     fn eq(&self, other: &Window) -> bool {
@@ -68,12 +79,22 @@ impl Window {
         let mut buf = buffer::alloc(buf_len as usize);
         loop {
             let read = unsafe { winuser::GetClassNameW(self.0, buf.as_mut_ptr(), buf_len) };
-            if read != 0 {
+            if read == 0 {
+                let err = Win32Err::last_err();
+                if err.is_success() {
+                    buf_len *= 2;
+                    buf = buffer::alloc(buf_len as usize);
+                    continue
+                }
+                else {
+                    return Err(err);
+                }
+            }
+            else {
                 buf_len = read;
                 break;
             }
-            buf_len *= 2;
-            buf = buffer::alloc(buf_len as usize);
+
         }
         Ok(buf.with_length((buf_len) as usize).as_string_lossy())
     }
