@@ -2,8 +2,8 @@
 
 members = [
     "src/engine",
-    "src/native",
-    "src/util",
-
-    "tests/integration_tests"
+    "src/engine_data",
+    "src/engine_native",
+    "src/engine_windows_bindings",
+    "src/engine_util",
 ]
