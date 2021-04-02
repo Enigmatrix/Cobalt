@@ -30,6 +30,15 @@ impl Win32Err {
         err
     }
 
+    pub fn last_result() -> Result<(), Win32Err> {
+        let err = Win32Err::last_err();
+        if err.is_success() {
+            Ok(())
+        } else {
+            Err(err)
+        }
+    }
+
     pub fn clear_last_err() {
         unsafe { SetLastError(0) };
     }
@@ -41,7 +50,7 @@ impl Win32Err {
 
 #[macro_export]
 macro_rules! win32 {
-    (zero = $e: expr) => {{
+    (non_zero: $e: expr) => {{
         let val = unsafe { $e };
         if val == 0 {
             Err($crate::error::Win32Err::last_err())
@@ -49,7 +58,7 @@ macro_rules! win32 {
             Ok(val)
         }
     }};
-    (inner zero = $e: expr) => {{
+    (non_zero: inner $e: expr) => {{
         let val = unsafe { $e };
         if val.0 == 0 {
             Err($crate::error::Win32Err::last_err())

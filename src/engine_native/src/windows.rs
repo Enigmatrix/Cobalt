@@ -1,5 +1,5 @@
 use engine_windows_bindings::windows::win32::{system_services::PWSTR, windows_and_messaging::{GetForegroundWindow, GetWindowTextLengthW, GetWindowTextW, HWND}};
-use std::{fmt, hash};
+use std::{ffi::OsString, fmt, hash};
 use crate::error::{Win32Err};
 use crate::buffer::*;
 use crate::win32;
@@ -16,7 +16,7 @@ impl fmt::Debug for Window {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Window")
             .field("hwnd", &self.hwnd)
-            /* .field("title", &self.title())*/
+            .field("title", &self.title())
             /* .field("class", &self.class()) */
             .finish()
     }
@@ -47,32 +47,26 @@ impl hash::Hash for Window {
 
 
 impl Window {
-    pub fn new(hwnd: HWND) -> Window {
-        Window { hwnd }
+    pub fn new(hwnd: HWND) -> Result<Window, Win32Err> {
+        Ok(Window { hwnd })
     }
 
-    pub fn title(&self) -> Result<&dyn Buffer, Win32Err> {
+    pub fn title(&self) -> Result<OsString, Win32Err> {
         Win32Err::clear_last_err(); // yes, actually important!
+        
         let len = unsafe { GetWindowTextLengthW(self.hwnd) };
-        // fails if len == 0 && !Win32Err::last_err().is_success()
         if len == 0 {
-            let err = Win32Err::last_err();
-            if err.is_success() {
-                Ok(&local::<0>())
-            } else {
-                Err(err)
-            }
+            Win32Err::last_result().map(|_| OsString::new())
         } else {
             let mut buf = alloc(len as usize + 1);
             
             let written =
-                win32!(zero = GetWindowTextW(self.hwnd, PWSTR(buf.as_mut_ptr()), len + 1))?;
-            Ok(&buf.with_length(written as usize))
+                win32!(non_zero: GetWindowTextW(self.hwnd, PWSTR(buf.as_mut_ptr()), len + 1))?;
+            Ok(buf.with_length(written as usize).as_os_string())
         }
     }
 
     pub fn foreground() -> Result<Window, Win32Err> {
-        let fore = win32!(inner zero = GetForegroundWindow())?;
-        Ok(Window::new(fore))
+        Window::new(win32!(non_zero: inner GetForegroundWindow())?)
     }
 }

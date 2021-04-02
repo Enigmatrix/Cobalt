@@ -1,4 +1,4 @@
-use std::{ffi::OsString, fmt::{self, write}, mem::{MaybeUninit}};
+use std::{ffi::OsString, fmt, mem::{MaybeUninit}};
 
 use engine_windows_bindings::windows::win32::system_services::PWSTR;
 
@@ -33,12 +33,6 @@ pub trait Buffer {
         Self: Sized,
     {
         WithLength { inner: self, len }
-    }
-}
-
-impl fmt::Debug for dyn Buffer {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.as_string_lossy())
     }
 }
 
