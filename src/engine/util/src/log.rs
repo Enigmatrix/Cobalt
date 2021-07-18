@@ -9,7 +9,7 @@ pub fn setup_log() -> Result<()> {
     tracing::subscriber::set_global_default(
         tracing_subscriber::fmt()
             // .with_max_level(Level::from(crate::config::Config::instance().log.level))
-            .pretty()
+            // .pretty()
             .with_env_filter(filter)
             // .with_thread_ids(true)
             // .compact()
