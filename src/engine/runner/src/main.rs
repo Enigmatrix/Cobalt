@@ -1,8 +1,11 @@
 use std::{io::{Read, stdin}, time::{self, Instant}};
 
 use platform::{timer::Timer, window};
+use util::*;
 
-fn main() {
+fn main() -> Result<()> {
+    util::setup().wrap_err("setup utils")?;
+
     let mut prev = Instant::now();
 
     let _timer = Timer::new(0, 1000, &mut || {
@@ -11,6 +14,8 @@ fn main() {
         println!("{:?}: {:?}", since, window::Window::foreground());
         prev = now;
     });
+
     let mut s = String::new();
     stdin().read_to_string(&mut s);
+    Ok(())
 }

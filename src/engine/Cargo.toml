@@ -1,9 +1,0 @@
-[workspace]
-
-members = [
-    "bindings",
-    "platform",
-    "util",
-    "data",
-    "runner"
-]

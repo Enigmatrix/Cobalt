@@ -1,0 +1,9 @@
+[workspace]
+
+members = [
+    "src/engine/bindings",
+    "src/engine/platform",
+    "src/engine/util",
+    "src/engine/data",
+    "src/engine/runner"
+]
