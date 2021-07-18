@@ -36,12 +36,10 @@ impl<F: FnMut()> Timer<F> {
 
 impl<F: FnMut()> Drop for Timer<F> {
     fn drop(&mut self) {
-        unsafe {
-            // TODO wrap in error-handling checker, from util
-            win32!(non_zero: inner {
-                // INVALID handle for completionevent means that we are waiting for this deletion to finish execution (esp when we have a running callback in timer)
-                DeleteTimerQueueTimer(HANDLE::NULL, self.handle, HANDLE::INVALID);
-            }).expect("Timer cancellation successful");
-        }
+        // TODO wrap in error-handling checker, from util
+        win32!(non_zero: inner {
+            // INVALID handle for completionevent means that we are waiting for this deletion to finish execution (esp when we have a running callback in timer)
+            DeleteTimerQueueTimer(HANDLE::NULL, self.handle, HANDLE::INVALID)
+        }).expect("Timer cancellation successful");
     }
 }

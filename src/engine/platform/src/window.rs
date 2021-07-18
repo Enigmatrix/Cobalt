@@ -1,6 +1,71 @@
-use bindings::Windows::Win32::Foundation::HWND;
+use bindings::Windows::Win32::{Foundation::HWND, UI::WindowsAndMessaging::{GetForegroundWindow, GetWindowTextLengthW, GetWindowTextW}};
+
+use std::{ffi::OsString, fmt, hash};
+
+use crate::{buffer::Buffer, buffer, error::Win32Err, win32};
 
 pub struct Window {
     hwnd: HWND
 }
 
+impl fmt::Debug for Window {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Window")
+            .field("hwnd", &self.hwnd)
+            .field("title", &self.title())
+            .finish()
+    }
+}
+
+impl PartialEq<Window> for Window {
+    fn eq(&self, other: &Window) -> bool {
+        self.hwnd == other.hwnd
+    }
+}
+
+impl Eq for Window {}
+
+impl PartialEq<HWND> for Window {
+    fn eq(&self, other: &HWND) -> bool {
+        self.hwnd == *other
+    }
+}
+
+impl hash::Hash for Window {
+    fn hash<H>(&self, hasher: &mut H)
+    where
+        H: hash::Hasher,
+    {
+        hasher.write_usize(self.hwnd.0 as usize);
+    }
+}
+
+impl Window {
+    pub fn new(hwnd: HWND) -> Window {
+        Window { hwnd }
+    }
+
+    pub fn title(&self) -> Result<OsString, Win32Err> {
+        Win32Err::clear_last_err(); // yes, actually important!
+        let len = unsafe { GetWindowTextLengthW(self.hwnd) };
+        // fails if len == 0 && !Win32Err::last_err().is_success()
+        if len == 0 {
+            let err = Win32Err::last_err();
+            if err.is_success() {
+                Ok(OsString::new())
+            } else {
+                Err(err)
+            }
+        } else {
+            let mut buf = buffer::alloc(len as usize + 1);
+            let written =
+                win32!(non_zero: GetWindowTextW(self.hwnd, buf.as_pwstr(), len + 1))?;
+
+            Ok(buf.with_length(written as usize).to_os_string())
+        }
+    }
+
+    pub fn foreground() -> Result<Window, Win32Err> {
+        Ok(Window::new(win32!(non_zero: inner GetForegroundWindow())?))
+    }
+}
