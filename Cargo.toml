@@ -1,9 +1,0 @@
-[workspace]
-
-members = [
-    "src/engine",
-    "src/engine_data",
-    "src/engine_native",
-    "src/engine_windows_bindings",
-    "src/engine_util",
-]
