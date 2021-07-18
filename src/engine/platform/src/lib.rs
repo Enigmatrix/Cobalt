@@ -3,8 +3,9 @@
 
 pub mod error;
 pub mod buffer;
-pub mod timer;
+pub mod process;
 pub mod window;
+pub mod timer;
 
 #[cfg(test)]
 mod tests {

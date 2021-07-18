@@ -1,5 +1,3 @@
-#![feature(untagged_unions)]
-
 mod bindings {
     windows::include_bindings!();
 }
