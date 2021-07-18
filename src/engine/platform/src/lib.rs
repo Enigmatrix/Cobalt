@@ -1,3 +1,5 @@
+pub mod timer;
+
 #[cfg(test)]
 mod tests {
     #[test]

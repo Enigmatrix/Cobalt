@@ -4,5 +4,6 @@ members = [
     "bindings",
     "platform",
     "util",
-    "data"
+    "data",
+    "runner"
 ]
