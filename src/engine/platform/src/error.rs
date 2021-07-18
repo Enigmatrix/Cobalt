@@ -51,9 +51,17 @@ impl Win32Err {
 
 #[macro_export]
 macro_rules! win32 {
+    (non_zero: inner $e: expr) => {{
+        let val = unsafe { $e };
+        if val.0 == 0 {
+            Err($crate::error::Win32Err::last_err())
+        } else {
+            Ok(val)
+        }
+    }};
     (non_zero: $e: expr) => {{
         let val = unsafe { $e };
-        if val.eq(0) {
+        if val == 0 {
             Err($crate::error::Win32Err::last_err())
         } else {
             Ok(val)
