@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::fmt;
 
-use bindings::Windows::Win32::System::Diagnostics::Debug::{GetLastError, SetLastError};
+use bindings::Windows::Win32::{self, System::Diagnostics::Debug::{GetLastError, SetLastError, WIN32_ERROR}};
 
 pub struct Win32Err(i32);
 
@@ -20,13 +20,28 @@ impl fmt::Debug for Win32Err {
 
 impl Error for Win32Err {}
 
-impl Win32Err {
-    pub fn from(err: i32) -> Win32Err {
-        Win32Err(err)
+impl From<i32> for Win32Err {
+    fn from(v: i32) -> Self {
+        Win32Err(v)
     }
+}
 
+impl From<u32> for Win32Err {
+    fn from(v: u32) -> Self {
+        Win32Err(v as i32)
+    }
+}
+
+impl From<WIN32_ERROR> for Win32Err {
+    fn from(v: WIN32_ERROR) -> Self {
+        Win32Err(v.0 as i32)
+    }
+}
+
+impl Win32Err {
+    
     pub fn last_err() -> Win32Err {
-        let err = Win32Err(unsafe { GetLastError().0 } as i32);
+        let err = Win32Err::from(unsafe { GetLastError() });
         Win32Err::clear_last_err();
         err
     }

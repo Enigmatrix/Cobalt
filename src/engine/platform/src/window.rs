@@ -1,4 +1,4 @@
-use bindings::{Windows::Win32::{Foundation::HWND, System::{Com::CoTaskMemFree, PropertiesSystem::{IPropertyStore, PROPERTYKEY, PropVariantToStringAlloc, SHGetPropertyStoreForWindow}, Threading::IsImmersiveProcess}, UI::WindowsAndMessaging::{GetClassNameW, GetForegroundWindow, GetWindowTextLengthW, GetWindowTextW, GetWindowThreadProcessId}}, meta::Guid};
+use bindings::{Windows::Win32::{Foundation::HWND, System::{Com::CoTaskMemFree, Diagnostics::Debug::ERROR_INVALID_WINDOW_HANDLE, PropertiesSystem::{IPropertyStore, PROPERTYKEY, PropVariantToStringAlloc, SHGetPropertyStoreForWindow}, Threading::IsImmersiveProcess}, UI::WindowsAndMessaging::{GetClassNameW, GetForegroundWindow, GetWindowTextLengthW, GetWindowTextW, GetWindowThreadProcessId}}, meta::Guid};
 
 use std::{ffi::OsString, fmt, hash};
 
@@ -46,8 +46,11 @@ impl hash::Hash for Window {
 pub static PKEY_AppUserModel_ID: PROPERTYKEY = PROPERTYKEY { fmtid: Guid::from_values(0x9F4C2855, 0x9F79, 0x4B39, [0xA8, 0xD0, 0xE1, 0xD4, 0x2D, 0xE1, 0xD5, 0xF3]), pid: 5 };
 
 impl Window {
-    pub fn new(hwnd: HWND) -> Window {
-        Window { hwnd }
+    pub fn new(hwnd: HWND) -> Result<Window, Win32Err> {
+        match hwnd.is_null() {
+            true => Err(Win32Err::from(ERROR_INVALID_WINDOW_HANDLE)),
+            false => Ok(Window { hwnd })
+        }
     }
 
     pub fn title(&self) -> Result<OsString, Win32Err> {
@@ -66,15 +69,14 @@ impl Window {
     }
 
     pub fn class(&self) -> Result<OsString, Win32Err> {
-        let mut len = 256;
+        let mut len: usize = 256;
 
         loop {
-            let mut buf = buffer::alloc(len as usize);
+            let mut buf = buffer::alloc(len);
             let read = unsafe { GetClassNameW(self.hwnd, buf.as_pwstr(), len as i32) };
 
             if read != 0 { // success! a valid read
-                len = read;
-                return Ok(buf.with_length(len as usize).to_os_string())
+                return Ok(buf.with_length(read as usize).to_os_string())
             }
 
             let err = Win32Err::last_err();
@@ -88,7 +90,7 @@ impl Window {
     }
 
     pub fn foreground() -> Result<Window, Win32Err> {
-        Ok(Window::new(win32!(non_zero: inner GetForegroundWindow())?))
+        Window::new(win32!(non_zero: inner GetForegroundWindow())?)
     }
 
     pub fn pid_tid(&self) -> Result<(ProcessId, u32), Win32Err> {
