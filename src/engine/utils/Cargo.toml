@@ -9,3 +9,4 @@ edition = "2021"
 tracing-subscriber = { version = "0.3", features = ["env-filter"]}
 tracing = "0.1"
 color-eyre = "0.6"
+flume = "0.10"

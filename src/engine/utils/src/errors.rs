@@ -1,3 +1,4 @@
+pub use color_eyre::eyre::*;
 pub use color_eyre::*;
 
 pub fn setup() -> color_eyre::Result<()> {

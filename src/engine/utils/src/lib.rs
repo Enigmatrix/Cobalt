@@ -1,8 +1,8 @@
+pub mod channels;
 pub mod errors;
 pub mod tracing;
 
-use color_eyre::eyre::Context;
-use errors::Result;
+use errors::*;
 
 pub fn setup() -> Result<()> {
     errors::setup().context("setup errors")?;
