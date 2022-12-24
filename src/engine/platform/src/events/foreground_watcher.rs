@@ -1,4 +1,4 @@
-use crate::objects::Timestamp;
+use crate::objects::{Timestamp, Window};
 
 use super::{Event, WinEventArgs, WinEventHook};
 use utils::channels::Sender;
@@ -21,7 +21,7 @@ impl ForegroundWatcher {
         sender
             .send(Event::ForegroundSwitch {
                 at: Timestamp::from_event_millis(args.dwmseventtime),
-                hwnd: args.hwnd,
+                window: Window::new(args.hwnd),
             })
             .context("send foreground switch event")?;
         Ok(())

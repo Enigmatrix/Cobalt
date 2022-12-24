@@ -1,3 +1,7 @@
+#![feature(new_uninit)]
+#![feature(maybe_uninit_uninit_array, maybe_uninit_slice)]
+
+pub mod buffers;
 pub mod errors;
 pub mod events;
 pub mod objects;

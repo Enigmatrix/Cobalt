@@ -9,7 +9,7 @@ use windows::Win32::UI::WindowsAndMessaging::{
     MSLLHOOKSTRUCT,
 };
 
-use crate::objects::{Duration, Timestamp};
+use crate::objects::{Duration, Timestamp, Window};
 
 use super::{ForegroundWatcher, InteractionStateChange, InteractionWatcher, WinEventArgs};
 
@@ -17,7 +17,7 @@ use super::{ForegroundWatcher, InteractionStateChange, InteractionWatcher, WinEv
 pub enum Event {
     ForegroundSwitch {
         at: Timestamp,
-        hwnd: HWND,
+        window: Window,
     },
     InteractionStateChange {
         at: Timestamp,
