@@ -3,15 +3,14 @@ use std::mem::MaybeUninit;
 use utils::channels::Sender;
 use utils::errors::*;
 use windows::Win32::Foundation::{BOOLEAN, HWND, LPARAM, LRESULT, WPARAM};
-use windows::Win32::UI::Accessibility::HWINEVENTHOOK;
 use windows::Win32::UI::WindowsAndMessaging::{
     CallNextHookEx, DispatchMessageW, GetMessageW, TranslateMessage, HHOOK, KBDLLHOOKSTRUCT, MSG,
     MSLLHOOKSTRUCT,
 };
 
-use crate::objects::{Duration, Timestamp, Window};
+use crate::objects::{Duration, Timer, Timestamp, Window};
 
-use super::{ForegroundWatcher, InteractionStateChange, InteractionWatcher, WinEventArgs};
+use super::{ForegroundWatcher, InteractionStateChange, InteractionWatcher};
 
 #[derive(Debug)]
 pub enum Event {
@@ -28,6 +27,7 @@ pub enum Event {
 pub struct TotalWatcher {
     foreground: ForegroundWatcher,
     interaction: InteractionWatcher,
+    _timer: Timer,
     pub(crate) sender: Sender<Event>,
 }
 
@@ -36,20 +36,32 @@ static mut INSTANCE: MaybeUninit<TotalWatcher> = MaybeUninit::uninit();
 impl TotalWatcher {
     // Do not call twice
     pub fn new(sender: Sender<Event>) -> Result<&'static Self> {
-        let foreground = ForegroundWatcher::new(Some(Self::foreground_watcher_callback))
-            .context("setup foreground watcher")?;
+        // run until we get an actual foreground window
+        let fg_window = loop {
+            if let Some(f) = Window::foreground() {
+                break f;
+            };
+        };
+
+        let foreground = ForegroundWatcher::new(fg_window).context("setup foreground watcher")?;
         let interaction = InteractionWatcher::new(
-            Duration::from_millis(5_000), // make this configurable
+            Duration::from_millis(5_000), // TODO make this configurable
             Some(Self::interaction_watcher_mouse_callback),
             Some(TotalWatcher::interaction_watcher_keyboard_callback),
-            Some(TotalWatcher::interaction_watcher_timer_callback),
         )
         .context("setup interaction watcher")?;
+
+        // TODO let this be configurable
+        let freq = Duration::from_millis(200);
+
+        let _timer = Timer::new(freq, freq, Some(TotalWatcher::timer_callback), None)
+            .context("polling timer for interaction watcher")?;
 
         unsafe {
             INSTANCE = MaybeUninit::new(Self {
                 foreground,
                 interaction,
+                _timer,
                 sender,
             })
         };
@@ -60,12 +72,11 @@ impl TotalWatcher {
         INSTANCE.assume_init_mut()
     }
 
-    unsafe extern "system" fn interaction_watcher_timer_callback(_: *mut c_void, _: BOOLEAN) {
+    unsafe extern "system" fn timer_callback(_: *mut c_void, _: BOOLEAN) {
         let watcher = TotalWatcher::instance();
         watcher
-            .interaction
-            .trigger(&mut watcher.sender, Timestamp::now())
-            .context("interaction watcher timer trigger")
+            .trigger()
+            .context("total watcher timer trigger")
             .unwrap();
     }
 
@@ -95,32 +106,15 @@ impl TotalWatcher {
         CallNextHookEx(HHOOK::default(), code, wparam, lparam)
     }
 
-    unsafe extern "system" fn foreground_watcher_callback(
-        hwineventhook: HWINEVENTHOOK,
-        event: u32,
-        hwnd: HWND,
-        idobject: i32,
-        idchild: i32,
-        ideventthread: u32,
-        dwmseventtime: u32,
-    ) {
-        let watcher = TotalWatcher::instance();
-        watcher
-            .foreground
-            .trigger(
-                &mut watcher.sender,
-                WinEventArgs {
-                    hwineventhook,
-                    event,
-                    hwnd,
-                    idobject,
-                    idchild,
-                    ideventthread,
-                    dwmseventtime,
-                },
-            )
-            .context("trigger foreground watcher")
-            .unwrap();
+    pub fn trigger(&mut self) -> Result<()> {
+        let now = Timestamp::now();
+        self.interaction
+            .trigger(&mut self.sender, now)
+            .context("trigger interaction watcher")?;
+        self.foreground
+            .trigger(&mut self.sender, now)
+            .context("trigger interaction watcher")?;
+        Ok(())
     }
 
     pub fn run(&self) {

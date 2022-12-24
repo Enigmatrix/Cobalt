@@ -1,10 +1,9 @@
-use crate::objects::{Duration, Timer, Timestamp};
+use crate::objects::{Duration, Timestamp};
 
 use super::{Event, WindowsHook};
 use utils::{channels::Sender, errors::*};
 use windows::Win32::{
     Foundation::WPARAM,
-    System::Threading::WAITORTIMERCALLBACK,
     UI::WindowsAndMessaging::{
         HC_ACTION, HOOKPROC, KBDLLHOOKSTRUCT, LLKHF_INJECTED, MSLLHOOKSTRUCT, WH_KEYBOARD_LL,
         WH_MOUSE_LL, WM_KEYDOWN, WM_LBUTTONDOWN, WM_MBUTTONDOWN, WM_RBUTTONDOWN, WM_XBUTTONDOWN,
@@ -21,7 +20,6 @@ pub enum InteractionStateChange {
 pub struct InteractionWatcher {
     _mouse: WindowsHook,
     _keyboard: WindowsHook,
-    _timer: Timer,
     max_gap: Duration,
     keystrokes: u32,
     mouseclicks: u32,
@@ -30,24 +28,14 @@ pub struct InteractionWatcher {
 }
 
 impl InteractionWatcher {
-    pub fn new(
-        max_gap: Duration,
-        _mouse: HOOKPROC,
-        _keyboard: HOOKPROC,
-        cb: WAITORTIMERCALLBACK,
-    ) -> Result<Self> {
+    pub fn new(max_gap: Duration, _mouse: HOOKPROC, _keyboard: HOOKPROC) -> Result<Self> {
         let _mouse =
             WindowsHook::global(WH_MOUSE_LL, _mouse).context("setup low-level mouse hook")?;
         let _keyboard = WindowsHook::global(WH_KEYBOARD_LL, _keyboard)
             .context("setup low-level keyboard hook")?;
-        let freq = Duration::from_millis(200);
-
-        let _timer =
-            Timer::new(freq, freq, cb, None).context("polling timer for interaction watcher")?;
         Ok(InteractionWatcher {
             _mouse,
             _keyboard,
-            _timer,
             max_gap,
             keystrokes: 0,
             mouseclicks: 0,

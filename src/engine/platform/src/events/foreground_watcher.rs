@@ -1,29 +1,29 @@
 use crate::objects::{Timestamp, Window};
 
-use super::{Event, WinEventArgs, WinEventHook};
+use super::Event;
 use utils::channels::Sender;
 use utils::errors::*;
-use windows::Win32::UI::Accessibility::WINEVENTPROC;
-use windows::Win32::UI::WindowsAndMessaging::EVENT_SYSTEM_FOREGROUND;
 
 pub struct ForegroundWatcher {
-    _hook: WinEventHook,
+    window: Window,
 }
 
 impl ForegroundWatcher {
-    pub fn new(proc: WINEVENTPROC) -> Result<Self> {
-        let _hook =
-            WinEventHook::global(EVENT_SYSTEM_FOREGROUND, proc).context("setup foreground hook")?;
-        Ok(Self { _hook })
+    pub fn new(foreground: Window) -> Result<Self> {
+        Ok(Self { window: foreground })
     }
 
-    pub fn trigger(&self, sender: &mut Sender<Event>, args: WinEventArgs) -> Result<()> {
-        sender
-            .send(Event::ForegroundSwitch {
-                at: Timestamp::from_event_millis(args.dwmseventtime),
-                window: Window::new(args.hwnd),
-            })
-            .context("send foreground switch event")?;
+    pub fn trigger(&mut self, sender: &mut Sender<Event>, now: Timestamp) -> Result<()> {
+        let foreground = Window::foreground();
+        if let Some(foreground) = foreground && foreground != self.window {
+            sender
+                .send(Event::ForegroundSwitch {
+                    at: now,
+                    window: foreground.clone(),
+                })
+                .context("send foreground switch event")?;
+            self.window = foreground;
+        }
         Ok(())
     }
 }

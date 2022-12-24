@@ -1,5 +1,6 @@
 #![feature(new_uninit)]
 #![feature(maybe_uninit_uninit_array, maybe_uninit_slice)]
+#![feature(let_chains)]
 
 pub mod buffers;
 pub mod errors;

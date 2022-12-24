@@ -13,7 +13,7 @@ use crate::{
     win32,
 };
 
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, Clone)]
 pub struct Window {
     hwnd: HWND,
 }
@@ -21,7 +21,7 @@ pub struct Window {
 impl fmt::Debug for Window {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Window")
-            .field("hwnd", &self.hwnd)
+            .field("hwnd", &format_args!("0x{:x}", self.hwnd.0))
             .field("title", &self.title())
             // .field("class", &self.class())
             // .field("aumid", &self.aumid())
