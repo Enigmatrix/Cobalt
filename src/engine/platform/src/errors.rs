@@ -1,5 +1,7 @@
 use std::fmt;
-use windows::Win32::Foundation::{GetLastError, SetLastError, NO_ERROR, WIN32_ERROR};
+use windows::Win32::Foundation::{
+    GetLastError, SetLastError, ERROR_INSUFFICIENT_BUFFER, NO_ERROR, WIN32_ERROR,
+};
 
 pub struct Win32Error(WIN32_ERROR);
 
@@ -21,6 +23,11 @@ impl Win32Error {
         } else {
             Err(Self(err))
         }
+    }
+
+    pub fn insufficient_size(&self) -> bool {
+        let err = self.0;
+        err == ERROR_INSUFFICIENT_BUFFER
     }
 
     pub fn clear_last_err() {
@@ -69,6 +76,24 @@ macro_rules! win32 {
             Err($crate::errors::Win32Error::last_err())
         } else {
             Ok(val)
+        }
+    }};
+}
+
+#[macro_export]
+macro_rules! repeat_size {
+    ($szi: ident -> $e: expr) => {
+        repeat_size!($szi -> $e, 256)
+    };
+    ($szi: ident -> $e: expr, $sz: expr) => {{
+        let mut $szi = $sz;
+        loop {
+            let res: Result<_, Win32Error> = $e;
+            if let Err(err) = &res && err.insufficient_size() {
+                $szi *= 2;
+            } else {
+                break res;
+            }
         }
     }};
 }
