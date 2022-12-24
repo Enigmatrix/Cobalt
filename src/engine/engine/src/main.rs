@@ -4,6 +4,8 @@ use utils::{channels, errors::*};
 
 fn main() -> Result<()> {
     utils::setup().context("setup utils")?;
+    platform::setup().context("setup platform")?;
+
     info!("🚀 engine started");
 
     let (sender, reciever) = channels::unbounded();

@@ -1,8 +1,5 @@
 [workspace]
 
 members = [
-    "src/engine/utils",
-    "src/engine/platform",
-    "src/engine/data",
-    "src/engine/engine",
+    "src/engine/*",
 ]

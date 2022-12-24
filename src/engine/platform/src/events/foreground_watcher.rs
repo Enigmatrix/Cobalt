@@ -1,4 +1,7 @@
-use super::{Event, TotalWatcher, WinEventArgs, WinEventHook};
+use crate::objects::Timestamp;
+
+use super::{Event, WinEventArgs, WinEventHook};
+use utils::channels::Sender;
 use utils::errors::*;
 use windows::Win32::UI::Accessibility::WINEVENTPROC;
 use windows::Win32::UI::WindowsAndMessaging::EVENT_SYSTEM_FOREGROUND;
@@ -14,11 +17,11 @@ impl ForegroundWatcher {
         Ok(Self { _hook })
     }
 
-    pub fn trigger(&self, total: &TotalWatcher, args: WinEventArgs) -> Result<()> {
-        total.sender
+    pub fn trigger(&self, sender: &mut Sender<Event>, args: WinEventArgs) -> Result<()> {
+        sender
             .send(Event::ForegroundSwitch {
+                at: Timestamp::from_event_millis(args.dwmseventtime),
                 hwnd: args.hwnd,
-                timestamp: args.dwmseventtime,
             })
             .context("send foreground switch event")?;
         Ok(())
