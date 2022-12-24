@@ -57,7 +57,7 @@ impl fmt::Display for Timestamp {
                 &self.0 as *const _ as *const FILETIME,
                 &mut sys as *mut _ as *mut SYSTEMTIME,
             )
-        }; // check result?
+        };
         write!(
             fmt,
             "{:04}-{:02}-{:02} {:02}:{:02}:{:02}.{:03}Z",

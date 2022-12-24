@@ -1,4 +1,5 @@
-pub use utils::errors::*;
+use crate::*;
+use utils::errors::*;
 use windows::Win32::{
     Foundation::{HINSTANCE, HWND},
     UI::{
@@ -23,8 +24,7 @@ pub struct WinEventArgs {
 
 impl WinEventHook {
     pub fn global(event: u32, proc: WINEVENTPROC) -> Result<Self> {
-        // TODO handle invalid hook
-        let hook = unsafe {
+        let hook = win32!(non_zero: unsafe {
             SetWinEventHook(
                 event,
                 event,
@@ -34,14 +34,14 @@ impl WinEventHook {
                 0,
                 WINEVENT_OUTOFCONTEXT,
             )
-        };
+        })
+        .context("setup native WinEventHook")?;
         Ok(Self { hook })
     }
 }
 
 impl Drop for WinEventHook {
     fn drop(&mut self) {
-        // TODO handle unhook error
-        let _ = unsafe { UnhookWinEvent(self.hook) };
+        win32!(non_zero: unsafe { UnhookWinEvent(self.hook) } ).expect("drop WinEventHook");
     }
 }

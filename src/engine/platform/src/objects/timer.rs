@@ -7,6 +7,8 @@ use windows::Win32::{
     },
 };
 
+use crate::win32;
+
 use super::Duration;
 
 pub struct Timer {
@@ -22,8 +24,8 @@ impl Timer {
     ) -> Result<Timer> {
         let mut handle = HANDLE::default();
 
-        // TODO handle error
-        let _ = unsafe {
+        win32!(non_zero:
+            unsafe {
             CreateTimerQueueTimer(
                 &mut handle,
                 HANDLE::default(),
@@ -33,7 +35,8 @@ impl Timer {
                 period.millis(),
                 WORKER_THREAD_FLAGS::default(), // use different flags to change priority
             )
-        };
+        })
+        .context("create native timer")?;
 
         Ok(Timer { handle })
     }
@@ -41,10 +44,10 @@ impl Timer {
 
 impl Drop for Timer {
     fn drop(&mut self) {
-        // TODO handle error
-        let _ = unsafe {
+        win32!(non_zero: unsafe {
             // INVALID handle for completionevent means that we are waiting for this deletion to finish execution (esp when we have a running callback in timer)
             DeleteTimerQueueTimer(HANDLE::default(), self.handle, HANDLE(-1))
-        };
+        })
+        .expect("drop native timer");
     }
 }
