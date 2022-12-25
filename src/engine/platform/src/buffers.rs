@@ -1,6 +1,6 @@
 use std::{ffi::OsString, mem::MaybeUninit};
 
-use windows::core::PWSTR;
+use windows::{core::PWSTR, Win32::Foundation::UNICODE_STRING};
 
 /// Base trait for buffers meant to be ffi-safe
 pub trait Buffer {
@@ -52,6 +52,12 @@ impl<B: Buffer> Buffer for WithLength<B> {
     }
 }
 
+impl Buffer for UNICODE_STRING {
+    fn as_bytes(&mut self) -> &mut [u16] {
+        unsafe { std::slice::from_raw_parts_mut(self.Buffer.0, (self.Length / 2) as usize) }
+    }
+}
+
 const SMALL_BUF_STACK_MAX: usize = 0x100;
 
 /// Buffer allocated on the stack if below a certain size, and heap otherwise
@@ -73,11 +79,12 @@ impl SmallBuf {
 
 impl Buffer for SmallBuf {
     fn as_bytes(&mut self) -> &mut [u16] {
-        if self.len < SMALL_BUF_STACK_MAX {
-            unsafe { MaybeUninit::slice_assume_init_mut(&mut self.stack[..]) }
+        let slice = if self.len < SMALL_BUF_STACK_MAX {
+            unsafe { MaybeUninit::slice_assume_init_mut(&mut self.stack) }
         } else {
             unsafe { MaybeUninit::slice_assume_init_mut(&mut self.heap) }
-        }
+        };
+        &mut slice[..self.len]
     }
 }
 

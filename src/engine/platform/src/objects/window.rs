@@ -91,9 +91,9 @@ impl Window {
     pub fn class(&self) -> Result<String> {
         repeat_size!(len -> {
             let mut buf = buf(len);
-            let len = win32!(non_zero_num: unsafe { GetClassNameW(self.hwnd, buf.as_bytes()) })?;
-            Ok(buf.with_length(len as usize).to_string_lossy())
-        })
+            win32!(non_zero_num: unsafe { GetClassNameW(self.hwnd, buf.as_bytes()) })
+                .map(|new_len| buf.with_length(new_len as usize).to_string_lossy())
+        }, 0x100, 0x100000)
         .context("get class name")
     }
 
