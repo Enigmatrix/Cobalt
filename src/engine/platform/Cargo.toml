@@ -23,6 +23,9 @@ features = [
 
     "Foundation",
     "Storage",
+    "Storage_Streams",
+    "Storage_FileProperties",
+    "ApplicationModel",
 ]
 
 [dependencies]

@@ -48,7 +48,11 @@ fn main() -> Result<()> {
             let PidTid { pid, .. } = window.pid_tid()?;
             let process = Process::new(pid)?;
             let path = process.path()?;
-            let info = block_on(AppInfo::from_win32(&path))?;
+            let info = if process.is_uwp(Some(&path))? {
+                block_on(AppInfo::from_uwp(&window.aumid()?))
+            } else {
+                block_on(AppInfo::from_win32(&path))
+            }?;
             info!(cmd_line = ?process.cmd_line()?, path, is_uwp = process.is_uwp(Some(&path))?, info = ?info);
         }
     }

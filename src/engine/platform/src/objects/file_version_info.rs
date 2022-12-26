@@ -69,12 +69,12 @@ impl FileVersionInfo {
                 Ok(buf) => {
                     // sometimes there is a null terminator and sometimes there isn't ...
                     let buf = if let Some(0) = buf.last() {
-                        &buf[..buf.len()-1]
+                        &buf[..buf.len() - 1]
                     } else {
-                        &buf
+                        buf
                     };
                     return Ok(String::from_utf16_lossy(buf));
-                },
+                }
                 Err(err) => defaulterr = defaulterr.error(err),
             }
         }
