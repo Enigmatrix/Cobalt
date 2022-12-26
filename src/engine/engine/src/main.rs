@@ -1,4 +1,5 @@
-use platform::events::TotalWatcher;
+use platform::events::{Event, TotalWatcher};
+use platform::objects::{PidTid, Process};
 use utils::tracing::info;
 use utils::{channels, errors::*};
 
@@ -17,7 +18,13 @@ fn main() -> Result<()> {
     });
 
     for event in reciever {
-        info!("ev = {:?}", event);
+        info!(?event);
+
+        if let Event::ForegroundSwitch { window, .. } = event {
+            let PidTid { pid, .. } = window.pid_tid()?;
+            let process = Process::new(pid)?;
+            info!(cmd_line = ?process.cmd_line(), path = ?process.path());
+        }
     }
 
     info!("🛑 engine exiting");

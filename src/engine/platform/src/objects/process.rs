@@ -6,7 +6,7 @@ use windows::Win32::{
     },
 };
 
-use crate::{buffers::Buffer, errors::NtError, repeat_twice, win32};
+use crate::{buffers::WideBuffer, errors::NtError, repeat_twice, win32};
 
 pub type ProcessId = u32;
 pub type ThreadId = u32;
@@ -26,6 +26,9 @@ impl PidTid {
 // ref: https://github.com/winsiderss/systeminformer/blob/d243fcb2f287eca7c01970a332bac9cf4dcb478f/phnt/include/ntpsapi.h#L172
 #[allow(non_upper_case_globals)]
 const ProcessCommandLine: PROCESSINFOCLASS = PROCESSINFOCLASS(60);
+// ref: https://github.com/winsiderss/systeminformer/blob/d243fcb2f287eca7c01970a332bac9cf4dcb478f/phnt/include/ntpsapi.h#L155
+#[allow(non_upper_case_globals)]
+const ProcessImageFileNameWin32: PROCESSINFOCLASS = PROCESSINFOCLASS(43);
 
 pub struct Process {
     handle: HANDLE,
@@ -40,19 +43,43 @@ impl Process {
     }
 
     pub fn cmd_line(&self) -> Result<String> {
-        repeat_twice!(len, buf -> unsafe {
+        self.query_information_string(ProcessCommandLine)
+            .context("get process command line")
+    }
+
+    pub fn path(&self) -> Result<String> {
+        self.query_information_string(ProcessImageFileNameWin32)
+            .context("get process image file name")
+    }
+
+    #[inline(always)]
+    fn query_information_string(&self, cls: PROCESSINFOCLASS) -> Result<String> {
+        self.query_information(
+            cls,
+            |us: &mut UNICODE_STRING| us.to_string_lossy(),
+            u16::MAX as u32 + std::mem::size_of::<UNICODE_STRING>() as u32,
+        )
+    }
+
+    #[inline(always)]
+    fn query_information<T, R, F: Fn(&mut T) -> R>(
+        &self,
+        cls: PROCESSINFOCLASS,
+        cb: F,
+        max_size: u32,
+    ) -> Result<R> {
+        Ok(repeat_twice!(len, buf -> unsafe {
             // TODO check when the windows-rs library gives just the NTSTATUS
-            match NtQueryInformationProcess(self.handle, ProcessCommandLine, buf, len, &mut len) {
+            match NtQueryInformationProcess(self.handle, cls, buf, len, &mut len) {
                 Err(err) => Err(NtError::from(err)),
                 Ok(()) => {
                     // unwrap will always succeed as otherwise NtQueryInformationProcess would have failed
                     // and we would have exited.
-                    let us = buf.cast::<UNICODE_STRING>().as_mut().unwrap();
-                    Ok(us.to_string_lossy())
+                    let us = buf.cast::<T>().as_mut().unwrap();
+                    Ok(cb(us))
                 }
             }
-        }, 0x10000)
-        .context("get native command line wrapper")
+        }, max_size)?)
     }
 }
 

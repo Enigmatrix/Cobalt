@@ -19,7 +19,7 @@ use windows::{
 };
 
 use crate::{
-    buffers::{buf, Buffer},
+    buffers::{buf, Buffer, WideBuffer},
     errors::Win32Error,
     repeat_size, win32,
 };
@@ -93,7 +93,7 @@ impl Window {
             let mut buf = buf(len);
             win32!(non_zero_num: unsafe { GetClassNameW(self.hwnd, buf.as_bytes()) })
                 .map(|new_len| buf.with_length(new_len as usize).to_string_lossy())
-        }, 0x100, 0x100000)
+        }, 0x100, 0x10000)
         .context("get class name")
     }
 

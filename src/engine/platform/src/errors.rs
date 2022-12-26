@@ -136,6 +136,8 @@ macro_rules! repeat_size {
 #[macro_export]
 macro_rules! repeat_twice {
     ($szi:ident, $bufi:ident -> $e: expr, $max_sz: expr) => {{
+        use $crate::buffers::Buffer;
+
         let mut $szi = 0;
         let $bufi = std::ptr::null_mut();
         let res: Result<_, _> = $e;
@@ -143,8 +145,8 @@ macro_rules! repeat_twice {
             if $szi > $max_sz {
                 utils::errors::bail!("exceeded max size");
             }
-            let mut _buf = $crate::buffers::buf($szi as usize);
-            let $bufi = _buf.as_mut_ptr().cast();
+            let mut _buf = $crate::buffers::buf::<u8>($szi as usize);
+            let $bufi = _buf.as_mut_void();
             $e
         } else {
             res
