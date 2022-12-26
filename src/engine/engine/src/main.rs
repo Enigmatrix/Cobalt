@@ -23,7 +23,8 @@ fn main() -> Result<()> {
         if let Event::ForegroundSwitch { window, .. } = event {
             let PidTid { pid, .. } = window.pid_tid()?;
             let process = Process::new(pid)?;
-            info!(cmd_line = ?process.cmd_line(), path = ?process.path());
+            let path = process.path()?;
+            info!(cmd_line = ?process.cmd_line()?, path, is_uwp = process.is_uwp(Some(&path))?);
         }
     }
 

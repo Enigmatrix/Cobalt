@@ -8,9 +8,7 @@ pub struct Win32Error(WIN32_ERROR);
 
 impl Win32Error {
     fn get_last_error() -> WIN32_ERROR {
-        let err = unsafe { GetLastError() };
-        // Self::clear_last_err();
-        err
+        unsafe { GetLastError() }
     }
 
     pub fn last_err() -> Self {

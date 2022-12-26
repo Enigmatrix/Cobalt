@@ -1,8 +1,9 @@
 use utils::errors::*;
 use windows::Win32::{
-    Foundation::{CloseHandle, HANDLE, UNICODE_STRING},
+    Foundation::{CloseHandle, HANDLE, UNICODE_STRING, WAIT_TIMEOUT},
     System::Threading::{
-        NtQueryInformationProcess, OpenProcess, PROCESSINFOCLASS, PROCESS_QUERY_LIMITED_INFORMATION,
+        IsImmersiveProcess, NtQueryInformationProcess, OpenProcess, WaitForSingleObject,
+        PROCESSINFOCLASS, PROCESS_QUERY_LIMITED_INFORMATION,
     },
 };
 
@@ -30,6 +31,8 @@ const ProcessCommandLine: PROCESSINFOCLASS = PROCESSINFOCLASS(60);
 #[allow(non_upper_case_globals)]
 const ProcessImageFileNameWin32: PROCESSINFOCLASS = PROCESSINFOCLASS(43);
 
+const APPLICATION_FRAME_HOST: &str = "C:\\Windows\\System32\\ApplicationFrameHost.exe";
+
 pub struct Process {
     handle: HANDLE,
 }
@@ -40,6 +43,23 @@ impl Process {
                                                         // don't set the handle as inheritable
         let handle = unsafe { OpenProcess(access, false, pid).context("native open process")? };
         Ok(Self { handle })
+    }
+
+    /// Check whether this process is still running
+    pub fn exists(&self) -> bool {
+        // based on https://stackoverflow.com/a/1238410/8151052
+        unsafe { WaitForSingleObject(self.handle, 0) == WAIT_TIMEOUT }
+    }
+
+    pub fn is_uwp(&self, path: Option<&str>) -> Result<bool> {
+        Ok(unsafe { IsImmersiveProcess(self.handle).as_bool() }
+            && if let Some(path) = path {
+                path.eq_ignore_ascii_case(APPLICATION_FRAME_HOST)
+            } else {
+                self.path()
+                    .context("get process path for is_uwp")?
+                    .eq_ignore_ascii_case(APPLICATION_FRAME_HOST)
+            })
     }
 
     pub fn cmd_line(&self) -> Result<String> {
