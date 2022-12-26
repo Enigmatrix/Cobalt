@@ -47,7 +47,7 @@ impl TotalWatcher {
         let interaction = InteractionWatcher::new(
             Duration::from_millis(5_000), // TODO make this configurable
             Some(Self::interaction_watcher_mouse_callback),
-            Some(TotalWatcher::interaction_watcher_keyboard_callback),
+            Some(Self::interaction_watcher_keyboard_callback),
         )
         .context("setup interaction watcher")?;
 

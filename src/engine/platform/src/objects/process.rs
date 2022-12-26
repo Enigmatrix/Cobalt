@@ -31,7 +31,7 @@ const ProcessCommandLine: PROCESSINFOCLASS = PROCESSINFOCLASS(60);
 #[allow(non_upper_case_globals)]
 const ProcessImageFileNameWin32: PROCESSINFOCLASS = PROCESSINFOCLASS(43);
 
-const APPLICATION_FRAME_HOST: &str = "C:\\Windows\\System32\\ApplicationFrameHost.exe";
+const APPLICATION_FRAME_HOST: &str = r"C:\Windows\System32\ApplicationFrameHost.exe";
 
 pub struct Process {
     handle: HANDLE,

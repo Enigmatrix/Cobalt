@@ -19,11 +19,10 @@ features = [
     "Win32_Storage_EnhancedStorage",
     "Win32_UI_Shell_PropertiesSystem",
     "Win32_System_Com_StructuredStorage",
+    "Win32_Storage_FileSystem",
+
     "Foundation",
-    "Foundation_Collections",
     "Storage",
-    "Storage_Streams",
-    "Storage_FileProperties",
 ]
 
 [dependencies]

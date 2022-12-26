@@ -1,13 +1,16 @@
 use platform::events::{Event, TotalWatcher};
-use platform::objects::{PidTid, Process, AppInfo};
+use platform::objects::{AppInfo, PidTid, Process};
 use utils::tracing::info;
 use utils::{channels, errors::*};
 
-unsafe fn rwclone(_p: *const ()) -> std::task::RawWaker { make_raw_waker() }
+unsafe fn rwclone(_p: *const ()) -> std::task::RawWaker {
+    make_raw_waker()
+}
 unsafe fn rwwake(_p: *const ()) {}
 unsafe fn rwwakebyref(_p: *const ()) {}
 unsafe fn rwdrop(_p: *const ()) {}
-static RWVTABLE: std::task::RawWakerVTable = std::task::RawWakerVTable::new(rwclone, rwwake, rwwakebyref, rwdrop);
+static RWVTABLE: std::task::RawWakerVTable =
+    std::task::RawWakerVTable::new(rwclone, rwwake, rwwakebyref, rwdrop);
 fn make_raw_waker() -> std::task::RawWaker {
     std::task::RawWaker::new(&(), &RWVTABLE)
 }
@@ -19,7 +22,7 @@ fn block_on<T, F: std::future::Future<Output = T>>(fut: F) -> T {
 
     loop {
         if let std::task::Poll::Ready(x) = boxed_fut.as_mut().poll(&mut ctx) {
-            break x
+            break x;
         }
     }
 }
