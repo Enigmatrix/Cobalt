@@ -1,7 +1,7 @@
 use rusqlite::{Connection, Statement};
 use utils::errors::*;
 
-use crate::models;
+use crate::{migrations::default_migrations, migrator::Migrator, models};
 
 macro_rules! prepare_stmt {
     ($conn: expr, $sql:expr) => {{
@@ -51,6 +51,7 @@ impl DatabaseHolder {
         // TODO update app statement
         // TODO columns
         // TODO migrations
+        // TODO insert null App (just to get the id)
 
         Ok(Database {
             conn,
@@ -72,9 +73,14 @@ impl DatabaseHolder {
 impl DatabaseHolder {
     pub fn new(conn_str: &str) -> Result<DatabaseHolder> {
         //TODO the other options can disable mutexes
-        let conn = Connection::open(conn_str).context("open db using conn str")?;
+        let mut conn = Connection::open(conn_str).context("open db using conn str")?;
         // TODO enable fkey
         // TODO turn on WAL
+
+        // run migration
+        Migrator::new(&mut conn, default_migrations())
+            .migrate()
+            .context("run default migration")?;
 
         Ok(DatabaseHolder { conn })
     }

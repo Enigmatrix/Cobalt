@@ -10,7 +10,7 @@ pub fn setup() -> Result<()> {
         .with(fmt::layer()) // default fmt layer
         .with(
             filter::EnvFilter::try_from_default_env()
-                .or_else(|_| filter::EnvFilter::try_new("info"))
+                .or_else(|_| filter::EnvFilter::try_new("trace")) // TODO production should be info
                 .context("initialize default info env filter")?,
         )
         .try_init()
