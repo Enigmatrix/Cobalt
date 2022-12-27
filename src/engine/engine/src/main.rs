@@ -1,16 +1,11 @@
+use data::db::DatabaseHolder;
 use platform::events::{Event, TotalWatcher};
 use platform::objects::{AppInfo, PidTid, Process};
 use utils::tracing::info;
 use utils::{channels, errors::*};
 
-unsafe fn rwclone(_p: *const ()) -> std::task::RawWaker {
-    make_raw_waker()
-}
-unsafe fn rwwake(_p: *const ()) {}
-unsafe fn rwwakebyref(_p: *const ()) {}
-unsafe fn rwdrop(_p: *const ()) {}
 static RWVTABLE: std::task::RawWakerVTable =
-    std::task::RawWakerVTable::new(rwclone, rwwake, rwwakebyref, rwdrop);
+    std::task::RawWakerVTable::new(|_| make_raw_waker(), |_| {}, |_| {}, |_| {});
 fn make_raw_waker() -> std::task::RawWaker {
     std::task::RawWaker::new(&(), &RWVTABLE)
 }
@@ -30,6 +25,9 @@ fn block_on<T, F: std::future::Future<Output = T>>(fut: F) -> T {
 fn main() -> Result<()> {
     utils::setup().context("setup utils")?;
     platform::setup().context("setup platform")?;
+
+    let mut db_holder = DatabaseHolder::new(":memory:").context("create db holder")?;
+    let db = db_holder.database().context("get db")?;
 
     info!("🚀 engine started");
 
