@@ -1,8 +1,6 @@
 use std::cmp;
 
-use rusqlite::params;
-use rusqlite::Connection;
-use rusqlite::Error as SqliteError;
+use rusqlite::{params, Connection, Error as SqliteError};
 use utils::errors::*;
 use utils::tracing::debug;
 

@@ -1,6 +1,7 @@
+use std::fmt::Debug;
+
 use rusqlite::types::ToSqlOutput;
 use rusqlite::{Result, ToSql};
-use std::fmt::Debug;
 
 pub type Timestamp = u64;
 

@@ -1,8 +1,8 @@
-use crate::objects::{Timestamp, Window};
-
-use super::Event;
 use utils::channels::Sender;
 use utils::errors::*;
+
+use super::Event;
+use crate::objects::{Timestamp, Window};
 
 pub struct ForegroundWatcher {
     window: Window,

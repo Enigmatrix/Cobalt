@@ -1,15 +1,13 @@
 use std::ffi::c_void;
+
 use utils::errors::*;
-use windows::Win32::{
-    Foundation::HANDLE,
-    System::Threading::{
-        CreateTimerQueueTimer, DeleteTimerQueueTimer, WAITORTIMERCALLBACK, WORKER_THREAD_FLAGS,
-    },
+use windows::Win32::Foundation::HANDLE;
+use windows::Win32::System::Threading::{
+    CreateTimerQueueTimer, DeleteTimerQueueTimer, WAITORTIMERCALLBACK, WORKER_THREAD_FLAGS,
 };
 
-use crate::win32;
-
 use super::Duration;
+use crate::win32;
 
 pub struct Timer {
     handle: HANDLE,

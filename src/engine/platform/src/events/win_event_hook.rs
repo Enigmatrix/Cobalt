@@ -1,12 +1,11 @@
-use crate::*;
 use utils::errors::*;
-use windows::Win32::{
-    Foundation::{HINSTANCE, HWND},
-    UI::{
-        Accessibility::{SetWinEventHook, UnhookWinEvent, HWINEVENTHOOK, WINEVENTPROC},
-        WindowsAndMessaging::WINEVENT_OUTOFCONTEXT,
-    },
+use windows::Win32::Foundation::{HINSTANCE, HWND};
+use windows::Win32::UI::Accessibility::{
+    SetWinEventHook, UnhookWinEvent, HWINEVENTHOOK, WINEVENTPROC,
 };
+use windows::Win32::UI::WindowsAndMessaging::WINEVENT_OUTOFCONTEXT;
+
+use crate::*;
 
 pub struct WinEventHook {
     hook: HWINEVENTHOOK,

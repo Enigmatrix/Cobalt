@@ -1,13 +1,13 @@
 use utils::errors::*;
-use windows::Win32::{
-    Foundation::{CloseHandle, HANDLE, UNICODE_STRING, WAIT_TIMEOUT},
-    System::Threading::{
-        IsImmersiveProcess, NtQueryInformationProcess, OpenProcess, WaitForSingleObject,
-        PROCESSINFOCLASS, PROCESS_QUERY_LIMITED_INFORMATION,
-    },
+use windows::Win32::Foundation::{CloseHandle, HANDLE, UNICODE_STRING, WAIT_TIMEOUT};
+use windows::Win32::System::Threading::{
+    IsImmersiveProcess, NtQueryInformationProcess, OpenProcess, WaitForSingleObject,
+    PROCESSINFOCLASS, PROCESS_QUERY_LIMITED_INFORMATION,
 };
 
-use crate::{buffers::WideBuffer, errors::NtError, repeat_twice, win32};
+use crate::buffers::WideBuffer;
+use crate::errors::NtError;
+use crate::{repeat_twice, win32};
 
 pub type ProcessId = u32;
 pub type ThreadId = u32;

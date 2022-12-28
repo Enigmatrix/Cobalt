@@ -1,9 +1,7 @@
 use utils::errors::*;
-use windows::Win32::{
-    Foundation::HINSTANCE,
-    UI::WindowsAndMessaging::{
-        SetWindowsHookExW, UnhookWindowsHookEx, HHOOK, HOOKPROC, WINDOWS_HOOK_ID,
-    },
+use windows::Win32::Foundation::HINSTANCE;
+use windows::Win32::UI::WindowsAndMessaging::{
+    SetWindowsHookExW, UnhookWindowsHookEx, HHOOK, HOOKPROC, WINDOWS_HOOK_ID,
 };
 
 use crate::win32;

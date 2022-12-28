@@ -1,14 +1,13 @@
-use crate::objects::{Duration, Timestamp};
+use utils::channels::Sender;
+use utils::errors::*;
+use windows::Win32::Foundation::WPARAM;
+use windows::Win32::UI::WindowsAndMessaging::{
+    HC_ACTION, HOOKPROC, KBDLLHOOKSTRUCT, LLKHF_INJECTED, MSLLHOOKSTRUCT, WH_KEYBOARD_LL,
+    WH_MOUSE_LL, WM_KEYDOWN, WM_LBUTTONDOWN, WM_MBUTTONDOWN, WM_RBUTTONDOWN, WM_XBUTTONDOWN,
+};
 
 use super::{Event, WindowsHook};
-use utils::{channels::Sender, errors::*};
-use windows::Win32::{
-    Foundation::WPARAM,
-    UI::WindowsAndMessaging::{
-        HC_ACTION, HOOKPROC, KBDLLHOOKSTRUCT, LLKHF_INJECTED, MSLLHOOKSTRUCT, WH_KEYBOARD_LL,
-        WH_MOUSE_LL, WM_KEYDOWN, WM_LBUTTONDOWN, WM_MBUTTONDOWN, WM_RBUTTONDOWN, WM_XBUTTONDOWN,
-    },
-};
+use crate::objects::{Duration, Timestamp};
 
 #[derive(Debug)]
 pub enum InteractionStateChange {

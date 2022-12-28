@@ -1,11 +1,9 @@
 use utils::errors::*;
-use windows::{
-    ApplicationModel::AppInfo as UWPAppInfo,
-    Foundation::Size,
-    Storage::{
-        FileProperties::ThumbnailMode, StorageFile, Streams::IRandomAccessStreamWithContentType,
-    },
-};
+use windows::ApplicationModel::AppInfo as UWPAppInfo;
+use windows::Foundation::Size;
+use windows::Storage::FileProperties::ThumbnailMode;
+use windows::Storage::StorageFile;
+use windows::Storage::Streams::IRandomAccessStreamWithContentType;
 
 use crate::objects::FileVersionInfo;
 

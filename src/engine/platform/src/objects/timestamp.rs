@@ -1,14 +1,9 @@
 use std::mem::MaybeUninit;
+use std::{fmt, ops};
 
-use std::fmt;
-use std::ops;
-use windows::Win32::{
-    Foundation::{FILETIME, SYSTEMTIME},
-    System::{
-        SystemInformation::{GetSystemTimePreciseAsFileTime, GetTickCount64},
-        Time::FileTimeToSystemTime,
-    },
-};
+use windows::Win32::Foundation::{FILETIME, SYSTEMTIME};
+use windows::Win32::System::SystemInformation::{GetSystemTimePreciseAsFileTime, GetTickCount64};
+use windows::Win32::System::Time::FileTimeToSystemTime;
 
 #[derive(Ord, PartialOrd, Eq, PartialEq, Copy, Clone)]
 /// UTC FILETIME, representing the number of 100-nanosecond intervals since January 1, 1601 (UTC).

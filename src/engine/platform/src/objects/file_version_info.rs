@@ -1,15 +1,14 @@
 use std::mem::MaybeUninit;
 
 use utils::errors::*;
-use windows::{
-    core::PCWSTR,
-    w,
-    Win32::Storage::FileSystem::{
-        GetFileVersionInfoExW, GetFileVersionInfoSizeExW, VerQueryValueW, FILE_VER_GET_LOCALISED,
-    },
+use windows::core::PCWSTR;
+use windows::w;
+use windows::Win32::Storage::FileSystem::{
+    GetFileVersionInfoExW, GetFileVersionInfoSizeExW, VerQueryValueW, FILE_VER_GET_LOCALISED,
 };
 
-use crate::{errors::Win32Error, win32};
+use crate::errors::Win32Error;
+use crate::win32;
 
 pub struct FileVersionInfo {
     version_info: Box<[MaybeUninit<u8>]>,

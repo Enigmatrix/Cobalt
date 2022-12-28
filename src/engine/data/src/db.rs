@@ -1,11 +1,10 @@
-use rusqlite::{blob::Blob, params, Connection, Result as SqliteResult, Row, Statement};
+use rusqlite::blob::Blob;
+use rusqlite::{params, Connection, Result as SqliteResult, Row, Statement};
 use utils::errors::*;
 
-use crate::{
-    migrations::default_migrations,
-    migrator::Migrator,
-    models::{self, Table},
-};
+use crate::migrations::default_migrations;
+use crate::migrator::Migrator;
+use crate::models::{self, Table};
 
 macro_rules! prepare_stmt {
     ($conn: expr, $sql:expr) => {{
@@ -135,7 +134,11 @@ impl<'a> Database<'a> {
             .context("find or insert empty app query")
     }
 
-    pub fn create_app_icon(&mut self, app: &models::Ref<models::App>, sz: usize) -> Result<Blob<'a>> {
+    pub fn create_app_icon(
+        &mut self,
+        app: &models::Ref<models::App>,
+        sz: usize,
+    ) -> Result<Blob<'a>> {
         self.app_icon_init_stmt
             .execute(params![sz, app,])
             .context("set app icon blob size")?;
@@ -234,7 +237,9 @@ impl DatabaseHolder {
 
 #[cfg(test)]
 mod tests {
-    use std::{path::PathBuf, str::FromStr, io::{Read, Write, Seek}};
+    use std::io::{Read, Seek, Write};
+    use std::path::PathBuf;
+    use std::str::FromStr;
 
     use super::*;
 

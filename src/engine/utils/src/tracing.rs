@@ -1,9 +1,8 @@
-use crate::errors::*;
 pub use tracing::*;
 use tracing_subscriber::prelude::*;
 pub use tracing_subscriber::*;
 
-use crate::errors::Result;
+use crate::errors::*;
 
 pub fn setup() -> Result<()> {
     registry()

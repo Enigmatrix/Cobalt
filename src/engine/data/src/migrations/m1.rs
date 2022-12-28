@@ -1,7 +1,7 @@
-use crate::migrator::Migration;
 use rusqlite::{params, Connection};
-
 use utils::errors::*;
+
+use crate::migrator::Migration;
 
 pub struct Migration1;
 

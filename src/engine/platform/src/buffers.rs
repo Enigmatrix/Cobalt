@@ -1,10 +1,9 @@
-use std::{
-    ffi::{c_void, OsString},
-    marker::PhantomData,
-    mem::MaybeUninit,
-};
+use std::ffi::{c_void, OsString};
+use std::marker::PhantomData;
+use std::mem::MaybeUninit;
 
-use windows::{core::PWSTR, Win32::Foundation::UNICODE_STRING};
+use windows::core::PWSTR;
+use windows::Win32::Foundation::UNICODE_STRING;
 
 /// Base trait for buffers meant to be ffi-safe
 pub trait Buffer<T> {

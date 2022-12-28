@@ -1,8 +1,9 @@
 use data::db::DatabaseHolder;
 use platform::events::{Event, TotalWatcher};
 use platform::objects::{AppInfo, PidTid, Process};
+use utils::channels;
+use utils::errors::*;
 use utils::tracing::info;
-use utils::{channels, errors::*};
 
 static RWVTABLE: std::task::RawWakerVTable =
     std::task::RawWakerVTable::new(|_| make_raw_waker(), |_| {}, |_| {}, |_| {});

@@ -1,30 +1,22 @@
 use std::fmt;
-use utils::errors::*;
-use windows::{
-    core::{Vtable, GUID},
-    Win32::{
-        Foundation::HWND,
-        Storage::EnhancedStorage::PKEY_AppUserModel_ID,
-        System::Com::CoTaskMemFree,
-        UI::{
-            Shell::PropertiesSystem::{
-                IPropertyStore, PropVariantToStringAlloc, SHGetPropertyStoreForWindow,
-            },
-            WindowsAndMessaging::{
-                GetClassNameW, GetForegroundWindow, GetWindowTextLengthW, GetWindowTextW,
-                GetWindowThreadProcessId, IsWindow,
-            },
-        },
-    },
-};
 
-use crate::{
-    buffers::{buf, Buffer, WideBuffer},
-    errors::Win32Error,
-    repeat_size, win32,
+use utils::errors::*;
+use windows::core::{Vtable, GUID};
+use windows::Win32::Foundation::HWND;
+use windows::Win32::Storage::EnhancedStorage::PKEY_AppUserModel_ID;
+use windows::Win32::System::Com::CoTaskMemFree;
+use windows::Win32::UI::Shell::PropertiesSystem::{
+    IPropertyStore, PropVariantToStringAlloc, SHGetPropertyStoreForWindow,
+};
+use windows::Win32::UI::WindowsAndMessaging::{
+    GetClassNameW, GetForegroundWindow, GetWindowTextLengthW, GetWindowTextW,
+    GetWindowThreadProcessId, IsWindow,
 };
 
 use super::PidTid;
+use crate::buffers::{buf, Buffer, WideBuffer};
+use crate::errors::Win32Error;
+use crate::{repeat_size, win32};
 
 #[derive(PartialEq, Eq, Clone)]
 pub struct Window {
