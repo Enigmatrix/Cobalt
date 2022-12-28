@@ -1,3 +1,5 @@
+mod processor;
+
 use data::db::DatabaseHolder;
 use platform::events::{Event, TotalWatcher};
 use platform::objects::{AppInfo, PidTid, Process};
