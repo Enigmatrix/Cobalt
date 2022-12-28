@@ -114,7 +114,9 @@ table!(
         "color",
         "identity_tag",
         "identity_text0",
-        // "icon", // TODO icon
+        // We do not list icon as a column, as we do not insert nor query icons.
+
+        // "icon"
     ]
 );
 table!(

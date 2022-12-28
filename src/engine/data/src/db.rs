@@ -1,7 +1,11 @@
-use rusqlite::{params, Connection, Result as SqliteResult, Row, Statement};
+use rusqlite::{blob::Blob, params, Connection, Result as SqliteResult, Row, Statement};
 use utils::errors::*;
 
-use crate::{migrations::default_migrations, migrator::Migrator, models};
+use crate::{
+    migrations::default_migrations,
+    migrator::Migrator,
+    models::{self, Table},
+};
 
 macro_rules! prepare_stmt {
     ($conn: expr, $sql:expr) => {{
@@ -45,6 +49,7 @@ pub struct Database<'a> {
     pub(crate) insert_session_stmt: Statement<'a>,
     pub(crate) insert_usage_stmt: Statement<'a>,
     pub(crate) insert_interaction_period_stmt: Statement<'a>,
+    pub(crate) app_icon_init_stmt: Statement<'a>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -130,6 +135,22 @@ impl<'a> Database<'a> {
             .context("find or insert empty app query")
     }
 
+    pub fn create_app_icon(&mut self, app: &models::Ref<models::App>, sz: usize) -> Result<Blob<'a>> {
+        self.app_icon_init_stmt
+            .execute(params![sz, app,])
+            .context("set app icon blob size")?;
+
+        self.conn
+            .blob_open(
+                rusqlite::DatabaseName::Main,
+                models::App::name(),
+                "icon",
+                app.inner as i64,
+                false,
+            )
+            .context("open app icon blob")
+    }
+
     fn to_app(row: &Row) -> SqliteResult<FoundOrInserted<models::App>> {
         let id = models::Ref::new(row.get(0)?);
         Ok(if row.get(1)? {
@@ -175,8 +196,11 @@ impl DatabaseHolder {
                 conn,
                 // The `DO UPDATE id = id` _should_ be replaced with `DO NOTHING` in future versions of SQLite
                 // whenever it starts working...
-                "INSERT INTO app (identity_tag, identity_text0) VALUES (?, ?)
-                    ON CONFLICT (identity_tag, identity_text0) DO UPDATE SET id = id RETURNING *"
+                format!(
+                    "INSERT INTO app (identity_tag, identity_text0) VALUES (?, ?)
+                        ON CONFLICT (identity_tag, identity_text0) DO UPDATE SET id = id RETURNING {}",
+                    models::App::columns().join(", ")
+                )
             )?,
             initialize_app_stmt: update_stmt!(conn, models::App).context("prep app update stmt")?,
             insert_session_stmt: insert_stmt!(conn, models::Session)
@@ -184,7 +208,9 @@ impl DatabaseHolder {
             insert_usage_stmt: insert_stmt!(conn, models::Usage)
                 .context("prep usage insert stmt")?,
             insert_interaction_period_stmt: insert_stmt!(conn, models::InteractionPeriod)
-                .context("interaction period insert stmt")?,
+                .context("prep interaction period insert stmt")?,
+            app_icon_init_stmt: prepare_stmt!(conn, "UPDATE app SET icon = ZEROBLOB(?) WHERE id = ?")
+                .context("prep app icon init stmt")?,
         })
     }
 }
@@ -192,8 +218,10 @@ impl DatabaseHolder {
 impl DatabaseHolder {
     pub fn new(conn_str: &str) -> Result<DatabaseHolder> {
         let mut conn = Connection::open(conn_str).context("open db using conn str")?;
-        conn.pragma_update(None, "foreign_keys", "ON").context("turn on foreign keys")?;
-        conn.pragma_update(None, "journal_mode", "WAL").context("turn on WAL")?;
+        conn.pragma_update(None, "foreign_keys", "ON")
+            .context("turn on foreign keys")?;
+        conn.pragma_update(None, "journal_mode", "WAL")
+            .context("turn on WAL")?;
 
         // run migration
         Migrator::new(&mut conn, default_migrations())
@@ -206,13 +234,13 @@ impl DatabaseHolder {
 
 #[cfg(test)]
 mod tests {
-    use std::{path::PathBuf, str::FromStr};
+    use std::{path::PathBuf, str::FromStr, io::{Read, Write, Seek}};
 
     use super::*;
 
     fn get_all_apps(db: &mut Database<'_>) -> Result<Vec<FoundOrInserted<models::App>>> {
         let mut stmt = db.conn.prepare("SELECT * FROM app ORDER BY id")?;
-        let rows = stmt.query_map([], |row| Database::to_app(row))?;
+        let rows = stmt.query_map([], |row| Database::to_app(row))?; // icon column is loaded and ignored
         let mut v = Vec::new();
         for r in rows {
             v.push(r?);
@@ -532,6 +560,42 @@ mod tests {
             })?,
             FoundOrInserted::Found(app1)
         );
+
+        Ok(())
+    }
+
+    #[test]
+    fn app_icons() -> Result<()> {
+        let mut db_holder = DatabaseHolder::new(":memory:")?;
+        let mut db = db_holder.database()?;
+
+        let app_id0 = db.find_or_insert_empty_app(&models::AppIdentity::Win32 {
+            path: r"C:\Users\User\cobalt.exe".into(),
+        })?;
+        let app_id0 = if let FoundOrInserted::Inserted(re) = app_id0 {
+            assert_ne!(re, models::Ref::default());
+            re
+        } else {
+            panic!("not inserted");
+        };
+
+        // blob is all 0s
+        let mut icon = db.create_app_icon(&app_id0, 10)?;
+        let mut buf = Vec::new();
+        icon.read_to_end(&mut buf)?;
+        check_slice_eq(&[0; 10], &buf);
+
+        //reset
+        icon.seek(std::io::SeekFrom::Start(0))?;
+
+        // blob can be written to
+        icon.write_all(&(0..10).collect::<Vec<_>>())?;
+
+        // check writes
+        icon.seek(std::io::SeekFrom::Start(0))?;
+        let mut buf = Vec::new();
+        icon.read_to_end(&mut buf)?;
+        check_slice_eq(&(0..10).collect::<Vec<_>>(), &buf);
 
         Ok(())
     }
