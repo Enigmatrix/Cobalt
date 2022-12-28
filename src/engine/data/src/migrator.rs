@@ -1,5 +1,6 @@
 use std::cmp;
 
+use rusqlite::params;
 use rusqlite::Connection;
 use rusqlite::Error as SqliteError;
 use utils::errors::*;
@@ -46,29 +47,47 @@ impl<'a> Migrator<'a> {
     pub fn get_current_version(&self) -> Result<u64> {
         match self
             .conn
-            .query_row("SELECT Version FROM Migration", [], |row| row.get(0))
+            .query_row("SELECT version FROM migration", [], |row| row.get(0))
         {
             Ok(v) => Ok(v),
             Err(SqliteError::QueryReturnedNoRows) => Ok(0),
-            Err(SqliteError::SqliteFailure(_, Some(ref v))) if v == "no such table: Migration" => {
+            Err(SqliteError::SqliteFailure(_, Some(ref v))) if v == "no such table: migration" => {
                 Ok(0)
             }
             Err(e) => Err(e).context("get current version query"),
         }
     }
 
+    fn set_current_version(&self, version: u64) -> Result<()> {
+        self.conn
+            .execute("UPDATE migration SET version = ?", params![version])
+            .context("set current version query")?;
+        Ok(())
+    }
+
     pub fn migrate(&mut self) -> Result<()> {
         let current_version = self.get_current_version().context("get current version")?;
+        let mut new_version = None;
+
         for m in self
             .migrations
             .iter_mut()
             .skip_while(|m| m.version() <= current_version)
         {
             let ver = m.version();
-            debug!("running migration {}", ver);
+            debug!("running migration {ver}");
             m.up(self.conn)
-                .with_context(|| format!("error running migration {}", ver))?;
+                .with_context(|| format!("error running migration {ver}"))?;
+
+            let new_version = new_version.get_or_insert(ver);
+            *new_version = (*new_version).max(ver);
         }
+
+        if let Some(new_version) = new_version {
+            self.set_current_version(new_version)
+                .context("set current version")?;
+        }
+
         Ok(())
     }
 }

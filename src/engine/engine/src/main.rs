@@ -27,7 +27,7 @@ fn main() -> Result<()> {
     platform::setup().context("setup platform")?;
 
     let mut db_holder = DatabaseHolder::new(":memory:").context("create db holder")?;
-    let db = db_holder.database().context("get db")?;
+    let mut _db = db_holder.database().context("get db")?;
 
     info!("🚀 engine started");
 
