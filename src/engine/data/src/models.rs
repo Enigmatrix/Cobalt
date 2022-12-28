@@ -1,19 +1,22 @@
 use rusqlite::types::ToSqlOutput;
 use rusqlite::{Result, ToSql};
+use std::fmt::Debug;
 
 pub type Timestamp = u64;
 
-#[derive(Default, Debug, PartialEq, Eq)]
+#[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct App {
     pub id: Ref<Self>,
+    // pub initialized: bool,
     pub name: String,
     pub description: String,
     pub company: String,
     pub color: Option<String>,
     pub identity: AppIdentity,
+    // pub icon:
 }
 
-#[derive(Default, Debug, PartialEq, Eq)]
+#[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct Session {
     pub id: Ref<Self>,
     pub app: Ref<App>,
@@ -21,7 +24,7 @@ pub struct Session {
     pub cmd_line: Option<String>,
 }
 
-#[derive(Default, Debug, PartialEq, Eq)]
+#[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct Usage {
     pub id: Ref<Self>,
     pub session: Ref<Session>,
@@ -29,7 +32,7 @@ pub struct Usage {
     pub end: Timestamp,
 }
 
-#[derive(Default, Debug, PartialEq, Eq)]
+#[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct InteractionPeriod {
     pub id: Ref<Self>,
     pub start: Timestamp,
@@ -38,8 +41,8 @@ pub struct InteractionPeriod {
     pub keystrokes: u64,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
 /// Unique identity of an App, outside of the Database (on the FileSystem/Registry)
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum AppIdentity {
     Win32 { path: String },
     UWP { aumid: String },
@@ -54,16 +57,17 @@ impl Default for AppIdentity {
 }
 
 pub trait Table {
-    type Id: Default;
+    type Id: Default + Debug + Clone + Eq;
 
     fn id(&self) -> &Ref<Self>
     where
         Self: Sized;
 
+    fn name() -> &'static str;
     fn columns() -> &'static [&'static str];
 }
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct Ref<T: Table> {
     pub inner: T::Id,
 }
@@ -74,20 +78,6 @@ impl<T: Table> Ref<T> {
     }
 }
 
-impl<Id: Clone, T: Table<Id = Id>> Clone for Ref<T> {
-    fn clone(&self) -> Self {
-        Self::new(self.inner.clone())
-    }
-}
-
-impl<Id: PartialEq, T: Table<Id = Id>> PartialEq for Ref<T> {
-    fn eq(&self, other: &Self) -> bool {
-        self.inner.eq(&other.inner)
-    }
-}
-
-impl<Id: Eq, T: Table<Id = Id>> Eq for Ref<T> {}
-
 impl<Id: ToSql + 'static, T: Table<Id = Id>> ToSql for Ref<T> {
     fn to_sql(&self) -> Result<ToSqlOutput<'_>> {
         self.inner.to_sql()
@@ -95,11 +85,14 @@ impl<Id: ToSql + 'static, T: Table<Id = Id>> ToSql for Ref<T> {
 }
 
 macro_rules! table {
-    ($t:ty, $fld:ident : $id:ty, $cols: expr) => {
+    ($t:ty, $name:expr, $fld:ident : $id:ty, $cols:expr) => {
         impl Table for $t {
             type Id = $id;
             fn id(&self) -> &Ref<Self> {
                 &self.$fld
+            }
+            fn name() -> &'static str {
+                $name
             }
             fn columns() -> &'static [&'static str] {
                 &$cols
@@ -110,21 +103,30 @@ macro_rules! table {
 
 table!(
     App,
+    "app",
     id: u64,
     [
         "id",
+        "initialized",
         "name",
         "description",
         "company",
         "color",
         "identity_tag",
-        "identity_text0"
+        "identity_text0",
+        // "icon", // TODO icon
     ]
 );
-table!(Session, id: u64, ["id", "app", "title", "cmd_line",]);
-table!(Usage, id: u64, ["id", "session", "start", "end"]);
+table!(
+    Session,
+    "session",
+    id: u64,
+    ["id", "app", "title", "cmd_line",]
+);
+table!(Usage, "usage", id: u64, ["id", "session", "start", "end"]);
 table!(
     InteractionPeriod,
+    "interaction_period",
     id: u64,
     ["id", "start", "end", "mouseclicks", "keystrokes"]
 );

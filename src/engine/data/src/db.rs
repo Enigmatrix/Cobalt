@@ -1,4 +1,4 @@
-use rusqlite::{params, Connection, OptionalExtension, Statement};
+use rusqlite::{params, Connection, Result as SqliteResult, Row, Statement};
 use utils::errors::*;
 
 use crate::{migrations::default_migrations, migrator::Migrator, models};
@@ -13,10 +13,11 @@ macro_rules! prepare_stmt {
 }
 
 macro_rules! insert_stmt {
-    ($conn: expr, $tbl:expr, $mdl:ty) => {{
+    ($conn: expr, $mdl:ty) => {{
+        let name = <$mdl as $crate::models::Table>::name();
         let sql = format!(
             "INSERT INTO {} VALUES (NULL{})",
-            $tbl,
+            name,
             ", ?".repeat(<$mdl as $crate::models::Table>::columns().len() - 1)
         );
         prepare_stmt!($conn, sql)
@@ -24,42 +25,56 @@ macro_rules! insert_stmt {
 }
 
 macro_rules! update_stmt {
-    ($conn: expr, $tbl:expr, $mdl:ty) => {{
+    ($conn: expr, $mdl:ty) => {{
+        let name = <$mdl as $crate::models::Table>::name();
         let update_flds = <$mdl as $crate::models::Table>::columns()
             .iter()
             .skip(1) // skip id column
             .map(|c| format!("{c} = ?"))
             .collect::<Vec<_>>()
             .join(", ");
-        let sql = format!("UPDATE {} SET {} WHERE id = ?", $tbl, update_flds);
+        let sql = format!("UPDATE {} SET {} WHERE id = ?", name, update_flds);
         prepare_stmt!($conn, sql)
     }};
 }
 
 pub struct Database<'a> {
     pub(crate) conn: &'a Connection,
-    pub(crate) find_app_stmt: Statement<'a>,
-    pub(crate) update_app_stmt: Statement<'a>,
-    pub(crate) insert_empty_app_stmt: Statement<'a>,
+    pub(crate) find_or_insert_empty_app_stmt: Statement<'a>,
+    pub(crate) initialize_app_stmt: Statement<'a>,
     pub(crate) insert_session_stmt: Statement<'a>,
     pub(crate) insert_usage_stmt: Statement<'a>,
     pub(crate) insert_interaction_period_stmt: Statement<'a>,
 }
 
-impl<'a> Database<'a> {
-    // TODO or make this take a AppIdentity? then the cols for identity_* can be
-    // non null and will need to change the trigger
-    pub fn insert_empty_app(&mut self) -> Result<models::Ref<models::App>> {
-        self.insert_empty_app_stmt
-            .raw_execute()
-            .context("execute insert empty app stmt")?;
-        Ok(models::Ref::new(self.conn.last_insert_rowid() as u64))
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub enum FoundOrInserted<T: models::Table> {
+    Found(T),
+    Inserted(models::Ref<T>),
+}
+
+impl<T: models::Table> FoundOrInserted<T> {
+    pub fn unwrap_found(&self) -> &T {
+        match self {
+            Self::Found(v) => v,
+            _ => panic!("value is not Found"),
+        }
     }
 
-    pub fn update_app(&mut self, app: &models::App) -> Result<()> {
-        let (identity_tag, identity_text0) = self.destructure_identity(&app.identity);
-        self.update_app_stmt
+    pub fn unwrap_inserted(&self) -> &models::Ref<T> {
+        match self {
+            Self::Inserted(v) => v,
+            _ => panic!("value is not Inserted"),
+        }
+    }
+}
+
+impl<'a> Database<'a> {
+    pub fn initialize_app(&mut self, app: &models::App) -> Result<()> {
+        let (identity_tag, identity_text0) = Self::destructure_identity(&app.identity);
+        self.initialize_app_stmt
             .execute(params![
+                true,
                 app.name,
                 app.description,
                 app.company,
@@ -104,18 +119,40 @@ impl<'a> Database<'a> {
         Ok(())
     }
 
-    pub fn find_app(
+    pub fn find_or_insert_empty_app(
         &mut self,
         identity: &models::AppIdentity,
-    ) -> Result<Option<models::Ref<models::App>>> {
-        let (tag, text1) = self.destructure_identity(identity);
-        self.find_app_stmt
-            .query_row(params! {tag, text1}, |row| row.get(0).map(models::Ref::new))
-            .optional()
-            .context("find app query")
+    ) -> Result<FoundOrInserted<models::App>> {
+        let (tag, text1) = Self::destructure_identity(identity);
+
+        self.find_or_insert_empty_app_stmt
+            .query_row(params! {tag, text1}, |row| Self::to_app(row))
+            .context("find or insert empty app query")
     }
 
-    fn destructure_identity<'b>(&self, identity: &'b models::AppIdentity) -> (u64, &'b str) {
+    fn to_app(row: &Row) -> SqliteResult<FoundOrInserted<models::App>> {
+        let id = models::Ref::new(row.get(0)?);
+        Ok(if row.get(1)? {
+            let app = models::App {
+                id,
+                name: row.get(2)?,
+                description: row.get(3)?,
+                company: row.get(4)?,
+                color: row.get(5)?,
+                identity: if row.get::<usize, u64>(6)? == 0 {
+                    models::AppIdentity::Win32 { path: row.get(7)? }
+                } else {
+                    models::AppIdentity::UWP { aumid: row.get(7)? }
+                },
+            };
+
+            FoundOrInserted::Found(app)
+        } else {
+            FoundOrInserted::Inserted(id)
+        })
+    }
+
+    fn destructure_identity(identity: &models::AppIdentity) -> (u64, &str) {
         match identity {
             models::AppIdentity::Win32 { path } => (0, path),
             models::AppIdentity::UWP { aumid } => (1, aumid),
@@ -134,35 +171,29 @@ impl DatabaseHolder {
 
         Ok(Database {
             conn,
-            find_app_stmt: prepare_stmt!(
+            find_or_insert_empty_app_stmt: prepare_stmt!(
                 conn,
-                "SELECT id FROM app WHERE identity_tag = ? AND identity_text0 = ?"
+                // The `DO UPDATE id = id` _should_ be replaced with `DO NOTHING` in future versions of SQLite
+                // whenever it starts working...
+                "INSERT INTO app (identity_tag, identity_text0) VALUES (?, ?)
+                    ON CONFLICT (identity_tag, identity_text0) DO UPDATE SET id = id RETURNING *"
             )?,
-            //TODO get table name from model (models::Table::name())
-            insert_empty_app_stmt: prepare_stmt!(conn, "INSERT INTO app(id) VALUES (NULL)")
-                .context("prep empty app insert stmt")?,
-            update_app_stmt: update_stmt!(conn, "app", models::App)
-                .context("prep app update stmt")?,
-            insert_session_stmt: insert_stmt!(conn, "session", models::Session)
+            initialize_app_stmt: update_stmt!(conn, models::App).context("prep app update stmt")?,
+            insert_session_stmt: insert_stmt!(conn, models::Session)
                 .context("prep session insert stmt")?,
-            insert_usage_stmt: insert_stmt!(conn, "usage", models::Usage)
+            insert_usage_stmt: insert_stmt!(conn, models::Usage)
                 .context("prep usage insert stmt")?,
-            insert_interaction_period_stmt: insert_stmt!(
-                conn,
-                "interaction_period",
-                models::InteractionPeriod
-            )
-            .context("interaction period insert stmt")?,
+            insert_interaction_period_stmt: insert_stmt!(conn, models::InteractionPeriod)
+                .context("interaction period insert stmt")?,
         })
     }
 }
 
 impl DatabaseHolder {
     pub fn new(conn_str: &str) -> Result<DatabaseHolder> {
-        //TODO the other options can disable mutexes
         let mut conn = Connection::open(conn_str).context("open db using conn str")?;
-        // TODO enable fkey
-        // TODO turn on WAL
+        conn.pragma_update(None, "foreign_keys", "ON").context("turn on foreign keys")?;
+        conn.pragma_update(None, "journal_mode", "WAL").context("turn on WAL")?;
 
         // run migration
         Migrator::new(&mut conn, default_migrations())
@@ -175,24 +206,13 @@ impl DatabaseHolder {
 
 #[cfg(test)]
 mod tests {
+    use std::{path::PathBuf, str::FromStr};
+
     use super::*;
 
-    fn get_all_apps(db: &mut Database<'_>) -> Result<Vec<models::App>> {
+    fn get_all_apps(db: &mut Database<'_>) -> Result<Vec<FoundOrInserted<models::App>>> {
         let mut stmt = db.conn.prepare("SELECT * FROM app ORDER BY id")?;
-        let rows = stmt.query_map([], |row| {
-            Ok(models::App {
-                id: models::Ref::new(row.get(0)?),
-                name: row.get(1)?,
-                description: row.get(2)?,
-                company: row.get(3)?,
-                color: row.get(4)?,
-                identity: if row.get::<usize, u64>(5)? == 0 {
-                    models::AppIdentity::Win32 { path: row.get(6)? }
-                } else {
-                    models::AppIdentity::UWP { aumid: row.get(6)? }
-                },
-            })
-        })?;
+        let rows = stmt.query_map([], |row| Database::to_app(row))?;
         let mut v = Vec::new();
         for r in rows {
             v.push(r?);
@@ -263,7 +283,7 @@ mod tests {
 
     #[test]
     fn create_file_backed_db() -> Result<()> {
-        let fpath = std::env::temp_dir().join("test.db");
+        let fpath = PathBuf::from_str("./test.db")?;
         {
             let mut db_holder = DatabaseHolder::new(&fpath.to_string_lossy())?;
             let _ = db_holder.database()?;
@@ -280,19 +300,17 @@ mod tests {
     }
 
     #[test]
-    fn insert_empty_app() -> Result<()> {
-        let mut db_holder = DatabaseHolder::new(":memory:")?;
-        let mut db = db_holder.database()?;
-        let app_id = db.insert_empty_app()?;
-        assert_ne!(app_id, models::Ref::default()); // test that we actually inserted something
-        Ok(())
-    }
-
-    #[test]
     fn insert_session() -> Result<()> {
         let mut db_holder = DatabaseHolder::new(":memory:")?;
         let mut db = db_holder.database()?;
-        let app_id = db.insert_empty_app()?;
+        let app_identity = models::AppIdentity::Win32 {
+            path: r"C:\Users\User\cobalt.exe".into(),
+        };
+        let app_id = match db.find_or_insert_empty_app(&app_identity)? {
+            FoundOrInserted::Inserted(id) => id,
+            _ => panic!(),
+        };
+
         let mut session0 = models::Session {
             id: Default::default(),
             app: app_id.clone(),
@@ -320,7 +338,13 @@ mod tests {
     fn insert_usage() -> Result<()> {
         let mut db_holder = DatabaseHolder::new(":memory:")?;
         let mut db = db_holder.database()?;
-        let app_id = db.insert_empty_app()?;
+        let app_identity = models::AppIdentity::Win32 {
+            path: r"C:\Users\User\cobalt.exe".into(),
+        };
+        let app_id = match db.find_or_insert_empty_app(&app_identity)? {
+            FoundOrInserted::Inserted(id) => id,
+            _ => panic!(),
+        };
         let mut session = models::Session {
             id: Default::default(),
             app: app_id.clone(),
@@ -363,11 +387,15 @@ mod tests {
     }
 
     #[test]
-    fn update_app() -> Result<()> {
+    fn initialize_app() -> Result<()> {
         let mut db_holder = DatabaseHolder::new(":memory:")?;
         let mut db = db_holder.database()?;
 
-        let app_id0 = db.insert_empty_app()?;
+        let app_id0 = db.find_or_insert_empty_app(&models::AppIdentity::Win32 {
+            path: r"C:\Users\User\cobalt.exe".into(),
+        })?;
+        let app_id0 = app_id0.unwrap_inserted();
+
         let app0 = models::App {
             id: app_id0.clone(),
             name: "Cobalt".into(),
@@ -378,10 +406,18 @@ mod tests {
                 path: r"C:\Users\User\cobalt.exe".into(),
             },
         };
-        db.update_app(&app0)?;
-        check_slice_eq(&[app0], &get_all_apps(&mut db)?);
+        db.initialize_app(&app0)?;
+
+        check_slice_eq(
+            &[app0],
+            &get_all_apps(&mut db)?
+                .into_iter()
+                .map(|a| a.unwrap_found().clone())
+                .collect::<Vec<_>>(),
+        );
 
         // update existing app + update to UWP + update with color
+        // Specifically, we overwrite the AppIdentity with another AppIdentity
         let app1 = models::App {
             id: app_id0.clone(),
             name: "Mail".into(),
@@ -392,32 +428,51 @@ mod tests {
                 aumid: "MS!Mail".into(),
             },
         };
-        db.update_app(&app1)?;
-        check_slice_eq(&[app1], &get_all_apps(&mut db)?);
+        db.initialize_app(&app1)?;
+        check_slice_eq(
+            &[app1],
+            &get_all_apps(&mut db)?
+                .into_iter()
+                .map(|a| a.unwrap_found().clone())
+                .collect::<Vec<_>>(),
+        );
 
         // Failing duplicate app identity
-        let app_id1 = db.insert_empty_app()?;
+        let app_id2 = db.find_or_insert_empty_app(&models::AppIdentity::UWP {
+            aumid: "NotMS!Mail".into(),
+        })?;
+        let app_id2 = app_id2.unwrap_inserted();
+
         let app2 = models::App {
-            id: app_id1.clone(),
+            id: app_id2.clone(),
             name: "NotMail".into(),
             color: Some("#234567".into()),
             company: "Not Daddy MS".into(),
             description: "NotMail App".into(),
             identity: models::AppIdentity::UWP {
                 aumid: "MS!Mail".into(),
-            }, // dup app identity
+            }, // dup app identity, but in a different row
         };
-        assert!(db.update_app(&app2).is_err());
+        assert!(db.initialize_app(&app2).is_err());
 
         Ok(())
     }
 
     #[test]
-    fn find_app() -> Result<()> {
+    fn find_or_insert_empty_app() -> Result<()> {
         let mut db_holder = DatabaseHolder::new(":memory:")?;
         let mut db = db_holder.database()?;
 
-        let app_id0 = db.insert_empty_app()?;
+        let app_id0 = db.find_or_insert_empty_app(&models::AppIdentity::Win32 {
+            path: r"C:\Users\User\cobalt.exe".into(),
+        })?;
+        let app_id0 = if let FoundOrInserted::Inserted(re) = app_id0 {
+            assert_ne!(re, models::Ref::default());
+            re
+        } else {
+            panic!("not inserted");
+        };
+
         let app0 = models::App {
             id: app_id0.clone(),
             name: "Cobalt".into(),
@@ -428,9 +483,18 @@ mod tests {
                 path: r"C:\Users\User\cobalt.exe".into(),
             },
         };
-        db.update_app(&app0)?;
+        db.initialize_app(&app0)?;
 
-        let app_id1 = db.insert_empty_app()?;
+        let app_id1 = db.find_or_insert_empty_app(&models::AppIdentity::UWP {
+            aumid: "MS!Mail".into(),
+        })?;
+        let app_id1 = if let FoundOrInserted::Inserted(re) = app_id1 {
+            assert_ne!(re, models::Ref::default());
+            re
+        } else {
+            panic!("not inserted");
+        };
+
         let app1 = models::App {
             id: app_id1.clone(),
             name: "Mail".into(),
@@ -441,31 +505,32 @@ mod tests {
                 aumid: "MS!Mail".into(),
             },
         };
-        db.update_app(&app1)?;
+        db.initialize_app(&app1)?;
+
+        assert!(
+            matches!( db.find_or_insert_empty_app(&models::AppIdentity::Win32 {
+                path: r"C:\Users\User\not_cobalt.exe".into()
+            })?, FoundOrInserted::Inserted(r) if r != models::Ref::default())
+        );
+
+        assert!(
+            matches!( db.find_or_insert_empty_app(&models::AppIdentity::UWP {
+                aumid: r"NotMS!Mail".into()
+            })?, FoundOrInserted::Inserted(r) if r != models::Ref::default())
+        );
 
         assert_eq!(
-            db.find_app(&models::AppIdentity::Win32 {
-                path: r"C:\Users\User\not_cobalt.exe".into()
-            })?,
-            None
-        );
-        assert_eq!(
-            db.find_app(&models::AppIdentity::UWP {
-                aumid: r"NotMS!Mail".into()
-            })?,
-            None
-        );
-        assert_eq!(
-            db.find_app(&models::AppIdentity::Win32 {
+            db.find_or_insert_empty_app(&models::AppIdentity::Win32 {
                 path: r"C:\Users\User\cobalt.exe".into()
             })?,
-            Some(app_id0)
+            FoundOrInserted::Found(app0)
         );
+
         assert_eq!(
-            db.find_app(&models::AppIdentity::UWP {
+            db.find_or_insert_empty_app(&models::AppIdentity::UWP {
                 aumid: r"MS!Mail".into()
             })?,
-            Some(app_id1)
+            FoundOrInserted::Found(app1)
         );
 
         Ok(())

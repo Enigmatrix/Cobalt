@@ -14,15 +14,18 @@ impl Migration for Migration1 {
         let tx = conn.transaction().context("create transaction")?;
 
         // all fields of app are nullable
+        // TODO icon
         tx.execute(
             "CREATE TABLE app (
             id              INTEGER PRIMARY KEY NOT NULL,
+            initialized     TINYINT NOT NULL DEFAULT FALSE,
             name            TEXT,
             description     TEXT,
             company         TEXT,
             color           TEXT,
-            identity_tag    INTEGER,
-            identity_text0  TEXT
+            identity_tag    INTEGER NOT NULL,
+            identity_text0  TEXT NOT NULL /*,
+            icon            BLOB */
         )",
             params![],
         )
@@ -32,10 +35,9 @@ impl Migration for Migration1 {
         tx.execute(
             "CREATE TABLE session (
             id              INTEGER PRIMARY KEY NOT NULL,
-            app             INTEGER NOT NULL,
+            app             INTEGER NOT NULL REFERENCES app(id),
             title           TEXT NOT NULL,
-            cmd_line        TEXT,
-            FOREIGN KEY(app) references app(id)
+            cmd_line        TEXT
         )",
             params![],
         )
@@ -44,10 +46,9 @@ impl Migration for Migration1 {
         tx.execute(
             "CREATE TABLE usage (
             id              INTEGER PRIMARY KEY NOT NULL,
-            session         INTEGER NOT NULL,
+            session         INTEGER NOT NULL REFERENCES session(id),
             start           INTEGER NOT NULL,
-            end             INTEGER NOT NULL,
-            FOREIGN KEY(session) references session(id)
+            end             INTEGER NOT NULL
         )",
             params![],
         )
@@ -77,10 +78,8 @@ impl Migration for Migration1 {
 
         tx.execute(
             "CREATE TABLE _app_tag (
-            app             INTEGER NOT NULL,
-            session         INTEGER NOT NULL,
-            FOREIGN KEY(app) references app(id),
-            FOREIGN KEY(session) references session(id),
+            app             INTEGER NOT NULL REFERENCES app(id),
+            session         INTEGER NOT NULL REFERENCES session(id),
             PRIMARY KEY (app, session)
         )",
             params![],
@@ -110,8 +109,7 @@ impl Migration for Migration1 {
         .context("create index interaction_period")?;
 
         tx.execute(
-            "CREATE UNIQUE INDEX app_identity ON app (identity_tag, identity_text0)
-                WHERE identity_tag IS NOT NULL AND identity_text0 IS NOT NULL",
+            "CREATE UNIQUE INDEX app_identity ON app (identity_tag, identity_text0)",
             params![],
         )
         .context("create unique index app_identity")?;
