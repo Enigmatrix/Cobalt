@@ -10,12 +10,12 @@ use utils::channels::Sender;
 use utils::errors::*;
 
 pub struct ProcessDetails {
-    pub app: models::App,
+    pub app: models::Ref<models::App>,
     pub process: Process,
 }
 
 pub struct SessionDetails {
-    pub session: models::Session,
+    pub session: models::Ref<models::Session>,
     pub window: Window,
 }
 
@@ -32,10 +32,15 @@ pub struct Processor<'a> {
 
 pub enum Event {
     Platform(PlatformEvent),
+    AppInfoUpdate(models::App),
 }
 
 impl<'a> Processor<'a> {
-    pub fn new(db: Database<'a>, app_info_tx: Sender<models::Ref<models::App>>, now: Timestamp) -> Self {
+    pub fn new(
+        db: Database<'a>,
+        app_info_tx: Sender<models::Ref<models::App>>,
+        now: Timestamp,
+    ) -> Self {
         Self {
             processes: HashMap::new(),
             windows: HashMap::new(),
@@ -44,11 +49,11 @@ impl<'a> Processor<'a> {
             app_info_tx,
 
             current_usage: None,
-            interaction_start: now
+            interaction_start: now,
         }
     }
 
-    pub fn get_process_details(
+    pub fn create_process_details(
         pid: ProcessId,
         window: Window,
         db: &mut Database<'_>,
@@ -71,43 +76,41 @@ impl<'a> Processor<'a> {
             .find_or_insert_empty_app(&app_identity)
             .with_context(|| format!("find or insert empty app for {:?}", &app_identity))?
         {
-            FoundOrInserted::Found(existing_app) => existing_app,
+            FoundOrInserted::Found(existing_app) => existing_app.id,
             FoundOrInserted::Inserted(new_app) => {
-                let app = models::App {
-                    id: new_app.clone(),
-                    identity: app_identity,
-                    ..Default::default()
-                };
                 app_info_tx
-                    .send(new_app)
+                    .send(new_app.clone())
                     .context("send app info request msg")?;
-                app
+                new_app
             }
         };
 
         Ok(ProcessDetails { app, process })
     }
 
-    pub fn get_session_details(&mut self, window: Window) -> Result<SessionDetails> {
+    pub fn create_session_details(
+        window: Window,
+        processes: &mut HashMap<ProcessId, ProcessDetails>,
+        db: &mut Database<'_>,
+        app_info_tx: &Sender<models::Ref<models::App>>,
+    ) -> Result<SessionDetails> {
         let title = window.title().context("get window title")?; // TODO we are getting window title too many times ... maybe make it part of platform::Event?
         let PidTid { pid, .. } = window.pid_tid().context("get window pid")?;
 
-        let ProcessDetails { app, process } = self
-            .processes
+        let ProcessDetails { app, process } = processes
             .fallible_get_or_insert(pid, |pid| {
-                Self::get_process_details(pid, window.clone(), &mut self.db, &self.app_info_tx)
+                Self::create_process_details(pid, window.clone(), db, app_info_tx)
             })
             .context("get or insert process details")?;
 
         let mut session = models::Session {
             id: models::Ref::default(),
-            app: app.id.clone(),
+            app: app.clone(),
             title,
             cmd_line: Some(process.cmd_line().context("get command line")?), //TODO fallible!
         };
-        self.db
-            .insert_session(&mut session)
-            .context("insert session")?;
+        db.insert_session(&mut session).context("insert session")?;
+        let session = session.id;
         Ok(SessionDetails { session, window })
     }
 
@@ -115,6 +118,8 @@ impl<'a> Processor<'a> {
         match ev {
             Event::Platform(ev) => match ev {
                 PlatformEvent::ForegroundSwitch { at, window } => {
+                    // TODO remove extaneous processes and windows
+
                     if let Some(current_usage) = &mut self.current_usage {
                         current_usage.end = at.into();
                         self.db
@@ -123,12 +128,20 @@ impl<'a> Processor<'a> {
                     }
 
                     let SessionDetails { session, .. } = self
-                        .get_session_details(window)
+                        .windows
+                        .fallible_get_or_insert(window, |window| {
+                            Self::create_session_details(
+                                window,
+                                &mut self.processes,
+                                &mut self.db,
+                                &self.app_info_tx,
+                            )
+                        })
                         .context("get or insert session details")?;
 
                     self.current_usage = Some(models::Usage {
                         id: models::Ref::default(),
-                        session: session.id,
+                        session: session.clone(),
                         start: at.into(),
                         end: at.into(),
                     });
@@ -154,6 +167,9 @@ impl<'a> Processor<'a> {
                     }
                 },
             },
+            Event::AppInfoUpdate(app) => {
+                // idk actually
+            }
         }
         Ok(())
     }

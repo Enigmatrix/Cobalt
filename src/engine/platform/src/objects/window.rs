@@ -1,4 +1,5 @@
 use std::fmt;
+use std::hash::{Hash, Hasher};
 
 use utils::errors::*;
 use windows::core::{Vtable, GUID};
@@ -18,10 +19,24 @@ use crate::buffers::{buf, Buffer, WideBuffer};
 use crate::errors::Win32Error;
 use crate::{repeat_size, win32};
 
-#[derive(PartialEq, Eq, Clone)]
+#[derive(Clone)]
 pub struct Window {
     hwnd: HWND,
 }
+
+impl Hash for Window {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        state.write_isize(self.hwnd.0)
+    }
+}
+
+impl PartialEq for Window {
+    fn eq(&self, other: &Self) -> bool {
+        self.hwnd.eq(&other.hwnd)
+    }
+}
+
+impl Eq for Window {}
 
 impl fmt::Debug for Window {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

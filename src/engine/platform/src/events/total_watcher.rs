@@ -35,7 +35,7 @@ static mut INSTANCE: MaybeUninit<TotalWatcher> = MaybeUninit::uninit();
 
 impl TotalWatcher {
     // Do not call twice
-    pub fn new(sender: Sender<Event>) -> Result<&'static Self> {
+    pub fn new(events_tx: Sender<Event>, start: Timestamp) -> Result<&'static Self> {
         // run until we get an actual foreground window
         let fg_window = loop {
             if let Some(f) = Window::foreground() {
@@ -46,6 +46,7 @@ impl TotalWatcher {
         let foreground = ForegroundWatcher::new(fg_window).context("setup foreground watcher")?;
         let interaction = InteractionWatcher::new(
             Duration::from_millis(5_000), // TODO make this configurable
+            start,
             Some(Self::interaction_watcher_mouse_callback),
             Some(Self::interaction_watcher_keyboard_callback),
         )
@@ -62,7 +63,7 @@ impl TotalWatcher {
                 foreground,
                 interaction,
                 _timer,
-                sender,
+                sender: events_tx,
             })
         };
         Ok(unsafe { Self::instance() })

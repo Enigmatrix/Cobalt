@@ -27,7 +27,7 @@ pub struct InteractionWatcher {
 }
 
 impl InteractionWatcher {
-    pub fn new(max_gap: Duration, _mouse: HOOKPROC, _keyboard: HOOKPROC) -> Result<Self> {
+    pub fn new(max_gap: Duration, start: Timestamp, _mouse: HOOKPROC, _keyboard: HOOKPROC) -> Result<Self> {
         let _mouse =
             WindowsHook::global(WH_MOUSE_LL, _mouse).context("setup low-level mouse hook")?;
         let _keyboard = WindowsHook::global(WH_KEYBOARD_LL, _keyboard)
@@ -38,7 +38,7 @@ impl InteractionWatcher {
             max_gap,
             keystrokes: 0,
             mouseclicks: 0,
-            last_interaction: Timestamp::now(),
+            last_interaction: start,
             idle: true,
         })
     }
