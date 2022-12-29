@@ -415,5 +415,6 @@ Cargo.lock
 *.pdb
 
 
-## Ignore vscode
+## Ignore IDE-specific files
 .vscode
+.idea
