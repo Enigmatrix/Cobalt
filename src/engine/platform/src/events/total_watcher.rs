@@ -1,7 +1,6 @@
 use std::ffi::c_void;
 use std::mem::MaybeUninit;
 
-use utils::channels::Sender;
 use utils::errors::*;
 use windows::Win32::Foundation::{BOOLEAN, HWND, LPARAM, LRESULT, WPARAM};
 use windows::Win32::UI::WindowsAndMessaging::{

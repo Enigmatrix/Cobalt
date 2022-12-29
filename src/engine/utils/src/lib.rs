@@ -1,5 +1,6 @@
 pub mod channels;
 pub mod errors;
+pub mod futures;
 pub mod tracing;
 
 use errors::*;

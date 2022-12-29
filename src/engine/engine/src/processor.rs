@@ -8,6 +8,7 @@ use platform::events::{Event as PlatformEvent, InteractionStateChange};
 use platform::objects::{PidTid, Process, ProcessId, Timestamp, Window};
 use utils::channels::Sender;
 use utils::errors::*;
+use utils::tracing::info;
 
 pub struct ProcessDetails {
     pub app: models::Ref<models::App>,
@@ -24,7 +25,7 @@ pub struct Processor<'a> {
     windows: HashMap<Window, SessionDetails>,
 
     db: Database<'a>,
-    app_info_tx: Sender<models::Ref<models::App>>,
+    app_info_tx: Sender<(models::Ref<models::App>, models::AppIdentity)>,
 
     current_usage: Option<models::Usage>,
     interaction_start: Timestamp,
@@ -39,7 +40,7 @@ pub enum Event {
 impl<'a> Processor<'a> {
     pub fn new(
         db: Database<'a>,
-        app_info_tx: Sender<models::Ref<models::App>>,
+        app_info_tx: Sender<(models::Ref<models::App>, models::AppIdentity)>,
         now: Timestamp,
     ) -> Self {
         Self {
@@ -58,7 +59,7 @@ impl<'a> Processor<'a> {
         pid: ProcessId,
         window: Window,
         db: &mut Database<'_>,
-        app_info_tx: &Sender<models::Ref<models::App>>,
+        app_info_tx: &Sender<(models::Ref<models::App>, models::AppIdentity)>,
     ) -> Result<ProcessDetails> {
         let process = Process::new(pid).with_context(|| format!("create process for pid={pid}"))?;
         let path = process.path().context("get process path")?;
@@ -80,7 +81,7 @@ impl<'a> Processor<'a> {
             FoundOrInserted::Found(existing_app) => existing_app.id,
             FoundOrInserted::Inserted(new_app) => {
                 app_info_tx
-                    .send(new_app.clone())
+                    .send((new_app.clone(), app_identity.clone()))
                     .context("send app info request msg")?;
                 new_app
             }
@@ -93,7 +94,7 @@ impl<'a> Processor<'a> {
         window: Window,
         processes: &mut HashMap<ProcessId, ProcessDetails>,
         db: &mut Database<'_>,
-        app_info_tx: &Sender<models::Ref<models::App>>,
+        app_info_tx: &Sender<(models::Ref<models::App>, models::AppIdentity)>,
     ) -> Result<SessionDetails> {
         let title = window.title().context("get window title")?; // TODO we are getting window title too many times ... maybe make it part of platform::Event?
         let PidTid { pid, .. } = window.pid_tid().context("get window pid")?;
@@ -169,7 +170,8 @@ impl<'a> Processor<'a> {
                 },
             },
             Event::AppInfoUpdate(app) => {
-                // idk actually
+                info!(?app, "app info update");
+                // TODO
             }
         }
         Ok(())
