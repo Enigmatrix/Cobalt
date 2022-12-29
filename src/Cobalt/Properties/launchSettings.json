@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "Cobalt (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "Cobalt (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

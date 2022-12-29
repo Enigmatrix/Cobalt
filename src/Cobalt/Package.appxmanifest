@@ -7,14 +7,14 @@
   IgnorableNamespaces="uap rescap">
 
   <Identity
-    Name="f5bf64ed-218a-4449-87ee-20ed4645557b"
+    Name="0fbcafab-00e5-4402-8ad1-047fe24bfe3f"
     Publisher="CN=enigm"
     Version="1.0.0.0" />
 
   <Properties>
-    <DisplayName>Cobalt (Package)</DisplayName>
+    <DisplayName>Cobalt</DisplayName>
     <PublisherDisplayName>enigm</PublisherDisplayName>
-    <Logo>Images\StoreLogo.png</Logo>
+    <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
 
   <Dependencies>
@@ -31,13 +31,13 @@
       Executable="$targetnametoken$.exe"
       EntryPoint="$targetentrypoint$">
       <uap:VisualElements
-        DisplayName="Cobalt (Package)"
-        Description="Cobalt (Package)"
+        DisplayName="Cobalt"
+        Description="Cobalt"
         BackgroundColor="transparent"
-        Square150x150Logo="Images\Square150x150Logo.png"
-        Square44x44Logo="Images\Square44x44Logo.png">
-        <uap:DefaultTile Wide310x150Logo="Images\Wide310x150Logo.png" />
-        <uap:SplashScreen Image="Images\SplashScreen.png" />
+        Square150x150Logo="Assets\Square150x150Logo.png"
+        Square44x44Logo="Assets\Square44x44Logo.png">
+        <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png" />
+        <uap:SplashScreen Image="Assets\SplashScreen.png" />
       </uap:VisualElements>
     </Application>
   </Applications>
