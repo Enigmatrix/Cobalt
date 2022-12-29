@@ -30,6 +30,7 @@ pub struct Processor<'a> {
     interaction_start: Timestamp,
 }
 
+#[derive(Debug)]
 pub enum Event {
     Platform(PlatformEvent),
     AppInfoUpdate(models::App),

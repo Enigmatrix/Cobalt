@@ -1,4 +1,3 @@
-use utils::channels::Sender;
 use utils::errors::*;
 use windows::Win32::Foundation::WPARAM;
 use windows::Win32::UI::WindowsAndMessaging::{
@@ -6,7 +5,7 @@ use windows::Win32::UI::WindowsAndMessaging::{
     WH_MOUSE_LL, WM_KEYDOWN, WM_LBUTTONDOWN, WM_MBUTTONDOWN, WM_RBUTTONDOWN, WM_XBUTTONDOWN,
 };
 
-use super::{Event, WindowsHook};
+use super::{CallbackRef, Event, WindowsHook};
 use crate::objects::{Duration, Timestamp};
 
 #[derive(Debug)]
@@ -27,7 +26,12 @@ pub struct InteractionWatcher {
 }
 
 impl InteractionWatcher {
-    pub fn new(max_gap: Duration, start: Timestamp, _mouse: HOOKPROC, _keyboard: HOOKPROC) -> Result<Self> {
+    pub fn new(
+        max_gap: Duration,
+        start: Timestamp,
+        _mouse: HOOKPROC,
+        _keyboard: HOOKPROC,
+    ) -> Result<Self> {
         let _mouse =
             WindowsHook::global(WH_MOUSE_LL, _mouse).context("setup low-level mouse hook")?;
         let _keyboard = WindowsHook::global(WH_KEYBOARD_LL, _keyboard)
@@ -52,26 +56,24 @@ impl InteractionWatcher {
         now - self.last_interaction <= self.max_gap
     }
 
-    pub fn trigger(&mut self, sender: &mut Sender<Event>, now: Timestamp) -> Result<()> {
+    pub fn trigger(&mut self, cb: CallbackRef, now: Timestamp) -> Result<()> {
         if self.idle && self.recent_interaction(now) {
             self.idle = false;
-            sender
-                .send(Event::InteractionStateChange {
-                    at: now,
-                    change: InteractionStateChange::Active,
-                })
-                .context("send interaction state change event (active)")?;
+            cb(Event::InteractionStateChange {
+                at: now,
+                change: InteractionStateChange::Active,
+            })
+            .context("callback interaction state change event (active)")?;
         } else if !self.idle && !self.recent_interaction(now) {
             self.idle = true;
-            sender
-                .send(Event::InteractionStateChange {
-                    at: now,
-                    change: InteractionStateChange::Idle {
-                        mouseclicks: self.mouseclicks,
-                        keystrokes: self.keystrokes,
-                    },
-                })
-                .context("send interaction state change event (idle)")?;
+            cb(Event::InteractionStateChange {
+                at: now,
+                change: InteractionStateChange::Idle {
+                    mouseclicks: self.mouseclicks,
+                    keystrokes: self.keystrokes,
+                },
+            })
+            .context("callback interaction state change event (idle)")?;
             self.reset_interactions();
         }
         Ok(())

@@ -12,6 +12,9 @@ use windows::Win32::UI::WindowsAndMessaging::{
 use super::{ForegroundWatcher, InteractionStateChange, InteractionWatcher};
 use crate::objects::{Duration, Timer, Timestamp, Window};
 
+pub type CallbackRef<'a> = &'a dyn Fn(Event) -> Result<()>;
+pub type Callback = Box<dyn Fn(Event) -> Result<()>>;
+
 #[derive(Debug)]
 pub enum Event {
     ForegroundSwitch {
@@ -28,14 +31,14 @@ pub struct TotalWatcher {
     foreground: ForegroundWatcher,
     interaction: InteractionWatcher,
     _timer: Timer,
-    pub(crate) sender: Sender<Event>,
+    cb: Callback,
 }
 
 static mut INSTANCE: MaybeUninit<TotalWatcher> = MaybeUninit::uninit();
 
 impl TotalWatcher {
     // Do not call twice
-    pub fn new(events_tx: Sender<Event>, start: Timestamp) -> Result<&'static Self> {
+    pub fn new(cb: Callback, start: Timestamp) -> Result<&'static Self> {
         // run until we get an actual foreground window
         let fg_window = loop {
             if let Some(f) = Window::foreground() {
@@ -63,7 +66,7 @@ impl TotalWatcher {
                 foreground,
                 interaction,
                 _timer,
-                sender: events_tx,
+                cb,
             })
         };
         Ok(unsafe { Self::instance() })
@@ -110,10 +113,10 @@ impl TotalWatcher {
     pub fn trigger(&mut self) -> Result<()> {
         let now = Timestamp::now();
         self.interaction
-            .trigger(&mut self.sender, now)
+            .trigger(&self.cb, now)
             .context("trigger interaction watcher")?;
         self.foreground
-            .trigger(&mut self.sender, now)
+            .trigger(&self.cb, now)
             .context("trigger interaction watcher")?;
         Ok(())
     }

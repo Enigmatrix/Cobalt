@@ -1,7 +1,6 @@
-use utils::channels::Sender;
 use utils::errors::*;
 
-use super::Event;
+use super::{CallbackRef, Event};
 use crate::objects::{Timestamp, Window};
 
 pub struct ForegroundWatcher {
@@ -13,15 +12,14 @@ impl ForegroundWatcher {
         Ok(Self { window: foreground })
     }
 
-    pub fn trigger(&mut self, sender: &mut Sender<Event>, now: Timestamp) -> Result<()> {
+    pub fn trigger(&mut self, cb: CallbackRef, now: Timestamp) -> Result<()> {
         let foreground = Window::foreground();
         if let Some(foreground) = foreground && foreground != self.window {
-            sender
-                .send(Event::ForegroundSwitch {
+            cb(Event::ForegroundSwitch {
                     at: now,
                     window: foreground.clone(),
                 })
-                .context("send foreground switch event")?;
+                .context("callback foreground switch event")?;
             self.window = foreground;
         }
         Ok(())

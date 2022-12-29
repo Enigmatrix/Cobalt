@@ -7,7 +7,7 @@ use utils::channels::{self, select};
 use utils::errors::*;
 use utils::tracing::info;
 
-use crate::processor::{Processor, Event};
+use crate::processor::{Event, Processor};
 
 static RWVTABLE: std::task::RawWakerVTable =
     std::task::RawWakerVTable::new(|_| make_raw_waker(), |_| {}, |_| {}, |_| {});
@@ -33,7 +33,7 @@ fn main() -> Result<()> {
 
     let start = Timestamp::now();
 
-    let mut db_holder = DatabaseHolder::new(":memory:").context("create db holder")?;
+    let mut db_holder = DatabaseHolder::new("./f.db").context("create db holder")?;
     let db = db_holder.database().context("get db")?;
 
     info!("🚀 engine started");
@@ -41,20 +41,21 @@ fn main() -> Result<()> {
     let (events_tx, events_rx) = channels::unbounded();
 
     let (app_info_tx, app_info_rx) = channels::unbounded();
-    let (app_info_res_tx, app_info_res_rx) = channels::unbounded();
 
     let mut processor = Processor::new(db, app_info_tx, start);
 
     let _ = std::thread::spawn(move || {
-        TotalWatcher::new(events_tx, start)
+        let tx = events_tx.clone();
+        let cb = Box::new(move |pev| tx.send(Event::Platform(pev)).context("send platform event"));
+        TotalWatcher::new(cb, start)
             .expect("setup total watcher")
             .run();
     });
 
-    select::Selector::new()
-    .recv(&events_rx, |pev| processor.process(Event::Platform(pev.context("recv platform event")?)))
-    .recv(&app_info_res_rx, |app| processor.process(Event::AppInfoUpdate(app.context("recv app info update context")?)))
-    .wait();
+    for event in events_rx {
+        info!(?event);
+        processor.process(event).context("process event")?
+    }
 
     // for event in events_rx {
     //     info!(?event);
