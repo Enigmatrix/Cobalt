@@ -7,7 +7,6 @@ use platform::objects::AppInfo;
 use utils::channels::Receiver;
 use utils::errors::*;
 use utils::futures::{block_on, LocalExecutor};
-use utils::tracing::info;
 
 type Callback = Box<dyn Fn(models::App) -> Result<()>>;
 
@@ -56,17 +55,16 @@ impl<'a> AppInfoExtractor<'a> {
             identity,
         };
 
-        let blob = {
+        let mut blob = {
             let mut db = db.borrow_mut();
             let sz = app_info.logo.Size()?;
             db.create_app_icon(&app.id, sz as usize)
                 .context("create app icon")?
         };
 
-        info!("created blob of size {}", blob.size());
-
-        // TODO write logo
-        // app_info.logo.ReadAsync(buffer, count, options)
+        AppInfo::copy_logo_to(app_info.logo, &mut blob)
+            .await
+            .context("copy logo to blob")?;
 
         {
             let mut db = db.borrow_mut();
@@ -89,7 +87,8 @@ impl<'a> AppInfoExtractor<'a> {
                     .recv_async()
                     .await
                     .context("recv extract tx")
-                    .unwrap();
+                    .unwrap(); // TODO get rid of this unwrap....
+
                 let cb = self.cb.clone();
                 let db = self.db.clone();
                 self.exec
@@ -97,7 +96,7 @@ impl<'a> AppInfoExtractor<'a> {
                         Self::extract(app, identity, cb, db)
                             .await
                             .context("extract app info")
-                            .unwrap();
+                            .unwrap(); // TODO get rid of this unwrap...
                     })
                     .detach();
             }
