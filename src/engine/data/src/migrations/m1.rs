@@ -13,6 +13,9 @@ impl Migration for Migration1 {
     fn up(&mut self, conn: &mut Connection) -> Result<()> {
         let tx = conn.transaction().context("create transaction")?;
 
+
+        // TODO make color non-null
+
         // all fields of app are nullable, except identity
         tx.execute(
             "CREATE TABLE app (
@@ -68,7 +71,7 @@ impl Migration for Migration1 {
         tx.execute(
             "CREATE TABLE tag (
             id              INTEGER PRIMARY KEY NOT NULL,
-            name            TEXT,
+            name            TEXT NOT NULL,
             color           TEXT
         )",
             params![],
@@ -78,8 +81,8 @@ impl Migration for Migration1 {
         tx.execute(
             "CREATE TABLE _app_tag (
             app             INTEGER NOT NULL REFERENCES app(id),
-            session         INTEGER NOT NULL REFERENCES session(id),
-            PRIMARY KEY (app, session)
+            tag             INTEGER NOT NULL REFERENCES tag(id),
+            PRIMARY KEY (app, tag)
         )",
             params![],
         )
