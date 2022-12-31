@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "Cobalt.Taskbar (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "Cobalt.Taskbar (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
