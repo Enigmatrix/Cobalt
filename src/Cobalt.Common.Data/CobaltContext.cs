@@ -22,6 +22,7 @@ public class CobaltContext : DbContext
     public DbSet<Usage> Usages { get; init; } = default!;
     public DbSet<InteractionPeriod> InteractionPeriods { get; init; } = default!;
     public DbSet<Tag> Tags { get; init; } = default!;
+    public DbSet<Alert> Alerts { get; init; } = default!;
 
     public IQueryable<App> InitializedApps => Apps.Where(app => EF.Property<bool>(app, "initialized"));
 
@@ -35,6 +36,9 @@ public class CobaltContext : DbContext
         var dateTimeConverter = new ValueConverter<DateTime, long>(
             dt => dt.ToFileTime(),
             ticks => DateTime.FromFileTime(ticks));
+        var timeSpanConverter = new ValueConverter<TimeSpan, long>(
+            ts => ts.Ticks,
+            ticks => TimeSpan.FromTicks(ticks));
 
         var app = modelBuilder.Entity<App>();
         app.Property<bool>("initialized");
@@ -50,8 +54,13 @@ public class CobaltContext : DbContext
         interactionPeriod.Property(ip => ip.End).HasConversion(dateTimeConverter);
 
         app.HasMany(a => a.Tags).WithMany(t => t.Apps)
-            .UsingEntity("_app_tag", 
+            .UsingEntity("_app_tag",
                 at => at.HasOne(typeof(Tag)).WithMany().HasForeignKey("tag"),
                 at => at.HasOne(typeof(App)).WithMany().HasForeignKey("app"));
+
+        var alert = modelBuilder.Entity<Alert>();
+        alert.Property<int>("_exceedActionTag");
+        alert.Property<string>("_exceedActionText0");
+        alert.Property(a => a.UsageLimit).HasConversion(timeSpanConverter);
     }
 }

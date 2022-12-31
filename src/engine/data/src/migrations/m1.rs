@@ -89,14 +89,26 @@ impl Migration for Migration1 {
         .context("create table _app_tag")?;
 
         tx.execute(
+            "CREATE TABLE alert (
+            id              INTEGER PRIMARY KEY NOT NULL,
+            app             INTEGER REFERENCES app(id),
+            tag             INTEGER REFERENCES tag(id),
+            usage_limit     INTEGER NOT NULL,
+            action_tag      INTEGER NOT NULL,
+            action_text0    TEXT,
+            time_frame      INTEGER NOT NULL
+        )",
+            params![],
+        )
+        .context("create table alert")?;
+
+        tx.execute(
             "CREATE TABLE migration (
             version     INTEGER NOT NULL
         )",
             params![],
         )
         .context("create table migration")?;
-
-        //TODO insert alert
 
         tx.execute(
             "CREATE INDEX usage_start_end ON usage (start ASC, end ASC)",
