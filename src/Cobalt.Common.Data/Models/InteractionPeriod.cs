@@ -9,6 +9,21 @@ public class InteractionPeriod
     [Required] public long Id { get; set; } = default!;
     [Required] public int MouseClicks { get; set; }
     [Required] public int KeyStrokes { get; set; }
-    [Required] public DateTime Start { get; set; } = default!;
-    [Required] public DateTime End { get; set; } = default!;
+
+    [Required] [Column("start")] internal long StartTicks { get; set; }
+    [Required] [Column("end")] internal long EndTicks { get; set; }
+
+    [NotMapped]
+    public DateTime Start
+    {
+        get => DateTime.FromFileTime(StartTicks);
+        set => StartTicks = value.ToFileTime();
+    }
+
+    [NotMapped]
+    public DateTime End
+    {
+        get => DateTime.FromFileTime(EndTicks);
+        set => EndTicks = value.ToFileTime();
+    }
 }

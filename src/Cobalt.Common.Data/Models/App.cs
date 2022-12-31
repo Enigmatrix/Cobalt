@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Cobalt.Common.Utils;
 
 namespace Cobalt.Common.Data.Models;
 
@@ -26,8 +27,7 @@ public class App
             {
                 0 => new AppIdentity.Win32(_identityText0),
                 1 => new AppIdentity.Uwp(_identityText0),
-                _ => throw new Exception(
-                    $"Discriminated Union (AppIdentity) does not contain tag={_identityTag}") // TODO create exception for this in Utils
+                _ => throw new ToDiscriminatedUnionException<AppIdentity>(_identityTag)
             };
         set
         {
@@ -46,7 +46,7 @@ public class App
                     break;
                 }
                 default:
-                    throw new Exception("Discriminated Union (AppIdentity) with unknown branch");
+                    throw new FromDiscriminatedUnionException<AppIdentity>();
             }
         }
     }

@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Cobalt.Common.Utils;
 
 namespace Cobalt.Common.Data.Models;
 
@@ -49,8 +50,7 @@ public class Alert
             {
                 0 => new ExceedAction.Kill(),
                 1 => new ExceedAction.Message(_exceedActionText0!),
-                _ => throw new Exception(
-                    $"Discriminated Union (ExceedAction) does not contain tag={_exceedActionTag}") // TODO create exception for this in Utils
+                _ => throw new ToDiscriminatedUnionException<ExceedAction>(_exceedActionTag)
             };
         set
         {
@@ -69,7 +69,7 @@ public class Alert
                     break;
                 }
                 default:
-                    throw new Exception("Discriminated Union (ExceedAction) with unknown branch");
+                    throw new FromDiscriminatedUnionException<ExceedAction>();
             }
         }
     }

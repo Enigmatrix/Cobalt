@@ -59,10 +59,6 @@ public class CobaltContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        var dateTimeConverter = new ValueConverter<DateTime, long>(
-            dt => dt.ToFileTime(),
-            ticks => DateTime.FromFileTime(ticks));
-
         var app = modelBuilder.Entity<App>();
         app.Property<bool>("initialized");
         app.Property<int>("_identityTag");
@@ -73,8 +69,8 @@ public class CobaltContext : DbContext
         usage.Property(u => u.EndTicks);
 
         var interactionPeriod = modelBuilder.Entity<InteractionPeriod>();
-        interactionPeriod.Property(ip => ip.Start).HasConversion(dateTimeConverter);
-        interactionPeriod.Property(ip => ip.End).HasConversion(dateTimeConverter);
+        interactionPeriod.Property(ip => ip.StartTicks);
+        interactionPeriod.Property(ip => ip.EndTicks);
 
         app.HasMany(a => a.Tags).WithMany(t => t.Apps)
             .UsingEntity("_app_tag",
