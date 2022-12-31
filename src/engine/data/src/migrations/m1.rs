@@ -91,6 +91,7 @@ impl Migration for Migration1 {
         tx.execute(
             "CREATE TABLE alert (
             id              INTEGER PRIMARY KEY NOT NULL,
+            target_is_app   TINYINT NOT NULL,
             app             INTEGER REFERENCES app(id),
             tag             INTEGER REFERENCES tag(id),
             usage_limit     INTEGER NOT NULL,

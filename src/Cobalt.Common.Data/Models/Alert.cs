@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Cobalt.Common.Data.Models;
 
@@ -19,19 +20,22 @@ public abstract record ExceedAction
 [Table("alert")]
 public class Alert
 {
-    [Column("action_tag")] private int _exceedActionTag;
+    // maybe can internal props? for query purposes
+    [Required] [Column("action_tag")] private int _exceedActionTag;
     [Column("action_text0")] private string? _exceedActionText0;
 
-    public long Id { get; set; } = default!;
+    [Required] public long Id { get; set; } = default!;
+    [Required] [Column("target_is_app")] public bool TargetIsApp { get; set; } = default!;
     [ForeignKey("app")] public App? App { get; set; } = default!;
     [ForeignKey("tag")] public Tag? Tag { get; set; } = default!;
 
-    [Column("usage_limit")] public TimeSpan UsageLimit { get; set; } = default!;
+    [Required] [Column("usage_limit")] public TimeSpan UsageLimit { get; set; } = default!;
 
-    [Column("time_frame")] public TimeFrame TimeFrame { get; set; } = default!;
+    [Required] [Column("time_frame")] public TimeFrame TimeFrame { get; set; } = default!;
 
     // Using this property in a query is a bad idea since it will materialize the tabs too early
-    [NotMapped] public ExceedAction ExceedAction
+    [NotMapped]
+    public ExceedAction ExceedAction
     {
         get =>
             _exceedActionTag switch

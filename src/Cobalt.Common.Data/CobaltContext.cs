@@ -26,6 +26,16 @@ public class CobaltContext : DbContext
 
     public IQueryable<App> InitializedApps => Apps.Where(app => EF.Property<bool>(app, "initialized"));
 
+    public IQueryable<Alert> W()
+    {
+        return Alerts.Where(alert =>
+                (alert.TargetIsApp ? alert.App!.Sessions.SelectMany(sess =>sess.Usages.Select(usage=> usage.EndTicks - usage.StartTicks)).Sum()
+                :
+                alert.Tag!.Apps.SelectMany(app => app.Sessions.SelectMany(sess =>sess.Usages.Select(usage=> usage.EndTicks - usage.StartTicks))).Sum())
+            >
+            TimeSpan.FromDays(1).Ticks);
+    }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         optionsBuilder.UseSqlite($"Data Source={_path}");
@@ -45,9 +55,9 @@ public class CobaltContext : DbContext
         app.Property<int>("_identityTag");
         app.Property<string>("_identityText0");
 
-        var usage = modelBuilder.Entity<Usage>();
-        usage.Property(u => u.Start).HasConversion(dateTimeConverter);
-        usage.Property(u => u.End).HasConversion(dateTimeConverter);
+         var usage = modelBuilder.Entity<Usage>();
+         usage.Property(u => u.StartTicks);
+         usage.Property(u => u.EndTicks);
 
         var interactionPeriod = modelBuilder.Entity<InteractionPeriod>();
         interactionPeriod.Property(ip => ip.Start).HasConversion(dateTimeConverter);
