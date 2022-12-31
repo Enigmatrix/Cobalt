@@ -10,9 +10,20 @@ public class Usage
 
     [Required] [ForeignKey("session")] public Session Session { get; set; } = default!;
 
-    [Required] [Column("start")] internal long StartTicks { get; set; } = default!;
-    [Required] [Column("end")] internal long EndTicks { get; set; } = default!;
+    [Required] [Column("start")] internal long StartTicks { get; set; }
+    [Required] [Column("end")] internal long EndTicks { get; set; }
 
-    public DateTime Start => DateTime.FromFileTime(StartTicks);
-    public DateTime End => DateTime.FromFileTime(EndTicks);
+    [NotMapped]
+    public DateTime Start
+    {
+        get => DateTime.FromFileTime(StartTicks);
+        set => StartTicks = value.ToFileTime();
+    }
+
+    [NotMapped]
+    public DateTime End
+    {
+        get => DateTime.FromFileTime(EndTicks);
+        set => EndTicks = value.ToFileTime();
+    }
 }

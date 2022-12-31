@@ -26,14 +26,30 @@ public class CobaltContext : DbContext
 
     public IQueryable<App> InitializedApps => Apps.Where(app => EF.Property<bool>(app, "initialized"));
 
-    public IQueryable<Alert> W()
+    public IQueryable<Alert> GetExpiredAlerts()
     {
-        return Alerts.Where(alert =>
-                (alert.TargetIsApp ? alert.App!.Sessions.SelectMany(sess =>sess.Usages.Select(usage=> usage.EndTicks - usage.StartTicks)).Sum()
-                :
-                alert.Tag!.Apps.SelectMany(app => app.Sessions.SelectMany(sess =>sess.Usages.Select(usage=> usage.EndTicks - usage.StartTicks))).Sum())
-            >
-            TimeSpan.FromDays(1).Ticks);
+        var today = DateTime.Today;
+        var week = today - TimeSpan.FromDays((int)today.DayOfWeek);
+        var month = today - TimeSpan.FromDays(today.Day);
+
+        return Alerts
+            .Select(alert => new
+            {
+                Alert = alert,
+                // no switch statement in Linq Expressions
+                Start = alert.TimeFrame == TimeFrame.Daily ? today.ToFileTime() :
+                    alert.TimeFrame == TimeFrame.Weekly ? week.ToFileTime() : month.ToFileTime()
+            })
+            .Where(v =>
+                // The cursed things I have to do to get this to be a SQL query ...
+                Apps.Where(app => v.Alert.TargetIsApp ? app.Id == v.Alert.App!.Id : v.Alert.Tag!.Apps.Contains(app))
+                    .SelectMany(app => app.Sessions.SelectMany(sess =>
+                        sess.Usages.Where(usage => usage.EndTicks > v.Start).Select(usage =>
+                            usage.EndTicks - Math.Max(usage.StartTicks, v.Start))))
+                    .Sum()
+                >
+                v.Alert.UsageLimitTicks)
+            .Select(v => v.Alert);
     }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -46,18 +62,15 @@ public class CobaltContext : DbContext
         var dateTimeConverter = new ValueConverter<DateTime, long>(
             dt => dt.ToFileTime(),
             ticks => DateTime.FromFileTime(ticks));
-        var timeSpanConverter = new ValueConverter<TimeSpan, long>(
-            ts => ts.Ticks,
-            ticks => TimeSpan.FromTicks(ticks));
 
         var app = modelBuilder.Entity<App>();
         app.Property<bool>("initialized");
         app.Property<int>("_identityTag");
         app.Property<string>("_identityText0");
 
-         var usage = modelBuilder.Entity<Usage>();
-         usage.Property(u => u.StartTicks);
-         usage.Property(u => u.EndTicks);
+        var usage = modelBuilder.Entity<Usage>();
+        usage.Property(u => u.StartTicks);
+        usage.Property(u => u.EndTicks);
 
         var interactionPeriod = modelBuilder.Entity<InteractionPeriod>();
         interactionPeriod.Property(ip => ip.Start).HasConversion(dateTimeConverter);
@@ -71,6 +84,6 @@ public class CobaltContext : DbContext
         var alert = modelBuilder.Entity<Alert>();
         alert.Property<int>("_exceedActionTag");
         alert.Property<string>("_exceedActionText0");
-        alert.Property(a => a.UsageLimit).HasConversion(timeSpanConverter);
+        alert.Property(a => a.UsageLimitTicks);
     }
 }

@@ -29,7 +29,14 @@ public class Alert
     [ForeignKey("app")] public App? App { get; set; } = default!;
     [ForeignKey("tag")] public Tag? Tag { get; set; } = default!;
 
-    [Required] [Column("usage_limit")] public TimeSpan UsageLimit { get; set; } = default!;
+    [Required] [Column("usage_limit")] internal long UsageLimitTicks { get; set; }
+
+    [NotMapped]
+    public TimeSpan UsageLimit
+    {
+        get => TimeSpan.FromTicks(UsageLimitTicks);
+        set => UsageLimitTicks = value.Ticks;
+    }
 
     [Required] [Column("time_frame")] public TimeFrame TimeFrame { get; set; } = default!;
 

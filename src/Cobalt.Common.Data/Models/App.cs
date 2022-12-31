@@ -6,10 +6,10 @@ namespace Cobalt.Common.Data.Models;
 [Table("app")]
 public class App
 {
-    // maybe can internal props? for query purposes
-    [Required] [Column("identity_tag")] private readonly int _identityTag = default!;
+    // TODO maybe can internal props? for query purposes
+    [Required] [Column("identity_tag")] private int _identityTag;
 
-    [Column("identity_text0")] private readonly string _identityText0 = default!;
+    [Column("identity_text0")] private string _identityText0 = default!;
 
     [Required] public long Id { get; set; } = default!;
     [Required] public string Name { get; set; } = default!;
@@ -19,13 +19,37 @@ public class App
 
     // Using this property in a query is a bad idea since it will materialize the tabs too early
     [NotMapped]
-    public AppIdentity Identity => _identityTag switch
+    public AppIdentity Identity
     {
-        0 => new AppIdentity.Win32(_identityText0),
-        1 => new AppIdentity.Uwp(_identityText0),
-        _ => throw new Exception(
-            $"Discriminated Union (AppIdentity) does not contain tag={_identityTag}") // TODO create exception for this in Utils
-    };
+        get =>
+            _identityTag switch
+            {
+                0 => new AppIdentity.Win32(_identityText0),
+                1 => new AppIdentity.Uwp(_identityText0),
+                _ => throw new Exception(
+                    $"Discriminated Union (AppIdentity) does not contain tag={_identityTag}") // TODO create exception for this in Utils
+            };
+        set
+        {
+            switch (value)
+            {
+                case AppIdentity.Win32 win32:
+                {
+                    _identityTag = 0;
+                    _identityText0 = win32.Path;
+                    break;
+                }
+                case AppIdentity.Uwp uwp:
+                {
+                    _identityTag = 1;
+                    _identityText0 = uwp.Aumid;
+                    break;
+                }
+                default:
+                    throw new Exception("Discriminated Union (AppIdentity) with unknown branch");
+            }
+        }
+    }
 
     public List<Session> Sessions { get; set; } = default!;
     public List<Tag> Tags { get; set; } = default!;
