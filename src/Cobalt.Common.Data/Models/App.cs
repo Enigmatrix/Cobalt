@@ -5,14 +5,13 @@ using Cobalt.Common.Utils;
 namespace Cobalt.Common.Data.Models;
 
 [Table("app")]
-public class App
+public class App : Entity
 {
     // TODO maybe can internal props? for query purposes
     [Required] [Column("identity_tag")] private int _identityTag;
 
     [Column("identity_text0")] private string _identityText0 = default!;
 
-    [Required] public long Id { get; set; } = default!;
     [Required] public string Name { get; set; } = default!;
     [Required] public string Description { get; set; } = default!;
     [Required] public string Company { get; set; } = default!;

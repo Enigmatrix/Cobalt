@@ -4,9 +4,8 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace Cobalt.Common.Data.Models;
 
 [Table("interaction_period")]
-public class InteractionPeriod
+public class InteractionPeriod : Entity
 {
-    [Required] public long Id { get; set; } = default!;
     [Required] public int MouseClicks { get; set; }
     [Required] public int KeyStrokes { get; set; }
 

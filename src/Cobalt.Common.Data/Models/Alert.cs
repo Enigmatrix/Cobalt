@@ -19,13 +19,12 @@ public abstract record ExceedAction
 }
 
 [Table("alert")]
-public class Alert
+public class Alert : Entity
 {
     // maybe can internal props? for query purposes
     [Required] [Column("action_tag")] private int _exceedActionTag;
     [Column("action_text0")] private string? _exceedActionText0;
 
-    [Required] public long Id { get; set; } = default!;
     [Required] [Column("target_is_app")] public bool TargetIsApp { get; set; } = default!;
     [ForeignKey("app")] public App? App { get; set; } = default!;
     [ForeignKey("tag")] public Tag? Tag { get; set; } = default!;

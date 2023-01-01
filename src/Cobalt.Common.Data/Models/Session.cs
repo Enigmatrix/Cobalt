@@ -4,10 +4,8 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace Cobalt.Common.Data.Models;
 
 [Table("session")]
-public class Session
+public class Session : Entity
 {
-    [Required] public long Id { get; set; } = default!;
-
     [Required] [ForeignKey("app")] public App App { get; set; } = default!;
 
     [Required] public string Title { get; set; } = default!;
