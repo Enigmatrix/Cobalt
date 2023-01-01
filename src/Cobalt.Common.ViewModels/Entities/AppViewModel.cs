@@ -1,15 +1,28 @@
 ﻿using System.Collections.ObjectModel;
 using Cobalt.Common.Data;
-using Cobalt.Common.Data.Models;
+using Cobalt.Common.Data.Entities;
 using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace Cobalt.Common.ViewModels.Models;
+namespace Cobalt.Common.ViewModels.Entities;
 
 public partial class AppViewModel : EditableEntityViewModel<App>
 {
+    [ObservableProperty] private string? _color;
+
+    [ObservableProperty] private string _company = default!;
+
+    [ObservableProperty] private string _description = default!;
+
+    [ObservableProperty] private string _name = default!;
+
+    private ObservableCollection<TagViewModel>? _tags;
+
     public AppViewModel(CobaltContext ctx, EntityViewModelCache cache) : base(ctx, cache)
     {
     }
+
+    public ObservableCollection<TagViewModel> Tags =>
+        _tags ??= new ObservableCollection<TagViewModel>(Inner.Tags.Select(tag => Cache.GetForTag(tag)));
 
     public override void InitializeEntity(App app)
     {
@@ -20,21 +33,6 @@ public partial class AppViewModel : EditableEntityViewModel<App>
 
         Inner = app;
     }
-
-    [ObservableProperty]
-    private string? _color = default!;
-
-    [ObservableProperty]
-    private string _name = default!;
-
-    [ObservableProperty]
-    private string _description = default!;
-
-    [ObservableProperty]
-    private string _company = default!;
-
-    private ObservableCollection<TagViewModel>? _tags = null;
-    public ObservableCollection<TagViewModel> Tags => _tags ??= new(Inner.Tags.Select(tag => Cache.GetForTag(tag)));
 
     public override void SaveChanges()
     {

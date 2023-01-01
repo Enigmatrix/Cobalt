@@ -1,6 +1,5 @@
-﻿using Cobalt.Common.Data.Models;
+﻿using Cobalt.Common.Data.Entities;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Cobalt.Common.Data;
 

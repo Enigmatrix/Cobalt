@@ -2,5 +2,7 @@
 
 public class ToDiscriminatedUnionException<T> : Exception
 {
-    public ToDiscriminatedUnionException(int tag) : base($"Discriminated Union ({typeof(T)}) with unknown tag {tag}") {}
+    public ToDiscriminatedUnionException(int tag) : base($"Discriminated Union ({typeof(T)}) with unknown tag {tag}")
+    {
+    }
 }

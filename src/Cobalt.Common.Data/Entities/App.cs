@@ -2,7 +2,7 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using Cobalt.Common.Utils;
 
-namespace Cobalt.Common.Data.Models;
+namespace Cobalt.Common.Data.Entities;
 
 [Table("app")]
 public class App : Entity

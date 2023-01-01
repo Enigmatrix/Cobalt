@@ -1,13 +1,12 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Cobalt.Common.Data.Models;
+namespace Cobalt.Common.Data.Entities;
 
-[Table("interaction_period")]
-public class InteractionPeriod : Entity
+[Table("usage")]
+public class Usage : Entity
 {
-    [Required] public int MouseClicks { get; set; }
-    [Required] public int KeyStrokes { get; set; }
+    [Required] [ForeignKey("session")] public Session Session { get; set; } = default!;
 
     [Required] [Column("start")] internal long StartTicks { get; set; }
     [Required] [Column("end")] internal long EndTicks { get; set; }

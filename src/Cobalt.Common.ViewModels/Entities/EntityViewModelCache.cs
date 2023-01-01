@@ -1,23 +1,23 @@
 ﻿using System.Runtime.CompilerServices;
 using Cobalt.Common.Data;
-using Cobalt.Common.Data.Models;
+using Cobalt.Common.Data.Entities;
 
-namespace Cobalt.Common.ViewModels.Models;
+namespace Cobalt.Common.ViewModels.Entities;
 
 public class EntityViewModelCache
 {
-    public ConditionalWeakTable<App, AppViewModel> Apps { get; } = new();
-
-    public ConditionalWeakTable<Tag, TagViewModel> Tags { get; } = new();
-
-    public ConditionalWeakTable<Alert, AlertViewModel> Alerts { get; } = new();
+    private readonly CobaltContext _ctx;
 
     public EntityViewModelCache(CobaltContext ctx)
     {
         _ctx = ctx;
     }
 
-    private readonly CobaltContext _ctx;
+    public ConditionalWeakTable<App, AppViewModel> Apps { get; } = new();
+
+    public ConditionalWeakTable<Tag, TagViewModel> Tags { get; } = new();
+
+    public ConditionalWeakTable<Alert, AlertViewModel> Alerts { get; } = new();
 
     public TagViewModel GetForTag(Tag tag)
     {

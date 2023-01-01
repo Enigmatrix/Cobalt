@@ -1,12 +1,11 @@
 using Microsoft.UI.Xaml;
 
-namespace Cobalt
+namespace Cobalt;
+
+public sealed partial class MainWindow : Window
 {
-    public sealed partial class MainWindow : Window
+    public MainWindow()
     {
-        public MainWindow()
-        {
-            this.InitializeComponent();
-        }
+        InitializeComponent();
     }
 }

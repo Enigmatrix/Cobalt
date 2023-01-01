@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Cobalt.Common.Data.Models;
+namespace Cobalt.Common.Data.Entities;
 
 [Table("session")]
 public class Session : Entity

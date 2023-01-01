@@ -1,12 +1,23 @@
-﻿using System.Collections.ObjectModel;
-using Cobalt.Common.Data;
-using Cobalt.Common.Data.Models;
+﻿using Cobalt.Common.Data;
+using Cobalt.Common.Data.Entities;
 using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace Cobalt.Common.ViewModels.Models;
+namespace Cobalt.Common.ViewModels.Entities;
 
 public partial class AlertViewModel : EditableEntityViewModel<Alert>
 {
+    [ObservableProperty] private AppViewModel? _app;
+
+    [ObservableProperty] private ExceedAction _exceedAction;
+
+    [ObservableProperty] private TagViewModel? _tag;
+
+    [ObservableProperty] private bool _targetIsApp;
+
+    [ObservableProperty] private TimeFrame _timeFrame;
+
+    [ObservableProperty] private TimeSpan _usageLimit;
+
     public AlertViewModel(CobaltContext ctx, EntityViewModelCache cache) : base(ctx, cache)
     {
     }
@@ -25,24 +36,6 @@ public partial class AlertViewModel : EditableEntityViewModel<Alert>
 
         Inner = alert;
     }
-
-    [ObservableProperty]
-    private bool _targetIsApp;
-
-    [ObservableProperty]
-    private AppViewModel? _app;
-
-    [ObservableProperty]
-    private TagViewModel? _tag;
-
-    [ObservableProperty]
-    private TimeSpan _usageLimit;
-
-    [ObservableProperty]
-    private TimeFrame _timeFrame;
-
-    [ObservableProperty]
-    private ExceedAction _exceedAction;
 
     public override void SaveChanges()
     {

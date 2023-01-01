@@ -2,5 +2,7 @@
 
 public class FromDiscriminatedUnionException<T> : Exception
 {
-    public FromDiscriminatedUnionException() : base($"Discriminated Union ({typeof(T)}) with unknown branch") {}
+    public FromDiscriminatedUnionException() : base($"Discriminated Union ({typeof(T)}) with unknown branch")
+    {
+    }
 }

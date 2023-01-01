@@ -1,26 +1,26 @@
 ﻿using Cobalt.Common.Data;
-using Cobalt.Common.Data.Models;
+using Cobalt.Common.Data.Entities;
 using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace Cobalt.Common.ViewModels.Models;
+namespace Cobalt.Common.ViewModels.Entities;
 
-public abstract class EntityViewModel<T> : ObservableValidator where T: Entity
+public abstract class EntityViewModel<T> : ObservableValidator where T : Entity
 {
-    public T Inner { get; set; } = default!;
-
-    protected EntityViewModelCache Cache { get; }
-
-    public abstract void InitializeEntity(T entity);
-
-    public long Id => Inner.Id;
-
     protected EntityViewModel(EntityViewModelCache cache)
     {
         Cache = cache;
     }
+
+    public T Inner { get; set; } = default!;
+
+    protected EntityViewModelCache Cache { get; }
+
+    public long Id => Inner.Id;
+
+    public abstract void InitializeEntity(T entity);
 }
 
-public abstract class EditableEntityViewModel<T> : EntityViewModel<T> where T: Entity
+public abstract class EditableEntityViewModel<T> : EntityViewModel<T> where T : Entity
 {
     protected readonly CobaltContext Context;
 
