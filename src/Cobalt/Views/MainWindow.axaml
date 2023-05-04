@@ -12,44 +12,44 @@
     <Design.DataContext>
         <!-- This only sets the DataContext for the previewer in an IDE,
              to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
-        <vm:MainWindowViewModel/>
+        <vm:MainWindowViewModel />
     </Design.DataContext>
 
-	<fla:NavigationView PaneDisplayMode="Left">
+    <fla:NavigationView PaneDisplayMode="Left">
         <fla:NavigationView.MenuItems>
 
             <fla:NavigationViewItem Content="Home">
                 <fla:NavigationViewItem.Icon>
-                    <fla:SymbolIcon Symbol="Home"/>
+                    <fla:SymbolIcon Symbol="Home" />
                 </fla:NavigationViewItem.Icon>
             </fla:NavigationViewItem>
 
             <fla:NavigationViewItem Content="Apps">
                 <fla:NavigationViewItem.Icon>
-                    <fla:SymbolIcon Symbol="AllApps"/>
+                    <fla:SymbolIcon Symbol="AllApps" />
                 </fla:NavigationViewItem.Icon>
             </fla:NavigationViewItem>
 
             <fla:NavigationViewItem Content="Tags">
                 <fla:NavigationViewItem.Icon>
-                    <fla:SymbolIcon Symbol="Tag"/>
+                    <fla:SymbolIcon Symbol="Tag" />
                 </fla:NavigationViewItem.Icon>
             </fla:NavigationViewItem>
 
             <fla:NavigationViewItem Content="Alerts">
                 <fla:NavigationViewItem.Icon>
-                    <fla:SymbolIcon Symbol="Alert"/>
+                    <fla:SymbolIcon Symbol="Alert" />
                 </fla:NavigationViewItem.Icon>
             </fla:NavigationViewItem>
 
             <fla:NavigationViewItem Content="History">
                 <fla:NavigationViewItem.Icon>
-                    <fla:SymbolIcon Symbol="Clock"/>
+                    <fla:SymbolIcon Symbol="Clock" />
                 </fla:NavigationViewItem.Icon>
             </fla:NavigationViewItem>
 
         </fla:NavigationView.MenuItems>
-        <TextBlock Text="{Binding Greeting}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        <TextBlock Text="{Binding Greeting}" HorizontalAlignment="Center" VerticalAlignment="Center" />
     </fla:NavigationView>
 
 </Window>
