@@ -3,6 +3,7 @@
         xmlns:vm="using:Cobalt.ViewModels"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:fla="clr-namespace:FluentAvalonia.UI.Controls;assembly=FluentAvalonia"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="Cobalt.Views.MainWindow"
         Icon="/Assets/avalonia-logo.ico"
@@ -14,6 +15,41 @@
         <vm:MainWindowViewModel/>
     </Design.DataContext>
 
-    <TextBlock Text="{Binding Greeting}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+	<fla:NavigationView PaneDisplayMode="Left">
+        <fla:NavigationView.MenuItems>
+
+            <fla:NavigationViewItem Content="Home">
+                <fla:NavigationViewItem.Icon>
+                    <fla:SymbolIcon Symbol="Home"/>
+                </fla:NavigationViewItem.Icon>
+            </fla:NavigationViewItem>
+
+            <fla:NavigationViewItem Content="Apps">
+                <fla:NavigationViewItem.Icon>
+                    <fla:SymbolIcon Symbol="AllApps"/>
+                </fla:NavigationViewItem.Icon>
+            </fla:NavigationViewItem>
+
+            <fla:NavigationViewItem Content="Tags">
+                <fla:NavigationViewItem.Icon>
+                    <fla:SymbolIcon Symbol="Tag"/>
+                </fla:NavigationViewItem.Icon>
+            </fla:NavigationViewItem>
+
+            <fla:NavigationViewItem Content="Alerts">
+                <fla:NavigationViewItem.Icon>
+                    <fla:SymbolIcon Symbol="Alert"/>
+                </fla:NavigationViewItem.Icon>
+            </fla:NavigationViewItem>
+
+            <fla:NavigationViewItem Content="History">
+                <fla:NavigationViewItem.Icon>
+                    <fla:SymbolIcon Symbol="Clock"/>
+                </fla:NavigationViewItem.Icon>
+            </fla:NavigationViewItem>
+
+        </fla:NavigationView.MenuItems>
+        <TextBlock Text="{Binding Greeting}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+    </fla:NavigationView>
 
 </Window>
