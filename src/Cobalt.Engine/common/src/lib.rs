@@ -1,14 +1,12 @@
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
-}
+pub mod errors;
+pub mod tracing;
+pub mod settings;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+use settings::Settings;
+use errors::*;
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
+pub fn setup(settings: &Settings) -> Result<()> {
+    errors::setup().context("setup errors")?;
+    tracing::setup(&settings.logging.engine_log_filter.filter).context("setup tracing")?;
+    Ok(())
 }
