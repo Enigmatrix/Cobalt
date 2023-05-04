@@ -1,3 +1,7 @@
 [workspace]
 
 members = ["src/Cobalt.Engine/*"]
+
+[profile.release]
+lto = true
+codegen-units = 1
