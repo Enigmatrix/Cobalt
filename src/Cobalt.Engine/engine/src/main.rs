@@ -1,5 +1,5 @@
-use common::settings::Settings;
 use common::errors::*;
+use common::settings::Settings;
 
 fn main() -> Result<()> {
     let settings = Settings::from_file("appsettings.json").context("fetch settings")?;

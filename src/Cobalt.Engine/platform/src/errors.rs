@@ -1,8 +1,8 @@
 use std::fmt;
-use windows::Win32::Foundation::{WIN32_ERROR, GetLastError, SetLastError, NO_ERROR, NTSTATUS};
+use windows::Win32::Foundation::{GetLastError, SetLastError, NO_ERROR, NTSTATUS, WIN32_ERROR};
 
 pub struct Win32Error {
-    inner: WIN32_ERROR
+    inner: WIN32_ERROR,
 }
 
 impl Win32Error {
@@ -11,7 +11,9 @@ impl Win32Error {
     }
 
     pub fn last_error() -> Self {
-        Self { inner: Self::get_last_error() }
+        Self {
+            inner: Self::get_last_error(),
+        }
     }
 
     pub fn last_result() -> Result<(), Self> {
@@ -42,7 +44,9 @@ impl fmt::Debug for Win32Error {
 
 impl std::error::Error for Win32Error {}
 
-pub struct NtError { inner: NTSTATUS }
+pub struct NtError {
+    inner: NTSTATUS,
+}
 
 // We don't do any fancy strings for NTSTATUS as they are ill-defined e.g. 0xc0000005:
 // ref: https://microsoft.public.win32.programmer.kernel.narkive.com/7QXg81R8/ntstatus-to-string

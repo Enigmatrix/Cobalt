@@ -1,7 +1,7 @@
 pub use tracing::*;
 pub use tracing_subscriber::prelude::*;
 
-use tracing_subscriber::{registry, fmt, EnvFilter};
+use tracing_subscriber::{fmt, registry, EnvFilter};
 
 use crate::errors::*;
 

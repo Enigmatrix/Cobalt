@@ -1,13 +1,13 @@
 use common::errors::*;
-use windows::Win32::UI::WindowsAndMessaging::{GetForegroundWindow, GetWindowThreadProcessId};
 use windows::Win32::Foundation::HWND;
+use windows::Win32::UI::WindowsAndMessaging::{GetForegroundWindow, GetWindowThreadProcessId};
 
-use crate::win32;
 use crate::objects::process::*;
+use crate::win32;
 
 /// Representation of a Window on the user's desktop
 pub struct Window {
-    inner: HWND
+    inner: HWND,
 }
 
 impl Window {

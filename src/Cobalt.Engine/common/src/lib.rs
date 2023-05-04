@@ -1,9 +1,9 @@
 pub mod errors;
-pub mod tracing;
 pub mod settings;
+pub mod tracing;
 
-use settings::Settings;
 use errors::*;
+use settings::Settings;
 
 pub fn setup(settings: &Settings) -> Result<()> {
     errors::setup().context("setup errors")?;

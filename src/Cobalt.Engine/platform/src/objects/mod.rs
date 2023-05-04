@@ -1,5 +1,5 @@
-mod window;
 mod process;
+mod window;
 
-pub use window::*;
 pub use process::*;
+pub use window::*;
