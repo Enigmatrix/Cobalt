@@ -6,6 +6,7 @@
 pub mod buffers;
 pub mod errors;
 pub mod objects;
+pub mod watchers;
 
 pub use buffers::*;
 pub use errors::*;

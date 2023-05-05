@@ -17,6 +17,7 @@ use crate::*;
 use common::errors::*;
 
 /// Representation of a Window on the user's desktop
+#[derive(Clone, PartialEq, Eq)]
 pub struct Window {
     inner: HWND,
 }
