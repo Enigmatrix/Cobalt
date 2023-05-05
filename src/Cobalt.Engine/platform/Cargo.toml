@@ -15,7 +15,15 @@ features = [
     "Win32_System_Com_StructuredStorage",
     "Win32_System_Threading",
     "Win32_System_SystemInformation",
-    "Win32_System_Time"
+    "Win32_System_Time",
+    "Win32_Storage_FileSystem",
+    "Win32_System_WinRT",
+
+    "Foundation",
+    "Storage",
+    "Storage_Streams",
+    "Storage_FileProperties",
+    "ApplicationModel",
 ]
 
 [dependencies]
