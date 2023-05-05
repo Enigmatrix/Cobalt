@@ -13,7 +13,9 @@ features = [
     "Win32_UI_Shell_PropertiesSystem",
     "Win32_Storage_EnhancedStorage",
     "Win32_System_Com_StructuredStorage",
-    "Win32_System_Threading"
+    "Win32_System_Threading",
+    "Win32_System_SystemInformation",
+    "Win32_System_Time"
 ]
 
 [dependencies]

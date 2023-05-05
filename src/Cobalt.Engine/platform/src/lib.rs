@@ -9,3 +9,10 @@ pub mod objects;
 
 pub use buffers::*;
 pub use errors::*;
+
+use common::errors::*;
+
+pub fn setup() -> Result<()> {
+    crate::objects::Timestamp::setup();
+    Ok(())
+}
