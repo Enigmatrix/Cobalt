@@ -1,6 +1,7 @@
 use std::io::Write;
 
 use common::errors::*;
+use windows::core::ComInterface;
 use windows::ApplicationModel::AppInfo as UWPAppInfo;
 use windows::Foundation::Size;
 use windows::Storage::FileProperties::ThumbnailMode;
@@ -9,7 +10,6 @@ use windows::Storage::Streams::{
     Buffer, IBuffer, IRandomAccessStreamWithContentType, InputStreamOptions,
 };
 use windows::Win32::System::WinRT::IBufferByteAccess;
-use windows::core::ComInterface;
 
 use crate::objects::FileVersionInfo;
 
@@ -30,6 +30,7 @@ impl AppInfo {
         Ok(std::slice::from_raw_parts_mut(data, buffer.Length()? as _))
     }
 
+    // TODO shift this somewhere else in the future
     pub async fn copy_logo_to<W: Write>(logo: Logo, w: &mut W) -> Result<()> {
         let capacity = 4096;
         let buf = Buffer::Create(capacity)?;
@@ -47,6 +48,7 @@ impl AppInfo {
         Ok(())
     }
 
+    /// Create a new [AppInfo] of a Win32 progrem from its path
     pub async fn from_win32(path: &str) -> Result<Self> {
         let file = StorageFile::GetFileFromPathAsync(&path.into())?
             .await
@@ -64,10 +66,11 @@ impl AppInfo {
             name: fv.query_value("ProductName")?,
             description: fv.query_value("FileDescription")?,
             company: fv.query_value("CompanyName")?,
-            logo
+            logo,
         })
     }
 
+    /// Create a new [AppInfo] of a given UWP app from its AUMID
     pub async fn from_uwp(aumid: &str) -> Result<Self> {
         let app_info =
             UWPAppInfo::GetFromAppUserModelId(&aumid.into()).context("get app info with aumid")?;

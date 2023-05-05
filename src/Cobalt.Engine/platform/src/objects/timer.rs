@@ -16,6 +16,7 @@ pub struct Timer {
 }
 
 impl Timer {
+    /// Create a new [Timer] which calls the callback with the specified due and period
     pub fn new<F: Fn() -> Result<()>>(
         due: Duration,
         period: Duration,

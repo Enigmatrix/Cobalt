@@ -7,10 +7,12 @@ use windows::Win32::UI::WindowsAndMessaging::{
 pub struct EventLoop;
 
 impl EventLoop {
+    /// Create a new [EventLoop]
     pub fn new() -> Self {
         EventLoop
     }
 
+    /// Start the [EventLoop]
     pub fn run(&self) {
         let mut msg: MSG = Default::default();
         while unsafe { GetMessageW(&mut msg, HWND::default(), 0, 0).as_bool() } {

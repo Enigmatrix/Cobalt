@@ -16,9 +16,11 @@ fn main() -> Result<()> {
             let process = platform::objects::Process::new(window.pid()?)?;
             let path = process.path()?;
             info!(title = window.title()?);
-            info!(path = path);
             if process.is_uwp(Some(&path))? {
-                info!(aumid = window.aumid()?);
+                let aumid = window.aumid()?;
+                info!(aumid);
+            } else {
+                info!(path = path);
             }
         }
 

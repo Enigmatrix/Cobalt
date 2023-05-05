@@ -2,10 +2,10 @@ use std::mem::MaybeUninit;
 use std::path::PathBuf;
 
 use windows::core::PCWSTR;
+use windows::w;
 use windows::Win32::Storage::FileSystem::{
     GetFileVersionInfoExW, GetFileVersionInfoSizeExW, VerQueryValueW, FILE_VER_GET_LOCALISED,
 };
-use windows::w;
 
 use crate::*;
 
@@ -13,10 +13,11 @@ const TRANSLATION_CODEPAGE: PCWSTR = w!("\\VarFileInfo\\Translation\0");
 
 pub struct FileVersionInfo {
     buffer: Box<[MaybeUninit<u8>]>,
-    langid: String
+    langid: String,
 }
 
 impl FileVersionInfo {
+    /// Create a new [FileVersionInfo] for the specified path
     pub fn new(path: impl Into<PathBuf>) -> Result<Self> {
         use std::os::windows::ffi::*;
 
@@ -45,12 +46,10 @@ impl FileVersionInfo {
         let langid = ((langid[0] as u32) << 16) + langid[1] as u32;
         let langid = format!("{langid:08X}");
 
-        Ok(FileVersionInfo {
-            buffer,
-            langid
-        })
+        Ok(FileVersionInfo { buffer, langid })
     }
 
+    /// Query the [FileVersionInfo] for the specified key, returning the value as a [String]
     pub fn query_value(&mut self, key: &str) -> Result<String> {
         // constants from: https://referencesource.microsoft.com/#system/services/monitoring/system/diagnosticts/FileVersionInfo.cs,478
         // should be equivalent to how explorer.exe Properties window does it
@@ -60,8 +59,7 @@ impl FileVersionInfo {
             let key = format!("\\StringFileInfo\\{lang}\\{key}\0"); // null terminate string
             let mut key = key.encode_utf16().collect::<Vec<_>>();
 
-            let res =
-                Self::raw_query_value::<u16>(&mut self.buffer, PCWSTR(key.as_mut_ptr()));
+            let res = Self::raw_query_value::<u16>(&mut self.buffer, PCWSTR(key.as_mut_ptr()));
             if let Ok(buf) = res {
                 // sometimes there is a null terminator and sometimes there isn't ...
                 let buf = if let Some(0) = buf.last() {
