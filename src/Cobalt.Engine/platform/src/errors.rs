@@ -1,5 +1,7 @@
 use std::fmt;
-use windows::Win32::Foundation::{GetLastError, SetLastError, NO_ERROR, NTSTATUS, WIN32_ERROR};
+use windows::Win32::Foundation::{
+    GetLastError, SetLastError, NO_ERROR, NTSTATUS, STATUS_INFO_LENGTH_MISMATCH, WIN32_ERROR,
+};
 
 pub struct Win32Error {
     inner: WIN32_ERROR,
@@ -48,6 +50,21 @@ pub struct NtError {
     inner: NTSTATUS,
 }
 
+impl NtError {
+    pub fn insufficient_size(&self) -> bool {
+        self.inner == STATUS_INFO_LENGTH_MISMATCH
+    }
+
+    pub fn from_hresult(err: windows::core::Error) -> Self {
+        // this black magic is due to [windows::core::Error] being a HRESULT essentially,
+        // and to convert a NTSTATUS to a HRESULT they turn on the NT facility by OR-ing with
+        // this constant, so here we do the inverse.
+        Self {
+            inner: NTSTATUS(err.code().0 & !0x1000_0000),
+        }
+    }
+}
+
 // We don't do any fancy strings for NTSTATUS as they are ill-defined e.g. 0xc0000005:
 // ref: https://microsoft.public.win32.programmer.kernel.narkive.com/7QXg81R8/ntstatus-to-string
 impl fmt::Display for NtError {
@@ -87,6 +104,27 @@ macro_rules! win32 {
             Err($crate::errors::Win32Error::last_error())
         } else {
             Ok(val)
+        }
+    }};
+}
+
+#[macro_export]
+macro_rules! adapt_size {
+    ($szi:ident, $bufi:ident -> $e: expr, $max_sz: expr) => {{
+        use $crate::buffers::Buffer;
+
+        let mut $szi = 0;
+        let $bufi = std::ptr::null_mut();
+        let res: Result<_, _> = $e;
+        if let Err(err) = &res && err.insufficient_size() {
+            if $szi > $max_sz {
+                common::errors::bail!("exceeded max size");
+            }
+            let mut _buf = $crate::buffers::buf::<u8>($szi as usize);
+            let $bufi = _buf.as_mut_void();
+            $e
+        } else {
+            res
         }
     }};
 }

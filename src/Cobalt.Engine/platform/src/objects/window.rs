@@ -1,6 +1,5 @@
 use std::ptr;
 
-use common::errors::*;
 use windows::core::{ComInterface, Interface};
 use windows::imp::CoTaskMemFree;
 use windows::Win32::Foundation::HWND;
@@ -12,8 +11,10 @@ use windows::Win32::UI::WindowsAndMessaging::{
     GetForegroundWindow, GetWindowTextLengthW, GetWindowTextW, GetWindowThreadProcessId,
 };
 
-use crate::objects::process::*;
+use crate::objects::process::ProcessId;
 use crate::*;
+
+use common::errors::*;
 
 /// Representation of a Window on the user's desktop
 pub struct Window {
