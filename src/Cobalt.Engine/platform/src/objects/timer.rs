@@ -17,7 +17,7 @@ pub struct Timer {
 
 impl Timer {
     /// Create a new [Timer] which calls the callback with the specified due and period
-    pub fn new<F: Fn() -> Result<()>>(
+    pub fn new<F: FnMut() -> Result<()>>(
         due: Duration,
         period: Duration,
         cb: &mut F,
@@ -41,7 +41,7 @@ impl Timer {
         Ok(Timer { handle })
     }
 
-    unsafe extern "system" fn trampoline<F: Fn() -> Result<()>>(ctx: *mut c_void, _: BOOLEAN) {
+    unsafe extern "system" fn trampoline<F: FnMut() -> Result<()>>(ctx: *mut c_void, _: BOOLEAN) {
         ctx.cast::<F>().as_mut().unwrap()()
             .context("timer callback")
             .unwrap();

@@ -66,7 +66,7 @@ impl Interaction {
     }
 
     /// Initialize this global [Interaction] with new settings
-    pub fn initialize<'a>(timeout: Duration, now: Timestamp) -> Result<&'a Self> {
+    pub fn initialize<'a>(timeout: Duration, now: Timestamp) -> Result<&'a mut Self> {
         unsafe {
             INTERACTION_INSTANCE = MaybeUninit::new(Self {
                 mouseclicks: 0,
@@ -78,7 +78,7 @@ impl Interaction {
                 _keyboard_hook: WindowsHook::global().context("keyboard ll windows hook")?,
             })
         };
-        Ok(unsafe { INTERACTION_INSTANCE.assume_init_ref() })
+        Ok(unsafe { INTERACTION_INSTANCE.assume_init_mut() })
     }
 }
 

@@ -3,8 +3,8 @@ use common::errors::*;
 
 #[derive(Clone)]
 pub struct WindowSession {
-    window: Window,
-    title: String,
+    pub window: Window,
+    pub title: String,
 }
 
 /// [Foreground] watcher (window, title)
@@ -24,7 +24,6 @@ impl Foreground {
         };
         Ok(Foreground { current })
     }
-
 
     /// Check if there is [WindowSession] change being triggered
     pub fn trigger(&mut self) -> Result<Option<WindowSession>> {
