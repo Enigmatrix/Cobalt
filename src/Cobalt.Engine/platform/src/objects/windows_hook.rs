@@ -1,12 +1,14 @@
 use std::marker::PhantomData;
 
 use common::errors::*;
-use windows::Win32::Foundation::{HMODULE, WPARAM, LPARAM, LRESULT};
-use windows::Win32::UI::WindowsAndMessaging::{HHOOK, UnhookWindowsHookEx, SetWindowsHookExW, WINDOWS_HOOK_ID, HOOKPROC, CallNextHookEx};
+use windows::Win32::Foundation::{HMODULE, LPARAM, LRESULT, WPARAM};
+use windows::Win32::UI::WindowsAndMessaging::{
+    CallNextHookEx, SetWindowsHookExW, UnhookWindowsHookEx, HHOOK, WINDOWS_HOOK_ID,
+};
 
 pub struct WindowsHook<T: WindowsHookType> {
     hook: HHOOK,
-    _t: PhantomData<T>
+    _t: PhantomData<T>,
 }
 
 pub trait WindowsHookType {
@@ -16,9 +18,14 @@ pub trait WindowsHookType {
 
 impl<T: WindowsHookType> WindowsHook<T> {
     pub fn global() -> Result<WindowsHook<T>> {
-        let hook = unsafe { SetWindowsHookExW(T::id(),Some(Self::trampoline), HMODULE::default(), 0)
-            .context("create global windows hook")? };
-        Ok(WindowsHook { hook, _t: PhantomData })
+        let hook = unsafe {
+            SetWindowsHookExW(T::id(), Some(Self::trampoline), HMODULE::default(), 0)
+                .context("create global windows hook")?
+        };
+        Ok(WindowsHook {
+            hook,
+            _t: PhantomData,
+        })
     }
 
     unsafe extern "system" fn trampoline(ncode: i32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
@@ -29,6 +36,10 @@ impl<T: WindowsHookType> WindowsHook<T> {
 
 impl<T: WindowsHookType> Drop for WindowsHook<T> {
     fn drop(&mut self) {
-        unsafe { UnhookWindowsHookEx(self.hook).ok().expect("drop windows hook") };
+        unsafe {
+            UnhookWindowsHookEx(self.hook)
+                .ok()
+                .expect("drop windows hook")
+        };
     }
 }
