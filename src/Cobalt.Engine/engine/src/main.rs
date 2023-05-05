@@ -8,7 +8,10 @@ fn main() -> Result<()> {
     platform::setup().context("setup platform")?;
     info!("engine is running");
 
-    loop {
+    let ev = platform::objects::EventLoop::new();
+    let every = platform::objects::Duration::from_millis(1_000);
+
+    let _timer = platform::objects::Timer::new(every, every, &mut || {
         if let Some(window) = platform::objects::Window::foreground() {
             let process = platform::objects::Process::new(window.pid()?)?;
             let path = process.path()?;
@@ -19,6 +22,10 @@ fn main() -> Result<()> {
             }
         }
 
-        std::thread::sleep(std::time::Duration::from_secs(1));
-    }
+        Ok(())
+    });
+
+    ev.run();
+
+    Ok(())
 }
