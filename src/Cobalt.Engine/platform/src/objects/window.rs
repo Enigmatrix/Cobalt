@@ -47,12 +47,14 @@ impl Window {
 
     /// Get the title of the [Window]
     pub fn title(&self) -> Result<String> {
-        let len = win32!(val: unsafe { GetWindowTextLengthW(self.inner) })
-            .context("get window title length")?;
+        let len = unsafe { GetWindowTextLengthW(self.inner) };
+
         let title = if len == 0 {
-            String::new()
+            Win32Error::last_result()
+                .map(|_| String::new())
+                .context("get window title length")?
         } else {
-            let mut buf = buffers::buf(len as usize);
+            let mut buf = buffers::buf(len as usize + 1);
             let written = win32!(val: unsafe { GetWindowTextW(self.inner, buf.as_bytes()) })
                 .context("get window title")?;
             buf.with_length(written as usize).to_string_lossy()
