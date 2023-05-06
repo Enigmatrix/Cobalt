@@ -30,11 +30,11 @@ impl AppInfo {
         Ok(std::slice::from_raw_parts_mut(data, buffer.Length()? as _))
     }
 
-    pub async fn copy_logo_to<W: Write>(logo: Logo, writer: &mut W) -> Result<()> {
+    pub async fn copy_logo_to<W: Write>(&self, writer: &mut W) -> Result<()> {
         let capacity = 4096;
         let buffer = Buffer::Create(capacity)?;
         loop {
-            let win_buffer = logo
+            let win_buffer = self.logo
                 .ReadAsync(&buffer, capacity, InputStreamOptions::None)?
                 .await
                 .context("read from logo stream")?;

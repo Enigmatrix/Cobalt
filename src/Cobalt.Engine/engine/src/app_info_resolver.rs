@@ -14,7 +14,7 @@ impl AppInfoResolver {
     /// Find information about the [App] and save it into the [Database]
     pub async fn resolve(&self, mut db: Database, req: AppInfoRequest) -> Result<()> {
         let mut updater = AppUpdater::from(&mut db).context("create app updater")?;
-        let info = match req.app_identity {
+        let info: AppInfo = match req.app_identity {
             AppIdentity::Win32 { path } => AppInfo::from_win32(&path)
                 .await
                 .context("get win32 app info")?,
@@ -26,10 +26,19 @@ impl AppInfoResolver {
         let icon_size = info.logo.Size().context("get app icon size")?;
         let color = self.random_color();
 
+        {
+            let mut icon_writer = updater
+                .app_icon(req.id.clone())
+                .context("open app icon for writing")?;
+            info.copy_logo_to(&mut icon_writer)
+                .await
+                .context("copy logo to witer")?;
+        }
+
         updater
             .update_app(
                 &App {
-                    id: req.id.clone(),
+                    id: req.id,
                     name: info.name,
                     description: info.description,
                     company: info.company,
@@ -39,13 +48,6 @@ impl AppInfoResolver {
                 icon_size,
             )
             .context("update app info")?;
-
-        let mut icon_writer = updater
-            .app_icon(req.id)
-            .context("open app icon for writing")?;
-        AppInfo::copy_logo_to(info.logo, &mut icon_writer)
-            .await
-            .context("copy logo to witer")?;
 
         Ok(())
     }
