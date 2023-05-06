@@ -158,8 +158,16 @@ impl<'a> AppUpdater<'a> {
         Ok(Self {
             update_app: prepare_stmt!(
                 conn,
-                "UPDATE app SET name = ?, description = ?, company = ?, initialized = 1, icon = ZEROBLOB(?) WHERE id = ?"
-            ).context("update app stmt")?,
+                "UPDATE app SET
+                    name = ?,
+                    description = ?,
+                    company = ?,
+                    color = ?
+                    icon = ZEROBLOB(?),
+                    initialized = 1
+                WHERE id = ?"
+            )
+            .context("update app stmt")?,
             conn,
         })
     }
@@ -171,6 +179,7 @@ impl<'a> AppUpdater<'a> {
                 app.name,
                 app.description,
                 app.company,
+                app.color,
                 icon_size,
                 app.id
             ])

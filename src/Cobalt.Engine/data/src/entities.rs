@@ -6,10 +6,11 @@ pub type Timestamp = u64;
 pub struct App {
     pub id: Ref<Self>,
     // pub initialized: bool,
+    // pub found: bool,
     pub name: String,
     pub description: String,
     pub company: String,
-    pub color: Option<String>,
+    pub color: String,
     pub identity: AppIdentity,
     // pub icon: Blob
 }
@@ -100,6 +101,7 @@ table!(
     [
         "id",
         "initialized",
+        "found",
         "name",
         "description",
         "company",

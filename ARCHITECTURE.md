@@ -11,6 +11,7 @@ erDiagram
         text_nullable   name
         text_nullable   description
         text_nullable   company
+        text_nullable   color
         int             appidentity_tag     UK "UNIQUE(tag, text0)"
         text            appidentity_text0   UK "UNIQUE(tag, text0)"
         blob_nullable   icon

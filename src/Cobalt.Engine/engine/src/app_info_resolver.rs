@@ -1,6 +1,7 @@
 use common::errors::*;
 use data::*;
 use platform::objects::AppInfo;
+use rand::{seq::SliceRandom, Rng};
 
 pub struct AppInfoRequest {
     id: Ref<App>,
@@ -21,7 +22,9 @@ impl AppInfoResolver {
                 .await
                 .context("get uwp app info")?,
         };
+
         let icon_size = info.logo.Size().context("get app icon size")?;
+        let color = self.random_color();
 
         updater
             .update_app(
@@ -30,6 +33,7 @@ impl AppInfoResolver {
                     name: info.name,
                     description: info.description,
                     company: info.company,
+                    color,
                     ..Default::default()
                 },
                 icon_size,
@@ -44,5 +48,21 @@ impl AppInfoResolver {
             .context("copy logo to witer")?;
 
         Ok(())
+    }
+
+    pub fn random_color(&self) -> String {
+        // ref: https://github.com/catppuccin/catppuccin
+        // Mocha colors
+
+        let mut rng = rand::rngs::ThreadRng::default();
+
+        [
+            "#f5e0dc", "#f2cdcd", "#f5c2e7", "#cba6f7", "#f38ba8", "#eba0ac", "#fab387", "#f9e2af",
+            "#a6e3a1", "#94e2d5", "#89dceb", "#74c7ec", "#89b4fa", "#b4befe",
+            "#cdd6f4", // Text
+        ]
+        .choose(&mut rng)
+        .unwrap()
+        .to_string()
     }
 }
