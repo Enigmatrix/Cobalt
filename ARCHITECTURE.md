@@ -18,7 +18,7 @@ erDiagram
 
     tag {
         int             id PK
-        text            name
+        text            name UK
         text            color
     }
 
