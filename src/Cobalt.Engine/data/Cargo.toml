@@ -6,3 +6,5 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+rusqlite = { version = "0.29", features = ["winsqlite3", "blob"]}
+common = { path = "../common" }
