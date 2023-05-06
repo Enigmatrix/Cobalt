@@ -15,9 +15,17 @@ pub struct Logging {
 }
 
 #[derive(Debug, Deserialize)]
+pub struct ConnectionStrings {
+    #[serde(rename(deserialize = "DatabasePath"))]
+    pub database_path: String,
+}
+
+#[derive(Debug, Deserialize)]
 pub struct Settings {
     #[serde(rename(deserialize = "Logging"))]
     pub logging: Logging,
+    #[serde(rename(deserialize = "ConnectionStrings"))]
+    pub connection_strings: ConnectionStrings,
 }
 
 impl Settings {

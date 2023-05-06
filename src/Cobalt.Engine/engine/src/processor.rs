@@ -1,6 +1,7 @@
 use common::channels::*;
 use common::errors::*;
 
+use data::Database;
 use platform::objects::{Timestamp, Window};
 use platform::watchers::{InteractionStateChange, WindowSession};
 
@@ -17,6 +18,7 @@ impl Processor {
     pub fn new(
         foreground: Window,
         start: Timestamp,
+        db: Database,
         app_info_tx: Sender<AppInfoRequest>,
     ) -> Processor {
         unimplemented!()

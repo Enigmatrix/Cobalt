@@ -3,11 +3,13 @@ mod cache;
 mod processor;
 
 use std::thread;
+use std::thread::JoinHandle;
 
 use common::channels::*;
 use common::errors::*;
 use common::settings::Settings;
 use common::tracing::*;
+use data::Database;
 use platform::{
     objects::{EventLoop, Process, Timer, Timestamp, Window},
     watchers::{self, InteractionStateChange, WindowSession},
@@ -37,36 +39,34 @@ fn main() -> Result<()> {
     let (event_tx, event_rx) = channel();
 
     let watcher_event_tx = event_tx;
-    let _watcher = thread::spawn(move || {
-        (|| -> Result<()> {
-            let ev = EventLoop::new();
-            let mut foreground = watchers::Foreground::new(foreground_window)
-                .context("create foreground watcher")?;
-            let interaction = watchers::Interaction::initialize(idle_timeout, start)
-                .context("initialize global interaction watcher")?;
-            let _timer = Timer::new(every, every, &mut || {
-                let now = Timestamp::now();
-                if let Some(change) = foreground.trigger().context("trigger foreground watcher")? {
-                    watcher_event_tx
-                        .send(ProcessorEvent::WindowSession(change))
-                        .context("send window session change")?;
-                }
-                if let Some(change) = interaction
-                    .trigger(now)
-                    .context("trigger interaction watcher")?
-                {
-                    watcher_event_tx
-                        .send(ProcessorEvent::InteractionStateChange(change))
-                        .context("send interaction state change")?;
-                }
-                Ok(())
-            });
-            ev.run();
+    let watcher = run_win_event_loop_thread(move |ev| {
+        let mut foreground = watchers::Foreground::new(foreground_window.clone())
+            .context("create foreground watcher")?;
+        let interaction = watchers::Interaction::initialize(idle_timeout, start)
+            .context("initialize global interaction watcher")?;
+        let _timer = Timer::new(every, every, &mut || {
+            let now = Timestamp::now();
+            if let Some(change) = foreground.trigger().context("trigger foreground watcher")? {
+                watcher_event_tx
+                    .send(ProcessorEvent::WindowSession(change))
+                    .context("send window session change")?;
+            }
+            if let Some(change) = interaction
+                .trigger(now)
+                .context("trigger interaction watcher")?
+            {
+                watcher_event_tx
+                    .send(ProcessorEvent::InteractionStateChange(change))
+                    .context("send interaction state change")?;
+            }
             Ok(())
-        })()
-        .unwrap()
+        });
+
+        ev.run();
+        Ok(())
     });
 
+    let db = Database::new(&settings).context("create db for processor")?;
     for change in event_rx {
         match change {
             ProcessorEvent::WindowSession(WindowSession { window, title }) => {
@@ -90,7 +90,22 @@ fn main() -> Result<()> {
         }
     }
 
-    _watcher.join().unwrap();
+    watcher.join().unwrap();
 
     Ok(())
+}
+
+fn run_win_event_loop_thread<F: Send + 'static + FnMut(&EventLoop) -> Result<()>>(
+    mut f: F,
+) -> JoinHandle<()> {
+    thread::spawn(move || {
+        (move || -> Result<()> {
+            let ev = EventLoop::new();
+
+            f(&ev)?;
+
+            Ok(())
+        })()
+        .unwrap();
+    })
 }

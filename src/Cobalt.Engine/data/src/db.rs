@@ -1,6 +1,7 @@
 use std::io::Write;
 
 use common::errors::*;
+use common::settings::Settings;
 use rusqlite::{params, Connection, Statement};
 
 use crate::entities::*;
@@ -49,9 +50,10 @@ pub struct Database {
 
 impl Database {
     /// Create a new [Database] from a connection string
-    pub fn new(conn_str: &str) -> Result<Database> {
+    pub fn new(settings: &Settings) -> Result<Database> {
         // TODO check if arbitrary conn_str works
-        let conn = Connection::open(conn_str).context("open connection")?;
+        let conn = Connection::open(&settings.connection_strings.database_path)
+            .context("open connection")?;
         Ok(Database { conn })
     }
 }
