@@ -158,16 +158,22 @@ impl<'a> AppUpdater<'a> {
         Ok(Self {
             update_app: prepare_stmt!(
                 conn,
-                "UPDATE app SET name = ?, description = ?, company = ?, initialized = 1 WHERE id = ?"
+                "UPDATE app SET name = ?, description = ?, company = ?, initialized = 1, icon = ZEROBLOB(?) WHERE id = ?"
             ).context("update app stmt")?,
             conn,
         })
     }
 
     /// Update the [App] with additional information
-    pub fn update_app(&mut self, app: &App) -> Result<()> {
+    pub fn update_app(&mut self, app: &App, icon_size: u64) -> Result<()> {
         self.update_app
-            .execute(params![app.name, app.description, app.company, app.id])
+            .execute(params![
+                app.name,
+                app.description,
+                app.company,
+                icon_size,
+                app.id
+            ])
             .context("update app stmt execute")?;
         Ok(())
     }

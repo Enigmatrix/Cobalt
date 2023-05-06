@@ -13,7 +13,7 @@ use windows::Win32::System::WinRT::IBufferByteAccess;
 
 use crate::objects::FileVersionInfo;
 
-type Logo = IRandomAccessStreamWithContentType;
+pub type Logo = IRandomAccessStreamWithContentType;
 
 #[derive(Clone, Debug)]
 pub struct AppInfo {
@@ -30,20 +30,19 @@ impl AppInfo {
         Ok(std::slice::from_raw_parts_mut(data, buffer.Length()? as _))
     }
 
-    // TODO shift this somewhere else in the future
-    pub async fn copy_logo_to<W: Write>(logo: Logo, w: &mut W) -> Result<()> {
+    pub async fn copy_logo_to<W: Write>(logo: Logo, writer: &mut W) -> Result<()> {
         let capacity = 4096;
-        let buf = Buffer::Create(capacity)?;
+        let buffer = Buffer::Create(capacity)?;
         loop {
-            let outbuf = logo
-                .ReadAsync(&buf, capacity, InputStreamOptions::None)?
+            let win_buffer = logo
+                .ReadAsync(&buffer, capacity, InputStreamOptions::None)?
                 .await
                 .context("read from logo stream")?;
-            let outslice = unsafe { Self::as_mut_bytes(&outbuf)? };
-            if outslice.is_empty() {
+            let buf = unsafe { Self::as_mut_bytes(&win_buffer)? };
+            if buf.is_empty() {
                 break;
             }
-            w.write_all(outslice).context("write bytes to writer")?;
+            writer.write_all(buf).context("write bytes to writer")?;
         }
         Ok(())
     }

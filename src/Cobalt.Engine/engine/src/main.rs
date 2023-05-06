@@ -1,6 +1,10 @@
-use std::sync::mpsc::channel;
+mod app_info_resolver;
+mod cache;
+mod processor;
+
 use std::thread;
 
+use common::channels::*;
 use common::errors::*;
 use common::settings::Settings;
 use common::tracing::*;
@@ -9,10 +13,7 @@ use platform::{
     watchers::{self, InteractionStateChange, WindowSession},
 };
 
-pub enum Event {
-    WindowSession(WindowSession),
-    InteractionStateChange(InteractionStateChange),
-}
+use crate::processor::ProcessorEvent;
 
 fn main() -> Result<()> {
     let settings = Settings::from_file("appsettings.json").context("fetch settings")?;
@@ -47,7 +48,7 @@ fn main() -> Result<()> {
                 let now = Timestamp::now();
                 if let Some(change) = foreground.trigger().context("trigger foreground watcher")? {
                     watcher_event_tx
-                        .send(Event::WindowSession(change))
+                        .send(ProcessorEvent::WindowSession(change))
                         .context("send window session change")?;
                 }
                 if let Some(change) = interaction
@@ -55,7 +56,7 @@ fn main() -> Result<()> {
                     .context("trigger interaction watcher")?
                 {
                     watcher_event_tx
-                        .send(Event::InteractionStateChange(change))
+                        .send(ProcessorEvent::InteractionStateChange(change))
                         .context("send interaction state change")?;
                 }
                 Ok(())
@@ -68,7 +69,7 @@ fn main() -> Result<()> {
 
     for change in event_rx {
         match change {
-            Event::WindowSession(WindowSession { window, title }) => {
+            ProcessorEvent::WindowSession(WindowSession { window, title }) => {
                 let process = Process::new(window.pid()?)?;
                 let path = process.path()?;
                 info!(title);
@@ -79,8 +80,10 @@ fn main() -> Result<()> {
                     info!(path = path);
                 }
             }
-            Event::InteractionStateChange(InteractionStateChange::Active) => warn!("Active!"),
-            Event::InteractionStateChange(InteractionStateChange::Idle {
+            ProcessorEvent::InteractionStateChange(InteractionStateChange::Active) => {
+                warn!("Active!")
+            }
+            ProcessorEvent::InteractionStateChange(InteractionStateChange::Idle {
                 mouseclicks,
                 keystrokes,
             }) => warn!("Idle, recorded m={}, k={}", mouseclicks, keystrokes),

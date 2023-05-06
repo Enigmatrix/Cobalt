@@ -4,3 +4,4 @@ mod table;
 
 pub use db::*;
 pub use entities::*;
+pub use table::*;
