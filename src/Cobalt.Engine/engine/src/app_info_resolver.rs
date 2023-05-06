@@ -50,7 +50,7 @@ impl AppInfoResolver {
         Ok(())
     }
 
-    pub fn random_color(&self) -> String {
+    fn random_color(&self) -> String {
         // ref: https://github.com/catppuccin/catppuccin
         // Mocha colors
 
@@ -64,5 +64,11 @@ impl AppInfoResolver {
         .choose(&mut rng)
         .unwrap()
         .to_string()
+    }
+}
+
+impl Default for AppInfoResolver {
+    fn default() -> Self {
+        Self
     }
 }
