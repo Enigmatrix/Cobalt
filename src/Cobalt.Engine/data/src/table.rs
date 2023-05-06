@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use rusqlite::types::ToSqlOutput;
+use rusqlite::types::{FromSql, FromSqlResult, ToSqlOutput, ValueRef};
 use rusqlite::{Result, ToSql};
 
 pub trait Table {
@@ -28,5 +28,11 @@ impl<T: Table> Ref<T> {
 impl<Id: ToSql + 'static, T: Table<Id = Id>> ToSql for Ref<T> {
     fn to_sql(&self) -> Result<ToSqlOutput<'_>> {
         self.inner.to_sql()
+    }
+}
+
+impl<Id: FromSql + 'static, T: Table<Id = Id>> FromSql for Ref<T> {
+    fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
+        Id::column_result(value).map(|id| Ref::new(id))
     }
 }
