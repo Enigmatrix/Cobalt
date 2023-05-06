@@ -62,14 +62,15 @@ impl<'a> EntityInserter<'a> {
         Ok(Self {
             find_or_insert_app_stmt: prepare_stmt!(
                 conn,
-                "INSERT INTO app (identity_tag, identity_text0) VALUES (?, ?) ON CONFLICT DO NOTHING RETURNING id"
+                "INSERT INTO app (identity_tag, identity_text0) VALUES (?, ?) ON CONFLICT
+                 DO UPDATE SET conflict = 1 RETURNING id, conflict"
             )
             .context("find or insert app stmt")?,
             insert_session: insert_stmt!(conn, Session).context("session insert stmt")?,
             insert_usage: insert_stmt!(conn, Usage).context("usage insert stmt")?,
             insert_interaction_period: insert_stmt!(conn, InteractionPeriod)
                 .context("interaction period insert stmt")?,
-            conn
+            conn,
         })
     }
 
@@ -99,16 +100,4 @@ impl<'a> EntityInserter<'a> {
 pub struct AppUpdater<'a> {
     conn: &'a mut Connection,
     update_app: Statement<'a>,
-}
-
-#[test]
-fn feature() -> Result<()> {
-    {
-        let db = Database::new("test.db")?;
-        db.conn.execute("create table app (id int primary key, gg text unique);", params![])?;
-        db.conn.execute("insert into app values (NULL, 'lmao');", params![])?;
-        db.conn.execute("insert into app values (NULL, 'lmao') on conflict do nothing returning id;", params![])?;
-    }
-    std::fs::remove_file("test.db")?;
-    Ok(())
 }
