@@ -12,6 +12,7 @@ pub trait Table {
 
     fn name() -> &'static str;
     fn columns() -> &'static [&'static str];
+    fn has_id() -> bool;
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Eq)]

@@ -32,7 +32,6 @@ pub struct Usage {
 
 #[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct InteractionPeriod {
-    pub id: Ref<Self>,
     pub start: Timestamp,
     pub end: Timestamp,
     pub mouseclicks: u64,
@@ -66,6 +65,29 @@ macro_rules! table {
             }
             fn columns() -> &'static [&'static str] {
                 &$cols
+            }
+            fn has_id() -> bool {
+                true
+            }
+        }
+    };
+}
+
+macro_rules! table_without_id {
+    ($t:ty, $name:expr, $cols:expr) => {
+        impl crate::table::Table for $t {
+            type Id = ();
+            fn id(&self) -> &crate::table::Ref<Self> {
+                unimplemented!()
+            }
+            fn name() -> &'static str {
+                $name
+            }
+            fn columns() -> &'static [&'static str] {
+                &$cols
+            }
+            fn has_id() -> bool {
+                false
             }
         }
     };
@@ -114,15 +136,8 @@ table!(
     ]
 );
 
-table!(
+table_without_id!(
     InteractionPeriod,
     "interaction_period",
-    id: u64,
-    [
-        "id",
-        "start",
-        "end",
-        "mouseclicks",
-        "keystrokes"
-    ]
+    ["start", "end", "mouseclicks", "keystrokes"]
 );
