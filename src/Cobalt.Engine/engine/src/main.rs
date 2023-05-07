@@ -117,8 +117,8 @@ fn main() -> Result<()> {
         processor.handle(change).context("handle processor event")?;
     }
 
-    watcher.join().unwrap();
     resolver.join().unwrap();
+    watcher.join().unwrap();
 
     Ok(())
 }

@@ -55,6 +55,8 @@ impl Window {
 
     /// Get the title of the [Window]
     pub fn title(&self) -> Result<String> {
+        // important for some reason ...
+        Win32Error::clear_last_err();
         let len = unsafe { GetWindowTextLengthW(self.inner) };
 
         let title = if len == 0 {
