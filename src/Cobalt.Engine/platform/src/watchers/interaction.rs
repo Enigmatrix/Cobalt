@@ -10,10 +10,14 @@ use windows::Win32::UI::WindowsAndMessaging::{
 
 use crate::objects::{Duration, Timestamp, WindowsHook, WindowsHookType};
 
-// TODO include start - end here
 pub enum InteractionStateChange {
     Active,
-    Idle { mouseclicks: u32, keystrokes: u32 },
+    Idle {
+        mouseclicks: u32,
+        keystrokes: u32,
+        active_start: Timestamp,
+        idle_start: Timestamp,
+    },
 }
 
 // The reading/reset of mouseclicks+keystroke on the some other thread might race
@@ -25,6 +29,7 @@ pub struct Interaction {
     mouseclicks: u32,
     keystrokes: u32,
     last_interaction: Timestamp,
+    last_active_start: Timestamp,
     timeout: Duration,
     idle: bool,
     _mouse_hook: WindowsHook<MouseLL>,
@@ -43,12 +48,15 @@ impl Interaction {
     pub fn trigger(&mut self, now: Timestamp) -> Result<Option<InteractionStateChange>> {
         if self.idle && self.recent(now) {
             self.idle = false;
+            self.last_active_start = now;
             return Ok(Some(InteractionStateChange::Active));
         } else if !self.idle && !self.recent(now) {
             self.idle = true;
             let change = InteractionStateChange::Idle {
                 mouseclicks: self.mouseclicks,
                 keystrokes: self.keystrokes,
+                active_start: self.last_active_start,
+                idle_start: now,
             };
             self.reset();
             return Ok(Some(change));
@@ -73,6 +81,7 @@ impl Interaction {
                 mouseclicks: 0,
                 keystrokes: 0,
                 last_interaction: now,
+                last_active_start: now,
                 timeout,
                 idle: false,
                 _mouse_hook: WindowsHook::global().context("mouse ll windows hook")?,

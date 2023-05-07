@@ -64,7 +64,7 @@ fn main() -> Result<()> {
                     .context("trigger interaction watcher")?
                 {
                     event_tx
-                        .send(ProcessorEvent::InteractionStateChange { at: now, change })
+                        .send(ProcessorEvent::InteractionStateChange { change })
                         .context("send interaction state change")?;
                 }
                 Ok(())
@@ -132,9 +132,14 @@ fn main() -> Result<()> {
                     InteractionStateChange::Idle {
                         mouseclicks,
                         keystrokes,
+                        active_start,
+                        idle_start,
                     },
                 ..
-            } => warn!("Idle, recorded m={}, k={}", mouseclicks, keystrokes),
+            } => warn!(
+                "Idle ({} - {}), recorded m={}, k={}",
+                active_start, idle_start, mouseclicks, keystrokes
+            ),
         }
     }
 

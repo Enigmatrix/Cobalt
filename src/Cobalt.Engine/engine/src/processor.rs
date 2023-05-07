@@ -13,7 +13,6 @@ pub enum ProcessorEvent {
         change: WindowSession,
     },
     InteractionStateChange {
-        at: Timestamp,
         change: InteractionStateChange,
     },
 }
@@ -37,15 +36,15 @@ impl Processor {
                 change: WindowSession { window, title },
             } => {}
             ProcessorEvent::InteractionStateChange {
-                at,
                 change: InteractionStateChange::Active,
             } => {}
             ProcessorEvent::InteractionStateChange {
-                at,
                 change:
                     InteractionStateChange::Idle {
                         mouseclicks,
                         keystrokes,
+                        active_start,
+                        idle_start,
                     },
             } => {}
         }
