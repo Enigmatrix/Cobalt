@@ -51,6 +51,112 @@ pub struct Processor<'a> {
 }
 
 impl<'a> Processor<'a> {
+    /// Create a new [Processor], which initializes it's first [Usage]
+    pub fn new(
+        foreground: Window,
+        start: Timestamp,
+        db: &'a mut Database,
+        app_info_tx: UnboundedSender<AppInfoRequest>,
+    ) -> Result<Self> {
+        let mut sessions = HashMap::new();
+        let mut apps = HashMap::new();
+        let mut inserter = EntityInserter::from(db).context("create entity inserter")?;
+        let title = foreground
+            .title()
+            .context("get foreground window title for processor")?;
+        let session_details = Self::create_session_for_window(
+            &mut apps,
+            &mut inserter,
+            &app_info_tx,
+            &foreground,
+            title.clone(),
+        )
+        .context("get session details for foreground window")?;
+        let current_usage = Usage {
+            id: Ref::default(),
+            session: session_details.session.clone(),
+            start: start.into(),
+            end: start.into(),
+        };
+        sessions.insert(
+            WindowSession {
+                window: foreground,
+                title,
+            },
+            session_details,
+        );
+        Ok(Self {
+            sessions,
+            apps,
+            inserter,
+            current_usage,
+            app_info_tx,
+        })
+    }
+
+    /// Handle a [ProcessorEvent]
+    pub fn handle(&mut self, event: ProcessorEvent) -> Result<()> {
+        match event {
+            ProcessorEvent::WindowSession {
+                at,
+                change: window_session,
+            } => {
+                self.current_usage.end = at.into();
+                self.inserter
+                    .insert_usage(&self.current_usage)
+                    .context("insert usage")?;
+
+                info!(title = window_session.title, "switched window");
+
+                let session_details = self
+                    .sessions
+                    .fallible_get_or_insert(window_session, |ws| {
+                        Self::create_session_for_window(
+                            &mut self.apps,
+                            &mut self.inserter,
+                            &self.app_info_tx,
+                            &ws.window,
+                            ws.title,
+                        )
+                        .context("create session details for window")
+                    })
+                    .context("get or create session details for window")?;
+                self.current_usage = Usage {
+                    id: Ref::default(),
+                    session: session_details.session.clone(),
+                    start: at.into(),
+                    end: at.into(),
+                };
+            }
+            ProcessorEvent::InteractionStateChange {
+                change: InteractionStateChange::Active,
+            } => {
+                info!("active");
+            }
+            ProcessorEvent::InteractionStateChange {
+                change:
+                    InteractionStateChange::Idle {
+                        mouseclicks,
+                        keystrokes,
+                        active_start,
+                        idle_start,
+                    },
+            } => {
+                info!("idle");
+                self.inserter
+                    .insert_interaction_period(&InteractionPeriod {
+                        id: Ref::default(),
+                        start: active_start.into(),
+                        end: idle_start.into(),
+                        mouseclicks,
+                        keystrokes,
+                    })
+                    .context("insert interaction period")?;
+            }
+        }
+        Ok(())
+    }
+
     fn create_app_for_process(
         inserter: &mut EntityInserter<'a>,
         app_info_tx: &UnboundedSender<AppInfoRequest>,
@@ -129,110 +235,6 @@ impl<'a> Processor<'a> {
         Ok(SessionDetails {
             session: session.id,
         })
-    }
-
-    pub fn new(
-        foreground: Window,
-        start: Timestamp,
-        db: &'a mut Database,
-        app_info_tx: UnboundedSender<AppInfoRequest>,
-    ) -> Result<Self> {
-        let mut sessions = HashMap::new();
-        let mut apps = HashMap::new();
-        let mut inserter = EntityInserter::from(db).context("create entity inserter")?;
-        let title = foreground
-            .title()
-            .context("get foreground window title for processor")?;
-        let session_details = Self::create_session_for_window(
-            &mut apps,
-            &mut inserter,
-            &app_info_tx,
-            &foreground,
-            title.clone(),
-        )
-        .context("get session details for foreground window")?;
-        let current_usage = Usage {
-            id: Ref::default(),
-            session: session_details.session.clone(),
-            start: start.into(),
-            end: start.into(),
-        };
-        sessions.insert(
-            WindowSession {
-                window: foreground,
-                title,
-            },
-            session_details,
-        );
-        Ok(Self {
-            sessions,
-            apps,
-            inserter,
-            current_usage,
-            app_info_tx,
-        })
-    }
-
-    pub fn handle(&mut self, event: ProcessorEvent) -> Result<()> {
-        match event {
-            ProcessorEvent::WindowSession {
-                at,
-                change: window_session,
-            } => {
-                self.current_usage.end = at.into();
-                self.inserter
-                    .insert_usage(&self.current_usage)
-                    .context("insert usage")?;
-
-                info!(title = window_session.title, "switched window");
-
-                let session_details = self
-                    .sessions
-                    .fallible_get_or_insert(window_session, |ws| {
-                        Self::create_session_for_window(
-                            &mut self.apps,
-                            &mut self.inserter,
-                            &self.app_info_tx,
-                            &ws.window,
-                            ws.title,
-                        )
-                        .context("create session details for window")
-                    })
-                    .context("get or create session details for window")?;
-                self.current_usage = Usage {
-                    id: Ref::default(),
-                    session: session_details.session.clone(),
-                    start: at.into(),
-                    end: at.into(),
-                };
-            }
-            ProcessorEvent::InteractionStateChange {
-                change: InteractionStateChange::Active,
-            } => {
-                info!("active");
-            }
-            ProcessorEvent::InteractionStateChange {
-                change:
-                    InteractionStateChange::Idle {
-                        mouseclicks,
-                        keystrokes,
-                        active_start,
-                        idle_start,
-                    },
-            } => {
-                info!("idle");
-                self.inserter
-                    .insert_interaction_period(&InteractionPeriod {
-                        id: Ref::default(),
-                        start: active_start.into(),
-                        end: idle_start.into(),
-                        mouseclicks,
-                        keystrokes,
-                    })
-                    .context("insert interaction period")?;
-            }
-        }
-        Ok(())
     }
 }
 

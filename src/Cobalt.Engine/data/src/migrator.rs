@@ -5,7 +5,7 @@ use rusqlite::{Connection, Error as SqliteError};
 
 use crate::{db::Database, migrations::default_migrations};
 
-pub trait Migration {
+pub(crate) trait Migration {
     fn version(&self) -> u64;
 
     fn up(&mut self, conn: &mut Connection) -> Result<()>;
@@ -32,12 +32,14 @@ impl Ord for dyn Migration {
     }
 }
 
+/// In charge of running migrations for a [Database]
 pub struct Migrator<'a> {
     conn: &'a mut Connection,
     migrations: Vec<Box<dyn Migration>>,
 }
 
 impl<'a> Migrator<'a> {
+    /// Create a new [Migrator]
     pub fn new(db: &'a mut Database) -> Self {
         let mut migrations = default_migrations();
         migrations.sort();
@@ -47,7 +49,7 @@ impl<'a> Migrator<'a> {
         }
     }
 
-    pub fn get_current_version(&self) -> Result<u64> {
+    fn get_current_version(&self) -> Result<u64> {
         let version = self
             .conn
             .pragma_query_value(None, "user_version", |r| r.get(0));
@@ -65,6 +67,7 @@ impl<'a> Migrator<'a> {
         Ok(())
     }
 
+    /// Run all migrations on the [Database]
     pub fn migrate(&mut self) -> Result<()> {
         let current_version = self.get_current_version().context("get current version")?;
         let mut new_version = None;

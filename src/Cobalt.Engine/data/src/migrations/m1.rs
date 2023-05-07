@@ -3,7 +3,7 @@ use rusqlite::{params, Connection};
 
 use crate::migrator::Migration;
 
-pub struct Migration1;
+pub(crate) struct Migration1;
 
 impl Migration for Migration1 {
     fn version(&self) -> u64 {
