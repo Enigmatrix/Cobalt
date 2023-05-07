@@ -14,8 +14,8 @@ use common::settings::*;
 use common::tracing::*;
 use data::*;
 use platform::{
-    objects::{EventLoop, Process, Timer, Timestamp, Window},
-    watchers::{self, InteractionStateChange, WindowSession},
+    objects::{EventLoop, Timer, Timestamp, Window},
+    watchers::{self},
 };
 use tokio::task::spawn_local;
 use tokio::task::LocalSet;

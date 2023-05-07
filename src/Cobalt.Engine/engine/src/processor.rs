@@ -1,9 +1,7 @@
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
-use std::collections::HashSet;
 use std::hash::Hash;
 
-use common::channels::*;
 use common::errors::*;
 
 use common::tracing::info;
@@ -37,12 +35,10 @@ pub enum ProcessorEvent {
 
 pub struct SessionDetails {
     session: Ref<Session>,
-    titles: HashSet<String>,
 }
 
 pub struct AppDetails {
     app: Ref<App>,
-    process: Process,
     cmd_line: Option<String>,
 }
 
@@ -100,7 +96,6 @@ impl<'a> Processor<'a> {
         Ok({
             AppDetails {
                 app: app_id,
-                process,
                 cmd_line,
             }
         })
@@ -111,14 +106,10 @@ impl<'a> Processor<'a> {
         inserter: &mut EntityInserter<'a>,
         app_info_tx: &UnboundedSender<AppInfoRequest>,
         window: &Window,
-        title: &String,
+        title: String,
     ) -> Result<SessionDetails> {
         let pid = window.pid().context("get window pid")?;
-        let AppDetails {
-            app,
-            process,
-            cmd_line,
-        } = apps
+        let AppDetails { app, cmd_line } = apps
             .fallible_get_or_insert(pid, |pid| {
                 Self::create_app_for_process(inserter, app_info_tx, pid, window)
                     .context("create app details for process")
@@ -128,19 +119,15 @@ impl<'a> Processor<'a> {
         let mut session = Session {
             id: Ref::default(),
             app: app.clone(),
-            title: title.clone(),
+            title,
             cmd_line: cmd_line.clone(),
         };
         inserter
             .insert_session(&mut session)
             .context("insert session")?;
 
-        let mut titles = HashSet::new();
-        titles.insert(title.clone());
-
         Ok(SessionDetails {
             session: session.id,
-            titles,
         })
     }
 
@@ -161,7 +148,7 @@ impl<'a> Processor<'a> {
             &mut inserter,
             &app_info_tx,
             &foreground,
-            &title,
+            title.clone(),
         )
         .context("get session details for foreground window")?;
         let current_usage = Usage {
@@ -207,7 +194,7 @@ impl<'a> Processor<'a> {
                             &mut self.inserter,
                             &self.app_info_tx,
                             &ws.window,
-                            &ws.title,
+                            ws.title,
                         )
                         .context("create session details for window")
                     })
