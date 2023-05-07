@@ -15,6 +15,8 @@ use crate::objects::FileVersionInfo;
 
 pub type Logo = IRandomAccessStreamWithContentType;
 
+// TODO app_info fetch should be result -> option and should log the result
+
 #[derive(Clone, Debug)]
 pub struct AppInfo {
     pub name: String,

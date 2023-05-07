@@ -6,15 +6,15 @@ use common::errors::*;
 
 use common::tracing::info;
 use common::tracing::warn;
-use data::App;
-use data::AppIdentity;
-use data::Database;
-use data::EntityInserter;
-use data::FoundOrInserted;
-use data::InteractionPeriod;
-use data::Ref;
-use data::Session;
-use data::Usage;
+use data::db::Database;
+use data::db::EntityInserter;
+use data::db::FoundOrInserted;
+use data::entities::App;
+use data::entities::AppIdentity;
+use data::entities::InteractionPeriod;
+use data::entities::Session;
+use data::entities::Usage;
+use data::table::Ref;
 use platform::objects::Process;
 use platform::objects::ProcessId;
 use platform::objects::{Timestamp, Window};
@@ -181,7 +181,7 @@ impl<'a> Processor<'a> {
             } => {
                 self.current_usage.end = at.into();
                 self.inserter
-                    .insert_usage(&mut self.current_usage)
+                    .insert_usage(&self.current_usage)
                     .context("insert usage")?;
 
                 info!(title = window_session.title, "switched window");
@@ -223,6 +223,7 @@ impl<'a> Processor<'a> {
                 info!("idle");
                 self.inserter
                     .insert_interaction_period(&InteractionPeriod {
+                        id: Ref::default(),
                         start: active_start.into(),
                         end: idle_start.into(),
                         mouseclicks,

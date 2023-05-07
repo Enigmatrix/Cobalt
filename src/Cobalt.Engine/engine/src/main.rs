@@ -1,7 +1,6 @@
 #![feature(async_closure)]
 
 mod app_info_resolver;
-mod cache;
 mod processor;
 
 use std::future::Future;
@@ -12,7 +11,8 @@ use common::channels::*;
 use common::errors::*;
 use common::settings::*;
 use common::tracing::*;
-use data::*;
+use data::db::Database;
+use data::migrator::Migrator;
 use platform::{
     objects::{EventLoop, Timer, Timestamp, Window},
     watchers::{self},
@@ -23,6 +23,8 @@ use tokio::task::LocalSet;
 use crate::app_info_resolver::AppInfoResolver;
 use crate::processor::Processor;
 use crate::processor::ProcessorEvent;
+
+// TODO make all the unwrap in the whole engine unwrap_or_exit (kill entire process)
 
 fn main() -> Result<()> {
     let settings = Settings::from_file("appsettings.json").context("fetch settings")?;
@@ -38,6 +40,10 @@ fn main() -> Result<()> {
     let start = Timestamp::now();
 
     info!("engine is running");
+
+    let mut db = Database::new(&settings).context("create db for processor")?;
+    let mut migrator = Migrator::new(&mut db);
+    migrator.migrate().context("run migrations")?;
 
     // TODO from config
     let idle_timeout = platform::objects::Duration::from_millis(5_000);
@@ -79,7 +85,6 @@ fn main() -> Result<()> {
     };
 
     let resolver = {
-        let settings = settings.clone();
         run_single_threaded_tokio(async move {
             loop {
                 let app_info = app_info_rx.recv().await;
@@ -106,7 +111,6 @@ fn main() -> Result<()> {
         })
     };
 
-    let mut db = Database::new(&settings).context("create db for processor")?;
     let mut processor = Processor::new(foreground_window, start, &mut db, app_info_tx)
         .context("create processor")?;
     for change in event_rx {

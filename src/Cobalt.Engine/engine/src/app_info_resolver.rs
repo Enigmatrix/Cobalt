@@ -1,5 +1,7 @@
 use common::errors::*;
-use data::*;
+use data::db::{AppUpdater, Database};
+use data::entities::{App, AppIdentity};
+use data::table::Ref;
 use platform::objects::AppInfo;
 use rand::seq::SliceRandom;
 
@@ -24,10 +26,12 @@ impl AppInfoResolver {
                 .context("get uwp app info")?,
         };
 
-        let icon_size = info.logo.Size().context("get app icon size")?;
         let color = self.random_color();
 
         {
+            let icon_size = info.logo.Size().context("get app icon size")?;
+            updater.update_app_icon_size(req.id.clone(), icon_size).context("update app icon size")?;
+
             let mut icon_writer = updater
                 .app_icon(req.id.clone())
                 .context("open app icon for writing")?;
@@ -47,8 +51,7 @@ impl AppInfoResolver {
                         company: info.company,
                         color,
                         ..Default::default()
-                    },
-                    icon_size,
+                    }
                 )
                 .context("update app info")?;
         }
