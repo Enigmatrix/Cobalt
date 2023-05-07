@@ -19,21 +19,11 @@ macro_rules! prepare_stmt {
 macro_rules! insert_stmt {
     ($conn: expr, $mdl:ty) => {{
         let name = <$mdl as $crate::table::Table>::name();
-        let sql = if <$mdl as $crate::table::Table>::has_id() {
-            format!(
-                "INSERT INTO {} ({}) VALUES (NULL{})",
-                name,
-                <$mdl as $crate::table::Table>::columns().join(", "),
-                ", ?".repeat(<$mdl as $crate::table::Table>::columns().len() - 1)
-            )
-        } else {
-            format!(
-                "INSERT INTO {} ({}) VALUES ({})",
-                name,
-                <$mdl as $crate::table::Table>::columns().join(", "),
-                ", ?".repeat(<$mdl as $crate::table::Table>::columns().len())
-            )
-        };
+        let sql = format!(
+            "INSERT INTO {} VALUES (NULL{})",
+            name,
+            ", ?".repeat(<$mdl as $crate::table::Table>::columns().len() - 1)
+        );
         prepare_stmt!($conn, sql)
     }};
 }
@@ -110,11 +100,10 @@ impl<'a> EntityInserter<'a> {
     }
 
     /// Insert a [Usage] into the [Database]
-    pub fn insert_usage(&mut self, usage: &mut Usage) -> Result<()> {
+    pub fn insert_usage(&mut self, usage: &Usage) -> Result<()> {
         self.insert_usage
             .execute(params![usage.session, usage.start, usage.end])
             .context("insert usage stmt execute")?;
-        usage.id = Ref::new(self.last_insert_id());
         Ok(())
     }
 
@@ -150,6 +139,7 @@ impl<'a> EntityInserter<'a> {
 pub struct AppUpdater<'a> {
     conn: &'a Connection,
     update_app: Statement<'a>,
+    update_app_icon_size: Statement<'a>,
 }
 
 impl<'a> AppUpdater<'a> {
@@ -163,9 +153,15 @@ impl<'a> AppUpdater<'a> {
                     name = ?,
                     description = ?,
                     company = ?,
-                    color = ?
-                    icon = ZEROBLOB(?),
+                    color = ?,
                     initialized = 1
+                WHERE id = ?"
+            )
+            .context("update app stmt")?,
+            update_app_icon_size: prepare_stmt!(
+                conn,
+                "UPDATE app SET
+                    icon = ZEROBLOB(?)
                 WHERE id = ?"
             )
             .context("update app stmt")?,
@@ -174,14 +170,24 @@ impl<'a> AppUpdater<'a> {
     }
 
     /// Update the [App] with additional information
-    pub fn update_app(&mut self, app: &App, icon_size: u64) -> Result<()> {
+    pub fn update_app_icon_size(&mut self, id: Ref<App>, icon_size: u64) -> Result<()> {
+        self.update_app_icon_size
+            .execute(params![
+                icon_size,
+                id
+            ])
+            .context("update app stmt execute")?;
+        Ok(())
+    }
+
+    /// Update the [App] with additional information
+    pub fn update_app(&mut self, app: &App) -> Result<()> {
         self.update_app
             .execute(params![
                 app.name,
                 app.description,
                 app.company,
                 app.color,
-                icon_size,
                 app.id
             ])
             .context("update app stmt execute")?;

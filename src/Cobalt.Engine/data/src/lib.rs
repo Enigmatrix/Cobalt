@@ -1,7 +1,5 @@
-mod db;
-mod entities;
-mod table;
-
-pub use db::*;
-pub use entities::*;
-pub use table::*;
+pub mod db;
+pub mod entities;
+mod migrations;
+pub mod migrator;
+pub mod table;
