@@ -13,8 +13,8 @@ use crate::objects::{Duration, Timestamp, WindowsHook, WindowsHookType};
 pub enum InteractionStateChange {
     Active,
     Idle {
-        mouseclicks: u32,
-        keystrokes: u32,
+        mouseclicks: u64,
+        keystrokes: u64,
         active_start: Timestamp,
         idle_start: Timestamp,
     },
@@ -26,8 +26,8 @@ pub enum InteractionStateChange {
 
 /// [Interaction] watcher (mouseclicks, keystrokes)
 pub struct Interaction {
-    mouseclicks: u32,
-    keystrokes: u32,
+    mouseclicks: u64,
+    keystrokes: u64,
     last_interaction: Timestamp,
     last_active_start: Timestamp,
     timeout: Duration,

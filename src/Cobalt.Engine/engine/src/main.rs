@@ -21,6 +21,7 @@ use tokio::task::spawn_local;
 use tokio::task::LocalSet;
 
 use crate::app_info_resolver::AppInfoResolver;
+use crate::processor::Processor;
 use crate::processor::ProcessorEvent;
 
 fn main() -> Result<()> {
@@ -47,6 +48,7 @@ fn main() -> Result<()> {
 
     let watcher = {
         let event_tx = event_tx;
+        let foreground_window = foreground_window.clone();
         run_win_event_loop_thread(move |ev| {
             let mut foreground = watchers::Foreground::new(foreground_window.clone())
                 .context("create foreground watcher")?;
@@ -104,43 +106,11 @@ fn main() -> Result<()> {
         })
     };
 
-    let db = Database::new(&settings).context("create db for processor")?;
+    let mut db = Database::new(&settings).context("create db for processor")?;
+    let mut processor = Processor::new(foreground_window, start, &mut db, app_info_tx)
+        .context("create processor")?;
     for change in event_rx {
-        match change {
-            ProcessorEvent::WindowSession {
-                change: WindowSession { window, title },
-                ..
-            } => {
-                let process = Process::new(window.pid()?)?;
-                let path = process.path()?;
-                info!(title);
-                if process.is_uwp(Some(&path))? {
-                    let aumid = window.aumid()?;
-                    info!(aumid);
-                } else {
-                    info!(path = path);
-                }
-            }
-            ProcessorEvent::InteractionStateChange {
-                change: InteractionStateChange::Active,
-                ..
-            } => {
-                warn!("Active!")
-            }
-            ProcessorEvent::InteractionStateChange {
-                change:
-                    InteractionStateChange::Idle {
-                        mouseclicks,
-                        keystrokes,
-                        active_start,
-                        idle_start,
-                    },
-                ..
-            } => warn!(
-                "Idle ({} - {}), recorded m={}, k={}",
-                active_start, idle_start, mouseclicks, keystrokes
-            ),
-        }
+        processor.handle(change).context("handle processor event")?;
     }
 
     watcher.join().unwrap();

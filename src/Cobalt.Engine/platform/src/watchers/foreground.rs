@@ -1,7 +1,7 @@
 use crate::objects::Window;
 use common::errors::*;
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 pub struct WindowSession {
     pub window: Window,
     pub title: String,

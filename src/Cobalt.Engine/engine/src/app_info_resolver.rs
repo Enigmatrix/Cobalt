@@ -3,9 +3,10 @@ use data::*;
 use platform::objects::AppInfo;
 use rand::seq::SliceRandom;
 
+#[derive(Debug)]
 pub struct AppInfoRequest {
-    id: Ref<App>,
-    app_identity: AppIdentity,
+    pub id: Ref<App>,
+    pub app_identity: AppIdentity,
 }
 
 pub struct AppInfoResolver;

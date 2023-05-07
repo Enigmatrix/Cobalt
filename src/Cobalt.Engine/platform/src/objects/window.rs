@@ -1,3 +1,4 @@
+use std::hash::{Hash, Hasher};
 use std::ptr;
 
 use windows::core::{ComInterface, Interface};
@@ -20,6 +21,12 @@ use common::errors::*;
 #[derive(Clone, PartialEq, Eq)]
 pub struct Window {
     inner: HWND,
+}
+
+impl Hash for Window {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.inner.0.hash(state);
+    }
 }
 
 impl Window {
