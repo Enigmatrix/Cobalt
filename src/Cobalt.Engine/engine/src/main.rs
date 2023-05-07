@@ -1,3 +1,5 @@
+#![feature(async_closure)]
+
 mod app_info_resolver;
 mod cache;
 mod processor;
@@ -15,6 +17,8 @@ use platform::{
     watchers::{self, InteractionStateChange, WindowSession},
 };
 
+use crate::app_info_resolver::AppInfoRequest;
+use crate::app_info_resolver::AppInfoResolver;
 use crate::processor::ProcessorEvent;
 
 fn main() -> Result<()> {
@@ -37,6 +41,8 @@ fn main() -> Result<()> {
     let every = platform::objects::Duration::from_millis(1_000);
 
     let (event_tx, event_rx) = channel();
+    // TODO this should be async-friendly
+    let (app_info_tx, app_info_rx) = channel::<AppInfoRequest>();
 
     let watcher_event_tx = event_tx;
     let watcher = run_win_event_loop_thread(move |ev| {
@@ -48,7 +54,7 @@ fn main() -> Result<()> {
             let now = Timestamp::now();
             if let Some(change) = foreground.trigger().context("trigger foreground watcher")? {
                 watcher_event_tx
-                    .send(ProcessorEvent::WindowSession(change))
+                    .send(ProcessorEvent::WindowSession { at: now, change })
                     .context("send window session change")?;
             }
             if let Some(change) = interaction
@@ -56,20 +62,48 @@ fn main() -> Result<()> {
                 .context("trigger interaction watcher")?
             {
                 watcher_event_tx
-                    .send(ProcessorEvent::InteractionStateChange(change))
+                    .send(ProcessorEvent::InteractionStateChange { at: now, change })
                     .context("send interaction state change")?;
             }
             Ok(())
-        });
+        })
+        .context("create timer")?;
 
         ev.run();
         Ok(())
     });
 
+    let rt = tokio::runtime::Builder::new_multi_thread()
+        .build()
+        .context("build tokio runtime")?;
+    {
+        let settings = settings.clone();
+        rt.spawn(async move || -> Result<()> {
+            for app_info in app_info_rx {
+                // tokio::spawn(async move {
+                //     (|| -> Result<()> {
+
+                //     })().unwrap();
+                // });
+
+                let db = Database::new(&settings).context("create db for app info")?;
+                let resolver = AppInfoResolver::default();
+                resolver
+                    .resolve(db, app_info)
+                    .await
+                    .context("resolve app info")?;
+            }
+            Ok(())
+        }());
+    }
+
     let db = Database::new(&settings).context("create db for processor")?;
     for change in event_rx {
         match change {
-            ProcessorEvent::WindowSession(WindowSession { window, title }) => {
+            ProcessorEvent::WindowSession {
+                change: WindowSession { window, title },
+                ..
+            } => {
                 let process = Process::new(window.pid()?)?;
                 let path = process.path()?;
                 info!(title);
@@ -80,13 +114,20 @@ fn main() -> Result<()> {
                     info!(path = path);
                 }
             }
-            ProcessorEvent::InteractionStateChange(InteractionStateChange::Active) => {
+            ProcessorEvent::InteractionStateChange {
+                change: InteractionStateChange::Active,
+                ..
+            } => {
                 warn!("Active!")
             }
-            ProcessorEvent::InteractionStateChange(InteractionStateChange::Idle {
-                mouseclicks,
-                keystrokes,
-            }) => warn!("Idle, recorded m={}, k={}", mouseclicks, keystrokes),
+            ProcessorEvent::InteractionStateChange {
+                change:
+                    InteractionStateChange::Idle {
+                        mouseclicks,
+                        keystrokes,
+                    },
+                ..
+            } => warn!("Idle, recorded m={}, k={}", mouseclicks, keystrokes),
         }
     }
 

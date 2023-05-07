@@ -10,6 +10,7 @@ use windows::Win32::UI::WindowsAndMessaging::{
 
 use crate::objects::{Duration, Timestamp, WindowsHook, WindowsHookType};
 
+// TODO include start - end here
 pub enum InteractionStateChange {
     Active,
     Idle { mouseclicks: u32, keystrokes: u32 },

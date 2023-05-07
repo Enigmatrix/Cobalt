@@ -16,7 +16,8 @@ pub struct Timer {
 }
 
 impl Timer {
-    /// Create a new [Timer] which calls the callback with the specified due and period
+    /// Create a new [Timer] which calls the callback with the specified due and period.
+    /// ### Safety: callback must last as long as the [Timer], and the callback must not be moved.
     pub fn new<F: FnMut() -> Result<()>>(
         due: Duration,
         period: Duration,

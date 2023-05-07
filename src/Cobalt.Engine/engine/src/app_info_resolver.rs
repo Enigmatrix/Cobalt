@@ -1,3 +1,9 @@
+use std::{
+    borrow::BorrowMut,
+    ops::DerefMut,
+    sync::{Arc, Mutex},
+};
+
 use common::errors::*;
 use data::*;
 use platform::objects::AppInfo;
@@ -30,24 +36,26 @@ impl AppInfoResolver {
             let mut icon_writer = updater
                 .app_icon(req.id.clone())
                 .context("open app icon for writing")?;
-            info.copy_logo_to(&mut icon_writer)
-                .await
-                .context("copy logo to witer")?;
+            let copy_fut = info.copy_logo_to(&mut icon_writer);
+
+            copy_fut.await.context("copy logo to writer")?;
         }
 
-        updater
-            .update_app(
-                &App {
-                    id: req.id,
-                    name: info.name,
-                    description: info.description,
-                    company: info.company,
-                    color,
-                    ..Default::default()
-                },
-                icon_size,
-            )
-            .context("update app info")?;
+        {
+            updater
+                .update_app(
+                    &App {
+                        id: req.id,
+                        name: info.name,
+                        description: info.description,
+                        company: info.company,
+                        color,
+                        ..Default::default()
+                    },
+                    icon_size,
+                )
+                .context("update app info")?;
+        }
 
         Ok(())
     }

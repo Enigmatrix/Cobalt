@@ -34,7 +34,8 @@ impl AppInfo {
         let capacity = 4096;
         let buffer = Buffer::Create(capacity)?;
         loop {
-            let win_buffer = self.logo
+            let win_buffer = self
+                .logo
                 .ReadAsync(&buffer, capacity, InputStreamOptions::None)?
                 .await
                 .context("read from logo stream")?;
