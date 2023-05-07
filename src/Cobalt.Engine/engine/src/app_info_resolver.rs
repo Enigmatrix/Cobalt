@@ -1,13 +1,7 @@
-use std::{
-    borrow::BorrowMut,
-    ops::DerefMut,
-    sync::{Arc, Mutex},
-};
-
 use common::errors::*;
 use data::*;
 use platform::objects::AppInfo;
-use rand::{seq::SliceRandom, Rng};
+use rand::seq::SliceRandom;
 
 pub struct AppInfoRequest {
     id: Ref<App>,
@@ -36,9 +30,10 @@ impl AppInfoResolver {
             let mut icon_writer = updater
                 .app_icon(req.id.clone())
                 .context("open app icon for writing")?;
-            let copy_fut = info.copy_logo_to(&mut icon_writer);
 
-            copy_fut.await.context("copy logo to writer")?;
+            info.copy_logo_to(&mut icon_writer)
+                .await
+                .context("copy logo to writer")?;
         }
 
         {
