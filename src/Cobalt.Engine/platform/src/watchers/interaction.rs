@@ -83,7 +83,7 @@ impl Interaction {
                 last_interaction: now,
                 last_active_start: now,
                 timeout,
-                idle: false,
+                idle: true,
                 _mouse_hook: WindowsHook::global().context("mouse ll windows hook")?,
                 _keyboard_hook: WindowsHook::global().context("keyboard ll windows hook")?,
             })
