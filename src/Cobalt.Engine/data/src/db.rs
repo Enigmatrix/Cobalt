@@ -51,7 +51,6 @@ pub struct Database {
 impl Database {
     /// Create a new [Database] from a connection string
     pub fn new(settings: &Settings) -> Result<Database> {
-        // TODO check if arbitrary conn_str works
         let conn = Connection::open(&settings.connection_strings.database_path)
             .context("open connection")?;
         Ok(Database { conn })
