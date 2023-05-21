@@ -172,10 +172,7 @@ impl<'a> AppUpdater<'a> {
     /// Update the [App] with additional information
     pub fn update_app_icon_size(&mut self, id: Ref<App>, icon_size: u64) -> Result<()> {
         self.update_app_icon_size
-            .execute(params![
-                icon_size,
-                id
-            ])
+            .execute(params![icon_size, id])
             .context("update app stmt execute")?;
         Ok(())
     }

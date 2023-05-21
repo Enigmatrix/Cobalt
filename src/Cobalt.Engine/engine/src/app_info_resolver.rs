@@ -30,7 +30,9 @@ impl AppInfoResolver {
 
         {
             let icon_size = info.logo.Size().context("get app icon size")?;
-            updater.update_app_icon_size(req.id.clone(), icon_size).context("update app icon size")?;
+            updater
+                .update_app_icon_size(req.id.clone(), icon_size)
+                .context("update app icon size")?;
 
             let mut icon_writer = updater
                 .app_icon(req.id.clone())
@@ -43,16 +45,14 @@ impl AppInfoResolver {
 
         {
             updater
-                .update_app(
-                    &App {
-                        id: req.id,
-                        name: info.name,
-                        description: info.description,
-                        company: info.company,
-                        color,
-                        ..Default::default()
-                    }
-                )
+                .update_app(&App {
+                    id: req.id,
+                    name: info.name,
+                    description: info.description,
+                    company: info.company,
+                    color,
+                    ..Default::default()
+                })
                 .context("update app info")?;
         }
 
