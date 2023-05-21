@@ -5,11 +5,13 @@ VisualStudioVersion = 17.5.33530.505
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cobalt", "src\Cobalt\Cobalt.csproj", "{009E5B5D-9DD1-4578-B97A-00AA25270DA4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cobalt.Common.Utils", "src\Cobalt.Common.Utils\Cobalt.Common.Utils.csproj", "{EB572890-83C2-4476-BA0C-964ADB3A1F1C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cobalt.Common.Utils", "src\Cobalt.Common.Utils\Cobalt.Common.Utils.csproj", "{EB572890-83C2-4476-BA0C-964ADB3A1F1C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cobalt.Common.Data", "src\Cobalt.Common.Data\Cobalt.Common.Data.csproj", "{0ED3AAC1-5DFD-49C6-9048-696A1F0A1E15}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cobalt.Common.Data", "src\Cobalt.Common.Data\Cobalt.Common.Data.csproj", "{0ED3AAC1-5DFD-49C6-9048-696A1F0A1E15}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cobalt.Common.Analysis", "src\Cobalt.Common.Analysis\Cobalt.Common.Analysis.csproj", "{D6AC4080-530C-4155-A540-3ECF6FF8CDA2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cobalt.Common.Analysis", "src\Cobalt.Common.Analysis\Cobalt.Common.Analysis.csproj", "{D6AC4080-530C-4155-A540-3ECF6FF8CDA2}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Cobalt.Tests", "src\Cobalt.Tests\Cobalt.Tests.fsproj", "{61DB17D0-1C58-4B6B-882D-BEB4498799B5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +35,10 @@ Global
 		{D6AC4080-530C-4155-A540-3ECF6FF8CDA2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D6AC4080-530C-4155-A540-3ECF6FF8CDA2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D6AC4080-530C-4155-A540-3ECF6FF8CDA2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{61DB17D0-1C58-4B6B-882D-BEB4498799B5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{61DB17D0-1C58-4B6B-882D-BEB4498799B5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{61DB17D0-1C58-4B6B-882D-BEB4498799B5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{61DB17D0-1C58-4B6B-882D-BEB4498799B5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
