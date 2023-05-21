@@ -21,6 +21,9 @@ public class CobaltContext : DbContext
     public DbSet<Alert> Alerts { get; set; } = null!;
     public DbSet<Reminder> Reminders { get; set; } = null!;
 
+    // 1. Can i use something other than anonymous types (so that I can return a WithDuration<Alert> from AlertDuritions)
+    // 2. How can I map a IQueryable<Usages>, Start, End => Duration using expressions???
+
     public IQueryable<Alert> TriggeredAlerts(DateTime now)
     {
         var today = now.Date;
@@ -41,7 +44,7 @@ public class CobaltContext : DbContext
             {
                 als.Alert,
                 Expired = Apps.Where(app => EF.Property<bool>(als.Alert, "_targetIsApp")
-                        ? EF.Property<App?>(als.Alert, "_app")!.Id == app.Id
+                        ? EF.Property<App?>(als.Alert, "_app")! == app
                         : EF.Property<Tag?>(als.Alert, "_tag")!.Apps.Contains(app))
                     .SelectMany(x => x.Sessions)
                     .SelectMany(x => x.Usages)
