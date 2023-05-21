@@ -28,12 +28,12 @@ public abstract record Action
 [Table("alert")]
 public class Alert
 {
-    private long? _actionInt0 = default!;
     private readonly long _actionTag = default!;
+    private readonly bool _targetIsApp = default!;
+    private long? _actionInt0 = default!;
     private string? _actionText0 = default!;
     private App? _app = default!;
     private Tag? _tag = default!;
-    private readonly bool _targetIsApp = default!;
 
     public long Id { get; set; }
 
@@ -44,7 +44,9 @@ public class Alert
             false => new Target.TagTarget(_tag ?? throw new ArgumentNullException(nameof(_tag)))
         };
 
-    [Column("usage_limit")] public TimeSpan UsageLimit { get; set; }
+    [Column("usage_limit")] public long UsageLimitTicks { get; set; }
+
+    [NotMapped] public TimeSpan UsageLimit => TimeSpan.FromTicks(UsageLimitTicks);
 
     [Column("time_frame")] public TimeFrame TimeFrame { get; set; }
 

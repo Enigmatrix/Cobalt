@@ -6,8 +6,13 @@ namespace Cobalt.Common.Data.Entities;
 public class InteractionPeriod
 {
     public long Id { get; set; }
-    public DateTime Start { get; set; }
-    public DateTime End { get; set; }
+
+    [Column("start")] public long StartTicks { get; set; }
+
+    [Column("end")] public long EndTicks { get; set; }
+
+    [NotMapped] public DateTime Start => new(StartTicks);
+    [NotMapped] public DateTime End => new(EndTicks);
 
     [Column("mouseclicks")] public long MouseClicks { get; set; }
 

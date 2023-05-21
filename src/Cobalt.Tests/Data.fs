@@ -91,9 +91,9 @@ type DataTests() =
             ["@app"; "@tag"] app_tags
 
         let alerts: obj list list = [
-            [true; 1; DBNull.Value; 1000; TimeFrame.Daily; 0; DBNull.Value; DBNull.Value];
-            [false; DBNull.Value; 1; 2000; TimeFrame.Weekly; 1; 3000; DBNull.Value];
-            [true; 2; DBNull.Value; 4000; TimeFrame.Monthly; 2; DBNull.Value; "msg2"];
+            [true; 1; DBNull.Value; 100; TimeFrame.Daily; 0; DBNull.Value; DBNull.Value];
+            [false; DBNull.Value; 1; 200; TimeFrame.Weekly; 1; 300; DBNull.Value];
+            [true; 2; DBNull.Value; 400; TimeFrame.Monthly; 2; DBNull.Value; "msg2"];
         ]
         exec_multiple "insert into alert values (NULL, @target_is_app, @app, @tag, @usage_limit, @time_frame, @action_tag, @action_int0, @action_text0)"
             ["@target_is_app"; "@app"; "@tag"; "@usage_limit"; "@time_frame"; "@action_tag"; "@action_int0"; "@action_text0"] alerts
@@ -242,17 +242,17 @@ type DataTests() =
         let read_alerts = db.Alerts |> Seq.toList
 
         test <@ (read_alerts.[0].Target :?> Target.AppTarget).App.Id = 1 @>
-        test <@ read_alerts.[0].UsageLimit = TimeSpan.FromTicks(1000) @>
+        test <@ read_alerts.[0].UsageLimit = TimeSpan.FromTicks(100) @>
         test <@ read_alerts.[0].TimeFrame = TimeFrame.Daily @>
         test <@ read_alerts.[0].Action = Action.Kill() @>
 
         test <@ (read_alerts.[1].Target :?> Target.TagTarget).Tag.Id = 1 @>
-        test <@ read_alerts.[1].UsageLimit = TimeSpan.FromTicks(2000) @>
+        test <@ read_alerts.[1].UsageLimit = TimeSpan.FromTicks(200) @>
         test <@ read_alerts.[1].TimeFrame = TimeFrame.Weekly @>
-        test <@ read_alerts.[1].Action = Action.Dim(TimeSpan.FromTicks(3000)) @>
+        test <@ read_alerts.[1].Action = Action.Dim(TimeSpan.FromTicks(300)) @>
 
         test <@ (read_alerts.[2].Target :?> Target.AppTarget).App.Id = 2 @>
-        test <@ read_alerts.[2].UsageLimit = TimeSpan.FromTicks(4000) @>
+        test <@ read_alerts.[2].UsageLimit = TimeSpan.FromTicks(400) @>
         test <@ read_alerts.[2].TimeFrame = TimeFrame.Monthly @>
         test <@ read_alerts.[2].Action = Action.Message("msg2") @>
 
@@ -278,6 +278,12 @@ type DataTests() =
         test <@ read_reminders.[0].Alert.Id = 1 @>
         test <@ read_reminders.[1].Alert.Id = 1 @>
         test <@ read_reminders.[2].Alert.Id = 2 @>
+
+    [<Fact>]
+    let ``triggered alerts`` () =
+        let alerts = db.TriggeredAlerts(now)
+        let list = alerts.ToList().Select(fun x -> x.Id).ToList()
+        test <@ list |> Seq.toList = [1; 2] @>
 
 
     interface IDisposable with 

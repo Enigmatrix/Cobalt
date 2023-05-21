@@ -1,6 +1,5 @@
 ﻿using Cobalt.Common.Data.Entities;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Cobalt.Common.Data;
 
@@ -22,6 +21,38 @@ public class CobaltContext : DbContext
     public DbSet<Alert> Alerts { get; set; } = null!;
     public DbSet<Reminder> Reminders { get; set; } = null!;
 
+    public IQueryable<Alert> TriggeredAlerts(DateTime now)
+    {
+        var today = now.Date;
+        var week = today - TimeSpan.FromDays((int)today.DayOfWeek);
+        var month = today - TimeSpan.FromDays(today.Day);
+
+        return Alerts
+            .Select(alert => new
+            {
+                Alert = alert,
+                // no switch statement in Linq Expressions
+                Start = alert.TimeFrame == TimeFrame.Daily ? today.Ticks :
+                    alert.TimeFrame == TimeFrame.Weekly ? week.Ticks : month.Ticks,
+                End = alert.TimeFrame == TimeFrame.Daily ? today.AddDays(1).Ticks :
+                    alert.TimeFrame == TimeFrame.Weekly ? week.AddDays(7).Ticks : month.AddMonths(1).Ticks
+            })
+            .Select(als => new
+            {
+                als.Alert,
+                Expired = Apps.Where(app => EF.Property<bool>(als.Alert, "_targetIsApp")
+                        ? EF.Property<App?>(als.Alert, "_app")!.Id == app.Id
+                        : EF.Property<Tag?>(als.Alert, "_tag")!.Apps.Contains(app))
+                    .SelectMany(x => x.Sessions)
+                    .SelectMany(x => x.Usages)
+                    .Where(x => x.EndTicks > als.Start && x.StartTicks < als.End)
+                    .Select(x => Math.Min(x.EndTicks, als.End) - Math.Max(x.StartTicks, als.Start))
+                    .Sum() >= als.Alert.UsageLimitTicks
+            })
+            .Where(x => x.Expired)
+            .Select(x => x.Alert);
+    }
+
     protected override void OnModelCreating(ModelBuilder model)
     {
         // TODO maybe include app initialized field, as well as a HasQueryInclude
@@ -39,18 +70,6 @@ public class CobaltContext : DbContext
                     j => j.HasKey("app", "tag"));
         });
 
-        model.Entity<Usage>(usage =>
-        {
-            usage.Property(x => x.Start).HasConversion<DateTimeToTicksConverter>();
-            usage.Property(x => x.End).HasConversion<DateTimeToTicksConverter>();
-        });
-
-        model.Entity<InteractionPeriod>(ip =>
-        {
-            ip.Property(x => x.Start).HasConversion<DateTimeToTicksConverter>();
-            ip.Property(x => x.End).HasConversion<DateTimeToTicksConverter>();
-        });
-
         model.Entity<Alert>(alerts =>
         {
             alerts.Property("_targetIsApp").HasColumnName("target_is_app");
@@ -58,7 +77,6 @@ public class CobaltContext : DbContext
             alerts.HasOne("_tag").WithMany().HasForeignKey("tag");
             alerts.Navigation("_app").AutoInclude();
             alerts.Navigation("_tag").AutoInclude();
-            alerts.Property(x => x.UsageLimit).HasConversion<TimeSpanToTicksConverter>();
             alerts.Property("_actionTag").HasColumnName("action_tag");
             alerts.Property("_actionInt0").HasColumnName("action_int0");
             alerts.Property("_actionText0").HasColumnName("action_text0");

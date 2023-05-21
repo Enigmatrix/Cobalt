@@ -12,4 +12,6 @@ public class Session
     public string Title { get; set; }
 
     [Column("cmd_line")] public string? CmdLine { get; set; }
+
+    public List<Usage> Usages { get; set; } = default!;
 }
