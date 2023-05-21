@@ -1,5 +1,8 @@
-﻿namespace Cobalt.Common.Data.Entities;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 
+namespace Cobalt.Common.Data.Entities;
+
+[Table("tag")]
 public class Tag
 {
     public long Id { get; set; }

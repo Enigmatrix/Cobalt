@@ -1,4 +1,6 @@
-﻿namespace Cobalt.Common.Data.Entities;
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+namespace Cobalt.Common.Data.Entities;
 
 public abstract record Target
 {
@@ -21,6 +23,7 @@ public abstract record Action
     public sealed record Message(string Text) : Action;
 }
 
+[Table("alert")]
 public class Alert
 {
     public long Id { get; set; }
