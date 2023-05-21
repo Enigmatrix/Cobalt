@@ -20,14 +20,12 @@ public class CobaltContext : DbContext
     public DbSet<Usage> Usages { get; set; } = null!;
     public DbSet<InteractionPeriod> InteractionPeriods { get; set; } = null!;
     public DbSet<Tag> Tags { get; set; } = null!;
-    /*
     public DbSet<Alert> Alerts { get; set; } = null!;
     public DbSet<Reminder> Reminders { get; set; } = null!;
-    */
 
     protected override void OnModelCreating(ModelBuilder model)
     {
-        // TODO setup all the stupid properties
+        // TODO maybe include app initialized field, as well as a HasQueryInclude
 
         model.Entity<App>(app =>
         {
@@ -52,6 +50,19 @@ public class CobaltContext : DbContext
         {
             ip.Property(x => x.Start).HasConversion<DateTimeToTicksConverter>();
             ip.Property(x => x.End).HasConversion<DateTimeToTicksConverter>();
+        });
+
+        model.Entity<Alert>(alerts =>
+        {
+            alerts.Property("_targetIsApp").HasColumnName("target_is_app");
+            alerts.HasOne("_app").WithMany().HasForeignKey("app");
+            alerts.HasOne("_tag").WithMany().HasForeignKey("tag");
+            alerts.Navigation("_app").AutoInclude();
+            alerts.Navigation("_tag").AutoInclude();
+            alerts.Property(x => x.UsageLimit).HasConversion<TimeSpanToTicksConverter>();
+            alerts.Property("_actionTag").HasColumnName("action_tag");
+            alerts.Property("_actionInt0").HasColumnName("action_int0");
+            alerts.Property("_actionText0").HasColumnName("action_text0");
         });
     }
 

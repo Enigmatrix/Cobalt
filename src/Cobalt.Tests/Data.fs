@@ -90,6 +90,22 @@ type DataTests() =
         exec_multiple "insert into _app_tag values (@app, @tag)"
             ["@app"; "@tag"] app_tags
 
+        let alerts: obj list list = [
+            [true; 1; DBNull.Value; 1000; TimeFrame.Daily; 0; DBNull.Value; DBNull.Value];
+            [false; DBNull.Value; 1; 2000; TimeFrame.Weekly; 1; 3000; DBNull.Value];
+            [true; 2; DBNull.Value; 4000; TimeFrame.Monthly; 2; DBNull.Value; "msg2"];
+        ]
+        exec_multiple "insert into alert values (NULL, @target_is_app, @app, @tag, @usage_limit, @time_frame, @action_tag, @action_int0, @action_text0)"
+            ["@target_is_app"; "@app"; "@tag"; "@usage_limit"; "@time_frame"; "@action_tag"; "@action_int0"; "@action_text0"] alerts
+
+        let reminders: obj list list = [
+            [1; 0.3; "msg0"];
+            [1; 0.5; "msg1"];
+            [2; 0.9; "msg2"];
+        ]
+        exec_multiple "insert into reminder values (NULL, @alert, @threshold, @message)"
+            ["@alert"; "@threshold"; "@message"] reminders
+
     do
         File.Delete(fpath)
         migrate()
@@ -219,6 +235,49 @@ type DataTests() =
         test <@ read_tags.[1].Apps.[1].Name = "name1" @>
 
         test <@ read_tags.[2].Apps |> Seq.length = 0 @>
+
+    [<Fact>]
+    let ``get alerts`` () =
+
+        let read_alerts = db.Alerts |> Seq.toList
+
+        test <@ (read_alerts.[0].Target :?> Target.AppTarget).App.Id = 1 @>
+        test <@ read_alerts.[0].UsageLimit = TimeSpan.FromTicks(1000) @>
+        test <@ read_alerts.[0].TimeFrame = TimeFrame.Daily @>
+        test <@ read_alerts.[0].Action = Action.Kill() @>
+
+        test <@ (read_alerts.[1].Target :?> Target.TagTarget).Tag.Id = 1 @>
+        test <@ read_alerts.[1].UsageLimit = TimeSpan.FromTicks(2000) @>
+        test <@ read_alerts.[1].TimeFrame = TimeFrame.Weekly @>
+        test <@ read_alerts.[1].Action = Action.Dim(TimeSpan.FromTicks(3000)) @>
+
+        test <@ (read_alerts.[2].Target :?> Target.AppTarget).App.Id = 2 @>
+        test <@ read_alerts.[2].UsageLimit = TimeSpan.FromTicks(4000) @>
+        test <@ read_alerts.[2].TimeFrame = TimeFrame.Monthly @>
+        test <@ read_alerts.[2].Action = Action.Message("msg2") @>
+
+    [<Fact>]
+    let ``get reminders`` () =
+
+        let read_reminders = db.Reminders |> Seq.toList
+
+        test <@ read_reminders.[0].Threshold = 0.3 @>
+        test <@ read_reminders.[0].Message = "msg0" @>
+
+        test <@ read_reminders.[1].Threshold = 0.5 @>
+        test <@ read_reminders.[1].Message = "msg1" @>
+
+        test <@ read_reminders.[2].Threshold = 0.9 @>
+        test <@ read_reminders.[2].Message = "msg2" @>
+
+    [<Fact>]
+    let ``get reminders, include alerts`` () =
+
+        let read_reminders = db.Reminders.Include (fun x -> x.Alert) |> Seq.toList
+
+        test <@ read_reminders.[0].Alert.Id = 1 @>
+        test <@ read_reminders.[1].Alert.Id = 1 @>
+        test <@ read_reminders.[2].Alert.Id = 2 @>
 
 
     interface IDisposable with 

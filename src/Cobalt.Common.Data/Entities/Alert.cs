@@ -26,10 +26,32 @@ public abstract record Action
 [Table("alert")]
 public class Alert
 {
+    private bool _targetIsApp = default!;
+    private App? _app = default!;
+    private Tag? _tag = default!;
+    private long _actionTag = default!;
+    private long? _actionInt0 = default!;
+    private string? _actionText0 = default!;
+
     public long Id { get; set; }
-    public Target Target { get; set; }
+    public Target Target =>
+        _targetIsApp switch
+        {
+            true => new Target.AppTarget(_app ?? throw new ArgumentNullException(nameof(_app))),
+            false => new Target.TagTarget(_tag ?? throw new ArgumentNullException(nameof(_tag))),
+        };
+    [Column("usage_limit")]
     public TimeSpan UsageLimit { get; set; }
+    [Column("time_frame")]
     public TimeFrame TimeFrame { get; set; }
-    public Action Action { get; set; }
+    public Action Action =>
+        _actionTag switch
+        {
+            0 => new Action.Kill(),
+            1 => new Action.Dim(TimeSpan.FromTicks(_actionInt0 ?? throw new ArgumentNullException(nameof(_actionInt0)))),
+            2 => new Action.Message(_actionText0 ?? throw new ArgumentNullException(nameof(_actionText0))),
+            _ => throw new InvalidOperationException() // TODO replace with DU Exception
+        };
+
     public List<Reminder> Reminders { get; set; }
 }
