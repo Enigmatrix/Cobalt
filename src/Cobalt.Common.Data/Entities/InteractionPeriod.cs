@@ -9,8 +9,7 @@ public class InteractionPeriod
     public DateTime Start { get; set; }
     public DateTime End { get; set; }
 
-    [Column("mouseclicks")]
-    public long MouseClicks { get; set; }
-    [Column("keystrokes")]
-    public long KeyStrokes { get; set; }
+    [Column("mouseclicks")] public long MouseClicks { get; set; }
+
+    [Column("keystrokes")] public long KeyStrokes { get; set; }
 }

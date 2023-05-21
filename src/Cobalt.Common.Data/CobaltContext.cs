@@ -1,7 +1,6 @@
 ﻿using Cobalt.Common.Data.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using System.Reflection.Emit;
 
 namespace Cobalt.Common.Data;
 
@@ -66,6 +65,8 @@ public class CobaltContext : DbContext
         });
     }
 
-    protected override void OnConfiguring(DbContextOptionsBuilder opts) =>
+    protected override void OnConfiguring(DbContextOptionsBuilder opts)
+    {
         opts.UseSqlite($"Data Source={_dbPath}");
+    }
 }

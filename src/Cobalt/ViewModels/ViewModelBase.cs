@@ -1,8 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace Cobalt.ViewModels
+namespace Cobalt.ViewModels;
+
+public class ViewModelBase : ObservableObject
 {
-    public class ViewModelBase : ObservableObject
-    {
-    }
 }
