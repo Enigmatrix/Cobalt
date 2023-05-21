@@ -3,7 +3,7 @@
 namespace Cobalt.Common.Data.Entities;
 
 [Table("usage")]
-public class Usage
+public class Usage : IHasDuration
 {
     public long Id { get; set; }
 
@@ -15,4 +15,5 @@ public class Usage
 
     [NotMapped] public DateTime Start => new(StartTicks);
     [NotMapped] public DateTime End => new(EndTicks);
+    [NotMapped] public TimeSpan Duration => End - Start;
 }
