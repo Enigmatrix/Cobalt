@@ -1,6 +1,7 @@
 ﻿using Cobalt.Common.Data.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using System.Reflection.Emit;
 
 namespace Cobalt.Common.Data;
 
@@ -32,6 +33,13 @@ public class CobaltContext : DbContext
         {
             app.Property("_identityTag").HasColumnName("identity_tag");
             app.Property("_identityText0").HasColumnName("identity_text0");
+            app.HasMany(e => e.Tags)
+                .WithMany(tag => tag.Apps)
+                .UsingEntity(
+                    "_app_tag",
+                    l => l.HasOne(typeof(Tag)).WithMany().HasForeignKey("tag").HasPrincipalKey(nameof(Tag.Id)),
+                    r => r.HasOne(typeof(App)).WithMany().HasForeignKey("app").HasPrincipalKey(nameof(App.Id)),
+                    j => j.HasKey("app", "tag"));
         });
 
         model.Entity<Usage>(usage =>

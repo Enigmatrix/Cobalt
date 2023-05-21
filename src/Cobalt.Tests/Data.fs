@@ -2,6 +2,7 @@ module Tests
 
 open System
 open System.IO
+open System.Linq
 
 open Xunit
 open Swensen.Unquote
@@ -73,6 +74,22 @@ type DataTests() =
         exec_multiple "insert into usage values (NULL, @session, @start, @end)"
             ["@session"; "@start"; "@end"] usages
 
+        let tags: obj list list = [
+            ["tag0"; "color0"];
+            ["tag1"; "color1"];
+            ["tag2"; "color2"];
+        ]
+        exec_multiple "insert into tag values (NULL, @name, @color)"
+            ["@name"; "@color"] tags
+
+        let app_tags: obj list list = [
+            [1; 1];
+            [1; 2];
+            [2; 2];
+        ]
+        exec_multiple "insert into _app_tag values (@app, @tag)"
+            ["@app"; "@tag"] app_tags
+
     do
         File.Delete(fpath)
         migrate()
@@ -99,6 +116,21 @@ type DataTests() =
         test <@ read_apps.[1].Identity = AppIdentity.Uwp("uwp_aumid1") @>
 
     [<Fact>]
+    let ``get apps, include tags`` () =
+
+        let read_apps = db.Apps.Include(fun x -> x.Tags) |> Seq.toList
+
+        test <@ read_apps.[0].Tags |> Seq.length = 2 @>
+        test <@ read_apps.[0].Tags.[0].Name = "tag0" @>
+        test <@ read_apps.[0].Tags.[0].Color = "color0" @>
+        test <@ read_apps.[0].Tags.[1].Name = "tag1" @>
+        test <@ read_apps.[0].Tags.[1].Color = "color1" @>
+
+        test <@ read_apps.[1].Tags |> Seq.length = 1 @>
+        test <@ read_apps.[1].Tags.[0].Name = "tag1" @>
+        test <@ read_apps.[1].Tags.[0].Color = "color1" @>
+
+    [<Fact>]
     let ``get sessions`` () =
 
         let read_sessions = db.Sessions |> Seq.toList
@@ -119,18 +151,12 @@ type DataTests() =
 
         test <@ read_sessions.[0].App.Id = 1 @>
         test <@ read_sessions.[0].App.Identity = AppIdentity.Win32("win32_path0") @>
-        test <@ read_sessions.[0].Title = "title0" @>
-        test <@ read_sessions.[0].CmdLine = "cmd_line0" @>
 
         test <@ read_sessions.[1].App.Id = 1 @>
         test <@ read_sessions.[1].App.Identity = AppIdentity.Win32("win32_path0") @>
-        test <@ read_sessions.[1].Title = "title1" @>
-        test <@ read_sessions.[1].CmdLine = "cmd_line1" @>
 
         test <@ read_sessions.[2].App.Id = 2 @>
         test <@ read_sessions.[2].App.Identity = AppIdentity.Uwp("uwp_aumid1") @>
-        test <@ read_sessions.[2].Title = "title2" @>
-        test <@ read_sessions.[2].CmdLine = null @>
 
     [<Fact>]
     let ``get usages`` () =
@@ -168,6 +194,31 @@ type DataTests() =
         test <@ read_interaction_periods.[2].End = new DateTime(now.Ticks + 900L) @>
         test <@ read_interaction_periods.[2].MouseClicks = 10 @>
         test <@ read_interaction_periods.[2].KeyStrokes = 0 @>
+
+    [<Fact>]
+    let ``get tags`` () =
+
+        let read_tags = db.Tags |> Seq.toList
+
+        test <@ read_tags.[0].Name = "tag0" @>
+        test <@ read_tags.[0].Color = "color0" @>
+
+        test <@ read_tags.[0].Name = "tag0" @>
+        test <@ read_tags.[0].Color = "color0" @>
+
+    [<Fact>]
+    let ``get tags, include apps`` () =
+
+        let read_tags = db.Tags.Include (fun x -> x.Apps) |> Seq.toList
+
+        test <@ read_tags.[0].Apps |> Seq.length = 1 @>
+        test <@ read_tags.[0].Apps.[0].Name = "name0" @>
+
+        test <@ read_tags.[1].Apps |> Seq.length = 2 @>
+        test <@ read_tags.[0].Apps.[0].Name = "name0" @>
+        test <@ read_tags.[1].Apps.[1].Name = "name1" @>
+
+        test <@ read_tags.[2].Apps |> Seq.length = 0 @>
 
 
     interface IDisposable with 

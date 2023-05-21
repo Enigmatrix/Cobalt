@@ -28,4 +28,6 @@ public class App
         };
 
     // Icon is not represented here
+
+    public List<Tag> Tags { get; set; }
 }
