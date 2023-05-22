@@ -1,6 +1,7 @@
 use crate::table::Ref;
 
 pub type Timestamp = u64;
+pub type Duration = u64;
 
 #[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct App {
@@ -13,6 +14,28 @@ pub struct App {
     pub color: String,
     pub identity: AppIdentity,
     // pub icon: Blob
+}
+
+/// Unique identity of an App, outside of the Database (on the FileSystem/Registry)
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum AppIdentity {
+    Win32 { path: String },
+    Uwp { aumid: String },
+}
+
+impl Default for AppIdentity {
+    fn default() -> Self {
+        Self::Win32 {
+            path: Default::default(),
+        }
+    }
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Eq)]
+pub struct Tag {
+    pub id: Ref<Self>,
+    pub name: String,
+    pub color: String,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Eq)]
@@ -40,19 +63,68 @@ pub struct InteractionPeriod {
     pub keystrokes: u64,
 }
 
-/// Unique identity of an App, outside of the Database (on the FileSystem/Registry)
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum AppIdentity {
-    Win32 { path: String },
-    Uwp { aumid: String },
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Target {
+    App(Ref<App>),
+    Tag(Ref<Tag>),
 }
 
-impl Default for AppIdentity {
+impl Default for Target {
     fn default() -> Self {
-        Self::Win32 {
-            path: Default::default(),
-        }
+        Self::App(Default::default())
     }
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Eq)]
+pub enum TimeFrame {
+    #[default]
+    Daily,
+    Weekly = 1,
+    Monthly = 2,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Action {
+    Kill,
+    Dim(Duration),
+    Message(String),
+}
+
+impl Default for Action {
+    fn default() -> Self {
+        Self::Kill
+    }
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Eq)]
+pub struct Alert {
+    pub id: Ref<Self>,
+    pub target: Target,
+    pub usage_limit: Duration,
+    pub time_frame: TimeFrame,
+    pub action: Action,
+}
+
+#[derive(Default, Debug, Clone)]
+pub struct Reminder {
+    pub id: Ref<Self>,
+    pub alert: Ref<Alert>,
+    pub threshold: f64,
+    pub message: String,
+}
+
+#[derive(Default, Debug, Clone)]
+pub struct AlertHit {
+    pub id: Ref<Self>,
+    pub alert: Ref<Alert>,
+    pub timestamp: Timestamp,
+}
+
+#[derive(Default, Debug, Clone)]
+pub struct ReminderHit {
+    pub id: Ref<Self>,
+    pub reminder: Ref<Reminder>,
+    pub timestamp: Timestamp,
 }
 
 macro_rules! table {
@@ -93,6 +165,13 @@ table!(
 );
 
 table!(
+    Tag,
+    "tag",
+    id: u64,
+    ["id", "name", "color"]
+);
+
+table!(
     Session,
     "session",
     id: u64,
@@ -121,4 +200,32 @@ table!(
     "interaction_period",
     id: u64,
     ["id", "start", "end", "mouseclicks", "keystrokes"]
+);
+
+table!(
+    Alert,
+    "alert",
+    id: u64,
+    ["id", "target_is_app", "app", "tag", "usage_limit", "time_frame", "action_tag", "action_int0", "action_text0"]
+);
+
+table!(
+    Reminder,
+    "reminder",
+    id: u64,
+    ["id", "alert", "threshold", "message"]
+);
+
+table!(
+    AlertHit,
+    "alert_hit",
+    id: u64,
+    ["id", "alert", "timestamp"]
+);
+
+table!(
+    ReminderHit,
+    "reminder_hit",
+    id: u64,
+    ["id", "reminder", "timestamp"]
 );

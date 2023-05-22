@@ -204,3 +204,140 @@ impl<'a> AppUpdater<'a> {
             .context("open app icon blob")
     }
 }
+
+pub enum Triggered {
+    Alert {
+        id: Ref<Alert>,
+        app: Ref<App>,
+        identity: AppIdentity,
+        action: Action,
+    },
+    Reminder {
+        id: Ref<Reminder>,
+        alert: Ref<Alert>,
+        message: String,
+    },
+}
+
+/// Reference to hold statements regarding [Alert] and [Reminder] fetching
+pub struct Alerter<'a> {
+    fetch_triggered: Statement<'a>,
+    insert_alert_hit: Statement<'a>,
+    insert_reminder_hit: Statement<'a>,
+}
+
+impl<'a> Alerter<'a> {
+    /// Initialize a [Alerter] from a given [Database]
+    pub fn from(db: &'a mut Database) -> Result<Self> {
+        Ok(Self {
+            fetch_triggered: prepare_stmt!(
+                db.conn,
+                "WITH
+                start(id, start) AS (
+                    SELECT id,
+                        CASE
+                            WHEN time_frame = 0 THEN ?
+                            WHEN time_frame = 1 THEN ?
+                            ELSE ?
+                        END
+                    FROM alert        
+                ),
+                dur(id, dur) AS (
+                    SELECT al.id, (
+                        SELECT COALESCE(SUM(u.end - MAX(u.start, t.start)), 0)
+                        FROM app a
+                        INNER JOIN session s ON s.app = a.id
+                        INNER JOIN usage u ON u.session = s.id
+                        WHERE u.end > t.start AND
+                            CASE
+                                WHEN al.target_is_app THEN al.app = a.id
+                                ELSE a.id IN (SELECT at.app FROM _app_tag at WHERE at.tag = al.tag)
+                            END)
+                    FROM alert al
+                    INNER JOIN start AS t ON al.id = t.id
+                )
+
+                SELECT 0, al.id, a.id, a.identity_tag, a.identity_text0, al.action_tag, al.action_int0, al.action_text0
+                FROM alert al
+                INNER JOIN dur ON al.id = dur.id
+                INNER JOIN app a ON (
+                    CASE
+                        WHEN al.target_is_app THEN al.app = a.id
+                        ELSE a.id IN (SELECT at.app FROM _app_tag at WHERE at.tag = al.tag)
+                    END)
+                WHERE dur >= al.usage_limit
+
+                UNION
+
+                SELECT 1, r.id, al.id, NULL, NULL, NULL, NULL, r.message
+                FROM reminder r
+                INNER JOIN alert al ON r.alert = al.id
+                INNER JOIN dur ON al.id = dur.id
+                WHERE dur >= al.usage_limit * r.threshold
+                    AND (SELECT COALESCE(MAX(timestamp)) FROM reminder_hit WHERE reminder = r.id)
+                        <= (SELECT start FROM start WHERE start.id = al.id)"
+            )
+            .context("fetch triggered stmt")?,
+            insert_alert_hit: insert_stmt!(db.conn, AlertHit).context("insert alert hit stmt")?,
+            insert_reminder_hit: insert_stmt!(db.conn, ReminderHit).context("insert reminder hit stmt")?
+        })
+    }
+
+    /// Fetch all triggered [Alert] and [Reminder]
+    pub fn fetch_triggered(
+        &'a mut self,
+        day_start: Timestamp,
+        week_start: Timestamp,
+        month_start: Timestamp,
+    ) -> Result<impl Iterator<Item = Result<Triggered, rusqlite::Error>> + 'a> {
+        let res = self
+            .fetch_triggered
+            .query_map(params![day_start, week_start, month_start], |r| {
+                Ok(if r.get(0)? {
+                    Triggered::Alert {
+                        id: r.get(1)?,
+                        app: r.get(2)?,
+                        identity: match r.get(3)? {
+                            0 => AppIdentity::Win32 { path: r.get(4)? },
+                            1 => AppIdentity::Uwp { aumid: r.get(4)? },
+                            x => Err(rusqlite::Error::InvalidPath(
+                                format!("bad index for AppIdentity: {x}").into(),
+                            ))?,
+                        },
+                        action: match r.get(5)? {
+                            0 => Action::Kill,
+                            1 => Action::Dim(r.get(6)?),
+                            2 => Action::Message(r.get(7)?),
+                            x => Err(rusqlite::Error::InvalidPath(
+                                format!("bad index for Action: {x}").into(),
+                            ))?,
+                        },
+                    }
+                } else {
+                    Triggered::Reminder {
+                        id: r.get(1)?,
+                        alert: r.get(2)?,
+                        message: r.get(7)?,
+                    }
+                })
+            })
+            .context("fetch stmt execute")?;
+        Ok(res)
+    }
+
+    /// Insert a [AlertHit] into the [Database]
+    pub fn insert_alert_hit(&mut self, hit: &AlertHit) -> Result<()> {
+        self.insert_alert_hit
+            .execute(params![hit.alert, hit.timestamp])
+            .context("insert alert hit stmt execute")?;
+        Ok(())
+    }
+
+    /// Insert a [ReminderHit] into the [Database]
+    pub fn insert_reminder_hit(&mut self, hit: &ReminderHit) -> Result<()> {
+        self.insert_reminder_hit
+            .execute(params![hit.reminder, hit.timestamp])
+            .context("insert reminder hit stmt execute")?;
+        Ok(())
+    }
+}
