@@ -13,9 +13,7 @@ impl Migration for Migration1 {
     fn up(&mut self, conn: &mut Connection) -> Result<()> {
         let tx = conn.transaction().context("create transaction")?;
 
-        // TODO make color non-null
-
-        // all fields of app are nullable, except identity
+        // all information fields of app are nullable, except identity
         tx.execute(
             "CREATE TABLE app (
             id              INTEGER PRIMARY KEY NOT NULL,
@@ -114,6 +112,26 @@ impl Migration for Migration1 {
             params![],
         )
         .context("create table alert")?;
+
+        tx.execute(
+            "CREATE TABLE alert_hit (
+            id              INTEGER PRIMARY KEY NOT NULL,
+            alert        INTEGER REFERENCES alert(id),
+            timestamp       INTEGER NOT NULL
+        )",
+            params![],
+        )
+        .context("create table alert_hit")?;
+
+        tx.execute(
+            "CREATE TABLE reminder_hit (
+            id              INTEGER PRIMARY KEY NOT NULL,
+            reminder        INTEGER REFERENCES reminder(id),
+            timestamp       INTEGER NOT NULL
+        )",
+            params![],
+        )
+        .context("create table reminder_hit")?;
 
         tx.execute(
             "CREATE INDEX usage_start_end ON usage (start ASC, end DESC)",
