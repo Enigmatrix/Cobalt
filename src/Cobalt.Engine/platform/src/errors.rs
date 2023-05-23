@@ -1,6 +1,7 @@
 use std::fmt;
 use windows::Win32::Foundation::{
-    GetLastError, SetLastError, NO_ERROR, NTSTATUS, STATUS_INFO_LENGTH_MISMATCH, WIN32_ERROR,
+    GetLastError, SetLastError, NO_ERROR, NTSTATUS, STATUS_INFO_LENGTH_MISMATCH, STATUS_SUCCESS,
+    WIN32_ERROR,
 };
 
 pub struct Win32Error {
@@ -46,13 +47,26 @@ impl fmt::Debug for Win32Error {
 
 impl std::error::Error for Win32Error {}
 
+#[derive(Clone)]
 pub struct NtError {
     inner: NTSTATUS,
 }
 
 impl NtError {
+    pub fn from(inner: NTSTATUS) -> Self {
+        Self { inner }
+    }
+
     pub fn insufficient_size(&self) -> bool {
         self.inner == STATUS_INFO_LENGTH_MISMATCH
+    }
+
+    pub fn to_result(&self) -> Result<(), Self> {
+        if self.inner == STATUS_SUCCESS {
+            Ok(())
+        } else {
+            Err(self.clone())
+        }
     }
 
     pub fn from_hresult(err: windows::core::Error) -> Self {
