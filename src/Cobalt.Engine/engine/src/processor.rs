@@ -44,6 +44,8 @@ pub struct AppDetails {
 
 pub struct Processor<'a> {
     sessions: HashMap<WindowSession, SessionDetails>,
+    // TODO this might be a bad idea, the ProcessId might be reused by Windows,
+    // so another app could be running with the same pid after the first one closed...
     apps: HashMap<ProcessId, AppDetails>,
     current_usage: Usage,
     inserter: EntityInserter<'a>,
