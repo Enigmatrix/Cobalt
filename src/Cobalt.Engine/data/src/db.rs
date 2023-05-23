@@ -274,7 +274,7 @@ impl<'a> Alerter<'a> {
                 INNER JOIN alert al ON r.alert = al.id
                 INNER JOIN dur ON al.id = dur.id
                 WHERE dur >= al.usage_limit * r.threshold
-                    AND (SELECT COALESCE(MAX(timestamp)) FROM reminder_hit WHERE reminder = r.id)
+                    AND (SELECT COALESCE(MAX(timestamp), 0) FROM reminder_hit WHERE reminder = r.id)
                         <= (SELECT start FROM start WHERE start.id = al.id)"
             )
             .context("fetch triggered stmt")?,
