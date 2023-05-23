@@ -5,6 +5,8 @@ use windows::Win32::Foundation::{FILETIME, SYSTEMTIME};
 use windows::Win32::System::SystemInformation::{GetSystemTimePreciseAsFileTime, GetTickCount64};
 use windows::Win32::System::Time::FileTimeToSystemTime;
 
+use common::errors::*;
+
 #[derive(Ord, PartialOrd, Eq, PartialEq, Copy, Clone)]
 /// UTC FILETIME, representing the number of 100-nanosecond intervals since January 1, 1601 (UTC).
 pub struct Timestamp(u64);
@@ -25,11 +27,12 @@ impl Timestamp {
     }
 
     /// Find the [`Timestamp`] at system boot by subtracting the current [`Timestamp`] from current time from boot.
-    pub fn setup() {
+    pub(crate) fn setup() -> Result<()> {
         unsafe {
             BOOT_TIME =
                 MaybeUninit::new(Timestamp::now() - Duration::from_millis(GetTickCount64() as i64))
         }
+        Ok(())
     }
 
     /// Gets the equivalent [`Timestamp`] given by a Win32 call, based off boot time

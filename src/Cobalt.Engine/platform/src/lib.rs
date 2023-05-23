@@ -14,6 +14,7 @@ pub use errors::*;
 use common::errors::*;
 
 pub fn setup() -> Result<()> {
-    crate::objects::Timestamp::setup();
+    crate::objects::Timestamp::setup().context("setup timestamp")?;
+    crate::objects::Window::setup().context("setup window")?;
     Ok(())
 }
