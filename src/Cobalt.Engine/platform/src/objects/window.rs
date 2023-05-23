@@ -1,15 +1,20 @@
 use std::hash::{Hash, Hasher};
+use std::mem::{self, MaybeUninit};
 use std::ptr;
 
 use windows::core::{ComInterface, Interface};
-use windows::imp::CoTaskMemFree;
-use windows::Win32::Foundation::HWND;
+use windows::imp::{CoTaskMemFree, GetProcAddress, LoadLibraryA};
+use windows::s;
+use windows::Win32::Foundation::{BOOLEAN, COLORREF, HWND, NTSTATUS, STATUS_BUFFER_TOO_SMALL};
 use windows::Win32::Storage::EnhancedStorage::PKEY_AppUserModel_ID;
+use windows::Win32::System::StationsAndDesktops::HDESK;
 use windows::Win32::UI::Shell::PropertiesSystem::{
     IPropertyStore, PropVariantToStringAlloc, SHGetPropertyStoreForWindow,
 };
 use windows::Win32::UI::WindowsAndMessaging::{
-    GetForegroundWindow, GetWindowTextLengthW, GetWindowTextW, GetWindowThreadProcessId,
+    GetForegroundWindow, GetWindowLongA, GetWindowTextLengthW, GetWindowTextW,
+    GetWindowThreadProcessId, IsWindowVisible, SetLayeredWindowAttributes, SetWindowLongA,
+    GWL_EXSTYLE, LWA_ALPHA, WS_EX_LAYERED,
 };
 
 use crate::objects::process::ProcessId;
@@ -55,6 +60,7 @@ impl Window {
 
     /// Get the title of the [Window]
     pub fn title(&self) -> Result<String> {
+        // TODO just call GetWindowTextW first, forget the call to GetWindowTextLength until it fails
         // important for some reason ...
         Win32Error::clear_last_err();
         let len = unsafe { GetWindowTextLengthW(self.inner) };
@@ -70,6 +76,12 @@ impl Window {
             buf.with_length(written as usize).to_string_lossy()
         };
         Ok(title)
+    }
+
+    /// Checks if the [Window] is visible
+    /// TODO include https://groups.google.com/a/chromium.org/g/chromium-dev/c/ytxVuf9TIvM
+    pub fn visible(&self) -> bool {
+        unsafe { IsWindowVisible(self.inner).as_bool() }
     }
 
     /// Get the [AUMID](https://learn.microsoft.com/en-us/windows/win32/shell/appids) of the [Window]
@@ -102,4 +114,81 @@ impl Window {
 
         Ok(aumid)
     }
+
+    /// Set the WS_EX_LAYERED style on this [Window]
+    pub fn enable_layered(&self) -> Result<()> {
+        loop {
+            let style = win32!(val: unsafe { GetWindowLongA(self.inner, GWL_EXSTYLE) })?;
+            let old_style = win32!(val: unsafe { SetWindowLongA(self.inner, GWL_EXSTYLE, style | WS_EX_LAYERED.0 as i32) })?;
+            if style == old_style {
+                break;
+            }
+        }
+        Ok(())
+    }
+
+    /// Change the layer opacity for this [Window]. Assumes the [Window] is already a layered window.
+    pub fn layer_dim(&self, alpha: u8) -> Result<()> {
+        // TODO check https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-updatelayeredwindow, that might be able to give black bg
+        unsafe { SetLayeredWindowAttributes(self.inner, COLORREF(0), alpha, LWA_ALPHA).ok()? };
+        Ok(())
+    }
+
+    /// Gets all the [Window] on the user's Desktop. Note that this include invisible windows.
+    pub fn get_all() -> Result<impl Iterator<Item = Window>> {
+        // let windows = Vec::new();
+        let mut needed = 128;
+        loop {
+            let sz = needed as usize + 128; // extra, in case there are more windows spawned between the two calls
+            let mut buf = buffers::buf::<HWND>(sz);
+            let err = unsafe {
+                NtUserBuildHwndList.assume_init()(
+                    HDESK(0),
+                    HWND(0),
+                    true.into(),
+                    false.into(),
+                    0,
+                    sz as u32,
+                    buf.as_mut_ptr(),
+                    &mut needed,
+                )
+            };
+            if err != STATUS_BUFFER_TOO_SMALL {
+                return NtError::from(err)
+                    .to_result()
+                    .map(|_| {
+                        unsafe { std::slice::from_raw_parts(buf.as_mut_ptr(), sz) }
+                            .iter()
+                            .cloned()
+                            .map(Window::new)
+                    })
+                    .context("build hwnd list");
+            }
+        }
+    }
+
+    /// Sets up native functions used by [Window]
+    pub(crate) fn setup() -> Result<()> {
+        let win32u = win32!(val: unsafe { LoadLibraryA(s!("win32u")) })?;
+        unsafe {
+            NtUserBuildHwndList = MaybeUninit::new(mem::transmute(
+                win32!(ptr: GetProcAddress(win32u, s!("NtUserBuildHwndList")) )?,
+            ))
+        };
+        Ok(())
+    }
 }
+
+#[allow(non_upper_case_globals)]
+static mut NtUserBuildHwndList: MaybeUninit<
+    fn(
+        hDesktop: HDESK,
+        hwndParent: HWND,
+        bChildren: BOOLEAN,
+        hideImmersive: BOOLEAN,
+        dwThreadId: u32,
+        cHwnd: u32,
+        phwndList: *mut HWND,
+        pcHwndNeeded: *mut u32,
+    ) -> NTSTATUS,
+> = MaybeUninit::uninit();
