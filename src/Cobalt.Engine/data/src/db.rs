@@ -218,6 +218,9 @@ pub enum Triggered {
     Reminder {
         id: Ref<Reminder>,
         alert: Ref<Alert>,
+        duration: Duration,
+        usage_limit: Duration,
+        threshold: f64,
         message: String,
     },
 }
@@ -276,7 +279,10 @@ impl<'a> Alerter<'a> {
                     Triggered::Reminder {
                         id: r.get(1)?,
                         alert: r.get(2)?,
-                        message: r.get(8)?,
+                        duration: r.get(3)?,
+                        usage_limit: r.get(4)?,
+                        threshold: r.get(5)?,
+                        message: r.get(6)?,
                     }
                 })
             })
