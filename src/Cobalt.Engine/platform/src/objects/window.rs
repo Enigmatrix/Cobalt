@@ -1,7 +1,8 @@
 use std::hash::{Hash, Hasher};
-use std::mem::{self, MaybeUninit};
+use std::mem::{self, MaybeUninit, size_of};
 use std::ptr;
 
+use windows::Win32::Graphics::Dwm::{DwmGetWindowAttribute, DWMWA_CLOAKED};
 use windows::core::{ComInterface, Interface};
 use windows::imp::{CoTaskMemFree, GetProcAddress, LoadLibraryA};
 use windows::s;
@@ -79,9 +80,16 @@ impl Window {
     }
 
     /// Checks if the [Window] is visible
-    /// TODO include https://groups.google.com/a/chromium.org/g/chromium-dev/c/ytxVuf9TIvM
-    pub fn visible(&self) -> bool {
-        unsafe { IsWindowVisible(self.inner).as_bool() }
+    pub fn visible(&self) -> Result<bool> {
+        Ok(unsafe { IsWindowVisible(self.inner).as_bool() })
+    }
+    
+    /// Checks if the [Window] is cloaked
+    /// ref: https://groups.google.com/a/chromium.org/g/chromium-dev/c/ytxVuf9TIvM
+    pub fn cloaked(&self) -> Result<bool> {
+        let mut cloaked = BOOLEAN::default();
+        unsafe { DwmGetWindowAttribute(self.inner, DWMWA_CLOAKED, &mut cloaked as *mut _ as *mut _,  size_of::<BOOLEAN>() as u32)? };
+        return Ok(cloaked.as_bool())
     }
 
     /// Get the [AUMID](https://learn.microsoft.com/en-us/windows/win32/shell/appids) of the [Window]

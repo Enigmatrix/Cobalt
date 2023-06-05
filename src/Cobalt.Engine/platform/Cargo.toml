@@ -19,6 +19,7 @@ features = [
     "Win32_System_Time",
     "Win32_Storage_FileSystem",
     "Win32_System_WinRT",
+    "Win32_Graphics_Dwm",
 
     "Foundation",
     "Storage",
