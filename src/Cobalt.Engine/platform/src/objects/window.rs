@@ -17,8 +17,8 @@ use windows::Win32::UI::Shell::PropertiesSystem::{
 };
 use windows::Win32::UI::WindowsAndMessaging::{
     GetForegroundWindow, GetWindowLongA, GetWindowRect, GetWindowTextLengthW, GetWindowTextW,
-    GetWindowThreadProcessId, IsWindowVisible, SetLayeredWindowAttributes, SetWindowLongA,
-    GWL_EXSTYLE, LWA_ALPHA, WS_EX_LAYERED, GWL_STYLE, WS_EX_TRANSPARENT, WS_EX_TOOLWINDOW,
+    GetWindowThreadProcessId, IsIconic, IsWindowVisible, SetLayeredWindowAttributes,
+    SetWindowLongA, GWL_EXSTYLE, LWA_ALPHA, WS_EX_LAYERED, WS_EX_TOOLWINDOW, WS_EX_TRANSPARENT,
 };
 
 use crate::objects::process::ProcessId;
@@ -86,19 +86,24 @@ impl Window {
     pub fn visible(&self) -> Result<bool> {
         // Check if window has the WS_VISIBLE property
         if unsafe { !IsWindowVisible(self.inner).as_bool() } {
-            return Ok(false)
+            return Ok(false);
         }
-        
+
+        // Check if window is minimized
+        if unsafe { IsIconic(self.inner).as_bool() } {
+            return Ok(false);
+        }
+
         let exstyle = unsafe { GetWindowLongA(self.inner, GWL_EXSTYLE) } as u32;
         // Check for the "transparent" windows, where hit-testing falls through them.
         // These are most likely not real windows, but rather overlays.
         if exstyle & WS_EX_TRANSPARENT.0 != 0 {
-            return Ok(false)
+            return Ok(false);
         }
         // Check for the tool windows, which are floating windows
         // These are most likely not real windows, but rather overlays.
         if exstyle & WS_EX_TOOLWINDOW.0 != 0 {
-            return Ok(false)
+            return Ok(false);
         }
 
         // Check if window isn't cloaked (Windows 10)
@@ -112,14 +117,14 @@ impl Window {
             )?
         };
         if cloaked != 0 {
-            return Ok(false)
+            return Ok(false);
         }
 
         // Check if window has a empty area
         let mut rect = RECT::default();
         unsafe { GetWindowRect(self.inner, &mut rect).ok()? }
         if unsafe { IsRectEmpty(&rect).as_bool() } {
-            return Ok(false)
+            return Ok(false);
         }
 
         Ok(true)
