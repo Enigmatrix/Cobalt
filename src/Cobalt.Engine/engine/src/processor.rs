@@ -23,6 +23,8 @@ use tokio::sync::mpsc::UnboundedSender;
 
 use crate::app_info_resolver::*;
 
+// TODO: periodically sent a UpdateUsage event, meant to insert/update the current
+// usage e.g. League where we spend 40 mins on it continuously without switching
 pub enum ProcessorEvent {
     WindowSession {
         at: Timestamp,
