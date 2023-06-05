@@ -20,6 +20,7 @@ features = [
     "Win32_Storage_FileSystem",
     "Win32_System_WinRT",
     "Win32_Graphics_Dwm",
+    "Win32_Graphics_Gdi",
 
     "Foundation",
     "Storage",

@@ -1,21 +1,24 @@
 use std::hash::{Hash, Hasher};
-use std::mem::{self, MaybeUninit, size_of};
+use std::mem::{self, size_of, MaybeUninit};
 use std::ptr;
 
-use windows::Win32::Graphics::Dwm::{DwmGetWindowAttribute, DWMWA_CLOAKED};
 use windows::core::{ComInterface, Interface};
 use windows::imp::{CoTaskMemFree, GetProcAddress, LoadLibraryA};
 use windows::s;
-use windows::Win32::Foundation::{BOOLEAN, COLORREF, HWND, NTSTATUS, STATUS_BUFFER_TOO_SMALL};
+use windows::Win32::Foundation::{
+    BOOLEAN, COLORREF, HWND, NTSTATUS, RECT, STATUS_BUFFER_TOO_SMALL,
+};
+use windows::Win32::Graphics::Dwm::{DwmGetWindowAttribute, DWMWA_CLOAKED};
+use windows::Win32::Graphics::Gdi::IsRectEmpty;
 use windows::Win32::Storage::EnhancedStorage::PKEY_AppUserModel_ID;
 use windows::Win32::System::StationsAndDesktops::HDESK;
 use windows::Win32::UI::Shell::PropertiesSystem::{
     IPropertyStore, PropVariantToStringAlloc, SHGetPropertyStoreForWindow,
 };
 use windows::Win32::UI::WindowsAndMessaging::{
-    GetForegroundWindow, GetWindowLongA, GetWindowTextLengthW, GetWindowTextW,
+    GetForegroundWindow, GetWindowLongA, GetWindowRect, GetWindowTextLengthW, GetWindowTextW,
     GetWindowThreadProcessId, IsWindowVisible, SetLayeredWindowAttributes, SetWindowLongA,
-    GWL_EXSTYLE, LWA_ALPHA, WS_EX_LAYERED,
+    GWL_EXSTYLE, LWA_ALPHA, WS_EX_LAYERED, GWL_STYLE, WS_EX_TRANSPARENT, WS_EX_TOOLWINDOW,
 };
 
 use crate::objects::process::ProcessId;
@@ -79,17 +82,47 @@ impl Window {
         Ok(title)
     }
 
-    /// Checks if the [Window] is visible
+    /// Checks if the [Window] is visible to the user
     pub fn visible(&self) -> Result<bool> {
-        Ok(unsafe { IsWindowVisible(self.inner).as_bool() })
-    }
-    
-    /// Checks if the [Window] is cloaked
-    /// ref: https://groups.google.com/a/chromium.org/g/chromium-dev/c/ytxVuf9TIvM
-    pub fn cloaked(&self) -> Result<bool> {
-        let mut cloaked = BOOLEAN::default();
-        unsafe { DwmGetWindowAttribute(self.inner, DWMWA_CLOAKED, &mut cloaked as *mut _ as *mut _,  size_of::<BOOLEAN>() as u32)? };
-        return Ok(cloaked.as_bool())
+        // Check if window has the WS_VISIBLE property
+        if unsafe { !IsWindowVisible(self.inner).as_bool() } {
+            return Ok(false)
+        }
+        
+        let exstyle = unsafe { GetWindowLongA(self.inner, GWL_EXSTYLE) } as u32;
+        // Check for the "transparent" windows, where hit-testing falls through them.
+        // These are most likely not real windows, but rather overlays.
+        if exstyle & WS_EX_TRANSPARENT.0 != 0 {
+            return Ok(false)
+        }
+        // Check for the tool windows, which are floating windows
+        // These are most likely not real windows, but rather overlays.
+        if exstyle & WS_EX_TOOLWINDOW.0 != 0 {
+            return Ok(false)
+        }
+
+        // Check if window isn't cloaked (Windows 10)
+        let mut cloaked: u32 = 0;
+        unsafe {
+            DwmGetWindowAttribute(
+                self.inner,
+                DWMWA_CLOAKED,
+                &mut cloaked as *mut _ as *mut _,
+                size_of::<u32>() as u32,
+            )?
+        };
+        if cloaked != 0 {
+            return Ok(false)
+        }
+
+        // Check if window has a empty area
+        let mut rect = RECT::default();
+        unsafe { GetWindowRect(self.inner, &mut rect).ok()? }
+        if unsafe { IsRectEmpty(&rect).as_bool() } {
+            return Ok(false)
+        }
+
+        Ok(true)
     }
 
     /// Get the [AUMID](https://learn.microsoft.com/en-us/windows/win32/shell/appids) of the [Window]
