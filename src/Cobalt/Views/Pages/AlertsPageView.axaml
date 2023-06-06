@@ -61,18 +61,9 @@
                 <StackPanel Orientation="Vertical">
                     <fla:CommandBar DefaultLabelPosition="Right">
                         <fla:CommandBar.PrimaryCommands>
-                            <fla:CommandBarButton Icon="Save" Label="Save" />
-                            <fla:CommandBarButton Icon="Undo" Label="Undo" />
-                            <fla:CommandBarSeparator />
-                            <fla:CommandBarToggleButton Icon="Bold" Label="Bold" />
-                            <fla:CommandBarToggleButton Icon="Italic" Label="Italic" />
-                            <fla:CommandBarToggleButton Icon="Underline" Label="Underline" />
+                            <fla:CommandBarButton IconSource="Edit" Label="Edit" />
+                            <fla:CommandBarButton IconSource="Delete" Label="Delete" />
                         </fla:CommandBar.PrimaryCommands>
-                        <fla:CommandBar.SecondaryCommands>
-                            <fla:CommandBarButton Icon="Cut" Label="Cut" />
-                            <fla:CommandBarButton Icon="Copy" Label="Copy" />
-                            <fla:CommandBarButton Icon="Paste" Label="Paste" />
-                        </fla:CommandBar.SecondaryCommands>
                     </fla:CommandBar>
 				</StackPanel>
 

@@ -19,33 +19,33 @@
         <fla:NavigationView.MenuItems>
 
             <fla:NavigationViewItem Content="Home" IsSelected="True">
-                <fla:NavigationViewItem.Icon>
-                    <fla:SymbolIcon Symbol="Home" />
-                </fla:NavigationViewItem.Icon>
+                <fla:NavigationViewItem.IconSource>
+                    <fla:SymbolIconSource Symbol="Home" />
+                </fla:NavigationViewItem.IconSource>
             </fla:NavigationViewItem>
 
             <fla:NavigationViewItem Content="Apps">
-                <fla:NavigationViewItem.Icon>
-                    <fla:SymbolIcon Symbol="AllApps" />
-                </fla:NavigationViewItem.Icon>
+                <fla:NavigationViewItem.IconSource>
+                    <fla:SymbolIconSource Symbol="AllApps" />
+                </fla:NavigationViewItem.IconSource>
             </fla:NavigationViewItem>
 
             <fla:NavigationViewItem Content="Tags">
-                <fla:NavigationViewItem.Icon>
-                    <fla:SymbolIcon Symbol="Tag" />
-                </fla:NavigationViewItem.Icon>
+                <fla:NavigationViewItem.IconSource>
+                    <fla:SymbolIconSource Symbol="Tag" />
+                </fla:NavigationViewItem.IconSource>
             </fla:NavigationViewItem>
 
             <fla:NavigationViewItem Content="Alerts">
-                <fla:NavigationViewItem.Icon>
-                    <fla:SymbolIcon Symbol="Alert" />
-                </fla:NavigationViewItem.Icon>
+                <fla:NavigationViewItem.IconSource>
+                    <fla:SymbolIconSource Symbol="Alert" />
+                </fla:NavigationViewItem.IconSource>
             </fla:NavigationViewItem>
 
             <fla:NavigationViewItem Content="History">
-                <fla:NavigationViewItem.Icon>
-                    <fla:SymbolIcon Symbol="Clock" />
-                </fla:NavigationViewItem.Icon>
+                <fla:NavigationViewItem.IconSource>
+                    <fla:SymbolIconSource Symbol="Clock" />
+                </fla:NavigationViewItem.IconSource>
             </fla:NavigationViewItem>
 
         </fla:NavigationView.MenuItems>
