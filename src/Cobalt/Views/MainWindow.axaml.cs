@@ -1,10 +1,10 @@
-using Avalonia.Controls;
 using Cobalt.Common.ViewModels;
 using FluentAvalonia.UI.Controls;
+using FluentAvalonia.UI.Windowing;
 
 namespace Cobalt.Views;
 
-public partial class MainWindow : Window
+public partial class MainWindow : AppWindow
 {
     public MainWindow()
     {

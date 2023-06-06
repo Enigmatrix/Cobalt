@@ -32,14 +32,14 @@
                             <StackPanel Margin="8,0" Orientation="Vertical" VerticalAlignment="Center">
                                 <TextBlock Text="Chrome" VerticalAlignment="Center"
                                            Theme="{StaticResource SubtitleTextBlockStyle}" />
-                                <TextBlock Text="Description, by Company" VerticalAlignment="Center" />
+                                <TextBlock Text="Description, by Company" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                             </StackPanel>
                         </StackPanel>
 
                         <Grid Grid.Row="0" RowDefinitions="Auto,*,Auto" Grid.Column="2" HorizontalAlignment="Right">
                             <StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Right">
-                                <fla:SymbolIcon Symbol="Message" />
-                                <TextBlock ToolTip.Tip="This argument may be long long" Text="Too much browsing!"
+                                <fla:SymbolIcon Symbol="Message" Foreground="{DynamicResource TextFillColorSecondaryBrush}"  />
+                                <TextBlock ToolTip.Tip="This argument may be long long" Text="Too much browsing!" Foreground="{DynamicResource TextFillColorSecondaryBrush}" 
                                            MaxWidth="150" MaxLines="1" Theme="{StaticResource CaptionTextBlockStyle}" />
                             </StackPanel>
 
@@ -59,13 +59,22 @@
                 </Expander.Header>
 
                 <StackPanel Orientation="Vertical">
-                    <fla:CommandBar DefaultLabelPosition="Right">
-                        <fla:CommandBar.PrimaryCommands>
-                            <fla:CommandBarButton IconSource="Edit" Label="Edit" />
-                            <fla:CommandBarButton IconSource="Delete" Label="Delete" />
-                        </fla:CommandBar.PrimaryCommands>
-                    </fla:CommandBar>
-				</StackPanel>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+						<Button>
+							<StackPanel Spacing="8" Orientation="Horizontal">
+								<fla:SymbolIcon Symbol="Edit" />
+								<TextBlock Text="Edit" />
+							</StackPanel>
+						</Button>
+
+						<Button>
+							<StackPanel Spacing="8" Orientation="Horizontal">
+								<fla:SymbolIcon Symbol="Delete" />
+								<TextBlock Text="Delete" />
+							</StackPanel>
+						</Button>
+                    </StackPanel>
+                </StackPanel>
 
             </Expander>
 
