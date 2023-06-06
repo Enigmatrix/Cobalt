@@ -2,7 +2,90 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:fla="clr-namespace:FluentAvalonia.UI.Controls;assembly=FluentAvalonia"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="Cobalt.Views.Pages.AlertsPageView">
-    Alerts
+    <Grid RowDefinitions="Auto,*">
+        <Grid Grid.Row="0" Margin="24, 16" ColumnDefinitions="Auto,*,Auto">
+            <TextBlock Grid.Column="0" Theme="{StaticResource TitleTextBlockStyle}">Alerts</TextBlock>
+            <Button Grid.Column="2" Classes="accent">
+                <StackPanel Spacing="8" Orientation="Horizontal">
+                    <fla:SymbolIcon Symbol="Add" />
+                    <TextBlock Text="Add" />
+                </StackPanel>
+            </Button>
+        </Grid>
+        <ItemsControl Grid.Row="1" Margin="0,-8,0,8">
+
+            <Expander Margin="8,8,8,0">
+                <Expander.Styles>
+                    <Style Selector="Expander /template/ ToggleButton#PART_toggle">
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                    </Style>
+                </Expander.Styles>
+                <Expander.Header>
+                    <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="*, Auto" Margin="0, 8">
+
+                        <StackPanel Margin="4" Orientation="Horizontal" Grid.Row="0" Grid.Column="0" Spacing="8">
+                            <fla:FAPathIcon VerticalAlignment="Center" Width="32" Height="32"
+                                            Data="M0 256C0 209.4 12.47 165.6 34.27 127.1L144.1 318.3C166 357.5 207.9 384 256 384C270.3 384 283.1 381.7 296.8 377.4L220.5 509.6C95.9 492.3 0 385.3 0 256zM365.1 321.6C377.4 302.4 384 279.1 384 256C384 217.8 367.2 183.5 340.7 160H493.4C505.4 189.6 512 222.1 512 256C512 397.4 397.4 511.1 256 512L365.1 321.6zM477.8 128H256C193.1 128 142.3 172.1 130.5 230.7L54.19 98.47C101 38.53 174 0 256 0C350.8 0 433.5 51.48 477.8 128V128zM168 256C168 207.4 207.4 168 256 168C304.6 168 344 207.4 344 256C344 304.6 304.6 344 256 344C207.4 344 168 304.6 168 256z" />
+                            <StackPanel Margin="8,0" Orientation="Vertical" VerticalAlignment="Center">
+                                <TextBlock Text="Chrome" VerticalAlignment="Center"
+                                           Theme="{StaticResource SubtitleTextBlockStyle}" />
+                                <TextBlock Text="Description, by Company" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </StackPanel>
+
+                        <Grid Grid.Row="0" RowDefinitions="Auto,*,Auto" Grid.Column="2" HorizontalAlignment="Right">
+                            <StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Right">
+                                <fla:SymbolIcon Symbol="Message" />
+                                <TextBlock ToolTip.Tip="This argument may be long long" Text="Too much browsing!"
+                                           MaxWidth="150" MaxLines="1" Theme="{StaticResource CaptionTextBlockStyle}" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="4" HorizontalAlignment="Right">
+                                <TextBlock Text="9m" Theme="{StaticResource CaptionTextBlockStyle}" />
+                                <TextBlock Text="/" Theme="{StaticResource CaptionTextBlockStyle}" />
+                                <TextBlock Text="12m" Theme="{StaticResource CaptionTextBlockStyle}" />
+                                <TextBlock Text="/" Theme="{StaticResource CaptionTextBlockStyle}" />
+                                <fla:SymbolIcon Symbol="Clock" />
+                                <TextBlock Text="Day" Theme="{StaticResource CaptionTextBlockStyle}" />
+                            </StackPanel>
+                        </Grid>
+
+                        <ProgressBar Margin="0,8,0,0" Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="1" Height="4"
+                                     Value="75" />
+                    </Grid>
+                </Expander.Header>
+
+                <StackPanel Orientation="Vertical">
+                    <fla:CommandBar DefaultLabelPosition="Right">
+                        <fla:CommandBar.PrimaryCommands>
+                            <fla:CommandBarButton Icon="Save" Label="Save" />
+                            <fla:CommandBarButton Icon="Undo" Label="Undo" />
+                            <fla:CommandBarSeparator />
+                            <fla:CommandBarToggleButton Icon="Bold" Label="Bold" />
+                            <fla:CommandBarToggleButton Icon="Italic" Label="Italic" />
+                            <fla:CommandBarToggleButton Icon="Underline" Label="Underline" />
+                        </fla:CommandBar.PrimaryCommands>
+                        <fla:CommandBar.SecondaryCommands>
+                            <fla:CommandBarButton Icon="Cut" Label="Cut" />
+                            <fla:CommandBarButton Icon="Copy" Label="Copy" />
+                            <fla:CommandBarButton Icon="Paste" Label="Paste" />
+                        </fla:CommandBar.SecondaryCommands>
+                    </fla:CommandBar>
+				</StackPanel>
+
+            </Expander>
+
+            <Expander Margin="8,8,8,0">
+                <Expander.Header>
+                    Header2
+                </Expander.Header>
+
+                <TextBox />
+            </Expander>
+
+        </ItemsControl>
+    </Grid>
 </UserControl>
