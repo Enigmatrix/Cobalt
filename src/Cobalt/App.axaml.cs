@@ -3,7 +3,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Data.Core;
 using Avalonia.Data.Core.Plugins;
 using Avalonia.Markup.Xaml;
-using Cobalt.ViewModels;
+using Cobalt.Common.ViewModels;
 using Cobalt.Views;
 
 namespace Cobalt;

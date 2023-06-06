@@ -1,7 +1,7 @@
 using System;
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
-using Cobalt.ViewModels;
+using Cobalt.Common.ViewModels;
 
 namespace Cobalt;
 
@@ -12,7 +12,7 @@ public class ViewLocator : IDataTemplate
         if (data is null)
             return new TextBlock { Text = "Null DataContext" };
 
-        var name = data.GetType().FullName!.Replace("ViewModel", "View");
+        var name = data.GetType().FullName!.Replace("Common.ViewModel", "View").Replace("ViewModel", "View");
         var type = Type.GetType(name);
 
         if (type != null) return (Control)Activator.CreateInstance(type)!;
