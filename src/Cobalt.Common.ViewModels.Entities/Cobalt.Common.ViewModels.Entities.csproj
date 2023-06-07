@@ -7,6 +7,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Cobalt.Common.ViewModels.Entities\Cobalt.Common.ViewModels.Entities.csproj" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.0" />
   </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Cobalt.Common.Data\Cobalt.Common.Data.csproj" />
+  </ItemGroup>
+
 </Project>

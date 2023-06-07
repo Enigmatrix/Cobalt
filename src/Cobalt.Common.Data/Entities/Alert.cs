@@ -26,10 +26,10 @@ public abstract record Action
 }
 
 [Table("alert")]
-public class Alert
+public class Alert : IEntity
 {
-    private readonly long _actionTag = default!;
-    private readonly bool _targetIsApp = default!;
+    private  long _actionTag = default!;
+    private  bool _targetIsApp = default!;
     private long? _actionInt0 = default!;
     private string? _actionText0 = default!;
     private App? _app = default!;
@@ -37,28 +37,73 @@ public class Alert
 
     public long Id { get; set; }
 
-    public Target Target =>
-        _targetIsApp switch
+    public Target Target
+    {
+        get =>
+            _targetIsApp switch
+            {
+                true => new Target.AppTarget(_app ?? throw new ArgumentNullException(nameof(_app))),
+                false => new Target.TagTarget(_tag ?? throw new ArgumentNullException(nameof(_tag)))
+            };
+        set
         {
-            true => new Target.AppTarget(_app ?? throw new ArgumentNullException(nameof(_app))),
-            false => new Target.TagTarget(_tag ?? throw new ArgumentNullException(nameof(_tag)))
-        };
+            switch (value)
+            {
+                case Target.AppTarget app:
+                    _targetIsApp = true;
+                    _app = app.App;
+                    break;
+                case Target.TagTarget tag:
+                    _targetIsApp = true;
+                    _tag = tag.Tag;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(value)); // TODO
+            }
+        }
+    }
 
     [Column("usage_limit")] public long UsageLimitTicks { get; set; }
 
-    [NotMapped] public TimeSpan UsageLimit => TimeSpan.FromTicks(UsageLimitTicks);
+    [NotMapped] public TimeSpan UsageLimit
+    {
+        get => TimeSpan.FromTicks(UsageLimitTicks);
+        set => UsageLimitTicks = value.Ticks;
+    }
 
     [Column("time_frame")] public TimeFrame TimeFrame { get; set; }
 
-    public Action Action =>
-        _actionTag switch
+    public Action Action
+    {
+        get =>
+            _actionTag switch
+            {
+                0 => new Action.Kill(),
+                1 => new Action.Dim(
+                    TimeSpan.FromTicks(_actionInt0 ?? throw new ArgumentNullException(nameof(_actionInt0)))),
+                2 => new Action.Message(_actionText0 ?? throw new ArgumentNullException(nameof(_actionText0))),
+                _ => throw new InvalidOperationException() // TODO replace with DU Exception
+            };
+        set
         {
-            0 => new Action.Kill(),
-            1 => new Action.Dim(
-                TimeSpan.FromTicks(_actionInt0 ?? throw new ArgumentNullException(nameof(_actionInt0)))),
-            2 => new Action.Message(_actionText0 ?? throw new ArgumentNullException(nameof(_actionText0))),
-            _ => throw new InvalidOperationException() // TODO replace with DU Exception
-        };
+            switch (value)
+            {
+                case Action.Kill kill:
+                    _actionTag = 0;
+                    break;
+                case Action.Dim dim:
+                    _actionTag = 1;
+                    _actionInt0 = dim.Duration.Ticks;
+                    break;
+                case Action.Message message:
+                    _actionTag = 2;
+                    _actionText0 = message.Text;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(value)); // TODO
+            }
+        }
+    }
 
     public List<Reminder> Reminders { get; set; }
 }

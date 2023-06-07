@@ -3,7 +3,7 @@
 namespace Cobalt.Common.Data.Entities;
 
 [Table("session")]
-public class Session
+public class Session : IEntity
 {
     public long Id { get; set; }
 

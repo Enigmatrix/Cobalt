@@ -3,7 +3,7 @@
 namespace Cobalt.Common.Data.Entities;
 
 [Table("interaction_period")]
-public class InteractionPeriod : IHasDuration
+public class InteractionPeriod : IEntity, IHasDuration
 {
     public long Id { get; set; }
 

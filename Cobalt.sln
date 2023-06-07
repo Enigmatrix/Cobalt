@@ -13,7 +13,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cobalt.Common.Analysis", "s
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Cobalt.Tests", "src\Cobalt.Tests\Cobalt.Tests.fsproj", "{61DB17D0-1C58-4B6B-882D-BEB4498799B5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cobalt.Common.ViewModels", "src\Cobalt.Common.ViewModels\Cobalt.Common.ViewModels.csproj", "{B275DC7E-36A1-4702-BFD6-9432E9E38505}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cobalt.Common.ViewModels", "src\Cobalt.Common.ViewModels\Cobalt.Common.ViewModels.csproj", "{B275DC7E-36A1-4702-BFD6-9432E9E38505}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cobalt.Common.ViewModels.Entities", "src\Cobalt.Common.ViewModels.Entities\Cobalt.Common.ViewModels.Entities.csproj", "{1B9C0AF6-3C65-4199-A512-AA1D7EE1797D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -45,6 +47,10 @@ Global
 		{B275DC7E-36A1-4702-BFD6-9432E9E38505}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B275DC7E-36A1-4702-BFD6-9432E9E38505}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B275DC7E-36A1-4702-BFD6-9432E9E38505}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1B9C0AF6-3C65-4199-A512-AA1D7EE1797D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1B9C0AF6-3C65-4199-A512-AA1D7EE1797D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1B9C0AF6-3C65-4199-A512-AA1D7EE1797D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1B9C0AF6-3C65-4199-A512-AA1D7EE1797D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

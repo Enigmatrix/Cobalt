@@ -3,7 +3,7 @@
 namespace Cobalt.Common.Data.Entities;
 
 [Table("usage")]
-public class Usage : IHasDuration
+public class Usage : IEntity, IHasDuration
 {
     public long Id { get; set; }
 

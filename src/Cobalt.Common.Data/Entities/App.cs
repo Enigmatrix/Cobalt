@@ -10,10 +10,10 @@ public abstract record AppIdentity
 }
 
 [Table("app")]
-public class App
+public class App : IEntity
 {
-    private readonly long _identityTag = default!;
-    private readonly string _identityText0 = default!;
+    private long _identityTag = default!;
+    private string _identityText0 = default!;
 
     public long Id { get; set; }
     public string Name { get; set; }
@@ -21,13 +21,31 @@ public class App
     public string Company { get; set; }
     public string Color { get; set; }
 
-    public AppIdentity Identity =>
-        _identityTag switch
-        {
-            0 => new AppIdentity.Win32(_identityText0),
-            1 => new AppIdentity.Uwp(_identityText0),
-            _ => throw new InvalidOperationException() // TODO throw custom exception
-        };
+    public AppIdentity Identity
+    {
+        get =>
+            _identityTag switch
+            {
+                0 => new AppIdentity.Win32(_identityText0),
+                1 => new AppIdentity.Uwp(_identityText0),
+                _ => throw new InvalidOperationException() // TODO throw custom exception
+            };
+        set {
+            switch (value)
+            {
+                case AppIdentity.Win32 win32:
+                    _identityTag = 0;
+                    _identityText0 = win32.Path;
+                    break;
+                case AppIdentity.Uwp uwp:
+                    _identityTag = 1;
+                    _identityText0 = uwp.Aumid;
+                    break;
+                default:
+                    throw new InvalidOperationException(); // TODO throw custom exception
+            }
+        }
+    }
 
     // Icon is not represented here
 

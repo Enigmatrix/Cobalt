@@ -3,7 +3,7 @@
 namespace Cobalt.Common.Data.Entities;
 
 [Table("reminder")]
-public class Reminder
+public class Reminder : IEntity
 {
     public long Id { get; set; }
 

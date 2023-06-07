@@ -3,7 +3,7 @@
 namespace Cobalt.Common.Data.Entities;
 
 [Table("tag")]
-public class Tag
+public class Tag : IEntity
 {
     public long Id { get; set; }
     public string Name { get; set; }
