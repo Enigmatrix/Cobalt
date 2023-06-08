@@ -104,7 +104,7 @@ public class Alert : IEntity
         }
     }
 
-    public List<Reminder> Reminders { get; set; }
+    public List<Reminder> Reminders { get; set; } = default!;
 
     public long Id { get; set; }
 }

@@ -5,9 +5,9 @@ namespace Cobalt.Common.Data.Entities;
 [Table("reminder")]
 public class Reminder : IEntity
 {
-    [ForeignKey("alert")] public Alert Alert { get; set; }
+    [ForeignKey("alert")] public Alert Alert { get; set; } = default!;
 
-    public double Threshold { get; set; }
-    public string Message { get; set; }
-    public long Id { get; set; }
+    public double Threshold { get; set; } = default!;
+    public string Message { get; set; } = default!;
+    public long Id { get; set; } = default!;
 }

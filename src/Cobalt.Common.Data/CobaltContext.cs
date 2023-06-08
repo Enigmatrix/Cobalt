@@ -13,48 +13,13 @@ public class CobaltContext : DbContext
         _dbPath = dbPath;
     }
 
-    public DbSet<App> Apps { get; set; } = null!;
-    public DbSet<Session> Sessions { get; set; } = null!;
-    public DbSet<Usage> Usages { get; set; } = null!;
-    public DbSet<InteractionPeriod> InteractionPeriods { get; set; } = null!;
-    public DbSet<Tag> Tags { get; set; } = null!;
-    public DbSet<Alert> Alerts { get; set; } = null!;
-    public DbSet<Reminder> Reminders { get; set; } = null!;
-
-    // 1. Can i use something other than anonymous types (so that I can return a WithDuration<Alert> from AlertDuritions)
-    // 2. How can I map a IQueryable<Usages>, Start, End => Duration using expressions???
-
-    public IQueryable<Alert> TriggeredAlerts(DateTime now)
-    {
-        var today = now.Date;
-        var week = today - TimeSpan.FromDays((int)today.DayOfWeek);
-        var month = today - TimeSpan.FromDays(today.Day);
-
-        return Alerts
-            .Select(alert => new
-            {
-                Alert = alert,
-                // no switch statement in Linq Expressions
-                Start = alert.TimeFrame == TimeFrame.Daily ? today.Ticks :
-                    alert.TimeFrame == TimeFrame.Weekly ? week.Ticks : month.Ticks,
-                End = alert.TimeFrame == TimeFrame.Daily ? today.AddDays(1).Ticks :
-                    alert.TimeFrame == TimeFrame.Weekly ? week.AddDays(7).Ticks : month.AddMonths(1).Ticks
-            })
-            .Select(als => new
-            {
-                als.Alert,
-                Expired = Apps.Where(app => EF.Property<bool>(als.Alert, "_targetIsApp")
-                        ? EF.Property<App?>(als.Alert, "_app")! == app
-                        : EF.Property<Tag?>(als.Alert, "_tag")!.Apps.Contains(app))
-                    .SelectMany(x => x.Sessions)
-                    .SelectMany(x => x.Usages)
-                    .Where(x => x.EndTicks > als.Start && x.StartTicks < als.End)
-                    .Select(x => Math.Min(x.EndTicks, als.End) - Math.Max(x.StartTicks, als.Start))
-                    .Sum() >= als.Alert.UsageLimitTicks
-            })
-            .Where(x => x.Expired)
-            .Select(x => x.Alert);
-    }
+    public DbSet<App> Apps { get; set; } = default!;
+    public DbSet<Session> Sessions { get; set; } = default!;
+    public DbSet<Usage> Usages { get; set; } = default!;
+    public DbSet<InteractionPeriod> InteractionPeriods { get; set; } = default!;
+    public DbSet<Tag> Tags { get; set; } = default!;
+    public DbSet<Alert> Alerts { get; set; } = default!;
+    public DbSet<Reminder> Reminders { get; set; } = default!;
 
     protected override void OnModelCreating(ModelBuilder model)
     {

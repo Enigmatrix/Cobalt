@@ -5,12 +5,12 @@ namespace Cobalt.Common.Data.Entities;
 [Table("session")]
 public class Session : IEntity
 {
-    [ForeignKey("app")] public App App { get; set; }
+    [ForeignKey("app")] public App App { get; set; } = default!;
 
-    public string Title { get; set; }
+    public string Title { get; set; } = default!;
 
-    [Column("cmd_line")] public string? CmdLine { get; set; }
+    [Column("cmd_line")] public string? CmdLine { get; set; } = default!;
 
     public List<Usage> Usages { get; set; } = default!;
-    public long Id { get; set; }
+    public long Id { get; set; } = default!;
 }

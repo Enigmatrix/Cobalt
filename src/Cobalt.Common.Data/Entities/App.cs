@@ -14,8 +14,8 @@ public class App : IEntity, IHasName, IHasColor
 {
     private long _identityTag;
     private string _identityText0 = default!;
-    public string Description { get; set; }
-    public string Company { get; set; }
+    public string Description { get; set; } = default!;
+    public string Company { get; set; } = default!;
 
     public AppIdentity Identity
     {
@@ -44,10 +44,10 @@ public class App : IEntity, IHasName, IHasColor
         }
     }
 
-    public List<Tag> Tags { get; set; }
+    public List<Tag> Tags { get; set; } = default!;
     public List<Session> Sessions { get; set; } = default!;
 
-    public long Id { get; set; }
-    public string Color { get; set; }
-    public string Name { get; set; }
+    public long Id { get; set; } = default!;
+    public string Color { get; set; } = default!;
+    public string Name { get; set; } = default!;
 }
