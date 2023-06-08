@@ -5,8 +5,6 @@ namespace Cobalt.Common.Data.Entities;
 [Table("interaction_period")]
 public class InteractionPeriod : IEntity, IHasDuration
 {
-    public long Id { get; set; }
-
     [Column("start")] public long StartTicks { get; set; }
 
     [Column("end")] public long EndTicks { get; set; }
@@ -17,5 +15,6 @@ public class InteractionPeriod : IEntity, IHasDuration
     [Column("mouseclicks")] public long MouseClicks { get; set; }
 
     [Column("keystrokes")] public long KeyStrokes { get; set; }
+    public long Id { get; set; }
     [NotMapped] public TimeSpan Duration => End - Start;
 }

@@ -10,16 +10,12 @@ public abstract record AppIdentity
 }
 
 [Table("app")]
-public class App : IEntity
+public class App : IEntity, IHasName, IHasColor
 {
-    private long _identityTag = default!;
+    private long _identityTag;
     private string _identityText0 = default!;
-
-    public long Id { get; set; }
-    public string Name { get; set; }
     public string Description { get; set; }
     public string Company { get; set; }
-    public string Color { get; set; }
 
     public AppIdentity Identity
     {
@@ -30,7 +26,8 @@ public class App : IEntity
                 1 => new AppIdentity.Uwp(_identityText0),
                 _ => throw new InvalidOperationException() // TODO throw custom exception
             };
-        set {
+        set
+        {
             switch (value)
             {
                 case AppIdentity.Win32 win32:
@@ -47,8 +44,10 @@ public class App : IEntity
         }
     }
 
-    // Icon is not represented here
-
     public List<Tag> Tags { get; set; }
     public List<Session> Sessions { get; set; } = default!;
+
+    public long Id { get; set; }
+    public string Color { get; set; }
+    public string Name { get; set; }
 }

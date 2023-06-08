@@ -89,5 +89,6 @@ public class CobaltContext : DbContext
     protected override void OnConfiguring(DbContextOptionsBuilder opts)
     {
         opts.UseSqlite($"Data Source={_dbPath}");
+        opts.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
     }
 }

@@ -28,14 +28,12 @@ public abstract record Action
 [Table("alert")]
 public class Alert : IEntity
 {
-    private  long _actionTag = default!;
-    private  bool _targetIsApp = default!;
-    private long? _actionInt0 = default!;
-    private string? _actionText0 = default!;
-    private App? _app = default!;
-    private Tag? _tag = default!;
-
-    public long Id { get; set; }
+    private long? _actionInt0;
+    private long _actionTag;
+    private string? _actionText0;
+    private App? _app;
+    private Tag? _tag;
+    private bool _targetIsApp;
 
     public Target Target
     {
@@ -65,7 +63,8 @@ public class Alert : IEntity
 
     [Column("usage_limit")] public long UsageLimitTicks { get; set; }
 
-    [NotMapped] public TimeSpan UsageLimit
+    [NotMapped]
+    public TimeSpan UsageLimit
     {
         get => TimeSpan.FromTicks(UsageLimitTicks);
         set => UsageLimitTicks = value.Ticks;
@@ -106,4 +105,6 @@ public class Alert : IEntity
     }
 
     public List<Reminder> Reminders { get; set; }
+
+    public long Id { get; set; }
 }
