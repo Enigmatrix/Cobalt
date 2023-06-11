@@ -181,7 +181,7 @@ impl Window {
     }
 
     /// Gets all the [Window] on the user's Desktop. Note that this include invisible windows.
-    pub fn get_all() -> Result<impl Iterator<Item = Window>> {
+    pub fn get_all() -> Result<Vec<Window>> {
         // let windows = Vec::new();
         let mut needed = 128;
         loop {
@@ -207,6 +207,7 @@ impl Window {
                             .iter()
                             .cloned()
                             .map(Window::new)
+                            .collect()
                     })
                     .context("build hwnd list");
             }
