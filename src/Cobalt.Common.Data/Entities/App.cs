@@ -17,6 +17,7 @@ public class App : IEntity, IHasName, IHasColor
     public string Description { get; set; } = default!;
     public string Company { get; set; } = default!;
 
+    [NotMapped]
     public AppIdentity Identity
     {
         get =>

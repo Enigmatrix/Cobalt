@@ -35,6 +35,7 @@ public class Alert : IEntity
     private Tag? _tag;
     private bool _targetIsApp;
 
+    [NotMapped]
     public Target Target
     {
         get =>
@@ -72,6 +73,7 @@ public class Alert : IEntity
 
     [Column("time_frame")] public TimeFrame TimeFrame { get; set; }
 
+    [NotMapped]
     public Action Action
     {
         get =>
