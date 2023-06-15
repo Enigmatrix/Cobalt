@@ -7,26 +7,28 @@ using TargetEntity = Cobalt.Common.Data.Entities.Target;
 
 namespace Cobalt.Common.ViewModels.Entities;
 
+// TODO inherit the HasColor, HasName, HasIcon traits here
 public abstract record TargetViewModel
 {
     public sealed record AppTarget(AppViewModel App) : TargetViewModel;
+
     public sealed record TagTarget(TagViewModel Tag) : TargetViewModel;
 }
 
 public partial class AlertViewModel : EditableEntityViewModel<Alert>
 {
-    [ObservableProperty] private TargetViewModel _target = default!;
-    [ObservableProperty] private TimeSpan _usageLimit = default!;
-    [ObservableProperty] private TimeFrame _timeFrame = default!;
     [ObservableProperty] private ActionEntity _action = default!;
+    [ObservableProperty] private TargetViewModel _target = default!;
+    [ObservableProperty] private TimeFrame _timeFrame;
+    [ObservableProperty] private TimeSpan _usageLimit;
+
+    public AlertViewModel(IEntityViewModelCache cache, IDbContextFactory<CobaltContext> conn) : base(cache, conn)
+    {
+    }
 
     public override void InitializeWith(Alert alert)
     {
         base.InitializeWith(alert);
-    }
-
-    public AlertViewModel(IEntityViewModelCache cache, IDbContextFactory<CobaltContext> conn) : base(cache, conn)
-    {
     }
 
     public override void Save()
@@ -35,8 +37,8 @@ public partial class AlertViewModel : EditableEntityViewModel<Alert>
         ctx.Attach(Entity);
         Entity.Target = Target switch
         {
-            TargetViewModel.AppTarget app => new TargetEntity.AppTarget(app.App.Entity),
-            TargetViewModel.TagTarget tag => new TargetEntity.TagTarget(tag.Tag.Entity),
+            TargetViewModel.AppTarget app => new Target.AppTarget(app.App.Entity),
+            TargetViewModel.TagTarget tag => new Target.TagTarget(tag.Tag.Entity),
             _ => throw new ArgumentOutOfRangeException() // TODO
         };
         Entity.UsageLimit = UsageLimit;

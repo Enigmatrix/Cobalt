@@ -1,20 +1,30 @@
 ﻿using Cobalt.Common.Data;
 using Cobalt.Common.Data.Entities;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Microsoft.EntityFrameworkCore;
 
 namespace Cobalt.Common.ViewModels.Entities;
 
-public partial class AppViewModel : EditableEntityViewModel<App>
+public partial class AppViewModel : EditableEntityViewModel<App>, IHasColor, IHasName, IHasIcon
 {
-    [ObservableProperty] private string _name = default!;
-    [ObservableProperty] private string _description = default!;
-    [ObservableProperty] private string _company = default!;
     [ObservableProperty] private string _color = default!;
+    [ObservableProperty] private string _company = default!;
+    [ObservableProperty] private string _description = default!;
     [ObservableProperty] private AppIdentity _identity = default!;
+    [ObservableProperty] private string _name = default!;
 
-    public AppViewModel(IEntityViewModelCache cache, CobaltContext context) : base(cache, context)
+    public AppViewModel(IEntityViewModelCache cache, IDbContextFactory<CobaltContext> conn) : base(cache, conn)
     {
     }
+
+    // TODO handle the icons
+
+    public void Dispose()
+    {
+        throw new NotImplementedException();
+    }
+
+    public Stream Icon { get; set; } = default!;
 
     public override void InitializeWith(App app)
     {

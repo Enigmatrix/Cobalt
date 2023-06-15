@@ -5,27 +5,30 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Cobalt.Common.ViewModels.Entities;
 
-public abstract partial class EntityViewModel : ObservableObject
+public abstract partial class EntityViewModel : ObservableObject, IEntity
 {
-    public abstract IEntity Inner { get; }
     protected readonly IEntityViewModelCache Cache;
+
+    [ObservableProperty] private long _id;
+
     protected EntityViewModel(IEntityViewModelCache cache)
     {
         Cache = cache;
     }
 
-    [ObservableProperty] private long _id;
+    public abstract IEntity Inner { get; }
 }
 
 public abstract class EntityViewModel<T> : EntityViewModel
     where T : IEntity
 {
-    public override IEntity Inner => Entity;
     public T Entity = default!;
 
     protected EntityViewModel(IEntityViewModelCache cache) : base(cache)
     {
     }
+
+    public override IEntity Inner => Entity;
 
     public virtual void InitializeWith(T entity)
     {

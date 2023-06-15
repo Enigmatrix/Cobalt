@@ -5,10 +5,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Cobalt.Common.ViewModels.Entities;
 
-public partial class TagViewModel : EditableEntityViewModel<Tag>
+public partial class TagViewModel : EditableEntityViewModel<Tag>, IHasColor, IHasName
 {
-    [ObservableProperty] private string _name = default!;
     [ObservableProperty] private string _color = default!;
+    [ObservableProperty] private string _name = default!;
 
     public TagViewModel(IEntityViewModelCache cache, IDbContextFactory<CobaltContext> conn) : base(cache, conn)
     {
