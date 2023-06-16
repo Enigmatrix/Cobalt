@@ -32,14 +32,17 @@
                             <StackPanel Margin="8,0" Orientation="Vertical" VerticalAlignment="Center">
                                 <TextBlock Text="Chrome" VerticalAlignment="Center"
                                            Theme="{StaticResource SubtitleTextBlockStyle}" />
-                                <TextBlock Text="Description, by Company" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                <TextBlock Text="Description, by Company" VerticalAlignment="Center"
+                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                             </StackPanel>
                         </StackPanel>
 
                         <Grid Grid.Row="0" RowDefinitions="Auto,*,Auto" Grid.Column="2" HorizontalAlignment="Right">
                             <StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Right">
-                                <fla:SymbolIcon Symbol="Message" Foreground="{DynamicResource TextFillColorSecondaryBrush}"  />
-                                <TextBlock ToolTip.Tip="This argument may be long long" Text="Too much browsing!" Foreground="{DynamicResource TextFillColorSecondaryBrush}" 
+                                <fla:SymbolIcon Symbol="Message"
+                                                Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                <TextBlock ToolTip.Tip="This argument may be long long" Text="Too much browsing!"
+                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                            MaxWidth="150" MaxLines="1" Theme="{StaticResource CaptionTextBlockStyle}" />
                             </StackPanel>
 
@@ -60,19 +63,19 @@
 
                 <StackPanel Orientation="Vertical">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
-						<Button>
-							<StackPanel Spacing="8" Orientation="Horizontal">
-								<fla:SymbolIcon Symbol="Edit" />
-								<TextBlock Text="Edit" />
-							</StackPanel>
-						</Button>
+                        <Button>
+                            <StackPanel Spacing="8" Orientation="Horizontal">
+                                <fla:SymbolIcon Symbol="Edit" />
+                                <TextBlock Text="Edit" />
+                            </StackPanel>
+                        </Button>
 
-						<Button>
-							<StackPanel Spacing="8" Orientation="Horizontal">
-								<fla:SymbolIcon Symbol="Delete" />
-								<TextBlock Text="Delete" />
-							</StackPanel>
-						</Button>
+                        <Button>
+                            <StackPanel Spacing="8" Orientation="Horizontal">
+                                <fla:SymbolIcon Symbol="Delete" />
+                                <TextBlock Text="Delete" />
+                            </StackPanel>
+                        </Button>
                     </StackPanel>
                 </StackPanel>
 
