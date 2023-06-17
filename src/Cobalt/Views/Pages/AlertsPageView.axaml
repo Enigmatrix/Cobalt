@@ -8,7 +8,7 @@
     <Grid RowDefinitions="Auto,*">
         <Grid Grid.Row="0" Margin="24, 16" ColumnDefinitions="Auto,*,Auto">
             <TextBlock Grid.Column="0" Theme="{StaticResource TitleTextBlockStyle}">Alerts</TextBlock>
-            <Button Grid.Column="2" Classes="accent">
+            <Button Grid.Column="2" Classes="accent" Click="Button_OnClick">
                 <StackPanel Spacing="8" Orientation="Horizontal">
                     <fla:SymbolIcon Symbol="Add" />
                     <TextBlock Text="Add" />
