@@ -58,7 +58,14 @@ public class CobaltContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder opts)
     {
+        // var conn = new SqliteConnection(_connStr);
+        // conn.Open();
+        // using var cmd = new SqliteCommand("PRAGMA journal_mode=WAL", conn);
+        // cmd.ExecuteNonQuery();
+        // opts.UseSqlite(conn);
+
         opts.UseSqlite(_connStr);
+
         opts.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
     }
 
