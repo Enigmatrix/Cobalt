@@ -43,6 +43,8 @@ impl Database {
     pub fn new(settings: &Settings) -> Result<Database> {
         let conn = Connection::open(&settings.connection_strings.database_path)
             .context("open connection")?;
+        conn.pragma_update(None, "journal_mode", "WAL")
+            .context("enable WAL")?;
         Ok(Database { conn })
     }
 }
