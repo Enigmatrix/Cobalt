@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "Cobalt": {
+      "commandName": "Project",
+      "workingDirectory": "..\\",
+      "nativeDebugging": false
+    }
+  }
+}
