@@ -1,6 +1,5 @@
 ﻿using System.Collections.ObjectModel;
 using System.ComponentModel.DataAnnotations;
-using System.Diagnostics;
 using Cobalt.Common.Data;
 using Cobalt.Common.Data.Entities;
 using Cobalt.Common.ViewModels.Entities;
@@ -47,7 +46,7 @@ public partial class AddAlertDialogViewModel : ObservableValidator
         }
     }
 
-    public ObservableCollection<AppViewModel> Apps
+    public ObservableCollection<AppViewModel> AllApps
     {
         get
         {
@@ -56,7 +55,7 @@ public partial class AddAlertDialogViewModel : ObservableValidator
         }
     }
 
-    public ObservableCollection<TagViewModel> Tags
+    public ObservableCollection<TagViewModel> AllTags
     {
         get
         {

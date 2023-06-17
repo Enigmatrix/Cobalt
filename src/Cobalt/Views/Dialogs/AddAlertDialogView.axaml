@@ -16,13 +16,13 @@
                    PrimaryButtonCommand="{Binding AddCommand}"
                    x:Class="Cobalt.Views.Dialogs.AddAlertDialogView">
     <Design.DataContext>
-        <!-- ReSharper disable Xaml.ConstructorWarning -->
+        <!-- ReSharper disable once Xaml.ConstructorWarning -->
         <dialogs:AddAlertDialogViewModel />
-        <!-- ReSharper restore Xaml.ConstructorWarning -->
     </Design.DataContext>
 
     <fla:ContentDialog.Resources>
-        <converters:StreamToBitmapConverter x:Key="StreamToBitmap"/>
+        <converters:StreamToBitmapConverter x:Key="StreamToBitmap" />
+        <!-- ReSharper disable once Xaml.RedundantResource -->
         <system:Double x:Key="ContentDialogMaxWidth">800</system:Double>
     </fla:ContentDialog.Resources>
 
@@ -32,12 +32,15 @@
             <Grid ColumnDefinitions="*, *">
                 <StackPanel Grid.Column="0" Orientation="Vertical" Spacing="8" Margin="0,0,8,0">
                     <RadioButton GroupName="Target" Content="App" x:Name="AppTarget" />
-                    <ComboBox IsEnabled="{Binding #AppTarget.IsChecked}" IsTextSearchEnabled="True" MinHeight="32" ItemsSource="{Binding Apps}" HorizontalAlignment="Stretch">
+                    <ComboBox IsEnabled="{Binding #AppTarget.IsChecked}" IsTextSearchEnabled="True" MinHeight="32"
+                              ItemsSource="{Binding AllApps}" HorizontalAlignment="Stretch">
                         <ComboBox.ItemTemplate>
                             <DataTemplate DataType="entities:AppViewModel">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <Image Width="20" Height="20" Source="{Binding Icon, Converter={StaticResource StreamToBitmap}}"/>
-                                    <TextBlock Text="{Binding Name}" Theme="{StaticResource BodyStrongTextBlockStyle}" VerticalAlignment="Center"/>
+                                    <Image Width="20" Height="20"
+                                           Source="{Binding Icon, Converter={StaticResource StreamToBitmap}}" />
+                                    <TextBlock Text="{Binding Name}" Theme="{StaticResource BodyStrongTextBlockStyle}"
+                                               VerticalAlignment="Center" />
                                 </StackPanel>
                             </DataTemplate>
                         </ComboBox.ItemTemplate>
@@ -46,58 +49,63 @@
                 <StackPanel Grid.Column="1" Orientation="Vertical" Spacing="8" Margin="0,0,8,0">
                     <RadioButton GroupName="Target" Content="Tag" x:Name="TagTarget" />
                     <Grid ColumnDefinitions="*,Auto" HorizontalAlignment="Stretch">
-						<ComboBox Grid.Column="0" IsEnabled="{Binding #TagTarget.IsChecked}" IsTextSearchEnabled="True" MinHeight="32" ItemsSource="{Binding Tags}" HorizontalAlignment="Stretch" CornerRadius="4,0,0,4"/>
-						<!-- TODO attach functionality here -->
-						<Button Grid.Column="1" MinHeight="32" IsEnabled="{Binding #TagTarget.IsChecked}" CornerRadius="0,4,4,0" BorderThickness="0,1,1,1">
-							<fla:SymbolIcon Symbol="Add"/>
-						</Button>
+                        <ComboBox Grid.Column="0" IsEnabled="{Binding #TagTarget.IsChecked}" IsTextSearchEnabled="True"
+                                  MinHeight="32" ItemsSource="{Binding AllTags}" HorizontalAlignment="Stretch"
+                                  CornerRadius="4,0,0,4" />
+                        <!-- TODO attach functionality here -->
+                        <Button Grid.Column="1" MinHeight="32" IsEnabled="{Binding #TagTarget.IsChecked}"
+                                CornerRadius="0,4,4,0" BorderThickness="0,1,1,1">
+                            <fla:SymbolIcon Symbol="Add" />
+                        </Button>
                     </Grid>
                 </StackPanel>
             </Grid>
         </StackPanel>
 
         <Grid ColumnDefinitions="*, *">
-			<StackPanel Grid.Column="0" Orientation="Vertical" Spacing="8">
-				<TextBlock Text="Time Frame" Theme="{StaticResource BodyStrongTextBlockStyle}"  />
-				<ComboBox IsTextSearchEnabled="True">
-					<ComboBoxItem Content="Daily"/>
-					<ComboBoxItem Content="Weekly"/>
-					<ComboBoxItem Content="Monthly"/>
-				</ComboBox>
-			</StackPanel>
+            <StackPanel Grid.Column="0" Orientation="Vertical" Spacing="8">
+                <TextBlock Text="Time Frame" Theme="{StaticResource BodyStrongTextBlockStyle}" />
+                <ComboBox IsTextSearchEnabled="True">
+                    <ComboBoxItem Content="Daily" />
+                    <ComboBoxItem Content="Weekly" />
+                    <ComboBoxItem Content="Monthly" />
+                </ComboBox>
+            </StackPanel>
 
-			<StackPanel Grid.Column="1" Orientation="Vertical" Spacing="8">
-				<TextBlock Text="Usage Limit" Theme="{StaticResource BodyStrongTextBlockStyle}"  />
-				<TimePicker ClockIdentifier="24HourClock" SelectedTime="{Binding UsageLimit}"  />
-			</StackPanel>
+            <StackPanel Grid.Column="1" Orientation="Vertical" Spacing="8">
+                <TextBlock Text="Usage Limit" Theme="{StaticResource BodyStrongTextBlockStyle}" />
+                <TimePicker ClockIdentifier="24HourClock" SelectedTime="{Binding UsageLimit}" />
+            </StackPanel>
         </Grid>
 
         <StackPanel Orientation="Vertical" Spacing="8">
 
-            <TextBlock Text="Action" Theme="{StaticResource BodyStrongTextBlockStyle}"  />
+            <TextBlock Text="Action" Theme="{StaticResource BodyStrongTextBlockStyle}" />
 
             <Grid RowDefinitions="*, 8, *, 8, *" ColumnDefinitions="Auto, 8, *">
-				<RadioButton x:Name="Kill" Grid.Column="0" Grid.Row="0" GroupName="Action">
-					<StackPanel Orientation="Horizontal" Spacing="8">
-				        <fla:FAPathIcon Width="20" Height="20" Data="M 31.1875 3.25 C 30.9375 3.292969 30.714844 3.425781 30.5625 3.625 L 11.5 27.375 C 11.257813 27.675781 11.210938 28.085938 11.378906 28.433594 C 11.546875 28.78125 11.898438 29 12.28125 29 L 22.75 29 L 17.75 45.4375 C 17.566406 45.910156 17.765625 46.441406 18.210938 46.679688 C 18.65625 46.917969 19.207031 46.789063 19.5 46.375 L 38.5 22.625 C 38.742188 22.324219 38.789063 21.914063 38.621094 21.566406 C 38.453125 21.21875 38.101563 21 37.71875 21 L 27.625 21 L 32.28125 4.53125 C 32.371094 4.222656 32.308594 3.886719 32.109375 3.632813 C 31.910156 3.378906 31.601563 3.238281 31.28125 3.25 C 31.25 3.25 31.21875 3.25 31.1875 3.25 Z M 29.03125 8.71875 L 25.3125 21.71875 C 25.222656 22.023438 25.285156 22.351563 25.472656 22.601563 C 25.664063 22.855469 25.964844 23.003906 26.28125 23 L 35.625 23 L 21.1875 41.09375 L 25.09375 28.28125 C 25.183594 27.976563 25.121094 27.648438 24.933594 27.398438 C 24.742188 27.144531 24.441406 26.996094 24.125 27 L 14.375 27 Z"/>
-						<TextBlock Text="Kill"/>
-					</StackPanel>
-				</RadioButton>
-				<RadioButton x:Name="Message" Grid.Column="0" Grid.Row="2" GroupName="Action">
-					<StackPanel Orientation="Horizontal" Spacing="8">
-						<fla:SymbolIcon Symbol="Message" FontSize="20"/>
-						<TextBlock Text="Message"/>
-					</StackPanel>
-				</RadioButton>
-				<RadioButton x:Name="Dim" Grid.Column="0" Grid.Row="4" GroupName="Action">
-					<StackPanel Orientation="Horizontal" Spacing="8">
-						<fla:SymbolIcon Symbol="WeatherSunny" FontSize="20"/>
-						<TextBlock Text="Dim"/>
+                <RadioButton x:Name="Kill" Grid.Column="0" Grid.Row="0" GroupName="Action">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <fla:FAPathIcon Width="20" Height="20"
+                                        Data="M 31.1875 3.25 C 30.9375 3.292969 30.714844 3.425781 30.5625 3.625 L 11.5 27.375 C 11.257813 27.675781 11.210938 28.085938 11.378906 28.433594 C 11.546875 28.78125 11.898438 29 12.28125 29 L 22.75 29 L 17.75 45.4375 C 17.566406 45.910156 17.765625 46.441406 18.210938 46.679688 C 18.65625 46.917969 19.207031 46.789063 19.5 46.375 L 38.5 22.625 C 38.742188 22.324219 38.789063 21.914063 38.621094 21.566406 C 38.453125 21.21875 38.101563 21 37.71875 21 L 27.625 21 L 32.28125 4.53125 C 32.371094 4.222656 32.308594 3.886719 32.109375 3.632813 C 31.910156 3.378906 31.601563 3.238281 31.28125 3.25 C 31.25 3.25 31.21875 3.25 31.1875 3.25 Z M 29.03125 8.71875 L 25.3125 21.71875 C 25.222656 22.023438 25.285156 22.351563 25.472656 22.601563 C 25.664063 22.855469 25.964844 23.003906 26.28125 23 L 35.625 23 L 21.1875 41.09375 L 25.09375 28.28125 C 25.183594 27.976563 25.121094 27.648438 24.933594 27.398438 C 24.742188 27.144531 24.441406 26.996094 24.125 27 L 14.375 27 Z" />
+                        <TextBlock Text="Kill" />
+                    </StackPanel>
+                </RadioButton>
+                <RadioButton x:Name="Message" Grid.Column="0" Grid.Row="2" GroupName="Action">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <fla:SymbolIcon Symbol="Message" FontSize="20" />
+                        <TextBlock Text="Message" />
+                    </StackPanel>
+                </RadioButton>
+                <RadioButton x:Name="Dim" Grid.Column="0" Grid.Row="4" GroupName="Action">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <fla:SymbolIcon Symbol="WeatherSunny" FontSize="20" />
+                        <TextBlock Text="Dim" />
                     </StackPanel>
                 </RadioButton>
 
                 <TextBox Grid.Column="2" Grid.Row="2" IsEnabled="{Binding #Message.IsChecked}" />
-                <TimePicker ClockIdentifier="24HourClock" Grid.Column="2" Grid.Row="4" IsEnabled="{Binding #Dim.IsChecked}" />
+                <TimePicker ClockIdentifier="24HourClock" Grid.Column="2" Grid.Row="4"
+                            IsEnabled="{Binding #Dim.IsChecked}" />
             </Grid>
         </StackPanel>
     </StackPanel>

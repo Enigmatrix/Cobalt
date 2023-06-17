@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using Cobalt.Common.Data.Entities;
+﻿using Cobalt.Common.Data.Entities;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -8,14 +7,13 @@ namespace Cobalt.Common.Data;
 
 public class CobaltContext : DbContext
 {
-    private readonly string _dbPath;
     private readonly string _connStr;
 
     public CobaltContext(IConfiguration config)
     {
-        _dbPath = config.GetConnectionString("DatabasePath")
-                  ?? throw new InvalidOperationException("DatabasePath not found");
-        _connStr = $"Data Source={_dbPath}";
+        var dbPath = config.GetConnectionString("DatabasePath")
+                     ?? throw new InvalidOperationException("DatabasePath not found");
+        _connStr = $"Data Source={dbPath}";
     }
 
     public DbSet<App> Apps { get; set; } = default!;
@@ -77,7 +75,7 @@ public class CobaltContext : DbContext
         cmd.ExecuteNonQuery();
 
         var ms = new MemoryStream();
-        using var blob =  new SqliteBlob(conn, "app", "icon", readOnly: true,
+        using var blob = new SqliteBlob(conn, "app", "icon", readOnly: true,
             rowid: appId);
         blob.CopyTo(ms);
 

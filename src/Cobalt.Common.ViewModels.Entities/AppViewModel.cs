@@ -10,10 +10,10 @@ public partial class AppViewModel : EditableEntityViewModel<App>, IHasColor, IHa
     [ObservableProperty] private string _color = default!;
     [ObservableProperty] private string _company = default!;
     [ObservableProperty] private string _description = default!;
-    [ObservableProperty] private AppIdentity _identity = default!;
-    [ObservableProperty] private string _name = default!;
 
     private Stream? _icon;
+    [ObservableProperty] private AppIdentity _identity = default!;
+    [ObservableProperty] private string _name = default!;
 
     public AppViewModel(IEntityViewModelCache cache, IDbContextFactory<CobaltContext> conn) : base(cache, conn)
     {
