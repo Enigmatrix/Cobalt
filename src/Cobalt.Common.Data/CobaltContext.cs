@@ -1,16 +1,21 @@
-﻿using Cobalt.Common.Data.Entities;
+﻿using System.Diagnostics;
+using Cobalt.Common.Data.Entities;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace Cobalt.Common.Data;
 
 public class CobaltContext : DbContext
 {
     private readonly string _dbPath;
+    private readonly string _connStr;
 
-    public CobaltContext(string dbPath)
+    public CobaltContext(IConfiguration config)
     {
-        // TODO enable WAL
-        _dbPath = dbPath;
+        _dbPath = config.GetConnectionString("DatabasePath")
+                  ?? throw new InvalidOperationException("DatabasePath not found");
+        _connStr = $"Data Source={_dbPath}";
     }
 
     public DbSet<App> Apps { get; set; } = default!;
@@ -53,7 +58,22 @@ public class CobaltContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder opts)
     {
-        opts.UseSqlite($"Data Source={_dbPath}");
+        opts.UseSqlite(_connStr);
         opts.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
+    }
+
+    public Stream AppIcon(long appId)
+    {
+        using var conn = new SqliteConnection(_connStr);
+        conn.Open();
+        using var cmd = new SqliteCommand("PRAGMA journal_mode=WAL", conn);
+        cmd.ExecuteNonQuery();
+
+        var ms = new MemoryStream();
+        using var blob =  new SqliteBlob(conn, "app", "icon", readOnly: true,
+            rowid: appId);
+        blob.CopyTo(ms);
+
+        return ms;
     }
 }

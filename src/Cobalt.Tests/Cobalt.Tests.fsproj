@@ -28,7 +28,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Cobalt.Common.Analysis\Cobalt.Common.Analysis.csproj" />
     <ProjectReference Include="..\Cobalt.Common.Data\Cobalt.Common.Data.csproj" />
+    <ProjectReference Include="..\Cobalt.Common.Infrastructure\Cobalt.Common.Infrastructure.csproj" />
+    <ProjectReference Include="..\Cobalt.Common.Utils\Cobalt.Common.Utils.csproj" />
+    <ProjectReference Include="..\Cobalt.Common.ViewModels.Entities\Cobalt.Common.ViewModels.Entities.csproj" />
+    <ProjectReference Include="..\Cobalt.Common.ViewModels\Cobalt.Common.ViewModels.csproj" />
   </ItemGroup>
 
 </Project>

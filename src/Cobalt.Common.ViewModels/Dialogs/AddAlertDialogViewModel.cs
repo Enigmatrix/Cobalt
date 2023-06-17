@@ -1,4 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.Collections.ObjectModel;
+using System.ComponentModel.DataAnnotations;
+using System.Diagnostics;
 using Cobalt.Common.Data;
 using Cobalt.Common.Data.Entities;
 using Cobalt.Common.ViewModels.Entities;
@@ -11,18 +13,29 @@ namespace Cobalt.Common.ViewModels.Dialogs;
 
 public partial class AddAlertDialogViewModel : ObservableValidator
 {
+    private readonly IEntityViewModelCache _cache;
+
+    private readonly IDbContextFactory<CobaltContext> _conn;
+
     [Required] [NotifyDataErrorInfo] [ObservableProperty]
     private ActionEntity? _action;
 
     [Required] [NotifyDataErrorInfo] [ObservableProperty]
-    private TargetViewModel? _target;
+    private Target? _target;
+
+    private TimeFrame _timeFrame = TimeFrame.Daily;
 
     [CustomValidation(typeof(AddAlertDialogViewModel), nameof(ValidateUsageLimit))]
     [ObservableProperty]
     [NotifyDataErrorInfo]
     private TimeSpan _usageLimit;
 
-    private TimeFrame _timeFrame = TimeFrame.Daily;
+    public AddAlertDialogViewModel(IEntityViewModelCache cache, IDbContextFactory<CobaltContext> conn)
+    {
+        _conn = conn;
+        _cache = cache;
+        ValidateAllProperties();
+    }
 
     public TimeFrame TimeFrame
     {
@@ -34,9 +47,22 @@ public partial class AddAlertDialogViewModel : ObservableValidator
         }
     }
 
-    public AddAlertDialogViewModel(IDbContextFactory<CobaltContext> conn)
+    public ObservableCollection<AppViewModel> Apps
     {
-        ValidateAllProperties();
+        get
+        {
+            using var db = _conn.CreateDbContext();
+            return new ObservableCollection<AppViewModel>(db.Apps.ToList().Select(app => _cache.App(app)));
+        }
+    }
+
+    public ObservableCollection<TagViewModel> Tags
+    {
+        get
+        {
+            using var db = _conn.CreateDbContext();
+            return new ObservableCollection<TagViewModel>(db.Tags.ToList().Select(tag => _cache.Tag(tag)));
+        }
     }
 
     public static ValidationResult? ValidateUsageLimit(string _, ValidationContext context)

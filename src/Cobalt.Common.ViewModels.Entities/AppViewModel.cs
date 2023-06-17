@@ -13,18 +13,29 @@ public partial class AppViewModel : EditableEntityViewModel<App>, IHasColor, IHa
     [ObservableProperty] private AppIdentity _identity = default!;
     [ObservableProperty] private string _name = default!;
 
+    private Stream? _icon;
+
     public AppViewModel(IEntityViewModelCache cache, IDbContextFactory<CobaltContext> conn) : base(cache, conn)
     {
     }
-
-    // TODO handle the icons
 
     public void Dispose()
     {
         throw new NotImplementedException();
     }
 
-    public Stream Icon { get; set; } = default!;
+    public Stream Icon
+    {
+        get
+        {
+            if (_icon != null) return _icon;
+
+            using var db = Conn.CreateDbContext();
+            return _icon = db.AppIcon(Id);
+        }
+        // TODO this is just for testing
+        set => _icon = value;
+    }
 
     public override void InitializeWith(App app)
     {

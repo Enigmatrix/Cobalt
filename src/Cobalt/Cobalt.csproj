@@ -32,7 +32,9 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\Cobalt.Common.Analysis\Cobalt.Common.Analysis.csproj" />
+		<ProjectReference Include="..\Cobalt.Common.Infrastructure\Cobalt.Common.Infrastructure.csproj" />
 		<ProjectReference Include="..\Cobalt.Common.ViewModels\Cobalt.Common.ViewModels.csproj" />
+		<ProjectReference Include="..\Cobalt.Common.ViewModels.Entities\Cobalt.Common.ViewModels.Entities.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

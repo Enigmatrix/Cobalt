@@ -11,6 +11,7 @@ open Microsoft.EntityFrameworkCore
 open System.Diagnostics
 open Microsoft.Data.Sqlite
 open Cobalt.Common.Data.Entities
+open Microsoft.Extensions.Configuration
 
 let fpath = "./test.db"
 
@@ -20,14 +21,19 @@ let migrate () =
     use proc = Process.Start(info)
     proc.WaitForExit()
 
+let dbconfig = 
+    let cfg = new ConfigurationBuilder()
+    let mem = dict ["ConnectionStrings:DatabasePath", fpath]
+    cfg.AddInMemoryCollection(mem).Build()
+
 [<Fact>]
 let ``init db`` () =
     File.Delete(fpath)
-    use db = new CobaltContext(fpath)
+    use db = new CobaltContext(dbconfig)
     migrate()
 
 type DataTests() =
-    let db = new CobaltContext(fpath)
+    let db = new CobaltContext(dbconfig)
     let conn = db.Database.GetDbConnection()
     let now = new DateTime(2023, 2, 4, 8, 0, 0)
 
