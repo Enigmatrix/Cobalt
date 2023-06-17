@@ -1,0 +1,55 @@
+<fla:ContentDialog xmlns="https://github.com/avaloniaui"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                   xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                   xmlns:fla="clr-namespace:FluentAvalonia.UI.Controls;assembly=FluentAvalonia"
+                   xmlns:dialogs="clr-namespace:Cobalt.Common.ViewModels.Dialogs;assembly=Cobalt.Common.ViewModels"
+                   mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+                   Title="Add Alert"
+                   PrimaryButtonText="Ok"
+                   CloseButtonText="Cancel"
+                   IsPrimaryButtonEnabled="{Binding !HasErrors}"
+                   DefaultButton="Primary"
+                   PrimaryButtonCommand="{Binding AddCommand}"
+                   x:Class="Cobalt.Views.Dialogs.AddAlertDialogView">
+    <Design.DataContext>
+        <dialogs:AddAlertDialogViewModel />
+    </Design.DataContext>
+    <StackPanel Orientation="Vertical" Spacing="16" Width="400">
+		<StackPanel Orientation="Vertical" Spacing="8">
+			<TextBlock Text="Target"/>
+			<Grid ColumnDefinitions="*, *">
+				<StackPanel Grid.Column="0" Orientation="Vertical" Spacing="8">
+					<RadioButton GroupName="Target" Content="App"/>
+					<ComboBox IsTextSearchEnabled="True"/>
+				</StackPanel>
+				<StackPanel Grid.Column="1" Orientation="Vertical" Spacing="8">
+					<RadioButton GroupName="Target" Content="Tag"/>
+					<ComboBox IsTextSearchEnabled="True"/>
+				</StackPanel>
+            </Grid>
+		</StackPanel>
+
+		<StackPanel Orientation="Vertical" Spacing="8">
+			<TextBlock Text="Time Frame"/>
+			<ComboBox></ComboBox>
+        </StackPanel>
+
+		<StackPanel Orientation="Vertical" Spacing="8">
+			<TextBlock Text="Usage Limit"/>
+			<TimePicker ClockIdentifier="24HourClock"/>
+        </StackPanel>
+
+		<StackPanel Orientation="Vertical" Spacing="8">
+			<TextBlock Text="Action"/>
+			<Grid RowDefinitions="*, *, *" ColumnDefinitions="Auto, *">
+                <RadioButton Grid.Column="0" Grid.Row="0" GroupName="Action" Content="Kill"/>
+                <RadioButton Grid.Column="0" Grid.Row="1" GroupName="Action" Content="Message"/>
+                <RadioButton Grid.Column="0" Grid.Row="2" GroupName="Action" Content="Dim"/>
+
+                <TextBox Grid.Column="1" Grid.Row="1"/>
+                <TimePicker ClockIdentifier="24HourClock" Grid.Column="1" Grid.Row="2"/>
+			</Grid>
+        </StackPanel>
+    </StackPanel>
+</fla:ContentDialog>
