@@ -415,8 +415,8 @@ Cargo.lock
 *.pdb
 
 ## Ignore databases
-main.db
-test.db
+main.db*
+test.db*
 
 ## Ignore VSCode
 .vscode
