@@ -45,7 +45,13 @@
                 </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Vertical" Spacing="8" Margin="0,0,8,0">
                     <RadioButton GroupName="Target" Content="Tag" x:Name="TagTarget" />
-                    <ComboBox IsEnabled="{Binding #TagTarget.IsChecked}" IsTextSearchEnabled="True" MinHeight="32" ItemsSource="{Binding Tags}" HorizontalAlignment="Stretch"/>
+                    <Grid ColumnDefinitions="*,Auto" HorizontalAlignment="Stretch">
+						<ComboBox Grid.Column="0" IsEnabled="{Binding #TagTarget.IsChecked}" IsTextSearchEnabled="True" MinHeight="32" ItemsSource="{Binding Tags}" HorizontalAlignment="Stretch" CornerRadius="4,0,0,4"/>
+						<!-- TODO attach functionality here -->
+						<Button Grid.Column="1" MinHeight="32" IsEnabled="{Binding #TagTarget.IsChecked}" CornerRadius="0,4,4,0" BorderThickness="0,1,1,1">
+							<fla:SymbolIcon Symbol="Add"/>
+						</Button>
+                    </Grid>
                 </StackPanel>
             </Grid>
         </StackPanel>
