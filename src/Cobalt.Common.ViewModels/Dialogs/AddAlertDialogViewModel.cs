@@ -11,7 +11,7 @@ using ActionEntity = Cobalt.Common.Data.Entities.Action;
 
 namespace Cobalt.Common.ViewModels.Dialogs;
 
-public partial class AddAlertDialogViewModel : ObservableValidator
+public partial class AddAlertDialogViewModel : DialogViewModelBase<Unit, AlertViewModel>
 {
     private readonly IEntityViewModelCache _cache;
 
@@ -30,12 +30,16 @@ public partial class AddAlertDialogViewModel : ObservableValidator
     [NotifyDataErrorInfo]
     private TimeSpan _usageLimit;
 
-    public AddAlertDialogViewModel(IEntityViewModelCache cache, IDbContextFactory<CobaltContext> conn)
+    public AddAlertDialogViewModel(IEntityViewModelCache cache, IDbContextFactory<CobaltContext> conn,
+        AddTagDialogViewModel addAddTagDialogViewModel)
     {
         _conn = conn;
+        AddTagDialogViewModel = addAddTagDialogViewModel;
         _cache = cache;
         ValidateAllProperties();
     }
+
+    public AddTagDialogViewModel AddTagDialogViewModel { get; }
 
     public TimeFrame TimeFrame
     {

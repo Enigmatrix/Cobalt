@@ -1,20 +1,21 @@
-<fla:ContentDialog xmlns="https://github.com/avaloniaui"
-                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                   xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-                   xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-                   xmlns:fla="clr-namespace:FluentAvalonia.UI.Controls;assembly=FluentAvalonia"
-                   xmlns:dialogs="clr-namespace:Cobalt.Common.ViewModels.Dialogs;assembly=Cobalt.Common.ViewModels"
-                   xmlns:entities="clr-namespace:Cobalt.Common.ViewModels.Entities;assembly=Cobalt.Common.ViewModels.Entities"
-                   xmlns:converters="clr-namespace:Cobalt.Converters"
-                   xmlns:system="clr-namespace:System;assembly=System.Runtime"
-                   mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-                   Title="Add Alert"
-                   PrimaryButtonText="Ok"
-                   CloseButtonText="Cancel"
-                   IsPrimaryButtonEnabled="{Binding !HasErrors}"
-                   DefaultButton="Primary"
-                   PrimaryButtonCommand="{Binding AddCommand}"
-                   x:Class="Cobalt.Views.Dialogs.AddAlertDialogView">
+<dialogsViews:DialogViewBase xmlns="https://github.com/avaloniaui"
+                             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                             xmlns:fla="clr-namespace:FluentAvalonia.UI.Controls;assembly=FluentAvalonia"
+                             xmlns:dialogs="clr-namespace:Cobalt.Common.ViewModels.Dialogs;assembly=Cobalt.Common.ViewModels"
+                             xmlns:entities="clr-namespace:Cobalt.Common.ViewModels.Entities;assembly=Cobalt.Common.ViewModels.Entities"
+                             xmlns:converters="clr-namespace:Cobalt.Converters"
+                             xmlns:system="clr-namespace:System;assembly=System.Runtime"
+                             xmlns:dialogsViews="clr-namespace:Cobalt.Views.Dialogs"
+                             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+                             Title="Add Alert"
+                             PrimaryButtonText="Ok"
+                             CloseButtonText="Cancel"
+                             IsPrimaryButtonEnabled="{Binding !HasErrors}"
+                             DefaultButton="Primary"
+                             PrimaryButtonCommand="{Binding AddCommand}"
+                             x:Class="Cobalt.Views.Dialogs.AddAlertDialogView">
     <Design.DataContext>
         <!-- ReSharper disable once Xaml.ConstructorWarning -->
         <dialogs:AddAlertDialogViewModel />
@@ -108,4 +109,4 @@
             </Grid>
         </StackPanel>
     </StackPanel>
-</fla:ContentDialog>
+</dialogsViews:DialogViewBase>

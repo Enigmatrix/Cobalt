@@ -2,6 +2,7 @@
 using System.ComponentModel.DataAnnotations;
 using Cobalt.Common.Data;
 using Cobalt.Common.Data.Entities;
+using Cobalt.Common.Utils;
 using Cobalt.Common.ViewModels.Entities;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -9,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Cobalt.Common.ViewModels.Dialogs;
 
-public partial class AddTagDialogViewModel : ObservableValidator
+public partial class AddTagDialogViewModel : DialogViewModelBase<Unit, TagViewModel>
 {
     private static readonly Random Random = new();
 
@@ -63,20 +64,21 @@ public partial class AddTagDialogViewModel : ObservableValidator
     }
 
 
-    // TODO set this as the dialog's result
     [RelayCommand(CanExecute = nameof(CanAdd))]
     public void Add()
     {
         using var db = _conn.CreateDbContext();
-
-        db.Attach(new Tag
+        var tag = new Tag
         {
             Name = Name ?? throw new NullReferenceException(nameof(Name)),
             Color = Color,
             Apps = Apps.Select(app => new App { Id = app.Id }).ToList()
-        });
+        };
 
+        db.Attach(tag);
         db.SaveChanges();
+
+        Output = _cache.Tag(tag);
     }
 
 
