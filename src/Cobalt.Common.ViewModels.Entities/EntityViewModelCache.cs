@@ -1,5 +1,4 @@
-﻿using System.Runtime.CompilerServices;
-using Cobalt.Common.Data;
+﻿using Cobalt.Common.Data;
 using Cobalt.Common.Data.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,39 +20,41 @@ public class EntityViewModelCache : IEntityViewModelCache
         _conn = conn;
     }
 
-    public ConditionalWeakTable<App, AppViewModel> Apps { get; } = new();
+    public Dictionary<long, WeakReference<AppViewModel>> Apps { get; } = new();
+    public Dictionary<long, WeakReference<TagViewModel>> Tags { get; } = new();
+    public Dictionary<long, WeakReference<AlertViewModel>> Alerts { get; } = new();
 
-    public ConditionalWeakTable<Tag, TagViewModel> Tags { get; } = new();
-
-    public ConditionalWeakTable<Alert, AlertViewModel> Alerts { get; } = new();
 
     public TagViewModel Tag(Tag tag)
     {
-        return Tags.GetValue(tag, t =>
-        {
-            var tvm = new TagViewModel(this, _conn);
-            tvm.InitializeWith(t);
-            return tvm;
-        });
+        if (Tags.TryGetValue(tag.Id, out var v) && v.TryGetTarget(out var vm))
+            return vm;
+
+        var nvm = new TagViewModel(this, _conn);
+        nvm.InitializeWith(tag);
+        Tags[tag.Id] = new WeakReference<TagViewModel>(nvm);
+        return nvm;
     }
 
     public AppViewModel App(App app)
     {
-        return Apps.GetValue(app, t =>
-        {
-            var tvm = new AppViewModel(this, _conn);
-            tvm.InitializeWith(t);
-            return tvm;
-        });
+        if (Apps.TryGetValue(app.Id, out var v) && v.TryGetTarget(out var vm))
+            return vm;
+
+        var nvm = new AppViewModel(this, _conn);
+        nvm.InitializeWith(app);
+        Apps[app.Id] = new WeakReference<AppViewModel>(nvm);
+        return nvm;
     }
 
     public AlertViewModel Alert(Alert alert)
     {
-        return Alerts.GetValue(alert, t =>
-        {
-            var tvm = new AlertViewModel(this, _conn);
-            tvm.InitializeWith(t);
-            return tvm;
-        });
+        if (Alerts.TryGetValue(alert.Id, out var v) && v.TryGetTarget(out var vm))
+            return vm;
+
+        var nvm = new AlertViewModel(this, _conn);
+        nvm.InitializeWith(alert);
+        Alerts[alert.Id] = new WeakReference<AlertViewModel>(nvm);
+        return nvm;
     }
 }
