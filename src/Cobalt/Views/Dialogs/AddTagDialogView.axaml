@@ -49,14 +49,14 @@
 
             <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,8">
 
-                <AutoCompleteBox Grid.Column="0" x:Name="SearchApps" ItemsSource="{Binding AllApps}"
+                <AutoCompleteBox Grid.Column="0" x:Name="SearchApps" AsyncPopulator="{Binding SearchAppsHandler}"
                                  Watermark="Search apps to add" SelectedItem="{Binding #This.SelectedApp}"
-                                 CornerRadius="4,0,0,4" MinHeight="32"
+                                 CornerRadius="4,0,0,4" MinHeight="32" FilterMode="None"
                                  KeyDown="Search_OnKeyDown" ItemSelector="{Binding #This.AppTextSelector}">
                     <AutoCompleteBox.ItemTemplate>
                         <DataTemplate DataType="entities:AppViewModel">
                             <StackPanel Orientation="Horizontal" Spacing="8" Margin="0, 4">
-                                <Image Width="32" Height="32"
+                                <Image Width="28" Height="28" VerticalAlignment="Center"
                                        Source="{Binding Icon, Converter={StaticResource StreamToBitmapConverter}}" />
                                 <StackPanel Orientation="Vertical" VerticalAlignment="Center">
                                     <TextBlock Text="{Binding Name}" Theme="{StaticResource BodyStrongTextBlockStyle}" />

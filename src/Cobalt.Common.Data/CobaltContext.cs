@@ -66,8 +66,8 @@ public class CobaltContext : DbContext
         opts.UseSqlite(_connStr);
 
         opts.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
-        // TODO for debugging only! Remove in prod
 
+        // TODO for debugging only! Remove in prod
         opts.LogTo(log => Trace.WriteLine(log));
     }
 

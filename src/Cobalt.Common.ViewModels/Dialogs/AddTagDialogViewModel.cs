@@ -50,14 +50,16 @@ public partial class AddTagDialogViewModel : ObservableValidator
         }
     }
 
-    public Func<string, CancellationToken, IEnumerable<object>> SearchAppsHandler => SearchApps;
+    public Func<string, CancellationToken, Task<IEnumerable<object>>> SearchAppsHandler => SearchApps;
 
-    // TODO AsyncPopulate isn't called???? Make this work!!
-    public IEnumerable<AppViewModel> SearchApps(string query, CancellationToken cancelToken)
+    public async Task<IEnumerable<object>> SearchApps(string query, CancellationToken cancelToken)
     {
-        using var db = _conn.CreateDbContext();
+        await using var db = await _conn.CreateDbContextAsync(cancelToken);
         // TODO fts in the future
-        return db.Apps.ToList().Select(app => _cache.App(app)).Except(Apps);
+        var apps = await db.Apps
+            .Where(app => app.Name.ToLower().Contains(query.ToLower()))
+            .ToListAsync(cancellationToken: cancelToken);
+        return apps.Select(app => _cache.App(app)).Except(Apps).Select(x => (object)x);
     }
 
     // TODO 'Enter' key in ContentDialog closes it... wtf
