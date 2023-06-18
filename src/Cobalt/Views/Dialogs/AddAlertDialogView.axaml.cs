@@ -23,6 +23,7 @@ public partial class AddAlertDialogView : ContentDialog, IStyleable
 
     private async void AddTag_OnClick(object? sender, RoutedEventArgs e)
     {
+        // TODO cleanup this, make it return the added tag
         var resolve = ServiceManager.Services;
         var conn = resolve.GetRequiredService<IDbContextFactory<CobaltContext>>();
         var dialog = new AddTagDialogView
