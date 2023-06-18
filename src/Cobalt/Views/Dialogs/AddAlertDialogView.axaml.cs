@@ -1,7 +1,6 @@
 using System;
 using Avalonia.Input;
 using Avalonia.Interactivity;
-using Avalonia.Styling;
 using Cobalt.Common.Data;
 using Cobalt.Common.Infrastructure;
 using Cobalt.Common.ViewModels.Dialogs;
@@ -12,14 +11,14 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Cobalt.Views.Dialogs;
 
-public partial class AddAlertDialogView : ContentDialog, IStyleable
+public partial class AddAlertDialogView : ContentDialog
 {
     public AddAlertDialogView()
     {
         InitializeComponent();
     }
 
-    Type IStyleable.StyleKey => typeof(ContentDialog);
+    protected override Type StyleKeyOverride => typeof(ContentDialog);
 
     private async void AddTag_OnClick(object? sender, RoutedEventArgs e)
     {
