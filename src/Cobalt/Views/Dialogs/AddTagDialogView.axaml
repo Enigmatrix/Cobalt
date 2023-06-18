@@ -12,9 +12,8 @@
                    PrimaryButtonText="Ok"
                    CloseButtonText="Cancel"
                    IsPrimaryButtonEnabled="{Binding !HasErrors}"
-                   DefaultButton="Primary"
                    PrimaryButtonCommand="{Binding AddCommand}"
-                   x:Name="This"
+                   x:Name="This" DefaultButton="Primary"
                    x:Class="Cobalt.Views.Dialogs.AddTagDialogView">
     <Design.DataContext>
         <!-- ReSharper disable once Xaml.ConstructorWarning -->
@@ -48,11 +47,11 @@
             <TextBlock Text="Apps" Theme="{StaticResource BodyStrongTextBlockStyle}" />
 
             <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,8">
-
+                <!--TODO select the first item by default, makes life easier-->
                 <AutoCompleteBox Grid.Column="0" x:Name="SearchApps" AsyncPopulator="{Binding SearchAppsHandler}"
                                  Watermark="Search apps to add" SelectedItem="{Binding #This.SelectedApp}"
                                  CornerRadius="4,0,0,4" MinHeight="32" FilterMode="None"
-                                 KeyDown="Search_OnKeyDown" ItemSelector="{Binding #This.AppTextSelector}">
+                                 KeyUp="Search_OnKeyUp" ItemSelector="{Binding #This.AppTextSelector}">
                     <AutoCompleteBox.ItemTemplate>
                         <DataTemplate DataType="entities:AppViewModel">
                             <StackPanel Orientation="Horizontal" Spacing="8" Margin="0, 4">

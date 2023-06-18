@@ -32,19 +32,28 @@ public partial class AddTagDialogView : ContentDialog, IStyleable
 
     Type IStyleable.StyleKey => typeof(ContentDialog);
 
-    private void Search_OnKeyDown(object? sender, KeyEventArgs e)
+    private void Search_OnKeyUp(object? sender, KeyEventArgs e)
     {
-        if (e.Key != Key.Enter || SelectedApp == null) return;
-
+        if (e.Key != Key.Enter) return;
         AddSelectedApp();
     }
 
     private void AddSelectedApp()
     {
         var toAdd = SelectedApp;
+        if (toAdd == null) return;
         ((AddTagDialogViewModel)DataContext!).AddApp(toAdd);
 
         SearchApps.Text = ""; // this also clears SelectedApp ...
+    }
+
+    // TODO create a common class, put it there
+    protected override void OnKeyUp(KeyEventArgs e)
+    {
+        // Override the ContentDialog PrimaryButton trigger on Enter key
+        if (e is { Handled: false, Key: Key.Enter }) return;
+
+        base.OnKeyUp(e);
     }
 
     private void Button_OnClick(object? sender, RoutedEventArgs e)

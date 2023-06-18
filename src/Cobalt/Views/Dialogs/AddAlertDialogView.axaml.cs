@@ -1,4 +1,5 @@
 using System;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Styling;
 using Cobalt.Common.Data;
@@ -31,5 +32,13 @@ public partial class AddAlertDialogView : ContentDialog, IStyleable
                 conn)
         };
         var result = await dialog.ShowAsync();
+    }
+
+    protected override void OnKeyUp(KeyEventArgs e)
+    {
+        // Override the ContentDialog PrimaryButton trigger on Enter key
+        if (e is { Handled: false, Key: Key.Enter }) return;
+
+        base.OnKeyUp(e);
     }
 }

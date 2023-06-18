@@ -58,12 +58,12 @@ public partial class AddTagDialogViewModel : ObservableValidator
         // TODO fts in the future
         var apps = await db.Apps
             .Where(app => app.Name.ToLower().Contains(query.ToLower()))
-            .ToListAsync(cancellationToken: cancelToken);
+            .ToListAsync(cancelToken);
         return apps.Select(app => _cache.App(app)).Except(Apps).Select(x => (object)x);
     }
 
-    // TODO 'Enter' key in ContentDialog closes it... wtf
 
+    // TODO set this as the dialog's result
     [RelayCommand(CanExecute = nameof(CanAdd))]
     public void Add()
     {
