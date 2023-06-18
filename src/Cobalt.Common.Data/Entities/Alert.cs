@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
+using Cobalt.Common.Utils;
 
 namespace Cobalt.Common.Data.Entities;
 
@@ -57,7 +58,7 @@ public class Alert : IEntity
                     _tag = tag.Tag;
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(value)); // TODO
+                    throw new DiscriminatedUnionException<Target>(nameof(Target));
             }
         }
     }
@@ -83,7 +84,7 @@ public class Alert : IEntity
                 1 => new Action.Dim(
                     TimeSpan.FromTicks(_actionInt0 ?? throw new ArgumentNullException(nameof(_actionInt0)))),
                 2 => new Action.Message(_actionText0 ?? throw new ArgumentNullException(nameof(_actionText0))),
-                _ => throw new InvalidOperationException() // TODO replace with DU Exception
+                _ => throw new DiscriminatedUnionException<Action>(nameof(Action))
             };
         set
         {
@@ -101,7 +102,7 @@ public class Alert : IEntity
                     _actionText0 = message.Text;
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(value)); // TODO
+                    throw new DiscriminatedUnionException<Action>(nameof(Action));
             }
         }
     }

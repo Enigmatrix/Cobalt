@@ -2,6 +2,7 @@
 using System.ComponentModel.DataAnnotations;
 using Cobalt.Common.Data;
 using Cobalt.Common.Data.Entities;
+using Cobalt.Common.Utils;
 using Cobalt.Common.ViewModels.Entities;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -72,7 +73,7 @@ public partial class AddAlertDialogViewModel : ObservableValidator
             TimeFrame.Daily => TimeSpan.FromDays(1),
             TimeFrame.Weekly => TimeSpan.FromDays(7),
             TimeFrame.Monthly => TimeSpan.FromDays(31),
-            _ => throw new ArgumentOutOfRangeException() // TODO
+            _ => throw new DiscriminatedUnionException<TimeFrame>(nameof(TimeFrame))
         };
 
         var invalid = instance.UsageLimit.Ticks <= 0 || instance.UsageLimit > maxUsageLimit;

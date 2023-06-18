@@ -1,5 +1,6 @@
 ﻿using Cobalt.Common.Data;
 using Cobalt.Common.Data.Entities;
+using Cobalt.Common.Utils;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.EntityFrameworkCore;
 using ActionEntity = Cobalt.Common.Data.Entities.Action;
@@ -39,7 +40,7 @@ public partial class AlertViewModel : EditableEntityViewModel<Alert>
         {
             TargetViewModel.AppTarget app => new Target.AppTarget(app.App.Entity),
             TargetViewModel.TagTarget tag => new Target.TagTarget(tag.Tag.Entity),
-            _ => throw new ArgumentOutOfRangeException() // TODO
+            _ => throw new DiscriminatedUnionException<TargetViewModel>(nameof(Target))
         };
         Entity.UsageLimit = UsageLimit;
         Entity.TimeFrame = TimeFrame;

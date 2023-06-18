@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
+using Cobalt.Common.Utils;
 
 namespace Cobalt.Common.Data.Entities;
 
@@ -25,7 +26,7 @@ public class App : IEntity, IHasName, IHasColor
             {
                 0 => new AppIdentity.Win32(_identityText0),
                 1 => new AppIdentity.Uwp(_identityText0),
-                _ => throw new InvalidOperationException() // TODO throw custom exception
+                _ => throw new DiscriminatedUnionException<AppIdentity>(nameof(Identity))
             };
         set
         {
@@ -40,7 +41,7 @@ public class App : IEntity, IHasName, IHasColor
                     _identityText0 = uwp.Aumid;
                     break;
                 default:
-                    throw new InvalidOperationException(); // TODO throw custom exception
+                    throw new DiscriminatedUnionException<AppIdentity>(nameof(Identity));
             }
         }
     }
