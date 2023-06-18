@@ -1,4 +1,5 @@
-﻿using Cobalt.Common.Data.Entities;
+﻿using System.Diagnostics;
+using Cobalt.Common.Data.Entities;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -65,6 +66,9 @@ public class CobaltContext : DbContext
         opts.UseSqlite(_connStr);
 
         opts.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
+        // TODO for debugging only! Remove in prod
+
+        opts.LogTo(log => Trace.WriteLine(log));
     }
 
     public Stream AppIcon(long appId)

@@ -1,0 +1,110 @@
+<fla:ContentDialog xmlns="https://github.com/avaloniaui"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                   xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                   xmlns:fla="clr-namespace:FluentAvalonia.UI.Controls;assembly=FluentAvalonia"
+                   xmlns:dialogs="clr-namespace:Cobalt.Common.ViewModels.Dialogs;assembly=Cobalt.Common.ViewModels"
+                   xmlns:system="clr-namespace:System;assembly=System.Runtime"
+                   xmlns:converters="clr-namespace:Cobalt.Converters"
+                   xmlns:entities="clr-namespace:Cobalt.Common.ViewModels.Entities;assembly=Cobalt.Common.ViewModels.Entities"
+                   mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+                   Title="Add Tag"
+                   PrimaryButtonText="Ok"
+                   CloseButtonText="Cancel"
+                   IsPrimaryButtonEnabled="{Binding !HasErrors}"
+                   DefaultButton="Primary"
+                   PrimaryButtonCommand="{Binding AddCommand}"
+                   x:Name="This"
+                   x:Class="Cobalt.Views.Dialogs.AddTagDialogView">
+    <Design.DataContext>
+        <!-- ReSharper disable once Xaml.ConstructorWarning -->
+        <dialogs:AddTagDialogViewModel />
+    </Design.DataContext>
+
+    <fla:ContentDialog.Resources>
+        <converters:StreamToBitmapConverter x:Key="StreamToBitmapConverter" />
+        <converters:StringToColorConverter x:Key="StringToColorConverter" />
+    </fla:ContentDialog.Resources>
+
+    <fla:ContentDialog.Styles>
+        <Style Selector="#Color /template/ DropDownButton">
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+        </Style>
+    </fla:ContentDialog.Styles>
+
+    <StackPanel Orientation="Vertical" Spacing="16">
+        <StackPanel Orientation="Vertical" Spacing="8">
+            <TextBlock Text="Name" Theme="{StaticResource BodyStrongTextBlockStyle}" />
+            <TextBox Text="{Binding Name}" />
+        </StackPanel>
+
+        <StackPanel Orientation="Vertical" Spacing="8">
+            <TextBlock Text="Color" Theme="{StaticResource BodyStrongTextBlockStyle}" />
+            <ColorPicker Width="{x:Static system:Double.NaN}" x:Name="Color"
+                         Color="{Binding Color, Converter={StaticResource StringToColorConverter}}" />
+        </StackPanel>
+
+        <StackPanel Orientation="Vertical" Spacing="8">
+            <TextBlock Text="Apps" Theme="{StaticResource BodyStrongTextBlockStyle}" />
+
+            <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,8">
+
+                <AutoCompleteBox Grid.Column="0" x:Name="SearchApps" ItemsSource="{Binding AllApps}"
+                                 Watermark="Search apps to add" SelectedItem="{Binding #This.SelectedApp}"
+                                 CornerRadius="4,0,0,4" MinHeight="32"
+                                 KeyDown="Search_OnKeyDown" ItemSelector="{Binding #This.AppTextSelector}">
+                    <AutoCompleteBox.ItemTemplate>
+                        <DataTemplate DataType="entities:AppViewModel">
+                            <StackPanel Orientation="Horizontal" Spacing="8" Margin="0, 4">
+                                <Image Width="32" Height="32"
+                                       Source="{Binding Icon, Converter={StaticResource StreamToBitmapConverter}}" />
+                                <StackPanel Orientation="Vertical" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding Name}" Theme="{StaticResource BodyStrongTextBlockStyle}" />
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{Binding Description}"
+                                                   Theme="{StaticResource CaptionTextBlockStyle}" />
+                                        <TextBlock Text=" by " Theme="{StaticResource CaptionTextBlockStyle}" />
+                                        <TextBlock Text="{Binding Company}"
+                                                   Theme="{StaticResource CaptionTextBlockStyle}" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </StackPanel>
+                        </DataTemplate>
+
+                    </AutoCompleteBox.ItemTemplate>
+                </AutoCompleteBox>
+
+                <Button Grid.Column="1" IsEnabled="{Binding !!#This.SelectedApp}"
+                        CornerRadius="0,4,4,0" MinHeight="32" Click="Button_OnClick">
+                    <fla:SymbolIcon Symbol="Accept" />
+                </Button>
+
+            </Grid>
+
+            <ItemsRepeater ItemsSource="{Binding Apps}">
+                <ItemsRepeater.Layout>
+                    <WrapLayout />
+                </ItemsRepeater.Layout>
+                <ItemsRepeater.ItemTemplate>
+                    <DataTemplate DataType="entities:AppViewModel">
+                        <fla:FABorder CornerRadius="4" Background="{DynamicResource ControlFillColorDefaultBrush}"
+                                      Height="32" Margin="0,0,4,4">
+                            <StackPanel Orientation="Horizontal">
+                                <Image Width="20" Height="20" Margin="8, 0"
+                                       Source="{Binding Icon, Converter={StaticResource StreamToBitmapConverter}}" />
+                                <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
+                                <Button CornerRadius="4" Background="Transparent" BorderThickness="0" Width="32"
+                                        Height="32" Command="{Binding #This.DataContext.RemoveAppCommand}"
+                                        CommandParameter="{Binding}">
+                                    <fla:FAPathIcon Width="8" Height="8"
+                                                    Data="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" />
+                                </Button>
+                            </StackPanel>
+                        </fla:FABorder>
+                    </DataTemplate>
+                </ItemsRepeater.ItemTemplate>
+            </ItemsRepeater>
+        </StackPanel>
+    </StackPanel>
+
+</fla:ContentDialog>

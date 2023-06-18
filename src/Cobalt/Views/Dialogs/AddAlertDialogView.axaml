@@ -36,7 +36,7 @@
                               ItemsSource="{Binding AllApps}" HorizontalAlignment="Stretch">
                         <ComboBox.ItemTemplate>
                             <DataTemplate DataType="entities:AppViewModel">
-                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                <StackPanel Orientation="Horizontal" Spacing="8" Margin="4,0">
                                     <Image Width="20" Height="20"
                                            Source="{Binding Icon, Converter={StaticResource StreamToBitmap}}" />
                                     <TextBlock Text="{Binding Name}" Theme="{StaticResource BodyStrongTextBlockStyle}"
@@ -52,9 +52,8 @@
                         <ComboBox Grid.Column="0" IsEnabled="{Binding #TagTarget.IsChecked}" IsTextSearchEnabled="True"
                                   MinHeight="32" ItemsSource="{Binding AllTags}" HorizontalAlignment="Stretch"
                                   CornerRadius="4,0,0,4" />
-                        <!-- TODO attach functionality here -->
                         <Button Grid.Column="1" MinHeight="32" IsEnabled="{Binding #TagTarget.IsChecked}"
-                                CornerRadius="0,4,4,0" BorderThickness="0,1,1,1">
+                                CornerRadius="0,4,4,0" BorderThickness="0,1,1,1" Click="AddTag_OnClick">
                             <fla:SymbolIcon Symbol="Add" />
                         </Button>
                     </Grid>
