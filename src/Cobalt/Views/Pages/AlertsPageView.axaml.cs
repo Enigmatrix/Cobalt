@@ -1,13 +1,8 @@
 using Avalonia.Controls;
-using Avalonia.Interactivity;
-using Cobalt.Common.Data;
-using Cobalt.Common.Infrastructure;
 using Cobalt.Common.Utils;
-using Cobalt.Common.ViewModels.Dialogs;
 using Cobalt.Common.ViewModels.Entities;
+using Cobalt.Common.ViewModels.Pages;
 using Cobalt.Views.Dialogs;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Cobalt.Views.Pages;
 
@@ -15,19 +10,19 @@ public partial class AlertsPageView : UserControl
 {
     public AlertsPageView()
     {
+        this.WhenActivated(() =>
+        {
+            var vm = (AlertsPageViewModel)DataContext!;
+            var addTagInteractionCleanup = vm.AddAlertInteraction.RegisterHandler(async ctx =>
+            {
+                var alert = await ctx.Input.ShowDialog<Unit, AlertViewModel, AddAlertDialogView>();
+                if (alert == null) return;
+                ctx.SetOutput(alert);
+            });
+
+            return () => { addTagInteractionCleanup(); };
+        });
+
         InitializeComponent();
-    }
-
-    private async void Button_OnClick(object? sender, RoutedEventArgs e)
-    {
-        var resolve = ServiceManager.Services;
-        var conn = resolve.GetRequiredService<IDbContextFactory<CobaltContext>>();
-        var cache = resolve.GetRequiredService<IEntityViewModelCache>();
-        var dialog =
-            new AddAlertDialogViewModel(
-                cache,
-                conn, new AddTagDialogViewModel(cache, conn));
-
-        var res = await dialog.ShowDialog<Unit, AlertViewModel, AddAlertDialogView>();
     }
 }

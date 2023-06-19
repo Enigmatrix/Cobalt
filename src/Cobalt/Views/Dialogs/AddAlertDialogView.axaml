@@ -54,7 +54,8 @@
                                   MinHeight="32" ItemsSource="{Binding AllTags}" HorizontalAlignment="Stretch"
                                   CornerRadius="4,0,0,4" />
                         <Button Grid.Column="1" MinHeight="32" IsEnabled="{Binding #TagTarget.IsChecked}"
-                                CornerRadius="0,4,4,0" BorderThickness="0,1,1,1" Click="AddTag_OnClick">
+                                CornerRadius="0,4,4,0" BorderThickness="0,1,1,1"
+                                Command="{Binding AddTagAndSetTargetCommand}">
                             <fla:SymbolIcon Symbol="Add" />
                         </Button>
                     </Grid>

@@ -3,12 +3,16 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:fla="clr-namespace:FluentAvalonia.UI.Controls;assembly=FluentAvalonia"
+             xmlns:pages="clr-namespace:Cobalt.Common.ViewModels.Pages;assembly=Cobalt.Common.ViewModels"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="Cobalt.Views.Pages.AlertsPageView">
+    <Design.DataContext>
+        <pages:AlertsPageViewModel />
+    </Design.DataContext>
     <Grid RowDefinitions="Auto,*">
         <Grid Grid.Row="0" Margin="24, 16" ColumnDefinitions="Auto,*,Auto">
             <TextBlock Grid.Column="0" Theme="{StaticResource TitleTextBlockStyle}">Alerts</TextBlock>
-            <Button Grid.Column="2" Classes="accent" Click="Button_OnClick">
+            <Button Grid.Column="2" Classes="accent" Command="{Binding AddAlertCommand}">
                 <StackPanel Spacing="8" Orientation="Horizontal">
                     <fla:SymbolIcon Symbol="Add" />
                     <TextBlock Text="Add" />

@@ -1,5 +1,8 @@
 ﻿using Cobalt.Common.Data;
+using Cobalt.Common.ViewModels;
+using Cobalt.Common.ViewModels.Dialogs;
 using Cobalt.Common.ViewModels.Entities;
+using Cobalt.Common.ViewModels.Pages;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -37,11 +40,35 @@ public class ServiceManager
         _serviceColl
             .AddSingleton<IConfiguration>(config)
             .AddDbContextFactory<CobaltContext>()
-            .AddSingleton<IEntityViewModelCache, EntityViewModelCache>();
+            .AddSingleton<IEntityViewModelCache, EntityViewModelCache>()
+
+            // Dialogs
+            .AddTransientWithFactory<AddAlertDialogViewModel>()
+            .AddTransientWithFactory<AddTagDialogViewModel>()
+
+            // Pages
+            .AddSingleton<AlertsPageViewModel>()
+            .AddSingleton<AppsPageViewModel>()
+            .AddSingleton<HistoryPageViewModel>()
+            .AddSingleton<HomePageViewModel>()
+            .AddSingleton<SettingsPageViewModel>()
+            .AddSingleton<TagsPageViewModel>()
+            .AddSingleton<MainWindowViewModel>();
     }
 
     public IServiceProvider Build()
     {
         return _serviceColl.BuildServiceProvider();
+    }
+}
+
+public static class ServiceCollectionExtensions
+{
+    public static IServiceCollection AddTransientWithFactory<T>(this IServiceCollection coll)
+        where T : class
+    {
+        return coll
+            .AddTransient<T>()
+            .AddSingleton<Func<T>>(prov => prov.GetRequiredService<T>);
     }
 }

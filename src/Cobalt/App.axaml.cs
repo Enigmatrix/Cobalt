@@ -3,8 +3,10 @@ using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Data.Core.Plugins;
 using Avalonia.Markup.Xaml;
+using Cobalt.Common.Infrastructure;
 using Cobalt.Common.ViewModels;
 using Cobalt.Views;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Cobalt;
 
@@ -24,7 +26,7 @@ public class App : Application
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             desktop.MainWindow = new MainWindow
             {
-                DataContext = new MainWindowViewModel()
+                DataContext = ServiceManager.Services.GetRequiredService<MainWindowViewModel>()
             };
 
         base.OnFrameworkInitializationCompleted();

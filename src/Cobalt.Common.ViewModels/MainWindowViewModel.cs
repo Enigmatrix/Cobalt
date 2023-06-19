@@ -5,16 +5,31 @@ namespace Cobalt.Common.ViewModels;
 
 public partial class MainWindowViewModel : ViewModelBase
 {
-    private readonly AlertsPageViewModel _alertsPage = new();
-    private readonly AppsPageViewModel _appsPage = new();
-    private readonly HistoryPageViewModel _historyPage = new();
-    private readonly HomePageViewModel _homePage = new();
-    private readonly SettingsPageViewModel _settingsPage = new();
-    private readonly TagsPageViewModel _tagsPage = new();
+    private readonly AlertsPageViewModel _alertsPage;
+    private readonly AppsPageViewModel _appsPage;
+    private readonly HistoryPageViewModel _historyPage;
+    private readonly HomePageViewModel _homePage;
+    private readonly SettingsPageViewModel _settingsPage;
+    private readonly TagsPageViewModel _tagsPage;
+
     [ObservableProperty] private PageViewModelBase _currentPage;
 
-    public MainWindowViewModel()
+    public MainWindowViewModel(
+        AlertsPageViewModel alertsPage,
+        AppsPageViewModel appsPage,
+        HistoryPageViewModel historyPage,
+        HomePageViewModel homePage,
+        SettingsPageViewModel settingsPage,
+        TagsPageViewModel tagsPage
+    )
     {
+        _alertsPage = alertsPage;
+        _appsPage = appsPage;
+        _historyPage = historyPage;
+        _homePage = homePage;
+        _settingsPage = settingsPage;
+        _tagsPage = tagsPage;
+
         CurrentPage = _homePage;
     }
 

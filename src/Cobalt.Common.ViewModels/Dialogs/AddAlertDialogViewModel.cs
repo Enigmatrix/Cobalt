@@ -4,6 +4,7 @@ using Cobalt.Common.Data;
 using Cobalt.Common.Data.Entities;
 using Cobalt.Common.Utils;
 using Cobalt.Common.ViewModels.Entities;
+using Cobalt.Common.ViewModels.Interactions;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.EntityFrameworkCore;
@@ -13,6 +14,7 @@ namespace Cobalt.Common.ViewModels.Dialogs;
 
 public partial class AddAlertDialogViewModel : DialogViewModelBase<Unit, AlertViewModel>
 {
+    private readonly Func<AddTagDialogViewModel> _addTagDialogFactory;
     private readonly IEntityViewModelCache _cache;
 
     private readonly IDbContextFactory<CobaltContext> _conn;
@@ -21,7 +23,7 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<Unit, AlertVi
     private ActionEntity? _action;
 
     [Required] [NotifyDataErrorInfo] [ObservableProperty]
-    private Target? _target;
+    private TargetViewModel? _target;
 
     private TimeFrame _timeFrame = TimeFrame.Daily;
 
@@ -31,15 +33,17 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<Unit, AlertVi
     private TimeSpan _usageLimit;
 
     public AddAlertDialogViewModel(IEntityViewModelCache cache, IDbContextFactory<CobaltContext> conn,
-        AddTagDialogViewModel addAddTagDialogViewModel)
+        Func<AddTagDialogViewModel> addTagDialogFactory)
     {
         _conn = conn;
-        AddTagDialogViewModel = addAddTagDialogViewModel;
         _cache = cache;
+
+        _addTagDialogFactory = addTagDialogFactory;
+        AddTagInteraction = new Interaction<AddTagDialogViewModel, TagViewModel>();
         ValidateAllProperties();
     }
 
-    public AddTagDialogViewModel AddTagDialogViewModel { get; }
+    public Interaction<AddTagDialogViewModel, TagViewModel> AddTagInteraction { get; }
 
     public TimeFrame TimeFrame
     {
@@ -47,6 +51,7 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<Unit, AlertVi
         set
         {
             SetProperty(ref _timeFrame, value, true);
+            OnPropertyChanged(nameof(MaxUsageLimit));
             ValidateProperty(UsageLimit, nameof(UsageLimit));
         }
     }
@@ -69,10 +74,8 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<Unit, AlertVi
         }
     }
 
-    public static ValidationResult? ValidateUsageLimit(string _, ValidationContext context)
-    {
-        var instance = (AddAlertDialogViewModel)context.ObjectInstance;
-        var maxUsageLimit = instance.TimeFrame switch
+    public TimeSpan MaxUsageLimit =>
+        TimeFrame switch
         {
             TimeFrame.Daily => TimeSpan.FromDays(1),
             TimeFrame.Weekly => TimeSpan.FromDays(7),
@@ -80,9 +83,21 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<Unit, AlertVi
             _ => throw new DiscriminatedUnionException<TimeFrame>(nameof(TimeFrame))
         };
 
-        var invalid = instance.UsageLimit.Ticks <= 0 || instance.UsageLimit > maxUsageLimit;
+    public static ValidationResult? ValidateUsageLimit(string _, ValidationContext context)
+    {
+        var instance = (AddAlertDialogViewModel)context.ObjectInstance;
+
+        var invalid = instance.UsageLimit.Ticks <= 0 || instance.UsageLimit > instance.MaxUsageLimit;
 
         return invalid ? null : new ValidationResult("Usage Limit is longer than maximum duration for Time Frame");
+    }
+
+    [RelayCommand]
+    public async Task AddTagAndSetTarget()
+    {
+        var tag = await AddTagInteraction.Handle(_addTagDialogFactory());
+        if (tag == null) return;
+        Target = new TargetViewModel.TagTarget(tag);
     }
 
     [RelayCommand(CanExecute = nameof(CanAdd))]
