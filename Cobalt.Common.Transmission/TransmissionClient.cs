@@ -5,7 +5,7 @@ using System.Reactive.Subjects;
 using System.Threading;
 using Cobalt.Common.Transmission.Messages;
 using Cobalt.Common.Transmission.Util;
-using ProtoBuf;
+using Newtonsoft.Json;
 using Serilog;
 
 namespace Cobalt.Common.Transmission
@@ -37,17 +37,18 @@ namespace Cobalt.Common.Transmission
 
             _listeningThread = new Thread(() =>
             {
-                while (_keepAlive)
-                    try
-                    {
-                        if (Serializer.NonGeneric.TryDeserializeWithLengthPrefix(_pipe, PrefixStyle.Base128,
-                            MessageBase.MessageTypeResolver, out var msg))
-                            _messages.OnNext((MessageBase) msg);
-                    }
-                    catch (Exception e)
-                    {
-                        Log.Fatal(e, "Pipe read exception");
-                    }
+                try
+                {
+                    while (_keepAlive)
+                        using (var reader = new JsonTextReader(streamReader) {CloseInput = false})
+                        {
+                            SingalMessageReceived(serializer.Deserialize<MessageBase>(reader));
+                        }
+                }
+                catch (Exception e)
+                {
+                    Log.Error(e, "Error on client listener thread: ");
+                }
             });
             _listeningThread.Start();
         }
