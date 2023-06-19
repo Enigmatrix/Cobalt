@@ -1,7 +1,6 @@
 ﻿using System;
+using System.IO;
 using System.IO.Pipes;
-using System.Reactive.Linq;
-using System.Reactive.Subjects;
 using System.Threading;
 using Cobalt.Common.Transmission.Messages;
 using Cobalt.Common.Transmission.Util;
@@ -12,20 +11,17 @@ namespace Cobalt.Common.Transmission
 {
     public interface ITransmissionClient : IDisposable
     {
-        IObservable<MessageBase> Messages();
-        IObservable<T> Messages<T>() where T : MessageBase;
+        event EventHandler<MessageReceivedArgs> MessageReceived;
     }
 
     public class TransmissionClient : ITransmissionClient
     {
         private readonly Thread _listeningThread;
-        private readonly Subject<MessageBase> _messages;
         private readonly NamedPipeClientStream _pipe;
         private bool _keepAlive;
 
         public TransmissionClient()
         {
-            _messages = new Subject<MessageBase>();
             _pipe = new NamedPipeClientStream(
                 Utilities.LocalComputer,
                 Utilities.PipeName,
@@ -34,6 +30,11 @@ namespace Cobalt.Common.Transmission
             _pipe.Connect(Utilities.PipeConnectionTimeout);
             //_pipe.ReadMode = PipeTransmissionMode.Message;
             _keepAlive = true;
+
+            //TODO wtf this is bugging out, causing inconsitent reads (out of order/delayed), creating another json reader is a workaround
+            //var reader = new JsonTextReader(new StreamReader(_pipe)) {SupportMultipleContent = true};
+            var serializer = Utilities.CreateSerializer();
+            var streamReader = new StreamReader(_pipe);
 
             _listeningThread = new Thread(() =>
             {
@@ -53,22 +54,18 @@ namespace Cobalt.Common.Transmission
             _listeningThread.Start();
         }
 
-        public IObservable<MessageBase> Messages()
-        {
-            return _messages;
-        }
-
-        public IObservable<T> Messages<T>()
-            where T : MessageBase
-        {
-            return Messages().OfType<T>();
-        }
-
         public void Dispose()
         {
             _keepAlive = false;
             _pipe.Dispose();
-            _listeningThread.Abort();
+        }
+
+        public event EventHandler<MessageReceivedArgs> MessageReceived;
+
+        private void SingalMessageReceived(MessageBase message)
+        {
+            if (MessageReceived != null)
+                MessageReceived(this, new MessageReceivedArgs(message));
         }
     }
 }
