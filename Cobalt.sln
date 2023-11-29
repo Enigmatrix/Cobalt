@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.8.34316.72
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cobalt.Common.Data", "src\Cobalt.Common.Data\Cobalt.Common.Data.csproj", "{455D2138-06AB-4BFD-8119-63DB94F27377}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleApp1", "src\ConsoleApp1\ConsoleApp1.csproj", "{C6BA03F5-16EE-4233-AA3D-F4FB1F7F68F8}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{455D2138-06AB-4BFD-8119-63DB94F27377}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{455D2138-06AB-4BFD-8119-63DB94F27377}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{455D2138-06AB-4BFD-8119-63DB94F27377}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{455D2138-06AB-4BFD-8119-63DB94F27377}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C6BA03F5-16EE-4233-AA3D-F4FB1F7F68F8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C6BA03F5-16EE-4233-AA3D-F4FB1F7F68F8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C6BA03F5-16EE-4233-AA3D-F4FB1F7F68F8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C6BA03F5-16EE-4233-AA3D-F4FB1F7F68F8}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {6ACB9071-DC82-4B35-977C-D09BE2FE9156}
+	EndGlobalSection
+EndGlobal
