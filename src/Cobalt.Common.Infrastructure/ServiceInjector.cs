@@ -7,18 +7,19 @@ namespace Cobalt.Common.Infrastructure;
 
 public class ServiceInjector
 {
-    private readonly IServiceProvider _serviceProvider;
-
-#if DEBUG
-    private const string AppSettings = "appsettings.Debug.json";
-#else
+    private const string DebugAppSettings = "appsettings.Debug.json";
     private const string AppSettings = "appsettings.json";
-#endif
+    private readonly IServiceProvider _serviceProvider;
 
     public ServiceInjector(ServiceCollection? services = null)
     {
         // Initialize Configuration
-        var configuration = new ConfigurationBuilder().AddJsonFile(AppSettings).Build();
+        var configuration = new ConfigurationBuilder()
+            .AddJsonFile(AppSettings)
+#if DEBUG
+            .AddJsonFile(DebugAppSettings)
+#endif
+            .Build();
 
         // Initialize Serilog
         Log.Logger = new LoggerConfiguration().ReadFrom.Configuration(configuration).CreateLogger();
