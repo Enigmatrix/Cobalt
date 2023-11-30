@@ -1,4 +1,5 @@
 ﻿using Cobalt.Common.Data;
+using Cobalt.Common.ViewModels;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
@@ -30,7 +31,13 @@ public class ServiceInjector
             .AddPooledDbContextFactory<QueryContext>(options => QueryContext.ConfigureFor(options,
                 configuration.GetConnectionString(nameof(QueryContext)) ??
                 throw new InvalidOperationException("Connection string not found")));
+        RegisterViewModels(services);
         _serviceProvider = services.BuildServiceProvider();
+    }
+
+    public static void RegisterViewModels(ServiceCollection services)
+    {
+        services.AddSingleton<MainViewModel>();
     }
 
     public T Resolve<T>() where T : notnull

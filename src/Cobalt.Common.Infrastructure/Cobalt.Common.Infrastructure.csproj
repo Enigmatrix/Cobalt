@@ -20,6 +20,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Cobalt.Common.Data\Cobalt.Common.Data.csproj" />
     <ProjectReference Include="..\Cobalt.Common.Util\Cobalt.Common.Util.csproj" />
+    <ProjectReference Include="..\Cobalt.Common.ViewModels\Cobalt.Common.ViewModels.csproj" />
   </ItemGroup>
 
 </Project>
