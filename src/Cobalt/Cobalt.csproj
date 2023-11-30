@@ -43,4 +43,20 @@
 		<ProjectReference Include="..\Cobalt.Common.Infrastructure\Cobalt.Common.Infrastructure.csproj" />
 		<ProjectReference Include="..\Cobalt.Common.ViewModels\Cobalt.Common.ViewModels.csproj" />
 	</ItemGroup>
+
+
+	<ItemGroup>
+	  <Compile Update="Views\Pages\AlertsPage.axaml.cs">
+	    <DependentUpon>AlertsPage.axaml</DependentUpon>
+	  </Compile>
+	  <Compile Update="Views\Pages\HistoryPage.axaml.cs">
+	    <DependentUpon>HistoryPage.axaml</DependentUpon>
+	  </Compile>
+	  <Compile Update="Views\Pages\TagsPage.axaml.cs">
+	    <DependentUpon>TagsPage.axaml</DependentUpon>
+	  </Compile>
+	  <Compile Update="Views\Pages\AppsPage.axaml.cs">
+	    <DependentUpon>AppsPage.axaml</DependentUpon>
+	  </Compile>
+	</ItemGroup>
 </Project>
