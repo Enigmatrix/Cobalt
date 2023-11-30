@@ -21,9 +21,8 @@ public enum TimeFrame
     Monthly
 }
 
-public class Alert
+public class Alert : IEntity
 {
-    public long Id { get; set; }
     public App? App { get; set; }
     public Tag? Tag { get; set; }
     public TimeSpan UsageLimit { get; set; }
@@ -31,4 +30,5 @@ public class Alert
     public required TriggerAction TriggerAction { get; set; }
     public List<Reminder> Reminders { get; } = new();
     public List<AlertEvent> AlertEvents { get; } = new();
+    public long Id { get; set; }
 }

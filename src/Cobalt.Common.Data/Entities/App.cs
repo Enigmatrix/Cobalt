@@ -12,10 +12,8 @@ public record AppIdentity(bool IsWin32, string PathOrAumid)
     public sealed record UWP(string Aumid) : AppIdentity(true, Aumid);
 }
 
-public class App
+public class App : IEntity
 {
-    public long Id { get; set; }
-
     // This property is used to check if the App details have been finalized. If not,
     // all fields except Id, Identity and Initialized will be set to empty values.
     public bool Initialized { get; set; }
@@ -26,5 +24,7 @@ public class App
     public required AppIdentity Identity { get; set; }
 
     public List<Tag> Tags { get; } = new();
+
+    public long Id { get; set; }
     // Blob
 }

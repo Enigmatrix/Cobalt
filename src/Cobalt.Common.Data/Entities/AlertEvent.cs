@@ -1,8 +1,8 @@
 ﻿namespace Cobalt.Common.Data.Entities;
 
-public class AlertEvent
+public class AlertEvent : IEntity
 {
-    public long Id { get; set; }
     public required Alert Alert { get; set; }
     public required DateTime Timestamp { get; set; }
+    public long Id { get; set; }
 }
