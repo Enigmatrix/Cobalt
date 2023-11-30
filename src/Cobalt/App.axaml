@@ -1,11 +1,15 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:fluentStyle="clr-namespace:FluentAvalonia.Styling;assembly=FluentAvalonia"
              x:Class="Cobalt.App"
+             xmlns:local="using:Cobalt"
              RequestedThemeVariant="Default">
-    <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
+             <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
 
+    <Application.DataTemplates>
+        <local:ViewLocator/>
+    </Application.DataTemplates>
+  
     <Application.Styles>
-        <fluentStyle:FluentAvaloniaTheme />
+        <FluentTheme />
     </Application.Styles>
 </Application>
