@@ -6,6 +6,13 @@ namespace Cobalt.Common.Data;
 
 public class QueryContext : DbContext
 {
+    private readonly string _path;
+
+    public QueryContext(string path)
+    {
+        _path = path;
+    }
+
     public DbSet<App> Apps { get; set; } = null!;
     public DbSet<Session> Session { get; set; } = null!;
     public DbSet<Usage> Usages { get; set; } = null!;
@@ -18,7 +25,7 @@ public class QueryContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        optionsBuilder.UseSqlite("Data Source=file.db").UseSnakeCaseNamingConvention();
+        optionsBuilder.UseSqlite($"Data Source={_path}").UseSnakeCaseNamingConvention();
     }
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
