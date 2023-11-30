@@ -1,8 +1,7 @@
 ﻿using ReactiveUI;
 
-namespace Cobalt.ViewModels
+namespace Cobalt.ViewModels;
+
+public class ViewModelBase : ReactiveObject
 {
-    public class ViewModelBase : ReactiveObject
-    {
-    }
 }
