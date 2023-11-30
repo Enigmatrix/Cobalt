@@ -1,5 +1,6 @@
 ﻿using Cobalt.Common.Data;
 using Cobalt.Common.ViewModels;
+using Cobalt.Common.ViewModels.Pages;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
@@ -38,6 +39,13 @@ public class ServiceInjector
     public static void RegisterViewModels(ServiceCollection services)
     {
         services.AddSingleton<MainViewModel>();
+
+        // Pages
+        services.AddSingleton<HomePageViewModel>();
+        services.AddSingleton<AppsPageViewModel>();
+        services.AddSingleton<TagsPageViewModel>();
+        services.AddSingleton<AlertsPageViewModel>();
+        services.AddSingleton<HistoryPageViewModel>();
     }
 
     public T Resolve<T>() where T : notnull
