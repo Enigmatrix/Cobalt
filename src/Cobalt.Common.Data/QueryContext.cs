@@ -6,11 +6,8 @@ namespace Cobalt.Common.Data;
 
 public class QueryContext : DbContext
 {
-    private readonly string _path;
-
-    public QueryContext(string path)
+    public QueryContext(DbContextOptions<QueryContext> options) : base(options)
     {
-        _path = path;
     }
 
     public DbSet<App> Apps { get; set; } = null!;
@@ -23,9 +20,13 @@ public class QueryContext : DbContext
     public DbSet<AlertEvent> AlertEvents { get; set; } = null!;
     public DbSet<ReminderEvent> ReminderEvents { get; set; } = null!;
 
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    public static void ConfigureFor(DbContextOptionsBuilder optionsBuilder, string connectionString)
     {
-        optionsBuilder.UseSqlite($"Data Source={_path}").UseSnakeCaseNamingConvention();
+        optionsBuilder
+            .UseSqlite(connectionString)
+            // We will be doing massive reads, and very little writes
+            .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)
+            .UseSnakeCaseNamingConvention();
     }
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)

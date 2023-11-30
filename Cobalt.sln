@@ -11,6 +11,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cobalt.Common.Util", "src\C
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cobalt.Tests", "src\Cobalt.Tests\Cobalt.Tests.csproj", "{3AB8DA83-6C38-4E09-9FDC-E4A5C7832A8B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cobalt.Common.Infrastructure", "src\Cobalt.Common.Infrastructure\Cobalt.Common.Infrastructure.csproj", "{3E210359-8CF4-439B-AA59-014F6090F84D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{3AB8DA83-6C38-4E09-9FDC-E4A5C7832A8B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3AB8DA83-6C38-4E09-9FDC-E4A5C7832A8B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3AB8DA83-6C38-4E09-9FDC-E4A5C7832A8B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3E210359-8CF4-439B-AA59-014F6090F84D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3E210359-8CF4-439B-AA59-014F6090F84D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3E210359-8CF4-439B-AA59-014F6090F84D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3E210359-8CF4-439B-AA59-014F6090F84D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

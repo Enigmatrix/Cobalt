@@ -1,4 +1,5 @@
 using Cobalt.Common.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace Cobalt.Tests;
 
@@ -10,8 +11,9 @@ public class DataTests : IDisposable
     public DataTests()
     {
         var count = Interlocked.Increment(ref _dbCount);
-        var path = $"test-{count}.db";
-        _context = new QueryContext(path);
+        var optionsBuilder = new DbContextOptionsBuilder<QueryContext>();
+        QueryContext.ConfigureFor(optionsBuilder, $"Data Source=test-{count}.db");
+        _context = new QueryContext(optionsBuilder.Options);
         _context.Database.EnsureCreated();
     }
 
