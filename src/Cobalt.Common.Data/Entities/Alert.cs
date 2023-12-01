@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 
 namespace Cobalt.Common.Data.Entities;
 
@@ -21,6 +22,7 @@ public enum TimeFrame
     Monthly
 }
 
+[PrimaryKey(nameof(Guid), nameof(Version))]
 public class Alert : IEntity
 {
     public App? App { get; set; }
@@ -30,5 +32,25 @@ public class Alert : IEntity
     public required TriggerAction TriggerAction { get; set; }
     public List<Reminder> Reminders { get; } = new();
     public List<AlertEvent> AlertEvents { get; } = new();
-    public long Id { get; set; }
+
+    public long Version { get; set; }
+
+    // can't autoincrement on integer partial keys, so use random guid instead
+    public Guid Guid { get; set; } = Guid.NewGuid();
+
+    public long Id => HashCode.Combine(Guid, Version);
+
+    public Alert Clone()
+    {
+        return new Alert
+        {
+            App = App,
+            Tag = Tag,
+            Guid = Guid,
+            UsageLimit = UsageLimit,
+            TimeFrame = TimeFrame,
+            TriggerAction = TriggerAction,
+            Version = Version
+        };
+    }
 }

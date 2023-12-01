@@ -20,6 +20,35 @@ public class QueryContext : DbContext
     public DbSet<AlertEvent> AlertEvents { get; set; } = null!;
     public DbSet<ReminderEvent> ReminderEvents { get; set; } = null!;
 
+    public void UpdateAlert(Alert alert)
+    {
+        var newAlert = alert.Clone();
+        newAlert.Version++;
+        var newReminders =
+            (alert.Reminders.Count == 0 ? Reminders.Where(x => x.Alert == alert).ToList() : alert.Reminders).Select(
+                reminder =>
+                {
+                    var newReminder = reminder.Clone();
+                    newReminder.Alert = newAlert;
+                    newReminder.Guid = Guid.NewGuid();
+                    newReminder.ReminderEvents.Clear();
+                    return newReminder;
+                });
+        newAlert.AlertEvents.Clear();
+        newAlert.Reminders.Clear();
+        newAlert.Reminders.AddRange(newReminders);
+        Add(newAlert);
+        SaveChanges();
+    }
+
+    public void UpdateReminder(Reminder reminder)
+    {
+        var newReminder = reminder.Clone();
+        newReminder.Version++;
+        Add(newReminder);
+        SaveChanges();
+    }
+
     public static void ConfigureFor(DbContextOptionsBuilder optionsBuilder, string connectionString)
     {
         optionsBuilder
