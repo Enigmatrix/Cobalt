@@ -105,18 +105,18 @@ public class DataTests : IDisposable
 
         alert.TimeFrame = TimeFrame.Monthly;
         _context.UpdateAlert(alert);
-        Assert.Equal(2, _context.Alerts.Count());
+        Assert.Single(_context.Alerts);
 
-        alert = _context.Alerts.Include(x => x.Reminders).ThenInclude(x => x.ReminderEvents).Include(x => x.AlertEvents)
+        /*alert = _context.Alerts.Include(x => x.Reminders).ThenInclude(x => x.ReminderEvents).Include(x => x.AlertEvents)
             .First();
         Assert.Equal(TimeFrame.Daily, alert.TimeFrame);
         Assert.Equal(2, alert.Reminders.Count);
         Assert.Equal(2, alert.AlertEvents.Count);
         Assert.Single(alert.Reminders[0].ReminderEvents);
-        Assert.Single(alert.Reminders[1].ReminderEvents);
+        Assert.Single(alert.Reminders[1].ReminderEvents);*/
 
         alert = _context.Alerts.Include(x => x.Reminders).ThenInclude(x => x.ReminderEvents).Include(x => x.AlertEvents)
-            .ToList()[1];
+            .First();
         Assert.Equal(TimeFrame.Monthly, alert.TimeFrame);
         Assert.Equal(2, alert.Reminders.Count);
         Assert.Empty(alert.AlertEvents);

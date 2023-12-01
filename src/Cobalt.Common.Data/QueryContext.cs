@@ -120,5 +120,17 @@ public class QueryContext : DbContext
                 r => r.HasOne(typeof(App)).WithMany().HasForeignKey("app_id").HasPrincipalKey(nameof(App.Id)),
                 j => j.HasKey("app_id", "tag_id")
             );
+
+        // Only take the Alert with the highest Versions
+        modelBuilder.Entity<Alert>().HasQueryFilter(alert =>
+            alert.Version == Alerts
+                .Where(otherAlert => otherAlert.Guid == alert.Guid)
+                .Max(otherAlert => otherAlert.Version));
+
+        // Only take the Reminder with the highest Versions
+        modelBuilder.Entity<Reminder>().HasQueryFilter(reminder =>
+            reminder.Version == Reminders
+                .Where(otherReminder => otherReminder.Guid == reminder.Guid)
+                .Max(otherReminder => otherReminder.Version));
     }
 }
