@@ -22,30 +22,74 @@ public class QueryContext : DbContext
 
     public void UpdateAlert(Alert alert)
     {
-        var newAlert = alert.Clone();
-        newAlert.Version++;
-        var newReminders =
-            (alert.Reminders.Count == 0 ? Reminders.Where(x => x.Alert == alert).ToList() : alert.Reminders).Select(
-                reminder =>
-                {
-                    var newReminder = reminder.Clone();
-                    newReminder.Alert = newAlert;
-                    newReminder.Guid = Guid.NewGuid();
-                    newReminder.ReminderEvents.Clear();
-                    return newReminder;
-                });
-        newAlert.AlertEvents.Clear();
-        newAlert.Reminders.Clear();
-        newAlert.Reminders.AddRange(newReminders);
-        Add(newAlert);
+        /*
+         * If there is any AlertEvent or ReminderEvent associated with this Alert, then we must create a new Alert with higher Version
+         * and duplicate the Reminders, with empty AlertEvents and ReminderEvents. Otherwise, we can just update.
+         * 
+         * Note that an AlertEvent or ReminderEvent can be generated after we check for their existence; this causes a race condition.
+         * The effect is that the event is added to an Alert that does not match the initial Alert that triggered it, but has the same
+         * identity. This is an rare occurrence, and we will not bother fixing it. For reference, the fix would be to have field called
+         * LastUpdate (set on update) in Alert. The event needs to be conditionally inserted if the Timestamp of the event is after this
+         * LastUpdate, else no insert should occur. Additionally, a system-wide mutex needs to be held from the time of the check till
+         * the time of the update that prevents insertion of events. This is so that LastUpdated is accurately set after the comparison.
+         */
+        var anyAlertEvents = alert.AlertEvents.Count != 0 || AlertEvents.Any(alertEvent => alertEvent.Alert == alert);
+        var anyReminderEvents = alert.Reminders.Any(reminder => reminder.ReminderEvents.Count != 0) ||
+                                ReminderEvents.Any(reminderEvent => reminderEvent.Reminder.Alert == alert);
+
+        if (anyAlertEvents || anyReminderEvents)
+        {
+            var newAlert = alert.Clone();
+            newAlert.Version++;
+            var newReminders =
+                (alert.Reminders.Count == 0 ? Reminders.Where(x => x.Alert == alert).ToList() : alert.Reminders).Select(
+                    reminder =>
+                    {
+                        var newReminder = reminder.Clone();
+                        newReminder.Guid = Guid.NewGuid();
+                        newReminder.Version = 1;
+                        newReminder.Alert = newAlert;
+                        newReminder.ReminderEvents.Clear();
+                        return newReminder;
+                    });
+            newAlert.AlertEvents.Clear();
+            newAlert.Reminders.Clear();
+            newAlert.Reminders.AddRange(newReminders);
+            Add(newAlert);
+        }
+        else
+        {
+            UpdateAlert(alert);
+        }
+
         SaveChanges();
     }
 
     public void UpdateReminder(Reminder reminder)
     {
-        var newReminder = reminder.Clone();
-        newReminder.Version++;
-        Add(newReminder);
+        /*
+         * If there is any ReminderEvent associated with this Reminder, then we must create a new Reminder with higher Version
+         * with empty ReminderEvents. Otherwise, we can just update.
+         * 
+         * Note that an ReminderEvent can be generated after we check for their existence; this causes a race condition.
+         * The effect is that the event is added to an Reminder that does not match the initial Reminder that triggered it, but has the same
+         * identity. This is an rare occurrence, and we will not bother fixing it. The fix is similar to the one in UpdateAlert, with a field
+         * called LastUpdate in this Reminder as well.
+         */
+
+        var anyReminderEvents = reminder.ReminderEvents.Count != 0 ||
+                                ReminderEvents.Any(reminderEvent => reminderEvent.Reminder == reminder);
+        if (anyReminderEvents)
+        {
+            var newReminder = reminder.Clone();
+            newReminder.Version++;
+            Add(newReminder);
+        }
+        else
+        {
+            Update(reminder);
+        }
+
         SaveChanges();
     }
 
