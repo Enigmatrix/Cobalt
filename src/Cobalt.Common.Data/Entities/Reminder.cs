@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cobalt.Common.Data.Entities;
@@ -13,6 +14,7 @@ public class Reminder : IEntity
     public required string Message { get; set; }
     public List<ReminderEvent> ReminderEvents { get; } = new();
 
+    [DefaultValue(1)]
     public long Version { get; set; }
 
     // can't autoincrement on integer partial keys, so use random guid instead
