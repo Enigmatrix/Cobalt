@@ -23,6 +23,7 @@ public class App : IEntity
     public required string Color { get; set; }
     public required AppIdentity Identity { get; set; }
 
+    public List<Session> Sessions { get; } = new();
     public List<Tag> Tags { get; } = new();
 
     public long Id { get; set; }

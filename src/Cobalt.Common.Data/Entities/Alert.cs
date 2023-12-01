@@ -34,8 +34,7 @@ public class Alert : IEntity
     public List<Reminder> Reminders { get; } = new();
     public List<AlertEvent> AlertEvents { get; } = new();
 
-    [DefaultValue(1)]
-    public long Version { get; set; }
+    [DefaultValue(1)] public long Version { get; set; }
 
     // can't autoincrement on integer partial keys, so use random guid instead
     public required Guid Guid { get; set; }

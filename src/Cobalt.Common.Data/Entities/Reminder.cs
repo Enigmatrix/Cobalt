@@ -14,8 +14,7 @@ public class Reminder : IEntity
     public required string Message { get; set; }
     public List<ReminderEvent> ReminderEvents { get; } = new();
 
-    [DefaultValue(1)]
-    public long Version { get; set; }
+    [DefaultValue(1)] public long Version { get; set; }
 
     // can't autoincrement on integer partial keys, so use random guid instead
     public required Guid Guid { get; set; }
