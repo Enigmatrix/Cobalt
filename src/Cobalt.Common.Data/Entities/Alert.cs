@@ -38,7 +38,7 @@ public class Alert : IEntity
     public long Version { get; set; }
 
     // can't autoincrement on integer partial keys, so use random guid instead
-    public Guid Guid { get; set; } = Guid.NewGuid();
+    public required Guid Guid { get; set; }
 
     public long Id => HashCode.Combine(Guid, Version);
 
