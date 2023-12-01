@@ -20,6 +20,21 @@ public class QueryContext : DbContext
     public DbSet<AlertEvent> AlertEvents { get; set; } = null!;
     public DbSet<ReminderEvent> ReminderEvents { get; set; } = null!;
 
+    public IQueryable<(App App, DateTime Duration)> AppDurations()
+    {
+        return Apps.Select(app => ValueTuple.Create(app,
+            new DateTime(app.Sessions.SelectMany(session =>
+                    session.Usages.Select(usage =>
+                        // IEnumerable<DateTime>.Sum() cannot be translated to a SQL query by EntityFramework.
+                        // ref: https://github.com/dotnet/efcore/issues/27103 and https://github.com/dotnet/efcore/issues/10434 
+
+                        // Instead we access the backing `long` value, and summation of that is valid. Surprisingly, converting
+                        // `long` to `TimeSpan` using the constructor is perfectly valid!
+                        EF.Property<long>(usage, nameof(usage.End)) - EF.Property<long>(usage, nameof(usage.Start))))
+                .Sum())
+        ));
+    }
+
     public void UpdateAlert(Alert alert)
     {
         /*
