@@ -1,4 +1,5 @@
-﻿using Cobalt.Common.Data.Entities;
+﻿using System.Linq.Expressions;
+using Cobalt.Common.Data.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
@@ -20,19 +21,50 @@ public class QueryContext : DbContext
     public DbSet<AlertEvent> AlertEvents { get; set; } = null!;
     public DbSet<ReminderEvent> ReminderEvents { get; set; } = null!;
 
-    public IQueryable<(App App, DateTime Duration)> AppDurations()
+    private static Expression<Func<App, long>> AppDurationTicksOnly(DateTime? start = null, DateTime? end = null)
     {
-        return Apps.Select(app => ValueTuple.Create(app,
-            new DateTime(app.Sessions.SelectMany(session =>
-                    session.Usages.Select(usage =>
-                        // IEnumerable<DateTime>.Sum() cannot be translated to a SQL query by EntityFramework.
-                        // ref: https://github.com/dotnet/efcore/issues/27103 and https://github.com/dotnet/efcore/issues/10434 
+        var startTicks = (start ?? DateTime.MinValue).Ticks;
+        var endTicks = (end ?? DateTime.MaxValue).Ticks;
 
-                        // Instead we access the backing `long` value, and summation of that is valid. Surprisingly, converting
-                        // `long` to `TimeSpan` using the constructor is perfectly valid!
-                        EF.Property<long>(usage, nameof(usage.End)) - EF.Property<long>(usage, nameof(usage.Start))))
-                .Sum())
-        ));
+        return app => app.Sessions.SelectMany(session =>
+                session.Usages
+                    .Select(usage =>
+                        // IEnumerable<TimeSpan>.Sum() and TimeSpan comparisons cannot be translated to a SQL query by EntityFramework.
+                        // ref: https://github.com/dotnet/efcore/issues/27103 and https://github.com/dotnet/efcore/issues/10434 
+                        new
+                        {
+                            StartTicks = EF.Property<long>(usage, nameof(usage.Start)),
+                            EndTicks = EF.Property<long>(usage, nameof(usage.End))
+                        }
+                    ))
+            .Where(usage => usage.EndTicks > startTicks && endTicks >= usage.StartTicks)
+            .Select(usage => Math.Min(endTicks, usage.EndTicks) - Math.Max(startTicks, usage.StartTicks))
+            .Sum();
+    }
+
+    public IQueryable<(App App, TimeSpan Duration)> AppDurations(IQueryable<App>? apps = null, DateTime? start = null,
+        DateTime? end = null)
+    {
+        // Surprisingly, converting long to TimeSpan using the constructor is perfectly valid!
+        Expression<Func<App, long, ValueTuple<App, TimeSpan>>> convert = (app, dur) =>
+            ValueTuple.Create(app, new TimeSpan(dur));
+
+        var appParam = Expression.Parameter(typeof(App));
+        var reforgedExpr = Expression.Lambda<Func<App, ValueTuple<App, TimeSpan>>>(
+            Expression.Invoke(convert, appParam, Expression.Invoke(AppDurationTicksOnly(start, end), appParam)),
+            appParam);
+
+        return (apps ?? Apps).Select(reforgedExpr);
+    }
+
+
+    public IQueryable<(Alert Alert, TimeSpan Duration)> AlertDurations(IQueryable<Alert>? alerts = null,
+        DateTime? start = null, DateTime? end = null)
+    {
+        return (alerts ?? Alerts).Select(alert =>
+            ValueTuple.Create(alert,
+                new TimeSpan(Apps.Where(app => alert.App == null ? alert.Tag!.Apps.Contains(app) : alert.App == app)
+                    .Select(AppDurationTicksOnly(start, end)).Sum())));
     }
 
     public void UpdateAlert(Alert alert)
