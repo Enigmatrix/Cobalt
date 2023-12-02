@@ -1,6 +1,7 @@
 using Cobalt.Common.Data;
 using Cobalt.Common.Data.Entities;
 using Microsoft.EntityFrameworkCore;
+using Xunit.Abstractions;
 
 namespace Cobalt.Tests;
 
@@ -8,12 +9,14 @@ public class DataTests : IDisposable
 {
     private static int _dbCount;
     private readonly int _count;
+    private readonly ITestOutputHelper _output;
     private QueryContext _context;
 
-    public DataTests()
+    public DataTests(ITestOutputHelper output)
     {
         _count = Interlocked.Increment(ref _dbCount);
-        _context = CreateContext(_count);
+        _context = CreateContext();
+        _output = output;
     }
 
     public void Dispose()
@@ -23,10 +26,10 @@ public class DataTests : IDisposable
         connection.EnsureDeleted();
     }
 
-    public QueryContext CreateContext(int count)
+    public QueryContext CreateContext()
     {
         var optionsBuilder = new DbContextOptionsBuilder<QueryContext>();
-        QueryContext.ConfigureFor(optionsBuilder, $"Data Source=test-{count}.db");
+        QueryContext.ConfigureFor(optionsBuilder, $"Data Source=test-{_count}.db");
         var context = new QueryContext(optionsBuilder.Options);
         context.Database.EnsureCreated();
         return context;
@@ -96,7 +99,7 @@ public class DataTests : IDisposable
         _context.SaveChanges();
         _context.Dispose();
 
-        _context = CreateContext(_count);
+        _context = CreateContext();
 
         Assert.Equal(1, _context.Alerts.Count());
         alert = _context.Alerts.Include(x => x.Reminders).ThenInclude(x => x.ReminderEvents).Include(x => x.AlertEvents)
@@ -110,14 +113,6 @@ public class DataTests : IDisposable
         _context.UpdateAlert(alert);
         Assert.Single(_context.Alerts);
 
-        /*alert = _context.Alerts.Include(x => x.Reminders).ThenInclude(x => x.ReminderEvents).Include(x => x.AlertEvents)
-            .First();
-        Assert.Equal(TimeFrame.Daily, alert.TimeFrame);
-        Assert.Equal(2, alert.Reminders.Count);
-        Assert.Equal(2, alert.AlertEvents.Count);
-        Assert.Single(alert.Reminders[0].ReminderEvents);
-        Assert.Single(alert.Reminders[1].ReminderEvents);*/
-
         alert = _context.Alerts.Include(x => x.Reminders).ThenInclude(x => x.ReminderEvents).Include(x => x.AlertEvents)
             .First();
         Assert.Equal(TimeFrame.Monthly, alert.TimeFrame);
@@ -126,4 +121,20 @@ public class DataTests : IDisposable
         Assert.Empty(alert.Reminders[0].ReminderEvents);
         Assert.Empty(alert.Reminders[1].ReminderEvents);
     }
+
+    /*
+    [Fact]
+    public void _PrintGeneratedQuery()
+    {
+        var query = _context.AlertDurations(
+            _context.Alerts
+                .Include(alert => alert.App)
+                .Include(alert => alert.Tag)
+                .Include(alert => alert.AlertEvents)
+                .Include(alert => alert.Reminders)
+                .ThenInclude(reminder => reminder.ReminderEvents));
+        var sql = query.ToQueryString();
+        _output.WriteLine(sql);
+    }
+    */
 }
