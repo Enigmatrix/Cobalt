@@ -17,11 +17,12 @@
 		<None Remove="appsettings.json" />
 	</ItemGroup>
 
+	<!-- Copy appsetting fiels from project root -->
 	<ItemGroup>
-		<Content Include="appsettings.Debug.json">
+		<Content Condition="'$(Configuration)' == 'Debug'" Include="../../dbg/appsettings.Debug.json">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</Content>
-		<Content Include="appsettings.json">
+		<Content Include="../../appsettings.json">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</Content>
 	</ItemGroup>
