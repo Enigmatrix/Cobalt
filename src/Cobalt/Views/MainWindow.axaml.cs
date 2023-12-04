@@ -20,7 +20,12 @@ public partial class MainWindow : Window, IViewFor<MainViewModel>
         this.WhenActivated(disposables =>
         {
             Frame.NavigationPageFactory ??= new NavFactory(ViewModel!);
-            Frame.NavigateFromObject(ViewModel!.Home.Name, new FrameNavigationOptions
+#if DEBUG
+            var startPage = ViewModel!.Experiments.Name;
+#else
+            var startPage = ViewModel!.Home.Name;
+#endif
+            Frame.NavigateFromObject(startPage, new FrameNavigationOptions
             {
                 IsNavigationStackEnabled = false,
                 TransitionInfoOverride = new EntranceNavigationTransitionInfo()
@@ -54,6 +59,9 @@ public partial class MainWindow : Window, IViewFor<MainViewModel>
     {
         private readonly Dictionary<string, Control> _pages = new()
         {
+#if DEBUG
+            [mvm.Experiments.Name] = new ExperimentsPage { ViewModel = mvm.Experiments },
+#endif
             [mvm.Home.Name] = new HomePage { ViewModel = mvm.Home },
             [mvm.Apps.Name] = new AppsPage { ViewModel = mvm.Apps },
             [mvm.Tags.Name] = new TagsPage { ViewModel = mvm.Tags },

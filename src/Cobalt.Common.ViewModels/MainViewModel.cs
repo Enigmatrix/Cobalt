@@ -4,9 +4,16 @@ namespace Cobalt.Common.ViewModels;
 
 public class MainViewModel : ViewModelBase
 {
-    public MainViewModel(HomePageViewModel home, AppsPageViewModel apps, TagsPageViewModel tags,
+    public MainViewModel(
+#if DEBUG
+        ExperimentsPageViewModel experiments,
+#endif
+        HomePageViewModel home, AppsPageViewModel apps, TagsPageViewModel tags,
         AlertsPageViewModel alerts, HistoryPageViewModel history)
     {
+#if DEBUG
+        Experiments = experiments;
+#endif
         Home = home;
         Apps = apps;
         Tags = tags;
@@ -14,6 +21,9 @@ public class MainViewModel : ViewModelBase
         History = history;
     }
 
+#if DEBUG
+    public ExperimentsPageViewModel Experiments { get; }
+#endif
     public HomePageViewModel Home { get; }
     public AppsPageViewModel Apps { get; }
     public TagsPageViewModel Tags { get; }
