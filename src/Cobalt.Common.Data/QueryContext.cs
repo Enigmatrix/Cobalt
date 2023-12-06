@@ -1,5 +1,6 @@
 ﻿using System.Linq.Expressions;
 using Cobalt.Common.Data.Entities;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
@@ -180,4 +181,30 @@ public class QueryContext : DbContext
                 .Where(otherReminder => otherReminder.Guid == reminder.Guid)
                 .Max(otherReminder => otherReminder.Version));
     }
+
+#if DEBUG
+
+    private const string SeedDbFile = "seed.db";
+
+    public void MigrateFromSeed(bool force = false)
+    {
+        var connStr = new SqliteConnectionStringBuilder(Database.GetConnectionString());
+        if (!force && File.Exists(connStr.DataSource)) return;
+        var username = Environment.UserName;
+
+        File.Copy(SeedDbFile, connStr.DataSource, true);
+        Apps.ExecuteUpdate(appSet => appSet.SetProperty(app => app.Identity.PathOrAumid,
+            app => app.Identity.PathOrAumid.Replace("|user|", username)));
+
+        SaveChanges();
+    }
+
+    public void UpdateAllUsageEnds(DateTime newUsageEnd)
+    {
+        var usageLastEnd = Usages.Max(usage => usage.End);
+        var deltaTicks = (newUsageEnd - usageLastEnd).Ticks;
+        Database.ExecuteSql($"UPDATE usages SET start = start + {deltaTicks}, end = end + {deltaTicks}");
+        SaveChanges();
+    }
+#endif
 }

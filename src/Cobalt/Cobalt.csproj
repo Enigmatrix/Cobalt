@@ -17,11 +17,15 @@
 		<None Remove="appsettings.json" />
 	</ItemGroup>
 
+	<!-- Copy appsetting fiels from project root -->
 	<ItemGroup>
-		<Content Include="appsettings.Debug.json">
+		<Content Condition="'$(Configuration)' == 'Debug'" Include="../../dbg/appsettings.Debug.json">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</Content>
-		<Content Include="appsettings.json">
+		<Content Condition="'$(Configuration)' == 'Debug'" Include="../../dbg/seed.db">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Include="../../appsettings.json">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</Content>
 	</ItemGroup>
@@ -42,8 +46,14 @@
 	<ItemGroup>
 		<ProjectReference Include="..\Cobalt.Common.Infrastructure\Cobalt.Common.Infrastructure.csproj" />
 		<ProjectReference Include="..\Cobalt.Common.ViewModels\Cobalt.Common.ViewModels.csproj" />
+		<ProjectReference Include="..\Cobalt.Common.Util\Cobalt.Common.Util.csproj" />
 	</ItemGroup>
 
+
+	<!-- Remove ExperimentsPage in non-Debug modes -->
+	<ItemGroup>
+	  <AvaloniaXaml Remove="Views\Pages\ExperimentsPage.axaml" Condition="'$(Configuration)' != 'Debug'" />
+	</ItemGroup>
 
 	<ItemGroup>
 	  <Compile Update="Views\Pages\AlertsPage.axaml.cs">
@@ -51,6 +61,9 @@
 	  </Compile>
 	  <Compile Update="Views\Pages\HistoryPage.axaml.cs">
 	    <DependentUpon>HistoryPage.axaml</DependentUpon>
+	  </Compile>
+	  <Compile Update="Views\Pages\ExperimentsPage.axaml.cs">
+	    <DependentUpon>ExperimentsPage.axaml</DependentUpon>
 	  </Compile>
 	  <Compile Update="Views\Pages\TagsPage.axaml.cs">
 	    <DependentUpon>TagsPage.axaml</DependentUpon>

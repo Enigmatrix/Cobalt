@@ -41,6 +41,9 @@ public class ServiceInjector
         services.AddSingleton<MainViewModel>();
 
         // Pages
+#if DEBUG
+        services.AddSingleton<ExperimentsPageViewModel>();
+#endif
         services.AddSingleton<HomePageViewModel>();
         services.AddSingleton<AppsPageViewModel>();
         services.AddSingleton<TagsPageViewModel>();
