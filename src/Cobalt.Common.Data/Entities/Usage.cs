@@ -1,5 +1,8 @@
 ﻿namespace Cobalt.Common.Data.Entities;
 
+/// <summary>
+///     A continuous usage of an <see cref="App" /> during an <see cref="Session" />
+/// </summary>
 public class Usage : IEntity, IHasDuration
 {
     public required Session Session { get; set; }

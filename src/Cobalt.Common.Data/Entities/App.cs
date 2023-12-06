@@ -4,6 +4,11 @@ namespace Cobalt.Common.Data.Entities;
 
 // Watch for inheritance support soon. Then make this record abstract & remove the properties
 // ref: https://github.com/dotnet/efcore/issues/31250
+/// <summary>
+///     An unique identity of an <see cref="App" />
+/// </summary>
+/// <param name="IsWin32">Tag of this identity</param>
+/// <param name="PathOrAumid">Path (Win32) or AUMID (UWP)</param>
 [ComplexType]
 public record AppIdentity(bool IsWin32, string PathOrAumid)
 {
@@ -12,6 +17,9 @@ public record AppIdentity(bool IsWin32, string PathOrAumid)
     public sealed record UWP(string Aumid) : AppIdentity(true, Aumid);
 }
 
+/// <summary>
+///     An app that has run on the computer.
+/// </summary>
 public class App : IEntity, IHasName, IHasColor
 {
     // This property is used to check if the App details have been finalized. If not,

@@ -3,6 +3,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Cobalt.Common.ViewModels.Pages;
 
+/// <summary>
+///     ViewModel for the Home Page
+/// </summary>
 public class HomePageViewModel : PageViewModelBase
 {
     public HomePageViewModel(IDbContextFactory<QueryContext> contexts) : base(contexts)

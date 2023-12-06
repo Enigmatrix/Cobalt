@@ -2,6 +2,9 @@
 
 namespace Cobalt.Common.ViewModels;
 
+/// <summary>
+///     Main View Model that is loaded first.
+/// </summary>
 public class MainViewModel : ViewModelBase
 {
     public MainViewModel(
@@ -35,8 +38,14 @@ public class MainViewModel : ViewModelBase
         };
     }
 
+    /// <summary>
+    ///     IoC container
+    /// </summary>
     public IServiceProvider Provider { get; }
 
+    /// <summary>
+    ///     Mapping between Page names and the <see cref="PageViewModelBase" />
+    /// </summary>
     public Dictionary<string, PageViewModelBase> Pages { get; }
 
 #if DEBUG

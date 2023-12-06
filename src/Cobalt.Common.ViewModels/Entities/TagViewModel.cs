@@ -5,6 +5,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Cobalt.Common.ViewModels.Entities;
 
+/// <summary>
+///     ViewModel for the Tag Entity
+/// </summary>
 public partial class TagViewModel : EditableEntityViewModelBase<Tag>
 {
     [ObservableProperty] private string _color;

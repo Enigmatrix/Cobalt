@@ -4,6 +4,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Cobalt.Common.Data.Entities;
 
+/// <summary>
+///     Notifications to send upon a certain threshold of an <see cref="Alert.UsageLimit" /> being reached.
+/// </summary>
 [PrimaryKey(nameof(Guid), nameof(Version))]
 public class Reminder : IEntity
 {

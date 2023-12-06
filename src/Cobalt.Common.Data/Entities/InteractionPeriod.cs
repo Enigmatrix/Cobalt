@@ -1,5 +1,8 @@
 ﻿namespace Cobalt.Common.Data.Entities;
 
+/// <summary>
+///     A period of continuous usage without idling
+/// </summary>
 public class InteractionPeriod : IEntity, IHasDuration
 {
     public required DateTime Start { get; set; }

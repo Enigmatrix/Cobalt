@@ -6,8 +6,15 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Cobalt.Common.Data;
 
+/// <summary>
+///     Database Query Context
+/// </summary>
 public class QueryContext : DbContext
 {
+    /// <summary>
+    ///     Constructor needed for using with AddPooledDbContextFactory
+    /// </summary>
+    /// <param name="options">OnConfiguring options sent to the constructor</param>
     public QueryContext(DbContextOptions<QueryContext> options) : base(options)
     {
     }
@@ -22,6 +29,12 @@ public class QueryContext : DbContext
     public DbSet<AlertEvent> AlertEvents { get; set; } = null!;
     public DbSet<ReminderEvent> ReminderEvents { get; set; } = null!;
 
+    /// <summary>
+    ///     Map an <see cref="App" /> to its <see cref="Usage" /> Duration within a range of time, using a reusable
+    ///     <see cref="Expression" />.
+    /// </summary>
+    /// <param name="start">Start range time. A null value implies no limit on the start time</param>
+    /// <param name="end">End range time. A null value implies no limit on the end time</param>
     private static Expression<Func<App, long>> AppDurationTicksOnly(DateTime? start = null, DateTime? end = null)
     {
         var startTicks = (start ?? DateTime.MinValue).Ticks;
@@ -43,6 +56,12 @@ public class QueryContext : DbContext
             .Sum();
     }
 
+    /// <summary>
+    ///     Gets <see cref="App" /> and their Durations
+    /// </summary>
+    /// <param name="apps">Pre-initialized <see cref="App" /> with e.g. Include queries or filters</param>
+    /// <param name="start">Start range time. A null value implies no limit on the start time</param>
+    /// <param name="end">End range time. A null value implies no limit on the end time</param>
     public IQueryable<(App App, TimeSpan Duration)> AppDurations(IQueryable<App>? apps = null, DateTime? start = null,
         DateTime? end = null)
     {
@@ -59,6 +78,12 @@ public class QueryContext : DbContext
     }
 
 
+    /// <summary>
+    ///     Gets <see cref="Alert" /> and their Durations
+    /// </summary>
+    /// <param name="alerts">Pre-initialized <see cref="Alert" /> with e.g. Include queries or filters</param>
+    /// <param name="start">Start range time. A null value implies no limit on the start time</param>
+    /// <param name="end">End range time. A null value implies no limit on the end time</param>
     public IQueryable<(Alert Alert, TimeSpan Duration)> AlertDurations(IQueryable<Alert>? alerts = null,
         DateTime? start = null, DateTime? end = null)
     {
@@ -68,6 +93,9 @@ public class QueryContext : DbContext
                     .Select(AppDurationTicksOnly(start, end)).Sum())));
     }
 
+    /// <summary>
+    ///     Updates an <see cref="Alert" />, creating a new version of the <see cref="Alert" /> if necessary.
+    /// </summary>
     public void UpdateAlert(Alert alert)
     {
         /*
@@ -113,6 +141,9 @@ public class QueryContext : DbContext
         SaveChanges();
     }
 
+    /// <summary>
+    ///     Updates an <see cref="Reminder" />, creating a new version of the <see cref="Reminder" /> if necessary.
+    /// </summary>
     public void UpdateReminder(Reminder reminder)
     {
         /*
@@ -141,6 +172,11 @@ public class QueryContext : DbContext
         SaveChanges();
     }
 
+    /// <summary>
+    ///     Configure the DbContext options
+    /// </summary>
+    /// <param name="optionsBuilder">DbContext Options Builder</param>
+    /// <param name="connectionString">Connection String from Configuration</param>
     public static void ConfigureFor(DbContextOptionsBuilder optionsBuilder, string connectionString)
     {
         optionsBuilder
@@ -186,6 +222,10 @@ public class QueryContext : DbContext
 
     private const string SeedDbFile = "dbg/seed.db";
 
+    /// <summary>
+    ///     Migrate the seed database to the actual database.
+    /// </summary>
+    /// <param name="force">Overwrite the existing actual database</param>
     public void MigrateFromSeed(bool force = false)
     {
         var connStr = new SqliteConnectionStringBuilder(Database.GetConnectionString());
@@ -199,6 +239,12 @@ public class QueryContext : DbContext
         SaveChanges();
     }
 
+    /// <summary>
+    ///     Update all the <see cref="Usage" /> Start and End times such that the last <see cref="Usage" /> End is equal to
+    ///     <paramref name="newUsageEnd" />,
+    ///     while preserving the deltas between all <see cref="Usage" />.
+    /// </summary>
+    /// <param name="newUsageEnd">New last <see cref="Usage" /> End</param>
     public void UpdateAllUsageEnds(DateTime newUsageEnd)
     {
         var usageLastEnd = Usages.Max(usage => usage.End);

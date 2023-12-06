@@ -6,6 +6,9 @@ namespace Cobalt.Common.Data.Entities;
 
 // Watch for inheritance support soon. Then make this record abstract & remove the properties
 // ref: https://github.com/dotnet/efcore/issues/31250
+/// <summary>
+///     Action to take once the <see cref="Alert.UsageLimit" /> has been reached.
+/// </summary>
 [ComplexType]
 public record TriggerAction(long Tag, string? MessageContent, TimeSpan? DimDuration)
 {
@@ -16,6 +19,9 @@ public record TriggerAction(long Tag, string? MessageContent, TimeSpan? DimDurat
     public sealed record Dim(TimeSpan Duration) : TriggerAction(2, null, Duration);
 }
 
+/// <summary>
+///     How long the monitoring duration should be for an <see cref="Alert" />
+/// </summary>
 public enum TimeFrame
 {
     Daily,
@@ -23,6 +29,11 @@ public enum TimeFrame
     Monthly
 }
 
+/// <summary>
+///     Monitoring record describing an usage limit for how long you use an <see cref="Cobalt.Common.Data.Entities.App" />
+///     or a collection of Apps under a <see cref="Tag" />, the actions to take when that limit is reached, and the
+///     reminders.
+/// </summary>
 [PrimaryKey(nameof(Guid), nameof(Version))]
 public class Alert : IEntity
 {

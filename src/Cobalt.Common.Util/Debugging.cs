@@ -1,5 +1,8 @@
 ﻿namespace Cobalt.Common.Util;
 
+/// <summary>
+///     Utility to find the DEBUG mode at runtime.
+/// </summary>
 public class Debugging
 {
 #if DEBUG

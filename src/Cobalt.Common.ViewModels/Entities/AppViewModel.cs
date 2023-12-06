@@ -5,6 +5,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Cobalt.Common.ViewModels.Entities;
 
+/// <summary>
+///     ViewModel for the App Entity
+/// </summary>
 public partial class AppViewModel : EditableEntityViewModelBase<App>
 {
     [ObservableProperty] private string _color;
