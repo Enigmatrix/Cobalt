@@ -1,11 +1,10 @@
 using System;
-using System.Collections.Generic;
 using Avalonia.Controls;
 using Cobalt.Common.ViewModels;
-using Cobalt.Views.Pages;
 using FluentAvalonia.UI.Controls;
 using FluentAvalonia.UI.Media.Animation;
 using FluentAvalonia.UI.Navigation;
+using Microsoft.Extensions.DependencyInjection;
 using ReactiveUI;
 
 namespace Cobalt.Views;
@@ -57,26 +56,24 @@ public partial class MainWindow : Window, IViewFor<MainViewModel>
 
     public record NavFactory(MainViewModel mvm) : INavigationPageFactory
     {
-        private readonly Dictionary<string, Control> _pages = new()
-        {
-#if DEBUG
-            [mvm.Experiments.Name] = new ExperimentsPage { ViewModel = mvm.Experiments },
-#endif
-            [mvm.Home.Name] = new HomePage { ViewModel = mvm.Home },
-            [mvm.Apps.Name] = new AppsPage { ViewModel = mvm.Apps },
-            [mvm.Tags.Name] = new TagsPage { ViewModel = mvm.Tags },
-            [mvm.Alerts.Name] = new AlertsPage { ViewModel = mvm.Alerts },
-            [mvm.History.Name] = new HistoryPage { ViewModel = mvm.History }
-        };
-
         public Control GetPage(Type srcType)
         {
-            throw new NotSupportedException();
+            var vm = (ViewModelBase)mvm.Provider.GetRequiredService(srcType);
+            return GetViewFromViewModel(vm);
         }
 
         public Control GetPageFromObject(object target)
         {
-            return _pages[(string)target];
+            var vm = mvm.Pages[(string)target];
+            return GetViewFromViewModel(vm);
+        }
+
+        public Control GetViewFromViewModel(ViewModelBase vm)
+        {
+            var vType = typeof(IViewFor<>).MakeGenericType(vm.GetType());
+            var v = (IViewFor)mvm.Provider.GetRequiredService(vType);
+            v.ViewModel ??= vm;
+            return (Control)v;
         }
     }
 }
