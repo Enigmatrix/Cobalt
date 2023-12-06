@@ -22,6 +22,9 @@
 		<Content Condition="'$(Configuration)' == 'Debug'" Include="../../dbg/appsettings.Debug.json">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</Content>
+		<Content Condition="'$(Configuration)' == 'Debug'" Include="../../dbg/seed.db">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
 		<Content Include="../../appsettings.json">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</Content>

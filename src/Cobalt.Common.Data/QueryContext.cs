@@ -1,4 +1,5 @@
 ﻿using Cobalt.Common.Data.Entities;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
@@ -48,4 +49,33 @@ public class QueryContext : DbContext
                 j => j.HasKey("app_id", "tag_id")
             );
     }
+
+#if DEBUG
+
+    private const string SeedDbFile = "seed.db";
+
+    public void MigrateFromSeed(bool force = false, DateTime? usageEndAt = null)
+    {
+        var connStr = new SqliteConnectionStringBuilder(Database.GetConnectionString());
+        if (!force && usageEndAt == null && File.Exists(connStr.DataSource)) return;
+        var username = Environment.UserName;
+
+        File.Copy(SeedDbFile, connStr.DataSource);
+        Apps.ExecuteUpdate(appSet => appSet.SetProperty(app => app.Identity.PathOrAumid,
+            app => app.Identity.PathOrAumid.Replace("|user|", username)));
+
+
+        if (usageEndAt != null)
+        {
+            var usageLastEnd = Usages.Max(usage => usage.End);
+            var delta = usageEndAt - usageLastEnd;
+            Usages.ExecuteUpdate(usageSet => usageSet.SetProperty(usage => usage.Start,
+                usage => usage.Start + delta));
+            Usages.ExecuteUpdate(usageSet => usageSet.SetProperty(usage => usage.Start,
+                usage => usage.End + delta));
+        }
+
+        SaveChanges();
+    }
+#endif
 }
