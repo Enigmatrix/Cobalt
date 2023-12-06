@@ -20,7 +20,7 @@ public class App : Application
         AvaloniaXamlLoader.Load(this);
     }
 
-    public override async void OnFrameworkInitializationCompleted()
+    public override void OnFrameworkInitializationCompleted()
     {
         var serviceCollection = new ServiceCollection();
 #if DEBUG
@@ -35,9 +35,9 @@ public class App : Application
         var services = new ServiceInjector(serviceCollection);
 #if DEBUG
         var contexts = services.Resolve<IDbContextFactory<QueryContext>>();
-        await using (var context = await contexts.CreateDbContextAsync())
+        using (var context = contexts.CreateDbContext())
         {
-            await context.MigrateFromSeed();
+            context.MigrateFromSeedAsync().Wait();
         }
 #endif
 
@@ -48,7 +48,5 @@ public class App : Application
             {
                 ViewModel = mainVm
             };
-
-        base.OnFrameworkInitializationCompleted();
     }
 }

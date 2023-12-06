@@ -42,7 +42,7 @@ public class DataTests : IDisposable
     }
 
     [Fact]
-    public void UpdateAlert_CreatesNewAlertWithDuplicatedRemindersAndEmptyEvents_OnNonEmptyEvents()
+    public async Task UpdateAlert_CreatesNewAlertWithDuplicatedRemindersAndEmptyEvents_OnNonEmptyEvents()
     {
         var alert = new Alert
         {
@@ -110,7 +110,7 @@ public class DataTests : IDisposable
         Assert.Single(alert.Reminders[1].ReminderEvents);
 
         alert.TimeFrame = TimeFrame.Monthly;
-        _context.UpdateAlert(alert);
+        await _context.UpdateAlertAsync(alert);
         Assert.Single(_context.Alerts);
 
         alert = _context.Alerts.Include(x => x.Reminders).ThenInclude(x => x.ReminderEvents).Include(x => x.AlertEvents)

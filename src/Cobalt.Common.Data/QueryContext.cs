@@ -62,15 +62,15 @@ public class QueryContext : DbContext
     /// <param name="apps">Pre-initialized <see cref="App" /> with e.g. Include queries or filters</param>
     /// <param name="start">Start range time. A null value implies no limit on the start time</param>
     /// <param name="end">End range time. A null value implies no limit on the end time</param>
-    public IQueryable<(App App, TimeSpan Duration)> AppDurations(IQueryable<App>? apps = null, DateTime? start = null,
+    public IQueryable<WithDuration<App>> AppDurations(IQueryable<App>? apps = null, DateTime? start = null,
         DateTime? end = null)
     {
         // Surprisingly, converting long to TimeSpan using the constructor is perfectly valid!
-        Expression<Func<App, long, ValueTuple<App, TimeSpan>>> convert = (app, dur) =>
-            ValueTuple.Create(app, new TimeSpan(dur));
+        Expression<Func<App, long, WithDuration<App>>> convert = (app, dur) =>
+            new WithDuration<App>(app, new TimeSpan(dur));
 
         var appParam = Expression.Parameter(typeof(App));
-        var reforgedExpr = Expression.Lambda<Func<App, ValueTuple<App, TimeSpan>>>(
+        var reforgedExpr = Expression.Lambda<Func<App, WithDuration<App>>>(
             Expression.Invoke(convert, appParam, Expression.Invoke(AppDurationTicksOnly(start, end), appParam)),
             appParam);
 
@@ -84,11 +84,11 @@ public class QueryContext : DbContext
     /// <param name="alerts">Pre-initialized <see cref="Alert" /> with e.g. Include queries or filters</param>
     /// <param name="start">Start range time. A null value implies no limit on the start time</param>
     /// <param name="end">End range time. A null value implies no limit on the end time</param>
-    public IQueryable<(Alert Alert, TimeSpan Duration)> AlertDurations(IQueryable<Alert>? alerts = null,
+    public IQueryable<WithDuration<Alert>> AlertDurations(IQueryable<Alert>? alerts = null,
         DateTime? start = null, DateTime? end = null)
     {
         return (alerts ?? Alerts).Select(alert =>
-            ValueTuple.Create(alert,
+            new WithDuration<Alert>(alert,
                 new TimeSpan(Apps.Where(app => alert.App == null ? alert.Tag!.Apps.Contains(app) : alert.App == app)
                     .Select(AppDurationTicksOnly(start, end)).Sum())));
     }
@@ -96,7 +96,7 @@ public class QueryContext : DbContext
     /// <summary>
     ///     Updates an <see cref="Alert" />, creating a new version of the <see cref="Alert" /> if necessary.
     /// </summary>
-    public async Task UpdateAlert(Alert alert)
+    public async Task UpdateAlertAsync(Alert alert)
     {
         /*
          * If there is any AlertEvent or ReminderEvent associated with this Alert, then we must create a new Alert with higher Version
@@ -147,7 +147,7 @@ public class QueryContext : DbContext
     /// <summary>
     ///     Updates an <see cref="Reminder" />, creating a new version of the <see cref="Reminder" /> if necessary.
     /// </summary>
-    public async Task UpdateReminder(Reminder reminder)
+    public async Task UpdateReminderAsync(Reminder reminder)
     {
         /*
          * If there is any ReminderEvent associated with this Reminder, then we must create a new Reminder with higher Version
@@ -155,7 +155,7 @@ public class QueryContext : DbContext
          * 
          * Note that an ReminderEvent can be generated after we check for their existence; this causes a race condition.
          * The effect is that the event is added to an Reminder that does not match the initial Reminder that triggered it, but has the same
-         * identity. This is an rare occurrence, and we will not bother fixing it. The fix is similar to the one in UpdateAlert, with a field
+         * identity. This is an rare occurrence, and we will not bother fixing it. The fix is similar to the one in UpdateAlertAsync, with a field
          * called LastUpdate in this Reminder as well.
          */
 
@@ -229,17 +229,21 @@ public class QueryContext : DbContext
     ///     Migrate the seed database to the actual database.
     /// </summary>
     /// <param name="force">Overwrite the existing actual database</param>
-    public async Task MigrateFromSeed(bool force = false)
+    public async Task MigrateFromSeedAsync(bool force = false)
     {
         var connStr = new SqliteConnectionStringBuilder(Database.GetConnectionString());
         if (!force && File.Exists(connStr.DataSource)) return;
         var username = Environment.UserName;
 
-        await File.OpenRead(SeedDbFile).CopyToAsync(File.Create(connStr.DataSource));
+        {
+            await using var seedFile = File.OpenRead(SeedDbFile);
+            await using var dbFile = File.Create(connStr.DataSource);
+            await seedFile.CopyToAsync(dbFile).ConfigureAwait(false);
+        }
         await Apps.ExecuteUpdateAsync(appSet => appSet.SetProperty(app => app.Identity.PathOrAumid,
-            app => app.Identity.PathOrAumid.Replace("|user|", username)));
+            app => app.Identity.PathOrAumid.Replace("|user|", username))).ConfigureAwait(false);
 
-        await SaveChangesAsync();
+        await SaveChangesAsync().ConfigureAwait(false);
     }
 
     /// <summary>
@@ -248,9 +252,9 @@ public class QueryContext : DbContext
     ///     while preserving the deltas between all <see cref="Usage" />.
     /// </summary>
     /// <param name="newUsageEnd">New last <see cref="Usage" /> End</param>
-    public async Task UpdateAllUsageEnds(DateTime newUsageEnd)
+    public async Task UpdateAllUsageEndsAsync(DateTime newUsageEnd)
     {
-        var usageLastEnd = Usages.Max(usage => usage.End);
+        var usageLastEnd = await Usages.MaxAsync(usage => usage.End);
         var deltaTicks = (newUsageEnd - usageLastEnd).Ticks;
         await Database.ExecuteSqlAsync($"UPDATE usages SET start = start + {deltaTicks}, end = end + {deltaTicks}");
         await SaveChangesAsync();
