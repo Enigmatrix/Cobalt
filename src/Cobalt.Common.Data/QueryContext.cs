@@ -54,24 +54,24 @@ public class QueryContext : DbContext
 
     private const string SeedDbFile = "seed.db";
 
-    public void MigrateFromSeed(bool force = false, DateTime? usageEndAt = null)
+    public void MigrateFromSeed(bool force = false)
     {
         var connStr = new SqliteConnectionStringBuilder(Database.GetConnectionString());
-        if (!force && usageEndAt == null && File.Exists(connStr.DataSource)) return;
+        if (!force && File.Exists(connStr.DataSource)) return;
         var username = Environment.UserName;
 
         File.Copy(SeedDbFile, connStr.DataSource, true);
         Apps.ExecuteUpdate(appSet => appSet.SetProperty(app => app.Identity.PathOrAumid,
             app => app.Identity.PathOrAumid.Replace("|user|", username)));
 
+        SaveChanges();
+    }
 
-        if (usageEndAt is { } usageEndAtValue)
-        {
-            var usageLastEnd = Usages.Max(usage => usage.End);
-            var deltaTicks = (usageEndAtValue - usageLastEnd).Ticks;
-            Database.ExecuteSql($"UPDATE usages SET start = start + {deltaTicks}, end = end + {deltaTicks}");
-        }
-
+    public void UpdateAllUsageEnds(DateTime newUsageEnd)
+    {
+        var usageLastEnd = Usages.Max(usage => usage.End);
+        var deltaTicks = (newUsageEnd - usageLastEnd).Ticks;
+        Database.ExecuteSql($"UPDATE usages SET start = start + {deltaTicks}, end = end + {deltaTicks}");
         SaveChanges();
     }
 #endif

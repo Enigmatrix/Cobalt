@@ -13,9 +13,9 @@ public partial class ExperimentsPageViewModel : PageViewModelBase
     public override string Name => "Experiments";
 
     [RelayCommand]
-    public void MigrateFromSeed()
+    public void UpdateAllUsageEnds()
     {
         using var context = Contexts.CreateDbContext();
-        context.MigrateFromSeed(usageEndAt: DateTime.Now);
+        context.UpdateAllUsageEnds(DateTime.Now);
     }
 }
