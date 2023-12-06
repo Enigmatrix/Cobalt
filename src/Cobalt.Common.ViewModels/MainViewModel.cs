@@ -5,6 +5,7 @@ namespace Cobalt.Common.ViewModels;
 public class MainViewModel : ViewModelBase
 {
     public MainViewModel(
+        IServiceProvider provider,
 #if DEBUG
         ExperimentsPageViewModel experiments,
 #endif
@@ -19,7 +20,24 @@ public class MainViewModel : ViewModelBase
         Tags = tags;
         Alerts = alerts;
         History = history;
+        Provider = provider;
+
+        Pages = new Dictionary<string, PageViewModelBase>
+        {
+#if DEBUG
+            [Experiments.Name] = experiments,
+#endif
+            [Home.Name] = home,
+            [Apps.Name] = apps,
+            [Tags.Name] = tags,
+            [Alerts.Name] = alerts,
+            [History.Name] = history
+        };
     }
+
+    public IServiceProvider Provider { get; }
+
+    public Dictionary<string, PageViewModelBase> Pages { get; }
 
 #if DEBUG
     public ExperimentsPageViewModel Experiments { get; }

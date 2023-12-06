@@ -9,7 +9,7 @@ namespace Cobalt.Common.Infrastructure;
 
 public class ServiceInjector
 {
-    private const string DebugAppSettings = "appsettings.Debug.json";
+    private const string DebugAppSettings = "dbg/appsettings.Debug.json";
     private const string AppSettings = "appsettings.json";
     private readonly IServiceProvider _serviceProvider;
 

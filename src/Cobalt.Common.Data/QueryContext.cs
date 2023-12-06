@@ -184,7 +184,7 @@ public class QueryContext : DbContext
 
 #if DEBUG
 
-    private const string SeedDbFile = "seed.db";
+    private const string SeedDbFile = "dbg/seed.db";
 
     public void MigrateFromSeed(bool force = false)
     {

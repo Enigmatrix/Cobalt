@@ -19,10 +19,8 @@
 
 	<!-- Copy appsetting fiels from project root -->
 	<ItemGroup>
-		<Content Condition="'$(Configuration)' == 'Debug'" Include="../../dbg/appsettings.Debug.json">
-			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
-		</Content>
-		<Content Condition="'$(Configuration)' == 'Debug'" Include="../../dbg/seed.db">
+		<Content Condition="'$(Configuration)' == 'Debug'" Include="../../dbg/**">
+			<TargetPath>dbg/%(RecursiveDir)\%(Filename)%(Extension)</TargetPath>
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</Content>
 		<Content Include="../../appsettings.json">
