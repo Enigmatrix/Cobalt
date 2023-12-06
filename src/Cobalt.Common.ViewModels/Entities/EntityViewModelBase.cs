@@ -50,11 +50,11 @@ public abstract class EditableEntityViewModelBase<T> : EntityViewModelBase<T> wh
     /// <summary>
     ///     Save the original Entity to the database.
     /// </summary>
-    public virtual void Save()
+    public virtual async Task Save()
     {
-        using var ctx = Contexts.CreateDbContext();
+        await using var ctx = await Contexts.CreateDbContextAsync();
         UpdateEntity();
         ctx.Update(Entity);
-        ctx.SaveChanges();
+        await ctx.SaveChangesAsync();
     }
 }

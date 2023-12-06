@@ -96,7 +96,7 @@ public class QueryContext : DbContext
     /// <summary>
     ///     Updates an <see cref="Alert" />, creating a new version of the <see cref="Alert" /> if necessary.
     /// </summary>
-    public void UpdateAlert(Alert alert)
+    public async Task UpdateAlert(Alert alert)
     {
         /*
          * If there is any AlertEvent or ReminderEvent associated with this Alert, then we must create a new Alert with higher Version
@@ -109,16 +109,19 @@ public class QueryContext : DbContext
          * LastUpdate, else no insert should occur. Additionally, a system-wide mutex needs to be held from the time of the check till
          * the time of the update that prevents insertion of events. This is so that LastUpdated is accurately set after the comparison.
          */
-        var anyAlertEvents = alert.AlertEvents.Count != 0 || AlertEvents.Any(alertEvent => alertEvent.Alert == alert);
+        var anyAlertEvents = alert.AlertEvents.Count != 0 ||
+                             await AlertEvents.AnyAsync(alertEvent => alertEvent.Alert == alert);
         var anyReminderEvents = alert.Reminders.Any(reminder => reminder.ReminderEvents.Count != 0) ||
-                                ReminderEvents.Any(reminderEvent => reminderEvent.Reminder.Alert == alert);
+                                await ReminderEvents.AnyAsync(reminderEvent => reminderEvent.Reminder.Alert == alert);
 
         if (anyAlertEvents || anyReminderEvents)
         {
             var newAlert = alert.Clone();
             newAlert.Version++;
             var newReminders =
-                (alert.Reminders.Count == 0 ? Reminders.Where(x => x.Alert == alert).ToList() : alert.Reminders).Select(
+                (alert.Reminders.Count == 0
+                    ? await Reminders.Where(x => x.Alert == alert).ToListAsync()
+                    : alert.Reminders).Select(
                     reminder =>
                     {
                         var newReminder = reminder.Clone();
@@ -135,16 +138,16 @@ public class QueryContext : DbContext
         }
         else
         {
-            UpdateAlert(alert);
+            Update(alert);
         }
 
-        SaveChanges();
+        await SaveChangesAsync();
     }
 
     /// <summary>
     ///     Updates an <see cref="Reminder" />, creating a new version of the <see cref="Reminder" /> if necessary.
     /// </summary>
-    public void UpdateReminder(Reminder reminder)
+    public async Task UpdateReminder(Reminder reminder)
     {
         /*
          * If there is any ReminderEvent associated with this Reminder, then we must create a new Reminder with higher Version
@@ -157,7 +160,7 @@ public class QueryContext : DbContext
          */
 
         var anyReminderEvents = reminder.ReminderEvents.Count != 0 ||
-                                ReminderEvents.Any(reminderEvent => reminderEvent.Reminder == reminder);
+                                await ReminderEvents.AnyAsync(reminderEvent => reminderEvent.Reminder == reminder);
         if (anyReminderEvents)
         {
             var newReminder = reminder.Clone();
@@ -169,7 +172,7 @@ public class QueryContext : DbContext
             Update(reminder);
         }
 
-        SaveChanges();
+        await SaveChangesAsync();
     }
 
     /// <summary>
@@ -226,17 +229,17 @@ public class QueryContext : DbContext
     ///     Migrate the seed database to the actual database.
     /// </summary>
     /// <param name="force">Overwrite the existing actual database</param>
-    public void MigrateFromSeed(bool force = false)
+    public async Task MigrateFromSeed(bool force = false)
     {
         var connStr = new SqliteConnectionStringBuilder(Database.GetConnectionString());
         if (!force && File.Exists(connStr.DataSource)) return;
         var username = Environment.UserName;
 
-        File.Copy(SeedDbFile, connStr.DataSource, true);
-        Apps.ExecuteUpdate(appSet => appSet.SetProperty(app => app.Identity.PathOrAumid,
+        await File.OpenRead(SeedDbFile).CopyToAsync(File.Create(connStr.DataSource));
+        await Apps.ExecuteUpdateAsync(appSet => appSet.SetProperty(app => app.Identity.PathOrAumid,
             app => app.Identity.PathOrAumid.Replace("|user|", username)));
 
-        SaveChanges();
+        await SaveChangesAsync();
     }
 
     /// <summary>
@@ -245,12 +248,12 @@ public class QueryContext : DbContext
     ///     while preserving the deltas between all <see cref="Usage" />.
     /// </summary>
     /// <param name="newUsageEnd">New last <see cref="Usage" /> End</param>
-    public void UpdateAllUsageEnds(DateTime newUsageEnd)
+    public async Task UpdateAllUsageEnds(DateTime newUsageEnd)
     {
         var usageLastEnd = Usages.Max(usage => usage.End);
         var deltaTicks = (newUsageEnd - usageLastEnd).Ticks;
-        Database.ExecuteSql($"UPDATE usages SET start = start + {deltaTicks}, end = end + {deltaTicks}");
-        SaveChanges();
+        await Database.ExecuteSqlAsync($"UPDATE usages SET start = start + {deltaTicks}, end = end + {deltaTicks}");
+        await SaveChangesAsync();
     }
 #endif
 }

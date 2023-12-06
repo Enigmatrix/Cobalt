@@ -19,9 +19,9 @@ public partial class ExperimentsPageViewModel : PageViewModelBase
     public override string Name => "Experiments";
 
     [RelayCommand]
-    public void UpdateAllUsageEnds()
+    public async Task UpdateAllUsageEnds()
     {
-        using var context = Contexts.CreateDbContext();
-        context.UpdateAllUsageEnds(DateTime.Now);
+        await using var context = await Contexts.CreateDbContextAsync();
+        await context.UpdateAllUsageEnds(DateTime.Now);
     }
 }
