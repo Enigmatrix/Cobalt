@@ -60,19 +60,16 @@ public class QueryContext : DbContext
         if (!force && usageEndAt == null && File.Exists(connStr.DataSource)) return;
         var username = Environment.UserName;
 
-        File.Copy(SeedDbFile, connStr.DataSource);
+        File.Copy(SeedDbFile, connStr.DataSource, true);
         Apps.ExecuteUpdate(appSet => appSet.SetProperty(app => app.Identity.PathOrAumid,
             app => app.Identity.PathOrAumid.Replace("|user|", username)));
 
 
-        if (usageEndAt != null)
+        if (usageEndAt is { } usageEndAtValue)
         {
             var usageLastEnd = Usages.Max(usage => usage.End);
-            var delta = usageEndAt - usageLastEnd;
-            Usages.ExecuteUpdate(usageSet => usageSet.SetProperty(usage => usage.Start,
-                usage => usage.Start + delta));
-            Usages.ExecuteUpdate(usageSet => usageSet.SetProperty(usage => usage.Start,
-                usage => usage.End + delta));
+            var deltaTicks = (usageEndAtValue - usageLastEnd).Ticks;
+            Database.ExecuteSql($"UPDATE usages SET start = start + {deltaTicks}, end = end + {deltaTicks}");
         }
 
         SaveChanges();
