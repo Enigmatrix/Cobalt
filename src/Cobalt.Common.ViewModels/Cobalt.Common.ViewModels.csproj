@@ -7,6 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Pages\ExperimentsPageViewModel.cs" Condition="'$(Configuration)' != 'Debug'" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
     <PackageReference Include="ReactiveUI" Version="19.5.1" />
   </ItemGroup>
