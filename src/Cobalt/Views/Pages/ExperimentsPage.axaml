@@ -6,10 +6,14 @@
                                 xmlns:pages="clr-namespace:Cobalt.Common.ViewModels.Pages;assembly=Cobalt.Common.ViewModels"
                                 xmlns:controls="clr-namespace:FluentAvalonia.UI.Controls;assembly=FluentAvalonia"
                                 xmlns:entities="clr-namespace:Cobalt.Common.ViewModels.Entities;assembly=Cobalt.Common.ViewModels"
+                                xmlns:converters="clr-namespace:Cobalt.Converters"
                                 mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
                                 x:Class="Cobalt.Views.Pages.ExperimentsPage" Padding="8"
                                 x:DataType="pages:ExperimentsPageViewModel">
     <StackPanel Orientation="Vertical">
+        <StackPanel.Resources>
+            <converters:BytesToImageConverter x:Key="BytesToImageConverter" />
+        </StackPanel.Resources>
         <DockPanel Margin="8,8, 16, 16">
 
             <TextBlock DockPanel.Dock="Left" Theme="{StaticResource TitleTextBlockStyle}" Text="{Binding Name}" />
@@ -66,12 +70,17 @@
                                     <ListBox SelectedItem="{Binding SelectedApp}" ItemsSource="{Binding Apps}">
                                         <ListBox.ItemTemplate>
                                             <DataTemplate DataType="entities:AppViewModel">
-                                                <StackPanel Orientation="Vertical">
-                                                    <TextBlock Text="{Binding Name}"
-                                                               Theme="{StaticResource BodyTextBlockStyle}" />
-                                                    <TextBlock Text="{Binding Description}"
-                                                               Theme="{StaticResource CaptionTextBlockStyle}"
-                                                               TextWrapping="NoWrap" />
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Image Width="28" Height="28" Margin="-8,0, 8, 0"
+                                                           Source="{Binding Image^, Converter={StaticResource BytesToImageConverter}}" />
+
+                                                    <StackPanel Orientation="Vertical">
+                                                        <TextBlock Text="{Binding Name}"
+                                                                   Theme="{StaticResource BodyTextBlockStyle}" />
+                                                        <TextBlock Text="{Binding Description}"
+                                                                   Theme="{StaticResource CaptionTextBlockStyle}"
+                                                                   TextWrapping="NoWrap" />
+                                                    </StackPanel>
                                                 </StackPanel>
                                             </DataTemplate>
                                         </ListBox.ItemTemplate>

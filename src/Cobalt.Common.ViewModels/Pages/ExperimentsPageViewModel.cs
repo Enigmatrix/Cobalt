@@ -1,7 +1,6 @@
 ﻿using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using Cobalt.Common.Data;
-using Cobalt.Common.Data.Entities;
 using Cobalt.Common.ViewModels.Entities;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;

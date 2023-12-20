@@ -30,6 +30,16 @@ public class QueryContext : DbContext
     public DbSet<ReminderEvent> ReminderEvents { get; set; } = null!;
 
     /// <summary>
+    ///     Get the Icon of an <see cref="App" />
+    /// </summary>
+    /// <param name="app"></param>
+    /// <returns>Icon as bytes</returns>
+    public async Task<byte[]?> GetAppIconBytes(App app)
+    {
+        return await Database.SqlQuery<byte[]?>($"SELECT icon as Value FROM apps WHERE id={app.Id}").SingleAsync();
+    }
+
+    /// <summary>
     ///     Map an <see cref="App" /> to its <see cref="Usage" /> Duration within a range of time, using a reusable
     ///     <see cref="Expression" />.
     /// </summary>

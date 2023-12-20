@@ -27,6 +27,18 @@ public partial class AppViewModel : EditableEntityViewModelBase<App>
         _identity = entity.Identity;
     }
 
+    public Task<byte[]?> Image =>
+        GetImage();
+
+    public async Task<byte[]?> GetImage()
+    {
+        return await Task.Run(async () =>
+        {
+            await using var context = await Contexts.CreateDbContextAsync();
+            return await context.GetAppIconBytes(Entity);
+        });
+    }
+
     public override void UpdateEntity()
     {
         Entity.Initialized = true; // cannot be set to false as a user
