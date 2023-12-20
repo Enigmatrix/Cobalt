@@ -5,7 +5,7 @@
                                 xmlns:reactiveUi="http://reactiveui.net"
                                 xmlns:pages="clr-namespace:Cobalt.Common.ViewModels.Pages;assembly=Cobalt.Common.ViewModels"
                                 xmlns:controls="clr-namespace:FluentAvalonia.UI.Controls;assembly=FluentAvalonia"
-                                xmlns:entities="clr-namespace:Cobalt.Common.Data.Entities;assembly=Cobalt.Common.Data"
+                                xmlns:entities="clr-namespace:Cobalt.Common.ViewModels.Entities;assembly=Cobalt.Common.ViewModels"
                                 mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
                                 x:Class="Cobalt.Views.Pages.ExperimentsPage" Padding="8"
                                 x:DataType="pages:ExperimentsPageViewModel">
@@ -52,7 +52,7 @@
                                           Padding="4" MinHeight="40" Margin="0,0,0,8">
                                     <ListBox SelectedItem="{Binding SelectedTag}" ItemsSource="{Binding Tags}">
                                         <ListBox.ItemTemplate>
-                                            <DataTemplate DataType="entities:Tag">
+                                            <DataTemplate DataType="entities:TagViewModel">
                                                 <StackPanel Orientation="Vertical">
                                                     <TextBlock Text="{Binding Name}" />
                                                 </StackPanel>
@@ -65,7 +65,7 @@
                                           Padding="4" MinHeight="40">
                                     <ListBox SelectedItem="{Binding SelectedApp}" ItemsSource="{Binding Apps}">
                                         <ListBox.ItemTemplate>
-                                            <DataTemplate DataType="entities:App">
+                                            <DataTemplate DataType="entities:AppViewModel">
                                                 <StackPanel Orientation="Vertical">
                                                     <TextBlock Text="{Binding Name}"
                                                                Theme="{StaticResource BodyTextBlockStyle}" />

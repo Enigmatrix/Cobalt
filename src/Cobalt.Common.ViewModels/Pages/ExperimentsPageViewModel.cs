@@ -2,6 +2,7 @@
 using System.Reactive.Linq;
 using Cobalt.Common.Data;
 using Cobalt.Common.Data.Entities;
+using Cobalt.Common.ViewModels.Entities;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.EntityFrameworkCore;
@@ -18,12 +19,12 @@ namespace Cobalt.Common.ViewModels.Pages;
 public partial class ExperimentsPageViewModel : PageViewModelBase
 {
     //[ObservableProperty] private ReadOnlyObservableCollection<App> _apps;
-    [ObservableProperty] private List<App> _apps;
+    [ObservableProperty] private List<AppViewModel> _apps;
     [ObservableProperty] private string _search = "";
     [ObservableProperty] private object? _selected;
-    [ObservableProperty] private App? _selectedApp;
-    [ObservableProperty] private Tag? _selectedTag;
-    [ObservableProperty] private List<Tag> _tags;
+    [ObservableProperty] private AppViewModel? _selectedApp;
+    [ObservableProperty] private TagViewModel? _selectedTag;
+    [ObservableProperty] private List<TagViewModel> _tags;
 
     public ExperimentsPageViewModel(IDbContextFactory<QueryContext> contexts) : base(contexts)
     {
@@ -66,22 +67,22 @@ public partial class ExperimentsPageViewModel : PageViewModelBase
 
     public override string Name => "Experiments";
 
-    public async Task<List<App>> GetApps(string search)
+    public async Task<List<AppViewModel>> GetApps(string search)
     {
         await using var context = await Contexts.CreateDbContextAsync();
         var a = await context.Apps.Where(x =>
                 x.Name.ToLower().Contains(search.ToLower()) || x.Description.Contains(search) ||
                 x.Company.Contains(search))
             .ToListAsync();
-        return a;
+        return a.Select(x => new AppViewModel(x, Contexts)).ToList();
     }
 
-    public async Task<List<Tag>> GetTags(string search)
+    public async Task<List<TagViewModel>> GetTags(string search)
     {
         await using var context = await Contexts.CreateDbContextAsync();
 
         var a = await context.Tags.Where(x => x.Name.ToLower().Contains(search.ToLower())).ToListAsync();
-        return a;
+        return a.Select(x => new TagViewModel(x, Contexts)).ToList();
     }
 
     [RelayCommand]
