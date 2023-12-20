@@ -5,6 +5,7 @@
                                 xmlns:reactiveUi="http://reactiveui.net"
                                 xmlns:pages="clr-namespace:Cobalt.Common.ViewModels.Pages;assembly=Cobalt.Common.ViewModels"
                                 xmlns:controls="clr-namespace:FluentAvalonia.UI.Controls;assembly=FluentAvalonia"
+                                xmlns:entities="clr-namespace:Cobalt.Common.Data.Entities;assembly=Cobalt.Common.Data"
                                 mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
                                 x:Class="Cobalt.Views.Pages.ExperimentsPage" Padding="8"
                                 x:DataType="pages:ExperimentsPageViewModel">
@@ -37,6 +38,57 @@
             <controls:SettingsExpanderItem Content="Update last Usage end to now" IsClickEnabled="True"
                                            Command="{Binding UpdateAllUsageEndsAsync}" />
         </controls:SettingsExpander>
+
+        <DropDownButton Content="{Binding Selected}">
+            <DropDownButton.Flyout>
+                <Flyout>
+                    <StackPanel Orientation="Vertical" Margin="-4">
+                        <TextBox Text="{Binding Search, Mode=TwoWay}" />
+
+                        <ScrollViewer Margin="0" Width="300" MaxHeight="400">
+                            <StackPanel Orientation="Vertical">
+                                <StackPanel.Styles>
+                                    <Style Selector="ListBoxItem">
+                                        <Setter Property="Margin" Value="0" />
+                                        <Setter Property="Padding" Value="4,2" />
+                                        <Setter Property="MinHeight" Value="0" />
+                                    </Style>
+                                </StackPanel.Styles>
+
+                                <TextBlock Margin="0,8,0,4" Theme="{StaticResource BodyStrongTextBlockStyle}"
+                                           Text="{Binding Tags.Count, StringFormat={}Tags ({0})}" />
+                                <ListBox SelectedItem="{Binding SelectedTag}" ItemsSource="{Binding Tags}">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate DataType="entities:Tag">
+                                            <StackPanel Orientation="Vertical">
+                                                <TextBlock Text="{Binding Name}" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+
+                                <TextBlock Margin="0,8,0,4" Theme="{StaticResource BodyStrongTextBlockStyle}"
+                                           Text="{Binding Apps.Count, StringFormat={}Apps ({0})}" />
+                                <ListBox SelectedItem="{Binding SelectedApp}" ItemsSource="{Binding Apps}">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate DataType="entities:App">
+                                            <StackPanel Orientation="Vertical">
+                                                <TextBlock Text="{Binding Name}"
+                                                           Theme="{StaticResource BodyTextBlockStyle}" />
+                                                <TextBlock Text="{Binding Description}"
+                                                           Theme="{StaticResource CaptionTextBlockStyle}"
+                                                           TextWrapping="NoWrap" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+
+                            </StackPanel>
+                        </ScrollViewer>
+                    </StackPanel>
+                </Flyout>
+            </DropDownButton.Flyout>
+        </DropDownButton>
 
     </StackPanel>
 </reactiveUi:ReactiveUserControl>
