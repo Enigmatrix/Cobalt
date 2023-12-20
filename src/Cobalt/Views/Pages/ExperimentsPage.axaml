@@ -43,52 +43,50 @@
             <DropDownButton.Flyout>
                 <Flyout>
                     <StackPanel Orientation="Vertical" Margin="-4">
-                        <TextBox Text="{Binding Search, Mode=TwoWay}" />
+                        <TextBox Text="{Binding Search, Mode=TwoWay}" Margin="0,0,0,8" />
 
                         <ScrollViewer Margin="0" Width="300" MaxHeight="400">
                             <StackPanel Orientation="Vertical">
-                                <StackPanel.Styles>
-                                    <Style Selector="ListBoxItem">
-                                        <Setter Property="Margin" Value="0" />
-                                        <Setter Property="Padding" Value="4,2" />
-                                        <Setter Property="MinHeight" Value="0" />
-                                    </Style>
-                                </StackPanel.Styles>
 
-                                <TextBlock Margin="0,8,0,4" Theme="{StaticResource BodyStrongTextBlockStyle}"
-                                           Text="{Binding Tags.Count, StringFormat={}Tags ({0})}" />
-                                <ListBox SelectedItem="{Binding SelectedTag}" ItemsSource="{Binding Tags}">
-                                    <ListBox.ItemTemplate>
-                                        <DataTemplate DataType="entities:Tag">
-                                            <StackPanel Orientation="Vertical">
-                                                <TextBlock Text="{Binding Name}" />
-                                            </StackPanel>
-                                        </DataTemplate>
-                                    </ListBox.ItemTemplate>
-                                </ListBox>
+                                <Expander Header="{Binding Tags.Count, StringFormat={}Tags ({0})}" IsExpanded="True"
+                                          Padding="4" MinHeight="40" Margin="0,0,0,8">
+                                    <ListBox SelectedItem="{Binding SelectedTag}" ItemsSource="{Binding Tags}">
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate DataType="entities:Tag">
+                                                <StackPanel Orientation="Vertical">
+                                                    <TextBlock Text="{Binding Name}" />
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+                                </Expander>
 
-                                <TextBlock Margin="0,8,0,4" Theme="{StaticResource BodyStrongTextBlockStyle}"
-                                           Text="{Binding Apps.Count, StringFormat={}Apps ({0})}" />
-                                <ListBox SelectedItem="{Binding SelectedApp}" ItemsSource="{Binding Apps}">
-                                    <ListBox.ItemTemplate>
-                                        <DataTemplate DataType="entities:App">
-                                            <StackPanel Orientation="Vertical">
-                                                <TextBlock Text="{Binding Name}"
-                                                           Theme="{StaticResource BodyTextBlockStyle}" />
-                                                <TextBlock Text="{Binding Description}"
-                                                           Theme="{StaticResource CaptionTextBlockStyle}"
-                                                           TextWrapping="NoWrap" />
-                                            </StackPanel>
-                                        </DataTemplate>
-                                    </ListBox.ItemTemplate>
-                                </ListBox>
+                                <Expander Header="{Binding Apps.Count, StringFormat={}Apps ({0})}" IsExpanded="True"
+                                          Padding="4" MinHeight="40">
+                                    <ListBox SelectedItem="{Binding SelectedApp}" ItemsSource="{Binding Apps}">
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate DataType="entities:App">
+                                                <StackPanel Orientation="Vertical">
+                                                    <TextBlock Text="{Binding Name}"
+                                                               Theme="{StaticResource BodyTextBlockStyle}" />
+                                                    <TextBlock Text="{Binding Description}"
+                                                               Theme="{StaticResource CaptionTextBlockStyle}"
+                                                               TextWrapping="NoWrap" />
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+                                </Expander>
 
                             </StackPanel>
                         </ScrollViewer>
                     </StackPanel>
+
+
                 </Flyout>
             </DropDownButton.Flyout>
         </DropDownButton>
+
 
     </StackPanel>
 </reactiveUi:ReactiveUserControl>
