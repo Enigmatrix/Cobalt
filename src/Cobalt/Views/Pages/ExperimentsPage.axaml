@@ -11,9 +11,6 @@
                                 x:Class="Cobalt.Views.Pages.ExperimentsPage" Padding="8"
                                 x:DataType="pages:ExperimentsPageViewModel">
     <StackPanel Orientation="Vertical">
-        <StackPanel.Resources>
-            <converters:BytesToImageConverter x:Key="BytesToImageConverter" />
-        </StackPanel.Resources>
         <DockPanel Margin="8,8, 16, 16">
 
             <TextBlock DockPanel.Dock="Left" Theme="{StaticResource TitleTextBlockStyle}" Text="{Binding Name}" />
@@ -43,7 +40,35 @@
                                            Command="{Binding UpdateAllUsageEndsAsync}" />
         </controls:SettingsExpander>
 
-        <DropDownButton Content="{Binding Selected}">
+        <DropDownButton Content="{Binding Selected}" MinHeight="48" MinWidth="100" Padding="16,0,8,0">
+            <DropDownButton.Resources>
+                <converters:BytesToImageConverter x:Key="BytesToImageConverter" />
+            </DropDownButton.Resources>
+            <DropDownButton.DataTemplates>
+
+                <DataTemplate DataType="entities:TagViewModel">
+                    <StackPanel Orientation="Horizontal">
+                        <controls:SymbolIcon Symbol="Tag" FontSize="20" Margin="-8,0,8,0" />
+                        <TextBlock VerticalAlignment="Center" Text="{Binding Name}" />
+                    </StackPanel>
+                </DataTemplate>
+
+                <DataTemplate DataType="entities:AppViewModel">
+                    <StackPanel Orientation="Horizontal">
+                        <Image Width="28" Height="28" Margin="-8,0, 8, 0"
+                               Source="{Binding Image^, Converter={StaticResource BytesToImageConverter}}" />
+
+                        <StackPanel Orientation="Vertical">
+                            <TextBlock Text="{Binding Name}"
+                                       Theme="{StaticResource BodyTextBlockStyle}" />
+                            <TextBlock Text="{Binding Description}"
+                                       Theme="{StaticResource CaptionTextBlockStyle}"
+                                       TextWrapping="NoWrap" />
+                        </StackPanel>
+                    </StackPanel>
+                </DataTemplate>
+
+            </DropDownButton.DataTemplates>
             <DropDownButton.Flyout>
                 <Flyout>
                     <StackPanel Orientation="Vertical" Margin="-4">
@@ -56,11 +81,6 @@
                                           Padding="4" MinHeight="40" Margin="0,0,0,8">
                                     <ListBox SelectedItem="{Binding SelectedTag}" ItemsSource="{Binding Tags}">
                                         <ListBox.ItemTemplate>
-                                            <DataTemplate DataType="entities:TagViewModel">
-                                                <StackPanel Orientation="Vertical">
-                                                    <TextBlock Text="{Binding Name}" />
-                                                </StackPanel>
-                                            </DataTemplate>
                                         </ListBox.ItemTemplate>
                                     </ListBox>
                                 </Expander>
@@ -69,20 +89,6 @@
                                           Padding="4" MinHeight="40">
                                     <ListBox SelectedItem="{Binding SelectedApp}" ItemsSource="{Binding Apps}">
                                         <ListBox.ItemTemplate>
-                                            <DataTemplate DataType="entities:AppViewModel">
-                                                <StackPanel Orientation="Horizontal">
-                                                    <Image Width="28" Height="28" Margin="-8,0, 8, 0"
-                                                           Source="{Binding Image^, Converter={StaticResource BytesToImageConverter}}" />
-
-                                                    <StackPanel Orientation="Vertical">
-                                                        <TextBlock Text="{Binding Name}"
-                                                                   Theme="{StaticResource BodyTextBlockStyle}" />
-                                                        <TextBlock Text="{Binding Description}"
-                                                                   Theme="{StaticResource CaptionTextBlockStyle}"
-                                                                   TextWrapping="NoWrap" />
-                                                    </StackPanel>
-                                                </StackPanel>
-                                            </DataTemplate>
                                         </ListBox.ItemTemplate>
                                     </ListBox>
                                 </Expander>
