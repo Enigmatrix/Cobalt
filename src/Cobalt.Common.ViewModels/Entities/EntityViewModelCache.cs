@@ -23,6 +23,11 @@ public interface IEntityViewModelCache
     ///     Convert the <see cref="Tag" /> to a cached <see cref="TagViewModel" />
     /// </summary>
     TagViewModel Tag(Tag tag);
+
+    /// <summary>
+    ///     Convert the <see cref="Reminder" /> to a cached <see cref="ReminderViewModel" />
+    /// </summary>
+    ReminderViewModel Reminder(Reminder reminder);
 }
 
 public record EntityViewModelCache(IDbContextFactory<QueryContext> Contexts) : IEntityViewModelCache
@@ -30,6 +35,7 @@ public record EntityViewModelCache(IDbContextFactory<QueryContext> Contexts) : I
     public Dictionary<long, WeakReference<AppViewModel>> Apps { get; } = new();
     public Dictionary<long, WeakReference<TagViewModel>> Tags { get; } = new();
     public Dictionary<long, WeakReference<AlertViewModel>> Alerts { get; } = new();
+    public Dictionary<long, WeakReference<ReminderViewModel>> Reminders { get; } = new();
 
 
     public TagViewModel Tag(Tag tag)
@@ -59,6 +65,16 @@ public record EntityViewModelCache(IDbContextFactory<QueryContext> Contexts) : I
 
         var nvm = new AlertViewModel(alert, this, Contexts);
         Alerts[alert.Id] = new WeakReference<AlertViewModel>(nvm);
+        return nvm;
+    }
+
+    public ReminderViewModel Reminder(Reminder reminder)
+    {
+        if (Reminders.TryGetValue(reminder.Id, out var v) && v.TryGetTarget(out var vm))
+            return vm;
+
+        var nvm = new ReminderViewModel(reminder, this, Contexts);
+        Reminders[reminder.Id] = new WeakReference<ReminderViewModel>(nvm);
         return nvm;
     }
 }
