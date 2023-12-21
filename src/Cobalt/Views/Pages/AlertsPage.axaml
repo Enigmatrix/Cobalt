@@ -79,9 +79,9 @@
                                 <Grid HorizontalAlignment="Stretch" RowDefinitions="Auto,Auto"
                                       ColumnDefinitions="Auto,*,Auto">
                                     <!--App/Tag at the left side-->
-                                    <Grid Grid.Row="0" Grid.Column="0" Height="68">
-                                        <ContentControl Content="{Binding Inner.App}" />
-                                        <ContentControl Content="{Binding Inner.Tag}" />
+                                    <Grid Grid.Row="0" Grid.Column="0" Height="68" VerticalAlignment="Center" Margin="0,0,0,-4">
+                                        <ContentControl Content="{Binding Inner.App}" VerticalAlignment="Center" VerticalContentAlignment="Center" />
+                                        <ContentControl Content="{Binding Inner.Tag}" VerticalAlignment="Center" VerticalContentAlignment="Center" />
                                     </Grid>
 
                                     <!--Durations,TriggerAction on the right side-->
