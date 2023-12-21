@@ -6,6 +6,9 @@ using Avalonia.Media.Imaging;
 
 namespace Cobalt.Converters;
 
+/// <summary>
+///     Converts from bytes to Avalonia <see cref="Bitmap" />
+/// </summary>
 public class BytesToImageConverter : IValueConverter
 {
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)

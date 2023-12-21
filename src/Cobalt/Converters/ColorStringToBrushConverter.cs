@@ -6,6 +6,9 @@ using Avalonia.Media.Immutable;
 
 namespace Cobalt.Converters;
 
+/// <summary>
+///     Converts from hex-string color e.g. #123456 to Avalonia <see cref="ImmutableSolidColorBrush" />
+/// </summary>
 public class ColorStringToBrushConverter : IValueConverter
 {
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
