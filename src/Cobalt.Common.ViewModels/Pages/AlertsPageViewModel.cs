@@ -14,7 +14,7 @@ namespace Cobalt.Common.ViewModels.Pages;
 /// </summary>
 public partial class AlertsPageViewModel : PageViewModelBase
 {
-    [ObservableProperty] private List<AlertViewModel> _alerts = default!;
+    [ObservableProperty] private List<WithDuration<AlertViewModel>> _alerts = default!;
 
     public AlertsPageViewModel(IEntityViewModelCache entityCache, IDbContextFactory<QueryContext> contexts) :
         base(contexts)
@@ -22,8 +22,12 @@ public partial class AlertsPageViewModel : PageViewModelBase
         this.WhenActivated(dis =>
         {
             // Getting all Alerts
+            // TODO make this WithDuration cleaner
             Observable.FromAsync(GetAlerts)
-                .Select(alerts => alerts.Select(entityCache.Alert).ToList())
+                .Select(alerts => alerts.Select(alertWithDur =>
+                        new WithDuration<AlertViewModel>(entityCache.Alert(alertWithDur.Inner), alertWithDur.Duration))
+                    .ToList())
+                .SubscribeOn(RxApp.TaskpoolScheduler)
                 .BindTo(this, self => self.Alerts)
                 .DisposeWith(dis);
         });
@@ -31,9 +35,9 @@ public partial class AlertsPageViewModel : PageViewModelBase
 
     public override string Name => "Alerts";
 
-    private async Task<List<Alert>> GetAlerts()
+    private async Task<List<WithDuration<Alert>>> GetAlerts()
     {
         await using var context = await Contexts.CreateDbContextAsync();
-        return await context.Alerts.ToListAsync();
+        return await context.AlertDurations().ToListAsync();
     }
 }
