@@ -4,7 +4,92 @@
                                 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
                                 xmlns:reactiveUi="http://reactiveui.net"
                                 xmlns:pages="clr-namespace:Cobalt.Common.ViewModels.Pages;assembly=Cobalt.Common.ViewModels"
+                                xmlns:controls="clr-namespace:FluentAvalonia.UI.Controls;assembly=FluentAvalonia"
+                                xmlns:entities="clr-namespace:Cobalt.Common.ViewModels.Entities;assembly=Cobalt.Common.ViewModels"
                                 mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450" Padding="16"
                                 x:Class="Cobalt.Views.Pages.AlertsPage" x:DataType="pages:AlertsPageViewModel">
-    <TextBlock Theme="{StaticResource TitleTextBlockStyle}" Text="{Binding Name}" />
+    <ScrollViewer>
+        <ScrollViewer.DataTemplates>
+
+            <DataTemplate DataType="entities:TagViewModel">
+                <StackPanel Orientation="Horizontal" Margin="8,0,8,4">
+                    <controls:SymbolIcon Symbol="Tag" FontSize="32" VerticalAlignment="Center" Margin="8,0,16,0"
+                                         Foreground="{Binding Color, Converter={StaticResource ColorStringToBrushConverter}}" />
+                    <TextBlock Text="{Binding Name}" VerticalAlignment="Center"
+                               Theme="{StaticResource SubtitleTextBlockStyle}" />
+                </StackPanel>
+            </DataTemplate>
+
+            <DataTemplate DataType="entities:AppViewModel">
+                <StackPanel Orientation="Horizontal" Margin="8,0,8,4">
+                    <Image Width="32" Height="32" Margin="8,0,16,0" VerticalAlignment="Center"
+                           Source="{Binding Image^, Converter={StaticResource BytesToImageConverter}}" />
+
+                    <StackPanel Orientation="Vertical" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Name}"
+                                   Theme="{StaticResource SubtitleTextBlockStyle}" />
+                        <TextBlock Text="{Binding Description}"
+                                   Theme="{StaticResource BodyTextBlockStyle}"
+                                   TextWrapping="NoWrap" />
+                    </StackPanel>
+                </StackPanel>
+            </DataTemplate>
+
+        </ScrollViewer.DataTemplates>
+        <StackPanel Orientation="Vertical">
+
+            <Grid ColumnDefinitions="Auto,*,Auto">
+
+                <TextBlock VerticalAlignment="Center" Grid.Column="0" DockPanel.Dock="Left"
+                           Theme="{StaticResource TitleTextBlockStyle}" Text="{Binding Name}" />
+
+                <controls:CommandBar VerticalAlignment="Center" DefaultLabelPosition="Right" Grid.Column="2">
+                    <controls:CommandBar.PrimaryCommands>
+                        <controls:CommandBarButton Label="Add" IconSource="Add" />
+                    </controls:CommandBar.PrimaryCommands>
+                </controls:CommandBar>
+            </Grid>
+
+            <ItemsRepeater ItemsSource="{Binding Alerts}">
+                <ItemsRepeater.Layout>
+                    <StackLayout Spacing="8" Orientation="Vertical" />
+                </ItemsRepeater.Layout>
+                <ItemsRepeater.ItemTemplate>
+                    <DataTemplate DataType="entities:AlertViewModel">
+                        <controls:FABorder CornerRadius="4" Padding="4"
+                                           Background="{DynamicResource CardBackgroundFillColorDefaultBrush}">
+                            <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="Auto,*,Auto">
+                                <!--App/Tag at the left side-->
+                                <Grid Grid.Row="0" Grid.Column="0" Height="68">
+                                    <ContentControl Content="{Binding App}" />
+                                    <ContentControl Content="{Binding Tag}" />
+                                </Grid>
+
+                                <!--Durations,TriggerAction on the right side-->
+                                <StackPanel Orientation="Vertical" Spacing="4" Margin="4" VerticalAlignment="Bottom"
+                                            Grid.Column="2" Grid.Row="0">
+                                    <StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Right">
+                                        <controls:SymbolIcon Symbol="Message" />
+                                        <TextBlock Text="Message" />
+                                    </StackPanel>
+
+                                    <StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Right">
+                                        <TextBlock Text="1h 8m" />
+                                        <TextBlock Text="/" />
+                                        <TextBlock Text="2h" />
+                                        <TextBlock Text="/" />
+                                        <TextBlock Text="Daily" />
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <ProgressBar Height="4" Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="1" Maximum="100"
+                                             Value="75" />
+                            </Grid>
+                        </controls:FABorder>
+                    </DataTemplate>
+                </ItemsRepeater.ItemTemplate>
+            </ItemsRepeater>
+
+        </StackPanel>
+    </ScrollViewer>
 </reactiveUi:ReactiveUserControl>

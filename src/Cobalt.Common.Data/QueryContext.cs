@@ -224,6 +224,15 @@ public class QueryContext : DbContext
                 .Where(otherAlert => otherAlert.Guid == alert.Guid)
                 .Max(otherAlert => otherAlert.Version));
 
+        // Auto-include Alert relationships
+        modelBuilder.Entity<Alert>()
+            .Navigation(alert => alert.App).AutoInclude();
+        modelBuilder.Entity<Alert>()
+            .Navigation(alert => alert.Tag).AutoInclude();
+        modelBuilder.Entity<Alert>()
+            .Navigation(alert => alert.Reminders).AutoInclude();
+
+
         // Only take the Reminder with the highest Versions
         modelBuilder.Entity<Reminder>().HasQueryFilter(reminder =>
             reminder.Version == Reminders
