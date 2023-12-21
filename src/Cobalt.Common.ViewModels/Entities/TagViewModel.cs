@@ -13,7 +13,8 @@ public partial class TagViewModel : EditableEntityViewModelBase<Tag>
     [ObservableProperty] private string _color;
     [ObservableProperty] private string _name;
 
-    public TagViewModel(Tag entity, IDbContextFactory<QueryContext> contexts) : base(entity, contexts)
+    public TagViewModel(Tag entity, IEntityViewModelCache entityCache, IDbContextFactory<QueryContext> contexts) : base(
+        entity, entityCache, contexts)
     {
         _name = entity.Name;
         _color = entity.Color;

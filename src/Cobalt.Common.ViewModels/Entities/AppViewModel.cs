@@ -17,7 +17,8 @@ public partial class AppViewModel : EditableEntityViewModelBase<App>
     [ObservableProperty] private bool _initialized;
     [ObservableProperty] private string _name;
 
-    public AppViewModel(App entity, IDbContextFactory<QueryContext> contexts) : base(entity, contexts)
+    public AppViewModel(App entity, IEntityViewModelCache entityCache, IDbContextFactory<QueryContext> contexts) : base(
+        entity, entityCache, contexts)
     {
         _initialized = entity.Initialized;
         _name = entity.Name;
@@ -27,10 +28,12 @@ public partial class AppViewModel : EditableEntityViewModelBase<App>
         _identity = entity.Identity;
     }
 
-    public Task<byte[]?> Image =>
-        GetImage();
+    /// <summary>
+    ///     Icon for the <see cref="App" />
+    /// </summary>
+    public Task<byte[]?> Image => GetImage();
 
-    public async Task<byte[]?> GetImage()
+    private async Task<byte[]?> GetImage()
     {
         return await Task.Run(async () =>
         {

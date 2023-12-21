@@ -19,11 +19,13 @@ public abstract partial class EntityViewModelBase : ViewModelBase
 /// </summary>
 public abstract class EntityViewModelBase<T> : EntityViewModelBase where T : IEntity
 {
-    protected readonly T Entity;
+    public readonly T Entity;
+    protected readonly IEntityViewModelCache EntityCache;
 
-    protected EntityViewModelBase(T entity)
+    protected EntityViewModelBase(T entity, IEntityViewModelCache entityCache)
     {
         Entity = entity;
+        EntityCache = entityCache;
         Id = Entity.Id;
     }
 
@@ -37,7 +39,8 @@ public abstract class EditableEntityViewModelBase<T> : EntityViewModelBase<T> wh
 {
     protected readonly IDbContextFactory<QueryContext> Contexts;
 
-    protected EditableEntityViewModelBase(T entity, IDbContextFactory<QueryContext> contexts) : base(entity)
+    protected EditableEntityViewModelBase(T entity, IEntityViewModelCache entityCache,
+        IDbContextFactory<QueryContext> contexts) : base(entity, entityCache)
     {
         Contexts = contexts;
     }

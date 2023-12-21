@@ -1,5 +1,6 @@
 ﻿using Cobalt.Common.Data;
 using Cobalt.Common.ViewModels;
+using Cobalt.Common.ViewModels.Entities;
 using Cobalt.Common.ViewModels.Pages;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -41,6 +42,8 @@ public class ServiceInjector
             .AddPooledDbContextFactory<QueryContext>(options => QueryContext.ConfigureFor(options,
                 configuration.GetConnectionString(nameof(QueryContext)) ??
                 throw new InvalidOperationException("Connection string not found")));
+
+        services.AddSingleton<IEntityViewModelCache, EntityViewModelCache>();
 
         // Register ViewModels
         RegisterViewModels(services);
