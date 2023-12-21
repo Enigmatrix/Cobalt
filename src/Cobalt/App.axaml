@@ -12,5 +12,6 @@
     <Application.Resources>
         <converters:BytesToImageConverter x:Key="BytesToImageConverter" />
         <converters:ColorStringToBrushConverter x:Key="ColorStringToBrushConverter" />
+        <converters:HumanizeTimeSpanConverter x:Key="HumanizeTimeSpanConverter" />
     </Application.Resources>
 </Application>

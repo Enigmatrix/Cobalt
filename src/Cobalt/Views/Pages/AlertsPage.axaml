@@ -82,18 +82,20 @@
                                     </StackPanel>
 
                                     <StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Right">
-                                        <!-- TODO: show these in human-readable times -->
-                                        <TextBlock Text="{Binding Duration}" />
+                                        <TextBlock
+                                            Text="{Binding Duration, Converter={StaticResource HumanizeTimeSpanConverter}}" />
                                         <TextBlock Text="/" />
-                                        <TextBlock Text="{Binding Inner.UsageLimit}" />
-                                        <TextBlock Text="/" />
+                                        <TextBlock
+                                            Text="{Binding Inner.UsageLimit, Converter={StaticResource HumanizeTimeSpanConverter}, StringFormat={}{0}\,}" />
                                         <!-- TODO: show icons here -->
-                                        <TextBlock Text="{Binding Inner.TimeFrame}" />
+                                        <TextBlock Text="{Binding Inner.TimeFrame}"
+                                                   Theme="{StaticResource BodyStrongTextBlockStyle}" />
                                     </StackPanel>
                                 </StackPanel>
 
                                 <!-- TODO: add reminder stops at some time -->
-                                <ProgressBar Height="8" Margin="4" Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="1" Maximum="{Binding Inner.UsageLimit.Ticks}"
+                                <ProgressBar Height="8" Margin="4" Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="1"
+                                             Maximum="{Binding Inner.UsageLimit.Ticks}"
                                              Value="{Binding Duration.Ticks}" />
                             </Grid>
                         </controls:FABorder>
