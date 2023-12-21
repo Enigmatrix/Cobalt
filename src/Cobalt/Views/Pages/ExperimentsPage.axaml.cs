@@ -1,7 +1,4 @@
 #if DEBUG
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using Avalonia.ReactiveUI;
 using Cobalt.Common.ViewModels.Pages;
 
@@ -12,11 +9,6 @@ public partial class ExperimentsPage : ReactiveUserControl<ExperimentsPageViewMo
     public ExperimentsPage()
     {
         InitializeComponent();
-    }
-
-    private async Task<IEnumerable<object>> WhatAsyncPopulator(string? s, CancellationToken token)
-    {
-        return await ViewModel!.GetApps(s);
     }
 }
 #endif
