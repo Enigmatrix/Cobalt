@@ -92,15 +92,50 @@ public class QueryContext : DbContext
     ///     Gets <see cref="Alert" /> and their Durations
     /// </summary>
     /// <param name="alerts">Pre-initialized <see cref="Alert" /> with e.g. Include queries or filters</param>
-    /// <param name="start">Start range time. A null value implies no limit on the start time</param>
-    /// <param name="end">End range time. A null value implies no limit on the end time</param>
-    public IQueryable<WithDuration<Alert>> AlertDurations(IQueryable<Alert>? alerts = null,
-        DateTime? start = null, DateTime? end = null)
+    public IQueryable<WithDuration<Alert>> AlertDurations(IQueryable<Alert>? alerts = null)
     {
-        return (alerts ?? Alerts).Select(alert =>
-            new WithDuration<Alert>(alert,
-                new TimeSpan(Apps.Where(app => alert.App == null ? alert.Tag!.Apps.Contains(app) : alert.App == app)
-                    .Select(AppDurationTicksOnly(start, end)).Sum())));
+        var today = DateTime.Today;
+
+        var todayStart = today;
+        var todayEnd = todayStart.AddDays(1);
+        var weekStart = today.AddDays(-(int)today.DayOfWeek);
+        var weekEnd = weekStart.AddDays(7);
+        var monthStart = today.AddDays(1 - today.Day);
+        var monthEnd = monthStart.AddMonths(1);
+
+        return (alerts ?? Alerts).Select(alert => new
+        {
+            Alert = alert,
+            // Nasty way to get correct (start,end) bounds
+            LimitStartTicks = alert.TimeFrame == TimeFrame.Daily ? todayStart.Ticks :
+                alert.TimeFrame == TimeFrame.Weekly ? weekStart.Ticks : monthStart.Ticks,
+            LimitEndTicks = alert.TimeFrame == TimeFrame.Daily ? todayEnd.Ticks :
+                alert.TimeFrame == TimeFrame.Weekly ? weekEnd.Ticks : monthEnd.Ticks
+        }).Select(alertInfo =>
+            new WithDuration<Alert>(alertInfo.Alert,
+                new TimeSpan(Apps
+                    .Where(app =>
+                        alertInfo.Alert.App == null
+                            ? alertInfo.Alert.Tag!.Apps.Contains(app)
+                            : alertInfo.Alert.App == app)
+                    // Copied from AppDurationsTickOnly - can't seem to use the start/end as expressions
+                    .SelectMany(app => app.Sessions.SelectMany(session =>
+                            session.Usages
+                                .Select(usage =>
+                                    // IEnumerable<TimeSpan>.Sum() and TimeSpan comparisons cannot be translated to a SQL query by EntityFramework.
+                                    // ref: https://github.com/dotnet/efcore/issues/27103 and https://github.com/dotnet/efcore/issues/10434 
+                                    new
+                                    {
+                                        StartTicks = EF.Property<long>(usage, nameof(usage.Start)),
+                                        EndTicks = EF.Property<long>(usage, nameof(usage.End))
+                                    }
+                                ))
+                        .Where(usage =>
+                            usage.EndTicks > alertInfo.LimitStartTicks && alertInfo.LimitEndTicks >= usage.StartTicks)
+                        .Select(usage =>
+                            Math.Min(alertInfo.LimitEndTicks, usage.EndTicks) -
+                            Math.Max(alertInfo.LimitStartTicks, usage.StartTicks))
+                    ).Sum())));
     }
 
     /// <summary>
