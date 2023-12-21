@@ -51,9 +51,9 @@
                 </controls:CommandBar>
             </Grid>
 
-            <ItemsRepeater ItemsSource="{Binding Alerts}">
+            <ItemsRepeater ItemsSource="{Binding Alerts}" Margin="0,12,0,0">
                 <ItemsRepeater.Layout>
-                    <StackLayout Spacing="8" Orientation="Vertical" />
+                    <StackLayout Spacing="12" Orientation="Vertical" />
                 </ItemsRepeater.Layout>
                 <ItemsRepeater.ItemTemplate>
                     <DataTemplate>
@@ -61,44 +61,56 @@
                             <x:Type TypeName="data:WithDuration" x:TypeArguments="entities:AlertViewModel" />
                         </DataTemplate.DataType>
 
-                        <!-- TODO: add shadow -->
-                        <!-- TODO: make this an Expander instead? and for the inner details we show usage of the App/Tag by time + threshold and some events -->
-                        <controls:FABorder CornerRadius="4" Padding="4"
-                                           Background="{DynamicResource CardBackgroundFillColorDefaultBrush}">
-                            <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="Auto,*,Auto">
-                                <!--App/Tag at the left side-->
-                                <Grid Grid.Row="0" Grid.Column="0" Height="68">
-                                    <ContentControl Content="{Binding Inner.App}" />
-                                    <ContentControl Content="{Binding Inner.Tag}" />
+                        <Expander HorizontalContentAlignment="Stretch">
+                            <Expander.Styles>
+                                <Style Selector="Expander /template/ ToggleButton#PART_toggle">
+                                    <Setter Property="Padding" Value="4" />
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                </Style>
+                            </Expander.Styles>
+                            <Expander.Resources>
+                            </Expander.Resources>
+                            <Expander.Header>
+                                <Grid HorizontalAlignment="Stretch" RowDefinitions="Auto,Auto"
+                                      ColumnDefinitions="Auto,*,Auto">
+                                    <!--App/Tag at the left side-->
+                                    <Grid Grid.Row="0" Grid.Column="0" Height="68">
+                                        <ContentControl Content="{Binding Inner.App}" />
+                                        <ContentControl Content="{Binding Inner.Tag}" />
+                                    </Grid>
+
+                                    <!--Durations,TriggerAction on the right side-->
+                                    <StackPanel Orientation="Vertical" Spacing="4" Margin="8,4"
+                                                VerticalAlignment="Bottom"
+                                                Grid.Column="2" Grid.Row="0">
+                                        <!-- TODO: Show according to TriggerAction -->
+                                        <StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Right">
+                                            <controls:SymbolIcon Symbol="Message" />
+                                            <TextBlock Text="Message" />
+                                        </StackPanel>
+
+                                        <StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Right">
+                                            <TextBlock
+                                                Text="{Binding Duration, Converter={StaticResource HumanizeTimeSpanConverter}}" />
+                                            <TextBlock Text="/" />
+                                            <TextBlock
+                                                Text="{Binding Inner.UsageLimit, Converter={StaticResource HumanizeTimeSpanConverter}, StringFormat={}{0}\,}" />
+                                            <!-- TODO: show icons here -->
+                                            <TextBlock Text="{Binding Inner.TimeFrame}"
+                                                       Theme="{StaticResource BodyStrongTextBlockStyle}" />
+                                        </StackPanel>
+                                    </StackPanel>
+
+                                    <!-- TODO: add reminder stops at some time -->
+                                    <ProgressBar Height="8" Margin="4,4,4,8" Grid.Column="0" Grid.ColumnSpan="3"
+                                                 Grid.Row="1"
+                                                 Maximum="{Binding Inner.UsageLimit.Ticks}"
+                                                 Value="{Binding Duration.Ticks}" />
                                 </Grid>
+                            </Expander.Header>
 
-                                <!--Durations,TriggerAction on the right side-->
-                                <StackPanel Orientation="Vertical" Spacing="4" Margin="8,4" VerticalAlignment="Bottom"
-                                            Grid.Column="2" Grid.Row="0">
-                                    <!-- TODO: Show according to TriggerAction -->
-                                    <StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Right">
-                                        <controls:SymbolIcon Symbol="Message" />
-                                        <TextBlock Text="Message" />
-                                    </StackPanel>
-
-                                    <StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Right">
-                                        <TextBlock
-                                            Text="{Binding Duration, Converter={StaticResource HumanizeTimeSpanConverter}}" />
-                                        <TextBlock Text="/" />
-                                        <TextBlock
-                                            Text="{Binding Inner.UsageLimit, Converter={StaticResource HumanizeTimeSpanConverter}, StringFormat={}{0}\,}" />
-                                        <!-- TODO: show icons here -->
-                                        <TextBlock Text="{Binding Inner.TimeFrame}"
-                                                   Theme="{StaticResource BodyStrongTextBlockStyle}" />
-                                    </StackPanel>
-                                </StackPanel>
-
-                                <!-- TODO: add reminder stops at some time -->
-                                <ProgressBar Height="8" Margin="4" Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="1"
-                                             Maximum="{Binding Inner.UsageLimit.Ticks}"
-                                             Value="{Binding Duration.Ticks}" />
-                            </Grid>
-                        </controls:FABorder>
+                            <!-- TODO Some sort of visualization of target usage? -->
+                        </Expander>
                     </DataTemplate>
                 </ItemsRepeater.ItemTemplate>
             </ItemsRepeater>
