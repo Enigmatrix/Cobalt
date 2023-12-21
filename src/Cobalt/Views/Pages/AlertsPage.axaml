@@ -18,8 +18,44 @@
                 <StackPanel Orientation="Horizontal" Margin="8,0,8,0">
                     <controls:SymbolIcon Symbol="Tag" FontSize="32" VerticalAlignment="Center" Margin="8,0,16,0"
                                          Foreground="{Binding Color, Converter={StaticResource ColorStringToBrushConverter}}" />
-                    <TextBlock Text="{Binding Name}" VerticalAlignment="Center"
-                               Theme="{StaticResource SubtitleTextBlockStyle}" />
+
+                    <StackPanel Orientation="Vertical" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Name}" VerticalAlignment="Center"
+                                   Theme="{StaticResource SubtitleTextBlockStyle}" />
+                        <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+
+                            <ItemsRepeater ItemsSource="{Binding AppsSubset}">
+                                <ItemsRepeater.Layout>
+                                    <StackLayout Spacing="8" Orientation="Horizontal" />
+                                </ItemsRepeater.Layout>
+                                <ItemsRepeater.ItemTemplate>
+                                    <DataTemplate DataType="entities:AppViewModel">
+                                        <controls:FABorder CornerRadius="4" Padding="4,2"
+                                                           Background="{DynamicResource ControlFillColorSecondaryBrush}">
+
+                                            <StackPanel Orientation="Horizontal">
+
+                                                <Image Width="16" Height="16" Margin="0,0,4,0"
+                                                       VerticalAlignment="Center"
+                                                       Source="{Binding Image^, Converter={StaticResource BytesToImageConverter}}" />
+
+                                                <TextBlock Text="{Binding Name}" VerticalAlignment="Center"
+                                                           Theme="{StaticResource CaptionTextBlockStyle}" />
+
+                                            </StackPanel>
+                                        </controls:FABorder>
+                                    </DataTemplate>
+                                </ItemsRepeater.ItemTemplate>
+                            </ItemsRepeater>
+
+                            <controls:FABorder Margin="8,0,0,0" Padding="4,2"
+                                               Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                                               CornerRadius="4" IsVisible="{Binding !!AppsNotInSubset}">
+                                <TextBlock Text="{Binding AppsNotInSubset, StringFormat={}+{0}}" />
+                            </controls:FABorder>
+
+                        </StackPanel>
+                    </StackPanel>
                 </StackPanel>
             </DataTemplate>
 
@@ -79,9 +115,12 @@
                                 <Grid HorizontalAlignment="Stretch" RowDefinitions="Auto,Auto"
                                       ColumnDefinitions="Auto,*,Auto">
                                     <!--App/Tag at the left side-->
-                                    <Grid Grid.Row="0" Grid.Column="0" Height="68" VerticalAlignment="Center" Margin="0,0,0,-4">
-                                        <ContentControl Content="{Binding Inner.App}" VerticalAlignment="Center" VerticalContentAlignment="Center" />
-                                        <ContentControl Content="{Binding Inner.Tag}" VerticalAlignment="Center" VerticalContentAlignment="Center" />
+                                    <Grid Grid.Row="0" Grid.Column="0" Height="68" VerticalAlignment="Center"
+                                          Margin="0,0,0,-4">
+                                        <ContentControl Content="{Binding Inner.App}" VerticalAlignment="Center"
+                                                        VerticalContentAlignment="Center" />
+                                        <ContentControl Content="{Binding Inner.Tag}" VerticalAlignment="Center"
+                                                        VerticalContentAlignment="Center" />
                                     </Grid>
 
                                     <!--Durations,TriggerAction on the right side-->

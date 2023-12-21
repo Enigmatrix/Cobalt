@@ -259,6 +259,10 @@ public class QueryContext : DbContext
                 .Where(otherAlert => otherAlert.Guid == alert.Guid)
                 .Max(otherAlert => otherAlert.Version));
 
+        // Auto-include Tag relationships
+        modelBuilder.Entity<Tag>()
+            .Navigation(tag => tag.Apps).AutoInclude();
+
         // Auto-include Alert relationships
         modelBuilder.Entity<Alert>()
             .Navigation(alert => alert.App).AutoInclude();
