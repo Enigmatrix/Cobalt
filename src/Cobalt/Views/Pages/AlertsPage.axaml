@@ -13,7 +13,7 @@
         <ScrollViewer.DataTemplates>
 
             <DataTemplate DataType="entities:TagViewModel">
-                <StackPanel Orientation="Horizontal" Margin="8,0,8,4">
+                <StackPanel Orientation="Horizontal" Margin="8,0,8,0">
                     <controls:SymbolIcon Symbol="Tag" FontSize="32" VerticalAlignment="Center" Margin="8,0,16,0"
                                          Foreground="{Binding Color, Converter={StaticResource ColorStringToBrushConverter}}" />
                     <TextBlock Text="{Binding Name}" VerticalAlignment="Center"
@@ -22,7 +22,7 @@
             </DataTemplate>
 
             <DataTemplate DataType="entities:AppViewModel">
-                <StackPanel Orientation="Horizontal" Margin="8,0,8,4">
+                <StackPanel Orientation="Horizontal" Margin="8,0,8,0">
                     <Image Width="32" Height="32" Margin="8,0,16,0" VerticalAlignment="Center"
                            Source="{Binding Image^, Converter={StaticResource BytesToImageConverter}}" />
 
@@ -73,7 +73,7 @@
                                 </Grid>
 
                                 <!--Durations,TriggerAction on the right side-->
-                                <StackPanel Orientation="Vertical" Spacing="4" Margin="4" VerticalAlignment="Bottom"
+                                <StackPanel Orientation="Vertical" Spacing="4" Margin="8,4" VerticalAlignment="Bottom"
                                             Grid.Column="2" Grid.Row="0">
                                     <!-- TODO: Show according to TriggerAction -->
                                     <StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Right">
@@ -92,10 +92,9 @@
                                     </StackPanel>
                                 </StackPanel>
 
-                                <!-- TODO: make the progress bar work according to Duration / Inner.UsageLimit -->
                                 <!-- TODO: add reminder stops at some time -->
-                                <ProgressBar Height="4" Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="1" Maximum="100"
-                                             Value="75" />
+                                <ProgressBar Height="8" Margin="4" Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="1" Maximum="{Binding Inner.UsageLimit.Ticks}"
+                                             Value="{Binding Duration.Ticks}" />
                             </Grid>
                         </controls:FABorder>
                     </DataTemplate>
