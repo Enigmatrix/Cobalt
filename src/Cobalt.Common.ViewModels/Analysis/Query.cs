@@ -7,13 +7,32 @@ using Microsoft.EntityFrameworkCore;
 namespace Cobalt.Common.ViewModels.Analysis;
 
 /// <summary>
+///     <inheritdoc />
+/// </summary>
+/// <typeparam name="TOutput">Output type</typeparam>
+/// <param name="Contexts">Context factory</param>
+/// <param name="InnerQueryWithoutArgs">Actual inner database query</param>
+/// <param name="assumeRefreshIsCalled">Assume that we do not produce anything in <see cref="Value" /> on subscription</param>
+public record Query<TOutput>(IDbContextFactory<QueryContext> Contexts,
+    Func<QueryContext, Task<TOutput>> InnerQueryWithoutArgs,
+    bool assumeRefreshIsCalled = true) : Query<Unit, TOutput>(Contexts, Observable.Return(Unit.Default),
+    (context, _) => InnerQueryWithoutArgs(context), assumeRefreshIsCalled)
+{
+}
+
+/// <summary>
 ///     Representation of a database query
 /// </summary>
-/// <typeparam name="T">Output type</typeparam>
+/// <typeparam name="TOutput">Output type</typeparam>
+/// <typeparam name="TArg">Argument type</typeparam>
 /// <param name="Contexts">Context factory</param>
-/// <param name="ActualQuery">Actual inner database query</param>
+/// <param name="Args">Arguments as an <see cref="IObservable{TArgs}" />></param>
+/// <param name="InnerQuery">Actual inner database query</param>
 /// <param name="assumeRefreshIsCalled">Assume that we do not produce anything in <see cref="Value" /> on subscription</param>
-public record Query<T>(IDbContextFactory<QueryContext> Contexts, Func<QueryContext, Task<T>> ActualQuery,
+public record Query<TArg, TOutput>(
+    IDbContextFactory<QueryContext> Contexts,
+    IObservable<TArg> Args,
+    Func<QueryContext, TArg, Task<TOutput>> InnerQuery,
     // ReSharper disable once InconsistentNaming
     bool assumeRefreshIsCalled = true) : IRefreshable
 {
@@ -22,14 +41,15 @@ public record Query<T>(IDbContextFactory<QueryContext> Contexts, Func<QueryConte
     /// <summary>
     ///     Query result value as an <see cref="IObservable{T}" />
     /// </summary>
-    public IObservable<T> Value
+    public IObservable<TOutput> Value
     {
         get
         {
             IObservable<Unit> refreshes = _refresh;
             if (!assumeRefreshIsCalled)
                 refreshes = refreshes.StartWith(Unit.Default);
-            return refreshes.SelectMany(_ => Observable.FromAsync(ProduceValue));
+            return refreshes.WithLatestFrom(Args)
+                .SelectMany(tup => Observable.FromAsync(() => ProduceValue(tup.Second)));
         }
     }
 
@@ -41,15 +61,16 @@ public record Query<T>(IDbContextFactory<QueryContext> Contexts, Func<QueryConte
     }
 
     /// <summary>
-    ///     Produces the value using the <see cref="ActualQuery" />
+    ///     Produces the value using the <see cref="InnerQuery" />
     /// </summary>
-    private async Task<T> ProduceValue()
+    /// <param name="arg">Argument to the inner database query</param>
+    protected async Task<TOutput> ProduceValue(TArg arg)
     {
         return await Task.Run(async () =>
         {
             var context = await Contexts.CreateDbContextAsync().ConfigureAwait(false);
             await using var _ = context.ConfigureAwait(false);
-            return await ActualQuery(context).ConfigureAwait(false);
+            return await InnerQuery(context, arg).ConfigureAwait(false);
         });
     }
 }
