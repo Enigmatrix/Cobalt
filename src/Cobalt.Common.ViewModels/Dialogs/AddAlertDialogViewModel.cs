@@ -7,7 +7,7 @@ using ReactiveUI;
 namespace Cobalt.Common.ViewModels.Dialogs;
 
 /// <summary>
-/// Dialog ViewModel to Add Alert
+///     Dialog ViewModel to Add Alert
 /// </summary>
 public class AddAlertDialogViewModel : DialogViewModelBase<AlertViewModel>
 {
