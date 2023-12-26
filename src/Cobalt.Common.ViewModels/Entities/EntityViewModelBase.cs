@@ -11,6 +11,10 @@ public abstract partial class EntityViewModelBase : ViewModelBase
 {
     [ObservableProperty] private long _id;
 
+    protected EntityViewModelBase(IDbContextFactory<QueryContext> contexts) : base(contexts)
+    {
+    }
+
     public abstract IEntity Inner { get; }
 }
 
@@ -22,7 +26,8 @@ public abstract class EntityViewModelBase<T> : EntityViewModelBase where T : IEn
     public readonly T Entity;
     protected readonly IEntityViewModelCache EntityCache;
 
-    protected EntityViewModelBase(T entity, IEntityViewModelCache entityCache)
+    protected EntityViewModelBase(T entity, IEntityViewModelCache entityCache, IDbContextFactory<QueryContext> contexts)
+        : base(contexts)
     {
         Entity = entity;
         EntityCache = entityCache;
@@ -37,12 +42,9 @@ public abstract class EntityViewModelBase<T> : EntityViewModelBase where T : IEn
 /// </summary>
 public abstract class EditableEntityViewModelBase<T> : EntityViewModelBase<T> where T : IEntity
 {
-    protected readonly IDbContextFactory<QueryContext> Contexts;
-
     protected EditableEntityViewModelBase(T entity, IEntityViewModelCache entityCache,
-        IDbContextFactory<QueryContext> contexts) : base(entity, entityCache)
+        IDbContextFactory<QueryContext> contexts) : base(entity, entityCache, contexts)
     {
-        Contexts = contexts;
     }
 
     /// <summary>
@@ -51,9 +53,9 @@ public abstract class EditableEntityViewModelBase<T> : EntityViewModelBase<T> wh
     public abstract void UpdateEntity();
 
     /// <summary>
-    ///     Save the original Entity to the database.
+    ///     SaveAsync the original Entity to the database.
     /// </summary>
-    public virtual async Task Save()
+    public virtual async Task SaveAsync()
     {
         await using var ctx = await Contexts.CreateDbContextAsync();
         UpdateEntity();

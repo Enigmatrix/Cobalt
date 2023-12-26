@@ -9,15 +9,9 @@ namespace Cobalt.Common.ViewModels.Dialogs;
 /// </summary>
 public abstract class DialogViewModelBase<TResult> : ViewModelBase, IActivatableViewModel
 {
-    protected DialogViewModelBase(IDbContextFactory<QueryContext> contexts)
+    protected DialogViewModelBase(IDbContextFactory<QueryContext> contexts) : base(contexts)
     {
-        Contexts = contexts;
     }
-
-    /// <summary>
-    ///     Factory to create <see cref="QueryContext" />
-    /// </summary>
-    protected IDbContextFactory<QueryContext> Contexts { get; }
 
     /// <summary>
     ///     Title of this Dialog

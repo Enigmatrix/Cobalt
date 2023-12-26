@@ -1,4 +1,6 @@
-﻿using Cobalt.Common.ViewModels.Pages;
+﻿using Cobalt.Common.Data;
+using Cobalt.Common.ViewModels.Pages;
+using Microsoft.EntityFrameworkCore;
 
 namespace Cobalt.Common.ViewModels;
 
@@ -13,7 +15,8 @@ public class MainViewModel : ViewModelBase
         ExperimentsPageViewModel experiments,
 #endif
         HomePageViewModel home, AppsPageViewModel apps, TagsPageViewModel tags,
-        AlertsPageViewModel alerts, HistoryPageViewModel history)
+        AlertsPageViewModel alerts, HistoryPageViewModel history,
+        IDbContextFactory<QueryContext> contexts) : base(contexts)
     {
 #if DEBUG
         Experiments = experiments;

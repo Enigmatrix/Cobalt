@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Cobalt.Common.ViewModels.Analysis;
 
 /// <summary>
-///     <inheritdoc />
+///     Representation of a database query
 /// </summary>
 /// <typeparam name="TOutput">Output type</typeparam>
 /// <param name="Contexts">Context factory</param>
