@@ -1,9 +1,10 @@
-﻿using System.Reactive.Disposables;
+﻿using System.Reactive;
+using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using Cobalt.Common.Data;
-using Cobalt.Common.Data.Entities;
+using Cobalt.Common.ViewModels.Analysis;
 using Cobalt.Common.ViewModels.Entities;
-using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using Microsoft.EntityFrameworkCore;
 using ReactiveUI;
 
@@ -14,30 +15,30 @@ namespace Cobalt.Common.ViewModels.Pages;
 /// </summary>
 public partial class AlertsPageViewModel : PageViewModelBase
 {
-    [ObservableProperty] private List<WithDuration<AlertViewModel>> _alerts = default!;
-
     public AlertsPageViewModel(IEntityViewModelCache entityCache, IDbContextFactory<QueryContext> contexts) :
         base(contexts)
     {
-        this.WhenActivated(dis =>
+        Alerts = new Query<List<WithDuration<AlertViewModel>>>(Contexts,
+            async context => (await context.AlertDurations().ToListAsync())
+                .Select(alertDur => alertDur.Map(entityCache.Alert)).ToList());
+
+        this.WhenActivated((CompositeDisposable dis) =>
         {
             // Getting all Alerts
-            // TODO make this WithDuration cleaner
-            Observable.FromAsync(GetAlerts)
-                .Select(alerts => alerts.Select(alertWithDur =>
-                        new WithDuration<AlertViewModel>(entityCache.Alert(alertWithDur.Inner), alertWithDur.Duration))
-                    .ToList())
-                .SubscribeOn(RxApp.TaskpoolScheduler)
-                .BindTo(this, self => self.Alerts)
-                .DisposeWith(dis);
+            Alerts.Refresh();
         });
     }
 
+    public Query<List<WithDuration<AlertViewModel>>> Alerts { get; }
+
+    public Interaction<Unit, AlertViewModel> AddAlertInteraction { get; } = new();
+
     public override string Name => "Alerts";
 
-    private async Task<List<WithDuration<Alert>>> GetAlerts()
+    [RelayCommand]
+    public async Task AddAlert()
     {
-        await using var context = await Contexts.CreateDbContextAsync();
-        return await context.AlertDurations().ToListAsync();
+        await AddAlertInteraction.Handle(Unit.Default); // TODO handle this?
+        await Alerts.Refresh();
     }
 }

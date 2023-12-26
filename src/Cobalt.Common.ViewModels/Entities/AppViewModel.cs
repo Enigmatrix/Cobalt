@@ -1,5 +1,6 @@
 ﻿using Cobalt.Common.Data;
 using Cobalt.Common.Data.Entities;
+using Cobalt.Common.ViewModels.Analysis;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.EntityFrameworkCore;
 
@@ -26,21 +27,14 @@ public partial class AppViewModel : EditableEntityViewModelBase<App>
         _company = entity.Company;
         _color = entity.Color;
         _identity = entity.Identity;
+
+        Image = new Query<byte[]?>(Contexts, async context => await context.GetAppIconBytes(Entity), false);
     }
 
     /// <summary>
     ///     Icon for the <see cref="App" />
     /// </summary>
-    public Task<byte[]?> Image => GetImage();
-
-    private async Task<byte[]?> GetImage()
-    {
-        return await Task.Run(async () =>
-        {
-            await using var context = await Contexts.CreateDbContextAsync();
-            return await context.GetAppIconBytes(Entity);
-        });
-    }
+    public Query<byte[]?> Image { get; }
 
     public override void UpdateEntity()
     {

@@ -37,7 +37,7 @@
 
                                                 <Image Width="16" Height="16" Margin="0,0,4,0"
                                                        VerticalAlignment="Center"
-                                                       Source="{Binding Image^, Converter={StaticResource BytesToImageConverter}}" />
+                                                       Source="{Binding Image.Value^, Converter={StaticResource BytesToImageConverter}}" />
 
                                                 <TextBlock Text="{Binding Name}" VerticalAlignment="Center"
                                                            Theme="{StaticResource CaptionTextBlockStyle}" />
@@ -62,7 +62,7 @@
             <DataTemplate DataType="entities:AppViewModel">
                 <StackPanel Orientation="Horizontal" Margin="8,0,8,0">
                     <Image Width="32" Height="32" Margin="8,0,16,0" VerticalAlignment="Center"
-                           Source="{Binding Image^, Converter={StaticResource BytesToImageConverter}}" />
+                           Source="{Binding Image.Value^, Converter={StaticResource BytesToImageConverter}}" />
 
                     <StackPanel Orientation="Vertical" VerticalAlignment="Center">
                         <TextBlock Text="{Binding Name}"
@@ -89,7 +89,7 @@
                 </controls:CommandBar>
             </Grid>
 
-            <ItemsRepeater ItemsSource="{Binding Alerts}" Margin="0,12,0,0">
+            <ItemsRepeater ItemsSource="{Binding Alerts.Value^}" Margin="0,12,0,0">
                 <ItemsRepeater.Layout>
                     <StackLayout Spacing="12" Orientation="Vertical" />
                 </ItemsRepeater.Layout>
