@@ -48,7 +48,8 @@ public record Query<TArg, TOutput>(
             IObservable<Unit> refreshes = _refresh;
             if (!assumeRefreshIsCalled)
                 refreshes = refreshes.StartWith(Unit.Default);
-            return refreshes.WithLatestFrom(Args)
+
+            return refreshes.CombineLatest(Args)
                 .SelectMany(tup => Observable.FromAsync(() => ProduceValue(tup.Second)));
         }
     }
