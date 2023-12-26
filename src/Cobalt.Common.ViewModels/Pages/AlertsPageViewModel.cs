@@ -3,6 +3,7 @@ using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using Cobalt.Common.Data;
 using Cobalt.Common.ViewModels.Analysis;
+using Cobalt.Common.ViewModels.Dialogs;
 using Cobalt.Common.ViewModels.Entities;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.EntityFrameworkCore;
@@ -15,12 +16,15 @@ namespace Cobalt.Common.ViewModels.Pages;
 /// </summary>
 public partial class AlertsPageViewModel : PageViewModelBase
 {
-    public AlertsPageViewModel(IEntityViewModelCache entityCache, IDbContextFactory<QueryContext> contexts) :
+    public AlertsPageViewModel(IEntityViewModelCache entityCache, IDbContextFactory<QueryContext> contexts,
+        AddAlertDialogViewModel addAlertDialog) :
         base(contexts)
     {
         Alerts = new Query<List<WithDuration<AlertViewModel>>>(Contexts,
             async context => (await context.AlertDurations().ToListAsync())
                 .Select(alertDur => alertDur.Map(entityCache.Alert)).ToList());
+
+        AddAlertDialog = addAlertDialog;
 
         this.WhenActivated((CompositeDisposable dis) =>
         {
@@ -34,6 +38,7 @@ public partial class AlertsPageViewModel : PageViewModelBase
     public Interaction<Unit, AlertViewModel> AddAlertInteraction { get; } = new();
 
     public override string Name => "Alerts";
+    public AddAlertDialogViewModel AddAlertDialog { get; }
 
     [RelayCommand]
     public async Task AddAlert()

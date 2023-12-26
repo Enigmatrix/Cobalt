@@ -84,7 +84,7 @@
 
                 <controls:CommandBar VerticalAlignment="Center" DefaultLabelPosition="Right" Grid.Column="2">
                     <controls:CommandBar.PrimaryCommands>
-                        <controls:CommandBarButton Label="Add" IconSource="Add" />
+                        <controls:CommandBarButton Label="Add" IconSource="Add" Command="{Binding AddAlertCommand}" />
                     </controls:CommandBar.PrimaryCommands>
                 </controls:CommandBar>
             </Grid>

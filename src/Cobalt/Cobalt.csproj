@@ -55,6 +55,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <Compile Update="Views\Dialogs\AddAlertDialog.axaml.cs">
+	    <DependentUpon>AddAlertDialog.axaml</DependentUpon>
+	  </Compile>
 	  <Compile Update="Views\Pages\AlertsPage.axaml.cs">
 	    <DependentUpon>AlertsPage.axaml</DependentUpon>
 	  </Compile>

@@ -1,5 +1,6 @@
 ﻿using Cobalt.Common.Data;
 using Cobalt.Common.ViewModels;
+using Cobalt.Common.ViewModels.Dialogs;
 using Cobalt.Common.ViewModels.Entities;
 using Cobalt.Common.ViewModels.Pages;
 using Microsoft.Extensions.Configuration;
@@ -67,6 +68,9 @@ public class ServiceInjector
         services.AddSingleton<TagsPageViewModel>();
         services.AddSingleton<AlertsPageViewModel>();
         services.AddSingleton<HistoryPageViewModel>();
+
+        // Dialogs
+        services.AddTransient<AddAlertDialogViewModel>();
     }
 
     /// <summary>
