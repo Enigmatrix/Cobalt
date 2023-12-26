@@ -3,7 +3,7 @@ using Cobalt.Common.ViewModels.Dialogs;
 
 namespace Cobalt.Views.Dialogs;
 
-public class AddAlertDialog : ReactiveUserControl<AddAlertDialogViewModel>
+public partial class AddAlertDialog : ReactiveUserControl<AddAlertDialogViewModel>
 {
     public AddAlertDialog()
     {

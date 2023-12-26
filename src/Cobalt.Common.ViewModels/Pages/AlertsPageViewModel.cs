@@ -1,5 +1,4 @@
-﻿using System.Reactive;
-using System.Reactive.Disposables;
+﻿using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using Cobalt.Common.Data;
 using Cobalt.Common.ViewModels.Analysis;
@@ -16,6 +15,8 @@ namespace Cobalt.Common.ViewModels.Pages;
 /// </summary>
 public partial class AlertsPageViewModel : PageViewModelBase
 {
+    private readonly AddAlertDialogViewModel _addAlertDialog;
+
     public AlertsPageViewModel(IEntityViewModelCache entityCache, IDbContextFactory<QueryContext> contexts,
         AddAlertDialogViewModel addAlertDialog) :
         base(contexts)
@@ -24,7 +25,7 @@ public partial class AlertsPageViewModel : PageViewModelBase
             async context => (await context.AlertDurations().ToListAsync())
                 .Select(alertDur => alertDur.Map(entityCache.Alert)).ToList());
 
-        AddAlertDialog = addAlertDialog;
+        _addAlertDialog = addAlertDialog;
 
         this.WhenActivated((CompositeDisposable dis) =>
         {
@@ -35,15 +36,16 @@ public partial class AlertsPageViewModel : PageViewModelBase
 
     public Query<List<WithDuration<AlertViewModel>>> Alerts { get; }
 
-    public Interaction<Unit, AlertViewModel> AddAlertInteraction { get; } = new();
+    public Interaction<AddAlertDialogViewModel, AlertViewModel?> AddAlertInteraction { get; } = new();
 
     public override string Name => "Alerts";
-    public AddAlertDialogViewModel AddAlertDialog { get; }
 
     [RelayCommand]
     public async Task AddAlert()
     {
-        await AddAlertInteraction.Handle(Unit.Default); // TODO handle this?
+        var alert = await AddAlertInteraction.Handle(_addAlertDialog);
+        if (alert == null) return;
+
         await Alerts.Refresh();
     }
 }
