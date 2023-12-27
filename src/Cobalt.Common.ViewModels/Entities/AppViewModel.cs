@@ -28,7 +28,7 @@ public partial class AppViewModel : EditableEntityViewModelBase<App>
         _color = entity.Color;
         _identity = entity.Identity;
 
-        Image = Query(async context => await context.GetAppIconBytes(Entity), assumeRefreshIsCalled: false);
+        Image = Query(async context => await context.GetAppIconBytes(Entity), false);
     }
 
     /// <summary>

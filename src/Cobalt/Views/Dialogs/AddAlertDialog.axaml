@@ -7,5 +7,11 @@
                                 mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
                                 x:Class="Cobalt.Views.Dialogs.AddAlertDialog"
                                 x:DataType="dialogs:AddAlertDialogViewModel">
-    <TextBlock Text="Add Alert Content" />
+    <StackPanel Orientation="Vertical">
+
+        <TextBlock Text="Add Alert Content" />
+        <TextBox MinWidth="200" Text="{Binding TargetSearch, Mode=TwoWay}" />
+        <TextBlock Text="{Binding Apps.Value^.Count, StringFormat={}Apps ({0})}" />
+        <TextBlock Text="{Binding Tags.Value^.Count, StringFormat={}Tags ({0})}" />
+    </StackPanel>
 </reactiveUi:ReactiveUserControl>
