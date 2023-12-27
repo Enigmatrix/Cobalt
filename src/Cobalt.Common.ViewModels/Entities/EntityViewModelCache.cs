@@ -1,4 +1,5 @@
-﻿using Cobalt.Common.Data;
+﻿using System.Collections.Concurrent;
+using Cobalt.Common.Data;
 using Cobalt.Common.Data.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -32,49 +33,74 @@ public interface IEntityViewModelCache
 
 public record EntityViewModelCache(IDbContextFactory<QueryContext> Contexts) : IEntityViewModelCache
 {
-    public Dictionary<long, WeakReference<AppViewModel>> Apps { get; } = new();
-    public Dictionary<long, WeakReference<TagViewModel>> Tags { get; } = new();
-    public Dictionary<long, WeakReference<AlertViewModel>> Alerts { get; } = new();
-    public Dictionary<long, WeakReference<ReminderViewModel>> Reminders { get; } = new();
+    public ConcurrentDictionary<long, WeakReference<AppViewModel>> Apps { get; } = new();
+    public ConcurrentDictionary<long, WeakReference<TagViewModel>> Tags { get; } = new();
+    public ConcurrentDictionary<long, WeakReference<AlertViewModel>> Alerts { get; } = new();
+    public ConcurrentDictionary<long, WeakReference<ReminderViewModel>> Reminders { get; } = new();
 
 
     public TagViewModel Tag(Tag tag)
     {
-        if (Tags.TryGetValue(tag.Id, out var v) && v.TryGetTarget(out var vm))
-            return vm;
+        var refvm = Tags.AddOrUpdate(tag.Id,
+            (id, tagParam) => new WeakReference<TagViewModel>(new TagViewModel(tagParam, this, Contexts)),
+            (id, prev, tagParam) =>
+            {
+                if (!prev.TryGetTarget(out _))
+                    prev = new WeakReference<TagViewModel>(new TagViewModel(tagParam, this, Contexts));
+                return prev;
+            }, tag);
 
-        var nvm = new TagViewModel(tag, this, Contexts);
-        Tags[tag.Id] = new WeakReference<TagViewModel>(nvm);
-        return nvm;
+        if (!refvm.TryGetTarget(out var vm))
+            throw new InvalidOperationException("Invalid state");
+        return vm;
     }
 
     public AppViewModel App(App app)
     {
-        if (Apps.TryGetValue(app.Id, out var v) && v.TryGetTarget(out var vm))
-            return vm;
+        var refvm = Apps.AddOrUpdate(app.Id,
+            (id, appParam) => new WeakReference<AppViewModel>(new AppViewModel(appParam, this, Contexts)),
+            (id, prev, appParam) =>
+            {
+                if (!prev.TryGetTarget(out _))
+                    prev = new WeakReference<AppViewModel>(new AppViewModel(appParam, this, Contexts));
+                return prev;
+            }, app);
 
-        var nvm = new AppViewModel(app, this, Contexts);
-        Apps[app.Id] = new WeakReference<AppViewModel>(nvm);
-        return nvm;
+        if (!refvm.TryGetTarget(out var vm))
+            throw new InvalidOperationException("Invalid state");
+        return vm;
     }
 
     public AlertViewModel Alert(Alert alert)
     {
-        if (Alerts.TryGetValue(alert.Id, out var v) && v.TryGetTarget(out var vm))
-            return vm;
+        var refvm = Alerts.AddOrUpdate(alert.Id,
+            (id, alertParam) => new WeakReference<AlertViewModel>(new AlertViewModel(alertParam, this, Contexts)),
+            (id, prev, alertParam) =>
+            {
+                if (!prev.TryGetTarget(out _))
+                    prev = new WeakReference<AlertViewModel>(new AlertViewModel(alertParam, this, Contexts));
+                return prev;
+            }, alert);
 
-        var nvm = new AlertViewModel(alert, this, Contexts);
-        Alerts[alert.Id] = new WeakReference<AlertViewModel>(nvm);
-        return nvm;
+        if (!refvm.TryGetTarget(out var vm))
+            throw new InvalidOperationException("Invalid state");
+        return vm;
     }
 
     public ReminderViewModel Reminder(Reminder reminder)
     {
-        if (Reminders.TryGetValue(reminder.Id, out var v) && v.TryGetTarget(out var vm))
-            return vm;
+        var refvm = Reminders.AddOrUpdate(reminder.Id,
+            (id, reminderParam) =>
+                new WeakReference<ReminderViewModel>(new ReminderViewModel(reminderParam, this, Contexts)),
+            (id, prev, reminderParam) =>
+            {
+                if (!prev.TryGetTarget(out _))
+                    prev = new WeakReference<ReminderViewModel>(new ReminderViewModel(reminderParam, this, Contexts));
+                return prev;
+            }, reminder);
 
-        var nvm = new ReminderViewModel(reminder, this, Contexts);
-        Reminders[reminder.Id] = new WeakReference<ReminderViewModel>(nvm);
-        return nvm;
+        if (!refvm.TryGetTarget(out var vm))
+            throw new InvalidOperationException("Invalid state");
+        return vm;
     }
 }
