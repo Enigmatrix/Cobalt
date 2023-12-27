@@ -36,16 +36,16 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
         // TODO use some case-ignore string search instead of tolower
 
         Apps = Query(searches,
-            async (context, search) => (await context.Apps.Where(app =>
+            async (context, search) => await context.Apps.Where(app =>
                 app.Name.ToLower().Contains(search.ToLower()) ||
                 app.Description.ToLower().Contains(search.ToLower()) ||
-                app.Company.ToLower().Contains(search.ToLower())
-            ).ToListAsync()).Select(_entityCache.App).ToList());
+                app.Company.ToLower().Contains(search.ToLower())).ToListAsync(),
+            _entityCache.App, false);
 
         Tags = Query(searches,
-            async (context, search) => (await context.Tags.Where(tag =>
-                tag.Name.ToLower().Contains(search.ToLower())
-            ).ToListAsync()).Select(_entityCache.Tag).ToList());
+            async (context, search) => await context.Tags.Where(tag =>
+                tag.Name.ToLower().Contains(search.ToLower())).ToListAsync(),
+            _entityCache.Tag, false);
 
         this.WhenActivated(dis =>
         {

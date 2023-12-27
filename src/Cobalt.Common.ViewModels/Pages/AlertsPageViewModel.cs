@@ -21,8 +21,8 @@ public partial class AlertsPageViewModel : PageViewModelBase
         AddAlertDialogViewModel addAlertDialog) :
         base(contexts)
     {
-        Alerts = Query(async context => (await context.AlertDurations().ToListAsync())
-            .Select(alertDur => alertDur.Map(entityCache.Alert)).ToList());
+        Alerts = Query(async context => await context.AlertDurations().ToListAsync(),
+            alertDur => alertDur.Map(entityCache.Alert));
 
         _addAlertDialog = addAlertDialog;
 

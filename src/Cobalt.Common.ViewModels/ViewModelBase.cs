@@ -29,15 +29,34 @@ public abstract class ViewModelBase : ObservableObject
     /// <summary>
     ///     Create a database query
     /// </summary>
-    /// <typeparam name="T">Output type</typeparam>
+    /// <typeparam name="TOutput">Output type</typeparam>
     /// <param name="query">The inner database query</param>
     /// <param name="assumeRefreshIsCalled">
     ///     Assume that we do not produce anything in <see cref="Query{T}.Value" /> on
     ///     subscription
     /// </param>
-    protected Query<T> Query<T>(Func<QueryContext, Task<T>> query, bool assumeRefreshIsCalled = true)
+    protected Query<TOutput> Query<TOutput>(Func<QueryContext, Task<TOutput>> query, bool assumeRefreshIsCalled = true)
     {
-        return new Query<T>(Contexts, query, assumeRefreshIsCalled);
+        return new Query<TOutput>(Contexts, query, assumeRefreshIsCalled);
+    }
+
+    /// <summary>
+    ///     Create a database query that returns a list and transform it post-materialization
+    /// </summary>
+    /// <typeparam name="TDbOutput">Database query list output type</typeparam>
+    /// <typeparam name="TOutput">Transformed list output type</typeparam>
+    /// <param name="query">The inner database query</param>
+    /// <param name="transform">Post-materialization transform</param>
+    /// <param name="assumeRefreshIsCalled">
+    ///     Assume that we do not produce anything in <see cref="Query{T}.Value" /> on
+    ///     subscription
+    /// </param>
+    protected Query<List<TOutput>> Query<TDbOutput, TOutput>(Func<QueryContext, Task<List<TDbOutput>>> query,
+        Func<TDbOutput, TOutput> transform,
+        bool assumeRefreshIsCalled = true)
+    {
+        return new Query<List<TOutput>>(Contexts, async ctx => (await query(ctx)).Select(transform).ToList(),
+            assumeRefreshIsCalled);
     }
 
     /// <summary>
@@ -55,5 +74,27 @@ public abstract class ViewModelBase : ObservableObject
         Func<QueryContext, TArgs, Task<TOutput>> query, bool assumeRefreshIsCalled = true)
     {
         return new Query<TArgs, TOutput>(Contexts, args, query, assumeRefreshIsCalled);
+    }
+
+    /// <summary>
+    ///     Create a database query that returns a list and transform it post-materialization
+    /// </summary>
+    /// <typeparam name="TArgs">Argument type</typeparam>
+    /// <typeparam name="TDbOutput">Database query list output type</typeparam>
+    /// <typeparam name="TOutput">Transformed list output type</typeparam>
+    /// <param name="args">Arguments as an <see cref="IObservable{TArgs}" /> stream</param>
+    /// <param name="query">The inner database query</param>
+    /// <param name="transform">Post-materialization transform</param>
+    /// <param name="assumeRefreshIsCalled">
+    ///     Assume that we do not produce anything in <see cref="Query{T}.Value" /> on
+    ///     subscription
+    /// </param>
+    protected Query<TArgs, List<TOutput>> Query<TArgs, TDbOutput, TOutput>(IObservable<TArgs> args,
+        Func<QueryContext, TArgs, Task<List<TDbOutput>>> query, Func<TDbOutput, TOutput> transform,
+        bool assumeRefreshIsCalled = true)
+    {
+        return new Query<TArgs, List<TOutput>>(Contexts, args,
+            async (ctx, arg) => (await query(ctx, arg)).Select(transform).ToList(),
+            assumeRefreshIsCalled);
     }
 }
