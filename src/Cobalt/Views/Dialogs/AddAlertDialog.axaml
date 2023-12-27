@@ -4,14 +4,102 @@
                                 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
                                 xmlns:reactiveUi="http://reactiveui.net"
                                 xmlns:dialogs="clr-namespace:Cobalt.Common.ViewModels.Dialogs;assembly=Cobalt.Common.ViewModels"
+                                xmlns:entities="clr-namespace:Cobalt.Common.ViewModels.Entities;assembly=Cobalt.Common.ViewModels"
+                                xmlns:controls="clr-namespace:FluentAvalonia.UI.Controls;assembly=FluentAvalonia"
                                 mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
                                 x:Class="Cobalt.Views.Dialogs.AddAlertDialog"
                                 x:DataType="dialogs:AddAlertDialogViewModel">
-    <StackPanel Orientation="Vertical">
 
-        <TextBlock Text="Add Alert Content" />
-        <TextBox MinWidth="200" Text="{Binding TargetSearch, Mode=TwoWay}" />
-        <TextBlock Text="{Binding Apps.Value^.Count, StringFormat={}Apps ({0})}" />
-        <TextBlock Text="{Binding Tags.Value^.Count, StringFormat={}Tags ({0})}" />
-    </StackPanel>
+    <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto, Auto, Auto, Auto" HorizontalAlignment="Stretch">
+        <Label Grid.Column="0" Grid.Row="0" Target="{Binding ElementName=TargetPicker}" VerticalAlignment="Center">Target</Label>
+        <Label Grid.Column="0" Grid.Row="1" Target="{Binding ElementName=UsageLimitPicker}" VerticalAlignment="Center">Usage Limit</Label>
+        <Label Grid.Column="0" Grid.Row="2" Target="{Binding ElementName=TimeFramePicker}" VerticalAlignment="Center">Time Frame</Label>
+        <Label Grid.Column="0" Grid.Row="3" Target="{Binding ElementName=TargetActionPicker}"
+               VerticalAlignment="Center">
+            Target Action
+        </Label>
+
+        <DropDownButton Grid.Column="1" Grid.Row="0" Name="TargetPicker" MinHeight="48" MinWidth="100"
+                        Padding="16,0,8,0" HorizontalAlignment="Stretch">
+            <DropDownButton.Content>
+                <Binding Path="SelectedTarget">
+                    <Binding.TargetNullValue>
+                        <TextBlock Text="Select App or Tag" />
+                    </Binding.TargetNullValue>
+                </Binding>
+            </DropDownButton.Content>
+            <DropDownButton.DataTemplates>
+
+                <DataTemplate DataType="entities:TagViewModel">
+                    <StackPanel Orientation="Horizontal">
+                        <controls:SymbolIcon Symbol="Tag" FontSize="20" Margin="-8,0,8,0"
+                                             Foreground="{Binding Color, Converter={StaticResource ColorStringToBrushConverter}}" />
+                        <TextBlock VerticalAlignment="Center" Text="{Binding Name}" />
+                    </StackPanel>
+                </DataTemplate>
+
+                <DataTemplate DataType="entities:AppViewModel">
+                    <StackPanel Orientation="Horizontal">
+                        <Image Width="28" Height="28" Margin="-8,0, 8, 0"
+                               Source="{Binding Image.Value^, Converter={StaticResource BytesToImageConverter}}" />
+
+                        <StackPanel Orientation="Vertical">
+                            <TextBlock Text="{Binding Name}"
+                                       Theme="{StaticResource BodyTextBlockStyle}" />
+                            <TextBlock Text="{Binding Description}"
+                                       Theme="{StaticResource CaptionTextBlockStyle}"
+                                       TextWrapping="NoWrap" />
+                        </StackPanel>
+                    </StackPanel>
+                </DataTemplate>
+
+            </DropDownButton.DataTemplates>
+            <DropDownButton.Flyout>
+                <Flyout>
+                    <StackPanel Orientation="Vertical" Margin="-12">
+                        <TextBox Text="{Binding TargetSearch, Mode=TwoWay}" Margin="8" />
+
+                        <ScrollViewer Margin="0" Width="300" MaxWidth="300" MaxHeight="400"
+                                      HorizontalScrollBarVisibility="Disabled">
+                            <StackPanel Orientation="Vertical">
+
+                                <Expander Header="{Binding Tags.Value^.Count, StringFormat={}Tags ({0})}"
+                                          IsExpanded="True"
+                                          Padding="4" MinHeight="40" Margin="0,0,0,8">
+                                    <ListBox SelectedItem="{Binding SelectedTag}" ItemsSource="{Binding Tags.Value^}" />
+                                </Expander>
+
+                                <Expander Header="{Binding Apps.Value^.Count, StringFormat={}Apps ({0})}"
+                                          IsExpanded="True"
+                                          Padding="4" MinHeight="40">
+                                    <ListBox SelectedItem="{Binding SelectedApp}" ItemsSource="{Binding Apps.Value^}" />
+                                </Expander>
+
+                            </StackPanel>
+                        </ScrollViewer>
+                    </StackPanel>
+
+
+                </Flyout>
+            </DropDownButton.Flyout>
+        </DropDownButton>
+
+        <TimePicker Grid.Column="1" Grid.Row="1" Name="UsageLimitPicker" SelectedTime="{Binding UsageLimit}"
+                    HorizontalAlignment="Stretch" ClockIdentifier="24HourClock">
+            <TimePicker.Resources>
+            </TimePicker.Resources>
+        </TimePicker>
+
+        <ComboBox Grid.Column="1" Grid.Row="2" Name="TimeFramePicker" SelectedItem="{Binding TimeFrame}"
+                  HorizontalAlignment="Stretch">
+            <ComboBoxItem Content="Daily" />
+            <ComboBoxItem Content="Weekly" />
+            <ComboBoxItem Content="Monthly" />
+        </ComboBox>
+
+        <ComboBox Grid.Column="1" Grid.Row="3" Name="TargetActionPicker" SelectedItem="{Binding }"
+                  HorizontalAlignment="Stretch" />
+
+    </Grid>
+
 </reactiveUi:ReactiveUserControl>

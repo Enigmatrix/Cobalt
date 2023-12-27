@@ -1,5 +1,4 @@
 ﻿using System.Reactive.Disposables;
-using System.Reactive.Linq;
 using Cobalt.Common.Data;
 using Cobalt.Common.Data.Entities;
 using Cobalt.Common.ViewModels.Analysis;
@@ -24,6 +23,9 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
     [ObservableProperty] private TriggerAction? _triggerAction; // TODO init this?
 
     // TODO find some validation library!!!!
+    // TODO count how many refreshes are done, try to get rid of the assumeRefreshIsCalled parameter
+    // TODO too many bindings to Apps/Tags, try reduce?
+
     [ObservableProperty] private TimeSpan _usageLimit;
 
     public AddAlertDialogViewModel(IEntityViewModelCache entityCache, IDbContextFactory<QueryContext> contexts) :
@@ -50,33 +52,30 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
         this.WhenActivated(dis =>
         {
             TargetSearch = "";
+            SelectedTarget = null;
+            SelectedApp = null;
+            SelectedTag = null;
             Apps.Refresh();
             Tags.Refresh();
 
 
             // Reset SelectedTarget based on the two selection properties, SelectedApp and SelectedTag
             this.WhenAnyValue(self => self.SelectedApp)
-                .Where(self => self != null)
-                .Subscribe(self =>
+                .WhereNotNull()
+                .Subscribe(app =>
                 {
                     SelectedTag = null;
-                    SelectedTarget = self!;
+                    SelectedTarget = app;
                 })
                 .DisposeWith(dis);
 
             this.WhenAnyValue(self => self.SelectedTag)
-                .Where(self => self != null)
-                .Subscribe(self =>
+                .WhereNotNull()
+                .Subscribe(tag =>
                 {
                     SelectedApp = null;
-                    SelectedTarget = self!;
+                    SelectedTarget = tag;
                 })
-                .DisposeWith(dis);
-
-            this.WhenAnyValue(self => self.SelectedTag, self => self.SelectedApp,
-                    (tag, app) => tag == null && app == null)
-                .DistinctUntilChanged()
-                .Subscribe(_ => SelectedTarget = null)
                 .DisposeWith(dis);
         });
     }
