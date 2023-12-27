@@ -23,6 +23,7 @@ public static class DialogExtensions
 
         var dialog = new ContentDialog
         {
+            Title = vm.Title,
             DefaultButton = ContentDialogButton.Primary,
             PrimaryButtonText = vm.PrimaryButtonText,
             CloseButtonText = vm.CloseButtonText,
