@@ -6,13 +6,15 @@ using Cobalt.Common.ViewModels.Entities;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.EntityFrameworkCore;
 using ReactiveUI;
+using ReactiveUI.Validation.Abstractions;
+using ReactiveUI.Validation.Contexts;
 
 namespace Cobalt.Common.ViewModels.Dialogs;
 
 /// <summary>
 ///     Dialog ViewModel to Add Alert
 /// </summary>
-public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewModel>
+public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewModel>, IValidatableViewModel
 {
     private readonly IEntityViewModelCache _entityCache;
     [ObservableProperty] private AppViewModel? _selectedApp;
@@ -49,6 +51,9 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
                 tag.Name.ToLower().Contains(search.ToLower())).ToListAsync(),
             _entityCache.Tag, false);
 
+        // INHERITABLEASDASDSADASD
+        ValidationContext.Add(TriggerAction.ValidationContext);
+
         this.WhenActivated(dis =>
         {
             TargetSearch = "";
@@ -57,7 +62,7 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
             SelectedTag = null;
             UsageLimit = null;
             TimeFrame = null;
-            TriggerAction = new TriggerActionViewModel();
+            //TriggerAction = new TriggerActionViewModel();
             Apps.Refresh();
             Tags.Refresh();
 
@@ -87,6 +92,8 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
     public Query<string, List<TagViewModel>> Tags { get; }
 
     public override string Title => "Add Alert";
+
+    public ValidationContext ValidationContext { get; } = new();
 
     public override async Task<AlertViewModel> GetResultAsync()
     {
