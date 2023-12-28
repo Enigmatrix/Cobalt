@@ -7,6 +7,44 @@ using Microsoft.EntityFrameworkCore;
 namespace Cobalt.Common.ViewModels.Entities;
 
 /// <summary>
+///     ViewModel for the <see cref="TriggerAction" /> owned object. Exists mainly to provide
+///     <see cref="ObservableObject" /> to the <see cref="TriggerAction" />
+/// </summary>
+public partial class TriggerActionViewModel : ObservableObject
+{
+    [ObservableProperty] private TimeSpan? _dimDuration;
+    [ObservableProperty] private string? _messageContent;
+    [ObservableProperty] private long _tag;
+
+    public TriggerActionViewModel(TriggerAction triggerAction)
+    {
+        _tag = triggerAction.Tag;
+        _messageContent = triggerAction.MessageContent;
+        _dimDuration = triggerAction.DimDuration;
+    }
+
+    /// <summary>
+    ///     Convert back to a <see cref="TriggerAction" />
+    /// </summary>
+    public TriggerAction ToTriggerAction()
+    {
+        TriggerAction triggerAction = Tag switch
+        {
+            0 => new TriggerAction.Kill(),
+            1 =>
+                // TODO make bad MessageContent throw a validation error
+                new TriggerAction.Message(MessageContent ?? ""),
+            2 =>
+                // TODO make bad DimDuration throw a validation error
+                new TriggerAction.Dim(DimDuration ?? TimeSpan.Zero),
+            _ => throw new InvalidOperationException() // TODO better exception
+        };
+
+        return triggerAction;
+    }
+}
+
+/// <summary>
 ///     ViewModel for the App Entity
 /// </summary>
 public partial class AppViewModel : EditableEntityViewModelBase<App>
