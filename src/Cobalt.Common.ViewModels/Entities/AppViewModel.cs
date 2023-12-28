@@ -14,14 +14,7 @@ public partial class TriggerActionViewModel : ObservableObject
 {
     [ObservableProperty] private TimeSpan? _dimDuration;
     [ObservableProperty] private string? _messageContent;
-    [ObservableProperty] private long _tag;
-
-    public TriggerActionViewModel(TriggerAction triggerAction)
-    {
-        _tag = triggerAction.Tag;
-        _messageContent = triggerAction.MessageContent;
-        _dimDuration = triggerAction.DimDuration;
-    }
+    [ObservableProperty] private long? _tag;
 
     /// <summary>
     ///     Convert back to a <see cref="TriggerAction" />

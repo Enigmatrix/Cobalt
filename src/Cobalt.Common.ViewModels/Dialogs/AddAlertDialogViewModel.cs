@@ -20,7 +20,7 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
     [ObservableProperty] private EntityViewModelBase? _selectedTarget;
     [ObservableProperty] private string _targetSearch = "";
     [ObservableProperty] private TimeFrame? _timeFrame;
-    [ObservableProperty] private TriggerActionViewModel _triggerAction;
+    [ObservableProperty] private TriggerActionViewModel _triggerAction = new();
 
     // TODO find some validation library!!!!
     // TODO count how many refreshes are done, try to get rid of the assumeRefreshIsCalled parameter
@@ -49,8 +49,6 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
                 tag.Name.ToLower().Contains(search.ToLower())).ToListAsync(),
             _entityCache.Tag, false);
 
-        TriggerAction = new TriggerActionViewModel(new TriggerAction.Kill(), Contexts);
-
         this.WhenActivated(dis =>
         {
             TargetSearch = "";
@@ -59,7 +57,7 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
             SelectedTag = null;
             UsageLimit = null;
             TimeFrame = null;
-            TriggerAction = new TriggerActionViewModel(new TriggerAction.Kill(), Contexts);
+            TriggerAction = new TriggerActionViewModel();
             Apps.Refresh();
             Tags.Refresh();
 
