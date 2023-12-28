@@ -22,8 +22,13 @@ public partial class TriggerActionViewModel : ReactiveObservableObject, IValidat
     [ObservableProperty] private string? _messageContent;
     [ObservableProperty] private long? _tag;
 
+    // TODO commonalize the 1 and 2
+    // TODO try multiple propertues
+    // TODO try multiple validation on the same properties
     public TriggerActionViewModel()
     {
+        // Reset properties after switching to other enums
+        // TODO dispose ...
         this.WhenAnyValue(self => self.Tag).Where(tag => tag != 1).Subscribe(_ => MessageContent = null);
         this.WhenAnyValue(self => self.Tag).Where(tag => tag != 2).Subscribe(_ => DimDuration = null);
 

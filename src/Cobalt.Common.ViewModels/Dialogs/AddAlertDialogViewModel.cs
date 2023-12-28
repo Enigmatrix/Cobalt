@@ -51,7 +51,7 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
                 tag.Name.ToLower().Contains(search.ToLower())).ToListAsync(),
             _entityCache.Tag, false);
 
-        // INHERITABLEASDASDSADASD
+        // TODO INHERITABLEASDASDSADASD
         ValidationContext.Add(TriggerAction.ValidationContext);
 
         this.WhenActivated(dis =>
