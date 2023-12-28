@@ -6,17 +6,37 @@
                                 xmlns:dialogs="clr-namespace:Cobalt.Common.ViewModels.Dialogs;assembly=Cobalt.Common.ViewModels"
                                 xmlns:entities="clr-namespace:Cobalt.Common.ViewModels.Entities;assembly=Cobalt.Common.ViewModels"
                                 xmlns:controls="clr-namespace:FluentAvalonia.UI.Controls;assembly=FluentAvalonia"
+                                xmlns:avalonia="clr-namespace:SpacedGridControl.Avalonia;assembly=SpacedGridControl.Avalonia"
+                                xmlns:dataEntities="clr-namespace:Cobalt.Common.Data.Entities;assembly=Cobalt.Common.Data"
                                 mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
                                 x:Class="Cobalt.Views.Dialogs.AddAlertDialog"
                                 x:DataType="dialogs:AddAlertDialogViewModel">
 
-    <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto, Auto, Auto, Auto" HorizontalAlignment="Stretch">
+    <avalonia:SpacedGrid ColumnSpacing="12" RowSpacing="12" MinWidth="500"
+                         RowDefinitions="Auto, Auto, Auto, Auto, Auto" HorizontalAlignment="Stretch">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" MinWidth="150" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
         <Label Grid.Column="0" Grid.Row="0" Target="{Binding ElementName=TargetPicker}" VerticalAlignment="Center">Target</Label>
         <Label Grid.Column="0" Grid.Row="1" Target="{Binding ElementName=UsageLimitPicker}" VerticalAlignment="Center">Usage Limit</Label>
         <Label Grid.Column="0" Grid.Row="2" Target="{Binding ElementName=TimeFramePicker}" VerticalAlignment="Center">Time Frame</Label>
-        <Label Grid.Column="0" Grid.Row="3" Target="{Binding ElementName=TargetActionPicker}"
+        <Label Grid.Column="0" Grid.Row="3" Target="{Binding ElementName=TriggerActionPicker}"
                VerticalAlignment="Center">
-            Target Action
+            Trigger Action
+        </Label>
+
+        <Label Grid.Column="0" Grid.Row="4" Target="{Binding ElementName=TriggerActionPicker}"
+               IsVisible="{Binding TriggerAction.Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={StaticResource Int1}}"
+               VerticalAlignment="Center">
+            <TextBlock Margin="16,0,0,0">Message Content</TextBlock>
+        </Label>
+
+
+        <Label Grid.Column="0" Grid.Row="4" Target="{Binding ElementName=TriggerActionPicker}"
+               IsVisible="{Binding TriggerAction.Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={StaticResource Int2}}"
+               VerticalAlignment="Center">
+            <TextBlock Margin="16,0,0,0">Dim Duration</TextBlock>
         </Label>
 
         <DropDownButton Grid.Column="1" Grid.Row="0" Name="TargetPicker" MinHeight="48" MinWidth="100"
@@ -92,14 +112,46 @@
 
         <ComboBox Grid.Column="1" Grid.Row="2" Name="TimeFramePicker" SelectedItem="{Binding TimeFrame}"
                   HorizontalAlignment="Stretch">
-            <ComboBoxItem Content="Daily" />
-            <ComboBoxItem Content="Weekly" />
-            <ComboBoxItem Content="Monthly" />
+            <dataEntities:TimeFrame>Daily</dataEntities:TimeFrame>
+            <dataEntities:TimeFrame>Weekly</dataEntities:TimeFrame>
+            <dataEntities:TimeFrame>Monthly</dataEntities:TimeFrame>
         </ComboBox>
 
-        <ComboBox Grid.Column="1" Grid.Row="3" Name="TargetActionPicker" SelectedItem="{Binding }"
-                  HorizontalAlignment="Stretch" />
+        <ComboBox Grid.Column="1" Grid.Row="3" Name="TriggerActionPicker"
+                  SelectedIndex="{Binding TriggerAction.Tag, Mode=TwoWay}"
+                  HorizontalAlignment="Stretch" HorizontalContentAlignment="Left">
+            <ComboBoxItem>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <controls:FAPathIcon Width="14" Height="14" Data="{StaticResource KillPath}"
+                                         VerticalAlignment="Center" />
+                    <TextBlock Text="Kill" VerticalAlignment="Center" />
+                </StackPanel>
+            </ComboBoxItem>
 
-    </Grid>
+            <ComboBoxItem>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <controls:FAPathIcon Width="14" Height="14" Data="{StaticResource MessagePath}"
+                                         VerticalAlignment="Center" />
+                    <TextBlock Text="Message" VerticalAlignment="Center" />
+                </StackPanel>
+            </ComboBoxItem>
+
+            <ComboBoxItem>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <controls:FAPathIcon Width="14" Height="14" Data="{StaticResource DimPath}"
+                                         VerticalAlignment="Center" />
+                    <TextBlock Text="Dim" VerticalAlignment="Center" />
+                </StackPanel>
+            </ComboBoxItem>
+        </ComboBox>
+
+        <TextBox Grid.Column="1" Grid.Row="4" Text="{Binding TriggerAction.MessageContent}" VerticalAlignment="Center"
+                 AcceptsReturn="True"
+                 IsVisible="{Binding TriggerAction.Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={StaticResource Int1}}" />
+        <TimePicker Grid.Column="1" Grid.Row="4" SelectedTime="{Binding TriggerAction.DimDuration}"
+                    HorizontalAlignment="Stretch" ClockIdentifier="24HourClock" VerticalAlignment="Center"
+                    IsVisible="{Binding TriggerAction.Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={StaticResource Int2}}" />
+
+    </avalonia:SpacedGrid>
 
 </reactiveUi:ReactiveUserControl>

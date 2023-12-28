@@ -19,14 +19,14 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
     [ObservableProperty] private TagViewModel? _selectedTag;
     [ObservableProperty] private EntityViewModelBase? _selectedTarget;
     [ObservableProperty] private string _targetSearch = "";
-    [ObservableProperty] private TimeFrame _timeFrame;
-    [ObservableProperty] private TriggerAction? _triggerAction; // TODO init this?
+    [ObservableProperty] private TimeFrame? _timeFrame;
+    [ObservableProperty] private TriggerActionViewModel _triggerAction;
 
     // TODO find some validation library!!!!
     // TODO count how many refreshes are done, try to get rid of the assumeRefreshIsCalled parameter
     // TODO too many bindings to Apps/Tags, try reduce?
 
-    [ObservableProperty] private TimeSpan _usageLimit;
+    [ObservableProperty] private TimeSpan? _usageLimit;
 
     public AddAlertDialogViewModel(IEntityViewModelCache entityCache, IDbContextFactory<QueryContext> contexts) :
         base(contexts)
@@ -49,12 +49,17 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
                 tag.Name.ToLower().Contains(search.ToLower())).ToListAsync(),
             _entityCache.Tag, false);
 
+        TriggerAction = new TriggerActionViewModel(new TriggerAction.Kill(), Contexts);
+
         this.WhenActivated(dis =>
         {
             TargetSearch = "";
             SelectedTarget = null;
             SelectedApp = null;
             SelectedTag = null;
+            UsageLimit = null;
+            TimeFrame = null;
+            TriggerAction = new TriggerActionViewModel(new TriggerAction.Kill(), Contexts);
             Apps.Refresh();
             Tags.Refresh();
 
@@ -87,13 +92,14 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
 
     public override async Task<AlertViewModel> GetResultAsync()
     {
+        // TODO validate
         var alert = new Alert
         {
             Guid = Guid.NewGuid(),
             Version = 1,
-            TimeFrame = TimeFrame,
-            TriggerAction = TriggerAction,
-            UsageLimit = UsageLimit
+            TimeFrame = TimeFrame!.Value,
+            TriggerAction = TriggerAction.ToTriggerAction(),
+            UsageLimit = UsageLimit!.Value
         };
         switch (SelectedTarget)
         {
@@ -106,7 +112,8 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
         }
 
         await using var context = await Contexts.CreateDbContextAsync();
-        await context.AddAsync(alert);
+        context.Attach(alert);
+        await context.Alerts.AddAsync(alert);
         await context.SaveChangesAsync();
 
         return new AlertViewModel(alert, _entityCache, Contexts);
