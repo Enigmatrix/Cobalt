@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+﻿using System.Linq.Expressions;
 using System.Reactive.Linq;
 using Cobalt.Common.Data;
 using Cobalt.Common.Data.Entities;
@@ -24,43 +24,59 @@ public partial class TriggerActionViewModel : ReactiveObservableObject, IValidat
 
     public TriggerActionViewModel()
     {
-        ValidationContext = new ValidationContext();
         this.WhenAnyValue(self => self.Tag).Where(tag => tag != 1).Subscribe(_ => MessageContent = null);
         this.WhenAnyValue(self => self.Tag).Where(tag => tag != 2).Subscribe(_ => DimDuration = null);
 
-        this.WhenAnyValue(self => self.MessageContent).Subscribe(nani => Debug.WriteLine($"send help: {nani}"));
-
-        var messageContentValid = this.WhenAnyValue(self => self.Tag)
-            .Select(tag => this
-                .WhenAnyValue(self => self.MessageContent)
-                // don't validate at the start, MessageContent is intentionally null at that point.
-                .SkipWhile((_, idx) => tag == 1 && idx == 0)
-                .Select(messageContent => tag != 1 || !string.IsNullOrWhiteSpace(messageContent)))
-            .Switch();
-
-        var dimDurationValid = this.WhenAnyValue(self => self.Tag)
-            .Select(tag => this
-                .WhenAnyValue(self => self.DimDuration)
-                // don't validate at the start, DimDuration is intentionally null at that point.
-                .SkipWhile((_, idx) => tag == 2 && idx == 0)
-                .Select(dimDuration => tag != 2 || dimDuration != null))
-            .Switch();
-
-        // TODO shall we just use fucking .BindValidation?
+        this.ValidationRule(self => self.Tag,
+            tag => tag != null,
+            "Trigger Action must be selected");
 
         this.ValidationRule(
             self => self.MessageContent,
-            messageContentValid.Do(x => Debug.WriteLine($"Message content is {(x ? "valid" : "invalid")}")),
+            WhenTagAndPropertyValid(1, self => self.MessageContent,
+                messageContent => !string.IsNullOrWhiteSpace(messageContent)),
             "Message Content is empty");
 
         this.ValidationRule(
             self => self.DimDuration,
-            dimDurationValid,
+            WhenTagAndPropertyValid(2, self => self.DimDuration, dimDuration => dimDuration != null),
             "Dim Duration is empty");
     }
 
     /// <inheritdoc />
     public ValidationContext ValidationContext { get; } = new();
+
+    /// <summary>
+    ///     When <see cref="Tag" /> matches <paramref name="tagMatch" />, validate <paramref name="prop" /> according to
+    ///     <paramref name="validate" /> and send the result, skipping the first validation since that value is always null.
+    ///     Otherwise send true by default.
+    /// </summary>
+    /// <typeparam name="T">Type of <paramref name="prop" /></typeparam>
+    /// <param name="tagMatch">Matching <see cref="Tag" /> value</param>
+    /// <param name="prop">Property extractor</param>
+    /// <param name="validate">The actual validation logic</param>
+    private IObservable<bool> WhenTagAndPropertyValid<T>(long tagMatch,
+        Expression<Func<TriggerActionViewModel, T>> prop,
+        Func<T, bool> validate)
+    {
+        return this.WhenAnyValue(self => self.Tag)
+            .Select(tag => this
+                .WhenAnyValue(prop)
+                // don't validate at the start, value is intentionally null at that point.
+                .SkipWhile((_, idx) => tag == tagMatch && idx == 0)
+                .Select(v => tag != tagMatch || validate(v)))
+            .Switch();
+    }
+
+    /// <summary>
+    ///     Reset all properties
+    /// </summary>
+    public void Clear()
+    {
+        Tag = null;
+        MessageContent = null;
+        DimDuration = null;
+    }
 
     /// <summary>
     ///     Convert back to a <see cref="TriggerAction" />

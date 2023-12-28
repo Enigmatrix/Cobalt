@@ -62,7 +62,7 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
             SelectedTag = null;
             UsageLimit = null;
             TimeFrame = null;
-            //TriggerAction = new TriggerActionViewModel();
+            TriggerAction.Clear();
             Apps.Refresh();
             Tags.Refresh();
 
