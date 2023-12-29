@@ -23,8 +23,6 @@ public partial class TriggerActionViewModel : ReactiveObservableObject, IValidat
     [ObservableProperty] private long? _tag;
 
     // TODO commonalize the 1 and 2
-    // TODO try multiple propertues
-    // TODO try multiple validation on the same properties
     public TriggerActionViewModel()
     {
         // Reset properties after switching to other enums
