@@ -27,7 +27,7 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
 
     // TODO find some validation library!!!!
     // TODO count how many refreshes are done, try to get rid of the assumeRefreshIsCalled parameter
-    // TODO too many bindings to Apps/Tags, try reduce?
+    // TODO too many ^ bindings to Apps/Tags, try reduce?
 
     [ObservableProperty] private TimeSpan? _usageLimit;
 
@@ -52,7 +52,7 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
                 tag.Name.ToLower().Contains(search.ToLower())).ToListAsync(),
             _entityCache.Tag, false);
 
-        // TODO INHERITABLEASDASDSADASD
+        // TODO explain this inheritance
         ValidationContext.Add(TriggerAction.ValidationContext);
 
         var validUsageLimitAndTimeFrame =
