@@ -50,6 +50,25 @@ public partial class TriggerActionViewModel : ReactiveObservableObject, IValidat
     public ValidationContext ValidationContext { get; } = new();
 
     /// <summary>
+    ///     Real usability validation status as an <see cref="IObservable{Boolean}" />
+    /// </summary>
+    public IObservable<bool> UsableValid()
+    {
+        return this.WhenAnyValue(
+            self => self.Tag,
+            self => self.MessageContent,
+            self => self.DimDuration
+            , (tag, messageContent, dimDuration) => tag switch
+            {
+                0 => true,
+                1 => !string.IsNullOrWhiteSpace(messageContent),
+                2 => dimDuration != null,
+                null => false,
+                _ => throw new Exception() // TODO actual exception
+            });
+    }
+
+    /// <summary>
     ///     When <see cref="Tag" /> matches <paramref name="tagMatch" />, validate <paramref name="prop" /> according to
     ///     <paramref name="validate" /> and send the result, skipping the first validation since that value is always null.
     ///     Otherwise send true by default.

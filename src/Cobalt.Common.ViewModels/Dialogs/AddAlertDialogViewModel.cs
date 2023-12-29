@@ -63,18 +63,17 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
         // This isn't a validation rule we don't want to display "X is unset" errors,
         // that would just mean the entire form is red.
         var allPropertiesNonNull = this.WhenAnyValue(
-            self => self.TriggerAction.Tag,
             self => self.SelectedTarget,
             self => self.UsageLimit,
             self => self.TimeFrame,
-            (tag, target, usageLimit, timeFrame) =>
-                tag != null && target != null && usageLimit != null && timeFrame != null);
+            (target, usageLimit, timeFrame) =>
+                target != null && usageLimit != null && timeFrame != null);
 
         PrimaryButtonCommand =
             ReactiveCommand.CreateFromTask(ProduceAlert,
                 this.IsValid()
-                    .CombineLatest(allPropertiesNonNull)
-                    .Select(valid => valid.First && valid.Second));
+                    .CombineLatest(allPropertiesNonNull, TriggerAction.UsableValid())
+                    .Select(valid => valid.First && valid.Second && valid.Third));
 
         this.WhenActivated(dis =>
         {
