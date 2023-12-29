@@ -1,4 +1,6 @@
-﻿using System.Reactive.Disposables;
+﻿using System.Reactive;
+using System.Reactive.Disposables;
+using System.Reactive.Linq;
 using Cobalt.Common.Data;
 using Cobalt.Common.Data.Entities;
 using Cobalt.Common.ViewModels.Analysis;
@@ -57,6 +59,22 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
         var validUsageLimitAndTimeFrame =
             this.WhenAnyValue(self => self.UsageLimit, self => self.TimeFrame, ValidUsageLimitAndTimeFrame);
 
+        // Additionally, validation that all our properties are set.
+        // This isn't a validation rule we don't want to display "X is unset" errors,
+        // that would just mean the entire form is red.
+        var allPropertiesNonNull = this.WhenAnyValue(
+            self => self.TriggerAction.Tag,
+            self => self.SelectedTarget,
+            self => self.UsageLimit,
+            self => self.TimeFrame,
+            (tag, target, usageLimit, timeFrame) =>
+                tag != null && target != null && usageLimit != null && timeFrame != null);
+
+        PrimaryButtonCommand =
+            ReactiveCommand.CreateFromTask(ProduceAlert,
+                this.IsValid()
+                    .CombineLatest(allPropertiesNonNull)
+                    .Select(valid => valid.First && valid.Second));
 
         this.WhenActivated(dis =>
         {
@@ -99,6 +117,8 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
         });
     }
 
+    public override ReactiveCommand<Unit, Unit> PrimaryButtonCommand { get; set; }
+
     public Query<string, List<AppViewModel>> Apps { get; }
     public Query<string, List<TagViewModel>> Tags { get; }
 
@@ -115,10 +135,10 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
         return timeFrame switch
         {
             // TODO change this back
-            Data.Entities.TimeFrame.Daily => usageLimit <= TimeSpan.FromDays(0.1),
-            Data.Entities.TimeFrame.Weekly => usageLimit <= TimeSpan.FromDays(0.7),
+            Data.Entities.TimeFrame.Daily => usageLimit <= TimeSpan.FromDays(1),
+            Data.Entities.TimeFrame.Weekly => usageLimit <= TimeSpan.FromDays(7),
             Data.Entities.TimeFrame.Monthly => usageLimit <=
-                                               TimeSpan.FromDays(3.1), // maximum number of days in a month
+                                               TimeSpan.FromDays(31), // maximum number of days in a month
             _ => throw new ArgumentOutOfRangeException(nameof(timeFrame), timeFrame, null) // TODO better exception
         };
     }

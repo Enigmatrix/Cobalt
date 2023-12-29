@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Reactive;
+using System.Threading.Tasks;
 using Cobalt.Common.ViewModels.Dialogs;
 using FluentAvalonia.UI.Controls;
 using ReactiveUI;
@@ -26,9 +27,15 @@ public static class DialogExtensions
             Title = vm.Title,
             DefaultButton = ContentDialogButton.Primary,
             PrimaryButtonText = vm.PrimaryButtonText,
+            PrimaryButtonCommand = vm.PrimaryButtonCommand,
+            PrimaryButtonCommandParameter = Unit.Default,
             CloseButtonText = vm.CloseButtonText,
             Content = view
         };
+        // Normally, we would never need to bind this ourselves
+        using var canExecute =
+            dialog.Bind(ContentDialog.IsPrimaryButtonEnabledProperty, vm.PrimaryButtonCommand.CanExecute);
+
         var result = await dialog.ShowAsync();
         return result == ContentDialogResult.Primary ? vm.GetResult() : default;
     }
