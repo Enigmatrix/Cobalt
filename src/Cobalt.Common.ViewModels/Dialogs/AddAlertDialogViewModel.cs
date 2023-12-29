@@ -25,7 +25,6 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
     [ObservableProperty] private TimeFrame? _timeFrame;
     [ObservableProperty] private TriggerActionViewModel _triggerAction = new();
 
-    // TODO find some validation library!!!!
     // TODO count how many refreshes are done, try to get rid of the assumeRefreshIsCalled parameter
     // TODO too many ^ bindings to Apps/Tags, try reduce?
 
@@ -58,11 +57,7 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
         var validUsageLimitAndTimeFrame =
             this.WhenAnyValue(self => self.UsageLimit, self => self.TimeFrame, ValidUsageLimitAndTimeFrame);
 
-        this.ValidationRule(self => self.TimeFrame, validUsageLimitAndTimeFrame,
-            "Time Frame cannot contain Usage Limit");
 
-        this.ValidationRule(self => self.UsageLimit, validUsageLimitAndTimeFrame,
-            "Usage Limit cannot contain Time Frame");
         this.WhenActivated(dis =>
         {
             TargetSearch = "";
@@ -74,6 +69,13 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
             TriggerAction.Clear();
             Apps.Refresh();
             Tags.Refresh();
+
+
+            this.ValidationRule(self => self.TimeFrame, validUsageLimitAndTimeFrame,
+                "Time Frame cannot contain Usage Limit").DisposeWith(dis);
+
+            this.ValidationRule(self => self.UsageLimit, validUsageLimitAndTimeFrame,
+                "Usage Limit cannot contain Time Frame").DisposeWith(dis);
 
 
             // Reset SelectedTarget based on the two selection properties, SelectedApp and SelectedTag
@@ -110,6 +112,7 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
 
         return timeFrame switch
         {
+            // TODO change this back
             Data.Entities.TimeFrame.Daily => usageLimit <= TimeSpan.FromDays(0.1),
             Data.Entities.TimeFrame.Weekly => usageLimit <= TimeSpan.FromDays(0.7),
             Data.Entities.TimeFrame.Monthly => usageLimit <=
@@ -120,7 +123,6 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
 
     public override async Task<AlertViewModel> GetResultAsync()
     {
-        // TODO validate
         var alert = new Alert
         {
             Guid = Guid.NewGuid(),
