@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using ReactiveUI;
 using ReactiveUI.Validation.Abstractions;
 using ReactiveUI.Validation.Contexts;
+using ReactiveUI.Validation.Extensions;
 
 namespace Cobalt.Common.ViewModels.Dialogs;
 
@@ -54,6 +55,14 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
         // TODO INHERITABLEASDASDSADASD
         ValidationContext.Add(TriggerAction.ValidationContext);
 
+        var validUsageLimitAndTimeFrame =
+            this.WhenAnyValue(self => self.UsageLimit, self => self.TimeFrame, ValidUsageLimitAndTimeFrame);
+
+        this.ValidationRule(self => self.TimeFrame, validUsageLimitAndTimeFrame,
+            "Time Frame cannot contain Usage Limit");
+
+        this.ValidationRule(self => self.UsageLimit, validUsageLimitAndTimeFrame,
+            "Usage Limit cannot contain Time Frame");
         this.WhenActivated(dis =>
         {
             TargetSearch = "";
@@ -94,6 +103,20 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
     public override string Title => "Add Alert";
 
     public ValidationContext ValidationContext { get; } = new();
+
+    private bool ValidUsageLimitAndTimeFrame(TimeSpan? usageLimit, TimeFrame? timeFrame)
+    {
+        if (usageLimit == null || timeFrame == null) return true;
+
+        return timeFrame switch
+        {
+            Data.Entities.TimeFrame.Daily => usageLimit <= TimeSpan.FromDays(0.1),
+            Data.Entities.TimeFrame.Weekly => usageLimit <= TimeSpan.FromDays(0.7),
+            Data.Entities.TimeFrame.Monthly => usageLimit <=
+                                               TimeSpan.FromDays(3.1), // maximum number of days in a month
+            _ => throw new ArgumentOutOfRangeException(nameof(timeFrame), timeFrame, null) // TODO better exception
+        };
+    }
 
     public override async Task<AlertViewModel> GetResultAsync()
     {
