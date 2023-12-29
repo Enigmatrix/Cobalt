@@ -10,11 +10,12 @@
         <!-- Set Defaults -->
         <Setter Property="Template">
             <ControlTemplate>
-                <Grid Width="200" Height="50">
+                <Grid MinHeight="{DynamicResource TextControlThemeMinHeight}">
                     <fluent:FABorder VerticalAlignment="Stretch" HorizontalAlignment="Stretch" CornerRadius="4">
-                        <TextBox Name="PART_DurationTextBox" IsVisible="False" />
-
+                        <TextBox VerticalContentAlignment="Center" HorizontalContentAlignment="Center"
+                                 Name="PART_DurationTextBox" IsVisible="False" />
                     </fluent:FABorder>
+
                     <Button Name="PART_DurationDisplay" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" />
                 </Grid>
             </ControlTemplate>

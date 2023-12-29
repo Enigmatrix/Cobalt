@@ -34,6 +34,7 @@ public class DurationPicker : TemplatedControl
         _textBox = e.NameScope.Get<TextBox>("PART_DurationTextBox");
         _display = e.NameScope.Get<Button>("PART_DurationDisplay");
 
+        //_textBox.Bind()
         _textBox.LostFocus += TextBoxLostFocus;
         _display.Click += DisplayClicked;
     }
