@@ -1,4 +1,5 @@
-﻿using Cobalt.Common.Data;
+﻿using System.Reactive;
+using Cobalt.Common.Data;
 using Microsoft.EntityFrameworkCore;
 using ReactiveUI;
 
@@ -29,6 +30,11 @@ public abstract class DialogViewModelBase<TResult> : ViewModelBase, IActivatable
     public string CloseButtonText => "Cancel";
 
     /// <summary>
+    ///     PrimaryButtonCommand of this Dialog
+    /// </summary>
+    public abstract ReactiveCommand<Unit, Unit> PrimaryButtonCommand { get; set; }
+
+    /// <summary>
     ///     Activator Context
     /// </summary>
     public ViewModelActivator Activator { get; } = new();
@@ -36,5 +42,5 @@ public abstract class DialogViewModelBase<TResult> : ViewModelBase, IActivatable
     /// <summary>
     ///     Produces the result of this Dialog
     /// </summary>
-    public abstract Task<TResult> GetResultAsync();
+    public abstract TResult GetResult();
 }

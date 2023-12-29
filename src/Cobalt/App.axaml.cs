@@ -1,10 +1,12 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Data.Core.Plugins;
 using Avalonia.Markup.Xaml;
 using Cobalt.Common.Data;
 using Cobalt.Common.Infrastructure;
 using Cobalt.Common.ViewModels;
 using Cobalt.Common.ViewModels.Pages;
+using Cobalt.Extensions;
 using Cobalt.Views;
 using Cobalt.Views.Pages;
 using Microsoft.EntityFrameworkCore;
@@ -22,6 +24,9 @@ public class App : Application
 
     public override void OnFrameworkInitializationCompleted()
     {
+        BindingPlugins.DataValidators.Clear(); // all other data validation plugins are not used anyway
+        BindingPlugins.DataValidators.Add(new ValidatorViewModelValidationPlugin());
+
         var serviceCollection = new ServiceCollection();
 #if DEBUG
         serviceCollection.AddSingleton<IViewFor<ExperimentsPageViewModel>, ExperimentsPage>();

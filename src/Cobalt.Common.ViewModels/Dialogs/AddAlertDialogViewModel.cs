@@ -1,4 +1,6 @@
-﻿using System.Reactive.Disposables;
+﻿using System.Reactive;
+using System.Reactive.Disposables;
+using System.Reactive.Linq;
 using Cobalt.Common.Data;
 using Cobalt.Common.Data.Entities;
 using Cobalt.Common.ViewModels.Analysis;
@@ -6,13 +8,16 @@ using Cobalt.Common.ViewModels.Entities;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.EntityFrameworkCore;
 using ReactiveUI;
+using ReactiveUI.Validation.Abstractions;
+using ReactiveUI.Validation.Contexts;
+using ReactiveUI.Validation.Extensions;
 
 namespace Cobalt.Common.ViewModels.Dialogs;
 
 /// <summary>
 ///     Dialog ViewModel to Add Alert
 /// </summary>
-public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewModel>
+public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewModel>, IValidatableViewModel
 {
     private readonly IEntityViewModelCache _entityCache;
     [ObservableProperty] private AppViewModel? _selectedApp;
@@ -22,9 +27,8 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
     [ObservableProperty] private TimeFrame? _timeFrame;
     [ObservableProperty] private TriggerActionViewModel _triggerAction = new();
 
-    // TODO find some validation library!!!!
     // TODO count how many refreshes are done, try to get rid of the assumeRefreshIsCalled parameter
-    // TODO too many bindings to Apps/Tags, try reduce?
+    // TODO too many ^ bindings to Apps/Tags, try reduce?
 
     [ObservableProperty] private TimeSpan? _usageLimit;
 
@@ -49,6 +53,29 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
                 tag.Name.ToLower().Contains(search.ToLower())).ToListAsync(),
             _entityCache.Tag, false);
 
+        // TODO explain this inheritance
+        ValidationContext.Add(TriggerAction.ValidationContext);
+
+        var validUsageLimitAndTimeFrame =
+            this.WhenAnyValue(self => self.UsageLimit, self => self.TimeFrame, ValidUsageLimitAndTimeFrame);
+
+        // Additionally, validation that all our properties are set.
+        // This isn't a validation rule we don't want to display "X is unset" errors,
+        // that would just mean the entire form is red.
+        var allPropertiesNonNull = this.WhenAnyValue(
+            self => self.TriggerAction.Tag,
+            self => self.SelectedTarget,
+            self => self.UsageLimit,
+            self => self.TimeFrame,
+            (tag, target, usageLimit, timeFrame) =>
+                tag != null && target != null && usageLimit != null && timeFrame != null);
+
+        PrimaryButtonCommand =
+            ReactiveCommand.CreateFromTask(ProduceAlert,
+                this.IsValid()
+                    .CombineLatest(allPropertiesNonNull)
+                    .Select(valid => valid.First && valid.Second));
+
         this.WhenActivated(dis =>
         {
             TargetSearch = "";
@@ -57,9 +84,16 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
             SelectedTag = null;
             UsageLimit = null;
             TimeFrame = null;
-            TriggerAction = new TriggerActionViewModel();
+            TriggerAction.Clear();
             Apps.Refresh();
             Tags.Refresh();
+
+
+            this.ValidationRule(self => self.TimeFrame, validUsageLimitAndTimeFrame,
+                "Time Frame cannot contain Usage Limit").DisposeWith(dis);
+
+            this.ValidationRule(self => self.UsageLimit, validUsageLimitAndTimeFrame,
+                "Usage Limit cannot contain Time Frame").DisposeWith(dis);
 
 
             // Reset SelectedTarget based on the two selection properties, SelectedApp and SelectedTag
@@ -83,14 +117,34 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
         });
     }
 
+    public override ReactiveCommand<Unit, Unit> PrimaryButtonCommand { get; set; }
+
     public Query<string, List<AppViewModel>> Apps { get; }
     public Query<string, List<TagViewModel>> Tags { get; }
 
     public override string Title => "Add Alert";
 
-    public override async Task<AlertViewModel> GetResultAsync()
+    private AlertViewModel? Result { get; set; }
+
+    public ValidationContext ValidationContext { get; } = new();
+
+    private bool ValidUsageLimitAndTimeFrame(TimeSpan? usageLimit, TimeFrame? timeFrame)
     {
-        // TODO validate
+        if (usageLimit == null || timeFrame == null) return true;
+
+        return timeFrame switch
+        {
+            // TODO change this back
+            Data.Entities.TimeFrame.Daily => usageLimit <= TimeSpan.FromDays(1),
+            Data.Entities.TimeFrame.Weekly => usageLimit <= TimeSpan.FromDays(7),
+            Data.Entities.TimeFrame.Monthly => usageLimit <=
+                                               TimeSpan.FromDays(31), // maximum number of days in a month
+            _ => throw new ArgumentOutOfRangeException(nameof(timeFrame), timeFrame, null) // TODO better exception
+        };
+    }
+
+    public async Task ProduceAlert()
+    {
         var alert = new Alert
         {
             Guid = Guid.NewGuid(),
@@ -114,6 +168,11 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
         await context.Alerts.AddAsync(alert);
         await context.SaveChangesAsync();
 
-        return new AlertViewModel(alert, _entityCache, Contexts);
+        Result = new AlertViewModel(alert, _entityCache, Contexts);
+    }
+
+    public override AlertViewModel GetResult()
+    {
+        return Result ?? throw new InvalidOperationException("Result unset"); // TODO better exception
     }
 }

@@ -14,7 +14,7 @@ namespace Cobalt.Common.ViewModels;
 ///     <see cref="ReactiveObject" />
 ///     otherwise the CommunityToolkit source generators will complain.
 /// </remarks>
-public abstract class ViewModelBase : ObservableObject
+public abstract class ViewModelBase : ReactiveObservableObject
 {
     protected ViewModelBase(IDbContextFactory<QueryContext> contexts)
     {

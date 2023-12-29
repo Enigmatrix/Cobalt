@@ -5,9 +5,10 @@
                                 xmlns:reactiveUi="http://reactiveui.net"
                                 xmlns:dialogs="clr-namespace:Cobalt.Common.ViewModels.Dialogs;assembly=Cobalt.Common.ViewModels"
                                 xmlns:entities="clr-namespace:Cobalt.Common.ViewModels.Entities;assembly=Cobalt.Common.ViewModels"
-                                xmlns:controls="clr-namespace:FluentAvalonia.UI.Controls;assembly=FluentAvalonia"
+                                xmlns:fluent="clr-namespace:FluentAvalonia.UI.Controls;assembly=FluentAvalonia"
                                 xmlns:avalonia="clr-namespace:SpacedGridControl.Avalonia;assembly=SpacedGridControl.Avalonia"
                                 xmlns:dataEntities="clr-namespace:Cobalt.Common.Data.Entities;assembly=Cobalt.Common.Data"
+                                xmlns:controls="clr-namespace:Cobalt.Controls"
                                 mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
                                 x:Class="Cobalt.Views.Dialogs.AddAlertDialog"
                                 x:DataType="dialogs:AddAlertDialogViewModel">
@@ -52,8 +53,8 @@
 
                 <DataTemplate DataType="entities:TagViewModel">
                     <StackPanel Orientation="Horizontal">
-                        <controls:SymbolIcon Symbol="Tag" FontSize="20" Margin="-8,0,8,0"
-                                             Foreground="{Binding Color, Converter={StaticResource ColorStringToBrushConverter}}" />
+                        <fluent:SymbolIcon Symbol="Tag" FontSize="20" Margin="-8,0,8,0"
+                                           Foreground="{Binding Color, Converter={StaticResource ColorStringToBrushConverter}}" />
                         <TextBlock VerticalAlignment="Center" Text="{Binding Name}" />
                     </StackPanel>
                 </DataTemplate>
@@ -110,7 +111,7 @@
             </TimePicker.Resources>
         </TimePicker>
 
-        <ComboBox Grid.Column="1" Grid.Row="2" Name="TimeFramePicker"
+        <controls:ExtendedComboBox Grid.Column="1" Grid.Row="2" Name="TimeFramePicker"
                   SelectedValueBinding="{ReflectionBinding Tag, Mode=TwoWay}"
                   SelectedValue="{Binding TimeFrame, Mode=TwoWay}"
                   HorizontalAlignment="Stretch" HorizontalContentAlignment="Left">
@@ -120,7 +121,7 @@
                 </ComboBoxItem.Tag>
                 <StackPanel Orientation="Horizontal" Spacing="8">
                     <!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2023 Fonticons, Inc. Icon: calendar-day-->
-                    <controls:FAPathIcon Width="14" Height="14"
+                    <fluent:FAPathIcon Width="14" Height="14"
                                          Data="M128 0c17.7 0 32 14.3 32 32V64H288V32c0-17.7 14.3-32 32-32s32 14.3 32 32V64h48c26.5 0 48 21.5 48 48v48H0V112C0 85.5 21.5 64 48 64H96V32c0-17.7 14.3-32 32-32zM0 192H448V464c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V192zm80 64c-8.8 0-16 7.2-16 16v96c0 8.8 7.2 16 16 16h96c8.8 0 16-7.2 16-16V272c0-8.8-7.2-16-16-16H80z"
                                          VerticalAlignment="Center" />
                     <TextBlock Text="Daily" VerticalAlignment="Center" />
@@ -133,7 +134,7 @@
                 </ComboBoxItem.Tag>
                 <StackPanel Orientation="Horizontal" Spacing="8">
                     <!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2023 Fonticons, Inc. Icon: calendar-week-->
-                    <controls:FAPathIcon Width="14" Height="14"
+                    <fluent:FAPathIcon Width="14" Height="14"
                                          Data="M128 0c17.7 0 32 14.3 32 32V64H288V32c0-17.7 14.3-32 32-32s32 14.3 32 32V64h48c26.5 0 48 21.5 48 48v48H0V112C0 85.5 21.5 64 48 64H96V32c0-17.7 14.3-32 32-32zM0 192H448V464c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V192zm80 64c-8.8 0-16 7.2-16 16v64c0 8.8 7.2 16 16 16H368c8.8 0 16-7.2 16-16V272c0-8.8-7.2-16-16-16H80z"
                                          VerticalAlignment="Center" />
                     <TextBlock Text="Weekly" VerticalAlignment="Center" />
@@ -146,14 +147,14 @@
                 </ComboBoxItem.Tag>
                 <StackPanel Orientation="Horizontal" Spacing="8">
                     <!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2023 Fonticons, Inc. Icon: calendar-days-->
-                    <controls:FAPathIcon Width="14" Height="14"
+                    <fluent:FAPathIcon Width="14" Height="14"
                                          Data="M128 0c17.7 0 32 14.3 32 32V64H288V32c0-17.7 14.3-32 32-32s32 14.3 32 32V64h48c26.5 0 48 21.5 48 48v48H0V112C0 85.5 21.5 64 48 64H96V32c0-17.7 14.3-32 32-32zM0 192H448V464c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V192zm64 80v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V272c0-8.8-7.2-16-16-16H80c-8.8 0-16 7.2-16 16zm128 0v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V272c0-8.8-7.2-16-16-16H208c-8.8 0-16 7.2-16 16zm144-16c-8.8 0-16 7.2-16 16v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V272c0-8.8-7.2-16-16-16H336zM64 400v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V400c0-8.8-7.2-16-16-16H80c-8.8 0-16 7.2-16 16zm144-16c-8.8 0-16 7.2-16 16v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V400c0-8.8-7.2-16-16-16H208zm112 16v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V400c0-8.8-7.2-16-16-16H336c-8.8 0-16 7.2-16 16z"
                                          VerticalAlignment="Center" />
                     <TextBlock Text="Monthly" VerticalAlignment="Center" />
                 </StackPanel>
             </ComboBoxItem>
 
-        </ComboBox>
+        </controls:ExtendedComboBox>
 
         <ComboBox Grid.Column="1" Grid.Row="3" Name="TriggerActionPicker"
                   SelectedValueBinding="{ReflectionBinding Tag, Mode=TwoWay}"
@@ -162,24 +163,24 @@
 
             <ComboBoxItem Tag="0">
                 <StackPanel Orientation="Horizontal" Spacing="8">
-                    <controls:FAPathIcon Width="14" Height="14" Data="{StaticResource KillPath}"
-                                         VerticalAlignment="Center" />
+                    <fluent:FAPathIcon Width="14" Height="14" Data="{StaticResource KillPath}"
+                                       VerticalAlignment="Center" />
                     <TextBlock Text="Kill" VerticalAlignment="Center" />
                 </StackPanel>
             </ComboBoxItem>
 
             <ComboBoxItem Tag="1">
                 <StackPanel Orientation="Horizontal" Spacing="8">
-                    <controls:FAPathIcon Width="14" Height="14" Data="{StaticResource MessagePath}"
-                                         VerticalAlignment="Center" />
+                    <fluent:FAPathIcon Width="14" Height="14" Data="{StaticResource MessagePath}"
+                                       VerticalAlignment="Center" />
                     <TextBlock Text="Message" VerticalAlignment="Center" />
                 </StackPanel>
             </ComboBoxItem>
 
             <ComboBoxItem Tag="2">
                 <StackPanel Orientation="Horizontal" Spacing="8">
-                    <controls:FAPathIcon Width="14" Height="14" Data="{StaticResource DimPath}"
-                                         VerticalAlignment="Center" />
+                    <fluent:FAPathIcon Width="14" Height="14" Data="{StaticResource DimPath}"
+                                       VerticalAlignment="Center" />
                     <TextBlock Text="Dim" VerticalAlignment="Center" />
                 </StackPanel>
             </ComboBoxItem>
