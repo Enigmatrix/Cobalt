@@ -8,9 +8,9 @@
                                 xmlns:entities="clr-namespace:Cobalt.Common.ViewModels.Entities;assembly=Cobalt.Common.ViewModels"
                                 xmlns:data="clr-namespace:Cobalt.Common.Data;assembly=Cobalt.Common.Data"
                                 xmlns:dataEntities="clr-namespace:Cobalt.Common.Data.Entities;assembly=Cobalt.Common.Data"
-                                mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450" Padding="16"
+                                mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
                                 x:Class="Cobalt.Views.Pages.AlertsPage" x:DataType="pages:AlertsPageViewModel">
-    <ScrollViewer>
+    <ScrollViewer Padding="16">
         <ScrollViewer.DataTemplates>
 
             <DataTemplate DataType="entities:TagViewModel">
