@@ -15,8 +15,10 @@
     <StackPanel Orientation="Vertical" Spacing="16" MinWidth="400"
                 HorizontalAlignment="Stretch">
         <StackPanel.Resources>
+            <x:Double x:Key="TimePickerThemeMaxWidth">Infinity</x:Double>
         </StackPanel.Resources>
-        <StackPanel Orientation="Vertical" Spacing="4">
+        <!-- ReSharper keeps removing TimePickerThemeMaxWidth, so we use it in a dumb manner -->
+        <StackPanel Orientation="Vertical" Spacing="4" Tag="{StaticResource TimePickerThemeMaxWidth}">
 
             <Label Target="{Binding ElementName=TargetPicker}" VerticalAlignment="Center">Target</Label>
 
