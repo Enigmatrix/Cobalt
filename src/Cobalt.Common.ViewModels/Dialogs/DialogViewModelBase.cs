@@ -36,5 +36,5 @@ public abstract class DialogViewModelBase<TResult> : ViewModelBase, IActivatable
     /// <summary>
     ///     Produces the result of this Dialog
     /// </summary>
-    public abstract Task<TResult> GetResultAsync();
+    public abstract TResult GetResult();
 }

@@ -104,6 +104,8 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
 
     public override string Title => "Add Alert";
 
+    private AlertViewModel? Result { get; set; }
+
     public ValidationContext ValidationContext { get; } = new();
 
     private bool ValidUsageLimitAndTimeFrame(TimeSpan? usageLimit, TimeFrame? timeFrame)
@@ -121,7 +123,7 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
         };
     }
 
-    public override async Task<AlertViewModel> GetResultAsync()
+    public async Task ProduceAlert()
     {
         var alert = new Alert
         {
@@ -146,6 +148,11 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
         await context.Alerts.AddAsync(alert);
         await context.SaveChangesAsync();
 
-        return new AlertViewModel(alert, _entityCache, Contexts);
+        Result = new AlertViewModel(alert, _entityCache, Contexts);
+    }
+
+    public override AlertViewModel GetResult()
+    {
+        return Result ?? throw new InvalidOperationException("Result unset"); // TODO better exception
     }
 }

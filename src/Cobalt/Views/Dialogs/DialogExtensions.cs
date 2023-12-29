@@ -30,6 +30,6 @@ public static class DialogExtensions
             Content = view
         };
         var result = await dialog.ShowAsync();
-        return result == ContentDialogResult.Primary ? await vm.GetResultAsync() : default;
+        return result == ContentDialogResult.Primary ? vm.GetResult() : default;
     }
 }
