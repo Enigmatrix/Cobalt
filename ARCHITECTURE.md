@@ -24,7 +24,7 @@ erDiagram
         text            color
     }
 
-    app_tag {
+    "_app_tag" {
         int             app_id PK,FK
         int             tag_id PK,FK
     }
@@ -84,8 +84,8 @@ erDiagram
 
     app ||--o{ session : sessions
     session ||--o{ usage : usages
-    app_tag ||--|{ app : app
-    app_tag ||--|{ tag : tag
+    "_app_tag" ||--|{ app : app
+    "_app_tag" ||--|{ tag : tag
     app ||--o{ alert : "app alerts"
     tag ||--o{ alert : "tag alerts"
     alert ||--o{ reminder : reminders
