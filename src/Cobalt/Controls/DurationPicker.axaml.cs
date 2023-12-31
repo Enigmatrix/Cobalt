@@ -1,6 +1,8 @@
 using System;
 using System.Reactive.Linq;
+using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Data;
 using Avalonia.Interactivity;
 using Cobalt.Common.ViewModels;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -14,11 +16,54 @@ namespace Cobalt.Controls;
 
 public partial class DurationPicker : UserControl
 {
+    public static readonly DirectProperty<DurationPicker, TimeSpan?> DurationProperty =
+        AvaloniaProperty.RegisterDirect<DurationPicker, TimeSpan?>(
+            nameof(Duration),
+            o => o.Duration,
+            (o, v) => o.Duration = v,
+            defaultBindingMode: BindingMode.TwoWay, enableDataValidation: true);
+
+    public static readonly DirectProperty<DurationPicker, DurationPickerViewModel?> ViewModelProperty =
+        AvaloniaProperty.RegisterDirect<DurationPicker, DurationPickerViewModel?>(
+            nameof(ViewModel),
+            o => o.ViewModel,
+            (o, v) => o.ViewModel = v);
+
+    private TimeSpan? _duration;
+    private IDisposable? _durationBind;
+    private DurationPickerViewModel? _viewModel;
+
     public DurationPicker()
     {
         InitializeComponent();
-        // TODO dispose!
-        DataContext = new DurationPickerViewModel();
+    }
+
+    public DurationPickerViewModel? ViewModel
+    {
+        get => _viewModel;
+        set => SetAndRaise(ViewModelProperty, ref _viewModel, value);
+    }
+
+    public TimeSpan? Duration
+    {
+        get => _duration;
+        set => SetAndRaise(DurationProperty, ref _duration, value);
+    }
+
+    protected override void OnLoaded(RoutedEventArgs e)
+    {
+        ViewModel = new DurationPickerViewModel();
+        _durationBind = Bind(DurationProperty, ViewModel.WhenAnyValue(self => self.Duration));
+
+        base.OnLoaded(e);
+    }
+
+    protected override void OnUnloaded(RoutedEventArgs e)
+    {
+        base.OnUnloaded(e);
+
+        ViewModel?.Dispose();
+        _durationBind?.Dispose();
     }
 
     private void Display_OnClick(object? sender, RoutedEventArgs e)
