@@ -9,8 +9,6 @@
 
     <Application.Styles>
         <fluentStyle:FluentAvaloniaTheme />
-
-        <StyleInclude Source="Controls/DurationPicker.axaml" />
     </Application.Styles>
     <Application.Resources>
         <converters:BytesToImageConverter x:Key="BytesToImageConverter" />

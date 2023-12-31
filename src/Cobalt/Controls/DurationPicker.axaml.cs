@@ -1,54 +1,59 @@
 using System;
-using Avalonia;
+using System.Reactive.Linq;
 using Avalonia.Controls;
-using Avalonia.Controls.Metadata;
-using Avalonia.Controls.Primitives;
-using Avalonia.Data;
 using Avalonia.Interactivity;
+using Cobalt.Common.ViewModels;
+using CommunityToolkit.Mvvm.ComponentModel;
+using ReactiveUI;
+using ReactiveUI.Validation.Abstractions;
+using ReactiveUI.Validation.Contexts;
+using ReactiveUI.Validation.Extensions;
 
 namespace Cobalt.Controls;
 
-[TemplatePart("PART_DurationTextBox", typeof(TextBox))]
-[TemplatePart("PART_DurationDisplay", typeof(Button))]
-public class DurationPicker : TemplatedControl
+public partial class DurationPicker : UserControl
 {
-    public static readonly StyledProperty<TimeSpan?> DurationProperty =
-        AvaloniaProperty.Register<ComboBox, TimeSpan?>(nameof(Duration), enableDataValidation: true,
-            defaultBindingMode: BindingMode.TwoWay);
-
-    private Button? _display;
-
-    private TextBox? _textBox;
-
-    public TimeSpan? Duration
+    public DurationPicker()
     {
-        get => GetValue(DurationProperty);
-        set => SetValue(DurationProperty, value);
+        InitializeComponent();
+        // TODO dispose!
+        DataContext = new DurationPickerViewModel();
     }
 
-    protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
+    private void Display_OnClick(object? sender, RoutedEventArgs e)
     {
-        if (_textBox != null) _textBox.LostFocus -= TextBoxLostFocus;
-        if (_display != null) _display.Click -= DisplayClicked;
-
-        _textBox = e.NameScope.Get<TextBox>("PART_DurationTextBox");
-        _display = e.NameScope.Get<Button>("PART_DurationDisplay");
-
-        //_textBox.Bind()
-        _textBox.LostFocus += TextBoxLostFocus;
-        _display.Click += DisplayClicked;
+        Display.IsVisible = false;
+        TextBox.IsVisible = true;
+        TextBox.Focus();
     }
 
-    private void TextBoxLostFocus(object? sender, RoutedEventArgs e)
+    private void TextBox_OnLostFocus(object? sender, RoutedEventArgs e)
     {
-        _textBox!.IsVisible = false;
-        _display!.IsVisible = true;
+        Display.IsVisible = true;
+        TextBox.IsVisible = false;
+    }
+}
+
+public partial class DurationPickerViewModel : ReactiveObservableObject, IValidatableViewModel, IDisposable
+{
+    private readonly IDisposable _propertyBinding;
+    [ObservableProperty] private TimeSpan? _duration;
+    [ObservableProperty] private string? _text;
+
+    public DurationPickerViewModel()
+    {
+        this.ValidationRule(self => self.Text, text => TimeSpan.TryParse(text, out _), "Invalid duration");
+        _propertyBinding = this.WhenAnyValue(self => self.Text)
+            .Where(text => TimeSpan.TryParse(text, out _))
+            .Select(text => TimeSpan.Parse(text))
+            .BindTo(this, self => self.Duration);
     }
 
-    private void DisplayClicked(object? sender, RoutedEventArgs e)
+    public void Dispose()
     {
-        _textBox!.IsVisible = true;
-        _display!.IsVisible = false;
-        _textBox.Focus();
+        _propertyBinding.Dispose();
+        ValidationContext.Dispose();
     }
+
+    public ValidationContext ValidationContext { get; } = new();
 }
