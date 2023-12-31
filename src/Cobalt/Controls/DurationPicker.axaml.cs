@@ -8,6 +8,7 @@ using ReactiveUI;
 using ReactiveUI.Validation.Abstractions;
 using ReactiveUI.Validation.Contexts;
 using ReactiveUI.Validation.Extensions;
+using TimeSpanParserUtil;
 
 namespace Cobalt.Controls;
 
@@ -42,10 +43,10 @@ public partial class DurationPickerViewModel : ReactiveObservableObject, IValida
 
     public DurationPickerViewModel()
     {
-        this.ValidationRule(self => self.Text, text => TimeSpan.TryParse(text, out _), "Invalid duration");
+        this.ValidationRule(self => self.Text, text => TimeSpanParser.TryParse(text, out _), "Invalid duration");
         _propertyBinding = this.WhenAnyValue(self => self.Text)
-            .Where(text => TimeSpan.TryParse(text, out _))
-            .Select(text => TimeSpan.Parse(text))
+            .Where(text => TimeSpanParser.TryParse(text, out _))
+            .Select(text => TimeSpanParser.Parse(text!))
             .BindTo(this, self => self.Duration);
     }
 

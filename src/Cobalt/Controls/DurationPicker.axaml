@@ -15,7 +15,14 @@
         </fluent:FABorder>
 
         <Button Click="Display_OnClick" Name="Display" IsVisible="True" VerticalAlignment="Stretch"
-                HorizontalAlignment="Stretch"
-                Content="{Binding DataType=controls:DurationPickerViewModel, Path=Duration, FallbackValue=Select Duration}" />
+                HorizontalAlignment="Stretch">
+            <Button.Content>
+                <ReflectionBinding Path="Duration" Converter="{StaticResource HumanizeTimeSpanConverter}">
+                    <ReflectionBinding.TargetNullValue>
+                        <TextBlock Text="Select Duration" />
+                    </ReflectionBinding.TargetNullValue>
+                </ReflectionBinding>
+            </Button.Content>
+        </Button>
     </Grid>
 </UserControl>
