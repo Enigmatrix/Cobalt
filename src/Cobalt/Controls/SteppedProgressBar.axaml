@@ -1,0 +1,49 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:controls="clr-namespace:Cobalt.Controls" Width="200" Height="10"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="Cobalt.Controls.SteppedProgressBar" Name="Self" ClipToBounds="False">
+             <UserControl.Resources>
+                 <controls:PercentToLeftConverter x:Key="PercentToLeftConverter"/>
+             </UserControl.Resources>
+  <ItemsControl ItemsSource="{Binding ItemsSource, ElementName=Self}" ClipToBounds="False">
+    <ItemsControl.ItemsPanel>
+        <ItemsPanelTemplate>
+            <Canvas HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="{StaticResource AccentFillColorDefaultBrush}" ClipToBounds="False">
+
+            </Canvas>
+        </ItemsPanelTemplate>
+    </ItemsControl.ItemsPanel>
+
+      <ItemsControl.Styles>
+          <Style Selector="ItemsControl > ContentPresenter">
+                <Setter Property="Tag" Value="{Binding $self.Width}"/>
+              <Setter Property="Canvas.Left">
+                  <MultiBinding Converter="{StaticResource PercentToLeftConverter}">
+					  <ReflectionBinding Path="Percent"/>
+					  <Binding ElementName="Self" Path="Width"/>
+                  </MultiBinding>
+              </Setter>
+          </Style>
+
+      </ItemsControl.Styles>
+    <ItemsControl.ItemTemplate>
+        <DataTemplate>
+            <Rectangle ToolTip.Placement="Top" ToolTip.ShowDelay="0" ToolTip.VerticalOffset="8" Fill="White" Width="4" Height="15" RadiusX="2" RadiusY="2">
+            <Rectangle.RenderTransform>
+                <TranslateTransform X="-2" Y="-2"></TranslateTransform>
+            </Rectangle.RenderTransform>
+                <ToolTip.Tip>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock>sasdfasfd HI</TextBlock>
+                        <TextBlock>HI</TextBlock>
+                    </StackPanel>
+                </ToolTip.Tip>
+            </Rectangle>
+        </DataTemplate>
+    </ItemsControl.ItemTemplate>
+
+  </ItemsControl>
+</UserControl>
