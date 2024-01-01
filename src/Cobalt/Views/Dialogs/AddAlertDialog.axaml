@@ -18,7 +18,7 @@
             <x:Double x:Key="TimePickerThemeMaxWidth">Infinity</x:Double>
         </StackPanel.Resources>
 
-		<!-- TODO Show some usage info for target/time frame + a view of alert control on alertpage here to make it look cool -->
+        <!-- TODO Show some usage info for target/time frame + a view of alert control on alertpage here to make it look cool -->
 
         <!-- ReSharper keeps removing TimePickerThemeMaxWidth, so we use it in a dumb manner -->
         <StackPanel Orientation="Vertical" Spacing="4" Tag="{StaticResource TimePickerThemeMaxWidth}">

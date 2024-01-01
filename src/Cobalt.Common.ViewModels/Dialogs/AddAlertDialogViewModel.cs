@@ -53,7 +53,7 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
                 tag.Name.ToLower().Contains(search.ToLower())).ToListAsync(),
             _entityCache.Tag, false);
 
-        // TODO explain this inheritance
+        // This is validation context composition
         ValidationContext.Add(TriggerAction.ValidationContext);
 
         var validUsageLimitAndTimeFrame =
