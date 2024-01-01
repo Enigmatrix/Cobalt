@@ -38,19 +38,12 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
         _entityCache = entityCache;
         var searches = this.WhenAnyValue(self => self.TargetSearch);
 
-        // TODO commonalize the search expression 
-        // TODO use some case-ignore string search instead of tolower
-
         Apps = Query(searches,
-            async (context, search) => await context.Apps.Where(app =>
-                app.Name.ToLower().Contains(search.ToLower()) ||
-                app.Description.ToLower().Contains(search.ToLower()) ||
-                app.Company.ToLower().Contains(search.ToLower())).ToListAsync(),
+            async (context, search) => await context.SearchApps(search).ToListAsync(),
             _entityCache.App, false);
 
         Tags = Query(searches,
-            async (context, search) => await context.Tags.Where(tag =>
-                tag.Name.ToLower().Contains(search.ToLower())).ToListAsync(),
+            async (context, search) => await context.SearchTags(search).ToListAsync(),
             _entityCache.Tag, false);
 
         // This is validation context composition
