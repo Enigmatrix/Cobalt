@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Cobalt.Common.Data\Cobalt.Common.Data.csproj" />
+    <ProjectReference Include="..\Cobalt.Common.Util\Cobalt.Common.Util.csproj" />
   </ItemGroup>
 
 </Project>

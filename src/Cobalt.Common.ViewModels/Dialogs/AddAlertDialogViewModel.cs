@@ -2,6 +2,7 @@
 using System.Reactive.Disposables;
 using Cobalt.Common.Data;
 using Cobalt.Common.Data.Entities;
+using Cobalt.Common.Util;
 using Cobalt.Common.ViewModels.Analysis;
 using Cobalt.Common.ViewModels.Entities;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -129,12 +130,10 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
 
         return timeFrame switch
         {
-            // TODO change this back
             Data.Entities.TimeFrame.Daily => usageLimit <= TimeSpan.FromDays(1),
             Data.Entities.TimeFrame.Weekly => usageLimit <= TimeSpan.FromDays(7),
-            Data.Entities.TimeFrame.Monthly => usageLimit <=
-                                               TimeSpan.FromDays(31), // maximum number of days in a month
-            _ => throw new ArgumentOutOfRangeException(nameof(timeFrame), timeFrame, null) // TODO better exception
+            Data.Entities.TimeFrame.Monthly => usageLimit <= TimeSpan.FromDays(31),
+            _ => throw new DiscriminatedUnionException<TimeFrame?>(nameof(timeFrame), timeFrame)
         };
     }
 
@@ -168,6 +167,6 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
 
     public override AlertViewModel GetResult()
     {
-        return Result ?? throw new InvalidOperationException("Result unset"); // TODO better exception
+        return Result ?? throw new InvalidOperationException();
     }
 }

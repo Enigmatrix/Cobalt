@@ -2,6 +2,7 @@
 using System.Reactive.Linq;
 using Cobalt.Common.Data;
 using Cobalt.Common.Data.Entities;
+using Cobalt.Common.Util;
 using Cobalt.Common.ViewModels.Analysis;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.EntityFrameworkCore;
@@ -56,7 +57,7 @@ public partial class TriggerActionViewModel : ReactiveObservableObject, IValidat
                 1 => !string.IsNullOrWhiteSpace(props.Item2),
                 2 => props.Item3 != null,
                 null => false,
-                _ => throw new Exception() // TODO actual exception
+                _ => throw new DiscriminatedUnionException<long?>(nameof(props.Item1), props.Item1)
             },
             _ => "Fields are empty");
     }
@@ -101,16 +102,13 @@ public partial class TriggerActionViewModel : ReactiveObservableObject, IValidat
     /// </summary>
     public TriggerAction ToTriggerAction()
     {
+        if (!ValidationContext.IsValid) throw new InvalidOperationException("Trigger Action is not in a valid state");
         TriggerAction triggerAction = Tag switch
         {
             0 => new TriggerAction.Kill(),
-            1 =>
-                // TODO make bad MessageContent throw a validation error
-                new TriggerAction.Message(MessageContent ?? ""),
-            2 =>
-                // TODO make bad DimDuration throw a validation error
-                new TriggerAction.Dim(DimDuration ?? TimeSpan.Zero),
-            _ => throw new InvalidOperationException() // TODO better exception
+            1 => new TriggerAction.Message(MessageContent!),
+            2 => new TriggerAction.Dim(DimDuration!.Value),
+            _ => throw new DiscriminatedUnionException<long?>(nameof(Tag), Tag)
         };
 
         return triggerAction;
