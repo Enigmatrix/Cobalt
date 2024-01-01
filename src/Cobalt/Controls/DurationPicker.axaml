@@ -5,6 +5,7 @@
              xmlns:fluent="clr-namespace:FluentAvalonia.UI.Controls;assembly=FluentAvalonia"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="Cobalt.Controls.DurationPicker" Name="Self">
+
     <Grid MinHeight="{DynamicResource TextControlThemeMinHeight}">
         <fluent:FABorder VerticalAlignment="Stretch" HorizontalAlignment="Stretch" CornerRadius="4">
             <TextBox LostFocus="TextBox_OnLostFocus" VerticalContentAlignment="Center"
@@ -25,4 +26,12 @@
             </Button.Content>
         </Button>
     </Grid>
+    
+    <UserControl.Template>
+        <ControlTemplate>
+            <DataValidationErrors>
+                <ContentControl Content="{TemplateBinding Content}"/>
+            </DataValidationErrors>
+        </ControlTemplate>
+    </UserControl.Template>
 </UserControl>

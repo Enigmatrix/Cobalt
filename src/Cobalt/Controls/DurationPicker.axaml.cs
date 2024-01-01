@@ -50,10 +50,23 @@ public partial class DurationPicker : UserControl
         set => SetAndRaise(DurationProperty, ref _duration, value);
     }
 
+    protected override void UpdateDataValidation(AvaloniaProperty property, BindingValueType state, Exception? error)
+    {
+        if (property == DurationProperty) // TODO add || texxtbox
+        {
+            DataValidationErrors.SetError(this, error);
+        }
+    }
+
     protected override void OnLoaded(RoutedEventArgs e)
     {
         ViewModel = new DurationPickerViewModel();
-        _durationBind = Bind(DurationProperty, ViewModel.WhenAnyValue(self => self.Duration));
+        // TODO move the error on the TextBox into the error of the main DurationPicker
+        _durationBind = ViewModel.WhenAnyValue(self => self.Duration).Subscribe(x =>
+        {
+            Duration = x;
+        });
+        
 
         base.OnLoaded(e);
     }
