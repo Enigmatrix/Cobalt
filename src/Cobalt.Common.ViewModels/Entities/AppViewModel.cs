@@ -23,13 +23,14 @@ public partial class TriggerActionViewModel : ReactiveObservableObject, IValidat
     [ObservableProperty] private string? _messageContent;
     [ObservableProperty] private long? _tag;
 
-    // TODO commonalize the 1 and 2
     public TriggerActionViewModel()
     {
         // Reset properties after switching to other enums
-        // TODO dispose ...
-        this.WhenAnyValue(self => self.Tag).Where(tag => tag != 1).Subscribe(_ => MessageContent = null);
-        this.WhenAnyValue(self => self.Tag).Where(tag => tag != 2).Subscribe(_ => DimDuration = null);
+        // These should be disposed, but we don't really have a good timing for it ...
+        this.WhenAnyValue(self => self.Tag).Where(tag => tag != TriggerAction.MessageTag)
+            .Subscribe(_ => MessageContent = null);
+        this.WhenAnyValue(self => self.Tag).Where(tag => tag != TriggerAction.DimTag)
+            .Subscribe(_ => DimDuration = null);
 
         this.ValidationRule(self => self.Tag,
             tag => tag != null,
@@ -37,13 +38,13 @@ public partial class TriggerActionViewModel : ReactiveObservableObject, IValidat
 
         this.ValidationRule(
             self => self.MessageContent,
-            WhenTagAndPropertyValid(1, self => self.MessageContent,
+            WhenTagAndPropertyValid(TriggerAction.MessageTag, self => self.MessageContent,
                 messageContent => !string.IsNullOrWhiteSpace(messageContent)),
             "Message Content is empty");
 
         this.ValidationRule(
             self => self.DimDuration,
-            WhenTagAndPropertyValid(2, self => self.DimDuration, dimDuration => dimDuration != null),
+            WhenTagAndPropertyValid(TriggerAction.DimTag, self => self.DimDuration, dimDuration => dimDuration != null),
             "Dim Duration is empty");
 
         this.ValidationRule(
@@ -53,9 +54,9 @@ public partial class TriggerActionViewModel : ReactiveObservableObject, IValidat
                 self => self.DimDuration),
             props => props.Item1 switch
             {
-                0 => true,
-                1 => !string.IsNullOrWhiteSpace(props.Item2),
-                2 => props.Item3 != null,
+                TriggerAction.KillTag => true,
+                TriggerAction.MessageTag => !string.IsNullOrWhiteSpace(props.Item2),
+                TriggerAction.DimTag => props.Item3 != null,
                 null => false,
                 _ => throw new DiscriminatedUnionException<long?>(nameof(props.Item1), props.Item1)
             },
