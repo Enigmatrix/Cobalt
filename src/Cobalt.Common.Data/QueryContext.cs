@@ -29,6 +29,28 @@ public class QueryContext : DbContext
     public DbSet<AlertEvent> AlertEvents { get; set; } = null!;
     public DbSet<ReminderEvent> ReminderEvents { get; set; } = null!;
 
+    // These searches might benefit from FTS or at least a case-insensitive collation
+
+    /// <summary>
+    ///     Search Apps using a query
+    /// </summary>
+    public IQueryable<App> SearchApps(string query)
+    {
+        return Apps.Where(app =>
+            app.Name.ToLower().Contains(query.ToLower()) ||
+            app.Description.ToLower().Contains(query.ToLower()) ||
+            app.Company.ToLower().Contains(query.ToLower()));
+    }
+
+    /// <summary>
+    ///     Search Tags using a query
+    /// </summary>
+    public IQueryable<Tag> SearchTags(string query)
+    {
+        return Tags.Where(tag =>
+            tag.Name.ToLower().Contains(query.ToLower()));
+    }
+
     /// <summary>
     ///     Get the Icon of an <see cref="App" />
     /// </summary>

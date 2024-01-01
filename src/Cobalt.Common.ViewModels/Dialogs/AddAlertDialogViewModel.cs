@@ -1,8 +1,8 @@
 ﻿using System.Reactive;
 using System.Reactive.Disposables;
-using System.Reactive.Linq;
 using Cobalt.Common.Data;
 using Cobalt.Common.Data.Entities;
+using Cobalt.Common.Util;
 using Cobalt.Common.ViewModels.Analysis;
 using Cobalt.Common.ViewModels.Entities;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -38,22 +38,15 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
         _entityCache = entityCache;
         var searches = this.WhenAnyValue(self => self.TargetSearch);
 
-        // TODO commonalize the search expression 
-        // TODO use some case-ignore string search instead of tolower
-
         Apps = Query(searches,
-            async (context, search) => await context.Apps.Where(app =>
-                app.Name.ToLower().Contains(search.ToLower()) ||
-                app.Description.ToLower().Contains(search.ToLower()) ||
-                app.Company.ToLower().Contains(search.ToLower())).ToListAsync(),
+            async (context, search) => await context.SearchApps(search).ToListAsync(),
             _entityCache.App, false);
 
         Tags = Query(searches,
-            async (context, search) => await context.Tags.Where(tag =>
-                tag.Name.ToLower().Contains(search.ToLower())).ToListAsync(),
+            async (context, search) => await context.SearchTags(search).ToListAsync(),
             _entityCache.Tag, false);
 
-        // TODO explain this inheritance
+        // This is validation context composition
         ValidationContext.Add(TriggerAction.ValidationContext);
 
         var validUsageLimitAndTimeFrame =
@@ -62,18 +55,15 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
         // Additionally, validation that all our properties are set.
         // This isn't a validation rule we don't want to display "X is unset" errors,
         // that would just mean the entire form is red.
-        var allPropertiesNonNull = this.WhenAnyValue(
-            self => self.SelectedTarget,
-            self => self.UsageLimit,
-            self => self.TimeFrame,
-            (target, usageLimit, timeFrame) =>
-                target != null && usageLimit != null && timeFrame != null);
+        this.ValidationRule(this.WhenAnyValue(
+                self => self.SelectedTarget,
+                self => self.UsageLimit,
+                self => self.TimeFrame),
+            props => props is { Item1: not null, Item2: not null, Item3: not null },
+            _ => "Fields are empty");
 
         PrimaryButtonCommand =
-            ReactiveCommand.CreateFromTask(ProduceAlert,
-                this.IsValid()
-                    .CombineLatest(allPropertiesNonNull, TriggerAction.UsableValid())
-                    .Select(valid => valid.First && valid.Second && valid.Third));
+            ReactiveCommand.CreateFromTask(ProduceAlert, this.IsValid());
 
         this.WhenActivated(dis =>
         {
@@ -133,12 +123,10 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
 
         return timeFrame switch
         {
-            // TODO change this back
             Data.Entities.TimeFrame.Daily => usageLimit <= TimeSpan.FromDays(1),
             Data.Entities.TimeFrame.Weekly => usageLimit <= TimeSpan.FromDays(7),
-            Data.Entities.TimeFrame.Monthly => usageLimit <=
-                                               TimeSpan.FromDays(31), // maximum number of days in a month
-            _ => throw new ArgumentOutOfRangeException(nameof(timeFrame), timeFrame, null) // TODO better exception
+            Data.Entities.TimeFrame.Monthly => usageLimit <= TimeSpan.FromDays(31),
+            _ => throw new DiscriminatedUnionException<TimeFrame?>(nameof(timeFrame), timeFrame)
         };
     }
 
@@ -172,6 +160,6 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
 
     public override AlertViewModel GetResult()
     {
-        return Result ?? throw new InvalidOperationException("Result unset"); // TODO better exception
+        return Result ?? throw new InvalidOperationException();
     }
 }

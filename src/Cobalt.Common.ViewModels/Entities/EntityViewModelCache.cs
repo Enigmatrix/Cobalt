@@ -33,85 +33,65 @@ public interface IEntityViewModelCache
 
 public record EntityViewModelCache(IDbContextFactory<QueryContext> Contexts) : IEntityViewModelCache
 {
-    public ConcurrentDictionary<long, WeakReference<AppViewModel>> Apps { get; } = new();
-    public ConcurrentDictionary<long, WeakReference<TagViewModel>> Tags { get; } = new();
-    public ConcurrentDictionary<long, WeakReference<AlertViewModel>> Alerts { get; } = new();
-    public ConcurrentDictionary<long, WeakReference<ReminderViewModel>> Reminders { get; } = new();
+    public WeakConcurrentDictionary<long, AppViewModel> Apps { get; } = new();
+    public WeakConcurrentDictionary<long, TagViewModel> Tags { get; } = new();
+    public WeakConcurrentDictionary<long, AlertViewModel> Alerts { get; } = new();
+    public WeakConcurrentDictionary<long, ReminderViewModel> Reminders { get; } = new();
 
 
     public TagViewModel Tag(Tag tag)
     {
-        while (true)
-        {
-            var refvm = Tags.AddOrUpdate(tag.Id,
-                (id, tagParam) => new WeakReference<TagViewModel>(new TagViewModel(tagParam, this, Contexts)),
-                (id, prev, tagParam) =>
-                {
-                    if (!prev.TryGetTarget(out _))
-                        prev = new WeakReference<TagViewModel>(new TagViewModel(tagParam, this, Contexts));
-                    return prev;
-                }, tag);
-
-            if (!refvm.TryGetTarget(out var vm)) continue;
-
-            return vm;
-        }
+        return Tags.Fetch(tag.Id, tag, entity => new TagViewModel(entity, this, Contexts));
     }
 
     public AppViewModel App(App app)
     {
-        while (true)
-        {
-            var refvm = Apps.AddOrUpdate(app.Id,
-                (id, appParam) => new WeakReference<AppViewModel>(new AppViewModel(appParam, this, Contexts)),
-                (id, prev, appParam) =>
-                {
-                    if (!prev.TryGetTarget(out _))
-                        prev = new WeakReference<AppViewModel>(new AppViewModel(appParam, this, Contexts));
-                    return prev;
-                }, app);
-
-            if (!refvm.TryGetTarget(out var vm))
-                continue;
-            return vm;
-        }
+        return Apps.Fetch(app.Id, app, entity => new AppViewModel(entity, this, Contexts));
     }
 
     public AlertViewModel Alert(Alert alert)
     {
-        while (true)
-        {
-            var refvm = Alerts.AddOrUpdate(alert.Id,
-                (id, alertParam) => new WeakReference<AlertViewModel>(new AlertViewModel(alertParam, this, Contexts)),
-                (id, prev, alertParam) =>
-                {
-                    if (!prev.TryGetTarget(out _))
-                        prev = new WeakReference<AlertViewModel>(new AlertViewModel(alertParam, this, Contexts));
-                    return prev;
-                }, alert);
-
-            if (!refvm.TryGetTarget(out var vm)) continue;
-            return vm;
-        }
+        return Alerts.Fetch(alert.Id, alert, entity => new AlertViewModel(entity, this, Contexts));
     }
 
     public ReminderViewModel Reminder(Reminder reminder)
     {
-        while (true)
-        {
-            var refvm = Reminders.AddOrUpdate(reminder.Id,
-                (id, reminderParam) =>
-                    new WeakReference<ReminderViewModel>(new ReminderViewModel(reminderParam, this, Contexts)),
-                (id, prev, reminderParam) =>
-                {
-                    if (!prev.TryGetTarget(out _))
-                        prev = new WeakReference<ReminderViewModel>(
-                            new ReminderViewModel(reminderParam, this, Contexts));
-                    return prev;
-                }, reminder);
+        return Reminders.Fetch(reminder.Id, reminder, entity => new ReminderViewModel(entity, this, Contexts));
+    }
+}
 
-            if (!refvm.TryGetTarget(out var vm)) continue;
-            return vm;
+public class WeakConcurrentDictionary<TKey, TValue>
+    where TKey : notnull
+    where TValue : class
+{
+    private readonly ConcurrentDictionary<TKey, WeakReference<TValue>> _inner = new();
+
+    public TValue Fetch<TArg>(TKey key, TArg arg, Func<TArg, TValue> create)
+    {
+        if (_inner.TryGetValue(key, out var wv) && wv.TryGetTarget(out var v)) return v;
+
+        TValue? strongRef = null;
+
+        TValue CreateRef()
+        {
+            return strongRef = create(arg);
         }
+
+        void SetRef(TValue value)
+        {
+            strongRef = value;
+        }
+
+        _inner.AddOrUpdate(key, static (_, ops) => new WeakReference<TValue>(ops.Item1()),
+            static (_, prev, ops) =>
+            {
+                if (prev.TryGetTarget(out var v))
+                    ops.Item2(v);
+                else
+                    prev = new WeakReference<TValue>(ops.Item1());
+                return prev;
+            }, ValueTuple.Create(CreateRef, SetRef));
+
+        return strongRef!;
     }
 }

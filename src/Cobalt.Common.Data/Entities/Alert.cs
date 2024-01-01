@@ -12,6 +12,10 @@ namespace Cobalt.Common.Data.Entities;
 [ComplexType]
 public record TriggerAction(long Tag, string? MessageContent, TimeSpan? DimDuration)
 {
+    public const int KillTag = 0;
+    public const int MessageTag = 1;
+    public const int DimTag = 2;
+
     public sealed record Kill() : TriggerAction(0, null, null);
 
     public sealed record Message(string Content) : TriggerAction(1, Content, null);
