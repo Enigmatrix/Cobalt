@@ -1,6 +1,5 @@
 ﻿using System.Reactive;
 using System.Reactive.Disposables;
-using System.Reactive.Linq;
 using Cobalt.Common.Data;
 using Cobalt.Common.Data.Entities;
 using Cobalt.Common.ViewModels.Analysis;
@@ -62,18 +61,15 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
         // Additionally, validation that all our properties are set.
         // This isn't a validation rule we don't want to display "X is unset" errors,
         // that would just mean the entire form is red.
-        var allPropertiesNonNull = this.WhenAnyValue(
-            self => self.SelectedTarget,
-            self => self.UsageLimit,
-            self => self.TimeFrame,
-            (target, usageLimit, timeFrame) =>
-                target != null && usageLimit != null && timeFrame != null);
+        this.ValidationRule(this.WhenAnyValue(
+                self => self.SelectedTarget,
+                self => self.UsageLimit,
+                self => self.TimeFrame),
+            props => props is { Item1: not null, Item2: not null, Item3: not null },
+            _ => "Fields are empty");
 
         PrimaryButtonCommand =
-            ReactiveCommand.CreateFromTask(ProduceAlert,
-                this.IsValid()
-                    .CombineLatest(allPropertiesNonNull, TriggerAction.UsableValid())
-                    .Select(valid => valid.First && valid.Second && valid.Third));
+            ReactiveCommand.CreateFromTask(ProduceAlert, this.IsValid());
 
         this.WhenActivated(dis =>
         {

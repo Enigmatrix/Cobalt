@@ -44,29 +44,25 @@ public partial class TriggerActionViewModel : ReactiveObservableObject, IValidat
             self => self.DimDuration,
             WhenTagAndPropertyValid(2, self => self.DimDuration, dimDuration => dimDuration != null),
             "Dim Duration is empty");
+
+        this.ValidationRule(
+            this.WhenAnyValue(
+                self => self.Tag,
+                self => self.MessageContent,
+                self => self.DimDuration),
+            props => props.Item1 switch
+            {
+                0 => true,
+                1 => !string.IsNullOrWhiteSpace(props.Item2),
+                2 => props.Item3 != null,
+                null => false,
+                _ => throw new Exception() // TODO actual exception
+            },
+            _ => "Fields are empty");
     }
 
     /// <inheritdoc />
     public ValidationContext ValidationContext { get; } = new();
-
-    /// <summary>
-    ///     Real usability validation status as an <see cref="IObservable{Boolean}" />
-    /// </summary>
-    public IObservable<bool> UsableValid()
-    {
-        return this.WhenAnyValue(
-            self => self.Tag,
-            self => self.MessageContent,
-            self => self.DimDuration
-            , (tag, messageContent, dimDuration) => tag switch
-            {
-                0 => true,
-                1 => !string.IsNullOrWhiteSpace(messageContent),
-                2 => dimDuration != null,
-                null => false,
-                _ => throw new Exception() // TODO actual exception
-            });
-    }
 
     /// <summary>
     ///     When <see cref="Tag" /> matches <paramref name="tagMatch" />, validate <paramref name="prop" /> according to
