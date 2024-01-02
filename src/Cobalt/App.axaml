@@ -27,5 +27,7 @@
         <system:Int64 x:Key="Int1">1</system:Int64>
         <system:Int64 x:Key="Int2">2</system:Int64>
 
+        <system:Double x:Key="ContentDialogMaxWidth">1000</system:Double>
+
     </Application.Resources>
 </Application>

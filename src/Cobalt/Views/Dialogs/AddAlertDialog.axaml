@@ -12,203 +12,231 @@
                                 x:Class="Cobalt.Views.Dialogs.AddAlertDialog"
                                 x:DataType="dialogs:AddAlertDialogViewModel">
 
-    <StackPanel Orientation="Vertical" Spacing="16" MinWidth="400"
+    <StackPanel Orientation="Vertical" Spacing="16" MinWidth="600"
                 HorizontalAlignment="Stretch">
         <StackPanel.Resources>
             <x:Double x:Key="TimePickerThemeMaxWidth">Infinity</x:Double>
         </StackPanel.Resources>
 
         <!-- TODO Show some usage info for target/time frame + a view of alert control on alertpage here to make it look cool -->
+        <!-- TODO stop settingsexpander from consuming a tab -->
 
         <!-- ReSharper keeps removing TimePickerThemeMaxWidth, so we use it in a dumb manner -->
-        <StackPanel Orientation="Vertical" Spacing="4" Tag="{StaticResource TimePickerThemeMaxWidth}">
 
-            <Label Target="{Binding ElementName=TargetPicker}" VerticalAlignment="Center">Target</Label>
+        <fluent:SettingsExpander Header="Target" IconSource="Target" Description="Monitoring target"
+                                 Tag="{StaticResource TimePickerThemeMaxWidth}">
+            <fluent:SettingsExpander.Footer>
+                <DropDownButton Name="TargetPicker" MinHeight="40" MinWidth="150" Margin="2,0"
+                                Padding="16,0,8,0" HorizontalAlignment="Stretch">
+                    <DropDownButton.Content>
+                        <Binding Path="SelectedTarget">
+                            <Binding.TargetNullValue>
+                                <TextBlock Text="Select App or Tag" />
+                            </Binding.TargetNullValue>
+                        </Binding>
+                    </DropDownButton.Content>
+                    <DropDownButton.DataTemplates>
 
-            <DropDownButton Name="TargetPicker" MinHeight="40" MinWidth="100" Margin="2,0"
-                            Padding="16,0,8,0" HorizontalAlignment="Stretch">
-                <DropDownButton.Content>
-                    <Binding Path="SelectedTarget">
-                        <Binding.TargetNullValue>
-                            <TextBlock Text="Select App or Tag" />
-                        </Binding.TargetNullValue>
-                    </Binding>
-                </DropDownButton.Content>
-                <DropDownButton.DataTemplates>
-
-                    <DataTemplate DataType="entities:TagViewModel">
-                        <StackPanel Orientation="Horizontal">
-                            <fluent:SymbolIcon Symbol="Tag" FontSize="20" Margin="-8,0,8,0"
-                                               Foreground="{Binding Color, Converter={StaticResource ColorStringToBrushConverter}}" />
-                            <TextBlock VerticalAlignment="Center" Text="{Binding Name}" />
-                        </StackPanel>
-                    </DataTemplate>
-
-                    <DataTemplate DataType="entities:AppViewModel">
-                        <StackPanel Orientation="Horizontal">
-                            <Image Width="28" Height="28" Margin="-8,0, 8, 0"
-                                   Source="{Binding Image.Value^, Converter={StaticResource BytesToImageConverter}}" />
-
-                            <StackPanel Orientation="Vertical">
-                                <TextBlock Text="{Binding Name}"
-                                           Theme="{StaticResource BodyTextBlockStyle}" />
-                                <TextBlock Text="{Binding Description}"
-                                           Theme="{StaticResource CaptionTextBlockStyle}"
-                                           TextWrapping="NoWrap" />
+                        <DataTemplate DataType="entities:TagViewModel">
+                            <StackPanel Orientation="Horizontal">
+                                <fluent:SymbolIcon Symbol="Tag" FontSize="20" Margin="-8,0,8,0"
+                                                   Foreground="{Binding Color, Converter={StaticResource ColorStringToBrushConverter}}" />
+                                <TextBlock VerticalAlignment="Center" Text="{Binding Name}" />
                             </StackPanel>
-                        </StackPanel>
-                    </DataTemplate>
+                        </DataTemplate>
 
-                </DropDownButton.DataTemplates>
-                <DropDownButton.Flyout>
-                    <Flyout>
-                        <StackPanel Orientation="Vertical" Margin="-12">
-                            <TextBox Text="{Binding TargetSearch, Mode=TwoWay}" Margin="8" />
+                        <DataTemplate DataType="entities:AppViewModel">
+                            <StackPanel Orientation="Horizontal">
+                                <Image Width="28" Height="28" Margin="-8,0, 8, 0"
+                                       Source="{Binding Image.Value^, Converter={StaticResource BytesToImageConverter}}" />
 
-                            <ScrollViewer Margin="0" Width="300" MaxWidth="300" MaxHeight="400"
-                                          HorizontalScrollBarVisibility="Disabled">
                                 <StackPanel Orientation="Vertical">
-
-                                    <Expander Header="{Binding Tags.Value^.Count, StringFormat={}Tags ({0})}"
-                                              IsExpanded="True"
-                                              Padding="4" MinHeight="40" Margin="0,0,0,8">
-                                        <ListBox SelectedItem="{Binding SelectedTag}"
-                                                 ItemsSource="{Binding Tags.Value^}" />
-                                    </Expander>
-
-                                    <Expander Header="{Binding Apps.Value^.Count, StringFormat={}Apps ({0})}"
-                                              IsExpanded="True"
-                                              Padding="4" MinHeight="40">
-                                        <ListBox SelectedItem="{Binding SelectedApp}"
-                                                 ItemsSource="{Binding Apps.Value^}" />
-                                    </Expander>
-
+                                    <TextBlock Text="{Binding Name}"
+                                               Theme="{StaticResource BodyTextBlockStyle}" />
+                                    <TextBlock Text="{Binding Description}"
+                                               Theme="{StaticResource CaptionTextBlockStyle}"
+                                               TextWrapping="NoWrap" />
                                 </StackPanel>
-                            </ScrollViewer>
+                            </StackPanel>
+                        </DataTemplate>
+
+                    </DropDownButton.DataTemplates>
+                    <DropDownButton.Flyout>
+                        <Flyout>
+                            <StackPanel Orientation="Vertical" Margin="-12">
+                                <TextBox Text="{Binding TargetSearch, Mode=TwoWay}" Margin="8" />
+
+                                <ScrollViewer Margin="0" Width="300" MaxWidth="300" MaxHeight="400"
+                                              HorizontalScrollBarVisibility="Disabled">
+                                    <StackPanel Orientation="Vertical">
+
+                                        <Expander Header="{Binding Tags.Value^.Count, StringFormat={}Tags ({0})}"
+                                                  IsExpanded="True"
+                                                  Padding="4" MinHeight="40" Margin="0,0,0,8">
+                                            <ListBox SelectedItem="{Binding SelectedTag}"
+                                                     ItemsSource="{Binding Tags.Value^}" />
+                                        </Expander>
+
+                                        <Expander Header="{Binding Apps.Value^.Count, StringFormat={}Apps ({0})}"
+                                                  IsExpanded="True"
+                                                  Padding="4" MinHeight="40">
+                                            <ListBox SelectedItem="{Binding SelectedApp}"
+                                                     ItemsSource="{Binding Apps.Value^}" />
+                                        </Expander>
+
+                                    </StackPanel>
+                                </ScrollViewer>
+                            </StackPanel>
+
+
+                        </Flyout>
+                    </DropDownButton.Flyout>
+                </DropDownButton>
+
+            </fluent:SettingsExpander.Footer>
+        </fluent:SettingsExpander>
+
+        <!-- If this was a SettingsExpander, we can't press space because of https://github.com/AvaloniaUI/Avalonia/issues/9623 -->
+        <!-- TODO make this settingsexpanderitem similar in style to settingsexpander-->
+        <fluent:SettingsExpanderItem Content="Usage Limit" IconSource="Clock"
+                                     Description="Duration before the Trigger Action activates">
+            <fluent:SettingsExpanderItem.Footer>
+
+                <controls:DurationPicker Name="UsageLimitPicker" Duration="{Binding UsageLimit}" Margin="2,0"
+                                         HorizontalAlignment="Stretch" MinWidth="150" />
+
+            </fluent:SettingsExpanderItem.Footer>
+        </fluent:SettingsExpanderItem>
+
+        <fluent:SettingsExpander Header="Time Frame" IconSource="Calendar"
+                                 Description="Time Frame when we monitor the Target's usages">
+            <fluent:SettingsExpander.Footer>
+
+                <controls:ExtendedComboBox Name="TimeFramePicker" Margin="2,0" MinWidth="150"
+                                           SelectedValueBinding="{ReflectionBinding Tag, Mode=TwoWay}"
+                                           SelectedValue="{Binding TimeFrame, Mode=TwoWay}"
+                                           HorizontalAlignment="Stretch" HorizontalContentAlignment="Left">
+                    <ComboBoxItem>
+                        <ComboBoxItem.Tag>
+                            <dataEntities:TimeFrame>Daily</dataEntities:TimeFrame>
+                        </ComboBoxItem.Tag>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2023 Fonticons, Inc. Icon: calendar-day-->
+                            <fluent:FAPathIcon Width="14" Height="14"
+                                               Data="M128 0c17.7 0 32 14.3 32 32V64H288V32c0-17.7 14.3-32 32-32s32 14.3 32 32V64h48c26.5 0 48 21.5 48 48v48H0V112C0 85.5 21.5 64 48 64H96V32c0-17.7 14.3-32 32-32zM0 192H448V464c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V192zm80 64c-8.8 0-16 7.2-16 16v96c0 8.8 7.2 16 16 16h96c8.8 0 16-7.2 16-16V272c0-8.8-7.2-16-16-16H80z"
+                                               VerticalAlignment="Center" />
+                            <TextBlock Text="Daily" VerticalAlignment="Center" />
                         </StackPanel>
+                    </ComboBoxItem>
+
+                    <ComboBoxItem>
+                        <ComboBoxItem.Tag>
+                            <dataEntities:TimeFrame>Weekly</dataEntities:TimeFrame>
+                        </ComboBoxItem.Tag>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2023 Fonticons, Inc. Icon: calendar-week-->
+                            <fluent:FAPathIcon Width="14" Height="14"
+                                               Data="M128 0c17.7 0 32 14.3 32 32V64H288V32c0-17.7 14.3-32 32-32s32 14.3 32 32V64h48c26.5 0 48 21.5 48 48v48H0V112C0 85.5 21.5 64 48 64H96V32c0-17.7 14.3-32 32-32zM0 192H448V464c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V192zm80 64c-8.8 0-16 7.2-16 16v64c0 8.8 7.2 16 16 16H368c8.8 0 16-7.2 16-16V272c0-8.8-7.2-16-16-16H80z"
+                                               VerticalAlignment="Center" />
+                            <TextBlock Text="Weekly" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </ComboBoxItem>
+
+                    <ComboBoxItem>
+                        <ComboBoxItem.Tag>
+                            <dataEntities:TimeFrame>Monthly</dataEntities:TimeFrame>
+                        </ComboBoxItem.Tag>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2023 Fonticons, Inc. Icon: calendar-days-->
+                            <fluent:FAPathIcon Width="14" Height="14"
+                                               Data="M128 0c17.7 0 32 14.3 32 32V64H288V32c0-17.7 14.3-32 32-32s32 14.3 32 32V64h48c26.5 0 48 21.5 48 48v48H0V112C0 85.5 21.5 64 48 64H96V32c0-17.7 14.3-32 32-32zM0 192H448V464c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V192zm64 80v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V272c0-8.8-7.2-16-16-16H80c-8.8 0-16 7.2-16 16zm128 0v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V272c0-8.8-7.2-16-16-16H208c-8.8 0-16 7.2-16 16zm144-16c-8.8 0-16 7.2-16 16v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V272c0-8.8-7.2-16-16-16H336zM64 400v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V400c0-8.8-7.2-16-16-16H80c-8.8 0-16 7.2-16 16zm144-16c-8.8 0-16 7.2-16 16v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V400c0-8.8-7.2-16-16-16H208zm112 16v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V400c0-8.8-7.2-16-16-16H336c-8.8 0-16 7.2-16 16z"
+                                               VerticalAlignment="Center" />
+                            <TextBlock Text="Monthly" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </ComboBoxItem>
+
+                </controls:ExtendedComboBox>
+
+            </fluent:SettingsExpander.Footer>
+        </fluent:SettingsExpander>
+
+        <fluent:SettingsExpander Header="Trigger Action" IconSource="ChevronRight" IsExpanded="True"
+                                 Description="Action we take when we reach the Usage Limit">
+            <fluent:SettingsExpander.Styles>
+                <Style
+                    Selector="fluent|SettingsExpander /template/ Expander /template/ ToggleButton:not(:empty) /template/ fluent|SymbolIcon#ExpandCollapseChevron">
+                    <Setter Property="IsVisible" Value="False" />
+                </Style>
+                <!-- TODO make it such that the user cannot toggle the expanded state for this SettingsExpander  -->
+                <!--<Style
+                    Selector="fluent|SettingsExpander /template/ Expander /template/ ToggleButton:not(:empty)">
+                    <Setter Property="IsHitTestVisible" Value="False" />
+                </Style>-->
+            </fluent:SettingsExpander.Styles>
+            <fluent:SettingsExpander.Footer>
+
+                <ComboBox Name="TriggerActionPicker" Margin="2,0" MinWidth="150"
+                          SelectedValueBinding="{ReflectionBinding Tag, Mode=TwoWay}"
+                          SelectedValue="{Binding TriggerAction.Tag, Mode=TwoWay}"
+                          HorizontalAlignment="Stretch" HorizontalContentAlignment="Left">
+
+                    <ComboBoxItem Tag="0">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <fluent:FAPathIcon Width="14" Height="14" Data="{StaticResource KillPath}"
+                                               VerticalAlignment="Center" />
+                            <TextBlock Text="Kill" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </ComboBoxItem>
+
+                    <ComboBoxItem Tag="1">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <fluent:FAPathIcon Width="14" Height="14" Data="{StaticResource MessagePath}"
+                                               VerticalAlignment="Center" />
+                            <TextBlock Text="Message" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </ComboBoxItem>
+
+                    <ComboBoxItem Tag="2">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <fluent:FAPathIcon Width="14" Height="14" Data="{StaticResource DimPath}"
+                                               VerticalAlignment="Center" />
+                            <TextBlock Text="Dim" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </ComboBoxItem>
+                </ComboBox>
+
+            </fluent:SettingsExpander.Footer>
+            <fluent:SettingsExpander.Items>
+
+                <fluent:SettingsExpanderItem IconSource="Comment"
+                                             Content="Message Content" Description="Notification message to show"
+                                             IsVisible="{Binding TriggerAction.Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={StaticResource Int1}}">
+
+                    <fluent:SettingsExpanderItem.Footer>
 
 
-                    </Flyout>
-                </DropDownButton.Flyout>
-            </DropDownButton>
+                        <TextBox Text="{Binding TriggerAction.MessageContent}" VerticalAlignment="Center"
+                                 AcceptsReturn="True" Margin="2,0" MinWidth="150"
+                                 IsVisible="{Binding TriggerAction.Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={StaticResource Int1}}" />
+                    </fluent:SettingsExpanderItem.Footer>
+                </fluent:SettingsExpanderItem>
 
-        </StackPanel>
+                <fluent:SettingsExpanderItem
+                    Content="Dim Duration" Description="Duration till complete dimming of Targets"
+                    IsVisible="{Binding TriggerAction.Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={StaticResource Int2}}">
+                    <fluent:SettingsExpanderItem.IconSource>
+                        <fluent:PathIconSource Data="{StaticResource DimPath}" />
+                    </fluent:SettingsExpanderItem.IconSource>
+                    <fluent:SettingsExpanderItem.Footer>
+                        <controls:DurationPicker Duration="{Binding TriggerAction.DimDuration}"
+                                                 HorizontalAlignment="Stretch" VerticalAlignment="Center"
+                                                 Margin="2,0" MinWidth="150"
+                                                 IsVisible="{Binding TriggerAction.Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={StaticResource Int2}}" />
+                    </fluent:SettingsExpanderItem.Footer>
+                </fluent:SettingsExpanderItem>
 
-        <StackPanel Orientation="Vertical" Spacing="4">
-            <Label Target="{Binding ElementName=UsageLimitPicker}" VerticalAlignment="Center">Usage Limit</Label>
-
-            <controls:DurationPicker Name="UsageLimitPicker" Duration="{Binding UsageLimit}" Margin="2,0"
-                                     HorizontalAlignment="Stretch" />
-        </StackPanel>
-
-        <StackPanel Orientation="Vertical" Spacing="4">
-            <Label Target="{Binding ElementName=TimeFramePicker}" VerticalAlignment="Center">Time Frame</Label>
-
-            <controls:ExtendedComboBox Name="TimeFramePicker" Margin="2,0"
-                                       SelectedValueBinding="{ReflectionBinding Tag, Mode=TwoWay}"
-                                       SelectedValue="{Binding TimeFrame, Mode=TwoWay}"
-                                       HorizontalAlignment="Stretch" HorizontalContentAlignment="Left">
-                <ComboBoxItem>
-                    <ComboBoxItem.Tag>
-                        <dataEntities:TimeFrame>Daily</dataEntities:TimeFrame>
-                    </ComboBoxItem.Tag>
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2023 Fonticons, Inc. Icon: calendar-day-->
-                        <fluent:FAPathIcon Width="14" Height="14"
-                                           Data="M128 0c17.7 0 32 14.3 32 32V64H288V32c0-17.7 14.3-32 32-32s32 14.3 32 32V64h48c26.5 0 48 21.5 48 48v48H0V112C0 85.5 21.5 64 48 64H96V32c0-17.7 14.3-32 32-32zM0 192H448V464c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V192zm80 64c-8.8 0-16 7.2-16 16v96c0 8.8 7.2 16 16 16h96c8.8 0 16-7.2 16-16V272c0-8.8-7.2-16-16-16H80z"
-                                           VerticalAlignment="Center" />
-                        <TextBlock Text="Daily" VerticalAlignment="Center" />
-                    </StackPanel>
-                </ComboBoxItem>
-
-                <ComboBoxItem>
-                    <ComboBoxItem.Tag>
-                        <dataEntities:TimeFrame>Weekly</dataEntities:TimeFrame>
-                    </ComboBoxItem.Tag>
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2023 Fonticons, Inc. Icon: calendar-week-->
-                        <fluent:FAPathIcon Width="14" Height="14"
-                                           Data="M128 0c17.7 0 32 14.3 32 32V64H288V32c0-17.7 14.3-32 32-32s32 14.3 32 32V64h48c26.5 0 48 21.5 48 48v48H0V112C0 85.5 21.5 64 48 64H96V32c0-17.7 14.3-32 32-32zM0 192H448V464c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V192zm80 64c-8.8 0-16 7.2-16 16v64c0 8.8 7.2 16 16 16H368c8.8 0 16-7.2 16-16V272c0-8.8-7.2-16-16-16H80z"
-                                           VerticalAlignment="Center" />
-                        <TextBlock Text="Weekly" VerticalAlignment="Center" />
-                    </StackPanel>
-                </ComboBoxItem>
-
-                <ComboBoxItem>
-                    <ComboBoxItem.Tag>
-                        <dataEntities:TimeFrame>Monthly</dataEntities:TimeFrame>
-                    </ComboBoxItem.Tag>
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2023 Fonticons, Inc. Icon: calendar-days-->
-                        <fluent:FAPathIcon Width="14" Height="14"
-                                           Data="M128 0c17.7 0 32 14.3 32 32V64H288V32c0-17.7 14.3-32 32-32s32 14.3 32 32V64h48c26.5 0 48 21.5 48 48v48H0V112C0 85.5 21.5 64 48 64H96V32c0-17.7 14.3-32 32-32zM0 192H448V464c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V192zm64 80v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V272c0-8.8-7.2-16-16-16H80c-8.8 0-16 7.2-16 16zm128 0v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V272c0-8.8-7.2-16-16-16H208c-8.8 0-16 7.2-16 16zm144-16c-8.8 0-16 7.2-16 16v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V272c0-8.8-7.2-16-16-16H336zM64 400v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V400c0-8.8-7.2-16-16-16H80c-8.8 0-16 7.2-16 16zm144-16c-8.8 0-16 7.2-16 16v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V400c0-8.8-7.2-16-16-16H208zm112 16v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V400c0-8.8-7.2-16-16-16H336c-8.8 0-16 7.2-16 16z"
-                                           VerticalAlignment="Center" />
-                        <TextBlock Text="Monthly" VerticalAlignment="Center" />
-                    </StackPanel>
-                </ComboBoxItem>
-
-            </controls:ExtendedComboBox>
-
-        </StackPanel>
-
-        <StackPanel Orientation="Vertical" Spacing="4">
-            <Label Target="{Binding ElementName=TriggerActionPicker}"
-                   VerticalAlignment="Center">
-                Trigger Action
-            </Label>
-
-            <ComboBox Name="TriggerActionPicker" Margin="2,0"
-                      SelectedValueBinding="{ReflectionBinding Tag, Mode=TwoWay}"
-                      SelectedValue="{Binding TriggerAction.Tag, Mode=TwoWay}"
-                      HorizontalAlignment="Stretch" HorizontalContentAlignment="Left">
-
-                <ComboBoxItem Tag="0">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <fluent:FAPathIcon Width="14" Height="14" Data="{StaticResource KillPath}"
-                                           VerticalAlignment="Center" />
-                        <TextBlock Text="Kill" VerticalAlignment="Center" />
-                    </StackPanel>
-                </ComboBoxItem>
-
-                <ComboBoxItem Tag="1">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <fluent:FAPathIcon Width="14" Height="14" Data="{StaticResource MessagePath}"
-                                           VerticalAlignment="Center" />
-                        <TextBlock Text="Message" VerticalAlignment="Center" />
-                    </StackPanel>
-                </ComboBoxItem>
-
-                <ComboBoxItem Tag="2">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <fluent:FAPathIcon Width="14" Height="14" Data="{StaticResource DimPath}"
-                                           VerticalAlignment="Center" />
-                        <TextBlock Text="Dim" VerticalAlignment="Center" />
-                    </StackPanel>
-                </ComboBoxItem>
-            </ComboBox>
-
-            <Label Target="{Binding ElementName=TriggerActionPicker}"
-                   IsVisible="{Binding TriggerAction.Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={StaticResource Int1}}"
-                   VerticalAlignment="Center">
-                <TextBlock>Message Content</TextBlock>
-            </Label>
-
-
-            <Label Target="{Binding ElementName=TriggerActionPicker}"
-                   IsVisible="{Binding TriggerAction.Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={StaticResource Int2}}"
-                   VerticalAlignment="Center">
-                <TextBlock>Dim Duration</TextBlock>
-            </Label>
-
-
-            <TextBox Text="{Binding TriggerAction.MessageContent}" VerticalAlignment="Center"
-                     AcceptsReturn="True" Margin="2,0"
-                     IsVisible="{Binding TriggerAction.Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={StaticResource Int1}}" />
-            <controls:DurationPicker Duration="{Binding TriggerAction.DimDuration}"
-                                     HorizontalAlignment="Stretch" VerticalAlignment="Center"
-                                     Margin="2,0"
-                                     IsVisible="{Binding TriggerAction.Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={StaticResource Int2}}" />
-        </StackPanel>
+            </fluent:SettingsExpander.Items>
+        </fluent:SettingsExpander>
 
     </StackPanel>
 
