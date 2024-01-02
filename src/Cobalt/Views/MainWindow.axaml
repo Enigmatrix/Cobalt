@@ -8,7 +8,10 @@
                         xmlns:util="clr-namespace:Cobalt.Common.Util;assembly=Cobalt.Common.Util"
                         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
                         x:Class="Cobalt.Views.MainWindow" x:DataType="viewModels:MainViewModel"
-                        Title="Cobalt">
+                        Title="Cobalt" Focusable="True">
+    <!-- Focusable=True lets use lose focus on TextBoxes by clicking elsewhere -->
+    <!-- ref: https://github.com/AvaloniaUI/Avalonia/discussions/12205#discussioncomment-6458926 -->
+
     <fluent:NavigationView ItemInvoked="NavigateTo">
         <fluent:NavigationView.MenuItems>
             <!-- Icons copied from https://avaloniaui.github.io/icons.html -->

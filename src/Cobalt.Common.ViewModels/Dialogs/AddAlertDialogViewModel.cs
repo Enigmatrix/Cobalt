@@ -79,10 +79,12 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
 
 
             this.ValidationRule(self => self.TimeFrame, validUsageLimitAndTimeFrame,
-                "Time Frame cannot contain Usage Limit").DisposeWith(dis);
+                "Time Frame smaller than Usage Limit").DisposeWith(dis);
 
             this.ValidationRule(self => self.UsageLimit, validUsageLimitAndTimeFrame,
-                "Usage Limit cannot contain Time Frame").DisposeWith(dis);
+                "Usage Limit larger than Time Frame").DisposeWith(dis);
+            this.ValidationRule(self => self.UsageLimit, usageLimit => usageLimit == null || usageLimit > TimeSpan.Zero,
+                "Usage Limit cannot be negative").DisposeWith(dis);
 
 
             // Reset SelectedTarget based on the two selection properties, SelectedApp and SelectedTag

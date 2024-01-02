@@ -24,10 +24,15 @@ public class App : Application
 
     public override void OnFrameworkInitializationCompleted()
     {
-        BindingPlugins.DataValidators.Clear(); // all other data validation plugins are not used anyway
+        // Add our IValidatorViewModel-based validation plugin
+
+        // This exists since we have view models not inheriting from ReactiveValidationObject
+        // but instead from IValidatorViewModel, which only has a ValidationContext.
         BindingPlugins.DataValidators.Add(new ValidatorViewModelValidationPlugin());
 
         var serviceCollection = new ServiceCollection();
+
+        // Add views
 #if DEBUG
         serviceCollection.AddSingleton<IViewFor<ExperimentsPageViewModel>, ExperimentsPage>();
 #endif
@@ -38,7 +43,9 @@ public class App : Application
         serviceCollection.AddSingleton<IViewFor<HistoryPageViewModel>, HistoryPage>();
 
         var services = new ServiceInjector(serviceCollection);
+
 #if DEBUG
+        // initial migration, since there is no Cobalt.Engine doing it for us.
         var contexts = services.Resolve<IDbContextFactory<QueryContext>>();
         using (var context = contexts.CreateDbContext())
         {
