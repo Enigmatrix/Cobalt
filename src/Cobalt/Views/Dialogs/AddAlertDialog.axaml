@@ -97,8 +97,8 @@
         <StackPanel Orientation="Vertical" Spacing="4">
             <Label Target="{Binding ElementName=UsageLimitPicker}" VerticalAlignment="Center">Usage Limit</Label>
 
-            <TimePicker Name="UsageLimitPicker" SelectedTime="{Binding UsageLimit}" Margin="2,0"
-                        HorizontalAlignment="Stretch" ClockIdentifier="24HourClock" />
+            <controls:DurationPicker Name="UsageLimitPicker" Duration="{Binding UsageLimit}" Margin="2,0"
+                                     HorizontalAlignment="Stretch" />
         </StackPanel>
 
         <StackPanel Orientation="Vertical" Spacing="4">
@@ -204,10 +204,10 @@
             <TextBox Text="{Binding TriggerAction.MessageContent}" VerticalAlignment="Center"
                      AcceptsReturn="True" Margin="2,0"
                      IsVisible="{Binding TriggerAction.Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={StaticResource Int1}}" />
-            <TimePicker SelectedTime="{Binding TriggerAction.DimDuration}"
-                        HorizontalAlignment="Stretch" ClockIdentifier="24HourClock" VerticalAlignment="Center"
-                        Margin="2,0"
-                        IsVisible="{Binding TriggerAction.Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={StaticResource Int2}}" />
+            <controls:DurationPicker Duration="{Binding TriggerAction.DimDuration}"
+                                     HorizontalAlignment="Stretch" VerticalAlignment="Center"
+                                     Margin="2,0"
+                                     IsVisible="{Binding TriggerAction.Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={StaticResource Int2}}" />
         </StackPanel>
 
     </StackPanel>
