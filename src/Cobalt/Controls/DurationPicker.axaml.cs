@@ -3,6 +3,7 @@ using System.Reactive.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Data;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Cobalt.Common.ViewModels;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -80,6 +81,16 @@ public partial class DurationPicker : UserControl
     }
 
     private void TextBox_OnLostFocus(object? sender, RoutedEventArgs e)
+    {
+        SwitchToDisplay();
+    }
+
+    private void TextBox_OnKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter || e.Key == Key.Escape) SwitchToDisplay();
+    }
+
+    private void SwitchToDisplay()
     {
         Display.IsVisible = true;
         TextBox.IsVisible = false;

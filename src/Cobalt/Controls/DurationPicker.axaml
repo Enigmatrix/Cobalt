@@ -10,7 +10,7 @@
         <fluent:FABorder VerticalAlignment="Stretch" HorizontalAlignment="Stretch" CornerRadius="4">
             <TextBox LostFocus="TextBox_OnLostFocus" VerticalContentAlignment="Center"
                      HorizontalContentAlignment="Center"
-                     Name="TextBox" IsVisible="False"
+                     Name="TextBox" IsVisible="False" KeyDown="TextBox_OnKeyDown"
                      Text="{Binding #Self.ViewModel.Text}" Margin="2" />
         </fluent:FABorder>
 
