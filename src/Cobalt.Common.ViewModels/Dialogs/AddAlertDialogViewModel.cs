@@ -7,6 +7,7 @@ using Cobalt.Common.Util;
 using Cobalt.Common.ViewModels.Analysis;
 using Cobalt.Common.ViewModels.Entities;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using Microsoft.EntityFrameworkCore;
 using ReactiveUI;
 using ReactiveUI.Validation.Abstractions;
@@ -124,16 +125,23 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
 
     public void AddReminder()
     {
-        // TODO Create a new ReminderViewModel type that's editable in place
-        // e.g. it has a EditMode field that's set to true when you just add it, with validation rules
         Reminders.Add(new ReminderViewModel(new Reminder
         {
             Guid = Guid.NewGuid(),
             Version = 1,
             Alert = null!, // this is actually fine!
-            Message = "Go to work!", // TODO for testing
-            Threshold = 0.10 // TODO for testing
-        }, _entityCache, Contexts));
+            Message = null!,
+            Threshold = 0.5
+        }, _entityCache, Contexts)
+        {
+            Editing = true
+        });
+    }
+
+    [RelayCommand]
+    public void DeleteReminder(ReminderViewModel reminder)
+    {
+        Reminders.Remove(reminder);
     }
 
     private bool ValidUsageLimitAndTimeFrame(TimeSpan? usageLimit, TimeFrame? timeFrame)

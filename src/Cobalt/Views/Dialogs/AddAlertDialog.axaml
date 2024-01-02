@@ -252,10 +252,23 @@
             <fluent:SettingsExpander.ItemTemplate>
                 <DataTemplate DataType="entities:ReminderViewModel">
 
-                    <fluent:SettingsExpanderItem Content="{Binding Message}"
-                                                 IconSource="Comment">
+                    <fluent:SettingsExpanderItem
+                        IconSource="Comment">
+                        <fluent:SettingsExpanderItem.Content>
+                            <Grid>
+                                <TextBlock IsVisible="{Binding !Editing}" Text="{Binding Message}" />
+
+                                <StackPanel Spacing="8" Orientation="Horizontal" IsVisible="{Binding Editing}">
+                                    <TextBlock Text="Message:" VerticalAlignment="Center" />
+                                    <TextBox Text="{Binding Message}" Watermark="Message Content" MinWidth="150" />
+                                    <TextBlock Text="Threshold:" VerticalAlignment="Center" Margin="8,0,0,0" />
+                                    <fluent:NumberBox Maximum="1" Minimum="0" Value="{Binding Threshold}" />
+                                </StackPanel>
+                            </Grid>
+                        </fluent:SettingsExpanderItem.Content>
                         <fluent:SettingsExpanderItem.Description>
                             <MultiBinding Converter="{StaticResource ReminderDescriptionConverter}">
+                                <Binding Path="Editing" />
                                 <Binding Path="Threshold" />
                                 <ReflectionBinding Path="DataContext.UsageLimit"
                                                    RelativeSource="{RelativeSource AncestorType=StackPanel}" />
@@ -264,8 +277,15 @@
                         <fluent:SettingsExpanderItem.Footer>
                             <fluent:CommandBar VerticalAlignment="Center">
                                 <fluent:CommandBar.PrimaryCommands>
-                                    <fluent:CommandBarButton Label="Edit" IconSource="Edit" />
-                                    <fluent:CommandBarButton Label="Delete" IconSource="Delete" />
+                                    <fluent:CommandBarButton Label="Ok" IconSource="Accept"
+                                                             Command="{Binding StopEditingCommand}"
+                                                             IsVisible="{Binding Editing}" />
+                                    <fluent:CommandBarButton Label="Edit" IconSource="Edit"
+                                                             Command="{Binding StartEditing}"
+                                                             IsVisible="{Binding !Editing}" />
+                                    <fluent:CommandBarButton Label="Delete" IconSource="Delete"
+                                                             Command="{Binding $parent[StackPanel].((dialogs:AddAlertDialogViewModel)DataContext).DeleteReminderCommand}"
+                                                             CommandParameter="{Binding}" />
                                 </fluent:CommandBar.PrimaryCommands>
                             </fluent:CommandBar>
                         </fluent:SettingsExpanderItem.Footer>
