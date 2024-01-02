@@ -9,7 +9,7 @@
     <Grid MinHeight="{DynamicResource TextControlThemeMinHeight}">
         <fluent:FABorder VerticalAlignment="Stretch" HorizontalAlignment="Stretch" CornerRadius="4">
             <TextBox LostFocus="TextBox_OnLostFocus" VerticalContentAlignment="Center"
-                     HorizontalContentAlignment="Center"
+                     HorizontalContentAlignment="Center" Watermark="e.g. 1 hour 30 min"
                      Name="TextBox" IsVisible="False" KeyDown="TextBox_OnKeyDown"
                      Text="{Binding #Self.ViewModel.Text}" Margin="2" />
         </fluent:FABorder>

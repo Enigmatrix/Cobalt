@@ -15,6 +15,9 @@ using TimeSpanParserUtil;
 
 namespace Cobalt.Controls;
 
+// TODO right now, this control has 2 validation levels, one at the textbox and one at this control layer
+// move the one at the textbox to the one at the control layer. The one at the textbox gives red border + red text
+// but the one at the control layer only gives red text, it looks incongruous.
 public partial class DurationPicker : UserControl
 {
     public static readonly DirectProperty<DurationPicker, TimeSpan?> DurationProperty =
