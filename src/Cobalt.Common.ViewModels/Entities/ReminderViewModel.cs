@@ -10,14 +10,12 @@ namespace Cobalt.Common.ViewModels.Entities;
 /// </summary>
 public partial class ReminderViewModel : EditableEntityViewModelBase<Reminder>
 {
-    [ObservableProperty] private AlertViewModel? _alert;
     [ObservableProperty] private string _message;
     [ObservableProperty] private double _threshold;
 
     public ReminderViewModel(Reminder entity, IEntityViewModelCache entityCache,
         IDbContextFactory<QueryContext> contexts) : base(entity, entityCache, contexts)
     {
-        Alert = EntityCache.Alert(entity.Alert);
         Message = entity.Message;
         Threshold = entity.Threshold;
     }

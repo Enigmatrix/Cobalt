@@ -1,4 +1,5 @@
-﻿using System.Reactive;
+﻿using System.Collections.ObjectModel;
+using System.Reactive;
 using System.Reactive.Disposables;
 using Cobalt.Common.Data;
 using Cobalt.Common.Data.Entities;
@@ -26,11 +27,11 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
     [ObservableProperty] private string _targetSearch = "";
     [ObservableProperty] private TimeFrame? _timeFrame;
     [ObservableProperty] private TriggerActionViewModel _triggerAction = new();
+    [ObservableProperty] private TimeSpan? _usageLimit;
+
 
     // TODO count how many refreshes are done, try to get rid of the assumeRefreshIsCalled parameter
     // TODO too many ^ bindings to Apps/Tags, try reduce?
-
-    [ObservableProperty] private TimeSpan? _usageLimit;
 
     public AddAlertDialogViewModel(IEntityViewModelCache entityCache, IDbContextFactory<QueryContext> contexts) :
         base(contexts)
@@ -108,6 +109,8 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
         });
     }
 
+    public ObservableCollection<ReminderViewModel> Reminders { get; } = new();
+
     public override ReactiveCommand<Unit, Unit> PrimaryButtonCommand { get; set; }
 
     public Query<string, List<AppViewModel>> Apps { get; }
@@ -118,6 +121,20 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
     private AlertViewModel? Result { get; set; }
 
     public ValidationContext ValidationContext { get; } = new();
+
+    public void AddReminder()
+    {
+        // TODO Create a new ReminderViewModel type that's editable in place
+        // e.g. it has a EditMode field that's set to true when you just add it, with validation rules
+        Reminders.Add(new ReminderViewModel(new Reminder
+        {
+            Guid = Guid.NewGuid(),
+            Version = 1,
+            Alert = null!, // this is actually fine!
+            Message = "Go to work!", // TODO for testing
+            Threshold = 0.10 // TODO for testing
+        }, _entityCache, Contexts));
+    }
 
     private bool ValidUsageLimitAndTimeFrame(TimeSpan? usageLimit, TimeFrame? timeFrame)
     {
