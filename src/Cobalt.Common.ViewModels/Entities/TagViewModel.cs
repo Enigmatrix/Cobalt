@@ -22,7 +22,6 @@ public partial class TagViewModel : EditableEntityViewModelBase<Tag>
     {
         _name = entity.Name;
         _color = entity.Color;
-        // TODO or maybe this should be fetched on demand?
         _apps = entity.Apps.Select(EntityCache.App).ToList();
         _appsSubset = entity.Apps.Select(EntityCache.App).Take(AppsSubsetSize).ToList();
         _appsNotInSubset = Math.Max(entity.Apps.Count - AppsSubsetSize, 0);
