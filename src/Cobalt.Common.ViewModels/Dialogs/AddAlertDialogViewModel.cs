@@ -169,6 +169,14 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
             TriggerAction = TriggerAction.ToTriggerAction(),
             UsageLimit = UsageLimit!.Value
         };
+        alert.Reminders.AddRange(Reminders.Select(reminder => new Reminder
+        {
+            Guid = Guid.NewGuid(),
+            Version = 1,
+            Message = reminder.Message!,
+            Threshold = reminder.Threshold!.Value,
+            Alert = alert
+        }));
         switch (SelectedTarget)
         {
             case AppViewModel app:
@@ -180,8 +188,10 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
         }
 
         await using var context = await Contexts.CreateDbContextAsync();
+        // Attach everything except reminders, which are instead in the added state
         context.Attach(alert);
-        await context.Alerts.AddAsync(alert);
+        context.AddRange(alert.Reminders);
+        await context.AddAsync(alert);
         await context.SaveChangesAsync();
 
         Result = new AlertViewModel(alert, _entityCache, Contexts);
