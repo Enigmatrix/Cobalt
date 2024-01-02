@@ -52,21 +52,14 @@ public partial class DurationPicker : UserControl
 
     protected override void UpdateDataValidation(AvaloniaProperty property, BindingValueType state, Exception? error)
     {
-        if (property == DurationProperty) // TODO add || texxtbox
-        {
+        if (property == DurationProperty)
             DataValidationErrors.SetError(this, error);
-        }
     }
 
     protected override void OnLoaded(RoutedEventArgs e)
     {
         ViewModel = new DurationPickerViewModel();
-        // TODO move the error on the TextBox into the error of the main DurationPicker
-        _durationBind = ViewModel.WhenAnyValue(self => self.Duration).Subscribe(x =>
-        {
-            Duration = x;
-        });
-        
+        _durationBind = ViewModel.WhenAnyValue(self => self.Duration).Subscribe(x => { Duration = x; });
 
         base.OnLoaded(e);
     }

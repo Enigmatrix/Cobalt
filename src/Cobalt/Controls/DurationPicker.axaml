@@ -26,11 +26,17 @@
             </Button.Content>
         </Button>
     </Grid>
-    
+
     <UserControl.Template>
         <ControlTemplate>
-            <DataValidationErrors>
-                <ContentControl Content="{TemplateBinding Content}"/>
+            <DataValidationErrors Name="SelfErr">
+                <DataValidationErrors.Styles>
+                    <Style
+                        Selector="DataValidationErrors#SelfErr /template/ ContentControl#InlineDataValidationContentControl">
+                        <Setter Property="Padding" Value="4,0,0,0" />
+                    </Style>
+                </DataValidationErrors.Styles>
+                <ContentControl Content="{TemplateBinding Content}" />
             </DataValidationErrors>
         </ControlTemplate>
     </UserControl.Template>
