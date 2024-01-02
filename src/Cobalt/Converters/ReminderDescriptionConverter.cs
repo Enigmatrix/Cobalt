@@ -17,7 +17,7 @@ public class ReminderDescriptionConverter : IMultiValueConverter
         if (values.Count != 3) return null;
         if (values[0] is not false || values[1] is not double threshold ||
             values[2] is not TimeSpan usageLimit) return null;
-        var duration = new TimeSpan((long)(usageLimit.Ticks * threshold));
+        var duration = new TimeSpan((long)(usageLimit.Ticks * threshold / 100.0));
         var durationString = duration.Humanize(2, maxUnit: TimeUnit.Day, minUnit: TimeUnit.Second);
         return $"{durationString} ({threshold}%)";
     }

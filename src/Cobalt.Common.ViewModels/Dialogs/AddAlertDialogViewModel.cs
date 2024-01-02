@@ -8,6 +8,8 @@ using Cobalt.Common.ViewModels.Analysis;
 using Cobalt.Common.ViewModels.Entities;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using DynamicData;
+using DynamicData.Binding;
 using Microsoft.EntityFrameworkCore;
 using ReactiveUI;
 using ReactiveUI.Validation.Abstractions;
@@ -131,7 +133,7 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
             Version = 1,
             Alert = null!, // this is actually fine!
             Message = null!,
-            Threshold = 0.5
+            Threshold = 50.0
         }, _entityCache, Contexts)
         {
             Editing = true
