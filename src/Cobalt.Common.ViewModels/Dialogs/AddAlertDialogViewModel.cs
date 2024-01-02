@@ -1,6 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using System.Reactive;
 using System.Reactive.Disposables;
+using System.Reactive.Linq;
 using Cobalt.Common.Data;
 using Cobalt.Common.Data.Entities;
 using Cobalt.Common.Util;
@@ -65,6 +66,15 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
                 self => self.TimeFrame),
             props => props is { Item1: not null, Item2: not null, Item3: not null },
             _ => "Fields are empty");
+
+
+        this.ValidationRule(Reminders
+                .ToObservableChangeSet(reminder => reminder) // the List version does not have TrueForAll
+                .TrueForAll(reminder => reminder.IsValid()
+                        .CombineLatest(reminder.WhenAnyValue(self => self.Editing)),
+                    static prop => prop is { First: true, Second: false })
+                .StartWith(true), // Reminders are empty at start
+            "Reminders are invalid");
 
         PrimaryButtonCommand =
             ReactiveCommand.CreateFromTask(ProduceAlert, this.IsValid());
