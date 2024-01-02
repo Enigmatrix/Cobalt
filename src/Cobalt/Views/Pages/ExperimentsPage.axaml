@@ -5,7 +5,6 @@
                                 xmlns:reactiveUi="http://reactiveui.net"
                                 xmlns:pages="clr-namespace:Cobalt.Common.ViewModels.Pages;assembly=Cobalt.Common.ViewModels"
                                 xmlns:controls="clr-namespace:FluentAvalonia.UI.Controls;assembly=FluentAvalonia"
-                                xmlns:controls1="clr-namespace:Cobalt.Controls"
                                 mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
                                 x:Class="Cobalt.Views.Pages.ExperimentsPage" Padding="8"
                                 x:DataType="pages:ExperimentsPageViewModel">
@@ -39,11 +38,6 @@
             <controls:SettingsExpanderItem Content="Update last Usage end to now" IsClickEnabled="True"
                                            Command="{Binding UpdateAllUsageEndsAsync}" />
         </controls:SettingsExpander>
-
-        <controls1:DurationPicker Width="300" Margin="20" Duration="{Binding LmaoDuration}" />
-
-        <TextBlock Text="{Binding LmaoDuration}" />
-        <TextBlock Text="{Binding ValidationContext.Valid^}" />
 
     </StackPanel>
 </reactiveUi:ReactiveUserControl>
