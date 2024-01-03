@@ -9,6 +9,7 @@
                                 xmlns:dataEntities="clr-namespace:Cobalt.Common.Data.Entities;assembly=Cobalt.Common.Data"
                                 xmlns:controls="clr-namespace:Cobalt.Controls"
                                 xmlns:entityViews="clr-namespace:Cobalt.Views.Entities"
+                                xmlns:dialogsView="clr-namespace:Cobalt.Views.Dialogs"
                                 mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="650"
                                 x:Class="Cobalt.Views.Dialogs.AddAlertDialog"
                                 x:DataType="dialogs:AddAlertDialogViewModel">
@@ -30,7 +31,7 @@
                 <DropDownButton Name="TargetPicker" MinHeight="40" MinWidth="150" Margin="2,0"
                                 Padding="16,0,8,0" HorizontalAlignment="Stretch">
                     <DropDownButton.Content>
-                        <Binding Path="SelectedTarget">
+                        <Binding Path="ChooseTargetDialog.Target">
                             <Binding.TargetNullValue>
                                 <TextBlock Text="Select App or Tag" />
                             </Binding.TargetNullValue>
@@ -64,32 +65,7 @@
                     </DropDownButton.DataTemplates>
                     <DropDownButton.Flyout>
                         <Flyout>
-                            <StackPanel Orientation="Vertical" Margin="-12">
-                                <TextBox Text="{Binding TargetSearch, Mode=TwoWay}" Margin="8" />
-
-                                <ScrollViewer Margin="0" Width="300" MaxWidth="300" MaxHeight="400"
-                                              HorizontalScrollBarVisibility="Disabled">
-                                    <StackPanel Orientation="Vertical">
-
-                                        <Expander Header="{Binding Tags.Value^.Count, StringFormat={}Tags ({0})}"
-                                                  IsExpanded="True"
-                                                  Padding="4" MinHeight="40" Margin="0,0,0,8">
-                                            <ListBox SelectedItem="{Binding SelectedTag}"
-                                                     ItemsSource="{Binding Tags.Value^}" />
-                                        </Expander>
-
-                                        <Expander Header="{Binding Apps.Value^.Count, StringFormat={}Apps ({0})}"
-                                                  IsExpanded="True"
-                                                  Padding="4" MinHeight="40">
-                                            <ListBox SelectedItem="{Binding SelectedApp}"
-                                                     ItemsSource="{Binding Apps.Value^}" />
-                                        </Expander>
-
-                                    </StackPanel>
-                                </ScrollViewer>
-                            </StackPanel>
-
-
+                            <dialogsView:ChooseTargetDialogView DataContext="{Binding ChooseTargetDialog}" />
                         </Flyout>
                     </DropDownButton.Flyout>
                 </DropDownButton>

@@ -12,10 +12,10 @@ public partial class AddAlertDialog : ReactiveUserControl<AddAlertDialogViewMode
     {
         InitializeComponent();
 
-        // Hide the TargetPicker Flyout when we have an SelectedTarget
+        // Hide the TargetPicker Flyout when we have an selected Target
         this.WhenActivated(dis =>
         {
-            ViewModel!.WhenAnyValue(self => self.SelectedTarget)
+            ViewModel!.WhenAnyValue(self => self.ChooseTargetDialog.Target)
                 .WhereNotNull()
                 .Subscribe(_ => { TargetPicker.Flyout?.Hide(); }).DisposeWith(dis);
         });

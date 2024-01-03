@@ -5,7 +5,6 @@ using System.Reactive.Linq;
 using Cobalt.Common.Data;
 using Cobalt.Common.Data.Entities;
 using Cobalt.Common.Util;
-using Cobalt.Common.ViewModels.Analysis;
 using Cobalt.Common.ViewModels.Entities;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -25,10 +24,6 @@ namespace Cobalt.Common.ViewModels.Dialogs;
 public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewModel>, IValidatableViewModel
 {
     private readonly IEntityViewModelCache _entityCache;
-    [ObservableProperty] private AppViewModel? _selectedApp;
-    [ObservableProperty] private TagViewModel? _selectedTag;
-    [ObservableProperty] private EntityViewModelBase? _selectedTarget;
-    [ObservableProperty] private string _targetSearch = "";
     [ObservableProperty] private TimeFrame? _timeFrame;
     [ObservableProperty] private TriggerActionViewModel _triggerAction = new();
     [ObservableProperty] private TimeSpan? _usageLimit;
@@ -41,15 +36,7 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
         base(contexts)
     {
         _entityCache = entityCache;
-        var searches = this.WhenAnyValue(self => self.TargetSearch);
-
-        Apps = Query(searches,
-            async (context, search) => await context.SearchApps(search).ToListAsync(),
-            _entityCache.App, false);
-
-        Tags = Query(searches,
-            async (context, search) => await context.SearchTags(search).ToListAsync(),
-            _entityCache.Tag, false);
+        ChooseTargetDialog = new ChooseTargetDialogViewModel(_entityCache, Contexts);
 
         // This is validation context composition
         ValidationContext.Add(TriggerAction.ValidationContext);
@@ -61,7 +48,7 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
         // This isn't a validation rule we don't want to display "X is unset" errors,
         // that would just mean the entire form is red.
         this.ValidationRule(this.WhenAnyValue(
-                self => self.SelectedTarget,
+                self => self.ChooseTargetDialog.Target,
                 self => self.UsageLimit,
                 self => self.TimeFrame),
             props => props is { Item1: not null, Item2: not null, Item3: not null },
@@ -81,15 +68,9 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
 
         this.WhenActivated(dis =>
         {
-            TargetSearch = "";
-            SelectedTarget = null;
-            SelectedApp = null;
-            SelectedTag = null;
             UsageLimit = null;
             TimeFrame = null;
             TriggerAction.Clear();
-            Apps.Refresh();
-            Tags.Refresh();
 
 
             this.ValidationRule(self => self.TimeFrame, validUsageLimitAndTimeFrame,
@@ -99,35 +80,14 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
                 "Usage Limit larger than Time Frame").DisposeWith(dis);
             this.ValidationRule(self => self.UsageLimit, usageLimit => usageLimit == null || usageLimit > TimeSpan.Zero,
                 "Usage Limit cannot be negative").DisposeWith(dis);
-
-
-            // Reset SelectedTarget based on the two selection properties, SelectedApp and SelectedTag
-            this.WhenAnyValue(self => self.SelectedApp)
-                .WhereNotNull()
-                .Subscribe(app =>
-                {
-                    SelectedTag = null;
-                    SelectedTarget = app;
-                })
-                .DisposeWith(dis);
-
-            this.WhenAnyValue(self => self.SelectedTag)
-                .WhereNotNull()
-                .Subscribe(tag =>
-                {
-                    SelectedApp = null;
-                    SelectedTarget = tag;
-                })
-                .DisposeWith(dis);
         });
     }
+
+    public ChooseTargetDialogViewModel ChooseTargetDialog { get; set; }
 
     public ObservableCollection<IReminderViewModel> Reminders { get; } = [];
 
     public override ReactiveCommand<Unit, Unit> PrimaryButtonCommand { get; set; }
-
-    public Query<string, List<AppViewModel>> Apps { get; }
-    public Query<string, List<TagViewModel>> Tags { get; }
 
     public override string Title => "Add Alert";
 
@@ -177,7 +137,7 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
             Threshold = reminder.Threshold,
             Alert = alert
         }));
-        switch (SelectedTarget)
+        switch (ChooseTargetDialog.Target)
         {
             case AppViewModel app:
                 alert.App = app.Entity;
