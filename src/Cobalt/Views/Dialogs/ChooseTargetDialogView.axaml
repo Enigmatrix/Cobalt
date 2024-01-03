@@ -4,12 +4,12 @@
                                 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                                 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
                                 xmlns:reactiveUi="http://reactiveui.net"
-                                x:DataType="dialogs:ChooseTargetDialogViewModel"
+                                x:DataType="dialogs:ChooseTargetDialogViewModel" Margin="-12"
                                 xmlns:dialogs="clr-namespace:Cobalt.Common.ViewModels.Dialogs;assembly=Cobalt.Common.ViewModels"
                                 mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
                                 x:Class="Cobalt.Views.Dialogs.ChooseTargetDialogView">
 
-    <StackPanel Orientation="Vertical" Margin="-12">
+    <StackPanel Orientation="Vertical">
         <TextBox Text="{Binding Search, Mode=TwoWay}" Margin="8" />
 
         <ScrollViewer Margin="0" Width="300" MaxWidth="300" MaxHeight="400"
