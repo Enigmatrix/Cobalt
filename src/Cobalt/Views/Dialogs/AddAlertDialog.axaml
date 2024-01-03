@@ -259,10 +259,10 @@
                                 <TextBlock IsVisible="{Binding !Editing}" Text="{Binding Message}" />
 
                                 <StackPanel Spacing="8" Orientation="Horizontal" IsVisible="{Binding Editing}">
-                                    <TextBlock Text="Message:" VerticalAlignment="Center" />
-                                    <TextBox Text="{Binding Message}" Watermark="Message Content" MinWidth="150" />
-                                    <TextBlock Text="Threshold (%):" VerticalAlignment="Center" Margin="8,0,0,0" />
-                                    <fluent:NumberBox Maximum="100" Minimum="0" Value="{Binding Threshold}" />
+                                    <TextBox Text="{Binding Message}" Watermark="Message Content" MinWidth="200" />
+                                    <fluent:NumberBox Maximum="100" Minimum="0" Value="{Binding Threshold}"
+                                                      MinWidth="150"
+                                                      PlaceholderText="Threshold (0-100%)" />
                                 </StackPanel>
                             </Grid>
                         </fluent:SettingsExpanderItem.Content>
