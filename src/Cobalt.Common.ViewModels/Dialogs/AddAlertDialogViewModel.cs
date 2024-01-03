@@ -1,11 +1,15 @@
-﻿using System.Reactive;
+﻿using System.Collections.ObjectModel;
+using System.Reactive;
 using System.Reactive.Disposables;
+using System.Reactive.Linq;
 using Cobalt.Common.Data;
 using Cobalt.Common.Data.Entities;
 using Cobalt.Common.Util;
-using Cobalt.Common.ViewModels.Analysis;
 using Cobalt.Common.ViewModels.Entities;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using DynamicData;
+using DynamicData.Binding;
 using Microsoft.EntityFrameworkCore;
 using ReactiveUI;
 using ReactiveUI.Validation.Abstractions;
@@ -20,31 +24,19 @@ namespace Cobalt.Common.ViewModels.Dialogs;
 public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewModel>, IValidatableViewModel
 {
     private readonly IEntityViewModelCache _entityCache;
-    [ObservableProperty] private AppViewModel? _selectedApp;
-    [ObservableProperty] private TagViewModel? _selectedTag;
-    [ObservableProperty] private EntityViewModelBase? _selectedTarget;
-    [ObservableProperty] private string _targetSearch = "";
     [ObservableProperty] private TimeFrame? _timeFrame;
     [ObservableProperty] private TriggerActionViewModel _triggerAction = new();
+    [ObservableProperty] private TimeSpan? _usageLimit;
+
 
     // TODO count how many refreshes are done, try to get rid of the assumeRefreshIsCalled parameter
     // TODO too many ^ bindings to Apps/Tags, try reduce?
-
-    [ObservableProperty] private TimeSpan? _usageLimit;
 
     public AddAlertDialogViewModel(IEntityViewModelCache entityCache, IDbContextFactory<QueryContext> contexts) :
         base(contexts)
     {
         _entityCache = entityCache;
-        var searches = this.WhenAnyValue(self => self.TargetSearch);
-
-        Apps = Query(searches,
-            async (context, search) => await context.SearchApps(search).ToListAsync(),
-            _entityCache.App, false);
-
-        Tags = Query(searches,
-            async (context, search) => await context.SearchTags(search).ToListAsync(),
-            _entityCache.Tag, false);
+        ChooseTargetDialog = new ChooseTargetDialogViewModel(_entityCache, Contexts);
 
         // This is validation context composition
         ValidationContext.Add(TriggerAction.ValidationContext);
@@ -56,26 +48,29 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
         // This isn't a validation rule we don't want to display "X is unset" errors,
         // that would just mean the entire form is red.
         this.ValidationRule(this.WhenAnyValue(
-                self => self.SelectedTarget,
+                self => self.ChooseTargetDialog.Target,
                 self => self.UsageLimit,
                 self => self.TimeFrame),
             props => props is { Item1: not null, Item2: not null, Item3: not null },
             _ => "Fields are empty");
+
+
+        this.ValidationRule(Reminders
+                .ToObservableChangeSet(reminder => reminder) // the List version does not have TrueForAll
+                .TrueForAll(reminder => reminder.IsValid()
+                        .CombineLatest(reminder.WhenAnyValue(self => self.Editing)),
+                    static prop => prop is { First: true, Second: false })
+                .StartWith(true), // Reminders are empty at start
+            "Reminders are invalid");
 
         PrimaryButtonCommand =
             ReactiveCommand.CreateFromTask(ProduceAlert, this.IsValid());
 
         this.WhenActivated(dis =>
         {
-            TargetSearch = "";
-            SelectedTarget = null;
-            SelectedApp = null;
-            SelectedTag = null;
             UsageLimit = null;
             TimeFrame = null;
             TriggerAction.Clear();
-            Apps.Refresh();
-            Tags.Refresh();
 
 
             this.ValidationRule(self => self.TimeFrame, validUsageLimitAndTimeFrame,
@@ -85,39 +80,31 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
                 "Usage Limit larger than Time Frame").DisposeWith(dis);
             this.ValidationRule(self => self.UsageLimit, usageLimit => usageLimit == null || usageLimit > TimeSpan.Zero,
                 "Usage Limit cannot be negative").DisposeWith(dis);
-
-
-            // Reset SelectedTarget based on the two selection properties, SelectedApp and SelectedTag
-            this.WhenAnyValue(self => self.SelectedApp)
-                .WhereNotNull()
-                .Subscribe(app =>
-                {
-                    SelectedTag = null;
-                    SelectedTarget = app;
-                })
-                .DisposeWith(dis);
-
-            this.WhenAnyValue(self => self.SelectedTag)
-                .WhereNotNull()
-                .Subscribe(tag =>
-                {
-                    SelectedApp = null;
-                    SelectedTarget = tag;
-                })
-                .DisposeWith(dis);
         });
     }
 
-    public override ReactiveCommand<Unit, Unit> PrimaryButtonCommand { get; set; }
+    public ChooseTargetDialogViewModel ChooseTargetDialog { get; set; }
 
-    public Query<string, List<AppViewModel>> Apps { get; }
-    public Query<string, List<TagViewModel>> Tags { get; }
+    public ObservableCollection<IReminderViewModel> Reminders { get; } = [];
+
+    public override ReactiveCommand<Unit, Unit> PrimaryButtonCommand { get; set; }
 
     public override string Title => "Add Alert";
 
     private AlertViewModel? Result { get; set; }
 
     public ValidationContext ValidationContext { get; } = new();
+
+    public void AddReminder()
+    {
+        Reminders.Add(new NewlyAddedReminderViewModel());
+    }
+
+    [RelayCommand]
+    public void DeleteReminder(IReminderViewModel reminder)
+    {
+        Reminders.Remove(reminder);
+    }
 
     private bool ValidUsageLimitAndTimeFrame(TimeSpan? usageLimit, TimeFrame? timeFrame)
     {
@@ -142,7 +129,15 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
             TriggerAction = TriggerAction.ToTriggerAction(),
             UsageLimit = UsageLimit!.Value
         };
-        switch (SelectedTarget)
+        alert.Reminders.AddRange(Reminders.Select(reminder => new Reminder
+        {
+            Guid = Guid.NewGuid(),
+            Version = 1,
+            Message = reminder.Message!,
+            Threshold = reminder.Threshold,
+            Alert = alert
+        }));
+        switch (ChooseTargetDialog.Target)
         {
             case AppViewModel app:
                 alert.App = app.Entity;
@@ -153,8 +148,10 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
         }
 
         await using var context = await Contexts.CreateDbContextAsync();
+        // Attach everything except reminders, which are instead in the added state
         context.Attach(alert);
-        await context.Alerts.AddAsync(alert);
+        context.AddRange(alert.Reminders);
+        await context.AddAsync(alert);
         await context.SaveChangesAsync();
 
         Result = new AlertViewModel(alert, _entityCache, Contexts);
