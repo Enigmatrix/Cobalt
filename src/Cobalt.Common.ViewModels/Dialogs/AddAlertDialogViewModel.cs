@@ -137,17 +137,7 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
 
     public void AddReminder()
     {
-        Reminders.Add(new ReminderViewModel(new Reminder
-        {
-            Guid = Guid.NewGuid(),
-            Version = 1,
-            Alert = null!, // this is actually fine!
-            Message = null!,
-            Threshold = 50.0
-        }, _entityCache, Contexts)
-        {
-            Editing = true
-        });
+        Reminders.Add(new ReminderViewModel(null, _entityCache, Contexts, true));
     }
 
     [RelayCommand]
@@ -184,7 +174,7 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
             Guid = Guid.NewGuid(),
             Version = 1,
             Message = reminder.Message!,
-            Threshold = reminder.Threshold!.Value,
+            Threshold = reminder.Threshold,
             Alert = alert
         }));
         switch (SelectedTarget)
