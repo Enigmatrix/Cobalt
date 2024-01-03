@@ -39,21 +39,13 @@ public class ValidatorViewModelValidationPlugin : IDataValidationPlugin
     }
 
 
-    private class Validator : DataValidationBase
+    private class Validator
+        (WeakReference<object?> reference, string name, IPropertyAccessor inner) : DataValidationBase(inner)
     {
         private const bool ExclusivePropertyName = true;
-        private readonly string _name;
-        private readonly WeakReference<object?> _reference;
         private IDisposable? _validationStatesSub;
 
-        public Validator(WeakReference<object?> reference, string name, IPropertyAccessor inner)
-            : base(inner)
-        {
-            _reference = reference;
-            _name = name;
-        }
-
-        private static IValidationState[] InitialValidationStates { get; } = { ValidationState.Valid };
+        private static IValidationState[] InitialValidationStates { get; } = [ValidationState.Valid];
 
         protected override void SubscribeCore()
         {
@@ -69,7 +61,7 @@ public class ValidatorViewModelValidationPlugin : IDataValidationPlugin
                     .ToCollection()
                     .Select(validations => validations
                         .OfType<IPropertyValidationComponent>()
-                        .Where(validation => validation.ContainsPropertyName(_name, ExclusivePropertyName))
+                        .Where(validation => validation.ContainsPropertyName(name, ExclusivePropertyName))
                         .Select(validation => validation.ValidationStatusChange)
                         .CombineLatest()
                         .StartWith(InitialValidationStates))
@@ -107,7 +99,7 @@ public class ValidatorViewModelValidationPlugin : IDataValidationPlugin
                 errors = target?.ValidationContext.Validations
                     .OfType<IPropertyValidationComponent>()
                     .Where(validation =>
-                        validation.ContainsPropertyName(_name, ExclusivePropertyName) && !validation.IsValid)
+                        validation.ContainsPropertyName(name, ExclusivePropertyName) && !validation.IsValid)
                     .SelectMany(x => x.Text ?? Enumerable.Empty<string>())
                     .ToList();
             }
@@ -127,12 +119,12 @@ public class ValidatorViewModelValidationPlugin : IDataValidationPlugin
 
         private IValidatableViewModel? GetReferenceTarget()
         {
-            _reference.TryGetTarget(out var target);
+            reference.TryGetTarget(out var target);
 
             return target as IValidatableViewModel;
         }
 
-        private Exception GenerateException(IList<string>? errors)
+        private static Exception GenerateException(IList<string>? errors)
         {
             if (errors!.Count == 1)
                 return new DataValidationException(errors[0]);
