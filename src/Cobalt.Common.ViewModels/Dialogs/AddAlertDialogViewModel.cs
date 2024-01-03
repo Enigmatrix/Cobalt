@@ -122,7 +122,7 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
         });
     }
 
-    public ObservableCollection<ReminderViewModel> Reminders { get; } = new();
+    public ObservableCollection<IReminderViewModel> Reminders { get; } = new();
 
     public override ReactiveCommand<Unit, Unit> PrimaryButtonCommand { get; set; }
 
@@ -137,11 +137,11 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
 
     public void AddReminder()
     {
-        Reminders.Add(new ReminderViewModel(null, _entityCache, Contexts, true));
+        Reminders.Add(new NewlyAddedReminderViewModel());
     }
 
     [RelayCommand]
-    public void DeleteReminder(ReminderViewModel reminder)
+    public void DeleteReminder(IReminderViewModel reminder)
     {
         Reminders.Remove(reminder);
     }

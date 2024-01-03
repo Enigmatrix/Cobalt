@@ -250,7 +250,7 @@
             </fluent:SettingsExpander.IconSource>
 
             <fluent:SettingsExpander.ItemTemplate>
-                <DataTemplate DataType="entities:ReminderViewModel">
+                <DataTemplate DataType="entities:IReminderViewModel">
 
                     <fluent:SettingsExpanderItem
                         IconSource="Comment">
@@ -281,7 +281,7 @@
                                                              Command="{Binding StopEditingCommand}"
                                                              IsVisible="{Binding Editing}" />
                                     <fluent:CommandBarButton Label="Edit" IconSource="Edit"
-                                                             Command="{Binding StartEditing}"
+                                                             Command="{Binding StartEditingCommand}"
                                                              IsVisible="{Binding !Editing}" />
                                     <fluent:CommandBarButton Label="Delete" IconSource="Delete"
                                                              Command="{Binding $parent[StackPanel].((dialogs:AddAlertDialogViewModel)DataContext).DeleteReminderCommand}"

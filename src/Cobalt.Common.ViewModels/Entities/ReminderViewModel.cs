@@ -12,36 +12,29 @@ using ReactiveUI.Validation.Extensions;
 namespace Cobalt.Common.ViewModels.Entities;
 
 /// <summary>
-///     ViewModel for the Reminder Entity
+///     ViewModel for the Reminder entity
 /// </summary>
-public partial class ReminderViewModel : EditableEntityViewModelBase<Reminder>, IActivatableViewModel,
-    IValidatableViewModel
+public interface IReminderViewModel : IValidatableViewModel, IReactiveObject
 {
-    private static readonly Reminder NullReminder = new()
-    {
-        Alert = default!,
-        Threshold = 0,
-        Message = default!,
-        Version = 0,
-        Guid = default
-    };
+    public bool Editing { get; set; }
+    public string Message { get; set; }
+    public double Threshold { get; set; }
 
-    [ObservableProperty] private bool _editing;
-    [ObservableProperty] private string? _message;
-    [ObservableProperty] private double _threshold = double.NaN;
+    public ReactiveCommand<Unit, Unit> StopEditingCommand { get; set; }
+    public ReactiveCommand<Unit, Unit> StartEditingCommand { get; set; }
 
-    public ReminderViewModel(Reminder? entity, IEntityViewModelCache entityCache,
-        IDbContextFactory<QueryContext> contexts, bool editing = false) : base(entity ?? NullReminder, entityCache,
-        contexts)
+    public void Setup()
     {
-        if (entity != null)
+        StartEditingCommand = ReactiveCommand.CreateFromTask(async () =>
         {
-            Message = entity.Message;
-            Threshold = entity.Threshold;
-        }
-
-        Editing = editing;
-        StopEditingCommand = ReactiveCommand.Create(StopEditing, this.IsValid());
+            await StartEditing();
+            Editing = true;
+        });
+        StopEditingCommand = ReactiveCommand.CreateFromTask(async () =>
+        {
+            await StopEditing();
+            Editing = false;
+        }, this.IsValid());
 
         var messageValid = this.WhenAnyValue(self => self.Message, message => !string.IsNullOrWhiteSpace(message));
         var thresholdValid = this.WhenAnyValue(self => self.Threshold, threshold => !double.IsNaN(threshold));
@@ -55,10 +48,61 @@ public partial class ReminderViewModel : EditableEntityViewModelBase<Reminder>, 
         this.ValidationRule(thresholdValid, "Threshold is empty");
     }
 
-    public ReactiveCommand<Unit, Unit> StopEditingCommand { get; }
+    public Task StopEditing()
+    {
+        return Task.CompletedTask;
+    }
+
+    public Task StartEditing()
+    {
+        return Task.CompletedTask;
+    }
+}
+
+/// <summary>
+///     ViewModel for a new added Reminder Entity
+/// </summary>
+public partial class NewlyAddedReminderViewModel : ReactiveObservableObject, IReminderViewModel
+{
+    [ObservableProperty] private bool _editing;
+    [ObservableProperty] private string? _message;
+    [ObservableProperty] private double _threshold = double.NaN;
+
+    public NewlyAddedReminderViewModel()
+    {
+        Editing = true;
+        ((IReminderViewModel)this).Setup();
+    }
+
+    public ValidationContext ValidationContext { get; } = new();
+    public ReactiveCommand<Unit, Unit> StopEditingCommand { get; set; } = default!;
+    public ReactiveCommand<Unit, Unit> StartEditingCommand { get; set; } = default!;
+}
+
+/// <summary>
+///     ViewModel for an already existing Reminder Entity
+/// </summary>
+public partial class ReminderViewModel : EditableEntityViewModelBase<Reminder>, IReminderViewModel
+{
+    [ObservableProperty] private bool _editing;
+    [ObservableProperty] private string _message;
+    [ObservableProperty] private double _threshold;
+
+    public ReminderViewModel(Reminder entity, IEntityViewModelCache entityCache,
+        IDbContextFactory<QueryContext> contexts) : base(entity, entityCache,
+        contexts)
+    {
+        Message = entity.Message;
+        Threshold = entity.Threshold;
+        Editing = false;
+
+        ((IReminderViewModel)this).Setup();
+    }
+
+    public ReactiveCommand<Unit, Unit> StopEditingCommand { get; set; } = default!;
+    public ReactiveCommand<Unit, Unit> StartEditingCommand { get; set; } = default!;
 
 
-    public ViewModelActivator Activator { get; } = new();
     public ValidationContext ValidationContext { get; } = new();
 
     public override void UpdateEntity()
@@ -66,15 +110,5 @@ public partial class ReminderViewModel : EditableEntityViewModelBase<Reminder>, 
         // We ignore updating Alert here, since that will never get updated through this view model
         Entity.Message = Message ?? throw new InvalidOperationException(nameof(Message));
         Entity.Threshold = Threshold;
-    }
-
-    public void StartEditing()
-    {
-        Editing = true;
-    }
-
-    private void StopEditing()
-    {
-        Editing = false;
     }
 }
