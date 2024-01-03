@@ -40,6 +40,27 @@ public partial class AlertsPageViewModel : PageViewModelBase
     public override string Name => "Alerts";
 
     [RelayCommand]
+    public async Task EditAlert(AlertViewModel alertVm)
+    {
+    }
+
+    [RelayCommand]
+    public async Task DeleteAlert(AlertViewModel alertVm)
+    {
+        await using var context = await Contexts.CreateDbContextAsync();
+        var guid = alertVm.Entity.Guid;
+        // no need to do anything special to delete Reminders, AlertEvent and ReminderEvent,
+        // they are cascade delete (App and Tag are not since they are nullable)
+        await context.Alerts
+            .IgnoreAutoIncludes() // otherwise it errors out
+            .IgnoreQueryFilters() // ignore max by version constraint
+            .Where(alert => alert.Guid == guid)
+            .ExecuteDeleteAsync();
+
+        await Alerts.Refresh();
+    }
+
+    [RelayCommand]
     public async Task AddAlert()
     {
         var alert = await AddAlertInteraction.Handle(_addAlertDialog);
