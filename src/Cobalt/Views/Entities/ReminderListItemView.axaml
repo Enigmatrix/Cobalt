@@ -1,0 +1,47 @@
+<fluent:SettingsExpanderItem xmlns="https://github.com/avaloniaui"
+                             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                             xmlns:entities="clr-namespace:Cobalt.Common.ViewModels.Entities;assembly=Cobalt.Common.ViewModels"
+                             xmlns:fluent="clr-namespace:FluentAvalonia.UI.Controls;assembly=FluentAvalonia"
+                             mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="50"
+                             x:DataType="entities:IReminderViewModel"
+                             IconSource="Comment" Name="Self"
+                             x:Class="Cobalt.Views.Entities.ReminderListItemView">
+
+    <fluent:SettingsExpanderItem.Content>
+        <Grid>
+            <TextBlock IsVisible="{Binding !Editing}" Text="{Binding Message}" />
+
+            <StackPanel Spacing="8" Orientation="Horizontal" IsVisible="{Binding Editing}">
+                <TextBox Text="{Binding Message}" Watermark="Message Content" MinWidth="200" />
+                <fluent:NumberBox Maximum="100" Minimum="0" Value="{Binding Threshold}"
+                                  MinWidth="150"
+                                  PlaceholderText="Threshold (0-100%)" />
+            </StackPanel>
+        </Grid>
+    </fluent:SettingsExpanderItem.Content>
+    <fluent:SettingsExpanderItem.Description>
+        <MultiBinding Converter="{StaticResource ReminderDescriptionConverter}">
+            <Binding Path="Editing" />
+            <Binding Path="Threshold" />
+            <Binding Path="UsageLimit" ElementName="Self" />
+        </MultiBinding>
+    </fluent:SettingsExpanderItem.Description>
+    <fluent:SettingsExpanderItem.Footer>
+        <fluent:CommandBar VerticalAlignment="Center">
+            <fluent:CommandBar.PrimaryCommands>
+                <fluent:CommandBarButton Label="Ok" IconSource="Accept"
+                                         Command="{Binding StopEditingCommand}"
+                                         IsVisible="{Binding Editing}" />
+                <fluent:CommandBarButton Label="Edit" IconSource="Edit"
+                                         Command="{Binding StartEditingCommand}"
+                                         IsVisible="{Binding !Editing}" />
+                <fluent:CommandBarButton Label="Delete" IconSource="Delete"
+                                         Command="{Binding #Self.DeleteCommand}"
+                                         CommandParameter="{Binding #Self.DeleteCommandParameter}" />
+            </fluent:CommandBar.PrimaryCommands>
+        </fluent:CommandBar>
+    </fluent:SettingsExpanderItem.Footer>
+
+</fluent:SettingsExpanderItem>

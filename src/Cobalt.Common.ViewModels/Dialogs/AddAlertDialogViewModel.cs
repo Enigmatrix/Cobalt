@@ -122,7 +122,7 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
         });
     }
 
-    public ObservableCollection<IReminderViewModel> Reminders { get; } = []; 
+    public ObservableCollection<IReminderViewModel> Reminders { get; } = [];
 
     public override ReactiveCommand<Unit, Unit> PrimaryButtonCommand { get; set; }
 
