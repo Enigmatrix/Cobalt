@@ -10,6 +10,9 @@ using ReactiveUI.Validation.Extensions;
 
 namespace Cobalt.Common.ViewModels.Dialogs;
 
+/// <summary>
+///     Dialog ViewModel to add new Alerts
+/// </summary>
 public class AddAlertDialogViewModel : AlertDialogViewModelBase
 {
     public AddAlertDialogViewModel(IEntityViewModelCache entityCache, IDbContextFactory<QueryContext> contexts) : base(

@@ -17,7 +17,7 @@ using ReactiveUI.Validation.Extensions;
 namespace Cobalt.Common.ViewModels.Dialogs;
 
 /// <summary>
-///     Dialog ViewModel to Add Alert
+///     Dialog ViewModel to modify Alerts
 /// </summary>
 public abstract partial class AlertDialogViewModelBase : DialogViewModelBase<AlertViewModel>, IValidatableViewModel
 {

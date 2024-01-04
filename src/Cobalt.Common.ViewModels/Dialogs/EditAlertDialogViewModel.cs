@@ -12,6 +12,9 @@ using ReactiveUI.Validation.Extensions;
 
 namespace Cobalt.Common.ViewModels.Dialogs;
 
+/// <summary>
+///     Dialog ViewModel to edit existing Alerts
+/// </summary>
 public partial class EditAlertDialogViewModel : AlertDialogViewModelBase
 {
     private readonly AlertViewModel _alert;
