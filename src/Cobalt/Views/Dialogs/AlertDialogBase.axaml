@@ -12,7 +12,7 @@
                                 xmlns:entityViews="clr-namespace:Cobalt.Views.Entities"
                                 xmlns:dialogsView="clr-namespace:Cobalt.Views.Dialogs"
                                 mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="650"
-                                x:Class="Cobalt.Views.Dialogs.AddAlertDialog"
+                                x:Class="Cobalt.Views.Dialogs.AlertDialogBase"
                                 x:DataType="dialogs:AlertDialogViewModelBase">
 
     <StackPanel Orientation="Vertical" Spacing="16" MinWidth="600"

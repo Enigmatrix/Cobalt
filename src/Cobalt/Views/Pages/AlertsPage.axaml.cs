@@ -15,10 +15,10 @@ public partial class AlertsPage : ReactiveUserControl<AlertsPageViewModel>
         this.WhenActivated(dis =>
         {
             ViewModel!.AddAlertInteraction.RegisterHandler(async context =>
-                    context.SetOutput(await context.Input.ShowDialog(new AddAlertDialog())))
+                    context.SetOutput(await context.Input.ShowDialog(new AlertDialogBase())))
                 .DisposeWith(dis);
             ViewModel!.EditAlertInteraction.RegisterHandler(async context =>
-                    context.SetOutput(await context.Input.ShowDialog(new AddAlertDialog())))
+                    context.SetOutput(await context.Input.ShowDialog(new AlertDialogBase())))
                 .DisposeWith(dis);
         });
     }
