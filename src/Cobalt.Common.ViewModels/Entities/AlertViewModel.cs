@@ -110,14 +110,18 @@ public partial class TriggerActionViewModel : ReactiveObservableObject, IValidat
     /// <summary>
     ///     Convert back to a <see cref="TriggerAction" />
     /// </summary>
-    public TriggerAction ToTriggerAction()
+    public TriggerAction? ToTriggerAction()
     {
-        if (!ValidationContext.IsValid) throw new InvalidOperationException("Trigger Action is not in a valid state");
-        TriggerAction triggerAction = Tag switch
+        if (!ValidationContext.IsValid) return null;
+        var triggerAction = Tag switch
         {
-            0 => new TriggerAction.Kill(),
+            /*0 => new TriggerAction.Kill(),
             1 => new TriggerAction.Message(MessageContent!),
-            2 => new TriggerAction.Dim(DimDuration!.Value),
+            2 => new TriggerAction.Dim(DimDuration!.Value),*/
+            // Until DbContexts can recognize DUs and load them properly from the db, we gotta resort to this
+            0 => new TriggerAction(0),
+            1 => new TriggerAction(1, MessageContent!),
+            2 => new TriggerAction(2, DimDuration: DimDuration!.Value),
             _ => throw new DiscriminatedUnionException<long?>(nameof(Tag), Tag)
         };
 
