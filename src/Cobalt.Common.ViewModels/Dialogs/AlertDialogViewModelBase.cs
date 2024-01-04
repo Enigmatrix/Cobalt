@@ -25,7 +25,7 @@ public abstract partial class AlertDialogViewModelBase : DialogViewModelBase<Ale
     private readonly SourceList<EditableReminderViewModel> _reminders = new();
     protected readonly IEntityViewModelCache EntityCache;
     [ObservableProperty] private TimeFrame? _timeFrame;
-    [ObservableProperty] private TriggerActionViewModel _triggerAction = new();
+    [ObservableProperty] private TriggerActionViewModel _triggerAction;
     [ObservableProperty] private TimeSpan? _usageLimit;
 
 
@@ -36,6 +36,7 @@ public abstract partial class AlertDialogViewModelBase : DialogViewModelBase<Ale
         base(contexts)
     {
         EntityCache = entityCache;
+        TriggerAction = new TriggerActionViewModel();
         ChooseTargetDialog = new ChooseTargetDialogViewModel(EntityCache, Contexts);
 
         // This is validation context composition

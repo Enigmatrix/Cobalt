@@ -17,9 +17,10 @@ public partial class ChooseTargetDialogViewModel : ViewModelBase, IActivatableVi
     [ObservableProperty] private string _search = "";
     [ObservableProperty] private EntityViewModelBase? _target;
 
-    public ChooseTargetDialogViewModel(IEntityViewModelCache entityCache, IDbContextFactory<QueryContext> contexts) :
+    public ChooseTargetDialogViewModel(IEntityViewModelCache entityCache, IDbContextFactory<QueryContext> contexts, EntityViewModelBase? target = null) :
         base(contexts)
     {
+        Target = target;
         var searches = this.WhenAnyValue(self => self.Search);
 
         Apps = Query(searches,
