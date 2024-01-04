@@ -1,4 +1,5 @@
-<reactiveUi:ReactiveUserControl x:TypeArguments="dialogs:AddAlertDialogViewModel" xmlns="https://github.com/avaloniaui"
+<reactiveUi:ReactiveUserControl x:TypeArguments="dialogs:AlertDialogViewModelBase"
+                                xmlns="https://github.com/avaloniaui"
                                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                                 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                                 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -12,7 +13,7 @@
                                 xmlns:dialogsView="clr-namespace:Cobalt.Views.Dialogs"
                                 mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="650"
                                 x:Class="Cobalt.Views.Dialogs.AddAlertDialog"
-                                x:DataType="dialogs:AddAlertDialogViewModel">
+                                x:DataType="dialogs:AlertDialogViewModelBase">
 
     <StackPanel Orientation="Vertical" Spacing="16" MinWidth="600"
                 HorizontalAlignment="Stretch">
@@ -236,9 +237,9 @@
             <fluent:SettingsExpander.ItemTemplate>
                 <DataTemplate DataType="entities:EditableReminderViewModel">
                     <entityViews:ReminderListItemView ViewModel="{Binding}"
-                                                      UsageLimit="{Binding $parent[StackPanel].((dialogs:AddAlertDialogViewModel)DataContext).UsageLimit}"
+                                                      UsageLimit="{Binding $parent[StackPanel].((dialogs:AlertDialogViewModelBase)DataContext).UsageLimit}"
                                                       DeleteCommandParameter="{Binding}"
-                                                      DeleteCommand="{Binding $parent[StackPanel].((dialogs:AddAlertDialogViewModel)DataContext).DeleteReminderCommand}" />
+                                                      DeleteCommand="{Binding $parent[StackPanel].((dialogs:AlertDialogViewModelBase)DataContext).DeleteReminderCommand}" />
                 </DataTemplate>
             </fluent:SettingsExpander.ItemTemplate>
 

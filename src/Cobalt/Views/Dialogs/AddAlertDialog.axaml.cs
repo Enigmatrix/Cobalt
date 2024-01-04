@@ -6,7 +6,7 @@ using ReactiveUI;
 
 namespace Cobalt.Views.Dialogs;
 
-public partial class AddAlertDialog : ReactiveUserControl<AddAlertDialogViewModel>
+public partial class AddAlertDialog : ReactiveUserControl<AlertDialogViewModelBase>
 {
     public AddAlertDialog()
     {
