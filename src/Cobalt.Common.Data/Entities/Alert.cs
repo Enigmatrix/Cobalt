@@ -10,17 +10,17 @@ namespace Cobalt.Common.Data.Entities;
 ///     Action to take once the <see cref="Alert.UsageLimit" /> has been reached.
 /// </summary>
 [ComplexType]
-public record TriggerAction(long Tag, string? MessageContent, TimeSpan? DimDuration)
+public record TriggerAction(long Tag, string? MessageContent = null, TimeSpan? DimDuration = null)
 {
     public const int KillTag = 0;
     public const int MessageTag = 1;
     public const int DimTag = 2;
 
-    public sealed record Kill() : TriggerAction(0, null, null);
+    public sealed record Kill() : TriggerAction(0);
 
-    public sealed record Message(string Content) : TriggerAction(1, Content, null);
+    public sealed record Message(string Content) : TriggerAction(1, Content);
 
-    public sealed record Dim(TimeSpan Duration) : TriggerAction(2, null, Duration);
+    public sealed record Dim(TimeSpan Duration) : TriggerAction(2, DimDuration: Duration);
 }
 
 /// <summary>
