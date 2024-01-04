@@ -1,24 +1,29 @@
 ﻿using System.Reactive;
+using System.Reactive.Linq;
 using Cobalt.Common.Data;
 using Cobalt.Common.ViewModels.Entities;
+using CommunityToolkit.Mvvm.ComponentModel;
 using DynamicData;
+using DynamicData.Binding;
 using Microsoft.EntityFrameworkCore;
 using ReactiveUI;
 using ReactiveUI.Validation.Extensions;
 
 namespace Cobalt.Common.ViewModels.Dialogs;
 
-public class EditAlertDialogViewModel : AlertDialogViewModelBase
+public partial class EditAlertDialogViewModel : AlertDialogViewModelBase
 {
     private readonly AlertViewModel _alert;
+    [ObservableProperty] private bool _isDirty;
 
     public EditAlertDialogViewModel(AlertViewModel alert, IEntityViewModelCache entityCache,
         IDbContextFactory<QueryContext> contexts) : base(
         entityCache, contexts)
     {
         _alert = alert;
+        var originalTarget = (EntityViewModelBase?)alert.App ?? alert.Tag!;
         ChooseTargetDialog =
-            new ChooseTargetDialogViewModel(EntityCache, Contexts, (EntityViewModelBase?)alert.App ?? alert.Tag!);
+            new ChooseTargetDialogViewModel(EntityCache, Contexts, originalTarget);
         UsageLimit = alert.UsageLimit;
         TimeFrame = alert.TimeFrame;
         TriggerAction = new TriggerActionViewModel(alert.TriggerAction);
@@ -26,6 +31,18 @@ public class EditAlertDialogViewModel : AlertDialogViewModelBase
 
         // This is validation context composition
         ValidationContext.Add(TriggerAction.ValidationContext);
+
+        var isDirty = this.WhenAnyValue(
+            self => self.ChooseTargetDialog!.Target,
+            self => self.UsageLimit,
+            self => self.TimeFrame,
+            (target, usageLimit, timeFrame) =>
+                target != originalTarget || usageLimit != alert.UsageLimit || timeFrame != alert.TimeFrame);
+        isDirty = isDirty.CombineLatest(TriggerAction.WhenAnyPropertyChanged().Select(triggerAction =>
+                triggerAction!.ToTriggerAction() != alert.TriggerAction).StartWith(false),
+            (dirty, triggerActionDirty) => dirty || triggerActionDirty);
+
+        isDirty.Subscribe(dirty => IsDirty = dirty);
     }
 
 
@@ -33,9 +50,20 @@ public class EditAlertDialogViewModel : AlertDialogViewModelBase
     public override string PrimaryButtonText => "Save";
     public override string CloseButtonText => "Discard";
 
+    // TODO IsDirty tracking:
+    // - Check if any of the current Alert properties are not equal to the original AlertViewModel properties
+    //    - Good thing about 2-level tracking is that we can directly compare the EntityViewModel of App/Tag
+    // - Check if any Reminder is dirty
+    //    - For newly added Reminders, they are always considered dirty, so this works out.
+    //    - If a newly added Reminder is then immediately removed, then the it's dirty-ness is removed, which is correct.
+
+    // TODO if we switch from kill -> dimduration, the first duration entered in dimduration does not trigger validation - the custom validation shit needs to be fixed!
 
     public override ReactiveCommand<Unit, Unit> PrimaryButtonCommand =>
-        ReactiveCommand.CreateFromTask(SaveAlertAsync, this.IsValid()); // TODO valid + isdirty
+        ReactiveCommand.CreateFromTask(SaveAlertAsync,
+            this.IsValid()
+                .CombineLatest(this.WhenAnyValue(self => self.IsDirty),
+                    (valid, dirty) => valid && dirty));
 
     public async Task SaveAlertAsync()
     {
