@@ -23,7 +23,7 @@ public partial class EditableReminderViewModel : ReactiveObservableObject, IVali
     [ObservableProperty] private string? _message;
     [ObservableProperty] private double _threshold = double.NaN;
 
-    public EditableReminderViewModel(Reminder? reminder = null)
+    public EditableReminderViewModel(Reminder? reminder = null, bool editing = false)
     {
         Reminder = reminder;
         if (reminder != null)
@@ -32,7 +32,7 @@ public partial class EditableReminderViewModel : ReactiveObservableObject, IVali
             Threshold = reminder.Threshold;
         }
 
-        Editing = true;
+        Editing = editing;
         CommitMessage = Message;
         CommitThreshold = Threshold;
 
