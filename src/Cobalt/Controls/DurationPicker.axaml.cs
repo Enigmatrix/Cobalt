@@ -62,7 +62,7 @@ public partial class DurationPicker : UserControl
 
     protected override void OnLoaded(RoutedEventArgs e)
     {
-        ViewModel = new DurationPickerViewModel();
+        ViewModel = new DurationPickerViewModel(Duration);
         _durationBind = ViewModel.WhenAnyValue(self => self.Duration).Subscribe(x => { Duration = x; });
 
         base.OnLoaded(e);
@@ -106,8 +106,9 @@ public partial class DurationPickerViewModel : ReactiveObservableObject, IValida
     [ObservableProperty] private TimeSpan? _duration;
     [ObservableProperty] private string? _text;
 
-    public DurationPickerViewModel()
+    public DurationPickerViewModel(TimeSpan? duration)
     {
+        Duration = duration;
         this.ValidationRule(self => self.Text, text => TimeSpanParser.TryParse(text, out _), "Invalid duration");
         _propertyBinding = this.WhenAnyValue(self => self.Text)
             .Where(text => TimeSpanParser.TryParse(text, out _))
