@@ -19,11 +19,19 @@ public partial class EditableReminderViewModel : ReactiveObservableObject, IVali
     [ObservableProperty] private string? _commitMessage;
     [ObservableProperty] private double _commitThreshold;
     [ObservableProperty] private bool _editing;
+    [ObservableProperty] private bool _isDirty;
     [ObservableProperty] private string? _message;
     [ObservableProperty] private double _threshold = double.NaN;
 
-    public EditableReminderViewModel()
+    public EditableReminderViewModel(Reminder? reminder = null)
     {
+        Reminder = reminder;
+        if (reminder != null)
+        {
+            Message = reminder.Message;
+            Threshold = reminder.Threshold;
+        }
+
         Editing = true;
         CommitMessage = Message;
         CommitThreshold = Threshold;
@@ -44,6 +52,13 @@ public partial class EditableReminderViewModel : ReactiveObservableObject, IVali
             Editing = false;
         }, commitsValid);
 
+        // Setup IsDirty
+        this.WhenAnyValue(self => self.Message, self => self.Threshold,
+                // ReSharper disable once CompareOfFloatsByEqualityOperator
+                (message, threshold) =>
+                    Reminder == null || (Reminder.Message != message && Reminder.Threshold != threshold))
+            .Subscribe(isDirty => IsDirty = isDirty);
+
         // Mark the properties as valid at start for the properties
         this.ValidationRule(self => self.CommitMessage,
             this.WhenAnyValue(self => self.CommitMessage,
@@ -58,6 +73,8 @@ public partial class EditableReminderViewModel : ReactiveObservableObject, IVali
         this.ValidationRule(this.WhenAnyValue(self => self.Threshold,
             threshold => !double.IsNaN(threshold)), "Threshold is empty");
     }
+
+    public Reminder? Reminder { get; set; }
 
     public ReactiveCommand<Unit, Unit> StopEditingCommand { get; }
     public ReactiveCommand<Unit, Unit> StartEditingCommand { get; }
