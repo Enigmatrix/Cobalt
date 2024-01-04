@@ -31,6 +31,7 @@ public class EditAlertDialogViewModel : AlertDialogViewModelBase
 
     public override string Title => "Edit Alert";
     public override string PrimaryButtonText => "Save";
+    public override string CloseButtonText => "Discard";
 
 
     public override ReactiveCommand<Unit, Unit> PrimaryButtonCommand =>
