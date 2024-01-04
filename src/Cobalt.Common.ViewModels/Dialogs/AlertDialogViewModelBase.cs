@@ -24,9 +24,9 @@ public abstract partial class AlertDialogViewModelBase : DialogViewModelBase<Ale
     protected readonly IEntityViewModelCache EntityCache;
     protected readonly SourceList<EditableReminderViewModel> RemindersSource = new();
 
-    [ObservableProperty] private ChooseTargetDialogViewModel _chooseTargetDialog;
+    [ObservableProperty] private ChooseTargetDialogViewModel? _chooseTargetDialog;
     [ObservableProperty] private TimeFrame? _timeFrame;
-    [ObservableProperty] private TriggerActionViewModel _triggerAction;
+    [ObservableProperty] private TriggerActionViewModel? _triggerAction;
     [ObservableProperty] private TimeSpan? _usageLimit;
 
 
@@ -45,7 +45,7 @@ public abstract partial class AlertDialogViewModelBase : DialogViewModelBase<Ale
         // This does not need to be disposed, and exists here so that at the point before activation,
         // the Primary Button is already disabled
         this.ValidationRule(this.WhenAnyValue(
-                self => self.ChooseTargetDialog.Target,
+                self => self.ChooseTargetDialog!.Target,
                 self => self.UsageLimit,
                 self => self.TimeFrame),
             props => props is { Item1: not null, Item2: not null, Item3: not null },

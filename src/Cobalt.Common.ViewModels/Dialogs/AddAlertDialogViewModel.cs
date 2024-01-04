@@ -45,7 +45,7 @@ public class AddAlertDialogViewModel : AlertDialogViewModelBase
             Guid = Guid.NewGuid(),
             Version = 1,
             TimeFrame = TimeFrame!.Value,
-            TriggerAction = TriggerAction.ToTriggerAction(),
+            TriggerAction = TriggerAction!.ToTriggerAction(),
             UsageLimit = UsageLimit!.Value
         };
         alert.Reminders.AddRange(Reminders.Select(reminder => new Reminder
@@ -56,7 +56,7 @@ public class AddAlertDialogViewModel : AlertDialogViewModelBase
             Threshold = reminder.Threshold,
             Alert = alert
         }));
-        switch (ChooseTargetDialog.Target)
+        switch (ChooseTargetDialog!.Target)
         {
             case AppViewModel app:
                 alert.App = app.Entity;
