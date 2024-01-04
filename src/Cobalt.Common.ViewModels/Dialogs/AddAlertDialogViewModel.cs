@@ -1,5 +1,4 @@
-﻿using System.Collections.ObjectModel;
-using System.Reactive;
+﻿using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using Cobalt.Common.Data;
@@ -24,6 +23,7 @@ namespace Cobalt.Common.ViewModels.Dialogs;
 public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewModel>, IValidatableViewModel
 {
     private readonly IEntityViewModelCache _entityCache;
+    private readonly SourceList<EditableReminderViewModel> _reminders = new();
     [ObservableProperty] private TimeFrame? _timeFrame;
     [ObservableProperty] private TriggerActionViewModel _triggerAction = new();
     [ObservableProperty] private TimeSpan? _usageLimit;
@@ -41,12 +41,11 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
         // This is validation context composition
         ValidationContext.Add(TriggerAction.ValidationContext);
 
-        var validUsageLimitAndTimeFrame =
-            this.WhenAnyValue(self => self.UsageLimit, self => self.TimeFrame, ValidUsageLimitAndTimeFrame);
-
         // Additionally, validation that all our properties are set.
         // This isn't a validation rule we don't want to display "X is unset" errors,
         // that would just mean the entire form is red.
+        // This does not need to be disposed, and exists here so that at the point before activation,
+        // the Primary Button is already disabled
         this.ValidationRule(this.WhenAnyValue(
                 self => self.ChooseTargetDialog.Target,
                 self => self.UsageLimit,
@@ -54,24 +53,19 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
             props => props is { Item1: not null, Item2: not null, Item3: not null },
             _ => "Fields are empty");
 
-
-        this.ValidationRule(Reminders
-                .ToObservableChangeSet(reminder => reminder) // the List version does not have TrueForAll
-                .TrueForAll(reminder => reminder.IsValid()
-                        .CombineLatest(reminder.WhenAnyValue(self => self.Editing)),
-                    static prop => prop is { First: true, Second: false })
-                .StartWith(true), // Reminders are empty at start
-            "Reminders are invalid");
-
         PrimaryButtonCommand =
             ReactiveCommand.CreateFromTask(ProduceAlert, this.IsValid());
 
         this.WhenActivated(dis =>
         {
+            _reminders.Clear();
+            Reminders.Clear(); // since we dispose of the Bind, we need to clean this ourselves
             UsageLimit = null;
             TimeFrame = null;
             TriggerAction.Clear();
 
+            var validUsageLimitAndTimeFrame =
+                this.WhenAnyValue(self => self.UsageLimit, self => self.TimeFrame, ValidUsageLimitAndTimeFrame);
 
             this.ValidationRule(self => self.TimeFrame, validUsageLimitAndTimeFrame,
                 "Time Frame smaller than Usage Limit").DisposeWith(dis);
@@ -80,12 +74,29 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
                 "Usage Limit larger than Time Frame").DisposeWith(dis);
             this.ValidationRule(self => self.UsageLimit, usageLimit => usageLimit == null || usageLimit > TimeSpan.Zero,
                 "Usage Limit cannot be negative").DisposeWith(dis);
+
+            _reminders
+                .Connect()
+                .AutoRefreshOnObservable(reminder => reminder.WhenAnyValue(self => self.Threshold))
+                .Sort(SortExpressionComparer<EditableReminderViewModel>.Ascending(reminder => reminder.Threshold))
+                .Bind(Reminders)
+                .Subscribe()
+                .DisposeWith(dis);
+
+            this.ValidationRule(_reminders.Connect()
+                    .AddKey(reminder =>
+                        reminder) // This is just to change this to a SourceCache-model since TrueForAll only exists for this
+                    .TrueForAll(reminder => reminder.IsValid()
+                            .CombineLatest(reminder.WhenAnyValue(self => self.Editing)),
+                        static prop => prop is { First: true, Second: false })
+                    .StartWith(true), // Reminders are empty at start
+                "Reminders are invalid").DisposeWith(dis);
         });
     }
 
     public ChooseTargetDialogViewModel ChooseTargetDialog { get; set; }
 
-    public ObservableCollection<IReminderViewModel> Reminders { get; } = [];
+    public ObservableCollectionExtended<EditableReminderViewModel> Reminders { get; } = new();
 
     public override ReactiveCommand<Unit, Unit> PrimaryButtonCommand { get; set; }
 
@@ -97,13 +108,13 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
 
     public void AddReminder()
     {
-        Reminders.Add(new NewlyAddedReminderViewModel());
+        _reminders.Add(new EditableReminderViewModel());
     }
 
     [RelayCommand]
-    public void DeleteReminder(IReminderViewModel reminder)
+    public void DeleteReminder(EditableReminderViewModel reminder)
     {
-        Reminders.Remove(reminder);
+        _reminders.Remove(reminder);
     }
 
     private bool ValidUsageLimitAndTimeFrame(TimeSpan? usageLimit, TimeFrame? timeFrame)
