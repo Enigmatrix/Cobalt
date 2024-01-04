@@ -21,7 +21,7 @@ namespace Cobalt.Common.ViewModels.Dialogs;
 /// </summary>
 public abstract partial class AlertDialogViewModelBase : DialogViewModelBase<AlertViewModel>, IValidatableViewModel
 {
-    protected readonly SourceList<EditableReminderViewModel> _reminders = new();
+    protected readonly SourceList<EditableReminderViewModel> RemindersSource = new();
     protected readonly IEntityViewModelCache EntityCache;
     [ObservableProperty] private TimeFrame? _timeFrame;
     [ObservableProperty] private TriggerActionViewModel _triggerAction;
@@ -38,8 +38,6 @@ public abstract partial class AlertDialogViewModelBase : DialogViewModelBase<Ale
     // _reminders
     // the normal properties
     // PrimaryButtonCommand needs to be changed
-
-    // idea: an overridable InitializeProperties(AlertViewModel?) and ResetProperties(AlertViewModel?)
 
     protected AlertDialogViewModelBase(IEntityViewModelCache entityCache, IDbContextFactory<QueryContext> contexts) :
         base(contexts)
@@ -76,7 +74,7 @@ public abstract partial class AlertDialogViewModelBase : DialogViewModelBase<Ale
             this.ValidationRule(self => self.UsageLimit, usageLimit => usageLimit == null || usageLimit > TimeSpan.Zero,
                 "Usage Limit cannot be negative").DisposeWith(dis);
 
-            _reminders
+            RemindersSource
                 .Connect()
                 .AutoRefreshOnObservable(reminder => reminder.WhenAnyValue(self => self.Threshold))
                 .Sort(SortExpressionComparer<EditableReminderViewModel>.Ascending(reminder => reminder.Threshold))
@@ -84,7 +82,8 @@ public abstract partial class AlertDialogViewModelBase : DialogViewModelBase<Ale
                 .Subscribe()
                 .DisposeWith(dis);
 
-            this.ValidationRule(_reminders.Connect()
+            this.ValidationRule(RemindersSource
+                    .Connect()
                     .AddKey(reminder =>
                         reminder) // This is just to change this to a SourceCache-model since TrueForAll only exists for this
                     .TrueForAll(reminder => reminder.IsValid()
@@ -105,13 +104,13 @@ public abstract partial class AlertDialogViewModelBase : DialogViewModelBase<Ale
 
     public void AddReminder()
     {
-        _reminders.Add(new EditableReminderViewModel());
+        RemindersSource.Add(new EditableReminderViewModel());
     }
 
     [RelayCommand]
     public void DeleteReminder(EditableReminderViewModel reminder)
     {
-        _reminders.Remove(reminder);
+        RemindersSource.Remove(reminder);
     }
 
     private bool ValidUsageLimitAndTimeFrame(TimeSpan? usageLimit, TimeFrame? timeFrame)

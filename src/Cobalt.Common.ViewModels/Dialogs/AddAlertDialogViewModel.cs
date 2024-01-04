@@ -17,7 +17,7 @@ public class AddAlertDialogViewModel : AlertDialogViewModelBase
     {
         this.WhenActivated((CompositeDisposable dis) =>
         {
-            _reminders.Clear();
+            RemindersSource.Clear();
             Reminders.Clear(); // since we dispose of the Bind, we need to clean this ourselves
             UsageLimit = null;
             TimeFrame = null;
