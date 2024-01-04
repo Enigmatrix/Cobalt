@@ -22,8 +22,8 @@ namespace Cobalt.Common.ViewModels.Dialogs;
 /// </summary>
 public abstract partial class AlertDialogViewModelBase : DialogViewModelBase<AlertViewModel>, IValidatableViewModel
 {
-    private readonly IEntityViewModelCache _entityCache;
     private readonly SourceList<EditableReminderViewModel> _reminders = new();
+    protected readonly IEntityViewModelCache EntityCache;
     [ObservableProperty] private TimeFrame? _timeFrame;
     [ObservableProperty] private TriggerActionViewModel _triggerAction = new();
     [ObservableProperty] private TimeSpan? _usageLimit;
@@ -32,11 +32,11 @@ public abstract partial class AlertDialogViewModelBase : DialogViewModelBase<Ale
     // TODO count how many refreshes are done, try to get rid of the assumeRefreshIsCalled parameter
     // TODO too many ^ bindings to Apps/Tags, try reduce?
 
-    public AlertDialogViewModelBase(IEntityViewModelCache entityCache, IDbContextFactory<QueryContext> contexts) :
+    protected AlertDialogViewModelBase(IEntityViewModelCache entityCache, IDbContextFactory<QueryContext> contexts) :
         base(contexts)
     {
-        _entityCache = entityCache;
-        ChooseTargetDialog = new ChooseTargetDialogViewModel(_entityCache, Contexts);
+        EntityCache = entityCache;
+        ChooseTargetDialog = new ChooseTargetDialogViewModel(EntityCache, Contexts);
 
         // This is validation context composition
         ValidationContext.Add(TriggerAction.ValidationContext);
@@ -100,9 +100,7 @@ public abstract partial class AlertDialogViewModelBase : DialogViewModelBase<Ale
 
     public override ReactiveCommand<Unit, Unit> PrimaryButtonCommand { get; set; }
 
-    public override string Title => "Add Alert";
-
-    private AlertViewModel? Result { get; set; }
+    protected AlertViewModel? Result { get; set; }
 
     public ValidationContext ValidationContext { get; } = new();
 
@@ -130,43 +128,7 @@ public abstract partial class AlertDialogViewModelBase : DialogViewModelBase<Ale
         };
     }
 
-    public async Task ProduceAlert()
-    {
-        var alert = new Alert
-        {
-            Guid = Guid.NewGuid(),
-            Version = 1,
-            TimeFrame = TimeFrame!.Value,
-            TriggerAction = TriggerAction.ToTriggerAction(),
-            UsageLimit = UsageLimit!.Value
-        };
-        alert.Reminders.AddRange(Reminders.Select(reminder => new Reminder
-        {
-            Guid = Guid.NewGuid(),
-            Version = 1,
-            Message = reminder.Message!,
-            Threshold = reminder.Threshold,
-            Alert = alert
-        }));
-        switch (ChooseTargetDialog.Target)
-        {
-            case AppViewModel app:
-                alert.App = app.Entity;
-                break;
-            case TagViewModel tag:
-                alert.Tag = tag.Entity;
-                break;
-        }
-
-        await using var context = await Contexts.CreateDbContextAsync();
-        // Attach everything except reminders, which are instead in the added state
-        context.Attach(alert);
-        context.AddRange(alert.Reminders);
-        await context.AddAsync(alert);
-        await context.SaveChangesAsync();
-
-        Result = new AlertViewModel(alert, _entityCache, Contexts);
-    }
+    public abstract Task ProduceAlert();
 
     public override AlertViewModel GetResult()
     {
