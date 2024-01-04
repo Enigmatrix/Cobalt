@@ -1,143 +1,54 @@
 ﻿using System.Reactive;
 using System.Reactive.Disposables;
-using System.Reactive.Linq;
 using Cobalt.Common.Data;
 using Cobalt.Common.Data.Entities;
-using Cobalt.Common.Util;
 using Cobalt.Common.ViewModels.Entities;
-using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
 using DynamicData;
-using DynamicData.Binding;
 using Microsoft.EntityFrameworkCore;
 using ReactiveUI;
-using ReactiveUI.Validation.Abstractions;
-using ReactiveUI.Validation.Contexts;
 using ReactiveUI.Validation.Extensions;
 
 namespace Cobalt.Common.ViewModels.Dialogs;
 
 /// <summary>
-///     Dialog ViewModel to Add Alert
+///     Dialog ViewModel to add new Alerts
 /// </summary>
-public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewModel>, IValidatableViewModel
+public class AddAlertDialogViewModel : AlertDialogViewModelBase
 {
-    private readonly IEntityViewModelCache _entityCache;
-    private readonly SourceList<EditableReminderViewModel> _reminders = new();
-    [ObservableProperty] private TimeFrame? _timeFrame;
-    [ObservableProperty] private TriggerActionViewModel _triggerAction = new();
-    [ObservableProperty] private TimeSpan? _usageLimit;
-
-
-    // TODO count how many refreshes are done, try to get rid of the assumeRefreshIsCalled parameter
-    // TODO too many ^ bindings to Apps/Tags, try reduce?
-
-    public AddAlertDialogViewModel(IEntityViewModelCache entityCache, IDbContextFactory<QueryContext> contexts) :
-        base(contexts)
+    public AddAlertDialogViewModel(IEntityViewModelCache entityCache, IDbContextFactory<QueryContext> contexts) : base(
+        entityCache, contexts)
     {
-        _entityCache = entityCache;
-        ChooseTargetDialog = new ChooseTargetDialogViewModel(_entityCache, Contexts);
+        TriggerAction = new TriggerActionViewModel();
+        ChooseTargetDialog = new ChooseTargetDialogViewModel(EntityCache, Contexts);
 
         // This is validation context composition
         ValidationContext.Add(TriggerAction.ValidationContext);
 
-        // Additionally, validation that all our properties are set.
-        // This isn't a validation rule we don't want to display "X is unset" errors,
-        // that would just mean the entire form is red.
-        // This does not need to be disposed, and exists here so that at the point before activation,
-        // the Primary Button is already disabled
-        this.ValidationRule(this.WhenAnyValue(
-                self => self.ChooseTargetDialog.Target,
-                self => self.UsageLimit,
-                self => self.TimeFrame),
-            props => props is { Item1: not null, Item2: not null, Item3: not null },
-            _ => "Fields are empty");
-
-        PrimaryButtonCommand =
-            ReactiveCommand.CreateFromTask(ProduceAlert, this.IsValid());
-
-        this.WhenActivated(dis =>
+        this.WhenActivated((CompositeDisposable dis) =>
         {
-            _reminders.Clear();
+            RemindersSource.Clear();
             Reminders.Clear(); // since we dispose of the Bind, we need to clean this ourselves
             UsageLimit = null;
             TimeFrame = null;
             TriggerAction.Clear();
-
-            var validUsageLimitAndTimeFrame =
-                this.WhenAnyValue(self => self.UsageLimit, self => self.TimeFrame, ValidUsageLimitAndTimeFrame);
-
-            this.ValidationRule(self => self.TimeFrame, validUsageLimitAndTimeFrame,
-                "Time Frame smaller than Usage Limit").DisposeWith(dis);
-
-            this.ValidationRule(self => self.UsageLimit, validUsageLimitAndTimeFrame,
-                "Usage Limit larger than Time Frame").DisposeWith(dis);
-            this.ValidationRule(self => self.UsageLimit, usageLimit => usageLimit == null || usageLimit > TimeSpan.Zero,
-                "Usage Limit cannot be negative").DisposeWith(dis);
-
-            _reminders
-                .Connect()
-                .AutoRefreshOnObservable(reminder => reminder.WhenAnyValue(self => self.Threshold))
-                .Sort(SortExpressionComparer<EditableReminderViewModel>.Ascending(reminder => reminder.Threshold))
-                .Bind(Reminders)
-                .Subscribe()
-                .DisposeWith(dis);
-
-            this.ValidationRule(_reminders.Connect()
-                    .AddKey(reminder =>
-                        reminder) // This is just to change this to a SourceCache-model since TrueForAll only exists for this
-                    .TrueForAll(reminder => reminder.IsValid()
-                            .CombineLatest(reminder.WhenAnyValue(self => self.Editing)),
-                        static prop => prop is { First: true, Second: false })
-                    .StartWith(true), // Reminders are empty at start
-                "Reminders are invalid").DisposeWith(dis);
+            ChooseTargetDialog.Clear();
         });
     }
 
-    public ChooseTargetDialogViewModel ChooseTargetDialog { get; set; }
-
-    public ObservableCollectionExtended<EditableReminderViewModel> Reminders { get; } = new();
-
-    public override ReactiveCommand<Unit, Unit> PrimaryButtonCommand { get; set; }
-
     public override string Title => "Add Alert";
 
-    private AlertViewModel? Result { get; set; }
 
-    public ValidationContext ValidationContext { get; } = new();
+    public override ReactiveCommand<Unit, Unit> PrimaryButtonCommand =>
+        ReactiveCommand.CreateFromTask(AddAlertAsync, this.IsValid());
 
-    public void AddReminder()
-    {
-        _reminders.Add(new EditableReminderViewModel());
-    }
-
-    [RelayCommand]
-    public void DeleteReminder(EditableReminderViewModel reminder)
-    {
-        _reminders.Remove(reminder);
-    }
-
-    private bool ValidUsageLimitAndTimeFrame(TimeSpan? usageLimit, TimeFrame? timeFrame)
-    {
-        if (usageLimit == null || timeFrame == null) return true;
-
-        return timeFrame switch
-        {
-            Data.Entities.TimeFrame.Daily => usageLimit <= TimeSpan.FromDays(1),
-            Data.Entities.TimeFrame.Weekly => usageLimit <= TimeSpan.FromDays(7),
-            Data.Entities.TimeFrame.Monthly => usageLimit <= TimeSpan.FromDays(31),
-            _ => throw new DiscriminatedUnionException<TimeFrame?>(nameof(timeFrame), timeFrame)
-        };
-    }
-
-    public async Task ProduceAlert()
+    public async Task AddAlertAsync()
     {
         var alert = new Alert
         {
             Guid = Guid.NewGuid(),
             Version = 1,
             TimeFrame = TimeFrame!.Value,
-            TriggerAction = TriggerAction.ToTriggerAction(),
+            TriggerAction = TriggerAction!.ToTriggerAction()!,
             UsageLimit = UsageLimit!.Value
         };
         alert.Reminders.AddRange(Reminders.Select(reminder => new Reminder
@@ -148,7 +59,7 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
             Threshold = reminder.Threshold,
             Alert = alert
         }));
-        switch (ChooseTargetDialog.Target)
+        switch (ChooseTargetDialog!.Target)
         {
             case AppViewModel app:
                 alert.App = app.Entity;
@@ -165,11 +76,6 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
         await context.AddAsync(alert);
         await context.SaveChangesAsync();
 
-        Result = new AlertViewModel(alert, _entityCache, Contexts);
-    }
-
-    public override AlertViewModel GetResult()
-    {
-        return Result ?? throw new InvalidOperationException();
+        Result = new AlertViewModel(alert, EntityCache, Contexts);
     }
 }

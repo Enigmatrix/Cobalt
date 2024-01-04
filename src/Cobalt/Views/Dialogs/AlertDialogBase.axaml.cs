@@ -6,16 +6,16 @@ using ReactiveUI;
 
 namespace Cobalt.Views.Dialogs;
 
-public partial class AddAlertDialog : ReactiveUserControl<AddAlertDialogViewModel>
+public partial class AlertDialogBase : ReactiveUserControl<AlertDialogViewModelBase>
 {
-    public AddAlertDialog()
+    public AlertDialogBase()
     {
         InitializeComponent();
 
         // Hide the TargetPicker Flyout when we have an selected Target
         this.WhenActivated(dis =>
         {
-            ViewModel!.WhenAnyValue(self => self.ChooseTargetDialog.Target)
+            ViewModel!.WhenAnyValue(self => self.ChooseTargetDialog!.Target)
                 .WhereNotNull()
                 .Subscribe(_ => { TargetPicker.Flyout?.Hide(); }).DisposeWith(dis);
         });

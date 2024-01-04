@@ -22,17 +22,17 @@ public abstract class DialogViewModelBase<TResult> : ViewModelBase, IActivatable
     /// <summary>
     ///     PrimaryButtonText of this Dialog
     /// </summary>
-    public string PrimaryButtonText => "Submit";
+    public virtual string PrimaryButtonText => "Submit";
 
     /// <summary>
     ///     CloseButtonText of this Dialog
     /// </summary>
-    public string CloseButtonText => "Cancel";
+    public virtual string CloseButtonText => "Cancel";
 
     /// <summary>
     ///     PrimaryButtonCommand of this Dialog
     /// </summary>
-    public abstract ReactiveCommand<Unit, Unit> PrimaryButtonCommand { get; set; }
+    public abstract ReactiveCommand<Unit, Unit> PrimaryButtonCommand { get; }
 
     /// <summary>
     ///     Activator Context

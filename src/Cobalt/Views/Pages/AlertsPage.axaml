@@ -170,7 +170,19 @@
                                 </Grid>
                             </Expander.Header>
 
-                            <!-- TODO Some sort of visualization of target usage? -->
+                            <StackPanel>
+                                <controls:CommandBar VerticalAlignment="Center" HorizontalAlignment="Right">
+                                    <controls:CommandBar.PrimaryCommands>
+                                        <controls:CommandBarButton Label="Edit" IconSource="Edit"
+                                                                   CommandParameter="{Binding Inner}"
+                                                                   Command="{Binding $parent[ScrollViewer].((pages:AlertsPageViewModel)DataContext).EditAlertCommand}" />
+                                        <controls:CommandBarButton Label="Delete" IconSource="Delete"
+                                                                   CommandParameter="{Binding Inner}"
+                                                                   Command="{Binding $parent[ScrollViewer].((pages:AlertsPageViewModel)DataContext).DeleteAlertCommand}" />
+                                    </controls:CommandBar.PrimaryCommands>
+                                </controls:CommandBar>
+                                <!-- TODO Some sort of visualization of target usage? -->
+                            </StackPanel>
                         </Expander>
                     </DataTemplate>
                 </ItemsRepeater.ItemTemplate>
