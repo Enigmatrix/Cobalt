@@ -21,8 +21,10 @@ namespace Cobalt.Common.ViewModels.Dialogs;
 /// </summary>
 public abstract partial class AlertDialogViewModelBase : DialogViewModelBase<AlertViewModel>, IValidatableViewModel
 {
-    protected readonly SourceList<EditableReminderViewModel> RemindersSource = new();
     protected readonly IEntityViewModelCache EntityCache;
+    protected readonly SourceList<EditableReminderViewModel> RemindersSource = new();
+
+    [ObservableProperty] private ChooseTargetDialogViewModel _chooseTargetDialog;
     [ObservableProperty] private TimeFrame? _timeFrame;
     [ObservableProperty] private TriggerActionViewModel _triggerAction;
     [ObservableProperty] private TimeSpan? _usageLimit;
@@ -32,22 +34,10 @@ public abstract partial class AlertDialogViewModelBase : DialogViewModelBase<Ale
     // TODO too many ^ bindings to Apps/Tags, try reduce?
 
 
-    // TODO need to prefill:
-    // ChooseTargetDialogViewModel
-    // TriggerAlertViewModel
-    // _reminders
-    // the normal properties
-    // PrimaryButtonCommand needs to be changed
-
     protected AlertDialogViewModelBase(IEntityViewModelCache entityCache, IDbContextFactory<QueryContext> contexts) :
         base(contexts)
     {
         EntityCache = entityCache;
-        TriggerAction = new TriggerActionViewModel();
-        ChooseTargetDialog = new ChooseTargetDialogViewModel(EntityCache, Contexts);
-
-        // This is validation context composition
-        ValidationContext.Add(TriggerAction.ValidationContext);
 
         // Additionally, validation that all our properties are set.
         // This isn't a validation rule we don't want to display "X is unset" errors,
@@ -93,8 +83,6 @@ public abstract partial class AlertDialogViewModelBase : DialogViewModelBase<Ale
                 "Reminders are invalid").DisposeWith(dis);
         });
     }
-
-    public ChooseTargetDialogViewModel ChooseTargetDialog { get; set; }
 
     public ObservableCollectionExtended<EditableReminderViewModel> Reminders { get; } = new();
 

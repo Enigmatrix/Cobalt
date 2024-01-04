@@ -15,6 +15,12 @@ public class AddAlertDialogViewModel : AlertDialogViewModelBase
     public AddAlertDialogViewModel(IEntityViewModelCache entityCache, IDbContextFactory<QueryContext> contexts) : base(
         entityCache, contexts)
     {
+        TriggerAction = new TriggerActionViewModel();
+        ChooseTargetDialog = new ChooseTargetDialogViewModel(EntityCache, Contexts);
+
+        // This is validation context composition
+        ValidationContext.Add(TriggerAction.ValidationContext);
+
         this.WhenActivated((CompositeDisposable dis) =>
         {
             RemindersSource.Clear();
