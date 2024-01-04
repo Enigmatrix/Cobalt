@@ -135,14 +135,19 @@ public partial class TriggerActionViewModel : ReactiveObservableObject, IValidat
 public partial class AlertViewModel : EditableEntityViewModelBase<Alert>
 {
     [ObservableProperty] private AppViewModel? _app;
-    [ObservableProperty] private List<ReminderViewModel> _reminders;
+    [ObservableProperty] private List<ReminderViewModel> _reminders = default!;
     [ObservableProperty] private TagViewModel? _tag;
     [ObservableProperty] private TimeFrame _timeFrame;
-    [ObservableProperty] private TriggerAction _triggerAction;
+    [ObservableProperty] private TriggerAction _triggerAction = default!;
     [ObservableProperty] private TimeSpan _usageLimit;
 
     public AlertViewModel(Alert entity, IEntityViewModelCache entityCache, IDbContextFactory<QueryContext> contexts) :
         base(entity, entityCache, contexts)
+    {
+        InitializeWith(entity);
+    }
+
+    public void InitializeWith(Alert entity)
     {
         TimeFrame = entity.TimeFrame;
         UsageLimit = entity.UsageLimit;
