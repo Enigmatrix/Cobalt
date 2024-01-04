@@ -56,7 +56,7 @@ public partial class EditableReminderViewModel : ReactiveObservableObject, IVali
         this.WhenAnyValue(self => self.Message, self => self.Threshold,
                 // ReSharper disable once CompareOfFloatsByEqualityOperator
                 (message, threshold) =>
-                    Reminder == null || (Reminder.Message != message && Reminder.Threshold != threshold))
+                    Reminder == null || Reminder.Message != message || Reminder.Threshold != threshold)
             .Subscribe(isDirty => IsDirty = isDirty);
 
         // Mark the properties as valid at start for the properties

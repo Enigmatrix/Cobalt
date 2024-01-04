@@ -32,17 +32,23 @@ public partial class EditAlertDialogViewModel : AlertDialogViewModelBase
         // This is validation context composition
         ValidationContext.Add(TriggerAction.ValidationContext);
 
-        var isDirty = this.WhenAnyValue(
+        var propsDirty = this.WhenAnyValue(
             self => self.ChooseTargetDialog!.Target,
             self => self.UsageLimit,
             self => self.TimeFrame,
             (target, usageLimit, timeFrame) =>
                 target != originalTarget || usageLimit != alert.UsageLimit || timeFrame != alert.TimeFrame);
-        isDirty = isDirty.CombineLatest(TriggerAction.WhenAnyPropertyChanged().Select(triggerAction =>
-                triggerAction!.ToTriggerAction() != alert.TriggerAction).StartWith(false),
-            (dirty, triggerActionDirty) => dirty || triggerActionDirty);
+        // combine with TriggerActionViewModel
+        var triggerActionDirty = TriggerAction.WhenAnyPropertyChanged().Select(triggerAction =>
+            triggerAction!.ToTriggerAction() != alert.TriggerAction).StartWith(false);
+        // combine with Reminders
+        var remindersDirty = RemindersSource.Connect()
+            .AddKey(reminder => reminder)
+            .TrueForAny(reminder => reminder.WhenAnyValue(self => self.IsDirty), dirty => dirty)
+            .StartWith(false);
 
-        isDirty.Subscribe(dirty => IsDirty = dirty);
+        propsDirty.CombineLatest(triggerActionDirty, remindersDirty, (a, b, c) => a || b || c)
+            .BindTo(this, self => self.IsDirty);
     }
 
 
