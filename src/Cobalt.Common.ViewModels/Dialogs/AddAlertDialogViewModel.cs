@@ -23,7 +23,7 @@ namespace Cobalt.Common.ViewModels.Dialogs;
 public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewModel>, IValidatableViewModel
 {
     private readonly IEntityViewModelCache _entityCache;
-    private readonly SourceList<IReminderViewModel> _reminders = new();
+    private readonly SourceList<EditableReminderViewModel> _reminders = new();
     [ObservableProperty] private TimeFrame? _timeFrame;
     [ObservableProperty] private TriggerActionViewModel _triggerAction = new();
     [ObservableProperty] private TimeSpan? _usageLimit;
@@ -78,13 +78,14 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
             _reminders
                 .Connect()
                 .AutoRefreshOnObservable(reminder => reminder.WhenAnyValue(self => self.Threshold))
-                .Sort(SortExpressionComparer<IReminderViewModel>.Ascending(reminder => reminder.Threshold))
+                .Sort(SortExpressionComparer<EditableReminderViewModel>.Ascending(reminder => reminder.Threshold))
                 .Bind(Reminders)
                 .Subscribe()
                 .DisposeWith(dis);
 
             this.ValidationRule(_reminders.Connect()
-                    .AddKey(reminder => reminder) // This is just to change this to a SourceCache-model since TrueForAll only exists for this
+                    .AddKey(reminder =>
+                        reminder) // This is just to change this to a SourceCache-model since TrueForAll only exists for this
                     .TrueForAll(reminder => reminder.IsValid()
                             .CombineLatest(reminder.WhenAnyValue(self => self.Editing)),
                         static prop => prop is { First: true, Second: false })
@@ -95,7 +96,7 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
 
     public ChooseTargetDialogViewModel ChooseTargetDialog { get; set; }
 
-    public ObservableCollectionExtended<IReminderViewModel> Reminders { get; } = new();
+    public ObservableCollectionExtended<EditableReminderViewModel> Reminders { get; } = new();
 
     public override ReactiveCommand<Unit, Unit> PrimaryButtonCommand { get; set; }
 
@@ -107,11 +108,11 @@ public partial class AddAlertDialogViewModel : DialogViewModelBase<AlertViewMode
 
     public void AddReminder()
     {
-        _reminders.Add(new NewlyAddedReminderViewModel());
+        _reminders.Add(new EditableReminderViewModel());
     }
 
     [RelayCommand]
-    public void DeleteReminder(IReminderViewModel reminder)
+    public void DeleteReminder(EditableReminderViewModel reminder)
     {
         _reminders.Remove(reminder);
     }

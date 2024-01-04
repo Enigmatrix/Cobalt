@@ -7,10 +7,10 @@ using ReactiveUI;
 
 namespace Cobalt.Views.Entities;
 
-public partial class ReminderListItemView : SettingsExpanderItem, IViewFor<IReminderViewModel>
+public partial class ReminderListItemView : SettingsExpanderItem, IViewFor<EditableReminderViewModel>
 {
-    public static readonly StyledProperty<IReminderViewModel?> ViewModelProperty = AvaloniaProperty
-        .Register<ReminderListItemView, IReminderViewModel?>(nameof(ViewModel));
+    public static readonly StyledProperty<EditableReminderViewModel?> ViewModelProperty = AvaloniaProperty
+        .Register<ReminderListItemView, EditableReminderViewModel?>(nameof(ViewModel));
 
     public static readonly StyledProperty<TimeSpan?> UsageLimitProperty = AvaloniaProperty
         .Register<ReminderListItemView, TimeSpan?>(nameof(UsageLimit));
@@ -52,7 +52,7 @@ public partial class ReminderListItemView : SettingsExpanderItem, IViewFor<IRemi
     /// <summary>
     ///     The ViewModel.
     /// </summary>
-    public IReminderViewModel? ViewModel
+    public EditableReminderViewModel? ViewModel
     {
         get => GetValue(ViewModelProperty);
         set => SetValue(ViewModelProperty, value);
@@ -61,13 +61,13 @@ public partial class ReminderListItemView : SettingsExpanderItem, IViewFor<IRemi
     object? IViewFor.ViewModel
     {
         get => ViewModel;
-        set => ViewModel = (IReminderViewModel?)value;
+        set => ViewModel = (EditableReminderViewModel?)value;
     }
 
     protected override void OnDataContextChanged(EventArgs e)
     {
         base.OnDataContextChanged(e);
-        ViewModel = DataContext as IReminderViewModel;
+        ViewModel = DataContext as EditableReminderViewModel;
     }
 
     private void OnViewModelChanged(object? value)

@@ -234,7 +234,7 @@
             </fluent:SettingsExpander.IconSource>
 
             <fluent:SettingsExpander.ItemTemplate>
-                <DataTemplate DataType="entities:IReminderViewModel">
+                <DataTemplate DataType="entities:EditableReminderViewModel">
                     <entityViews:ReminderListItemView ViewModel="{Binding}"
                                                       UsageLimit="{Binding $parent[StackPanel].((dialogs:AddAlertDialogViewModel)DataContext).UsageLimit}"
                                                       DeleteCommandParameter="{Binding}"

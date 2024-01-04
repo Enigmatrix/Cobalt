@@ -12,79 +12,64 @@ using ReactiveUI.Validation.Extensions;
 namespace Cobalt.Common.ViewModels.Entities;
 
 /// <summary>
-///     ViewModel for the Reminder entity
+///     ViewModel for an editable Reminder Entity
 /// </summary>
-public interface IReminderViewModel : IValidatableViewModel, IReactiveObject
+public partial class EditableReminderViewModel : ReactiveObservableObject, IValidatableViewModel
 {
-    public bool Editing { get; set; }
-    public string Message { get; set; }
-    public double Threshold { get; set; }
-
-    public ReactiveCommand<Unit, Unit> StopEditingCommand { get; set; }
-    public ReactiveCommand<Unit, Unit> StartEditingCommand { get; set; }
-
-    public void Setup()
-    {
-        StartEditingCommand = ReactiveCommand.CreateFromTask(async () =>
-        {
-            await StartEditing();
-            Editing = true;
-        });
-        StopEditingCommand = ReactiveCommand.CreateFromTask(async () =>
-        {
-            await StopEditing();
-            Editing = false;
-        }, this.IsValid());
-
-        var messageValid = this.WhenAnyValue(self => self.Message, message => !string.IsNullOrWhiteSpace(message));
-        var thresholdValid = this.WhenAnyValue(self => self.Threshold, threshold => !double.IsNaN(threshold));
-
-        // Mark the properties as valid at start for the properties
-        this.ValidationRule(self => self.Message, messageValid.Skip(1).StartWith(true), "Message is empty");
-        this.ValidationRule(self => self.Threshold, thresholdValid.Skip(1).StartWith(true), "Threshold is empty");
-
-        // Validate the whole model at the start
-        this.ValidationRule(messageValid, "Message is empty");
-        this.ValidationRule(thresholdValid, "Threshold is empty");
-    }
-
-    public Task StopEditing()
-    {
-        return Task.CompletedTask;
-    }
-
-    public Task StartEditing()
-    {
-        return Task.CompletedTask;
-    }
-}
-
-/// <summary>
-///     ViewModel for a new added Reminder Entity
-/// </summary>
-public partial class NewlyAddedReminderViewModel : ReactiveObservableObject, IReminderViewModel
-{
+    [ObservableProperty] private string? _commitMessage;
+    [ObservableProperty] private double _commitThreshold;
     [ObservableProperty] private bool _editing;
     [ObservableProperty] private string? _message;
     [ObservableProperty] private double _threshold = double.NaN;
 
-    public NewlyAddedReminderViewModel()
+    public EditableReminderViewModel()
     {
         Editing = true;
-        ((IReminderViewModel)this).Setup();
+        CommitMessage = Message;
+        CommitThreshold = Threshold;
+
+        var commitsValid = this.WhenAnyValue(self => self.CommitMessage, self => self.CommitThreshold,
+            (message, threshold) => !string.IsNullOrWhiteSpace(message) && !double.IsNaN(threshold));
+
+        StartEditingCommand = ReactiveCommand.Create(() =>
+        {
+            CommitMessage = Message;
+            CommitThreshold = Threshold;
+            Editing = true;
+        });
+        StopEditingCommand = ReactiveCommand.Create(() =>
+        {
+            Message = CommitMessage;
+            Threshold = CommitThreshold;
+            Editing = false;
+        }, commitsValid);
+
+        // Mark the properties as valid at start for the properties
+        this.ValidationRule(self => self.CommitMessage,
+            this.WhenAnyValue(self => self.CommitMessage,
+                message => !string.IsNullOrWhiteSpace(message)).Skip(1).StartWith(true), "Message is empty");
+        this.ValidationRule(self => self.CommitThreshold,
+            this.WhenAnyValue(self => self.CommitThreshold,
+                threshold => !double.IsNaN(threshold)).Skip(1).StartWith(true), "Threshold is empty");
+
+        // Validate the whole model at the start
+        this.ValidationRule(this.WhenAnyValue(self => self.Message,
+            message => !string.IsNullOrWhiteSpace(message)), "Message is empty");
+        this.ValidationRule(this.WhenAnyValue(self => self.Threshold,
+            threshold => !double.IsNaN(threshold)), "Threshold is empty");
     }
 
+    public ReactiveCommand<Unit, Unit> StopEditingCommand { get; }
+    public ReactiveCommand<Unit, Unit> StartEditingCommand { get; }
+
     public ValidationContext ValidationContext { get; } = new();
-    public ReactiveCommand<Unit, Unit> StopEditingCommand { get; set; } = default!;
-    public ReactiveCommand<Unit, Unit> StartEditingCommand { get; set; } = default!;
 }
 
 /// <summary>
-///     ViewModel for an already existing Reminder Entity
+///     ViewModel for a read-only Reminder Entity
 /// </summary>
-public partial class ReminderViewModel : EditableEntityViewModelBase<Reminder>, IReminderViewModel
+public partial class ReminderViewModel : EditableEntityViewModelBase<Reminder>
 {
-    [ObservableProperty] private bool _editing;
     [ObservableProperty] private string _message;
     [ObservableProperty] private double _threshold;
 
@@ -94,16 +79,7 @@ public partial class ReminderViewModel : EditableEntityViewModelBase<Reminder>, 
     {
         Message = entity.Message;
         Threshold = entity.Threshold;
-        Editing = false;
-
-        ((IReminderViewModel)this).Setup();
     }
-
-    public ReactiveCommand<Unit, Unit> StopEditingCommand { get; set; } = default!;
-    public ReactiveCommand<Unit, Unit> StartEditingCommand { get; set; } = default!;
-
-
-    public ValidationContext ValidationContext { get; } = new();
 
     public override void UpdateEntity()
     {
