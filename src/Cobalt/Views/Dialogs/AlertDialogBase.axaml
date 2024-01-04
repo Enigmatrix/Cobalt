@@ -158,7 +158,7 @@
                           SelectedValue="{Binding TriggerAction.Tag, Mode=TwoWay}"
                           HorizontalAlignment="Stretch" HorizontalContentAlignment="Left">
 
-                    <ComboBoxItem Tag="0">
+                    <ComboBoxItem Tag="{StaticResource Int0}">
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <fluent:FAPathIcon Width="14" Height="14" Data="{StaticResource KillPath}"
                                                VerticalAlignment="Center" />
@@ -166,7 +166,7 @@
                         </StackPanel>
                     </ComboBoxItem>
 
-                    <ComboBoxItem Tag="1">
+                    <ComboBoxItem Tag="{StaticResource Int1}">
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <fluent:FAPathIcon Width="14" Height="14" Data="{StaticResource MessagePath}"
                                                VerticalAlignment="Center" />
@@ -174,7 +174,7 @@
                         </StackPanel>
                     </ComboBoxItem>
 
-                    <ComboBoxItem Tag="2">
+                    <ComboBoxItem Tag="{StaticResource Int2}">
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <fluent:FAPathIcon Width="14" Height="14" Data="{StaticResource DimPath}"
                                                VerticalAlignment="Center" />
