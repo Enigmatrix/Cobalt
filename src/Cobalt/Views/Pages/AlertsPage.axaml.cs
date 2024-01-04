@@ -17,6 +17,9 @@ public partial class AlertsPage : ReactiveUserControl<AlertsPageViewModel>
             ViewModel!.AddAlertInteraction.RegisterHandler(async context =>
                     context.SetOutput(await context.Input.ShowDialog(new AddAlertDialog())))
                 .DisposeWith(dis);
+            ViewModel!.EditAlertInteraction.RegisterHandler(async context =>
+                    context.SetOutput(await context.Input.ShowDialog(new AddAlertDialog())))
+                .DisposeWith(dis);
         });
     }
 }

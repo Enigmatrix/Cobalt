@@ -16,6 +16,7 @@ namespace Cobalt.Common.ViewModels.Pages;
 public partial class AlertsPageViewModel : PageViewModelBase
 {
     private readonly AddAlertDialogViewModel _addAlertDialog;
+    private readonly IEntityViewModelCache _entityCache;
 
     public AlertsPageViewModel(IEntityViewModelCache entityCache, IDbContextFactory<QueryContext> contexts,
         AddAlertDialogViewModel addAlertDialog) :
@@ -24,6 +25,7 @@ public partial class AlertsPageViewModel : PageViewModelBase
         Alerts = Query(async context => await context.AlertDurations().ToListAsync(),
             alertDur => alertDur.Map(entityCache.Alert));
 
+        _entityCache = entityCache;
         _addAlertDialog = addAlertDialog;
 
         this.WhenActivated((CompositeDisposable dis) =>
@@ -36,12 +38,18 @@ public partial class AlertsPageViewModel : PageViewModelBase
     public Query<List<WithDuration<AlertViewModel>>> Alerts { get; }
 
     public Interaction<AddAlertDialogViewModel, AlertViewModel?> AddAlertInteraction { get; } = new();
+    public Interaction<EditAlertDialogViewModel, AlertViewModel?> EditAlertInteraction { get; } = new();
 
     public override string Name => "Alerts";
 
     [RelayCommand]
     public async Task EditAlert(AlertViewModel alertVm)
     {
+        var editAlertDialog = new EditAlertDialogViewModel(alertVm, _entityCache, Contexts);
+        var alert = await EditAlertInteraction.Handle(editAlertDialog);
+        if (alert == null) return;
+
+        await Alerts.Refresh();
     }
 
     [RelayCommand]
