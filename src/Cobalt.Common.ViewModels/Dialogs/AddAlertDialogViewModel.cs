@@ -1,7 +1,10 @@
-﻿using Cobalt.Common.Data;
+﻿using System.Reactive;
+using Cobalt.Common.Data;
 using Cobalt.Common.Data.Entities;
 using Cobalt.Common.ViewModels.Entities;
 using Microsoft.EntityFrameworkCore;
+using ReactiveUI;
+using ReactiveUI.Validation.Extensions;
 
 namespace Cobalt.Common.ViewModels.Dialogs;
 
@@ -14,7 +17,7 @@ public class AddAlertDialogViewModel : AlertDialogViewModelBase
 
     public override string Title => "Add Alert";
 
-    public override async Task ProduceAlert()
+    public async Task AddAlertAsync()
     {
         var alert = new Alert
         {
@@ -51,4 +54,7 @@ public class AddAlertDialogViewModel : AlertDialogViewModelBase
 
         Result = new AlertViewModel(alert, EntityCache, Contexts);
     }
+
+
+    public override ReactiveCommand<Unit, Unit> PrimaryButtonCommand => ReactiveCommand.CreateFromTask(AddAlertAsync, this.IsValid());
 }

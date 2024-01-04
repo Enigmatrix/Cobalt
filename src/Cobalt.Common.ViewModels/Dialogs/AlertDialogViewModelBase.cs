@@ -53,9 +53,6 @@ public abstract partial class AlertDialogViewModelBase : DialogViewModelBase<Ale
             props => props is { Item1: not null, Item2: not null, Item3: not null },
             _ => "Fields are empty");
 
-        PrimaryButtonCommand =
-            ReactiveCommand.CreateFromTask(ProduceAlert, this.IsValid());
-
         this.WhenActivated(dis =>
         {
             _reminders.Clear();
@@ -98,8 +95,6 @@ public abstract partial class AlertDialogViewModelBase : DialogViewModelBase<Ale
 
     public ObservableCollectionExtended<EditableReminderViewModel> Reminders { get; } = new();
 
-    public override ReactiveCommand<Unit, Unit> PrimaryButtonCommand { get; set; }
-
     protected AlertViewModel? Result { get; set; }
 
     public ValidationContext ValidationContext { get; } = new();
@@ -127,8 +122,6 @@ public abstract partial class AlertDialogViewModelBase : DialogViewModelBase<Ale
             _ => throw new DiscriminatedUnionException<TimeFrame?>(nameof(timeFrame), timeFrame)
         };
     }
-
-    public abstract Task ProduceAlert();
 
     public override AlertViewModel GetResult()
     {

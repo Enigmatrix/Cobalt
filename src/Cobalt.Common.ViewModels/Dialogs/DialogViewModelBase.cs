@@ -32,7 +32,7 @@ public abstract class DialogViewModelBase<TResult> : ViewModelBase, IActivatable
     /// <summary>
     ///     PrimaryButtonCommand of this Dialog
     /// </summary>
-    public abstract ReactiveCommand<Unit, Unit> PrimaryButtonCommand { get; set; }
+    public abstract ReactiveCommand<Unit, Unit> PrimaryButtonCommand { get; }
 
     /// <summary>
     ///     Activator Context
