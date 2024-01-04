@@ -1,5 +1,4 @@
-﻿using System.Reactive;
-using System.Reactive.Disposables;
+﻿using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using Cobalt.Common.Data;
 using Cobalt.Common.Data.Entities;
@@ -22,7 +21,7 @@ namespace Cobalt.Common.ViewModels.Dialogs;
 /// </summary>
 public abstract partial class AlertDialogViewModelBase : DialogViewModelBase<AlertViewModel>, IValidatableViewModel
 {
-    private readonly SourceList<EditableReminderViewModel> _reminders = new();
+    protected readonly SourceList<EditableReminderViewModel> _reminders = new();
     protected readonly IEntityViewModelCache EntityCache;
     [ObservableProperty] private TimeFrame? _timeFrame;
     [ObservableProperty] private TriggerActionViewModel _triggerAction;
@@ -31,6 +30,16 @@ public abstract partial class AlertDialogViewModelBase : DialogViewModelBase<Ale
 
     // TODO count how many refreshes are done, try to get rid of the assumeRefreshIsCalled parameter
     // TODO too many ^ bindings to Apps/Tags, try reduce?
+
+
+    // TODO need to prefill:
+    // ChooseTargetDialogViewModel
+    // TriggerAlertViewModel
+    // _reminders
+    // the normal properties
+    // PrimaryButtonCommand needs to be changed
+
+    // idea: an overridable InitializeProperties(AlertViewModel?) and ResetProperties(AlertViewModel?)
 
     protected AlertDialogViewModelBase(IEntityViewModelCache entityCache, IDbContextFactory<QueryContext> contexts) :
         base(contexts)
@@ -56,12 +65,6 @@ public abstract partial class AlertDialogViewModelBase : DialogViewModelBase<Ale
 
         this.WhenActivated(dis =>
         {
-            _reminders.Clear();
-            Reminders.Clear(); // since we dispose of the Bind, we need to clean this ourselves
-            UsageLimit = null;
-            TimeFrame = null;
-            TriggerAction.Clear();
-
             var validUsageLimitAndTimeFrame =
                 this.WhenAnyValue(self => self.UsageLimit, self => self.TimeFrame, ValidUsageLimitAndTimeFrame);
 

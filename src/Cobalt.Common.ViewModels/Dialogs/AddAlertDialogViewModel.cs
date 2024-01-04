@@ -1,7 +1,9 @@
 ﻿using System.Reactive;
+using System.Reactive.Disposables;
 using Cobalt.Common.Data;
 using Cobalt.Common.Data.Entities;
 using Cobalt.Common.ViewModels.Entities;
+using DynamicData;
 using Microsoft.EntityFrameworkCore;
 using ReactiveUI;
 using ReactiveUI.Validation.Extensions;
@@ -13,9 +15,22 @@ public class AddAlertDialogViewModel : AlertDialogViewModelBase
     public AddAlertDialogViewModel(IEntityViewModelCache entityCache, IDbContextFactory<QueryContext> contexts) : base(
         entityCache, contexts)
     {
+        this.WhenActivated((CompositeDisposable dis) =>
+        {
+            _reminders.Clear();
+            Reminders.Clear(); // since we dispose of the Bind, we need to clean this ourselves
+            UsageLimit = null;
+            TimeFrame = null;
+            TriggerAction.Clear();
+            ChooseTargetDialog.Clear();
+        });
     }
 
     public override string Title => "Add Alert";
+
+
+    public override ReactiveCommand<Unit, Unit> PrimaryButtonCommand =>
+        ReactiveCommand.CreateFromTask(AddAlertAsync, this.IsValid());
 
     public async Task AddAlertAsync()
     {
@@ -54,7 +69,4 @@ public class AddAlertDialogViewModel : AlertDialogViewModelBase
 
         Result = new AlertViewModel(alert, EntityCache, Contexts);
     }
-
-
-    public override ReactiveCommand<Unit, Unit> PrimaryButtonCommand => ReactiveCommand.CreateFromTask(AddAlertAsync, this.IsValid());
 }

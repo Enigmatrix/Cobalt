@@ -30,6 +30,7 @@ public partial class TriggerActionViewModel : ReactiveObservableObject, IValidat
             MessageContent = action.MessageContent;
             DimDuration = action.DimDuration;
         }
+
         // Reset properties after switching to other enums
         // These should be disposed, but we don't really have a good timing for it ...
         this.WhenAnyValue(self => self.Tag).Where(tag => tag != TriggerAction.MessageTag)
