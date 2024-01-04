@@ -33,6 +33,15 @@ public partial class EditAlertDialogViewModel : AlertDialogViewModelBase
         // This is validation context composition
         ValidationContext.Add(TriggerAction.ValidationContext);
 
+        // - Check if any of the current Alert properties are not equal to the original AlertViewModel properties
+        //    - Good thing about 2-level tracking is that we can directly compare the EntityViewModel of App/Tag
+        // - Watch for TriggerAlert changes
+        // - Check if any Reminder is dirty
+        //    - For newly added Reminders, they are always considered dirty, so this works out.
+        //    - If a newly added Reminder is then immediately removed, then the it's dirty-ness is removed, which is correct.
+        // - Check if reminder count changes. This implies that elements might have been added/removed, specifically it catches removal.
+
+        // watch if properties are changed
         var propsDirty = this.WhenAnyValue(
             self => self.ChooseTargetDialog!.Target,
             self => self.UsageLimit,
@@ -47,6 +56,7 @@ public partial class EditAlertDialogViewModel : AlertDialogViewModelBase
             .AddKey(reminder => reminder)
             .TrueForAny(reminder => reminder.WhenAnyValue(self => self.IsDirty), dirty => dirty)
             .StartWith(false);
+        // watch if reminder count changes
         var remindersCountChanged = RemindersSource.CountChanged.Select(count => count != alert.Reminders.Count);
 
         propsDirty.CombineLatest(triggerActionDirty, remindersDirty, remindersCountChanged,
@@ -58,15 +68,6 @@ public partial class EditAlertDialogViewModel : AlertDialogViewModelBase
     public override string Title => "Edit Alert";
     public override string PrimaryButtonText => "Save";
     public override string CloseButtonText => "Discard";
-
-    // TODO IsDirty tracking:
-    // - Check if any of the current Alert properties are not equal to the original AlertViewModel properties
-    //    - Good thing about 2-level tracking is that we can directly compare the EntityViewModel of App/Tag
-    // - Check if any Reminder is dirty
-    //    - For newly added Reminders, they are always considered dirty, so this works out.
-    //    - If a newly added Reminder is then immediately removed, then the it's dirty-ness is removed, which is correct.
-
-    // TODO if we switch from kill -> dimduration, the first duration entered in dimduration does not trigger validation - the custom validation shit needs to be fixed!
 
     public override ReactiveCommand<Unit, Unit> PrimaryButtonCommand =>
         ReactiveCommand.CreateFromTask(SaveAlertAsync,
@@ -95,6 +96,7 @@ public partial class EditAlertDialogViewModel : AlertDialogViewModelBase
                 context.Attach(alert.Tag);
                 break;
         }
+
         await context.UpdateAlertAsync(alert);
 
         var existingReminderVms = Reminders.Where(reminderVm => reminderVm.Reminder != null).ToList();
