@@ -152,8 +152,17 @@ public partial class AlertViewModel : EditableEntityViewModelBase<Alert>
         TimeFrame = entity.TimeFrame;
         UsageLimit = entity.UsageLimit;
         TriggerAction = entity.TriggerAction;
-        if (entity.App != null) App = EntityCache.App(entity.App);
-        else if (entity.Tag != null) Tag = EntityCache.Tag(entity.Tag);
+        if (entity.App != null)
+        {
+            App = EntityCache.App(entity.App);
+            Tag = null;
+        }
+        else if (entity.Tag != null)
+        {
+            App = null;
+            Tag = EntityCache.Tag(entity.Tag);
+        }
+
         Reminders = entity.Reminders.Select(EntityCache.Reminder).ToList();
     }
 
