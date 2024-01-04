@@ -1,6 +1,7 @@
 ﻿using System.Reactive;
 using System.Reactive.Linq;
 using Cobalt.Common.Data;
+using Cobalt.Common.Data.Entities;
 using Cobalt.Common.ViewModels.Entities;
 using CommunityToolkit.Mvvm.ComponentModel;
 using DynamicData;
@@ -75,39 +76,58 @@ public partial class EditAlertDialogViewModel : AlertDialogViewModelBase
 
     public async Task SaveAlertAsync()
     {
-        /*var alert = new Alert
-        {
-            Guid = Guid.NewGuid(),
-            Version = 1,
-            TimeFrame = TimeFrame!.Value,
-            TriggerAction = TriggerAction!.ToTriggerAction(),
-            UsageLimit = UsageLimit!.Value
-        };
-        alert.Reminders.AddRange(Reminders.Select(reminder => new Reminder
-        {
-            Guid = Guid.NewGuid(),
-            Version = 1,
-            Message = reminder.Message!,
-            Threshold = reminder.Threshold,
-            Alert = alert
-        }));
+        await using var context = await Contexts.CreateDbContextAsync();
+        var alert = _alert.Entity;
+        context.Attach(alert);
+
+        alert.TimeFrame = TimeFrame!.Value;
+        alert.TriggerAction = TriggerAction!.ToTriggerAction()!;
+        alert.UsageLimit = UsageLimit!.Value;
+
         switch (ChooseTargetDialog!.Target)
         {
             case AppViewModel app:
                 alert.App = app.Entity;
+                context.Attach(alert.App);
                 break;
             case TagViewModel tag:
                 alert.Tag = tag.Entity;
+                context.Attach(alert.Tag);
                 break;
         }
+        await context.UpdateAlertAsync(alert);
 
-        await using var context = await Contexts.CreateDbContextAsync();
-        // Attach everything except reminders, which are instead in the added state
-        context.Attach(alert);
-        context.AddRange(alert.Reminders);
-        await context.AddAsync(alert);
-        await context.SaveChangesAsync();*/
+        var existingReminderVms = Reminders.Where(reminderVm => reminderVm.Reminder != null).ToList();
 
+        // Delete existing reminders that are not in the final list
+        foreach (var reminderVm in _alert.Reminders)
+            if (existingReminderVms.Select(vm => vm.Reminder).All(reminder =>
+                    reminder!.Guid != reminderVm.Entity.Guid && reminder.Id != reminderVm.Entity.Id))
+                context.Remove(reminderVm.Entity);
+
+        // Update existing reminders that are in the final list and dirty
+        foreach (var reminderVm in existingReminderVms.Where(vm => vm.IsDirty))
+        {
+            var reminder = reminderVm.Reminder!;
+            reminder.Message = reminderVm.Message!;
+            reminder.Threshold = reminderVm.Threshold;
+            await context.UpdateReminderAsync(reminder);
+        }
+
+        // Add new reminders
+        foreach (var reminderVm in Reminders.Where(reminderVm => reminderVm.Reminder == null))
+            context.Add(new Reminder
+            {
+                Alert = alert,
+                Threshold = reminderVm.Threshold,
+                Message = reminderVm.Message!,
+                Version = 1,
+                Guid = Guid.NewGuid()
+            });
+
+        await context.SaveChangesAsync();
+
+        _alert.InitializeWith(alert);
         Result = _alert;
     }
 }
