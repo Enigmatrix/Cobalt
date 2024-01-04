@@ -92,7 +92,7 @@ public partial class TriggerActionViewModel : ReactiveObservableObject, IValidat
             .Select(tag => this
                 .WhenAnyValue(prop)
                 // don't validate at the start, value is intentionally null at that point.
-                .SkipWhile((_, idx) => tag == tagMatch && idx == 0)
+                .SkipWhile((v, idx) => tag == tagMatch && idx == 0 && v == null)
                 .Select(v => tag != tagMatch || validate(v)))
             .Switch();
     }
