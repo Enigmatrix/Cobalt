@@ -215,8 +215,15 @@
             </fluent:SettingsExpander.Items>
         </fluent:SettingsExpander>
 
-        <fluent:SettingsExpander Header="Reminders" Description="Reminders at certain thresholds" IsExpanded="True"
+        <fluent:SettingsExpander Description="Reminders at certain thresholds" IsExpanded="True"
                                  ItemsSource="{Binding Reminders}">
+            <fluent:SettingsExpander.Header>
+                <StackPanel Orientation="Horizontal" Spacing="4">
+                    <TextBlock Text="Reminders" />
+                    <TextBlock Text="{Binding Reminders.Count, StringFormat={}({0})}"
+                               IsVisible="{Binding Reminders.Count, Converter={StaticResource IsNotEqualConverter}, ConverterParameter={StaticResource EmptyCount}}" />
+                </StackPanel>
+            </fluent:SettingsExpander.Header>
             <fluent:SettingsExpander.Footer>
                 <Button Content="Add Reminder" Command="{Binding AddReminder}" />
             </fluent:SettingsExpander.Footer>
