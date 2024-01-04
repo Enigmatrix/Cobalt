@@ -46,8 +46,10 @@ public partial class EditAlertDialogViewModel : AlertDialogViewModelBase
             .AddKey(reminder => reminder)
             .TrueForAny(reminder => reminder.WhenAnyValue(self => self.IsDirty), dirty => dirty)
             .StartWith(false);
+        var remindersCountChanged = RemindersSource.CountChanged.Select(count => count != alert.Reminders.Count);
 
-        propsDirty.CombineLatest(triggerActionDirty, remindersDirty, (a, b, c) => a || b || c)
+        propsDirty.CombineLatest(triggerActionDirty, remindersDirty, remindersCountChanged,
+                (a, b, c, d) => a || b || c || d)
             .BindTo(this, self => self.IsDirty);
     }
 
