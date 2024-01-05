@@ -39,5 +39,6 @@
                                            Command="{Binding UpdateAllUsageEndsAsync}" />
         </controls:SettingsExpander>
 
+
     </StackPanel>
 </reactiveUi:ReactiveUserControl>

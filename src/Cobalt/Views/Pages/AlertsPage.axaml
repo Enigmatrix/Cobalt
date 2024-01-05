@@ -8,9 +8,14 @@
                                 xmlns:entities="clr-namespace:Cobalt.Common.ViewModels.Entities;assembly=Cobalt.Common.ViewModels"
                                 xmlns:data="clr-namespace:Cobalt.Common.Data;assembly=Cobalt.Common.Data"
                                 xmlns:dataEntities="clr-namespace:Cobalt.Common.Data.Entities;assembly=Cobalt.Common.Data"
+                                xmlns:system="clr-namespace:System;assembly=System.Runtime"
                                 mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
                                 x:Class="Cobalt.Views.Pages.AlertsPage" x:DataType="pages:AlertsPageViewModel">
     <ScrollViewer Padding="16">
+        <ScrollViewer.Resources>
+            <x:Double x:Key="ProgressBarTrackHeight">8</x:Double>
+            <CornerRadius x:Key="ProgressBarTrackCornerRadius">4</CornerRadius>
+        </ScrollViewer.Resources>
         <ScrollViewer.DataTemplates>
 
             <DataTemplate DataType="entities:TagViewModel">
@@ -162,11 +167,75 @@
                                         </StackPanel>
                                     </StackPanel>
 
-                                    <!-- TODO: add reminder stops at some time -->
-                                    <ProgressBar Height="8" Margin="4,4,4,8" Grid.Column="0" Grid.ColumnSpan="3"
-                                                 Grid.Row="1"
-                                                 Maximum="{Binding Inner.UsageLimit.Ticks}"
-                                                 Value="{Binding Duration.Ticks}" />
+                                    <Grid Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="1">
+                                        <ProgressBar Height="{StaticResource ProgressBarTrackHeight}" Margin="4,4,4,8"
+                                                     CornerRadius="{StaticResource ProgressBarTrackCornerRadius}"
+                                                     Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                                                     Maximum="{Binding Inner.UsageLimit.Ticks}"
+                                                     Name="Bar"
+                                                     Value="{Binding Duration.Ticks}" />
+
+                                        <ItemsControl ItemsSource="{Binding Inner.Reminders}" ClipToBounds="False">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <Canvas HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                                                            ClipToBounds="False" Margin="4,4,4,8" />
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+
+                                            <ItemsControl.Styles>
+                                                <Style Selector="ItemsControl > ContentPresenter">
+                                                    <Setter Property="Tag" Value="{Binding $self.Width}" />
+                                                    <Setter Property="Canvas.Left">
+                                                        <MultiBinding
+                                                            Converter="{StaticResource PercentToLeftConverter}">
+                                                            <ReflectionBinding Path="Threshold" />
+                                                            <Binding
+                                                                RelativeSource="{RelativeSource AncestorType=Canvas, Mode=FindAncestor}"
+                                                                Path="Bounds.Width" />
+                                                        </MultiBinding>
+                                                    </Setter>
+                                                </Style>
+
+                                            </ItemsControl.Styles>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate DataType="entities:ReminderViewModel">
+                                                    <Rectangle ToolTip.Placement="Top" ToolTip.ShowDelay="0"
+                                                               ToolTip.VerticalOffset="8"
+                                                               Fill="{DynamicResource TextFillColorSecondaryBrush}"
+                                                               Width="12" Height="12" RadiusX="6" RadiusY="6">
+                                                        <Rectangle.RenderTransform>
+                                                            <TranslateTransform X="-6" Y="-2" />
+                                                        </Rectangle.RenderTransform>
+                                                        <ToolTip.Tip>
+                                                            <StackPanel Orientation="Vertical" Spacing="4">
+                                                                <TextBlock HorizontalAlignment="Center"
+                                                                           Theme="{StaticResource BodyStrongTextBlockStyle}"
+                                                                           Text="{Binding Message}" />
+                                                                <TextBlock HorizontalAlignment="Center" FontSize="10"
+                                                                           Theme="{StaticResource CaptionTextBlockStyle}">
+                                                                    <TextBlock.Text>
+
+                                                                        <MultiBinding
+                                                                            Converter="{StaticResource ReminderDescriptionConverter}">
+                                                                            <Binding>
+                                                                                <Binding.Source>
+                                                                                    <system:Boolean>False</system:Boolean>
+                                                                                </Binding.Source>
+                                                                            </Binding>
+                                                                            <Binding Path="Threshold" />
+                                                                            <ReflectionBinding Path="Alert.UsageLimit" />
+                                                                        </MultiBinding>
+                                                                    </TextBlock.Text>
+                                                                </TextBlock>
+                                                            </StackPanel>
+                                                        </ToolTip.Tip>
+                                                    </Rectangle>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+
+                                        </ItemsControl>
+                                    </Grid>
                                 </Grid>
                             </Expander.Header>
 

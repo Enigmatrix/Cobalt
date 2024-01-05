@@ -98,6 +98,8 @@ public partial class ReminderViewModel : EditableEntityViewModelBase<Reminder>
         Threshold = entity.Threshold;
     }
 
+    public AlertViewModel Alert => EntityCache.Alert(Entity.Alert);
+
     public override void UpdateEntity()
     {
         // We ignore updating Alert here, since that will never get updated through this view model
