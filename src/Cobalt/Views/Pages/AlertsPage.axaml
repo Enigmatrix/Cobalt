@@ -11,6 +11,10 @@
                                 mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
                                 x:Class="Cobalt.Views.Pages.AlertsPage" x:DataType="pages:AlertsPageViewModel">
     <ScrollViewer Padding="16">
+		<ScrollViewer.Resources>
+			<x:Double x:Key="ProgressBarTrackHeight">8</x:Double>
+            <CornerRadius x:Key="ProgressBarTrackCornerRadius">4</CornerRadius>
+		</ScrollViewer.Resources>
         <ScrollViewer.DataTemplates>
 
             <DataTemplate DataType="entities:TagViewModel">
@@ -163,8 +167,9 @@
                                     </StackPanel>
 
                                     <!-- TODO: add reminder stops at some time -->
-                                    <ProgressBar Height="8" Margin="4,4,4,8" Grid.Column="0" Grid.ColumnSpan="3"
-                                                 Grid.Row="1"
+                                    <ProgressBar Height="{StaticResource ProgressBarTrackHeight}" Margin="4,4,4,8" Grid.Column="0" Grid.ColumnSpan="3"
+                                                 Grid.Row="1" CornerRadius="{StaticResource ProgressBarTrackCornerRadius}"
+                                                 Background="{DynamicResource ControlFillColorSecondaryBrush}"
                                                  Maximum="{Binding Inner.UsageLimit.Ticks}"
                                                  Value="{Binding Duration.Ticks}" />
                                 </Grid>
