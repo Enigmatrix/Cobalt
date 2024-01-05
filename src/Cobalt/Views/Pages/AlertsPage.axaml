@@ -8,6 +8,7 @@
                                 xmlns:entities="clr-namespace:Cobalt.Common.ViewModels.Entities;assembly=Cobalt.Common.ViewModels"
                                 xmlns:data="clr-namespace:Cobalt.Common.Data;assembly=Cobalt.Common.Data"
                                 xmlns:dataEntities="clr-namespace:Cobalt.Common.Data.Entities;assembly=Cobalt.Common.Data"
+                                xmlns:system="clr-namespace:System;assembly=System.Runtime"
                                 mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
                                 x:Class="Cobalt.Views.Pages.AlertsPage" x:DataType="pages:AlertsPageViewModel">
     <ScrollViewer Padding="16">
@@ -166,7 +167,6 @@
                                         </StackPanel>
                                     </StackPanel>
 
-                                    <!-- TODO: add reminder stops at some time -->
                                     <Grid Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="1">
                                         <ProgressBar Height="{StaticResource ProgressBarTrackHeight}" Margin="4,4,4,8"
                                                      CornerRadius="{StaticResource ProgressBarTrackCornerRadius}"
@@ -199,17 +199,35 @@
 
                                             </ItemsControl.Styles>
                                             <ItemsControl.ItemTemplate>
-                                                <DataTemplate>
+                                                <DataTemplate DataType="entities:ReminderViewModel">
                                                     <Rectangle ToolTip.Placement="Top" ToolTip.ShowDelay="0"
-                                                               ToolTip.VerticalOffset="8" Fill="White" Width="4"
-                                                               Height="16" RadiusX="2" RadiusY="2">
+                                                               ToolTip.VerticalOffset="8"
+                                                               Fill="{DynamicResource TextFillColorSecondaryBrush}"
+                                                               Width="12" Height="12" RadiusX="6" RadiusY="6">
                                                         <Rectangle.RenderTransform>
-                                                            <TranslateTransform X="-2" Y="-4" />
+                                                            <TranslateTransform X="-6" Y="-2" />
                                                         </Rectangle.RenderTransform>
                                                         <ToolTip.Tip>
-                                                            <StackPanel Orientation="Horizontal">
-                                                                <TextBlock>sasdfasfd HI</TextBlock>
-                                                                <TextBlock>HI</TextBlock>
+                                                            <StackPanel Orientation="Vertical" Spacing="4">
+                                                                <TextBlock HorizontalAlignment="Center"
+                                                                           Theme="{StaticResource BodyStrongTextBlockStyle}"
+                                                                           Text="{Binding Message}" />
+                                                                <TextBlock HorizontalAlignment="Center" FontSize="10"
+                                                                           Theme="{StaticResource CaptionTextBlockStyle}">
+                                                                    <TextBlock.Text>
+
+                                                                        <MultiBinding
+                                                                            Converter="{StaticResource ReminderDescriptionConverter}">
+                                                                            <Binding>
+                                                                                <Binding.Source>
+                                                                                    <system:Boolean>False</system:Boolean>
+                                                                                </Binding.Source>
+                                                                            </Binding>
+                                                                            <Binding Path="Threshold" />
+                                                                            <ReflectionBinding Path="Alert.UsageLimit" />
+                                                                        </MultiBinding>
+                                                                    </TextBlock.Text>
+                                                                </TextBlock>
                                                             </StackPanel>
                                                         </ToolTip.Tip>
                                                     </Rectangle>
