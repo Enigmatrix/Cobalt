@@ -60,7 +60,9 @@ public partial class TriggerActionViewModel : ReactiveObservableObject, IValidat
             this.WhenAnyValue(
                 self => self.Tag,
                 self => self.MessageContent,
-                self => self.DimDuration),
+                self => self.DimDuration)
+                // This is a workaround for #117
+                .ObserveOn(RxApp.TaskpoolScheduler),
             props => props.Item1 switch
             {
                 TriggerAction.KillTag => true,
