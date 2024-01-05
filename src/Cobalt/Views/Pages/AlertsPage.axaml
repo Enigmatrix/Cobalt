@@ -11,10 +11,10 @@
                                 mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
                                 x:Class="Cobalt.Views.Pages.AlertsPage" x:DataType="pages:AlertsPageViewModel">
     <ScrollViewer Padding="16">
-		<ScrollViewer.Resources>
-			<x:Double x:Key="ProgressBarTrackHeight">8</x:Double>
+        <ScrollViewer.Resources>
+            <x:Double x:Key="ProgressBarTrackHeight">8</x:Double>
             <CornerRadius x:Key="ProgressBarTrackCornerRadius">4</CornerRadius>
-		</ScrollViewer.Resources>
+        </ScrollViewer.Resources>
         <ScrollViewer.DataTemplates>
 
             <DataTemplate DataType="entities:TagViewModel">
@@ -167,11 +167,57 @@
                                     </StackPanel>
 
                                     <!-- TODO: add reminder stops at some time -->
-                                    <ProgressBar Height="{StaticResource ProgressBarTrackHeight}" Margin="4,4,4,8" Grid.Column="0" Grid.ColumnSpan="3"
-                                                 Grid.Row="1" CornerRadius="{StaticResource ProgressBarTrackCornerRadius}"
-                                                 Background="{DynamicResource ControlFillColorSecondaryBrush}"
-                                                 Maximum="{Binding Inner.UsageLimit.Ticks}"
-                                                 Value="{Binding Duration.Ticks}" />
+                                    <Grid Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="1">
+                                        <ProgressBar Height="{StaticResource ProgressBarTrackHeight}" Margin="4,4,4,8"
+                                                     CornerRadius="{StaticResource ProgressBarTrackCornerRadius}"
+                                                     Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                                                     Maximum="{Binding Inner.UsageLimit.Ticks}"
+                                                     Name="Bar"
+                                                     Value="{Binding Duration.Ticks}" />
+
+                                        <ItemsControl ItemsSource="{Binding Inner.Reminders}" ClipToBounds="False">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <Canvas HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                                                            ClipToBounds="False" Margin="4,4,4,8" />
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+
+                                            <ItemsControl.Styles>
+                                                <Style Selector="ItemsControl > ContentPresenter">
+                                                    <Setter Property="Tag" Value="{Binding $self.Width}" />
+                                                    <Setter Property="Canvas.Left">
+                                                        <MultiBinding
+                                                            Converter="{StaticResource PercentToLeftConverter}">
+                                                            <ReflectionBinding Path="Threshold" />
+                                                            <Binding
+                                                                RelativeSource="{RelativeSource AncestorType=Canvas, Mode=FindAncestor}"
+                                                                Path="Bounds.Width" />
+                                                        </MultiBinding>
+                                                    </Setter>
+                                                </Style>
+
+                                            </ItemsControl.Styles>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Rectangle ToolTip.Placement="Top" ToolTip.ShowDelay="0"
+                                                               ToolTip.VerticalOffset="8" Fill="White" Width="4"
+                                                               Height="16" RadiusX="2" RadiusY="2">
+                                                        <Rectangle.RenderTransform>
+                                                            <TranslateTransform X="-2" Y="-4" />
+                                                        </Rectangle.RenderTransform>
+                                                        <ToolTip.Tip>
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <TextBlock>sasdfasfd HI</TextBlock>
+                                                                <TextBlock>HI</TextBlock>
+                                                            </StackPanel>
+                                                        </ToolTip.Tip>
+                                                    </Rectangle>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+
+                                        </ItemsControl>
+                                    </Grid>
                                 </Grid>
                             </Expander.Header>
 
