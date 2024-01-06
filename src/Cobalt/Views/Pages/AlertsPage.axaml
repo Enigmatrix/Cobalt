@@ -135,21 +135,21 @@
                                                                 HorizontalAlignment="Right">
                                                         <controls:FAPathIcon Height="14" Width="14"
                                                                              Data="{StaticResource KillPath}"
-                                                                             IsVisible="{Binding Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={StaticResource Int0}}" />
+                                                                             IsVisible="{Binding Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={x:Static dataEntities:TriggerAction.KillTag}}" />
                                                         <TextBlock Text="Kill" VerticalAlignment="Center"
-                                                                   IsVisible="{Binding Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={StaticResource Int0}}" />
+                                                                   IsVisible="{Binding Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={x:Static dataEntities:TriggerAction.KillTag}}" />
 
                                                         <controls:FAPathIcon Height="12" Width="12" Margin="0,0,2,0"
                                                                              Data="{StaticResource MessagePath}"
-                                                                             IsVisible="{Binding Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={StaticResource Int1}}" />
+                                                                             IsVisible="{Binding Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={x:Static dataEntities:TriggerAction.MessageTag}}" />
                                                         <TextBlock Text="Message" VerticalAlignment="Center"
-                                                                   IsVisible="{Binding Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={StaticResource Int1}}" />
+                                                                   IsVisible="{Binding Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={x:Static dataEntities:TriggerAction.MessageTag}}" />
 
                                                         <controls:FAPathIcon Height="14" Width="14" Margin="0,0,2,0"
                                                                              Data="{StaticResource DimPath}"
-                                                                             IsVisible="{Binding Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={StaticResource Int2}}" />
+                                                                             IsVisible="{Binding Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={x:Static dataEntities:TriggerAction.DimTag}}" />
                                                         <TextBlock Text="Dim" VerticalAlignment="Center"
-                                                                   IsVisible="{Binding Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={StaticResource Int2}}" />
+                                                                   IsVisible="{Binding Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={x:Static dataEntities:TriggerAction.DimTag}}" />
                                                     </StackPanel>
 
                                                 </DataTemplate>
