@@ -1,11 +1,11 @@
-<reactiveUi:ReactiveUserControl x:TypeArguments="dialogs:ChooseTargetDialogViewModel"
+<reactiveUi:ReactiveUserControl x:TypeArguments="dialogVms:ChooseTargetDialogViewModel"
                                 xmlns="https://github.com/avaloniaui"
                                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                                 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                                 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
                                 xmlns:reactiveUi="http://reactiveui.net"
-                                x:DataType="dialogs:ChooseTargetDialogViewModel" Margin="-12"
-                                xmlns:dialogs="clr-namespace:Cobalt.Common.ViewModels.Dialogs;assembly=Cobalt.Common.ViewModels"
+                                x:DataType="dialogVms:ChooseTargetDialogViewModel" Margin="-12"
+                                xmlns:dialogVms="clr-namespace:Cobalt.Common.ViewModels.Dialogs;assembly=Cobalt.Common.ViewModels"
                                 mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
                                 x:Class="Cobalt.Views.Dialogs.ChooseTargetDialogView">
 

@@ -58,9 +58,9 @@ public partial class TriggerActionViewModel : ReactiveObservableObject, IValidat
 
         this.ValidationRule(
             this.WhenAnyValue(
-                self => self.Tag,
-                self => self.MessageContent,
-                self => self.DimDuration)
+                    self => self.Tag,
+                    self => self.MessageContent,
+                    self => self.DimDuration)
                 // This is a workaround for #117
                 .ObserveOn(RxApp.TaskpoolScheduler),
             props => props.Item1 switch

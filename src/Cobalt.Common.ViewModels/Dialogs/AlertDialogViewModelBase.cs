@@ -92,7 +92,7 @@ public abstract partial class AlertDialogViewModelBase : DialogViewModelBase<Ale
 
     public void AddReminder()
     {
-        RemindersSource.Add(new EditableReminderViewModel(editing: true));
+        RemindersSource.Add(new EditableReminderViewModel(this, editing: true));
     }
 
     [RelayCommand]
