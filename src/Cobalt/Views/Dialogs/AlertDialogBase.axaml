@@ -1,19 +1,19 @@
-<reactiveUi:ReactiveUserControl x:TypeArguments="dialogs:AlertDialogViewModelBase"
+<reactiveUi:ReactiveUserControl x:TypeArguments="vmDialogs:AlertDialogViewModelBase"
                                 xmlns="https://github.com/avaloniaui"
                                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                                 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                                 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
                                 xmlns:reactiveUi="http://reactiveui.net"
-                                xmlns:dialogs="clr-namespace:Cobalt.Common.ViewModels.Dialogs;assembly=Cobalt.Common.ViewModels"
-                                xmlns:entities="clr-namespace:Cobalt.Common.ViewModels.Entities;assembly=Cobalt.Common.ViewModels"
-                                xmlns:fluent="clr-namespace:FluentAvalonia.UI.Controls;assembly=FluentAvalonia"
+                                xmlns:vmDialogs="clr-namespace:Cobalt.Common.ViewModels.Dialogs;assembly=Cobalt.Common.ViewModels"
+                                xmlns:vmEntities="clr-namespace:Cobalt.Common.ViewModels.Entities;assembly=Cobalt.Common.ViewModels"
+                                xmlns:fluentUi="clr-namespace:FluentAvalonia.UI.Controls;assembly=FluentAvalonia"
                                 xmlns:dataEntities="clr-namespace:Cobalt.Common.Data.Entities;assembly=Cobalt.Common.Data"
                                 xmlns:controls="clr-namespace:Cobalt.Controls"
-                                xmlns:entityViews="clr-namespace:Cobalt.Views.Entities"
-                                xmlns:dialogsView="clr-namespace:Cobalt.Views.Dialogs"
+                                xmlns:entities="clr-namespace:Cobalt.Views.Entities"
+                                xmlns:dialogs="clr-namespace:Cobalt.Views.Dialogs"
                                 mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="650"
                                 x:Class="Cobalt.Views.Dialogs.AlertDialogBase"
-                                x:DataType="dialogs:AlertDialogViewModelBase">
+                                x:DataType="vmDialogs:AlertDialogViewModelBase">
 
     <StackPanel Orientation="Vertical" Spacing="16" MinWidth="600"
                 HorizontalAlignment="Stretch">
@@ -40,15 +40,15 @@
                     </DropDownButton.Content>
                     <DropDownButton.DataTemplates>
 
-                        <DataTemplate DataType="entities:TagViewModel">
+                        <DataTemplate DataType="vmEntities:TagViewModel">
                             <StackPanel Orientation="Horizontal">
-                                <fluent:SymbolIcon Symbol="Tag" FontSize="20" Margin="-8,0,8,0"
-                                                   Foreground="{Binding Color, Converter={StaticResource ColorStringToBrushConverter}}" />
+                                <fluentUi:SymbolIcon Symbol="Tag" FontSize="20" Margin="-8,0,8,0"
+                                                     Foreground="{Binding Color, Converter={StaticResource ColorStringToBrushConverter}}" />
                                 <TextBlock VerticalAlignment="Center" Text="{Binding Name}" />
                             </StackPanel>
                         </DataTemplate>
 
-                        <DataTemplate DataType="entities:AppViewModel">
+                        <DataTemplate DataType="vmEntities:AppViewModel">
                             <StackPanel Orientation="Horizontal">
                                 <Image Width="28" Height="28" Margin="-8,0, 8, 0"
                                        Source="{Binding Image.Value^, Converter={StaticResource BytesToImageConverter}}" />
@@ -66,7 +66,7 @@
                     </DropDownButton.DataTemplates>
                     <DropDownButton.Flyout>
                         <Flyout>
-                            <dialogsView:ChooseTargetDialogView DataContext="{Binding ChooseTargetDialog}" />
+                            <dialogs:ChooseTargetDialogView DataContext="{Binding ChooseTargetDialog}" />
                         </Flyout>
                     </DropDownButton.Flyout>
                 </DropDownButton>
@@ -98,9 +98,9 @@
                         </ComboBoxItem.Tag>
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2023 Fonticons, Inc. Icon: calendar-day-->
-                            <fluent:FAPathIcon Width="14" Height="14"
-                                               Data="M128 0c17.7 0 32 14.3 32 32V64H288V32c0-17.7 14.3-32 32-32s32 14.3 32 32V64h48c26.5 0 48 21.5 48 48v48H0V112C0 85.5 21.5 64 48 64H96V32c0-17.7 14.3-32 32-32zM0 192H448V464c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V192zm80 64c-8.8 0-16 7.2-16 16v96c0 8.8 7.2 16 16 16h96c8.8 0 16-7.2 16-16V272c0-8.8-7.2-16-16-16H80z"
-                                               VerticalAlignment="Center" />
+                            <fluentUi:FAPathIcon Width="14" Height="14"
+                                                 Data="M128 0c17.7 0 32 14.3 32 32V64H288V32c0-17.7 14.3-32 32-32s32 14.3 32 32V64h48c26.5 0 48 21.5 48 48v48H0V112C0 85.5 21.5 64 48 64H96V32c0-17.7 14.3-32 32-32zM0 192H448V464c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V192zm80 64c-8.8 0-16 7.2-16 16v96c0 8.8 7.2 16 16 16h96c8.8 0 16-7.2 16-16V272c0-8.8-7.2-16-16-16H80z"
+                                                 VerticalAlignment="Center" />
                             <TextBlock Text="Daily" VerticalAlignment="Center" />
                         </StackPanel>
                     </ComboBoxItem>
@@ -111,9 +111,9 @@
                         </ComboBoxItem.Tag>
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2023 Fonticons, Inc. Icon: calendar-week-->
-                            <fluent:FAPathIcon Width="14" Height="14"
-                                               Data="M128 0c17.7 0 32 14.3 32 32V64H288V32c0-17.7 14.3-32 32-32s32 14.3 32 32V64h48c26.5 0 48 21.5 48 48v48H0V112C0 85.5 21.5 64 48 64H96V32c0-17.7 14.3-32 32-32zM0 192H448V464c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V192zm80 64c-8.8 0-16 7.2-16 16v64c0 8.8 7.2 16 16 16H368c8.8 0 16-7.2 16-16V272c0-8.8-7.2-16-16-16H80z"
-                                               VerticalAlignment="Center" />
+                            <fluentUi:FAPathIcon Width="14" Height="14"
+                                                 Data="M128 0c17.7 0 32 14.3 32 32V64H288V32c0-17.7 14.3-32 32-32s32 14.3 32 32V64h48c26.5 0 48 21.5 48 48v48H0V112C0 85.5 21.5 64 48 64H96V32c0-17.7 14.3-32 32-32zM0 192H448V464c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V192zm80 64c-8.8 0-16 7.2-16 16v64c0 8.8 7.2 16 16 16H368c8.8 0 16-7.2 16-16V272c0-8.8-7.2-16-16-16H80z"
+                                                 VerticalAlignment="Center" />
                             <TextBlock Text="Weekly" VerticalAlignment="Center" />
                         </StackPanel>
                     </ComboBoxItem>
@@ -124,9 +124,9 @@
                         </ComboBoxItem.Tag>
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2023 Fonticons, Inc. Icon: calendar-days-->
-                            <fluent:FAPathIcon Width="14" Height="14"
-                                               Data="M128 0c17.7 0 32 14.3 32 32V64H288V32c0-17.7 14.3-32 32-32s32 14.3 32 32V64h48c26.5 0 48 21.5 48 48v48H0V112C0 85.5 21.5 64 48 64H96V32c0-17.7 14.3-32 32-32zM0 192H448V464c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V192zm64 80v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V272c0-8.8-7.2-16-16-16H80c-8.8 0-16 7.2-16 16zm128 0v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V272c0-8.8-7.2-16-16-16H208c-8.8 0-16 7.2-16 16zm144-16c-8.8 0-16 7.2-16 16v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V272c0-8.8-7.2-16-16-16H336zM64 400v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V400c0-8.8-7.2-16-16-16H80c-8.8 0-16 7.2-16 16zm144-16c-8.8 0-16 7.2-16 16v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V400c0-8.8-7.2-16-16-16H208zm112 16v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V400c0-8.8-7.2-16-16-16H336c-8.8 0-16 7.2-16 16z"
-                                               VerticalAlignment="Center" />
+                            <fluentUi:FAPathIcon Width="14" Height="14"
+                                                 Data="M128 0c17.7 0 32 14.3 32 32V64H288V32c0-17.7 14.3-32 32-32s32 14.3 32 32V64h48c26.5 0 48 21.5 48 48v48H0V112C0 85.5 21.5 64 48 64H96V32c0-17.7 14.3-32 32-32zM0 192H448V464c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V192zm64 80v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V272c0-8.8-7.2-16-16-16H80c-8.8 0-16 7.2-16 16zm128 0v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V272c0-8.8-7.2-16-16-16H208c-8.8 0-16 7.2-16 16zm144-16c-8.8 0-16 7.2-16 16v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V272c0-8.8-7.2-16-16-16H336zM64 400v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V400c0-8.8-7.2-16-16-16H80c-8.8 0-16 7.2-16 16zm144-16c-8.8 0-16 7.2-16 16v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V400c0-8.8-7.2-16-16-16H208zm112 16v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V400c0-8.8-7.2-16-16-16H336c-8.8 0-16 7.2-16 16z"
+                                                 VerticalAlignment="Center" />
                             <TextBlock Text="Monthly" VerticalAlignment="Center" />
                         </StackPanel>
                     </ComboBoxItem>
@@ -141,7 +141,7 @@
                                                Description="Action we take when we reach the Usage Limit">
                 <controls:ExtendedSettingsExpander.Styles>
                     <Style
-                        Selector="controls|ExtendedSettingsExpander /template/ Expander /template/ ToggleButton:not(:empty) /template/ fluent|SymbolIcon#ExpandCollapseChevron">
+                        Selector="controls|ExtendedSettingsExpander /template/ Expander /template/ ToggleButton:not(:empty) /template/ fluentUi|SymbolIcon#ExpandCollapseChevron">
                         <Setter Property="IsVisible" Value="False" />
                     </Style>
                     <!-- TODO make it such that the user cannot toggle the expanded state for this SettingsExpander  -->
@@ -159,24 +159,24 @@
 
                         <ComboBoxItem Tag="{x:Static dataEntities:TriggerAction.KillTag}">
                             <StackPanel Orientation="Horizontal" Spacing="8">
-                                <fluent:FAPathIcon Width="14" Height="14" Data="{StaticResource KillPath}"
-                                                   VerticalAlignment="Center" />
+                                <fluentUi:FAPathIcon Width="14" Height="14" Data="{StaticResource KillPath}"
+                                                     VerticalAlignment="Center" />
                                 <TextBlock Text="Kill" VerticalAlignment="Center" />
                             </StackPanel>
                         </ComboBoxItem>
 
                         <ComboBoxItem Tag="{x:Static dataEntities:TriggerAction.MessageTag}">
                             <StackPanel Orientation="Horizontal" Spacing="8">
-                                <fluent:FAPathIcon Width="14" Height="14" Data="{StaticResource MessagePath}"
-                                                   VerticalAlignment="Center" />
+                                <fluentUi:FAPathIcon Width="14" Height="14" Data="{StaticResource MessagePath}"
+                                                     VerticalAlignment="Center" />
                                 <TextBlock Text="Message" VerticalAlignment="Center" />
                             </StackPanel>
                         </ComboBoxItem>
 
                         <ComboBoxItem Tag="{x:Static dataEntities:TriggerAction.DimTag}">
                             <StackPanel Orientation="Horizontal" Spacing="8">
-                                <fluent:FAPathIcon Width="14" Height="14" Data="{StaticResource DimPath}"
-                                                   VerticalAlignment="Center" />
+                                <fluentUi:FAPathIcon Width="14" Height="14" Data="{StaticResource DimPath}"
+                                                     VerticalAlignment="Center" />
                                 <TextBlock Text="Dim" VerticalAlignment="Center" />
                             </StackPanel>
                         </ComboBoxItem>
@@ -192,30 +192,30 @@
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.Items>
 
-                    <fluent:SettingsExpanderItem IconSource="Comment"
-                                                 Content="Message Content" Description="Notification message to show"
-                                                 IsVisible="{Binding TriggerAction.Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={x:Static dataEntities:TriggerAction.MessageTag}}">
+                    <fluentUi:SettingsExpanderItem IconSource="Comment"
+                                                   Content="Message Content" Description="Notification message to show"
+                                                   IsVisible="{Binding TriggerAction.Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={x:Static dataEntities:TriggerAction.MessageTag}}">
 
-                        <fluent:SettingsExpanderItem.Footer>
+                        <fluentUi:SettingsExpanderItem.Footer>
 
 
                             <TextBox Text="{Binding TriggerAction.MessageContent}" VerticalAlignment="Center"
                                      AcceptsReturn="True" Margin="2,0" MinWidth="150" />
-                        </fluent:SettingsExpanderItem.Footer>
-                    </fluent:SettingsExpanderItem>
+                        </fluentUi:SettingsExpanderItem.Footer>
+                    </fluentUi:SettingsExpanderItem>
 
-                    <fluent:SettingsExpanderItem
+                    <fluentUi:SettingsExpanderItem
                         Content="Dim Duration" Description="Duration till complete dimming of Targets"
                         IsVisible="{Binding TriggerAction.Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={x:Static dataEntities:TriggerAction.DimTag}}">
-                        <fluent:SettingsExpanderItem.IconSource>
-                            <fluent:PathIconSource Data="{StaticResource DimPath}" />
-                        </fluent:SettingsExpanderItem.IconSource>
-                        <fluent:SettingsExpanderItem.Footer>
+                        <fluentUi:SettingsExpanderItem.IconSource>
+                            <fluentUi:PathIconSource Data="{StaticResource DimPath}" />
+                        </fluentUi:SettingsExpanderItem.IconSource>
+                        <fluentUi:SettingsExpanderItem.Footer>
                             <controls:DurationPicker Duration="{Binding TriggerAction.DimDuration}"
                                                      HorizontalAlignment="Stretch" VerticalAlignment="Center"
                                                      Margin="2,0" MinWidth="150" />
-                        </fluent:SettingsExpanderItem.Footer>
-                    </fluent:SettingsExpanderItem>
+                        </fluentUi:SettingsExpanderItem.Footer>
+                    </fluentUi:SettingsExpanderItem>
 
                 </ItemsControl.Items>
             </ItemsControl>
@@ -237,16 +237,16 @@
             </controls:ExtendedSettingsExpander.Footer>
             <controls:ExtendedSettingsExpander.IconSource>
                 <!-- Lightbulb icon from https://fluenticons.co/outlined -->
-                <fluent:PathIconSource
+                <fluentUi:PathIconSource
                     Data="M12 2.001a7.25 7.25 0 0 1 7.25 7.25c0 2.096-.9 4.02-2.663 5.742a.75.75 0 0 0-.175.265l-.032.103-1.13 4.895a2.25 2.25 0 0 1-2.02 1.737l-.173.007h-2.114a2.25 2.25 0 0 1-2.147-1.577l-.045-.167-1.13-4.895a.75.75 0 0 0-.206-.368c-1.68-1.64-2.577-3.463-2.659-5.444l-.006-.298.004-.24A7.25 7.25 0 0 1 12 2.002Zm2.115 16.498H9.884l.329 1.42a.75.75 0 0 0 .627.573l.103.008h2.114a.75.75 0 0 0 .7-.483l.03-.099.328-1.419ZM12 3.501a5.75 5.75 0 0 0-5.746 5.53l-.004.22.007.277c.076 1.563.8 3.02 2.206 4.392.264.258.46.576.571.926l.049.178.455 1.975h4.923l.458-1.976a2.25 2.25 0 0 1 .493-.97l.127-.133c1.404-1.373 2.128-2.828 2.204-4.392l.007-.277-.004-.22A5.75 5.75 0 0 0 12 3.5Z" />
             </controls:ExtendedSettingsExpander.IconSource>
 
             <controls:ExtendedSettingsExpander.ItemTemplate>
-                <DataTemplate DataType="entities:EditableReminderViewModel">
-                    <entityViews:ReminderListItemView ViewModel="{Binding}"
-                                                      UsageLimit="{Binding $parent[StackPanel].((dialogs:AlertDialogViewModelBase)DataContext).UsageLimit}"
-                                                      DeleteCommandParameter="{Binding}"
-                                                      DeleteCommand="{Binding $parent[StackPanel].((dialogs:AlertDialogViewModelBase)DataContext).DeleteReminderCommand}" />
+                <DataTemplate DataType="vmEntities:EditableReminderViewModel">
+                    <entities:ReminderListItemView ViewModel="{Binding}"
+                                                   UsageLimit="{Binding $parent[StackPanel].((vmDialogs:AlertDialogViewModelBase)DataContext).UsageLimit}"
+                                                   DeleteCommandParameter="{Binding}"
+                                                   DeleteCommand="{Binding $parent[StackPanel].((vmDialogs:AlertDialogViewModelBase)DataContext).DeleteReminderCommand}" />
                 </DataTemplate>
             </controls:ExtendedSettingsExpander.ItemTemplate>
 
