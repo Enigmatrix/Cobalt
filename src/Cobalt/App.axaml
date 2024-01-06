@@ -9,6 +9,8 @@
 
     <Application.Styles>
         <fluentStyle:FluentAvaloniaTheme />
+
+        <StyleInclude Source="Controls/ExtendedSettingsExpander.axaml" />
     </Application.Styles>
     <Application.Resources>
         <converters:BytesToImageConverter x:Key="BytesToImageConverter" />
