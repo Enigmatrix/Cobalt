@@ -26,9 +26,9 @@
 
         <!-- ReSharper keeps removing TimePickerThemeMaxWidth, so we use it in a dumb manner -->
 
-        <fluent:SettingsExpander Header="Target" IconSource="Target" Description="Monitoring target"
-                                 Tag="{StaticResource TimePickerThemeMaxWidth}">
-            <fluent:SettingsExpander.Footer>
+        <controls:ExtendedSettingsExpander Header="Target" IconSource="Target" Description="Monitoring target"
+                                           Tag="{StaticResource TimePickerThemeMaxWidth}">
+            <controls:ExtendedSettingsExpander.Footer>
                 <DropDownButton Name="TargetPicker" MinHeight="40" MinWidth="150" Margin="2,0"
                                 Padding="16,0,8,0" HorizontalAlignment="Stretch">
                     <DropDownButton.Content>
@@ -71,24 +71,22 @@
                     </DropDownButton.Flyout>
                 </DropDownButton>
 
-            </fluent:SettingsExpander.Footer>
-        </fluent:SettingsExpander>
+            </controls:ExtendedSettingsExpander.Footer>
+        </controls:ExtendedSettingsExpander>
 
-        <!-- If this was a SettingsExpander, we can't press space because of https://github.com/AvaloniaUI/Avalonia/issues/9623 -->
-        <!-- TODO make this settingsexpanderitem similar in style to settingsexpander-->
-        <fluent:SettingsExpanderItem Content="Usage Limit" IconSource="Clock"
-                                     Description="Duration before the Trigger Action activates">
-            <fluent:SettingsExpanderItem.Footer>
+        <controls:ExtendedSettingsExpander Header="Usage Limit" IconSource="Clock"
+                                           Description="Duration before the Trigger Action activates">
+            <controls:ExtendedSettingsExpander.Footer>
 
                 <controls:DurationPicker Name="UsageLimitPicker" Duration="{Binding UsageLimit}" Margin="2,0"
                                          HorizontalAlignment="Stretch" MinWidth="150" />
 
-            </fluent:SettingsExpanderItem.Footer>
-        </fluent:SettingsExpanderItem>
+            </controls:ExtendedSettingsExpander.Footer>
+        </controls:ExtendedSettingsExpander>
 
-        <fluent:SettingsExpander Header="Time Frame" IconSource="Calendar"
-                                 Description="Time Frame when we monitor the Target's usages">
-            <fluent:SettingsExpander.Footer>
+        <controls:ExtendedSettingsExpander Header="Time Frame" IconSource="Calendar"
+                                           Description="Time Frame when we monitor the Target's usages">
+            <controls:ExtendedSettingsExpander.Footer>
 
                 <controls:ExtendedComboBox Name="TimeFramePicker" Margin="2,0" MinWidth="150"
                                            SelectedValueBinding="{ReflectionBinding Tag, Mode=TwoWay}"
@@ -135,115 +133,126 @@
 
                 </controls:ExtendedComboBox>
 
-            </fluent:SettingsExpander.Footer>
-        </fluent:SettingsExpander>
+            </controls:ExtendedSettingsExpander.Footer>
+        </controls:ExtendedSettingsExpander>
 
-        <fluent:SettingsExpander Header="Trigger Action" IconSource="ChevronRight" IsExpanded="True"
-                                 Description="Action we take when we reach the Usage Limit">
-            <fluent:SettingsExpander.Styles>
-                <Style
-                    Selector="fluent|SettingsExpander /template/ Expander /template/ ToggleButton:not(:empty) /template/ fluent|SymbolIcon#ExpandCollapseChevron">
-                    <Setter Property="IsVisible" Value="False" />
-                </Style>
-                <!-- TODO make it such that the user cannot toggle the expanded state for this SettingsExpander  -->
-                <!--<Style
+        <StackPanel>
+            <controls:ExtendedSettingsExpander Header="Trigger Action" IconSource="ChevronRight" IsExpanded="True"
+                                               Description="Action we take when we reach the Usage Limit">
+                <controls:ExtendedSettingsExpander.Styles>
+                    <Style
+                        Selector="controls|ExtendedSettingsExpander /template/ Expander /template/ ToggleButton:not(:empty) /template/ fluent|SymbolIcon#ExpandCollapseChevron">
+                        <Setter Property="IsVisible" Value="False" />
+                    </Style>
+                    <!-- TODO make it such that the user cannot toggle the expanded state for this SettingsExpander  -->
+                    <!--<Style
                     Selector="fluent|SettingsExpander /template/ Expander /template/ ToggleButton:not(:empty)">
                     <Setter Property="IsHitTestVisible" Value="False" />
                 </Style>-->
-            </fluent:SettingsExpander.Styles>
-            <fluent:SettingsExpander.Footer>
+                </controls:ExtendedSettingsExpander.Styles>
+                <controls:ExtendedSettingsExpander.Footer>
 
-                <ComboBox Name="TriggerActionPicker" Margin="2,0" MinWidth="150"
-                          SelectedValueBinding="{ReflectionBinding Tag, Mode=TwoWay}"
-                          SelectedValue="{Binding TriggerAction.Tag, Mode=TwoWay}"
-                          HorizontalAlignment="Stretch" HorizontalContentAlignment="Left">
+                    <ComboBox Name="TriggerActionPicker" Margin="2,0" MinWidth="150"
+                              SelectedValueBinding="{ReflectionBinding Tag, Mode=TwoWay}"
+                              SelectedValue="{Binding TriggerAction.Tag, Mode=TwoWay}"
+                              HorizontalAlignment="Stretch" HorizontalContentAlignment="Left">
 
-                    <ComboBoxItem Tag="{StaticResource Int0}">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <fluent:FAPathIcon Width="14" Height="14" Data="{StaticResource KillPath}"
-                                               VerticalAlignment="Center" />
-                            <TextBlock Text="Kill" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </ComboBoxItem>
+                        <ComboBoxItem Tag="{StaticResource Int0}">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <fluent:FAPathIcon Width="14" Height="14" Data="{StaticResource KillPath}"
+                                                   VerticalAlignment="Center" />
+                                <TextBlock Text="Kill" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </ComboBoxItem>
 
-                    <ComboBoxItem Tag="{StaticResource Int1}">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <fluent:FAPathIcon Width="14" Height="14" Data="{StaticResource MessagePath}"
-                                               VerticalAlignment="Center" />
-                            <TextBlock Text="Message" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </ComboBoxItem>
+                        <ComboBoxItem Tag="{StaticResource Int1}">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <fluent:FAPathIcon Width="14" Height="14" Data="{StaticResource MessagePath}"
+                                                   VerticalAlignment="Center" />
+                                <TextBlock Text="Message" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </ComboBoxItem>
 
-                    <ComboBoxItem Tag="{StaticResource Int2}">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <fluent:FAPathIcon Width="14" Height="14" Data="{StaticResource DimPath}"
-                                               VerticalAlignment="Center" />
-                            <TextBlock Text="Dim" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </ComboBoxItem>
-                </ComboBox>
+                        <ComboBoxItem Tag="{StaticResource Int2}">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <fluent:FAPathIcon Width="14" Height="14" Data="{StaticResource DimPath}"
+                                                   VerticalAlignment="Center" />
+                                <TextBlock Text="Dim" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </ComboBoxItem>
+                    </ComboBox>
 
-            </fluent:SettingsExpander.Footer>
-            <fluent:SettingsExpander.Items>
+                </controls:ExtendedSettingsExpander.Footer>
+            </controls:ExtendedSettingsExpander>
+            <ItemsControl>
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Spacing="1" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.Items>
 
-                <fluent:SettingsExpanderItem IconSource="Comment"
-                                             Content="Message Content" Description="Notification message to show"
-                                             IsVisible="{Binding TriggerAction.Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={StaticResource Int1}}">
+                    <fluent:SettingsExpanderItem IconSource="Comment"
+                                                 Content="Message Content" Description="Notification message to show"
+                                                 IsVisible="{Binding TriggerAction.Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={StaticResource Int1}}">
 
-                    <fluent:SettingsExpanderItem.Footer>
+                        <fluent:SettingsExpanderItem.Footer>
 
 
-                        <TextBox Text="{Binding TriggerAction.MessageContent}" VerticalAlignment="Center"
-                                 AcceptsReturn="True" Margin="2,0" MinWidth="150"
-                                 IsVisible="{Binding TriggerAction.Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={StaticResource Int1}}" />
-                    </fluent:SettingsExpanderItem.Footer>
-                </fluent:SettingsExpanderItem>
+                            <TextBox Text="{Binding TriggerAction.MessageContent}" VerticalAlignment="Center"
+                                     AcceptsReturn="True" Margin="2,0" MinWidth="150"
+                                     IsVisible="{Binding TriggerAction.Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={StaticResource Int1}}" />
+                        </fluent:SettingsExpanderItem.Footer>
+                    </fluent:SettingsExpanderItem>
 
-                <fluent:SettingsExpanderItem
-                    Content="Dim Duration" Description="Duration till complete dimming of Targets"
-                    IsVisible="{Binding TriggerAction.Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={StaticResource Int2}}">
-                    <fluent:SettingsExpanderItem.IconSource>
-                        <fluent:PathIconSource Data="{StaticResource DimPath}" />
-                    </fluent:SettingsExpanderItem.IconSource>
-                    <fluent:SettingsExpanderItem.Footer>
-                        <controls:DurationPicker Duration="{Binding TriggerAction.DimDuration}"
-                                                 HorizontalAlignment="Stretch" VerticalAlignment="Center"
-                                                 Margin="2,0" MinWidth="150"
-                                                 IsVisible="{Binding TriggerAction.Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={StaticResource Int2}}" />
-                    </fluent:SettingsExpanderItem.Footer>
-                </fluent:SettingsExpanderItem>
+                    <fluent:SettingsExpanderItem
+                        Content="Dim Duration" Description="Duration till complete dimming of Targets"
+                        IsVisible="{Binding TriggerAction.Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={StaticResource Int2}}">
+                        <fluent:SettingsExpanderItem.IconSource>
+                            <fluent:PathIconSource Data="{StaticResource DimPath}" />
+                        </fluent:SettingsExpanderItem.IconSource>
+                        <fluent:SettingsExpanderItem.Footer>
+                            <controls:DurationPicker Duration="{Binding TriggerAction.DimDuration}"
+                                                     HorizontalAlignment="Stretch" VerticalAlignment="Center"
+                                                     Margin="2,0" MinWidth="150"
+                                                     IsVisible="{Binding TriggerAction.Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={StaticResource Int2}}" />
+                        </fluent:SettingsExpanderItem.Footer>
+                    </fluent:SettingsExpanderItem>
 
-            </fluent:SettingsExpander.Items>
-        </fluent:SettingsExpander>
+                </ItemsControl.Items>
+            </ItemsControl>
+        </StackPanel>
 
-        <fluent:SettingsExpander Description="Reminders at certain thresholds" IsExpanded="True"
-                                 ItemsSource="{Binding Reminders}">
-            <fluent:SettingsExpander.Header>
+        <controls:ExtendedSettingsExpander
+            IsTabStop="{Binding Reminders.Count, Converter={StaticResource IsNotEqualConverter}, ConverterParameter={StaticResource EmptyCount}}"
+            Description="Reminders at certain thresholds" IsExpanded="True"
+            ItemsSource="{Binding Reminders}">
+            <controls:ExtendedSettingsExpander.Header>
                 <StackPanel Orientation="Horizontal" Spacing="4">
                     <TextBlock Text="Reminders" />
                     <TextBlock Text="{Binding Reminders.Count, StringFormat={}({0})}"
                                IsVisible="{Binding Reminders.Count, Converter={StaticResource IsNotEqualConverter}, ConverterParameter={StaticResource EmptyCount}}" />
                 </StackPanel>
-            </fluent:SettingsExpander.Header>
-            <fluent:SettingsExpander.Footer>
+            </controls:ExtendedSettingsExpander.Header>
+            <controls:ExtendedSettingsExpander.Footer>
                 <Button Content="Add Reminder" Command="{Binding AddReminder}" />
-            </fluent:SettingsExpander.Footer>
-            <fluent:SettingsExpander.IconSource>
+            </controls:ExtendedSettingsExpander.Footer>
+            <controls:ExtendedSettingsExpander.IconSource>
                 <!-- Lightbulb icon from https://fluenticons.co/outlined -->
                 <fluent:PathIconSource
                     Data="M12 2.001a7.25 7.25 0 0 1 7.25 7.25c0 2.096-.9 4.02-2.663 5.742a.75.75 0 0 0-.175.265l-.032.103-1.13 4.895a2.25 2.25 0 0 1-2.02 1.737l-.173.007h-2.114a2.25 2.25 0 0 1-2.147-1.577l-.045-.167-1.13-4.895a.75.75 0 0 0-.206-.368c-1.68-1.64-2.577-3.463-2.659-5.444l-.006-.298.004-.24A7.25 7.25 0 0 1 12 2.002Zm2.115 16.498H9.884l.329 1.42a.75.75 0 0 0 .627.573l.103.008h2.114a.75.75 0 0 0 .7-.483l.03-.099.328-1.419ZM12 3.501a5.75 5.75 0 0 0-5.746 5.53l-.004.22.007.277c.076 1.563.8 3.02 2.206 4.392.264.258.46.576.571.926l.049.178.455 1.975h4.923l.458-1.976a2.25 2.25 0 0 1 .493-.97l.127-.133c1.404-1.373 2.128-2.828 2.204-4.392l.007-.277-.004-.22A5.75 5.75 0 0 0 12 3.5Z" />
-            </fluent:SettingsExpander.IconSource>
+            </controls:ExtendedSettingsExpander.IconSource>
 
-            <fluent:SettingsExpander.ItemTemplate>
+            <controls:ExtendedSettingsExpander.ItemTemplate>
                 <DataTemplate DataType="entities:EditableReminderViewModel">
                     <entityViews:ReminderListItemView ViewModel="{Binding}"
                                                       UsageLimit="{Binding $parent[StackPanel].((dialogs:AlertDialogViewModelBase)DataContext).UsageLimit}"
                                                       DeleteCommandParameter="{Binding}"
                                                       DeleteCommand="{Binding $parent[StackPanel].((dialogs:AlertDialogViewModelBase)DataContext).DeleteReminderCommand}" />
                 </DataTemplate>
-            </fluent:SettingsExpander.ItemTemplate>
+            </controls:ExtendedSettingsExpander.ItemTemplate>
 
-        </fluent:SettingsExpander>
+        </controls:ExtendedSettingsExpander>
 
     </StackPanel>
 

@@ -76,4 +76,8 @@
 			<DependentUpon>AppsPage.axaml</DependentUpon>
 		</Compile>
 	</ItemGroup>
+
+	<ItemGroup>
+		<UpToDateCheckInput Remove="Controls\ExtendedSettingsExpander.axaml" />
+	</ItemGroup>
 </Project>
