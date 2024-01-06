@@ -136,83 +136,92 @@
             </controls:ExtendedSettingsExpander.Footer>
         </controls:ExtendedSettingsExpander>
 
-        <controls:ExtendedSettingsExpander Header="Trigger Action" IconSource="ChevronRight" IsExpanded="True"
-                                           Description="Action we take when we reach the Usage Limit">
-            <controls:ExtendedSettingsExpander.Styles>
-                <Style
-                    Selector="controls|ExtendedSettingsExpander /template/ Expander /template/ ToggleButton:not(:empty) /template/ fluent|SymbolIcon#ExpandCollapseChevron">
-                    <Setter Property="IsVisible" Value="False" />
-                </Style>
-                <!-- TODO make it such that the user cannot toggle the expanded state for this SettingsExpander  -->
-                <!--<Style
+        <StackPanel>
+            <controls:ExtendedSettingsExpander Header="Trigger Action" IconSource="ChevronRight" IsExpanded="True"
+                                               Description="Action we take when we reach the Usage Limit">
+                <controls:ExtendedSettingsExpander.Styles>
+                    <Style
+                        Selector="controls|ExtendedSettingsExpander /template/ Expander /template/ ToggleButton:not(:empty) /template/ fluent|SymbolIcon#ExpandCollapseChevron">
+                        <Setter Property="IsVisible" Value="False" />
+                    </Style>
+                    <!-- TODO make it such that the user cannot toggle the expanded state for this SettingsExpander  -->
+                    <!--<Style
                     Selector="fluent|SettingsExpander /template/ Expander /template/ ToggleButton:not(:empty)">
                     <Setter Property="IsHitTestVisible" Value="False" />
                 </Style>-->
-            </controls:ExtendedSettingsExpander.Styles>
-            <controls:ExtendedSettingsExpander.Footer>
+                </controls:ExtendedSettingsExpander.Styles>
+                <controls:ExtendedSettingsExpander.Footer>
 
-                <ComboBox Name="TriggerActionPicker" Margin="2,0" MinWidth="150"
-                          SelectedValueBinding="{ReflectionBinding Tag, Mode=TwoWay}"
-                          SelectedValue="{Binding TriggerAction.Tag, Mode=TwoWay}"
-                          HorizontalAlignment="Stretch" HorizontalContentAlignment="Left">
+                    <ComboBox Name="TriggerActionPicker" Margin="2,0" MinWidth="150"
+                              SelectedValueBinding="{ReflectionBinding Tag, Mode=TwoWay}"
+                              SelectedValue="{Binding TriggerAction.Tag, Mode=TwoWay}"
+                              HorizontalAlignment="Stretch" HorizontalContentAlignment="Left">
 
-                    <ComboBoxItem Tag="{StaticResource Int0}">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <fluent:FAPathIcon Width="14" Height="14" Data="{StaticResource KillPath}"
-                                               VerticalAlignment="Center" />
-                            <TextBlock Text="Kill" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </ComboBoxItem>
+                        <ComboBoxItem Tag="{StaticResource Int0}">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <fluent:FAPathIcon Width="14" Height="14" Data="{StaticResource KillPath}"
+                                                   VerticalAlignment="Center" />
+                                <TextBlock Text="Kill" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </ComboBoxItem>
 
-                    <ComboBoxItem Tag="{StaticResource Int1}">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <fluent:FAPathIcon Width="14" Height="14" Data="{StaticResource MessagePath}"
-                                               VerticalAlignment="Center" />
-                            <TextBlock Text="Message" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </ComboBoxItem>
+                        <ComboBoxItem Tag="{StaticResource Int1}">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <fluent:FAPathIcon Width="14" Height="14" Data="{StaticResource MessagePath}"
+                                                   VerticalAlignment="Center" />
+                                <TextBlock Text="Message" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </ComboBoxItem>
 
-                    <ComboBoxItem Tag="{StaticResource Int2}">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <fluent:FAPathIcon Width="14" Height="14" Data="{StaticResource DimPath}"
-                                               VerticalAlignment="Center" />
-                            <TextBlock Text="Dim" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </ComboBoxItem>
-                </ComboBox>
+                        <ComboBoxItem Tag="{StaticResource Int2}">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <fluent:FAPathIcon Width="14" Height="14" Data="{StaticResource DimPath}"
+                                                   VerticalAlignment="Center" />
+                                <TextBlock Text="Dim" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </ComboBoxItem>
+                    </ComboBox>
 
-            </controls:ExtendedSettingsExpander.Footer>
-            <controls:ExtendedSettingsExpander.Items>
+                </controls:ExtendedSettingsExpander.Footer>
+            </controls:ExtendedSettingsExpander>
+            <ItemsControl>
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Spacing="1" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.Items>
 
-                <fluent:SettingsExpanderItem IconSource="Comment"
-                                             Content="Message Content" Description="Notification message to show"
-                                             IsVisible="{Binding TriggerAction.Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={StaticResource Int1}}">
+                    <fluent:SettingsExpanderItem IconSource="Comment"
+                                                 Content="Message Content" Description="Notification message to show"
+                                                 IsVisible="{Binding TriggerAction.Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={StaticResource Int1}}">
 
-                    <fluent:SettingsExpanderItem.Footer>
+                        <fluent:SettingsExpanderItem.Footer>
 
 
-                        <TextBox Text="{Binding TriggerAction.MessageContent}" VerticalAlignment="Center"
-                                 AcceptsReturn="True" Margin="2,0" MinWidth="150"
-                                 IsVisible="{Binding TriggerAction.Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={StaticResource Int1}}" />
-                    </fluent:SettingsExpanderItem.Footer>
-                </fluent:SettingsExpanderItem>
+                            <TextBox Text="{Binding TriggerAction.MessageContent}" VerticalAlignment="Center"
+                                     AcceptsReturn="True" Margin="2,0" MinWidth="150"
+                                     IsVisible="{Binding TriggerAction.Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={StaticResource Int1}}" />
+                        </fluent:SettingsExpanderItem.Footer>
+                    </fluent:SettingsExpanderItem>
 
-                <fluent:SettingsExpanderItem
-                    Content="Dim Duration" Description="Duration till complete dimming of Targets"
-                    IsVisible="{Binding TriggerAction.Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={StaticResource Int2}}">
-                    <fluent:SettingsExpanderItem.IconSource>
-                        <fluent:PathIconSource Data="{StaticResource DimPath}" />
-                    </fluent:SettingsExpanderItem.IconSource>
-                    <fluent:SettingsExpanderItem.Footer>
-                        <controls:DurationPicker Duration="{Binding TriggerAction.DimDuration}"
-                                                 HorizontalAlignment="Stretch" VerticalAlignment="Center"
-                                                 Margin="2,0" MinWidth="150"
-                                                 IsVisible="{Binding TriggerAction.Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={StaticResource Int2}}" />
-                    </fluent:SettingsExpanderItem.Footer>
-                </fluent:SettingsExpanderItem>
+                    <fluent:SettingsExpanderItem
+                        Content="Dim Duration" Description="Duration till complete dimming of Targets"
+                        IsVisible="{Binding TriggerAction.Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={StaticResource Int2}}">
+                        <fluent:SettingsExpanderItem.IconSource>
+                            <fluent:PathIconSource Data="{StaticResource DimPath}" />
+                        </fluent:SettingsExpanderItem.IconSource>
+                        <fluent:SettingsExpanderItem.Footer>
+                            <controls:DurationPicker Duration="{Binding TriggerAction.DimDuration}"
+                                                     HorizontalAlignment="Stretch" VerticalAlignment="Center"
+                                                     Margin="2,0" MinWidth="150"
+                                                     IsVisible="{Binding TriggerAction.Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={StaticResource Int2}}" />
+                        </fluent:SettingsExpanderItem.Footer>
+                    </fluent:SettingsExpanderItem>
 
-            </controls:ExtendedSettingsExpander.Items>
-        </controls:ExtendedSettingsExpander>
+                </ItemsControl.Items>
+            </ItemsControl>
+        </StackPanel>
 
         <controls:ExtendedSettingsExpander
             IsTabStop="{Binding Reminders.Count, Converter={StaticResource IsNotEqualConverter}, ConverterParameter={StaticResource EmptyCount}}"
