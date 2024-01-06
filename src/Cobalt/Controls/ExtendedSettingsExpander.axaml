@@ -8,7 +8,7 @@
     <Styles.Resources>
 
         <!-- Exact same as https://github.com/amwx/FluentAvalonia/blob/b84f54e75fd30feb18d766fe4d95da486d734b8f/src/FluentAvalonia/Styling/ControlThemes/FAControls/SettingsExpander/SettingsExpanderStyles.axaml#L101 -->
-        <!-- but the ToggleButton is now KeylessToggleButton -->
+        <!-- but the ToggleButton is now KeylessToggleButton and it's IsTabStop property is bound -->
         <ControlTheme x:Key="ExtendedSettingsExpanderExpanderStyle" TargetType="Expander">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="MinWidth" Value="0" />
@@ -19,7 +19,7 @@
             <Setter Property="Template">
                 <ControlTemplate>
                     <StackPanel>
-                        <controls:KeylessToggleButton Name="ToggleButton" IsTabStop="False"
+                        <controls:KeylessToggleButton Name="ToggleButton" IsTabStop="{TemplateBinding IsTabStop}"
                                                       MinHeight="{TemplateBinding MinHeight}"
                                                       IsEnabled="{TemplateBinding IsEnabled}"
                                                       IsChecked="{TemplateBinding IsExpanded, Mode=TwoWay}"
@@ -50,7 +50,7 @@
         </ControlTheme>
 
         <!-- Exact same as https://github.com/amwx/FluentAvalonia/blob/b84f54e75fd30feb18d766fe4d95da486d734b8f/src/FluentAvalonia/Styling/ControlThemes/FAControls/SettingsExpander/SettingsExpanderStyles.axaml#L141 -->
-        <!-- but the SettingsExpanderExpanderStyle is now ExtendedSettingsExpanderExpanderStyle -->
+        <!-- but the SettingsExpanderExpanderStyle is now ExtendedSettingsExpanderExpanderStyle, and we set IsTabStop to false and propagate it to Expander -->
         <ControlTheme x:Key="{x:Type controls:ExtendedSettingsExpander}" TargetType="controls:ExtendedSettingsExpander">
             <ControlTheme.Setters>
                 <Setter Property="Background" Value="{DynamicResource ExpanderBackground}" />
@@ -59,6 +59,7 @@
                 <Setter Property="Padding" Value="{DynamicResource SettingsExpanderPadding}" />
                 <Setter Property="CornerRadius" Value="{DynamicResource ControlCornerRadius}" />
                 <Setter Property="MinHeight" Value="{DynamicResource SettingsExpanderMinHeight}" />
+                <Setter Property="IsTabStop" Value="False" />
                 <Setter Property="ItemsPanel">
                     <ItemsPanelTemplate>
                         <StackPanel Spacing="1" />
@@ -66,7 +67,7 @@
                 </Setter>
                 <Setter Property="Template">
                     <ControlTemplate>
-                        <Expander Name="Expander"
+                        <Expander Name="Expander" IsTabStop="{TemplateBinding IsTabStop}"
                                   Theme="{StaticResource ExtendedSettingsExpanderExpanderStyle}"
                                   IsExpanded="{TemplateBinding IsExpanded, Mode=TwoWay}">
                             <Expander.Header>
