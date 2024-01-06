@@ -2,6 +2,7 @@
 using System.Reactive.Linq;
 using Cobalt.Common.Data;
 using Cobalt.Common.Data.Entities;
+using Cobalt.Common.ViewModels.Dialogs;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.EntityFrameworkCore;
 using ReactiveUI;
@@ -16,6 +17,7 @@ namespace Cobalt.Common.ViewModels.Entities;
 /// </summary>
 public partial class EditableReminderViewModel : ReactiveObservableObject, IValidatableViewModel
 {
+    private readonly AlertDialogViewModelBase _alert;
     [ObservableProperty] private string? _commitMessage;
     [ObservableProperty] private double _commitThreshold;
     [ObservableProperty] private bool _editing;
@@ -23,8 +25,9 @@ public partial class EditableReminderViewModel : ReactiveObservableObject, IVali
     [ObservableProperty] private string? _message;
     [ObservableProperty] private double _threshold = double.NaN;
 
-    public EditableReminderViewModel(Reminder? reminder = null, bool editing = false)
+    public EditableReminderViewModel(AlertDialogViewModelBase alert, Reminder? reminder = null, bool editing = false)
     {
+        _alert = alert;
         Reminder = reminder;
         if (reminder != null)
         {
@@ -79,6 +82,12 @@ public partial class EditableReminderViewModel : ReactiveObservableObject, IVali
     public ReactiveCommand<Unit, Unit> StopEditingCommand { get; }
     public ReactiveCommand<Unit, Unit> StartEditingCommand { get; }
 
+    public IObservable<TimeSpan?> ThresholdUsageLimit => this.WhenAnyValue(self => self.Threshold,
+        self => self._alert.UsageLimit,
+        (threshold, usageLimit) => double.IsNaN(threshold) || usageLimit == null
+            ? new TimeSpan?()
+            : new TimeSpan((long)(threshold * usageLimit.Value.Ticks)));
+
     public ValidationContext ValidationContext { get; } = new();
 }
 
@@ -99,6 +108,9 @@ public partial class ReminderViewModel : EditableEntityViewModelBase<Reminder>
     }
 
     public AlertViewModel Alert => EntityCache.Alert(Entity.Alert);
+
+    public IObservable<TimeSpan> ThresholdUsageLimit => this.WhenAnyValue(self => self.Threshold,
+        self => self.Alert.UsageLimit, (threshold, usageLimit) => new TimeSpan((long)(threshold * usageLimit.Ticks)));
 
     public override void UpdateEntity()
     {

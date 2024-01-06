@@ -31,7 +31,8 @@ public partial class EditAlertDialogViewModel : AlertDialogViewModelBase
         UsageLimit = alert.UsageLimit;
         TimeFrame = alert.TimeFrame;
         TriggerAction = new TriggerActionViewModel(alert.TriggerAction);
-        RemindersSource.AddRange(alert.Reminders.Select(reminder => new EditableReminderViewModel(reminder.Entity)));
+        RemindersSource.AddRange(
+            alert.Reminders.Select(reminder => new EditableReminderViewModel(this, reminder.Entity)));
 
         // This is validation context composition
         ValidationContext.Add(TriggerAction.ValidationContext);
