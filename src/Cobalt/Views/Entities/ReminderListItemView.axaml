@@ -15,12 +15,18 @@
             <StackPanel Orientation="Vertical" IsVisible="{Binding !Editing}">
 
                 <TextBlock Text="{Binding Message}" />
-                <StackPanel Orientation="Horizontal" Spacing="4">
+                <StackPanel Orientation="Horizontal">
                     <controls:DurationTextBlock Duration="{Binding ThresholdUsageLimit^}"
                                                 Theme="{StaticResource CaptionTextBlockStyle}"
+                                                IsVisible="{Binding ThresholdUsageLimit^, Converter={StaticResource IsNotNullConverter}}"
                                                 Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                    <TextBlock Text="Unknown Usage Limit"
+                               Theme="{StaticResource CaptionTextBlockStyle}"
+                               IsVisible="{Binding ThresholdUsageLimit^, Converter={StaticResource IsNullConverter}}"
+                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                     <TextBlock Text="{Binding Threshold, StringFormat={}({0}%)}"
                                Theme="{StaticResource CaptionTextBlockStyle}"
+                               Margin="4,0,0,0"
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                 </StackPanel>
             </StackPanel>
