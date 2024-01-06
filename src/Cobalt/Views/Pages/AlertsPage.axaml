@@ -193,7 +193,8 @@
                                                     <Setter Property="Canvas.Left">
                                                         <MultiBinding
                                                             Converter="{StaticResource PercentToLeftConverter}">
-                                                            <ReflectionBinding Path="Threshold" />
+                                                            <Binding Path="Threshold"
+                                                                     DataType="vmEntities:ReminderViewModel" />
                                                             <Binding
                                                                 RelativeSource="{RelativeSource AncestorType=Canvas, Mode=FindAncestor}"
                                                                 Path="Bounds.Width" />
@@ -228,7 +229,7 @@
                                                                                 </Binding.Source>
                                                                             </Binding>
                                                                             <Binding Path="Threshold" />
-                                                                            <ReflectionBinding Path="Alert.UsageLimit" />
+                                                                            <Binding Path="Alert.UsageLimit" />
                                                                         </MultiBinding>
                                                                     </TextBlock.Text>
                                                                 </TextBlock>
