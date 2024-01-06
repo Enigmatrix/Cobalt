@@ -184,7 +184,7 @@
 
                 </controls:ExtendedSettingsExpander.Footer>
             </controls:ExtendedSettingsExpander>
-            <ItemsControl>
+            <ItemsControl Margin="0,-1,0,0">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
                         <StackPanel Spacing="1" />
