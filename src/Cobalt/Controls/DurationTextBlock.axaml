@@ -4,6 +4,9 @@
            xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
            mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
            Text="{Binding $self.Duration, Converter={StaticResource HumanizeTimeSpanConverter}}"
-           x:Class="Cobalt.Controls.DurationTextBlock">
-
+           x:Class="Cobalt.Controls.DurationTextBlock" Name="Self">
+    <ToolTip.Tip>
+        <TextBlock
+            Text="{Binding #Self.Duration, Converter={StaticResource HumanizeTimeSpanConverter}, ConverterParameter={StaticResource True}}" />
+    </ToolTip.Tip>
 </TextBlock>
