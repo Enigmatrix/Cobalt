@@ -1,7 +1,7 @@
-using Avalonia.Controls.Primitives;
+using FluentAvalonia.UI.Controls;
 
-namespace Cobalt;
+namespace Cobalt.Controls;
 
-public class ExtendedSettingsExpander : TemplatedControl
+public class ExtendedSettingsExpander : SettingsExpander
 {
 }
