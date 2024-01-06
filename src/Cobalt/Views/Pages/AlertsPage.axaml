@@ -217,22 +217,15 @@
                                                                 <TextBlock HorizontalAlignment="Center"
                                                                            Theme="{StaticResource BodyStrongTextBlockStyle}"
                                                                            Text="{Binding Message}" />
-                                                                <TextBlock HorizontalAlignment="Center" FontSize="10"
-                                                                           Theme="{StaticResource CaptionTextBlockStyle}">
-                                                                    <TextBlock.Text>
 
-                                                                        <MultiBinding
-                                                                            Converter="{StaticResource ReminderDescriptionConverter}">
-                                                                            <Binding>
-                                                                                <Binding.Source>
-                                                                                    <sys:Boolean>False</sys:Boolean>
-                                                                                </Binding.Source>
-                                                                            </Binding>
-                                                                            <Binding Path="Threshold" />
-                                                                            <Binding Path="Alert.UsageLimit" />
-                                                                        </MultiBinding>
-                                                                    </TextBlock.Text>
-                                                                </TextBlock>
+																<StackPanel Orientation="Horizontal" Spacing="4">
+																	<controls:DurationTextBlock Duration="{Binding ThresholdUsageLimit^}"
+																								Theme="{StaticResource CaptionTextBlockStyle}"
+																								Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+																	<TextBlock Text="{Binding Threshold, StringFormat={}({0}%)}"
+																			   Theme="{StaticResource CaptionTextBlockStyle}"
+																			   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+																</StackPanel>
                                                             </StackPanel>
                                                         </ToolTip.Tip>
                                                     </Rectangle>

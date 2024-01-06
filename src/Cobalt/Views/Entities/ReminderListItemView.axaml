@@ -4,6 +4,7 @@
                                xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
                                xmlns:vmEntities="clr-namespace:Cobalt.Common.ViewModels.Entities;assembly=Cobalt.Common.ViewModels"
                                xmlns:fluentUi="clr-namespace:FluentAvalonia.UI.Controls;assembly=FluentAvalonia"
+                               xmlns:controls="clr-namespace:Cobalt.Controls"
                                mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="50"
                                x:DataType="vmEntities:EditableReminderViewModel"
                                IconSource="Comment" Name="Self"
@@ -11,7 +12,18 @@
 
     <fluentUi:SettingsExpanderItem.Content>
         <Grid>
-            <TextBlock IsVisible="{Binding !Editing}" Text="{Binding Message}" />
+            <StackPanel Orientation="Vertical" IsVisible="{Binding !Editing}">
+
+                <TextBlock Text="{Binding Message}" />
+                <StackPanel Orientation="Horizontal" Spacing="4">
+                    <controls:DurationTextBlock Duration="{Binding ThresholdUsageLimit^}"
+                                                Theme="{StaticResource CaptionTextBlockStyle}"
+                                                Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                    <TextBlock Text="{Binding Threshold, StringFormat={}({0}%)}"
+                               Theme="{StaticResource CaptionTextBlockStyle}"
+                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                </StackPanel>
+            </StackPanel>
 
             <StackPanel Spacing="8" Orientation="Horizontal" IsVisible="{Binding Editing}">
                 <TextBox Text="{Binding CommitMessage}" Watermark="Message Content" MinWidth="200" />
@@ -21,13 +33,6 @@
             </StackPanel>
         </Grid>
     </fluentUi:SettingsExpanderItem.Content>
-    <fluentUi:SettingsExpanderItem.Description>
-        <MultiBinding Converter="{StaticResource ReminderDescriptionConverter}">
-            <Binding Path="Editing" />
-            <Binding Path="Threshold" />
-            <Binding Path="UsageLimit" ElementName="Self" />
-        </MultiBinding>
-    </fluentUi:SettingsExpanderItem.Description>
     <fluentUi:SettingsExpanderItem.Footer>
         <fluentUi:CommandBar VerticalAlignment="Center">
             <fluentUi:CommandBar.PrimaryCommands>

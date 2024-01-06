@@ -86,7 +86,7 @@ public partial class EditableReminderViewModel : ReactiveObservableObject, IVali
         self => self._alert.UsageLimit,
         (threshold, usageLimit) => double.IsNaN(threshold) || usageLimit == null
             ? new TimeSpan?()
-            : new TimeSpan((long)(threshold * usageLimit.Value.Ticks)));
+            : new TimeSpan((long)(threshold * usageLimit.Value.Ticks / 100.0)));
 
     public ValidationContext ValidationContext { get; } = new();
 }
@@ -110,7 +110,8 @@ public partial class ReminderViewModel : EditableEntityViewModelBase<Reminder>
     public AlertViewModel Alert => EntityCache.Alert(Entity.Alert);
 
     public IObservable<TimeSpan> ThresholdUsageLimit => this.WhenAnyValue(self => self.Threshold,
-        self => self.Alert.UsageLimit, (threshold, usageLimit) => new TimeSpan((long)(threshold * usageLimit.Ticks)));
+        self => self.Alert.UsageLimit,
+        (threshold, usageLimit) => new TimeSpan((long)(threshold * usageLimit.Ticks / 100.0)));
 
     public override void UpdateEntity()
     {
