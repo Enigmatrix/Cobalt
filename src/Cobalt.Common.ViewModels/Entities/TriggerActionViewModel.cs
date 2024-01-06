@@ -119,9 +119,10 @@ public partial class TriggerActionViewModel : ReactiveObservableObject, IValidat
             1 => new TriggerAction.Message(MessageContent!),
             2 => new TriggerAction.Dim(DimDuration!.Value),*/
             // Until DbContexts can recognize DUs and load them properly from the db, we gotta resort to this
-            0 => new TriggerAction(0),
-            1 => new TriggerAction(1, MessageContent!),
-            2 => new TriggerAction(2, DimDuration: DimDuration ?? TimeSpan.MinValue),
+            TriggerAction.KillTag => new TriggerAction(TriggerAction.KillTag),
+            TriggerAction.MessageTag => new TriggerAction(TriggerAction.MessageTag, MessageContent!),
+            TriggerAction.DimTag => new TriggerAction(TriggerAction.DimTag,
+                DimDuration: DimDuration ?? TimeSpan.MinValue),
             _ => throw new DiscriminatedUnionException<long?>(nameof(Tag), Tag)
         };
 
