@@ -16,6 +16,8 @@
         <converters:HumanizeTimeSpanConverter x:Key="HumanizeTimeSpanConverter" />
         <converters:IsEqualConverter x:Key="IsEqualConverter" />
         <converters:IsNotEqualConverter x:Key="IsNotEqualConverter" />
+        <converters:IsNullConverter x:Key="IsNullConverter" />
+        <converters:IsNotNullConverter x:Key="IsNotNullConverter" />
         <converters:ReminderDescriptionConverter x:Key="ReminderDescriptionConverter" />
         <converters:PercentToLeftConverter x:Key="PercentToLeftConverter" />
 
