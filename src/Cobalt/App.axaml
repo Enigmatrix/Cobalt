@@ -20,7 +20,6 @@
         <converters:IsNotEqualConverter x:Key="IsNotEqualConverter" />
         <converters:IsNullConverter x:Key="IsNullConverter" />
         <converters:IsNotNullConverter x:Key="IsNotNullConverter" />
-        <converters:ReminderDescriptionConverter x:Key="ReminderDescriptionConverter" />
         <converters:PercentToLeftConverter x:Key="PercentToLeftConverter" />
 
         <!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2023 Fonticons, Inc. Icon: bolt-->

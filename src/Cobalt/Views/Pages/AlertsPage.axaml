@@ -8,7 +8,6 @@
                                 xmlns:vmEntities="clr-namespace:Cobalt.Common.ViewModels.Entities;assembly=Cobalt.Common.ViewModels"
                                 xmlns:data="clr-namespace:Cobalt.Common.Data;assembly=Cobalt.Common.Data"
                                 xmlns:dataEntities="clr-namespace:Cobalt.Common.Data.Entities;assembly=Cobalt.Common.Data"
-                                xmlns:sys="clr-namespace:System;assembly=System.Runtime"
                                 xmlns:controls="clr-namespace:Cobalt.Controls"
                                 mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
                                 x:Class="Cobalt.Views.Pages.AlertsPage" x:DataType="vmPages:AlertsPageViewModel">
@@ -218,14 +217,16 @@
                                                                            Theme="{StaticResource BodyStrongTextBlockStyle}"
                                                                            Text="{Binding Message}" />
 
-																<StackPanel Orientation="Horizontal" Spacing="4">
-																	<controls:DurationTextBlock Duration="{Binding ThresholdUsageLimit^}"
-																								Theme="{StaticResource CaptionTextBlockStyle}"
-																								Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-																	<TextBlock Text="{Binding Threshold, StringFormat={}({0}%)}"
-																			   Theme="{StaticResource CaptionTextBlockStyle}"
-																			   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-																</StackPanel>
+                                                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                                                    <controls:DurationTextBlock
+                                                                        Duration="{Binding ThresholdUsageLimit^}"
+                                                                        Theme="{StaticResource CaptionTextBlockStyle}"
+                                                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                                                    <TextBlock
+                                                                        Text="{Binding Threshold, StringFormat={}({0}%)}"
+                                                                        Theme="{StaticResource CaptionTextBlockStyle}"
+                                                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                                                </StackPanel>
                                                             </StackPanel>
                                                         </ToolTip.Tip>
                                                     </Rectangle>
