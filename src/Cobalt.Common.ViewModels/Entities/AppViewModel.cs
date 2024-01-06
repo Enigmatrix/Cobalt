@@ -17,6 +17,7 @@ public partial class AppViewModel : EditableEntityViewModelBase<App>
     [ObservableProperty] private AppIdentity _identity;
     [ObservableProperty] private bool _initialized;
     [ObservableProperty] private string _name;
+    private byte[]? _icon;
 
     public AppViewModel(App entity, IEntityViewModelCache entityCache, IDbContextFactory<QueryContext> contexts) : base(
         entity, entityCache, contexts)
@@ -28,7 +29,7 @@ public partial class AppViewModel : EditableEntityViewModelBase<App>
         _color = entity.Color;
         _identity = entity.Identity;
 
-        Image = Query(async context => await context.GetAppIconBytes(Entity), false);
+        Image = Query(async context => _icon ??= await context.GetAppIconBytes(Entity), false);
     }
 
     /// <summary>
