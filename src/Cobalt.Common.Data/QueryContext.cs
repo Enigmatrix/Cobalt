@@ -58,7 +58,7 @@ public class QueryContext : DbContext
     /// <returns>Icon as bytes</returns>
     public async Task<byte[]?> GetAppIconBytes(App app)
     {
-        return await Database.SqlQuery<byte[]?>($"SELECT icon as Value FROM apps WHERE id={app.Id}").SingleAsync();
+        return await Database.SqlQuery<byte[]?>($"SELECT icon as Value FROM apps WHERE id={app.Id}").FirstAsync();
     }
 
     /// <summary>
