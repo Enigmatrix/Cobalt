@@ -93,11 +93,13 @@
                 </fluentUi:CommandBar>
             </Grid>
 
-            <ItemsRepeater ItemsSource="{Binding Alerts.Value^}" Margin="0,12,0,0">
-                <ItemsRepeater.Layout>
-                    <StackLayout Spacing="12" Orientation="Vertical" />
-                </ItemsRepeater.Layout>
-                <ItemsRepeater.ItemTemplate>
+            <ItemsControl ItemsSource="{Binding Alerts.Value^}" Margin="0,12,0,0">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Spacing="12" Orientation="Vertical" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
                     <DataTemplate>
                         <DataTemplate.DataType>
                             <x:Type TypeName="data:WithDuration" x:TypeArguments="vmEntities:AlertViewModel" />
@@ -253,8 +255,8 @@
                             </StackPanel>
                         </Expander>
                     </DataTemplate>
-                </ItemsRepeater.ItemTemplate>
-            </ItemsRepeater>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
 
         </StackPanel>
     </ScrollViewer>
