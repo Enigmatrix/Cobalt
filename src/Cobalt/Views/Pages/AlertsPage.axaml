@@ -144,14 +144,14 @@
                                                                             IsVisible="{Binding Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={x:Static dataEntities:TriggerAction.MessageTag}}">
                                                                     <TextBlock Text="Notifies with message " />
                                                                     <TextBlock Text="{Binding MessageContent}"
-                                                                               FontWeight="Bold"/>
+                                                                               FontWeight="Bold" />
                                                                 </StackPanel>
                                                                 <StackPanel Orientation="Horizontal"
                                                                             IsVisible="{Binding Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={x:Static dataEntities:TriggerAction.DimTag}}">
                                                                     <TextBlock Text="Dim targets over " />
                                                                     <controls:DurationTextBlock
                                                                         Duration="{Binding DimDuration}"
-                                                                        FontWeight="Bold"/>
+                                                                        FontWeight="Bold" />
                                                                 </StackPanel>
                                                             </Grid>
                                                         </ToolTip.Tip>
@@ -187,7 +187,6 @@
                                                     Duration="{Binding Inner.UsageLimit}" />
                                                 <TextBlock Text="," />
                                             </StackPanel>
-                                            <!-- TODO: show timeframe icons here -->
                                             <TextBlock Text="{Binding Inner.TimeFrame}"
                                                        Theme="{StaticResource BodyStrongTextBlockStyle}" />
                                         </StackPanel>
@@ -227,13 +226,15 @@
                                             </ItemsControl.Styles>
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate DataType="vmEntities:ReminderViewModel">
-                                                    <Rectangle ToolTip.Placement="Top" ToolTip.ShowDelay="0"
-                                                               ToolTip.VerticalOffset="8"
-                                                               Fill="{DynamicResource TextFillColorSecondaryBrush}"
-                                                               Width="12" Height="12" RadiusX="6" RadiusY="6">
-                                                        <Rectangle.RenderTransform>
-                                                            <TranslateTransform X="-6" Y="-2" />
-                                                        </Rectangle.RenderTransform>
+                                                    <fluentUi:FABorder ToolTip.Placement="Top" ToolTip.ShowDelay="0"
+                                                                       ToolTip.VerticalOffset="8"
+                                                                       Background="{DynamicResource SolidBackgroundFillColorQuarternaryBrush}"
+                                                                       CornerRadius="8"
+                                                                       BoxShadow="0 0 1 1 #17000000"
+                                                                       Width="16" Height="16">
+                                                        <fluentUi:FABorder.RenderTransform>
+                                                            <TranslateTransform X="-8" Y="-4" />
+                                                        </fluentUi:FABorder.RenderTransform>
                                                         <ToolTip.Tip>
                                                             <StackPanel Orientation="Vertical" Spacing="4">
                                                                 <TextBlock HorizontalAlignment="Center"
@@ -252,7 +253,10 @@
                                                                 </StackPanel>
                                                             </StackPanel>
                                                         </ToolTip.Tip>
-                                                    </Rectangle>
+                                                        <fluentUi:FABorder CornerRadius="8" VerticalAlignment="Stretch"
+                                                                           HorizontalAlignment="Stretch"
+                                                                           Background="{DynamicResource AccentFillColorSecondaryBrush}" />
+                                                    </fluentUi:FABorder>
                                                 </DataTemplate>
                                             </ItemsControl.ItemTemplate>
 
