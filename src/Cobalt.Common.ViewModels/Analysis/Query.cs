@@ -50,7 +50,7 @@ public record Query<TArg, TOutput>(
                 refreshes = refreshes.StartWith(Unit.Default);
 
             return refreshes.CombineLatest(Args)
-                .SelectMany(tup => Observable.FromAsync(() => ProduceValue(tup.Second)));
+                .SelectMany(async tup => await ProduceValue(tup.Second).ConfigureAwait(false));
         }
     }
 
