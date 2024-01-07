@@ -29,9 +29,18 @@ public partial class DurationPicker : UserControl
             defaultBindingMode: BindingMode.TwoWay,
             enableDataValidation: true);
 
+    public static readonly DirectProperty<DurationPicker, object?> PlaceholderProperty =
+        AvaloniaProperty.RegisterDirect<DurationPicker, object?>(
+            nameof(Placeholder),
+            o => o.Placeholder,
+            (o, v) => o.Placeholder = v,
+            defaultBindingMode: BindingMode.TwoWay,
+            enableDataValidation: true);
+
     private static readonly string InvalidDuration = "Invalid duration";
 
     private TimeSpan? _duration;
+    private object? _placeholder;
     private string? _text;
 
     public DurationPicker()
@@ -49,6 +58,12 @@ public partial class DurationPicker : UserControl
     {
         get => _text;
         set => SetAndRaise(TextProperty, ref _text, value);
+    }
+
+    public object? Placeholder
+    {
+        get => _placeholder;
+        set => SetAndRaise(PlaceholderProperty, ref _placeholder, value);
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)

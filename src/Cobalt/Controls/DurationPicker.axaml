@@ -21,8 +21,8 @@
                 <Grid>
                     <controls:DurationTextBlock Duration="{Binding #Self.Duration}"
                                                 IsVisible="{Binding #Self.Duration, Converter={StaticResource IsNotNullConverter}}" />
-                    <TextBlock Text="Select Duration"
-                               IsVisible="{Binding #Self.Duration, Converter={StaticResource IsNullConverter}}" />
+                    <ContentControl Content="{Binding #Self.Placeholder, TargetNullValue=Select Duration}"
+                                    IsVisible="{Binding #Self.Duration, Converter={StaticResource IsNullConverter}}" />
                 </Grid>
             </Button.Content>
         </Button>
