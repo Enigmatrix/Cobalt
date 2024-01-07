@@ -22,7 +22,7 @@ public partial class AlertsPageViewModel : PageViewModelBase
         AddAlertDialogViewModel addAlertDialog) :
         base(contexts)
     {
-        Alerts = Query(async context => await context.AlertDurations().ToListAsync(),
+        Alerts = Query(context => context.AlertDurations(context.Alerts.AsSplitQuery()).ToListAsync(),
             alertDur => alertDur.Map(entityCache.Alert));
 
         _entityCache = entityCache;
