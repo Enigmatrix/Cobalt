@@ -1,16 +1,10 @@
 using System;
-using System.Reactive.Linq;
+using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Data;
 using Avalonia.Input;
 using Avalonia.Interactivity;
-using Cobalt.Common.ViewModels;
-using CommunityToolkit.Mvvm.ComponentModel;
-using ReactiveUI;
-using ReactiveUI.Validation.Abstractions;
-using ReactiveUI.Validation.Contexts;
-using ReactiveUI.Validation.Extensions;
 using TimeSpanParserUtil;
 
 namespace Cobalt.Controls;
@@ -27,25 +21,22 @@ public partial class DurationPicker : UserControl
             (o, v) => o.Duration = v,
             defaultBindingMode: BindingMode.TwoWay, enableDataValidation: true);
 
-    public static readonly DirectProperty<DurationPicker, DurationPickerViewModel?> ViewModelProperty =
-        AvaloniaProperty.RegisterDirect<DurationPicker, DurationPickerViewModel?>(
-            nameof(ViewModel),
-            o => o.ViewModel,
-            (o, v) => o.ViewModel = v);
+    public static readonly DirectProperty<DurationPicker, string?> TextProperty =
+        AvaloniaProperty.RegisterDirect<DurationPicker, string?>(
+            nameof(Text),
+            o => o.Text,
+            (o, v) => o.Text = v,
+            defaultBindingMode: BindingMode.TwoWay,
+            enableDataValidation: true);
+
+    private static readonly string InvalidDuration = "Invalid duration";
 
     private TimeSpan? _duration;
-    private IDisposable? _durationBind;
-    private DurationPickerViewModel? _viewModel;
+    private string? _text;
 
     public DurationPicker()
     {
         InitializeComponent();
-    }
-
-    public DurationPickerViewModel? ViewModel
-    {
-        get => _viewModel;
-        set => SetAndRaise(ViewModelProperty, ref _viewModel, value);
     }
 
     public TimeSpan? Duration
@@ -54,26 +45,54 @@ public partial class DurationPicker : UserControl
         set => SetAndRaise(DurationProperty, ref _duration, value);
     }
 
+    public string? Text
+    {
+        get => _text;
+        set => SetAndRaise(TextProperty, ref _text, value);
+    }
+
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+
+        if (change.Property == TextProperty && change.NewValue != null)
+        {
+            var text = (string)change.NewValue;
+
+            if (TimeSpanParser.TryParse(text, out var dur))
+            {
+                Duration = dur;
+                RemoveError(this, InvalidDuration);
+            }
+            else
+            {
+                AddError(this, InvalidDuration);
+            }
+        }
+        else if (change.Property == DurationProperty && change.NewValue == null)
+        {
+            Text = null;
+        }
+    }
+
+    private static void RemoveError(Control control, object error)
+    {
+        var errors = DataValidationErrors.GetErrors(control);
+        if (errors != null) DataValidationErrors.SetErrors(control, errors.Except([error]));
+    }
+
+    private static void AddError(Control control, object error)
+    {
+        var errors = DataValidationErrors.GetErrors(control);
+        var existingErrors = Enumerable.Empty<object>();
+        if (errors != null) existingErrors = errors.Except([error]);
+        DataValidationErrors.SetErrors(control, existingErrors.Append(error));
+    }
+
     protected override void UpdateDataValidation(AvaloniaProperty property, BindingValueType state, Exception? error)
     {
         if (property == DurationProperty)
             DataValidationErrors.SetError(this, error);
-    }
-
-    protected override void OnLoaded(RoutedEventArgs e)
-    {
-        ViewModel = new DurationPickerViewModel(Duration);
-        _durationBind = ViewModel.WhenAnyValue(self => self.Duration).Subscribe(x => { Duration = x; });
-
-        base.OnLoaded(e);
-    }
-
-    protected override void OnUnloaded(RoutedEventArgs e)
-    {
-        base.OnUnloaded(e);
-
-        ViewModel?.Dispose();
-        _durationBind?.Dispose();
     }
 
     private void Display_OnClick(object? sender, RoutedEventArgs e)
@@ -90,37 +109,14 @@ public partial class DurationPicker : UserControl
 
     private void TextBox_OnKeyDown(object? sender, KeyEventArgs e)
     {
-        if (e.Key == Key.Enter || e.Key == Key.Escape) SwitchToDisplay();
+        if (e.Key is Key.Enter or Key.Escape) SwitchToDisplay();
     }
 
     private void SwitchToDisplay()
     {
+        RemoveError(this, InvalidDuration);
+        Text = null;
         Display.IsVisible = true;
         TextBox.IsVisible = false;
     }
-}
-
-public partial class DurationPickerViewModel : ReactiveObservableObject, IValidatableViewModel, IDisposable
-{
-    private readonly IDisposable _propertyBinding;
-    [ObservableProperty] private TimeSpan? _duration;
-    [ObservableProperty] private string? _text;
-
-    public DurationPickerViewModel(TimeSpan? duration)
-    {
-        Duration = duration;
-        this.ValidationRule(self => self.Text, text => TimeSpanParser.TryParse(text, out _), "Invalid duration");
-        _propertyBinding = this.WhenAnyValue(self => self.Text)
-            .Where(text => TimeSpanParser.TryParse(text, out _))
-            .Select(text => TimeSpanParser.Parse(text!))
-            .BindTo(this, self => self.Duration);
-    }
-
-    public void Dispose()
-    {
-        _propertyBinding.Dispose();
-        ValidationContext.Dispose();
-    }
-
-    public ValidationContext ValidationContext { get; } = new();
 }

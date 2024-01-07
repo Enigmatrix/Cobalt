@@ -12,17 +12,17 @@
             <TextBox LostFocus="TextBox_OnLostFocus" VerticalContentAlignment="Center"
                      HorizontalContentAlignment="Center" Watermark="e.g. 1 hour 30 min"
                      Name="TextBox" IsVisible="False" KeyDown="TextBox_OnKeyDown"
-                     Text="{Binding #Self.ViewModel.Text}" Margin="2" />
+                     Text="{Binding #Self.Text}" Margin="2" />
         </fluentUi:FABorder>
 
         <Button Click="Display_OnClick" Name="Display" IsVisible="True" VerticalAlignment="Stretch"
                 HorizontalAlignment="Stretch">
             <Button.Content>
                 <Grid>
-                    <controls:DurationTextBlock Duration="{Binding #Self.ViewModel.Duration}"
-                                                IsVisible="{Binding #Self.ViewModel.Duration, Converter={StaticResource IsNotNullConverter}}" />
+                    <controls:DurationTextBlock Duration="{Binding #Self.Duration}"
+                                                IsVisible="{Binding #Self.Duration, Converter={StaticResource IsNotNullConverter}}" />
                     <TextBlock Text="Select Duration"
-                               IsVisible="{Binding #Self.ViewModel.Duration, Converter={StaticResource IsNullConverter}}" />
+                               IsVisible="{Binding #Self.Duration, Converter={StaticResource IsNullConverter}}" />
                 </Grid>
             </Button.Content>
         </Button>
