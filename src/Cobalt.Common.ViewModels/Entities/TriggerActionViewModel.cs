@@ -54,7 +54,8 @@ public partial class TriggerActionViewModel : ReactiveObservableObject, IValidat
 
         this.ValidationRule(
             self => self.DimDuration,
-            WhenTagAndPropertyValid(TriggerAction.DimTag, self => self.DimDuration, dimDuration => dimDuration >= TimeSpan.Zero),
+            WhenTagAndPropertyValid(TriggerAction.DimTag, self => self.DimDuration,
+                dimDuration => dimDuration >= TimeSpan.Zero),
             "Dim Duration is negative");
 
         this.WhenAnyValue(

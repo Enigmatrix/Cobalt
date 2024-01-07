@@ -14,10 +14,10 @@ public partial class AppViewModel : EditableEntityViewModelBase<App>
     [ObservableProperty] private string _color;
     [ObservableProperty] private string _company;
     [ObservableProperty] private string _description;
+    private byte[]? _icon;
     [ObservableProperty] private AppIdentity _identity;
     [ObservableProperty] private bool _initialized;
     [ObservableProperty] private string _name;
-    private byte[]? _icon;
 
     public AppViewModel(App entity, IEntityViewModelCache entityCache, IDbContextFactory<QueryContext> contexts) : base(
         entity, entityCache, contexts)
