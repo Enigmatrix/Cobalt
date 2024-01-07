@@ -134,6 +134,27 @@
 
                                                     <StackPanel Orientation="Horizontal" Spacing="4"
                                                                 HorizontalAlignment="Right">
+                                                        <ToolTip.Tip>
+                                                            <Grid>
+                                                                <StackPanel Orientation="Horizontal"
+                                                                            IsVisible="{Binding Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={x:Static dataEntities:TriggerAction.KillTag}}">
+                                                                    <TextBlock Text="Kills all targets" />
+                                                                </StackPanel>
+                                                                <StackPanel Orientation="Horizontal"
+                                                                            IsVisible="{Binding Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={x:Static dataEntities:TriggerAction.MessageTag}}">
+                                                                    <TextBlock Text="Notifies with message " />
+                                                                    <TextBlock Text="{Binding MessageContent}"
+                                                                               FontWeight="Bold"/>
+                                                                </StackPanel>
+                                                                <StackPanel Orientation="Horizontal"
+                                                                            IsVisible="{Binding Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={x:Static dataEntities:TriggerAction.DimTag}}">
+                                                                    <TextBlock Text="Dim targets over " />
+                                                                    <controls:DurationTextBlock
+                                                                        Duration="{Binding DimDuration}"
+                                                                        FontWeight="Bold"/>
+                                                                </StackPanel>
+                                                            </Grid>
+                                                        </ToolTip.Tip>
                                                         <fluentUi:FAPathIcon Height="14" Width="14"
                                                                              Data="{StaticResource KillPath}"
                                                                              IsVisible="{Binding Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={x:Static dataEntities:TriggerAction.KillTag}}" />
