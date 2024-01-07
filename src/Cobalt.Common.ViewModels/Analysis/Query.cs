@@ -67,11 +67,8 @@ public record Query<TArg, TOutput>(
     /// <param name="arg">Argument to the inner database query</param>
     protected async Task<TOutput> ProduceValue(TArg arg)
     {
-        return await Task.Run(async () =>
-        {
-            var context = await Contexts.CreateDbContextAsync().ConfigureAwait(false);
-            await using var _ = context.ConfigureAwait(false);
-            return await InnerQuery(context, arg).ConfigureAwait(false);
-        });
+        var context = await Contexts.CreateDbContextAsync().ConfigureAwait(false);
+        await using var _ = context.ConfigureAwait(false);
+        return await InnerQuery(context, arg).ConfigureAwait(false);
     }
 }
