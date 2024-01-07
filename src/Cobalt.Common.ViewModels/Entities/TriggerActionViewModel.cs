@@ -75,8 +75,6 @@ public partial class TriggerActionViewModel : ReactiveObservableObject, IValidat
                         _ => throw new DiscriminatedUnionException<long?>(nameof(Tag), Tag)
                     };
                 })
-            // This is a workaround for #117
-            .ObserveOn(RxApp.TaskpoolScheduler)
             .Subscribe(inner => Inner = inner);
 
         this.ValidationRule(
