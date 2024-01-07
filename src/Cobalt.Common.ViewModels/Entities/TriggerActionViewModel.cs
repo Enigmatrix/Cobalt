@@ -54,7 +54,8 @@ public partial class TriggerActionViewModel : ReactiveObservableObject, IValidat
 
         this.ValidationRule(
             self => self.DimDuration,
-            WhenTagAndPropertyValid(TriggerAction.DimTag, self => self.DimDuration, dimDuration => dimDuration >= TimeSpan.Zero),
+            WhenTagAndPropertyValid(TriggerAction.DimTag, self => self.DimDuration,
+                dimDuration => dimDuration >= TimeSpan.Zero),
             "Dim Duration is negative");
 
         this.WhenAnyValue(
@@ -75,8 +76,6 @@ public partial class TriggerActionViewModel : ReactiveObservableObject, IValidat
                         _ => throw new DiscriminatedUnionException<long?>(nameof(Tag), Tag)
                     };
                 })
-            // This is a workaround for #117
-            .ObserveOn(RxApp.TaskpoolScheduler)
             .Subscribe(inner => Inner = inner);
 
         this.ValidationRule(

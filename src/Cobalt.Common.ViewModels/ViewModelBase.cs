@@ -55,7 +55,8 @@ public abstract class ViewModelBase : ReactiveObservableObject
         Func<TDbOutput, TOutput> transform,
         bool assumeRefreshIsCalled = true)
     {
-        return new Query<List<TOutput>>(Contexts, async ctx => (await query(ctx).ConfigureAwait(false)).Select(transform).ToList(),
+        return new Query<List<TOutput>>(Contexts,
+            async ctx => (await query(ctx).ConfigureAwait(false)).Select(transform).ToList(),
             assumeRefreshIsCalled);
     }
 
