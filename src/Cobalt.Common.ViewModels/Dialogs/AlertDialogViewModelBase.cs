@@ -1,5 +1,4 @@
-﻿using System.Reactive.Disposables;
-using System.Reactive.Linq;
+﻿using System.Reactive.Linq;
 using Cobalt.Common.Data;
 using Cobalt.Common.Data.Entities;
 using Cobalt.Common.Util;
@@ -39,6 +38,17 @@ public abstract partial class AlertDialogViewModelBase : DialogViewModelBase<Ale
     {
         EntityCache = entityCache;
 
+        var validUsageLimitAndTimeFrame =
+            this.WhenAnyValue(self => self.UsageLimit, self => self.TimeFrame, ValidUsageLimitAndTimeFrame);
+
+        this.ValidationRule(self => self.TimeFrame, validUsageLimitAndTimeFrame,
+            "Time Frame smaller than Usage Limit");
+
+        this.ValidationRule(self => self.UsageLimit, validUsageLimitAndTimeFrame,
+            "Usage Limit larger than Time Frame");
+        this.ValidationRule(self => self.UsageLimit, usageLimit => usageLimit == null || usageLimit > TimeSpan.Zero,
+            "Usage Limit cannot be negative");
+
         // Additionally, validation that all our properties are set.
         // This isn't a validation rule we don't want to display "X is unset" errors,
         // that would just mean the entire form is red.
@@ -51,37 +61,22 @@ public abstract partial class AlertDialogViewModelBase : DialogViewModelBase<Ale
             props => props is { Item1: not null, Item2: not null, Item3: not null },
             _ => "Fields are empty");
 
-        this.WhenActivated(dis =>
-        {
-            var validUsageLimitAndTimeFrame =
-                this.WhenAnyValue(self => self.UsageLimit, self => self.TimeFrame, ValidUsageLimitAndTimeFrame);
+        RemindersSource
+            .Connect()
+            .AutoRefreshOnObservable(reminder => reminder.WhenAnyValue(self => self.Threshold))
+            .Sort(SortExpressionComparer<EditableReminderViewModel>.Ascending(reminder => reminder.Threshold))
+            .Bind(Reminders)
+            .Subscribe();
 
-            this.ValidationRule(self => self.TimeFrame, validUsageLimitAndTimeFrame,
-                "Time Frame smaller than Usage Limit").DisposeWith(dis);
-
-            this.ValidationRule(self => self.UsageLimit, validUsageLimitAndTimeFrame,
-                "Usage Limit larger than Time Frame").DisposeWith(dis);
-            this.ValidationRule(self => self.UsageLimit, usageLimit => usageLimit == null || usageLimit > TimeSpan.Zero,
-                "Usage Limit cannot be negative").DisposeWith(dis);
-
-            RemindersSource
+        this.ValidationRule(RemindersSource
                 .Connect()
-                .AutoRefreshOnObservable(reminder => reminder.WhenAnyValue(self => self.Threshold))
-                .Sort(SortExpressionComparer<EditableReminderViewModel>.Ascending(reminder => reminder.Threshold))
-                .Bind(Reminders)
-                .Subscribe()
-                .DisposeWith(dis);
-
-            this.ValidationRule(RemindersSource
-                    .Connect()
-                    .AddKey(reminder =>
-                        reminder) // This is just to change this to a SourceCache-model since TrueForAll only exists for this
-                    .TrueForAll(reminder => reminder.IsValid()
-                            .CombineLatest(reminder.WhenAnyValue(self => self.Editing)),
-                        static prop => prop is { First: true, Second: false })
-                    .StartWith(true), // Reminders are empty at start
-                "Reminders are invalid").DisposeWith(dis);
-        });
+                .AddKey(reminder =>
+                    reminder) // This is just to change this to a SourceCache-model since TrueForAll only exists for this
+                .TrueForAll(reminder => reminder.IsValid()
+                        .CombineLatest(reminder.WhenAnyValue(self => self.Editing)),
+                    static prop => prop is { First: true, Second: false })
+                .StartWith(true), // Reminders are empty at start
+            "Reminders are invalid");
     }
 
     public ObservableCollectionExtended<EditableReminderViewModel> Reminders { get; } = new();
