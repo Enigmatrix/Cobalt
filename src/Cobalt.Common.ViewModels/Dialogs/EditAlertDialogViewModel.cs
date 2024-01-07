@@ -83,6 +83,8 @@ public partial class EditAlertDialogViewModel : AlertDialogViewModelBase
     {
         await using var context = await Contexts.CreateDbContextAsync();
         var alert = _alert.Entity;
+        alert.App = null;
+        alert.Tag = null;
         context.Attach(alert);
 
         alert.TimeFrame = TimeFrame!.Value;
@@ -93,11 +95,9 @@ public partial class EditAlertDialogViewModel : AlertDialogViewModelBase
         {
             case AppViewModel app:
                 alert.App = app.Entity;
-                alert.Tag = null;
                 context.Attach(alert.App);
                 break;
             case TagViewModel tag:
-                alert.App = null;
                 alert.Tag = tag.Entity;
                 context.Attach(alert.Tag);
                 break;
