@@ -54,7 +54,7 @@ public partial class EditAlertDialogViewModel : AlertDialogViewModelBase
                 target != originalTarget || usageLimit != alert.UsageLimit || timeFrame != alert.TimeFrame);
         // combine with TriggerActionViewModel
         var triggerActionDirty = TriggerAction.WhenAnyPropertyChanged().Select(triggerAction =>
-            triggerAction!.ToTriggerAction() != alert.TriggerAction).StartWith(false);
+            triggerAction!.Inner != alert.TriggerAction).StartWith(false);
         // combine with Reminders
         var remindersDirty = RemindersSource.Connect()
             .AddKey(reminder => reminder)
@@ -88,7 +88,7 @@ public partial class EditAlertDialogViewModel : AlertDialogViewModelBase
         context.Attach(alert);
 
         alert.TimeFrame = TimeFrame!.Value;
-        alert.TriggerAction = TriggerAction!.ToTriggerAction()!;
+        alert.TriggerAction = TriggerAction!.Inner!;
         alert.UsageLimit = UsageLimit!.Value;
 
         switch (ChooseTargetDialog!.Target)

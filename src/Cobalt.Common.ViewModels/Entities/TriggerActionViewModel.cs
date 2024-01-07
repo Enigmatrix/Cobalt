@@ -17,6 +17,7 @@ namespace Cobalt.Common.ViewModels.Entities;
 public partial class TriggerActionViewModel : ReactiveObservableObject, IValidatableViewModel
 {
     [ObservableProperty] private TimeSpan? _dimDuration;
+    [ObservableProperty] private TriggerAction? _inner;
     [ObservableProperty] private string? _messageContent;
     [ObservableProperty] private long? _tag;
 
@@ -54,21 +55,31 @@ public partial class TriggerActionViewModel : ReactiveObservableObject, IValidat
         this.ValidationRule(self => self.DimDuration, dimDuration => dimDuration == null || dimDuration > TimeSpan.Zero,
             "Dim Duration cannot be negative");
 
+        this.WhenAnyValue(
+                self => self.Tag,
+                self => self.MessageContent,
+                self => self.DimDuration, (tag, messageContent, dimDuration) =>
+                {
+                    return tag switch
+                    {
+                        TriggerAction.KillTag => new TriggerAction(TriggerAction.KillTag),
+                        TriggerAction.MessageTag => string.IsNullOrWhiteSpace(messageContent)
+                            ? null
+                            : new TriggerAction(TriggerAction.MessageTag, messageContent),
+                        TriggerAction.DimTag => dimDuration == null
+                            ? null
+                            : new TriggerAction(TriggerAction.DimTag, DimDuration: dimDuration),
+                        null => null,
+                        _ => throw new DiscriminatedUnionException<long?>(nameof(Tag), Tag)
+                    };
+                })
+            // This is a workaround for #117
+            .ObserveOn(RxApp.TaskpoolScheduler)
+            .Subscribe(inner => Inner = inner);
+
         this.ValidationRule(
-            this.WhenAnyValue(
-                    self => self.Tag,
-                    self => self.MessageContent,
-                    self => self.DimDuration)
-                // This is a workaround for #117
-                .ObserveOn(RxApp.TaskpoolScheduler),
-            props => props.Item1 switch
-            {
-                TriggerAction.KillTag => true,
-                TriggerAction.MessageTag => !string.IsNullOrWhiteSpace(props.Item2),
-                TriggerAction.DimTag => props.Item3 != null,
-                null => false,
-                _ => throw new DiscriminatedUnionException<long?>(nameof(props.Item1), props.Item1)
-            },
+            this.WhenAnyValue(self => self.Inner),
+            inner => inner != null,
             _ => "Fields are empty");
     }
 
@@ -105,27 +116,5 @@ public partial class TriggerActionViewModel : ReactiveObservableObject, IValidat
         Tag = null;
         MessageContent = null;
         DimDuration = null;
-    }
-
-    /// <summary>
-    ///     Convert back to a <see cref="TriggerAction" />
-    /// </summary>
-    public TriggerAction? ToTriggerAction()
-    {
-        if (!ValidationContext.IsValid) return null;
-        var triggerAction = Tag switch
-        {
-            /*0 => new TriggerAction.Kill(),
-            1 => new TriggerAction.Message(MessageContent!),
-            2 => new TriggerAction.Dim(DimDuration!.Value),*/
-            // Until DbContexts can recognize DUs and load them properly from the db, we gotta resort to this
-            TriggerAction.KillTag => new TriggerAction(TriggerAction.KillTag),
-            TriggerAction.MessageTag => new TriggerAction(TriggerAction.MessageTag, MessageContent!),
-            TriggerAction.DimTag => new TriggerAction(TriggerAction.DimTag,
-                DimDuration: DimDuration ?? TimeSpan.MinValue),
-            _ => throw new DiscriminatedUnionException<long?>(nameof(Tag), Tag)
-        };
-
-        return triggerAction;
     }
 }
