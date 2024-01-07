@@ -93,11 +93,13 @@
                 </fluentUi:CommandBar>
             </Grid>
 
-            <ItemsRepeater ItemsSource="{Binding Alerts.Value^}" Margin="0,12,0,0">
-                <ItemsRepeater.Layout>
-                    <StackLayout Spacing="12" Orientation="Vertical" />
-                </ItemsRepeater.Layout>
-                <ItemsRepeater.ItemTemplate>
+            <ItemsControl ItemsSource="{Binding Alerts.Value^}" Margin="0,12,0,0">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Spacing="12" Orientation="Vertical" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
                     <DataTemplate>
                         <DataTemplate.DataType>
                             <x:Type TypeName="data:WithDuration" x:TypeArguments="vmEntities:AlertViewModel" />
@@ -132,6 +134,27 @@
 
                                                     <StackPanel Orientation="Horizontal" Spacing="4"
                                                                 HorizontalAlignment="Right">
+                                                        <ToolTip.Tip>
+                                                            <Grid>
+                                                                <StackPanel Orientation="Horizontal"
+                                                                            IsVisible="{Binding Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={x:Static dataEntities:TriggerAction.KillTag}}">
+                                                                    <TextBlock Text="Kills all targets" />
+                                                                </StackPanel>
+                                                                <StackPanel Orientation="Horizontal"
+                                                                            IsVisible="{Binding Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={x:Static dataEntities:TriggerAction.MessageTag}}">
+                                                                    <TextBlock Text="Notifies with message " />
+                                                                    <TextBlock Text="{Binding MessageContent}"
+                                                                               FontWeight="Bold" />
+                                                                </StackPanel>
+                                                                <StackPanel Orientation="Horizontal"
+                                                                            IsVisible="{Binding Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={x:Static dataEntities:TriggerAction.DimTag}}">
+                                                                    <TextBlock Text="Dim targets over " />
+                                                                    <controls:DurationTextBlock
+                                                                        Duration="{Binding DimDuration}"
+                                                                        FontWeight="Bold" />
+                                                                </StackPanel>
+                                                            </Grid>
+                                                        </ToolTip.Tip>
                                                         <fluentUi:FAPathIcon Height="14" Width="14"
                                                                              Data="{StaticResource KillPath}"
                                                                              IsVisible="{Binding Tag, Converter={StaticResource IsEqualConverter}, ConverterParameter={x:Static dataEntities:TriggerAction.KillTag}}" />
@@ -164,7 +187,6 @@
                                                     Duration="{Binding Inner.UsageLimit}" />
                                                 <TextBlock Text="," />
                                             </StackPanel>
-                                            <!-- TODO: show timeframe icons here -->
                                             <TextBlock Text="{Binding Inner.TimeFrame}"
                                                        Theme="{StaticResource BodyStrongTextBlockStyle}" />
                                         </StackPanel>
@@ -204,13 +226,15 @@
                                             </ItemsControl.Styles>
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate DataType="vmEntities:ReminderViewModel">
-                                                    <Rectangle ToolTip.Placement="Top" ToolTip.ShowDelay="0"
-                                                               ToolTip.VerticalOffset="8"
-                                                               Fill="{DynamicResource TextFillColorSecondaryBrush}"
-                                                               Width="12" Height="12" RadiusX="6" RadiusY="6">
-                                                        <Rectangle.RenderTransform>
-                                                            <TranslateTransform X="-6" Y="-2" />
-                                                        </Rectangle.RenderTransform>
+                                                    <fluentUi:FABorder ToolTip.Placement="Top" ToolTip.ShowDelay="0"
+                                                                       ToolTip.VerticalOffset="8"
+                                                                       Background="{DynamicResource SolidBackgroundFillColorQuarternaryBrush}"
+                                                                       CornerRadius="8"
+                                                                       BoxShadow="0 0 1 1 #17000000"
+                                                                       Width="16" Height="16">
+                                                        <fluentUi:FABorder.RenderTransform>
+                                                            <TranslateTransform X="-8" Y="-4" />
+                                                        </fluentUi:FABorder.RenderTransform>
                                                         <ToolTip.Tip>
                                                             <StackPanel Orientation="Vertical" Spacing="4">
                                                                 <TextBlock HorizontalAlignment="Center"
@@ -229,7 +253,10 @@
                                                                 </StackPanel>
                                                             </StackPanel>
                                                         </ToolTip.Tip>
-                                                    </Rectangle>
+                                                        <fluentUi:FABorder CornerRadius="8" VerticalAlignment="Stretch"
+                                                                           HorizontalAlignment="Stretch"
+                                                                           Background="{DynamicResource AccentFillColorSecondaryBrush}" />
+                                                    </fluentUi:FABorder>
                                                 </DataTemplate>
                                             </ItemsControl.ItemTemplate>
 
@@ -253,8 +280,8 @@
                             </StackPanel>
                         </Expander>
                     </DataTemplate>
-                </ItemsRepeater.ItemTemplate>
-            </ItemsRepeater>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
 
         </StackPanel>
     </ScrollViewer>
