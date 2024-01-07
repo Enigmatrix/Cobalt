@@ -13,7 +13,8 @@ namespace Cobalt.Common.ViewModels.Analysis;
 /// <param name="Contexts">Context factory</param>
 /// <param name="InnerQueryWithoutArgs">Actual inner database query</param>
 /// <param name="assumeRefreshIsCalled">Assume that we do not produce anything in <see cref="Value" /> on subscription</param>
-public record Query<TOutput>(IDbContextFactory<QueryContext> Contexts,
+public record Query<TOutput>(
+    IDbContextFactory<QueryContext> Contexts,
     Func<QueryContext, Task<TOutput>> InnerQueryWithoutArgs,
     bool assumeRefreshIsCalled = true) : Query<Unit, TOutput>(Contexts, Observable.Return(Unit.Default),
     (context, _) => InnerQueryWithoutArgs(context), assumeRefreshIsCalled)

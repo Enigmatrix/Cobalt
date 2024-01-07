@@ -39,8 +39,8 @@ public class ValidatorViewModelValidationPlugin : IDataValidationPlugin
     }
 
 
-    private class Validator
-        (WeakReference<object?> reference, string name, IPropertyAccessor inner) : DataValidationBase(inner)
+    private class Validator(WeakReference<object?> reference, string name, IPropertyAccessor inner)
+        : DataValidationBase(inner)
     {
         private const bool ExclusivePropertyName = true;
         private IDisposable? _validationStatesSub;
