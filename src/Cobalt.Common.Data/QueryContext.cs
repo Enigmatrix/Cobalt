@@ -168,7 +168,7 @@ public class QueryContext : DbContext
         /*
          * If there is any AlertEvent or ReminderEvent associated with this Alert, then we must create a new Alert with higher Version
          * and duplicate the Reminders, with empty AlertEvents and ReminderEvents. Otherwise, we can just update.
-         * 
+         *
          * Note that an AlertEvent or ReminderEvent can be generated after we check for their existence; this causes a race condition.
          * The effect is that the event is added to an Alert that does not match the initial Alert that triggered it, but has the same
          * identity. This is an rare occurrence, and we will not bother fixing it. For reference, the fix would be to have field called
@@ -219,7 +219,7 @@ public class QueryContext : DbContext
         /*
          * If there is any ReminderEvent associated with this Reminder, then we must create a new Reminder with higher Version
          * with empty ReminderEvents. Otherwise, we can just update.
-         * 
+         *
          * Note that an ReminderEvent can be generated after we check for their existence; this causes a race condition.
          * The effect is that the event is added to an Reminder that does not match the initial Reminder that triggered it, but has the same
          * identity. This is an rare occurrence, and we will not bother fixing it. The fix is similar to the one in UpdateAlertAsync, with a field
