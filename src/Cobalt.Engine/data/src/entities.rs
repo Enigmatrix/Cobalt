@@ -152,8 +152,8 @@ table!(
         "description",
         "company",
         "color",
-        "identity_tag",
-        "identity_text0",
+        "identity_is_win32",
+        "identity_path_or_aumid",
         // We do not list icon as a column, as we do not insert nor query icons.
 
         // "icon"
@@ -173,7 +173,7 @@ table!(
     id: Id,
     [
         "id",
-        "app",
+        "app_id",
         "title",
     ]
 );
@@ -184,7 +184,7 @@ table!(
     id: Id,
     [
         "id",
-        "session",
+        "session_id",
         "start",
         "end"
     ]
@@ -201,7 +201,7 @@ table!(
     Alert,
     "alert",
     id: VersionedId,
-    ["guid", "version", "target_is_app", "app", "tag", "usage_limit", "time_frame", "action_tag", "action_int0", "action_text0"]
+    ["guid", "version", "app_id", "tag_id", "usage_limit", "time_frame", "trigger_action_dim_duration", "trigger_action_message_content", "trigger_action_tag"]
 );
 
 table!(

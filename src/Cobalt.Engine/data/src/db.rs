@@ -33,10 +33,10 @@ pub struct Database {
 
 impl Database {
     pub fn new(path: &str) -> Result<Self> {
-        let conn = Connection::open(path).context("open conn")?;
+        let mut conn = Connection::open(path).context("open conn")?;
         conn.pragma_update(None, "journal_mode", "WAL")
             .context("enable WAL")?;
-        Migrator::new(&conn).migrate().context("migrate")?;
+        Migrator::new(&mut conn).migrate().context("migrate")?;
         Ok(Self { conn })
     }
 }

@@ -5,18 +5,18 @@ mod migration1;
 
 pub trait Migration {
     fn version(&self) -> u64;
-    fn up(&self, conn: &Connection) -> Result<()>;
+    fn up(&self, conn: &mut Connection) -> Result<()>;
     #[allow(dead_code)]
-    fn down(&self, conn: &Connection) -> Result<()>;
+    fn down(&self, conn: &mut Connection) -> Result<()>;
 }
 
 pub struct Migrator<'a> {
-    conn: &'a Connection,
+    conn: &'a mut Connection,
     migrations: Vec<Box<dyn Migration>>,
 }
 
 impl<'a> Migrator<'a> {
-    pub fn new(conn: &'a Connection) -> Self {
+    pub fn new(conn: &'a mut Connection) -> Self {
         let mut migrations: Vec<Box<dyn Migration>> = vec![Box::new(migration1::Migration1)];
         // should already by sorted, but just in case
         migrations.sort_by_key(|migration| migration.version());
@@ -41,7 +41,7 @@ impl<'a> Migrator<'a> {
         Ok(())
     }
 
-    pub fn migrate(&self) -> Result<()> {
+    pub fn migrate(&mut self) -> Result<()> {
         let current_version = self.current_version()?;
 
         for migration in &self.migrations {
