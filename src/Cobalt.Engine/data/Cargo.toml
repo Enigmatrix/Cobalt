@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 rusqlite = { version = "0.31", features = ["bundled", "blob", "uuid"]}
 uuid = "1.8.0"
+util = { path = "../util" }

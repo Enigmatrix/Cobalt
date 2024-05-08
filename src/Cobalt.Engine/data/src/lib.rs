@@ -1,6 +1,4 @@
-mod db;
-mod entities;
-mod migration;
+pub mod db;
+pub mod entities;
 mod migrations;
-mod migrator;
 mod table;
