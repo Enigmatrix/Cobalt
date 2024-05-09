@@ -50,7 +50,7 @@ impl Window {
     /// Get the [ProcessId] of the [Window]
     pub fn pid(&self) -> Result<ProcessId> {
         let mut pid = 0;
-        win32!(val: unsafe { GetWindowThreadProcessId(self.hwnd, Some(&mut pid)) });
+        let _tid = win32!(val: unsafe { GetWindowThreadProcessId(self.hwnd, Some(&mut pid)) });
         Ok(pid)
     }
 

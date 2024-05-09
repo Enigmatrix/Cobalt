@@ -1,5 +1,8 @@
 use std::fmt;
-use windows::Win32::Foundation::{GetLastError, SetLastError, NO_ERROR, WIN32_ERROR};
+use windows::Win32::Foundation::{
+    GetLastError, SetLastError, NO_ERROR, NTSTATUS, STATUS_INFO_LENGTH_MISMATCH, STATUS_SUCCESS,
+    WIN32_ERROR,
+};
 
 pub struct Win32Error {
     inner: WIN32_ERROR,
@@ -44,6 +47,44 @@ impl fmt::Debug for Win32Error {
 
 impl std::error::Error for Win32Error {}
 
+#[derive(Clone)]
+pub struct NtError {
+    inner: NTSTATUS,
+}
+
+impl NtError {
+    pub fn from(inner: NTSTATUS) -> Self {
+        Self { inner }
+    }
+
+    pub fn insufficient_size(&self) -> bool {
+        self.inner == STATUS_INFO_LENGTH_MISMATCH
+    }
+
+    pub fn to_result(&self) -> Result<(), Self> {
+        if self.inner == STATUS_SUCCESS {
+            Ok(())
+        } else {
+            Err(self.clone())
+        }
+    }
+}
+
+// We don't do any fancy strings for NTSTATUS as they are ill-defined e.g. 0xc0000005:
+// ref: https://microsoft.public.win32.programmer.kernel.narkive.com/7QXg81R8/ntstatus-to-string
+impl fmt::Display for NtError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "NtError(0x{:x})", self.inner.0)
+    }
+}
+impl fmt::Debug for NtError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Display::fmt(self, f)
+    }
+}
+
+impl std::error::Error for NtError {}
+
 #[macro_export]
 macro_rules! win32 {
     (val: $e: expr) => {{
@@ -68,6 +109,29 @@ macro_rules! win32 {
             Err($crate::err::Win32Error::last_error())
         } else {
             Ok(val)
+        }
+    }};
+}
+
+#[macro_export]
+macro_rules! adapt_size {
+    ($szi:ident, $bufi:ident -> $e: expr, $max_sz: expr) => {{
+        use $crate::buf::Buffer;
+
+        let mut $szi = 0;
+        let $bufi = std::ptr::null_mut();
+        let res: Result<_, _> = $e;
+        if let Err(err) = &res {
+            if err.insufficient_size() {
+                if $szi > $max_sz {
+                    util::error::bail!("exceeded max size");
+                }
+                let mut _buf = $crate::buf::buf::<u8>($szi as usize);
+                let $bufi = _buf.as_mut_void();
+                $e
+            } else { res }
+        } else {
+            res
         }
     }};
 }
