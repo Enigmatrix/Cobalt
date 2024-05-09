@@ -1,4 +1,4 @@
-use crate::table::{Color, Duration, Id, Ref, Timestamp, VersionedId};
+pub use crate::table::{Color, Duration, Id, Ref, Timestamp, VersionedId};
 
 #[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct App {
