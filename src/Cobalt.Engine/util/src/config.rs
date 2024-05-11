@@ -9,6 +9,7 @@ use serde::Deserialize;
 #[serde(rename_all = "PascalCase")]
 pub struct Config {
     connection_strings: ConnectionStrings,
+    engine_log_filter: String,
 }
 
 impl Config {
@@ -19,6 +20,10 @@ impl Config {
             .split_once("=")
             .expect("format of the connection string is Data Source=<path>")
             .1
+    }
+
+    pub fn engine_log_filter(&self) -> &str {
+        &self.engine_log_filter
     }
 }
 
@@ -37,9 +42,13 @@ pub fn get_config() -> Result<Config> {
 #[test]
 fn extract_query_content_connection_string() -> Result<()> {
     let config = get_config()?;
-    assert_eq!(
-        "Data Source=main.db",
-        config.connection_strings.query_context
-    );
+    assert_eq!("main.db", config.connection_string());
+    Ok(())
+}
+
+#[test]
+fn extract_engine_log_filter() -> Result<()> {
+    let config = get_config()?;
+    assert_eq!("Debug", config.engine_log_filter());
     Ok(())
 }
