@@ -1,5 +1,8 @@
 use rusqlite::{Connection, Statement};
-use util::error::{Context, Result};
+use util::{
+    config::Config,
+    error::{Context, Result},
+};
 
 use crate::{
     entities::{InteractionPeriod, Session, Usage},
@@ -32,7 +35,8 @@ pub struct Database {
 }
 
 impl Database {
-    pub fn new(path: &str) -> Result<Self> {
+    pub fn new(config: &Config) -> Result<Self> {
+        let path = config.connection_string();
         let mut conn = Connection::open(path).context("open conn")?;
         conn.pragma_update(None, "journal_mode", "WAL")
             .context("enable WAL")?;
