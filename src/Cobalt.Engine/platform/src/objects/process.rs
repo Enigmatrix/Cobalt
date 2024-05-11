@@ -13,7 +13,7 @@ use windows::{
     },
 };
 
-use crate::{adapt_size, buf::WideBuffer, err::NtError};
+use crate::{adapt_size, buf::WideBuffer, error::NtError};
 
 pub type ProcessId = u32;
 

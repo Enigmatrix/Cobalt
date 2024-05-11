@@ -13,7 +13,7 @@ use windows::Win32::{
 
 use crate::{
     buf::{buf, Buffer, WideBuffer},
-    err::Win32Error,
+    error::Win32Error,
     objects::ProcessId,
     win32,
 };

@@ -3,6 +3,6 @@
 #![feature(new_uninit)]
 
 mod buf;
-mod err;
+mod error;
 pub mod events;
 pub mod objects;
