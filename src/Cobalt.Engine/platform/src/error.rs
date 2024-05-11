@@ -90,7 +90,7 @@ macro_rules! win32 {
     (val: $e: expr) => {{
         let val = $e;
         if val == 0 {
-            Err($crate::err::Win32Error::last_error())
+            Err($crate::error::Win32Error::last_error())
         } else {
             Ok(val)
         }
@@ -98,7 +98,7 @@ macro_rules! win32 {
     (wrap: $e: expr) => {{
         let val = $e;
         if val.0 == 0 {
-            Err($crate::err::Win32Error::last_error())
+            Err($crate::error::Win32Error::last_error())
         } else {
             Ok(val)
         }
@@ -106,7 +106,7 @@ macro_rules! win32 {
     (ptr: $e: expr) => {{
         let val = $e;
         if val.is_null() {
-            Err($crate::err::Win32Error::last_error())
+            Err($crate::error::Win32Error::last_error())
         } else {
             Ok(val)
         }
