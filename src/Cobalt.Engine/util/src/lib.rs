@@ -1,6 +1,7 @@
 pub mod channels;
 pub mod config;
 pub mod error;
+pub mod future;
 pub mod tracing;
 
 use crate::config::Config;
