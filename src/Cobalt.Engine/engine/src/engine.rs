@@ -1,10 +1,11 @@
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
+use std::future::Future;
 
-use data::db::{FoundOrInserted, UsageWriter};
+use data::db::{Database, FoundOrInserted, UsageWriter};
 use data::entities::{App, AppIdentity, Ref, Session, Usage};
 use platform::events::{ForegroundChangedEvent, InteractionChangedEvent};
-use platform::objects::{Process, ProcessId, Window};
+use platform::objects::{Process, ProcessId, Timestamp, Window};
 use std::hash::Hash;
 use util::channels::Sender;
 use util::error::Result;
@@ -43,15 +44,57 @@ pub enum Event {
 }
 
 impl<'a> Engine<'a> {
-    pub fn handle(&mut self, event: Event) -> Result<()> {
+    /// Create a new [Engine], which initializes it's first [Usage]
+    pub async fn new(
+        foreground: Window,
+        start: Timestamp,
+        db: &'a mut Database,
+        resolver: Sender<AppInfoResolverRequest>,
+    ) -> Result<Self> {
+        let mut sessions = HashMap::new();
+        let mut apps = HashMap::new();
+        let mut inserter = UsageWriter::new(db)?;
+        let title = foreground.title()?;
+        let session_details = Self::create_session_for_window(
+            &mut apps,
+            &mut inserter,
+            &resolver,
+            &foreground,
+            title.clone(),
+        )
+        .await?;
+        let current_usage = Usage {
+            id: Default::default(),
+            session: session_details.session.clone(),
+            start: start.ticks(),
+            end: start.ticks(),
+        };
+        sessions.insert(
+            WindowSession {
+                window: foreground,
+                title,
+            },
+            session_details,
+        );
+        Ok(Self {
+            sessions,
+            apps,
+            inserter,
+            current_usage,
+            resolver,
+        })
+    }
+
+    pub async fn handle(&mut self, event: Event) -> Result<()> {
         match event {
             Event::ForegroundChanged(ForegroundChangedEvent { at, window, title }) => {
                 self.current_usage.end = at.ticks();
                 self.inserter.insert_usage(&self.current_usage)?;
 
-                let session_details = self.sessions.fallible_get_or_insert(
-                    WindowSession { window, title },
-                    |ws| {
+                let ws = WindowSession { window, title };
+                let session_details = self
+                    .sessions
+                    .fallible_get_or_insert_async(ws.clone(), async {
                         Self::create_session_for_window(
                             &mut self.apps,
                             &mut self.inserter,
@@ -59,8 +102,9 @@ impl<'a> Engine<'a> {
                             &ws.window,
                             ws.title,
                         )
-                    },
-                )?;
+                        .await
+                    })
+                    .await?;
 
                 self.current_usage = Usage {
                     id: Default::default(),
@@ -79,7 +123,7 @@ impl<'a> Engine<'a> {
         Ok(())
     }
 
-    fn create_app_for_process(
+    async fn create_app_for_process(
         inserter: &mut UsageWriter<'a>,
         resolver: &Sender<AppInfoResolverRequest>,
         pid: ProcessId,
@@ -102,24 +146,28 @@ impl<'a> Engine<'a> {
         let app_id = match found_app {
             FoundOrInserted::Found(id) => id,
             FoundOrInserted::Inserted(id) => {
-                resolver.send(AppInfoResolverRequest::new(id.clone(), identity.clone()))?;
+                resolver
+                    .send_async(AppInfoResolverRequest::new(id.clone(), identity.clone()))
+                    .await?;
                 id
             }
         };
         Ok({ AppDetails { app: app_id } })
     }
 
-    fn create_session_for_window(
+    async fn create_session_for_window(
         apps: &mut HashMap<ProcessId, AppDetails>,
         inserter: &mut UsageWriter<'a>,
-        app_info_tx: &Sender<AppInfoResolverRequest>,
+        resolver: &Sender<AppInfoResolverRequest>,
         window: &Window,
         title: String,
     ) -> Result<SessionDetails> {
         let pid = window.pid()?;
-        let AppDetails { app } = apps.fallible_get_or_insert(pid, |pid| {
-            Self::create_app_for_process(inserter, app_info_tx, pid, window)
-        })?;
+        let AppDetails { app } = apps
+            .fallible_get_or_insert_async(pid, async {
+                Self::create_app_for_process(inserter, resolver, pid, window).await
+            })
+            .await?;
 
         let mut session = Session {
             id: Default::default(),
@@ -135,22 +183,27 @@ impl<'a> Engine<'a> {
 }
 
 trait HashMapExt<K, V> {
-    fn fallible_get_or_insert<F: FnOnce(K) -> Result<V>>(
-        &mut self,
+    async fn fallible_get_or_insert_async<'a>(
+        &'a mut self,
         key: K,
-        create: F,
-    ) -> Result<&mut V>;
+        create: impl Future<Output = Result<V>>,
+    ) -> Result<&'a mut V>
+    where
+        V: 'a;
 }
 
 impl<K: Eq + Hash + Clone, V> HashMapExt<K, V> for HashMap<K, V> {
-    fn fallible_get_or_insert<F: FnOnce(K) -> Result<V>>(
-        &mut self,
+    async fn fallible_get_or_insert_async<'a>(
+        &'a mut self,
         key: K,
-        create: F,
-    ) -> Result<&mut V> {
+        create: impl Future<Output = Result<V>>,
+    ) -> Result<&'a mut V>
+    where
+        V: 'a,
+    {
         match self.entry(key.clone()) {
             Entry::Occupied(occ) => Ok(occ.into_mut()),
-            Entry::Vacant(vac) => Ok(vac.insert(create(key)?)),
+            Entry::Vacant(vac) => Ok(vac.insert(create.await?)),
         }
     }
 }

@@ -13,12 +13,7 @@ pub struct ForegroundChangedEvent {
 }
 
 impl ForegroundEventWatcher {
-    pub fn new() -> Result<Self> {
-        let window = loop {
-            if let Some(window) = Window::foreground() {
-                break window;
-            }
-        };
+    pub fn new(window: Window) -> Result<Self> {
         let title = window.title().context("title of initial fg window")?;
         Ok(Self { window, title })
     }
