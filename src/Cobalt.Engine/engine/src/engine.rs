@@ -7,14 +7,15 @@ use data::entities::{App, AppIdentity, Ref, Session, Usage};
 use platform::events::{ForegroundChangedEvent, InteractionChangedEvent};
 use platform::objects::{Process, ProcessId, Timestamp, Window};
 use std::hash::Hash;
-use util::channels::Sender;
+use util::config::Config;
 use util::error::Result;
+use util::future::task::LocalSpawnExt;
 
 use util::tracing::info;
 
-use crate::resolver::AppInfoResolverRequest;
+use crate::resolver::AppInfoResolver;
 
-pub struct Engine<'a> {
+pub struct Engine<'a, S: LocalSpawnExt> {
     // TODO this might be a bad idea, the HWND might be reused by Windows,
     // so another window could be running with the same HWND after the first one closed...
     sessions: HashMap<WindowSession, SessionDetails>,
@@ -22,8 +23,9 @@ pub struct Engine<'a> {
     // so another app could be running with the same pid after the first one closed...
     apps: HashMap<ProcessId, AppDetails>,
     current_usage: Usage,
+    config: Config,
     inserter: UsageWriter<'a>,
-    resolver: Sender<AppInfoResolverRequest>,
+    spawner: S,
 }
 
 #[derive(Debug, Clone, Hash, Eq, PartialEq)]
@@ -45,13 +47,14 @@ pub enum Event {
     InteractionChanged(InteractionChangedEvent),
 }
 
-impl<'a> Engine<'a> {
+impl<'a, S: LocalSpawnExt> Engine<'a, S> {
     /// Create a new [Engine], which initializes it's first [Usage]
     pub async fn new(
         foreground: Window,
         start: Timestamp,
+        config: Config,
         db: &'a mut Database,
-        resolver: Sender<AppInfoResolverRequest>,
+        spawner: S,
     ) -> Result<Self> {
         let mut sessions = HashMap::new();
         let mut apps = HashMap::new();
@@ -59,8 +62,9 @@ impl<'a> Engine<'a> {
         let title = foreground.title()?;
         let session_details = Self::create_session_for_window(
             &mut apps,
+            &config,
             &mut inserter,
-            &resolver,
+            &spawner,
             &foreground,
             title.clone(),
         )
@@ -80,10 +84,11 @@ impl<'a> Engine<'a> {
         );
         Ok(Self {
             sessions,
+            config,
             apps,
             inserter,
             current_usage,
-            resolver,
+            spawner,
         })
     }
 
@@ -100,8 +105,9 @@ impl<'a> Engine<'a> {
                     .fallible_get_or_insert_async(ws.clone(), async {
                         Self::create_session_for_window(
                             &mut self.apps,
+                            &self.config,
                             &mut self.inserter,
-                            &self.resolver,
+                            &self.spawner,
                             &ws.window,
                             ws.title,
                         )
@@ -134,7 +140,8 @@ impl<'a> Engine<'a> {
 
     async fn create_app_for_process(
         inserter: &mut UsageWriter<'a>,
-        resolver: &Sender<AppInfoResolverRequest>,
+        config: &Config,
+        spawner: &S,
         pid: ProcessId,
         window: &Window,
     ) -> Result<AppDetails> {
@@ -151,13 +158,20 @@ impl<'a> Engine<'a> {
         };
 
         let found_app = inserter.find_or_insert_app(&identity)?;
-
         let app_id = match found_app {
             FoundOrInserted::Found(id) => id,
             FoundOrInserted::Inserted(id) => {
-                resolver
-                    .send_async(AppInfoResolverRequest::new(id.clone(), identity.clone()))
-                    .await?;
+                {
+                    let config = config.clone();
+                    let id = id.clone();
+
+                    spawner.spawn_local(async move {
+                        AppInfoResolver::update_app(&config, id, identity)
+                            .await
+                            .expect("update app with info")
+                    })?;
+                }
+
                 id
             }
         };
@@ -166,15 +180,16 @@ impl<'a> Engine<'a> {
 
     async fn create_session_for_window(
         apps: &mut HashMap<ProcessId, AppDetails>,
+        config: &Config,
         inserter: &mut UsageWriter<'a>,
-        resolver: &Sender<AppInfoResolverRequest>,
+        spawner: &S,
         window: &Window,
         title: String,
     ) -> Result<SessionDetails> {
         let pid = window.pid()?;
         let AppDetails { app } = apps
             .fallible_get_or_insert_async(pid, async {
-                Self::create_app_for_process(inserter, resolver, pid, window).await
+                Self::create_app_for_process(inserter, config, spawner, pid, window).await
             })
             .await?;
 

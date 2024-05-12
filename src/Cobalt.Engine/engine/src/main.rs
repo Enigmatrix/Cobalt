@@ -6,7 +6,6 @@ use platform::{
     events::{ForegroundChangedEvent, ForegroundEventWatcher, InteractionWatcher},
     objects::{EventLoop, Timer, Timestamp, Window},
 };
-use resolver::{AppInfoResolver, AppInfoResolverRequest};
 use util::{
     channels::{self, Receiver, Sender},
     config::{self, Config},
@@ -69,33 +68,15 @@ fn event_loop(config: &Config, event_tx: Sender<Event>, fg: Window, now: Timesta
     Ok(())
 }
 
-async fn resolve_loop(
-    config: &Config,
-    rx: Receiver<AppInfoResolverRequest>,
-    spawner: LocalSpawner,
-) -> Result<()> {
-    loop {
-        let req = rx.recv_async().await?;
-        let config = config.clone();
-
-        // run concurrently, since they are independent
-        spawner.spawn_local(async move {
-            AppInfoResolver::update_app(&config, req)
-                .await
-                .expect("update app with info");
-        })?;
-    }
-}
-
 async fn engine_loop(
     config: &Config,
     rx: Receiver<Event>,
-    resolve_tx: Sender<AppInfoResolverRequest>,
+    spawner: &LocalSpawner,
     fg: Window,
     now: Timestamp,
 ) -> Result<()> {
     let mut db = Database::new(config)?;
-    let mut engine = Engine::new(fg, now, &mut db, resolve_tx).await?;
+    let mut engine = Engine::new(fg, now, config.clone(), &mut db, spawner).await?;
     loop {
         let ev = rx.recv_async().await?;
         engine.handle(ev).await?;
@@ -105,20 +86,12 @@ async fn engine_loop(
 fn processor(config: &Config, fg: Window, now: Timestamp, rx: Receiver<Event>) -> Result<()> {
     let mut pool = LocalPool::new();
     let spawner = pool.spawner();
-    let (resolve_tx, resolve_rx) = channels::unbounded();
 
-    let _config = config.clone();
+    let config = config.clone();
     pool.spawner().spawn_local(async move {
-        engine_loop(&_config, rx, resolve_tx, fg, now)
+        engine_loop(&config, rx, &spawner, fg, now)
             .await
             .expect("engine loop");
-    })?;
-
-    let _config = config.clone();
-    pool.spawner().spawn_local(async move {
-        resolve_loop(&_config, resolve_rx, spawner)
-            .await
-            .expect("resolver loop");
     })?;
 
     pool.run();

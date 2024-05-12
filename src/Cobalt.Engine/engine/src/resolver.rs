@@ -8,17 +8,6 @@ use util::{config::Config, error::Result};
 
 pub struct AppInfoResolver;
 
-pub struct AppInfoResolverRequest {
-    app: Ref<App>,
-    identity: AppIdentity,
-}
-
-impl AppInfoResolverRequest {
-    pub fn new(app: Ref<App>, identity: AppIdentity) -> Self {
-        AppInfoResolverRequest { app, identity }
-    }
-}
-
 impl AppInfoResolver {
     async fn resolve(identity: &AppIdentity) -> Result<AppInfo> {
         match identity {
@@ -27,8 +16,7 @@ impl AppInfoResolver {
         }
     }
 
-    pub async fn update_app(config: &Config, req: AppInfoResolverRequest) -> Result<()> {
-        let AppInfoResolverRequest { app, identity } = req;
+    pub async fn update_app(config: &Config, app: Ref<App>, identity: AppIdentity) -> Result<()> {
         let app_info = Self::resolve(&identity).await?;
 
         let mut db = Database::new(config)?;
