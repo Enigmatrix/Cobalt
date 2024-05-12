@@ -9,6 +9,6 @@ use crate::error::Result;
 
 pub fn setup(config: &Config) -> Result<()> {
     error::setup()?;
-    tracing::setup(&config.engine_log_filter())?;
+    tracing::setup(config.engine_log_filter())?;
     Ok(())
 }

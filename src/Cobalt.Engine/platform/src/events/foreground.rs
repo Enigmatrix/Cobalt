@@ -26,8 +26,12 @@ impl ForegroundEventWatcher {
             }
 
             self.window = fg.clone();
-            self.title = title.clone();
-            return Ok(Some(ForegroundChangedEvent { at, window: fg, title }));
+            self.title.clone_from(&title);
+            return Ok(Some(ForegroundChangedEvent {
+                at,
+                window: fg,
+                title,
+            }));
         }
         Ok(None)
     }

@@ -1,8 +1,10 @@
+use std::thread;
+
 use data::db::Database;
 use engine::{Engine, Event};
 use platform::{
-    events::{ForegroundChangedEvent, ForegroundEventWatcher},
-    objects::{Timestamp, Window},
+    events::{ForegroundChangedEvent, ForegroundEventWatcher, InteractionWatcher},
+    objects::{Duration, EventLoop, Timer, Timestamp, Window},
 };
 use resolver::{AppInfoResolver, AppInfoResolverRequest};
 use util::{
@@ -22,16 +24,48 @@ mod sentry;
 fn main() -> Result<()> {
     let config = config::get_config()?;
     util::setup(&config)?;
+    platform::setup()?;
 
     let (event_tx, event_rx) = channels::unbounded();
     let now = Timestamp::now();
     let fg = foreground_window();
 
-    let mut fg_watcher = ForegroundEventWatcher::new(fg.clone())?;
-    if let Some(ForegroundChangedEvent { at, window, title }) = fg_watcher.poll(now.clone())? {}
+    let ev_thread = {
+        let config = config.clone();
+        let fg = fg.clone();
+        thread::spawn(move || {
+            event_loop(&config, event_tx, fg, now).expect("event loop");
+        })
+    };
 
-    println!("Hello, world!");
     processor(&config, fg, now, event_rx)?;
+    ev_thread.join().expect("event loop thread");
+    Ok(())
+}
+
+fn event_loop(config: &Config, event_tx: Sender<Event>, fg: Window, now: Timestamp) -> Result<()> {
+    let ev = EventLoop::new();
+
+    let mut fg_watcher = ForegroundEventWatcher::new(fg)?;
+    let mut it_watcher = InteractionWatcher::new(Duration::from_millis(5000), now);
+
+    let every = Duration::from_millis(1_000); // TODO get this from config
+    let _timer = Timer::new(every, every, &mut || {
+        let now = Timestamp::now();
+        if let Some(ForegroundChangedEvent { at, window, title }) = fg_watcher.poll(now)? {
+            event_tx.send(Event::ForegroundChanged(ForegroundChangedEvent {
+                at,
+                window,
+                title,
+            }))?;
+        }
+        if let Some(event) = it_watcher.poll(now)? {
+            event_tx.send(Event::InteractionChanged(event))?;
+        }
+        Ok(())
+    })?;
+
+    ev.run();
     Ok(())
 }
 
@@ -43,6 +77,8 @@ async fn resolve_loop(
     loop {
         let req = rx.recv_async().await?;
         let config = config.clone();
+
+        // run concurrently, since they are independent
         spawner.spawn_local(async move {
             AppInfoResolver::update_app(&config, req)
                 .await
@@ -58,7 +94,7 @@ async fn engine_loop(
     fg: Window,
     now: Timestamp,
 ) -> Result<()> {
-    let mut db = Database::new(&config)?;
+    let mut db = Database::new(config)?;
     let mut engine = Engine::new(fg, now, &mut db, resolve_tx).await?;
     loop {
         let ev = rx.recv_async().await?;

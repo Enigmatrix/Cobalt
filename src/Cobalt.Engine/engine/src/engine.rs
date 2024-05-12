@@ -10,6 +10,8 @@ use std::hash::Hash;
 use util::channels::Sender;
 use util::error::Result;
 
+use util::tracing::info;
+
 use crate::resolver::AppInfoResolverRequest;
 
 pub struct Engine<'a> {
@@ -66,8 +68,8 @@ impl<'a> Engine<'a> {
         let current_usage = Usage {
             id: Default::default(),
             session: session_details.session.clone(),
-            start: start.ticks(),
-            end: start.ticks(),
+            start: start.into(),
+            end: start.into(),
         };
         sessions.insert(
             WindowSession {
@@ -88,10 +90,11 @@ impl<'a> Engine<'a> {
     pub async fn handle(&mut self, event: Event) -> Result<()> {
         match event {
             Event::ForegroundChanged(ForegroundChangedEvent { at, window, title }) => {
-                self.current_usage.end = at.ticks();
+                self.current_usage.end = at.into();
                 self.inserter.insert_usage(&self.current_usage)?;
 
                 let ws = WindowSession { window, title };
+                info!("Foreground changed to {:?}", ws);
                 let session_details = self
                     .sessions
                     .fallible_get_or_insert_async(ws.clone(), async {
@@ -109,8 +112,8 @@ impl<'a> Engine<'a> {
                 self.current_usage = Usage {
                     id: Default::default(),
                     session: session_details.session.clone(),
-                    start: at.ticks(),
-                    end: at.ticks(),
+                    start: at.into(),
+                    end: at.into(),
                 };
             }
             Event::InteractionChanged(InteractionChangedEvent::BecameIdle {
@@ -152,7 +155,7 @@ impl<'a> Engine<'a> {
                 id
             }
         };
-        Ok({ AppDetails { app: app_id } })
+        Ok(AppDetails { app: app_id })
     }
 
     async fn create_session_for_window(
