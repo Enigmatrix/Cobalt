@@ -142,7 +142,7 @@ macro_rules! table {
 
 table!(
     App,
-    "app",
+    "apps",
     id: Id,
     [
         "id",
@@ -162,14 +162,14 @@ table!(
 
 table!(
     Tag,
-    "tag",
+    "tags",
     id: Id,
     ["id", "name", "color"]
 );
 
 table!(
     Session,
-    "session",
+    "sessions",
     id: Id,
     [
         "id",
@@ -180,7 +180,7 @@ table!(
 
 table!(
     Usage,
-    "usage",
+    "usages",
     id: Id,
     [
         "id",
@@ -192,35 +192,35 @@ table!(
 
 table!(
     InteractionPeriod,
-    "interaction_period",
+    "interaction_periods",
     id: Id,
     ["id", "start", "end", "mouseclicks", "keystrokes"]
 );
 
 table!(
     Alert,
-    "alert",
+    "alerts",
     id: VersionedId,
     ["guid", "version", "app_id", "tag_id", "usage_limit", "time_frame", "trigger_action_dim_duration", "trigger_action_message_content", "trigger_action_tag"]
 );
 
 table!(
     Reminder,
-    "reminder",
+    "reminders",
     id: Id,
     ["guid", "version", "alert_guid", "alert_version", "threshold", "message"]
 );
 
 table!(
     AlertEvent,
-    "alert_event",
+    "alert_events",
     id: u64,
     ["id", "alert_guid", "alert_version", "timestamp"]
 );
 
 table!(
     ReminderEvent,
-    "reminder_event",
+    "reminder_events",
     id: Id,
     ["id", "reminder_guid", "reminder_version", "timestamp"]
 );

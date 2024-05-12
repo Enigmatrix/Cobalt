@@ -20,4 +20,16 @@ features = [
     "Win32_System_SystemInformation",
     "Win32_System_StationsAndDesktops",
     "Wdk_System_Threading",
+    "Win32_Storage_FileSystem",
+    "Win32_System_WinRT",
+
+    "Foundation",
+    "Foundation_Collections",
+    "Storage",
+    "Storage_Streams",
+    "Storage_FileProperties",
+    "ApplicationModel",
 ]
+
+[dev-dependencies]
+tokio = { version = "1.0", features = ["macros", "rt"] }

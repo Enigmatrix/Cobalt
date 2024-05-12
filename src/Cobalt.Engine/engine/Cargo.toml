@@ -8,4 +8,5 @@ edition = "2021"
 [dependencies]
 data = { path = "../data" }
 platform = { path = "../platform" }
+rand = { version = "0.8.5", features = ["std_rng"] }
 util = { path = "../util" }
