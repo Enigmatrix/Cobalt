@@ -42,7 +42,6 @@ impl InteractionWatcher {
                 let recorded_key_presses = self.key_presses;
                 self.mouse_clicks = 0;
                 self.key_presses = 0;
-                self.last_interaction = at;
                 self.active = false;
                 Ok(Some(InteractionChangedEvent::BecameIdle {
                     at,

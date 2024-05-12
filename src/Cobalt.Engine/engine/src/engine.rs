@@ -120,8 +120,14 @@ impl<'a> Engine<'a> {
                 at,
                 recorded_mouse_clicks,
                 recorded_key_presses,
-            }) => todo!(),
-            Event::InteractionChanged(InteractionChangedEvent::BecameActive { at }) => todo!(),
+            }) => {
+                info!("Became idle at {:?}", at);
+                // TODO
+            },
+            Event::InteractionChanged(InteractionChangedEvent::BecameActive { at }) => {
+                info!("Became active at {:?}", at);
+                // TODO
+            },
         };
         Ok(())
     }
