@@ -18,6 +18,15 @@ pub enum FoundOrInserted<T: Table> {
     Inserted(Ref<T>),
 }
 
+impl<T: Table> From<FoundOrInserted<T>> for Ref<T> {
+    fn from(value: FoundOrInserted<T>) -> Self {
+        match value {
+            FoundOrInserted::Found(id) => id,
+            FoundOrInserted::Inserted(id) => id,
+        }
+    }
+}
+
 macro_rules! prepare_stmt {
     ($conn: expr, $sql:expr) => {{
         let sql = $sql;

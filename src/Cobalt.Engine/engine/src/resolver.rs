@@ -13,6 +13,12 @@ pub struct AppInfoResolverRequest {
     identity: AppIdentity,
 }
 
+impl AppInfoResolverRequest {
+    pub fn new(app: Ref<App>, identity: AppIdentity) -> Self {
+        AppInfoResolverRequest { app, identity }
+    }
+}
+
 impl AppInfoResolver {
     async fn resolve(identity: &AppIdentity) -> Result<AppInfo> {
         match identity {
