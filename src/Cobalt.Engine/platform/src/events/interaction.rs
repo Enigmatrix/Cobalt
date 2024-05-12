@@ -1,5 +1,5 @@
 use crate::objects::{Duration, Timestamp};
-use util::error::Result;
+use util::{config::Config, error::Result};
 
 pub struct InteractionWatcher {
     max_idle_duration: Duration,
@@ -23,10 +23,9 @@ pub enum InteractionChangedEvent {
 }
 
 impl InteractionWatcher {
-    // TODO get max_idle_duration from Config
-    pub fn new(max_idle_duration: Duration, at: Timestamp) -> Self {
+    pub fn new(config: &Config, at: Timestamp) -> Self {
         Self {
-            max_idle_duration,
+            max_idle_duration: config.max_idle_duration().into(),
             active: true,
             last_interaction: at,
             mouse_clicks: 0,

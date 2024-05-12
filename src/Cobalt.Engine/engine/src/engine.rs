@@ -123,11 +123,11 @@ impl<'a> Engine<'a> {
             }) => {
                 info!("Became idle at {:?}", at);
                 // TODO
-            },
+            }
             Event::InteractionChanged(InteractionChangedEvent::BecameActive { at }) => {
                 info!("Became active at {:?}", at);
                 // TODO
-            },
+            }
         };
         Ok(())
     }

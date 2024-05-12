@@ -4,7 +4,7 @@ use data::db::Database;
 use engine::{Engine, Event};
 use platform::{
     events::{ForegroundChangedEvent, ForegroundEventWatcher, InteractionWatcher},
-    objects::{Duration, EventLoop, Timer, Timestamp, Window},
+    objects::{EventLoop, Timer, Timestamp, Window},
 };
 use resolver::{AppInfoResolver, AppInfoResolverRequest};
 use util::{
@@ -47,9 +47,9 @@ fn event_loop(config: &Config, event_tx: Sender<Event>, fg: Window, now: Timesta
     let ev = EventLoop::new();
 
     let mut fg_watcher = ForegroundEventWatcher::new(fg)?;
-    let mut it_watcher = InteractionWatcher::new(Duration::from_millis(5000), now);
+    let mut it_watcher = InteractionWatcher::new(config, now);
 
-    let every = Duration::from_millis(1_000); // TODO get this from config
+    let every = config.poll_duration().into();
     let _timer = Timer::new(every, every, &mut || {
         let now = Timestamp::now();
         if let Some(ForegroundChangedEvent { at, window, title }) = fg_watcher.poll(now)? {

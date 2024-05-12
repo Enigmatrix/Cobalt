@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use crate::error::Result;
 use figment::{
     providers::{Format, Json},
@@ -10,6 +12,8 @@ use serde::Deserialize;
 pub struct Config {
     connection_strings: ConnectionStrings,
     engine_log_filter: String,
+    max_idle_duration: Duration,
+    poll_duration: Duration,
 }
 
 impl Config {
@@ -23,6 +27,14 @@ impl Config {
 
     pub fn engine_log_filter(&self) -> &str {
         &self.engine_log_filter
+    }
+
+    pub fn max_idle_duration(&self) -> Duration {
+        self.max_idle_duration
+    }
+
+    pub fn poll_duration(&self) -> Duration {
+        self.poll_duration
     }
 }
 
