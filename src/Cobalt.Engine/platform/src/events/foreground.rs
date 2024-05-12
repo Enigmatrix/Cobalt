@@ -1,4 +1,4 @@
-use crate::objects::Window;
+use crate::objects::{Timestamp, Window};
 use util::error::{Context, Result};
 
 pub struct ForegroundEventWatcher {
@@ -7,22 +7,18 @@ pub struct ForegroundEventWatcher {
 }
 
 pub struct ForegroundChangedEvent {
-    window: Window,
-    title: String,
+    pub at: Timestamp,
+    pub window: Window,
+    pub title: String,
 }
 
 impl ForegroundEventWatcher {
-    pub fn new() -> Result<Self> {
-        let window = loop {
-            if let Some(window) = Window::foreground() {
-                break window;
-            }
-        };
+    pub fn new(window: Window) -> Result<Self> {
         let title = window.title().context("title of initial fg window")?;
         Ok(Self { window, title })
     }
 
-    pub fn poll(&mut self) -> Result<Option<ForegroundChangedEvent>> {
+    pub fn poll(&mut self, at: Timestamp) -> Result<Option<ForegroundChangedEvent>> {
         if let Some(fg) = Window::foreground() {
             let title = fg.title().context("title of new fg window")?;
             if fg == self.window && title == self.title {
@@ -30,8 +26,12 @@ impl ForegroundEventWatcher {
             }
 
             self.window = fg.clone();
-            self.title = title.clone();
-            return Ok(Some(ForegroundChangedEvent { window: fg, title }));
+            self.title.clone_from(&title);
+            return Ok(Some(ForegroundChangedEvent {
+                at,
+                window: fg,
+                title,
+            }));
         }
         Ok(None)
     }
