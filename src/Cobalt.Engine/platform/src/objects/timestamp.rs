@@ -4,11 +4,15 @@ use std::ops;
 pub struct Duration;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Timestamp;
+pub struct Timestamp(u64);
 
 impl Timestamp {
     pub fn now() -> Self {
         todo!()
+    }
+
+    pub fn ticks(&self) -> u64 {
+        self.0
     }
 }
 

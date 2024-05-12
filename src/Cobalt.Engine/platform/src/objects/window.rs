@@ -1,3 +1,5 @@
+use std::hash::{Hash, Hasher};
+
 use util::error::{Context, Result};
 use windows::Win32::{
     Foundation::HWND,
@@ -29,6 +31,12 @@ use crate::{
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Window {
     hwnd: HWND,
+}
+
+impl Hash for Window {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.hwnd.0.hash(state);
+    }
 }
 
 impl Window {
