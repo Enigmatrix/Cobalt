@@ -4,6 +4,11 @@ use util::error::Result;
 
 pub struct AppInfoResolver;
 
+pub struct AppInfoResolverRequest {
+    app: Ref<App>,
+    identity: AppIdentity,
+}
+
 impl AppInfoResolver {
     async fn resolve(identity: AppIdentity) -> Result<AppInfo> {
         match identity {
@@ -12,7 +17,8 @@ impl AppInfoResolver {
         }
     }
 
-    pub async fn update_app(app: Ref<App>, identity: AppIdentity) -> Result<()> {
+    pub async fn update_app(req: AppInfoResolverRequest) -> Result<()> {
+        let AppInfoResolverRequest { app, identity } = req;
         todo!()
     }
 }
