@@ -2,7 +2,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use data::db::{Database, FoundOrInserted, UsageWriter};
-use data::entities::{AppIdentity, Session, Usage};
+use data::entities::{AppIdentity, Ref, Session, Usage};
 use platform::events::{ForegroundChangedEvent, InteractionChangedEvent};
 use platform::objects::{Process, ProcessId, Timestamp, Window};
 use util::config::Config;
@@ -37,43 +37,30 @@ impl<'a, S: LocalSpawnExt> Engine<'a, S> {
         db: &'a mut Database,
         spawner: S,
     ) -> Result<Self> {
-        let mut inserter = UsageWriter::new(db)?;
+        let inserter = UsageWriter::new(db)?;
         let title = foreground.title()?;
         let ws = WindowSession {
             window: foreground.clone(),
             title: title.clone(),
         };
 
-        // TODO cleanup repeated code
-        let mut borrow = cache.borrow_mut();
-        let session_details = {
-            borrow.get_or_insert_session_for_window(ws, |cache| {
-                Self::create_session_for_window(
-                    cache,
-                    &config,
-                    &mut inserter,
-                    &spawner,
-                    &foreground,
-                    title,
-                )
-            })?
+        let mut ret = Self {
+            cache,
+            config,
+            inserter,
+            // set a default value, then update it right after
+            current_usage: Default::default(),
+            spawner,
         };
 
-        let current_usage = Usage {
+        ret.current_usage = Usage {
             id: Default::default(),
-            session: session_details.session.clone(),
+            session: ret.get_session_details(ws)?,
             start: start.into(),
             end: start.into(),
         };
 
-        drop(borrow);
-        Ok(Self {
-            cache,
-            config,
-            inserter,
-            current_usage,
-            spawner,
-        })
+        Ok(ret)
     }
 
     pub async fn handle(&mut self, event: Event) -> Result<()> {
@@ -85,22 +72,11 @@ impl<'a, S: LocalSpawnExt> Engine<'a, S> {
                 let ws = WindowSession { window, title };
                 info!("Foreground changed to {:?}", ws);
 
-                let mut borrow = self.cache.borrow_mut();
-                let session_details =
-                    borrow.get_or_insert_session_for_window(ws.clone(), |cache| {
-                        Self::create_session_for_window(
-                            cache,
-                            &self.config,
-                            &mut self.inserter,
-                            &self.spawner,
-                            &ws.window,
-                            ws.title,
-                        )
-                    })?;
+                let session = self.get_session_details(ws)?;
 
                 self.current_usage = Usage {
                     id: Default::default(),
-                    session: session_details.session.clone(),
+                    session,
                     start: at.into(),
                     end: at.into(),
                 };
@@ -112,6 +88,8 @@ impl<'a, S: LocalSpawnExt> Engine<'a, S> {
             }) => {
                 info!("Became idle at {:?}", at);
                 // TODO
+                let _ = recorded_mouse_clicks;
+                let _ = recorded_key_presses;
             }
             Event::InteractionChanged(InteractionChangedEvent::BecameActive { at }) => {
                 info!("Became active at {:?}", at);
@@ -119,6 +97,22 @@ impl<'a, S: LocalSpawnExt> Engine<'a, S> {
             }
         };
         Ok(())
+    }
+
+    fn get_session_details(&mut self, ws: WindowSession) -> Result<Ref<Session>> {
+        let mut borrow = self.cache.borrow_mut();
+        let session_details = borrow.get_or_insert_session_for_window(ws.clone(), |cache| {
+            Self::create_session_for_window(
+                cache,
+                &self.config,
+                &mut self.inserter,
+                &self.spawner,
+                &ws.window,
+                ws.title,
+            )
+        })?;
+
+        Ok(session_details.session.clone())
     }
 
     fn create_app_for_process(

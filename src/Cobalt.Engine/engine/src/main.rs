@@ -1,6 +1,6 @@
-use std::thread;
-use std::rc::Rc;
 use std::cell::RefCell;
+use std::rc::Rc;
+use std::thread;
 
 use data::db::Database;
 use engine::{Engine, Event};
