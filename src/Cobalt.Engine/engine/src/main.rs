@@ -1,4 +1,6 @@
 use std::thread;
+use std::rc::Rc;
+use std::cell::RefCell;
 
 use data::db::Database;
 use engine::{Engine, Event};
@@ -16,6 +18,7 @@ use util::{
     },
 };
 
+mod cache;
 mod engine;
 mod resolver;
 mod sentry;
@@ -76,7 +79,8 @@ async fn engine_loop(
     now: Timestamp,
 ) -> Result<()> {
     let mut db = Database::new(config)?;
-    let mut engine = Engine::new(fg, now, config.clone(), &mut db, spawner).await?;
+    let cache = Rc::new(RefCell::new(cache::Cache::new()));
+    let mut engine = Engine::new(cache, fg, now, config.clone(), &mut db, spawner).await?;
     loop {
         let ev = rx.recv_async().await?;
         engine.handle(ev).await?;
