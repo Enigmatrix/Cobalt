@@ -16,8 +16,10 @@ pub struct Cache {
     // so another app could be running with the same pid after the first one closed...
     apps: HashMap<ProcessId, AppDetails>,
 
-    windows: HashMap<ProcessId, Window>,
-    processes: HashMap<Ref<App>, ProcessId>,
+    // An app can have many processes open representing it.
+    // A process can have many windows.
+    windows: HashMap<ProcessId, Vec<Window>>,
+    processes: HashMap<Ref<App>, Vec<ProcessId>>,
 }
 
 #[derive(Debug, Clone, Hash, Eq, PartialEq)]
@@ -62,6 +64,11 @@ impl Cache {
         }
 
         let created = { create(self)? };
+        self.windows
+            .entry(ws.window.pid()?)
+            .or_insert_with(|| vec![])
+            .push(ws.window.clone());
+
         Ok(self.sessions.entry(ws).or_insert(created))
     }
 
@@ -75,6 +82,11 @@ impl Cache {
         }
 
         let created = { create(self)? };
+        self.processes
+            .entry(created.app.clone())
+            .or_insert_with(|| vec![])
+            .push(process);
+
         Ok(self.apps.entry(process).or_insert(created))
     }
 

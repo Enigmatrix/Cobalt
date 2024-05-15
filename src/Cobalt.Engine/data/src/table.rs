@@ -1,4 +1,5 @@
 use std::fmt::Debug;
+use std::hash::{Hash, Hasher};
 
 use rusqlite::types::{FromSql, FromSqlResult, ToSqlOutput, ValueRef};
 use rusqlite::{Result, ToSql};
@@ -17,6 +18,12 @@ pub trait Table {
 #[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct Ref<T: Table> {
     pub inner: T::Id,
+}
+
+impl<T: Table<Id: Hash>> Hash for Ref<T> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.inner.hash(state);
+    }
 }
 
 impl<T: Table> Ref<T> {
