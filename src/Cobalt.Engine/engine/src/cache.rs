@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, iter::empty};
 
 use data::entities::{App, Ref, Session};
 use platform::objects::{ProcessId, Window};
@@ -46,6 +46,19 @@ impl Cache {
             windows: HashMap::new(),
             processes: HashMap::new(),
         }
+    }
+
+    pub fn processes_for_app(&self, app: &Ref<App>) -> impl Iterator<Item = &ProcessId> {
+        self.processes.get(app).into_iter().flat_map(|i| i.iter())
+    }
+
+    pub fn windows_for_app(&self, app: &Ref<App>) -> impl Iterator<Item = &Window> {
+        self.processes_for_app(app).flat_map(|pid| {
+            self.windows
+                .get(pid)
+                .into_iter()
+                .flat_map(|windows| windows.iter())
+        })
     }
 
     pub fn get_or_insert_session_for_window(

@@ -7,7 +7,10 @@ use util::{
 };
 
 use crate::{
-    entities::{App, AppIdentity, InteractionPeriod, Ref, Session, Usage},
+    entities::{
+        Alert, AlertEvent, App, AppIdentity, InteractionPeriod, Ref, Reminder, ReminderEvent,
+        Session, Target, Timestamp, Usage,
+    },
     migrations::Migrator,
     table::Table,
 };
@@ -208,6 +211,45 @@ impl<'a> AppUpdater<'a> {
     fn update_app_icon_size(&mut self, id: Ref<App>, icon_size: u64) -> Result<()> {
         self.update_app_icon_size.execute(params![icon_size, id])?;
         Ok(())
+    }
+}
+
+/// Reference to hold statements regarding [Alert] queries
+pub struct AlertManager<'a> {
+    conn: &'a Connection,
+}
+
+impl<'a> AlertManager<'a> {
+    /// Initialize a [AlertManager] from a given [Database]
+    pub fn new(db: &'a mut Database) -> Result<Self> {
+        let conn = &db.conn;
+        Ok(Self { conn })
+    }
+
+    /// Gets all [App]s under the [Target]
+    pub fn target_apps(&mut self, _target: &Target) -> Result<impl Iterator<Item = App>> {
+        todo!();
+        Ok(Vec::new().into_iter())
+    }
+
+    /// Get all [Alert]s that are triggered, including when they were triggered
+    pub fn triggered_alerts(&self) -> Result<Vec<(Alert, Option<Timestamp>)>> {
+        todo!()
+    }
+
+    /// Get all [Reminder]s that are triggered, except those that are already handled
+    pub fn triggered_reminders(&self) -> Result<Vec<Reminder>> {
+        todo!()
+    }
+
+    /// Insert a [AlertEvent]
+    pub fn insert_alert_event(&mut self, _event: &AlertEvent) -> Result<()> {
+        todo!()
+    }
+
+    /// Insert a [ReminderEvent]
+    pub fn insert_reminder_event(&mut self, _event: &ReminderEvent) -> Result<()> {
+        todo!()
     }
 }
 
