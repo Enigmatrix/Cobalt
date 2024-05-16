@@ -217,19 +217,44 @@ impl<'a> AppUpdater<'a> {
 /// Reference to hold statements regarding [Alert] queries
 pub struct AlertManager<'a> {
     conn: &'a Connection,
+    get_app: Statement<'a>,
+    get_tag_apps: Statement<'a>,
+    insert_alert_event: Statement<'a>,
+    insert_reminder_event: Statement<'a>,
 }
 
 impl<'a> AlertManager<'a> {
     /// Initialize a [AlertManager] from a given [Database]
     pub fn new(db: &'a mut Database) -> Result<Self> {
         let conn = &db.conn;
-        Ok(Self { conn })
+        let get_app = prepare_stmt!(conn, "SELECT * FROM app WHERE id = ?")?;
+        let get_tag_apps = prepare_stmt!(
+            conn,
+            "SELECT * FROM app WHERE id IN 
+                (SELECT app_id FROM tag WHERE tag.id = ?)"
+        )?;
+        let insert_alert_event = insert_stmt!(conn, AlertEvent)?;
+        let insert_reminder_event = insert_stmt!(conn, ReminderEvent)?;
+        Ok(Self {
+            conn,
+            get_app,
+            get_tag_apps,
+            insert_alert_event,
+            insert_reminder_event,
+        })
     }
 
     /// Gets all [App]s under the [Target]
-    pub fn target_apps(&mut self, _target: &Target) -> Result<impl Iterator<Item = App>> {
-        todo!();
-        Ok(Vec::new().into_iter())
+    pub fn target_apps(&mut self, target: &Target) -> Result<Vec<App>> {
+        let rows = match target {
+            Target::Tag(tag) => self.get_tag_apps.query(params![tag])?,
+            // this will only return one result, but we get a row iterator nonetheless
+            Target::App(app) => self.get_app.query(params![app])?,
+        };
+        let apps = rows
+            .mapped(Self::row_to_app)
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(apps)
     }
 
     /// Get all [Alert]s that are triggered, including when they were triggered
@@ -243,13 +268,38 @@ impl<'a> AlertManager<'a> {
     }
 
     /// Insert a [AlertEvent]
-    pub fn insert_alert_event(&mut self, _event: &AlertEvent) -> Result<()> {
-        todo!()
+    pub fn insert_alert_event(&mut self, event: &AlertEvent) -> Result<()> {
+        self.insert_alert_event.execute(params![
+            event.alert.guid,
+            event.alert.version,
+            event.timestamp,
+        ])?;
+        Ok(())
     }
 
     /// Insert a [ReminderEvent]
-    pub fn insert_reminder_event(&mut self, _event: &ReminderEvent) -> Result<()> {
-        todo!()
+    pub fn insert_reminder_event(&mut self, event: &ReminderEvent) -> Result<()> {
+        self.insert_reminder_event.execute(params![
+            event.reminder.guid,
+            event.reminder.version,
+            event.timestamp,
+        ])?;
+        Ok(())
+    }
+
+    fn row_to_app(row: &rusqlite::Row) -> Result<App, rusqlite::Error> {
+        Ok(App {
+            id: row.get(0)?,
+            name: row.get(3)?,
+            description: row.get(4)?,
+            company: row.get(5)?,
+            color: row.get(6)?,
+            identity: if row.get(7)? {
+                AppIdentity::Win32 { path: row.get(8)? }
+            } else {
+                AppIdentity::Uwp { aumid: row.get(8)? }
+            },
+        })
     }
 }
 

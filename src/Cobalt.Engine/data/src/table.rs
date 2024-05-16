@@ -1,5 +1,6 @@
 use std::fmt::Debug;
 use std::hash::{Hash, Hasher};
+use std::ops::Deref;
 
 use rusqlite::types::{FromSql, FromSqlResult, ToSqlOutput, ValueRef};
 use rusqlite::{Result, ToSql};
@@ -29,6 +30,14 @@ impl<T: Table<Id: Hash>> Hash for Ref<T> {
 impl<T: Table> Ref<T> {
     pub fn new(inner: T::Id) -> Self {
         Self { inner }
+    }
+}
+
+impl<T: Table> Deref for Ref<T> {
+    type Target = T::Id;
+
+    fn deref(&self) -> &Self::Target {
+        &self.inner
     }
 }
 

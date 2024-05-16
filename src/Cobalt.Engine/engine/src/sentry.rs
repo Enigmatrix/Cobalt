@@ -50,7 +50,8 @@ impl<'a> Sentry<'a> {
     pub fn processes_for_target(&mut self, target: &Target) -> Result<Vec<ProcessId>> {
         let processes = self
             .mgr
-            .target_apps(&target)?
+            .target_apps(target)?
+            .iter()
             .flat_map(move |app| {
                 self.cache
                     .borrow()
@@ -65,7 +66,8 @@ impl<'a> Sentry<'a> {
     pub fn windows_for_target(&mut self, target: &Target) -> Result<Vec<Window>> {
         let window = self
             .mgr
-            .target_apps(&target)?
+            .target_apps(target)?
+            .iter()
             .flat_map(move |app| {
                 self.cache
                     .borrow()

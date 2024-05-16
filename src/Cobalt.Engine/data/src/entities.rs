@@ -207,14 +207,14 @@ table!(
 table!(
     Reminder,
     "reminders",
-    id: Id,
+    id: VersionedId,
     ["guid", "version", "alert_guid", "alert_version", "threshold", "message"]
 );
 
 table!(
     AlertEvent,
     "alert_events",
-    id: u64,
+    id: Id,
     ["id", "alert_guid", "alert_version", "timestamp"]
 );
 
