@@ -9,7 +9,7 @@ use util::{
 use crate::{
     entities::{
         Alert, AlertEvent, App, AppIdentity, InteractionPeriod, Ref, Reminder, ReminderEvent,
-        Session, Target, Timestamp, Usage,
+        Session, Target, TimeFrame, Timestamp, TriggerAction, Usage, VersionedId,
     },
     migrations::Migrator,
     table::Table,
@@ -216,9 +216,10 @@ impl<'a> AppUpdater<'a> {
 
 /// Reference to hold statements regarding [Alert] queries
 pub struct AlertManager<'a> {
-    conn: &'a Connection,
     get_app: Statement<'a>,
     get_tag_apps: Statement<'a>,
+    triggered_alerts: Statement<'a>,
+    triggered_reminders: Statement<'a>,
     insert_alert_event: Statement<'a>,
     insert_reminder_event: Statement<'a>,
 }
@@ -233,12 +234,16 @@ impl<'a> AlertManager<'a> {
             "SELECT * FROM app WHERE id IN 
                 (SELECT app_id FROM tag WHERE tag.id = ?)"
         )?;
+        let triggered_alerts = prepare_stmt!(conn, include_str!("queries/triggered_alerts.sql"))?;
+        let triggered_reminders =
+            prepare_stmt!(conn, include_str!("queries/triggered_reminders.sql"))?;
         let insert_alert_event = insert_stmt!(conn, AlertEvent)?;
         let insert_reminder_event = insert_stmt!(conn, ReminderEvent)?;
         Ok(Self {
-            conn,
             get_app,
             get_tag_apps,
+            triggered_alerts,
+            triggered_reminders,
             insert_alert_event,
             insert_reminder_event,
         })
@@ -257,14 +262,31 @@ impl<'a> AlertManager<'a> {
         Ok(apps)
     }
 
+    // TODO optim: use a single query to get all triggered alerts and reminders
+    // TODO optim: or use a single transaction for the below two.
+
     /// Get all [Alert]s that are triggered, including when they were triggered
-    pub fn triggered_alerts(&self) -> Result<Vec<(Alert, Option<Timestamp>)>> {
-        todo!()
+    pub fn triggered_alerts(&mut self) -> Result<Vec<(Alert, Option<Timestamp>)>> {
+        let (day_start, week_start, month_start) = Self::time_starts();
+        let result = self
+            .triggered_alerts
+            .query_map(params![day_start, week_start, month_start,], |row| {
+                Ok((Self::row_to_alert(row)?, row.get(9)?))
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(result)
     }
 
     /// Get all [Reminder]s that are triggered, except those that are already handled
-    pub fn triggered_reminders(&self) -> Result<Vec<Reminder>> {
-        todo!()
+    pub fn triggered_reminders(&mut self) -> Result<Vec<Reminder>> {
+        let (day_start, week_start, month_start) = Self::time_starts();
+        let result = self
+            .triggered_reminders
+            .query_map(params![day_start, week_start, month_start,], |row| {
+                Self::row_to_reminder(row)
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(result)
     }
 
     /// Insert a [AlertEvent]
@@ -300,6 +322,53 @@ impl<'a> AlertManager<'a> {
                 AppIdentity::Uwp { aumid: row.get(8)? }
             },
         })
+    }
+
+    fn row_to_alert(row: &rusqlite::Row) -> Result<Alert, rusqlite::Error> {
+        let app_id: Option<Ref<App>> = row.get(2)?;
+        Ok(Alert {
+            id: Ref::new(VersionedId {
+                guid: row.get(0)?,
+                version: row.get(1)?,
+            }),
+            target: if let Some(app_id) = app_id {
+                Target::App(app_id)
+            } else {
+                Target::Tag(row.get(3)?)
+            },
+            usage_limit: row.get(4)?,
+            time_frame: match row.get(5)? {
+                0 => TimeFrame::Daily,
+                1 => TimeFrame::Weekly,
+                2 => TimeFrame::Monthly,
+                _ => unreachable!("time frame"),
+            },
+            trigger_action: match row.get(8)? {
+                0 => TriggerAction::Kill,
+                1 => TriggerAction::Dim(row.get(6)?),
+                2 => TriggerAction::Message(row.get(7)?),
+                _ => unreachable!("trigger action"),
+            },
+        })
+    }
+
+    fn row_to_reminder(row: &rusqlite::Row) -> Result<Reminder, rusqlite::Error> {
+        Ok(Reminder {
+            id: Ref::new(VersionedId {
+                guid: row.get(0)?,
+                version: row.get(1)?,
+            }),
+            alert: Ref::new(VersionedId {
+                guid: row.get(2)?,
+                version: row.get(3)?,
+            }),
+            threshold: row.get(4)?,
+            message: row.get(5)?,
+        })
+    }
+
+    fn time_starts() -> (Timestamp, Timestamp, Timestamp) {
+        todo!()
     }
 }
 
@@ -510,4 +579,6 @@ mod tests {
         assert_eq!(icon, &icon_from_db);
         Ok(())
     }
+    
+    // TODO tests for AlertManager
 }
