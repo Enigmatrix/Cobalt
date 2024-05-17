@@ -228,11 +228,11 @@ impl<'a> AlertManager<'a> {
     /// Initialize a [AlertManager] from a given [Database]
     pub fn new(db: &'a mut Database) -> Result<Self> {
         let conn = &db.conn;
-        let get_app = prepare_stmt!(conn, "SELECT * FROM app WHERE id = ?")?;
+        let get_app = prepare_stmt!(conn, "SELECT * FROM apps WHERE id = ?")?;
         let get_tag_apps = prepare_stmt!(
             conn,
-            "SELECT * FROM app WHERE id IN 
-                (SELECT app_id FROM tag WHERE tag.id = ?)"
+            "SELECT * FROM apps WHERE id IN 
+                (SELECT app_id FROM _app_tags at WHERE at.tag_id = ?)"
         )?;
         let triggered_alerts = prepare_stmt!(conn, include_str!("queries/triggered_alerts.sql"))?;
         let triggered_reminders =
@@ -374,6 +374,8 @@ impl<'a> AlertManager<'a> {
 
 #[cfg(test)]
 mod tests {
+
+    use crate::entities::Tag;
 
     use super::*;
 
@@ -579,6 +581,230 @@ mod tests {
         assert_eq!(icon, &icon_from_db);
         Ok(())
     }
+
+    #[test]
+    fn target_apps() -> Result<()> {
+        let mut db = test_db()?;
+        {
+            let mut insert_app = insert_stmt!(db.conn, App)?;
+            insert_app.execute(params![
+                true, true, "name1", "desc1", "comp1", "red1", 1, "path1", false
+            ])?;
+            insert_app.execute(params![
+                true, true, "name2", "desc2", "comp2", "red2", 0, "aumid2", false
+            ])?;
+            insert_app.execute(params![
+                true, true, "name3", "desc3", "comp3", "red3", 1, "path3", false
+            ])?;
+
+            let mut insert_tag = insert_stmt!(db.conn, Tag)?;
+            insert_tag.execute(params!["tag_name1", "blue1"])?;
+            insert_tag.execute(params!["tag_name2", "blue2"])?;
+            insert_tag.execute(params!["tag_name3", "blue3"])?;
+            insert_tag.execute(params!["tag_name4", "blue4"])?;
+
+            let mut insert_app_tag = prepare_stmt!(
+                db.conn,
+                "INSERT INTO _app_tags(app_id, tag_id) VALUES (?, ?)"
+            )?;
+            insert_app_tag.execute(params![1, 1])?;
+            insert_app_tag.execute(params![2, 1])?;
+            insert_app_tag.execute(params![2, 2])?;
+            insert_app_tag.execute(params![3, 2])?;
+            insert_app_tag.execute(params![1, 3])?;
+        }
+
+        let mut mgr = AlertManager::new(&mut db)?;
+
+        let app1 = App {
+            id: Ref::new(1),
+            name: "name1".to_string(),
+            description: "desc1".to_string(),
+            company: "comp1".to_string(),
+            color: "red1".to_string(),
+            identity: AppIdentity::Win32 {
+                path: "path1".to_string(),
+            },
+        };
+        let app2 = App {
+            id: Ref::new(2),
+            name: "name2".to_string(),
+            description: "desc2".to_string(),
+            company: "comp2".to_string(),
+            color: "red2".to_string(),
+            identity: AppIdentity::Uwp {
+                aumid: "aumid2".to_string(),
+            },
+        };
+        let app3 = App {
+            id: Ref::new(3),
+            name: "name3".to_string(),
+            description: "desc3".to_string(),
+            company: "comp3".to_string(),
+            color: "red3".to_string(),
+            identity: AppIdentity::Win32 {
+                path: "path3".to_string(),
+            },
+        };
+
+        assert_eq!(
+            mgr.target_apps(&Target::App(Ref::new(1)))?,
+            vec![app1.clone()],
+        );
+
+        assert_eq!(
+            mgr.target_apps(&Target::App(Ref::new(2)))?,
+            vec![app2.clone()],
+        );
+
+        assert_eq!(
+            mgr.target_apps(&Target::App(Ref::new(3)))?,
+            vec![app3.clone()],
+        );
+
+        assert_eq!(
+            mgr.target_apps(&Target::Tag(Ref::new(1)))?,
+            vec![app1.clone(), app2.clone()],
+        );
+
+        assert_eq!(
+            mgr.target_apps(&Target::Tag(Ref::new(2)))?,
+            vec![app2.clone(), app3.clone()],
+        );
+
+        assert_eq!(
+            mgr.target_apps(&Target::Tag(Ref::new(3)))?,
+            vec![app1.clone()],
+        );
+
+        assert_eq!(mgr.target_apps(&Target::Tag(Ref::new(4)))?, Vec::new());
+
+        Ok(())
+    }
     
-    // TODO tests for AlertManager
+
+    // get triggered alerts queries
+
+    #[test]
+    fn insert_alert_event() -> Result<()> {
+        let mut db = test_db()?;
+
+        let guid = uuid::uuid!("67e55044-10b1-426f-9247-bb680e5fe0c8");
+        {
+            let mut insert_app = insert_stmt!(db.conn, App)?;
+            insert_app.execute(params![
+                true, true, "name1", "desc1", "comp1", "red1", 1, "path1", false
+            ])?;
+            let mut insert_alert = prepare_stmt!(
+                db.conn,
+                "INSERT INTO alerts VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            )?;
+            insert_alert.execute(params![
+                guid,
+                1,
+                1,
+                Option::<Ref<Tag>>::None,
+                100,
+                1,
+                0,
+                0,
+                1
+            ])?;
+        }
+
+        let mut alert_event = AlertEvent {
+            id: Default::default(),
+            alert: Ref::new(VersionedId { guid, version: 1 }),
+            timestamp: 1337,
+        };
+
+        {
+            let mut mgr = AlertManager::new(&mut db)?;
+
+            mgr.insert_alert_event(&alert_event)?;
+        }
+
+        let alert_event_from_db =
+            db.conn
+                .query_row("SELECT * FROM alert_events", params![], |f| {
+                    Ok(AlertEvent {
+                        id: f.get(0)?,
+                        alert: Ref::new(VersionedId {
+                            guid: f.get(1)?,
+                            version: f.get(2)?,
+                        }),
+                        timestamp: f.get(3)?,
+                    })
+                })?;
+        alert_event.id = Ref::new(1);
+
+        assert_eq!(alert_event, alert_event_from_db);
+
+        Ok(())
+    }
+
+    #[test]
+    fn insert_reminder_event() -> Result<()> {
+        let mut db = test_db()?;
+
+        let alert_guid = uuid::uuid!("67e55044-10b1-426f-9247-bb680e5fe0c8");
+        let reminder_guid = uuid::uuid!("67e55044-10b1-426f-9247-bb680e5fe0c9");
+        {
+            let mut insert_app = insert_stmt!(db.conn, App)?;
+            insert_app.execute(params![
+                true, true, "name1", "desc1", "comp1", "red1", 1, "path1", false
+            ])?;
+            let mut insert_alert = prepare_stmt!(
+                db.conn,
+                "INSERT INTO alerts VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            )?;
+            let mut insert_reminder =
+                prepare_stmt!(db.conn, "INSERT INTO reminders VALUES (?, ?, ?, ?, ?, ?)")?;
+            insert_alert.execute(params![
+                alert_guid,
+                1,
+                1,
+                Option::<Ref<Tag>>::None,
+                100,
+                1,
+                0,
+                0,
+                1
+            ])?;
+            insert_reminder.execute(params![reminder_guid, 1, alert_guid, 1, 0.75, "hello",])?;
+        }
+
+        let mut reminder_event = ReminderEvent {
+            id: Default::default(),
+            reminder: Ref::new(VersionedId {
+                guid: reminder_guid,
+                version: 1,
+            }),
+            timestamp: 1337,
+        };
+
+        {
+            let mut mgr = AlertManager::new(&mut db)?;
+
+            mgr.insert_reminder_event(&reminder_event)?;
+        }
+
+        let reminder_event_from_db =
+            db.conn
+                .query_row("SELECT * FROM reminder_events", params![], |f| {
+                    Ok(ReminderEvent {
+                        id: f.get(0)?,
+                        reminder: Ref::new(VersionedId {
+                            guid: f.get(1)?,
+                            version: f.get(2)?,
+                        }),
+                        timestamp: f.get(3)?,
+                    })
+                })?;
+        reminder_event.id = Ref::new(1);
+
+        assert_eq!(reminder_event, reminder_event_from_db);
+
+        Ok(())
+    }
 }
