@@ -101,7 +101,7 @@ pub struct Alert {
     pub trigger_action: TriggerAction,
 }
 
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Clone)] // can't impl PartialEq, Eq for f64
 pub struct Reminder {
     pub id: Ref<Self>,
     pub alert: Ref<Alert>,
@@ -109,14 +109,14 @@ pub struct Reminder {
     pub message: String,
 }
 
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct AlertEvent {
     pub id: Ref<Self>,
     pub alert: Ref<Alert>,
     pub timestamp: Timestamp,
 }
 
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct ReminderEvent {
     pub id: Ref<Self>,
     pub reminder: Ref<Reminder>,
@@ -154,9 +154,8 @@ table!(
         "color",
         "identity_is_win32",
         "identity_path_or_aumid",
-        // We do not list icon as a column, as we do not insert nor query icons.
-
-        // "icon"
+        // We do not insert nor query icons, but we put it here anyway
+        "icon"
     ]
 );
 

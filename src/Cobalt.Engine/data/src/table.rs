@@ -16,10 +16,18 @@ pub trait Table {
     fn columns() -> &'static [&'static str];
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Default, Debug, Clone)]
 pub struct Ref<T: Table> {
     pub inner: T::Id,
 }
+
+impl<T: Table<Id: PartialEq>> PartialEq for Ref<T> {
+    fn eq(&self, other: &Self) -> bool {
+        self.inner == other.inner
+    }
+}
+
+impl<T: Table<Id: Eq>> Eq for Ref<T> {}
 
 impl<T: Table<Id: Hash>> Hash for Ref<T> {
     fn hash<H: Hasher>(&self, state: &mut H) {
