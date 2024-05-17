@@ -79,7 +79,7 @@ impl Cache {
         let created = { create(self)? };
         self.windows
             .entry(ws.window.pid()?)
-            .or_insert_with(|| Vec::new())
+            .or_default()
             .push(ws.window.clone());
 
         Ok(self.sessions.entry(ws).or_insert(created))
@@ -97,7 +97,7 @@ impl Cache {
         let created = { create(self)? };
         self.processes
             .entry(created.app.clone())
-            .or_insert_with(|| Vec::new())
+            .or_default()
             .push(process);
 
         Ok(self.apps.entry(process).or_insert(created))
