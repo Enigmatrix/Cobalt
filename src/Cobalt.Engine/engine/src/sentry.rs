@@ -2,7 +2,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use data::{
-    db::AlertManager,
+    db::{AlertManager, Database},
     entities::{Alert, AlertEvent, ReminderEvent, Target, Timestamp, TriggerAction},
 };
 use platform::objects::{Process, ProcessId, Timestamp as PlatformTimestamp, Window};
@@ -27,8 +27,12 @@ pub struct Sentry<'a> {
 //     - for each alert:
 
 impl<'a> Sentry<'a> {
-    pub fn run(&mut self) -> Result<()> {
-        let now = PlatformTimestamp::now();
+    pub fn new(cache: Rc<RefCell<Cache>>, db: &'a mut Database) -> Result<Self> {
+        let mgr = AlertManager::new(db)?;
+        Ok(Self { cache, mgr })
+    }
+
+    pub fn run(&mut self, now: PlatformTimestamp) -> Result<()> {
         let alerts_hits = self.mgr.triggered_alerts(&now)?;
         for (alert, event) in alerts_hits {
             self.handle_alert(&alert, event, now)?;

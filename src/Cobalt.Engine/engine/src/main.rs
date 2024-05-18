@@ -5,7 +5,7 @@ use std::thread;
 use data::db::Database;
 use engine::{Engine, Event};
 use platform::{
-    events::{ForegroundChangedEvent, ForegroundEventWatcher, InteractionWatcher},
+    events::{ForegroundEventWatcher, InteractionWatcher},
     objects::{EventLoop, Timer, Timestamp, Window},
 };
 use util::{
@@ -29,6 +29,7 @@ fn main() -> Result<()> {
     platform::setup()?;
 
     let (event_tx, event_rx) = channels::unbounded();
+    let (alert_tx, alert_rx) = channels::unbounded();
     let now = Timestamp::now();
     let fg = foreground_window();
 
@@ -36,34 +37,44 @@ fn main() -> Result<()> {
         let config = config.clone();
         let fg = fg.clone();
         thread::spawn(move || {
-            event_loop(&config, event_tx, fg, now).expect("event loop");
+            event_loop(&config, event_tx, alert_tx, fg, now).expect("event loop");
         })
     };
 
-    processor(&config, fg, now, event_rx)?;
+    processor(&config, fg, now, event_rx, alert_rx)?;
     ev_thread.join().expect("event loop thread");
     Ok(())
 }
 
-fn event_loop(config: &Config, event_tx: Sender<Event>, fg: Window, now: Timestamp) -> Result<()> {
+fn event_loop(
+    config: &Config,
+    event_tx: Sender<Event>,
+    alert_tx: Sender<Timestamp>,
+    fg: Window,
+    now: Timestamp,
+) -> Result<()> {
     let ev = EventLoop::new();
+
+    let poll_dur = config.poll_duration().into();
+    let alert_dur = config.alert_duration().into();
 
     let mut fg_watcher = ForegroundEventWatcher::new(fg)?;
     let mut it_watcher = InteractionWatcher::new(config, now);
 
-    let every = config.poll_duration().into();
-    let _timer = Timer::new(every, every, &mut || {
+    let _poll_timer = Timer::new(poll_dur, poll_dur, &mut || {
         let now = Timestamp::now();
-        if let Some(ForegroundChangedEvent { at, window, title }) = fg_watcher.poll(now)? {
-            event_tx.send(Event::ForegroundChanged(ForegroundChangedEvent {
-                at,
-                window,
-                title,
-            }))?;
+        if let Some(event) = fg_watcher.poll(now)? {
+            event_tx.send(Event::ForegroundChanged(event))?;
         }
         if let Some(event) = it_watcher.poll(now)? {
             event_tx.send(Event::InteractionChanged(event))?;
         }
+        Ok(())
+    })?;
+
+    let _alert_timer = Timer::new(alert_dur, alert_dur, &mut || {
+        let now = Timestamp::now();
+        alert_tx.send(now)?;
         Ok(())
     })?;
 
@@ -73,13 +84,13 @@ fn event_loop(config: &Config, event_tx: Sender<Event>, fg: Window, now: Timesta
 
 async fn engine_loop(
     config: &Config,
+    cache: Rc<RefCell<cache::Cache>>,
     rx: Receiver<Event>,
     spawner: &LocalSpawner,
     fg: Window,
     now: Timestamp,
 ) -> Result<()> {
     let mut db = Database::new(config)?;
-    let cache = Rc::new(RefCell::new(cache::Cache::new()));
     let mut engine = Engine::new(cache, fg, now, config.clone(), &mut db, spawner).await?;
     loop {
         let ev = rx.recv_async().await?;
@@ -87,15 +98,45 @@ async fn engine_loop(
     }
 }
 
-fn processor(config: &Config, fg: Window, now: Timestamp, rx: Receiver<Event>) -> Result<()> {
+async fn sentry_loop(
+    config: &Config,
+    cache: Rc<RefCell<cache::Cache>>,
+    alert_rx: Receiver<Timestamp>,
+) -> Result<()> {
+    let mut db = Database::new(config)?;
+    let mut sentry = sentry::Sentry::new(cache, &mut db)?;
+    loop {
+        let at = alert_rx.recv_async().await?;
+        sentry.run(at)?;
+    }
+}
+
+fn processor(
+    config: &Config,
+    fg: Window,
+    now: Timestamp,
+    event_rx: Receiver<Event>,
+    alert_rx: Receiver<Timestamp>,
+) -> Result<()> {
     let mut pool = LocalPool::new();
     let spawner = pool.spawner();
 
-    let config = config.clone();
+    let cache = Rc::new(RefCell::new(cache::Cache::new()));
+
+    let _config = config.clone();
+    let _cache = cache.clone();
     pool.spawner().spawn_local(async move {
-        engine_loop(&config, rx, &spawner, fg, now)
+        engine_loop(&_config, _cache, event_rx, &spawner, fg, now)
             .await
             .expect("engine loop");
+    })?;
+
+    let _config = config.clone();
+    let _cache = cache.clone();
+    pool.spawner().spawn_local(async move {
+        sentry_loop(&_config, _cache, alert_rx)
+            .await
+            .expect("sentry loop");
     })?;
 
     pool.run();

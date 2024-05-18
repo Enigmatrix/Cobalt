@@ -14,6 +14,7 @@ pub struct Config {
     engine_log_filter: String,
     max_idle_duration: Duration,
     poll_duration: Duration,
+    alert_duration: Duration,
 }
 
 impl Config {
@@ -35,6 +36,10 @@ impl Config {
 
     pub fn poll_duration(&self) -> Duration {
         self.poll_duration
+    }
+
+    pub fn alert_duration(&self) -> Duration {
+        self.alert_duration
     }
 }
 
