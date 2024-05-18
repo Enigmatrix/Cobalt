@@ -29,12 +29,12 @@ pub struct Sentry<'a> {
 impl<'a> Sentry<'a> {
     pub fn run(&mut self) -> Result<()> {
         let now = PlatformTimestamp::now();
-        let alerts_hits = self.mgr.triggered_alerts()?;
+        let alerts_hits = self.mgr.triggered_alerts(&now)?;
         for (alert, event) in alerts_hits {
             self.handle_alert(&alert, event, now)?;
         }
 
-        let reminder_hits = self.mgr.triggered_reminders()?;
+        let reminder_hits = self.mgr.triggered_reminders(&now)?;
         for reminder in reminder_hits {
             self.handle_message_action(&reminder.message)?;
             self.mgr.insert_reminder_event(&ReminderEvent {

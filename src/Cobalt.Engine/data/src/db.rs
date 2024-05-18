@@ -4,6 +4,7 @@ use rusqlite::{params, Connection, Statement};
 use util::{
     config::Config,
     error::{Context, Result},
+    time::TimeSystem,
 };
 
 use crate::{
@@ -258,11 +259,16 @@ impl<'a> AlertManager<'a> {
     // TODO optim: or use a single transaction for the below two.
 
     /// Get all [Alert]s that are triggered, including when they were triggered
-    pub fn triggered_alerts(&mut self) -> Result<Vec<(Alert, Option<Timestamp>)>> {
-        let (day_start, week_start, month_start) = Self::time_starts();
+    pub fn triggered_alerts(
+        &mut self,
+        times: &impl TimeSystem,
+    ) -> Result<Vec<(Alert, Option<Timestamp>)>> {
+        let day_start = times.day_start().to_ticks();
+        let week_start = times.week_start().to_ticks();
+        let month_start = times.month_start().to_ticks();
         let result = self
             .triggered_alerts
-            .query_map(params![day_start, week_start, month_start,], |row| {
+            .query_map(params![day_start, week_start, month_start], |row| {
                 Ok((Self::row_to_alert(row)?, row.get(9)?))
             })?
             .collect::<Result<Vec<_>, _>>()?;
@@ -270,13 +276,16 @@ impl<'a> AlertManager<'a> {
     }
 
     /// Get all [Reminder]s that are triggered, except those that are already handled
-    pub fn triggered_reminders(&mut self) -> Result<Vec<Reminder>> {
-        let (day_start, week_start, month_start) = Self::time_starts();
+    pub fn triggered_reminders(&mut self, times: &impl TimeSystem) -> Result<Vec<Reminder>> {
+        let day_start = times.day_start().to_ticks();
+        let week_start = times.week_start().to_ticks();
+        let month_start = times.month_start().to_ticks();
         let result = self
             .triggered_reminders
-            .query_map(params![day_start, week_start, month_start,], |row| {
-                Self::row_to_reminder(row)
-            })?
+            .query_map(
+                params![day_start, week_start, month_start],
+                Self::row_to_reminder,
+            )?
             .collect::<Result<Vec<_>, _>>()?;
         Ok(result)
     }
@@ -342,10 +351,6 @@ impl<'a> AlertManager<'a> {
             threshold: row.get(4)?,
             message: row.get(5)?,
         })
-    }
-
-    fn time_starts() -> (Timestamp, Timestamp, Timestamp) {
-        todo!()
     }
 }
 
