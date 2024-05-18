@@ -55,7 +55,7 @@ impl<'a> Sentry<'a> {
             .flat_map(move |app| {
                 self.cache
                     .borrow()
-                    .processes_for_app(&app.id)
+                    .processes_for_app(app)
                     .cloned()
                     .collect::<Vec<_>>() // ew
             })
@@ -71,7 +71,7 @@ impl<'a> Sentry<'a> {
             .flat_map(move |app| {
                 self.cache
                     .borrow()
-                    .windows_for_app(&app.id)
+                    .windows_for_app(app)
                     .cloned()
                     .collect::<Vec<_>>() // ew
             })

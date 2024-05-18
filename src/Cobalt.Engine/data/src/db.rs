@@ -216,7 +216,6 @@ impl<'a> AppUpdater<'a> {
 
 /// Reference to hold statements regarding [Alert] queries
 pub struct AlertManager<'a> {
-    get_app: Statement<'a>,
     get_tag_apps: Statement<'a>,
     triggered_alerts: Statement<'a>,
     triggered_reminders: Statement<'a>,
@@ -228,19 +227,13 @@ impl<'a> AlertManager<'a> {
     /// Initialize a [AlertManager] from a given [Database]
     pub fn new(db: &'a mut Database) -> Result<Self> {
         let conn = &db.conn;
-        let get_app = prepare_stmt!(conn, "SELECT * FROM apps WHERE id = ?")?;
-        let get_tag_apps = prepare_stmt!(
-            conn,
-            "SELECT * FROM apps WHERE id IN 
-                (SELECT app_id FROM _app_tags at WHERE at.tag_id = ?)"
-        )?;
+        let get_tag_apps = prepare_stmt!(conn, "SELECT app_id FROM _app_tags WHERE tag_id = ?")?;
         let triggered_alerts = prepare_stmt!(conn, include_str!("queries/triggered_alerts.sql"))?;
         let triggered_reminders =
             prepare_stmt!(conn, include_str!("queries/triggered_reminders.sql"))?;
         let insert_alert_event = insert_stmt!(conn, AlertEvent)?;
         let insert_reminder_event = insert_stmt!(conn, ReminderEvent)?;
         Ok(Self {
-            get_app,
             get_tag_apps,
             triggered_alerts,
             triggered_reminders,
@@ -250,16 +243,15 @@ impl<'a> AlertManager<'a> {
     }
 
     /// Gets all [App]s under the [Target]
-    pub fn target_apps(&mut self, target: &Target) -> Result<Vec<App>> {
-        let rows = match target {
-            Target::Tag(tag) => self.get_tag_apps.query(params![tag])?,
+    pub fn target_apps(&mut self, target: &Target) -> Result<Vec<Ref<App>>> {
+        Ok(match target {
+            Target::Tag(tag) => self
+                .get_tag_apps
+                .query_map(params![tag], |row| row.get(0))?
+                .collect::<Result<Vec<_>, _>>()?,
             // this will only return one result, but we get a row iterator nonetheless
-            Target::App(app) => self.get_app.query(params![app])?,
-        };
-        let apps = rows
-            .mapped(Self::row_to_app)
-            .collect::<Result<Vec<_>, _>>()?;
-        Ok(apps)
+            Target::App(app) => vec![app.clone()],
+        })
     }
 
     // TODO optim: use a single query to get all triggered alerts and reminders
@@ -307,21 +299,6 @@ impl<'a> AlertManager<'a> {
             event.timestamp,
         ])?;
         Ok(())
-    }
-
-    fn row_to_app(row: &rusqlite::Row) -> Result<App, rusqlite::Error> {
-        Ok(App {
-            id: row.get(0)?,
-            name: row.get(3)?,
-            description: row.get(4)?,
-            company: row.get(5)?,
-            color: row.get(6)?,
-            identity: if row.get(7)? {
-                AppIdentity::Win32 { path: row.get(8)? }
-            } else {
-                AppIdentity::Uwp { aumid: row.get(8)? }
-            },
-        })
     }
 
     fn row_to_alert(row: &rusqlite::Row) -> Result<Alert, rusqlite::Error> {
@@ -649,41 +626,51 @@ mod tests {
 
         assert_eq!(
             mgr.target_apps(&Target::App(Ref::new(1)))?,
-            vec![app1.clone()],
+            vec![app1.id.clone()],
         );
 
         assert_eq!(
             mgr.target_apps(&Target::App(Ref::new(2)))?,
-            vec![app2.clone()],
+            vec![app2.id.clone()],
         );
 
         assert_eq!(
             mgr.target_apps(&Target::App(Ref::new(3)))?,
-            vec![app3.clone()],
+            vec![app3.id.clone()],
         );
 
         assert_eq!(
             mgr.target_apps(&Target::Tag(Ref::new(1)))?,
-            vec![app1.clone(), app2.clone()],
+            vec![app1.id.clone(), app2.id.clone()],
         );
 
         assert_eq!(
             mgr.target_apps(&Target::Tag(Ref::new(2)))?,
-            vec![app2.clone(), app3.clone()],
+            vec![app2.id.clone(), app3.id.clone()],
         );
 
         assert_eq!(
             mgr.target_apps(&Target::Tag(Ref::new(3)))?,
-            vec![app1.clone()],
+            vec![app1.id.clone()],
         );
 
         assert_eq!(mgr.target_apps(&Target::Tag(Ref::new(4)))?, Vec::new());
 
         Ok(())
     }
-    
 
     // get triggered alerts queries
+    #[test]
+    fn triggered_alerts() -> Result<()> {
+        // 1. no usages -> no alerts
+        // 2. normal case (1 usage exceeding limit) -> 1 alert + no timestamp
+        // 3. normal case + alert event in range -> 1 alert + timestamp
+        // 4. 2 usages, one before and one within the range,
+        //      total exceeding limit but not just one -> no alerts
+        // 5. 2 usages, one halfway in (start before) and one within the range,
+        //      total exceeding limit but not just one -> no alerts
+        Ok(())
+    }
 
     #[test]
     fn insert_alert_event() -> Result<()> {
