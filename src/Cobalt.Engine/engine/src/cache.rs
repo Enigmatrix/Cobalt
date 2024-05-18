@@ -4,11 +4,7 @@ use data::entities::{App, Ref, Session};
 use platform::objects::{ProcessId, Window};
 use util::error::Result;
 
-// Everyone holds a Rc<Refcell<Cache>>, presumably.
-
 pub struct Cache {
-    // TODO UsageWriter, Spawner, Config, or maybe just the generate functions?
-
     // TODO this might be a bad idea, the HWND might be reused by Windows,
     // so another window could be running with the same HWND after the first one closed...
     sessions: HashMap<WindowSession, SessionDetails>,
@@ -35,8 +31,6 @@ pub struct SessionDetails {
 pub struct AppDetails {
     pub app: Ref<App>,
 }
-
-// TODO transfer everything from engine into here.
 
 impl Cache {
     pub fn new() -> Self {
