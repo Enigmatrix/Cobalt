@@ -1,5 +1,3 @@
-use util::time::ToTicks;
-
 use crate::entities::Tag;
 
 use super::*;
