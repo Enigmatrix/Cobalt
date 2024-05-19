@@ -1,3 +1,5 @@
+use util::time::ToTicks;
+
 use crate::entities::Tag;
 
 use super::*;
@@ -16,10 +18,9 @@ fn insert_new_app() -> Result<()> {
         path: "notepad.exe".to_string(),
     })?;
     assert_eq!(res, FoundOrInserted::Inserted(Ref::<App>::new(1)));
-    let (init, path): (bool, String) =
-        db.conn.query_row("SELECT * FROM apps", params![], |f| {
-            Ok((f.get("initialized")?, f.get("identity_path_or_aumid")?))
-        })?;
+    let (init, path): (bool, String) = db.conn.query_row("SELECT * FROM apps", params![], |f| {
+        Ok((f.get("initialized")?, f.get("identity_path_or_aumid")?))
+    })?;
     assert_eq!("notepad.exe", path);
     assert_eq!(false, init);
     Ok(())
@@ -114,17 +115,17 @@ fn insert_interaction_period() -> Result<()> {
         keystrokes: 45,
     };
     writer.insert_interaction_period(&ip)?;
-    let ip_from_db =
-        db.conn
-            .query_row("SELECT * FROM interaction_periods", params![], |f| {
-                Ok(InteractionPeriod {
-                    id: f.get(0)?,
-                    start: f.get(1)?,
-                    end: f.get(2)?,
-                    mouseclicks: f.get(3)?,
-                    keystrokes: f.get(4)?,
-                })
-            })?;
+    let ip_from_db = db
+        .conn
+        .query_row("SELECT * FROM interaction_periods", params![], |f| {
+            Ok(InteractionPeriod {
+                id: f.get(0)?,
+                start: f.get(1)?,
+                end: f.get(2)?,
+                mouseclicks: f.get(3)?,
+                keystrokes: f.get(4)?,
+            })
+        })?;
     ip.id = Ref::new(1);
     assert_eq!(ip, ip_from_db);
     Ok(())
@@ -305,19 +306,6 @@ fn target_apps() -> Result<()> {
     Ok(())
 }
 
-// get triggered alerts queries
-#[test]
-fn triggered_alerts() -> Result<()> {
-    // 1. no usages -> no alerts
-    // 2. normal case (1 usage exceeding limit) -> 1 alert + no timestamp
-    // 3. normal case + alert event in range -> 1 alert + timestamp
-    // 4. 2 usages, one before and one within the range,
-    //      total exceeding limit but not just one -> no alerts
-    // 5. 2 usages, one halfway in (start before) and one within the range,
-    //      total exceeding limit but not just one -> no alerts
-    Ok(())
-}
-
 #[test]
 fn insert_alert_event() -> Result<()> {
     let mut db = test_db()?;
@@ -357,18 +345,18 @@ fn insert_alert_event() -> Result<()> {
         mgr.insert_alert_event(&alert_event)?;
     }
 
-    let alert_event_from_db =
-        db.conn
-            .query_row("SELECT * FROM alert_events", params![], |f| {
-                Ok(AlertEvent {
-                    id: f.get(0)?,
-                    alert: Ref::new(VersionedId {
-                        guid: f.get(1)?,
-                        version: f.get(2)?,
-                    }),
-                    timestamp: f.get(3)?,
-                })
-            })?;
+    let alert_event_from_db = db
+        .conn
+        .query_row("SELECT * FROM alert_events", params![], |f| {
+            Ok(AlertEvent {
+                id: f.get(0)?,
+                alert: Ref::new(VersionedId {
+                    guid: f.get(1)?,
+                    version: f.get(2)?,
+                }),
+                timestamp: f.get(3)?,
+            })
+        })?;
     alert_event.id = Ref::new(1);
 
     assert_eq!(alert_event, alert_event_from_db);
@@ -439,4 +427,206 @@ fn insert_reminder_event() -> Result<()> {
     assert_eq!(reminder_event, reminder_event_from_db);
 
     Ok(())
+}
+
+struct Times {
+    day_start: u64,
+    week_start: u64,
+    month_start: u64,
+}
+
+struct Tick(u64);
+
+impl ToTicks for Tick {
+    fn to_ticks(&self) -> u64 {
+        self.0
+    }
+}
+
+impl TimeSystem for Times {
+    type Ticks = Tick;
+
+    fn day_start(&self) -> Self::Ticks {
+        Tick(self.day_start)
+    }
+
+    fn week_start(&self) -> Self::Ticks {
+        Tick(self.week_start)
+    }
+
+    fn month_start(&self) -> Self::Ticks {
+        Tick(self.month_start)
+    }
+}
+
+mod arrange {
+    use core::time;
+
+    use super::*;
+
+    fn app(conn: &mut Connection, app: &mut App) -> Result<()> {
+        conn.execute(
+            "INSERT INTO apps VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)",
+            params![
+                app.id,
+                false,
+                false,
+                app.name,
+                app.description,
+                app.company,
+                app.color,
+                if let AppIdentity::Win32 { .. } = app.identity {
+                    1
+                } else {
+                    0
+                },
+                match &app.identity {
+                    AppIdentity::Win32 { path } => path,
+                    AppIdentity::Uwp { aumid } => aumid,
+                },
+            ],
+        )?;
+        app.id = Ref::new(conn.last_insert_rowid() as u64);
+        Ok(())
+    }
+
+    fn session(conn: &mut Connection, session: &mut Session) -> Result<()> {
+        conn.execute(
+            "INSERT INTO sessions VALUES (?, ?, ?)",
+            params![session.id, session.app, session.title,],
+        )?;
+        session.id = Ref::new(conn.last_insert_rowid() as u64);
+        Ok(())
+    }
+
+    fn usage(conn: &mut Connection, usage: &mut Usage) -> Result<()> {
+        conn.execute(
+            "INSERT INTO usages VALUES (?, ?, ?, ?)",
+            params![usage.id, usage.session, usage.start, usage.end,],
+        )?;
+        usage.id = Ref::new(conn.last_insert_rowid() as u64);
+        Ok(())
+    }
+
+    fn interaction_period(conn: &mut Connection, ip: &mut InteractionPeriod) -> Result<()> {
+        conn.execute(
+            "INSERT INTO interaction_periods VALUES (?, ?, ?, ?, ?)",
+            params![ip.id, ip.start, ip.end, ip.mouseclicks, ip.keystrokes,],
+        )?;
+        ip.id = Ref::new(conn.last_insert_rowid() as u64);
+        Ok(())
+    }
+
+    fn tag(conn: &mut Connection, tag: &mut Tag) -> Result<()> {
+        conn.execute(
+            "INSERT INTO tags VALUES (?, ?, ?)",
+            params![tag.id, tag.name, tag.color,],
+        )?;
+        tag.id = Ref::new(conn.last_insert_rowid() as u64);
+        Ok(())
+    }
+
+    fn app_tags(conn: &mut Connection, app_id: Ref<App>, tag_id: Ref<Tag>) -> Result<()> {
+        conn.execute(
+            "INSERT INTO _app_tags VALUES (?, ?)",
+            params![app_id, tag_id,],
+        )?;
+        Ok(())
+    }
+
+    fn alert(conn: &mut Connection, alert: &mut Alert) -> Result<()> {
+        let time_frame = match alert.time_frame {
+            TimeFrame::Daily => 0,
+            TimeFrame::Weekly => 1,
+            TimeFrame::Monthly => 2,
+        };
+
+        let (dim_duration, message_content, tag) = match &alert.trigger_action {
+            TriggerAction::Kill => (None, None, 0),
+            TriggerAction::Dim(dur) => (Some(dur), None, 1),
+            TriggerAction::Message(content) => (None, Some(content), 2),
+        };
+
+        let (app_id, tag_id) = match alert.target.clone() {
+            Target::App(app) => (Some(app), None),
+            Target::Tag(tag) => (None, Some(tag)),
+        };
+
+        conn.execute(
+            "INSERT INTO alerts VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            params![
+                alert.id.guid,
+                alert.id.version,
+                app_id,
+                tag_id,
+                alert.usage_limit,
+                time_frame,
+                dim_duration,
+                message_content,
+                tag
+            ],
+        )?;
+        Ok(())
+    }
+
+    fn reminder(conn: &mut Connection, reminder: &mut Reminder) -> Result<()> {
+        conn.execute(
+            "INSERT INTO reminders VALUES (?, ?, ?, ?, ?, ?)",
+            params![
+                reminder.id.guid,
+                reminder.id.version,
+                reminder.alert.guid,
+                reminder.alert.version,
+                reminder.threshold,
+                reminder.message,
+            ],
+        )?;
+        Ok(())
+    }
+
+    fn alert_event(conn: &mut Connection, event: &mut AlertEvent) -> Result<()> {
+        conn.execute(
+            "INSERT INTO alert_events VALUES (?, ?, ?, ?)",
+            params![
+                event.id,
+                event.alert.guid,
+                event.alert.version,
+                event.timestamp,
+            ],
+        )?;
+        event.id = Ref::new(conn.last_insert_rowid() as u64);
+        Ok(())
+    }
+
+    fn reminder_event(conn: &mut Connection, event: &mut ReminderEvent) -> Result<()> {
+        conn.execute(
+            "INSERT INTO reminder_events VALUES (?, ?, ?, ?)",
+            params![
+                event.id,
+                event.reminder.guid,
+                event.reminder.version,
+                event.timestamp,
+            ],
+        )?;
+        event.id = Ref::new(conn.last_insert_rowid() as u64);
+        Ok(())
+    }
+}
+
+mod triggered_alerts {
+    use super::*;
+
+    #[test]
+    fn no_alerts() -> Result<()> {
+        let mut db = test_db()?;
+
+        let mut mgr = AlertManager::new(&mut db)?;
+        let alerts = mgr.triggered_alerts(&Times {
+            day_start: 0,
+            week_start: 0,
+            month_start: 0,
+        })?;
+        assert_eq!(alerts, vec![]);
+        Ok(())
+    }
 }
