@@ -4,7 +4,7 @@ use rusqlite::{params, Connection, Statement};
 use util::{
     config::Config,
     error::{Context, Result},
-    time::TimeSystem,
+    time::{TimeSystem, ToTicks},
 };
 
 use crate::{
@@ -229,7 +229,8 @@ impl<'a> AlertManager<'a> {
     pub fn new(db: &'a mut Database) -> Result<Self> {
         let conn = &db.conn;
         let get_tag_apps = prepare_stmt!(conn, "SELECT app_id FROM _app_tags WHERE tag_id = ?")?;
-        let triggered_alerts = prepare_stmt!(conn, include_str!("../queries/triggered_alerts.sql"))?;
+        let triggered_alerts =
+            prepare_stmt!(conn, include_str!("../queries/triggered_alerts.sql"))?;
         let triggered_reminders =
             prepare_stmt!(conn, include_str!("../queries/triggered_reminders.sql"))?;
         let insert_alert_event = insert_stmt!(conn, AlertEvent)?;

@@ -97,6 +97,8 @@ impl ToTicks for Timestamp {
 }
 
 impl TimeSystem for Timestamp {
+    type Ticks = Self;
+
     fn day_start(&self) -> Self {
         let mut sys = self.system_time();
         sys.wHour = 0;
