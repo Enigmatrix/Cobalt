@@ -5,6 +5,7 @@ mod process;
 mod timer;
 mod timestamp;
 mod window;
+mod toast;
 
 pub use app_info::*;
 pub use event_loop::*;
@@ -13,3 +14,4 @@ pub use process::*;
 pub use timer::*;
 pub use timestamp::*;
 pub use window::*;
+pub use toast::*;
