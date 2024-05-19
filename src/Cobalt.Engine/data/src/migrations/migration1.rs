@@ -92,8 +92,8 @@ impl Migration for Migration1 {
             tag_id                          INTEGER REFERENCES tags(id),
             usage_limit                     INTEGER NOT NULL,
             time_frame                      INTEGER NOT NULL,
-            trigger_action_dim_duration     INTEGER NOT NULL,
-            trigger_action_message_content  INTEGER NOT NULL,
+            trigger_action_dim_duration     INTEGER,
+            trigger_action_message_content  TEXT,
             trigger_action_tag              INTEGER NOT NULL,
             PRIMARY KEY (guid, version)
         )",

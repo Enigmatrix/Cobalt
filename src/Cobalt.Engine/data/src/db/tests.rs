@@ -460,12 +460,10 @@ impl TimeSystem for Times {
 }
 
 mod arrange {
-    use core::time;
-
     use super::*;
 
-    fn app(conn: &mut Connection, app: &mut App) -> Result<()> {
-        conn.execute(
+    pub fn app(db: &mut Database, mut app: App) -> Result<App> {
+        db.conn.execute(
             "INSERT INTO apps VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)",
             params![
                 app.id,
@@ -486,55 +484,58 @@ mod arrange {
                 },
             ],
         )?;
-        app.id = Ref::new(conn.last_insert_rowid() as u64);
-        Ok(())
+        app.id = Ref::new(db.conn.last_insert_rowid() as u64);
+        Ok(app)
     }
 
-    fn session(conn: &mut Connection, session: &mut Session) -> Result<()> {
-        conn.execute(
+    pub fn session(db: &mut Database, mut session: Session) -> Result<Session> {
+        db.conn.execute(
             "INSERT INTO sessions VALUES (?, ?, ?)",
             params![session.id, session.app, session.title,],
         )?;
-        session.id = Ref::new(conn.last_insert_rowid() as u64);
-        Ok(())
+        session.id = Ref::new(db.conn.last_insert_rowid() as u64);
+        Ok(session)
     }
 
-    fn usage(conn: &mut Connection, usage: &mut Usage) -> Result<()> {
-        conn.execute(
+    pub fn usage(db: &mut Database, mut usage: Usage) -> Result<Usage> {
+        db.conn.execute(
             "INSERT INTO usages VALUES (?, ?, ?, ?)",
             params![usage.id, usage.session, usage.start, usage.end,],
         )?;
-        usage.id = Ref::new(conn.last_insert_rowid() as u64);
-        Ok(())
+        usage.id = Ref::new(db.conn.last_insert_rowid() as u64);
+        Ok(usage)
     }
 
-    fn interaction_period(conn: &mut Connection, ip: &mut InteractionPeriod) -> Result<()> {
-        conn.execute(
+    pub fn interaction_period(
+        db: &mut Database,
+        mut ip: InteractionPeriod,
+    ) -> Result<InteractionPeriod> {
+        db.conn.execute(
             "INSERT INTO interaction_periods VALUES (?, ?, ?, ?, ?)",
             params![ip.id, ip.start, ip.end, ip.mouseclicks, ip.keystrokes,],
         )?;
-        ip.id = Ref::new(conn.last_insert_rowid() as u64);
-        Ok(())
+        ip.id = Ref::new(db.conn.last_insert_rowid() as u64);
+        Ok(ip)
     }
 
-    fn tag(conn: &mut Connection, tag: &mut Tag) -> Result<()> {
-        conn.execute(
+    pub fn tag(db: &mut Database, mut tag: Tag) -> Result<Tag> {
+        db.conn.execute(
             "INSERT INTO tags VALUES (?, ?, ?)",
             params![tag.id, tag.name, tag.color,],
         )?;
-        tag.id = Ref::new(conn.last_insert_rowid() as u64);
-        Ok(())
+        tag.id = Ref::new(db.conn.last_insert_rowid() as u64);
+        Ok(tag)
     }
 
-    fn app_tags(conn: &mut Connection, app_id: Ref<App>, tag_id: Ref<Tag>) -> Result<()> {
-        conn.execute(
+    pub fn app_tags(db: &mut Database, app_id: Ref<App>, tag_id: Ref<Tag>) -> Result<()> {
+        db.conn.execute(
             "INSERT INTO _app_tags VALUES (?, ?)",
-            params![app_id, tag_id,],
+            params![app_id, tag_id],
         )?;
         Ok(())
     }
 
-    fn alert(conn: &mut Connection, alert: &mut Alert) -> Result<()> {
+    pub fn alert(db: &mut Database, alert: Alert) -> Result<Alert> {
         let time_frame = match alert.time_frame {
             TimeFrame::Daily => 0,
             TimeFrame::Weekly => 1,
@@ -552,7 +553,7 @@ mod arrange {
             Target::Tag(tag) => (None, Some(tag)),
         };
 
-        conn.execute(
+        db.conn.execute(
             "INSERT INTO alerts VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
             params![
                 alert.id.guid,
@@ -566,11 +567,11 @@ mod arrange {
                 tag
             ],
         )?;
-        Ok(())
+        Ok(alert)
     }
 
-    fn reminder(conn: &mut Connection, reminder: &mut Reminder) -> Result<()> {
-        conn.execute(
+    pub fn reminder(db: &mut Database, reminder: Reminder) -> Result<Reminder> {
+        db.conn.execute(
             "INSERT INTO reminders VALUES (?, ?, ?, ?, ?, ?)",
             params![
                 reminder.id.guid,
@@ -581,11 +582,11 @@ mod arrange {
                 reminder.message,
             ],
         )?;
-        Ok(())
+        Ok(reminder)
     }
 
-    fn alert_event(conn: &mut Connection, event: &mut AlertEvent) -> Result<()> {
-        conn.execute(
+    pub fn alert_event(db: &mut Database, mut event: AlertEvent) -> Result<AlertEvent> {
+        db.conn.execute(
             "INSERT INTO alert_events VALUES (?, ?, ?, ?)",
             params![
                 event.id,
@@ -594,12 +595,12 @@ mod arrange {
                 event.timestamp,
             ],
         )?;
-        event.id = Ref::new(conn.last_insert_rowid() as u64);
-        Ok(())
+        event.id = Ref::new(db.conn.last_insert_rowid() as u64);
+        Ok(event)
     }
 
-    fn reminder_event(conn: &mut Connection, event: &mut ReminderEvent) -> Result<()> {
-        conn.execute(
+    pub fn reminder_event(db: &mut Database, mut event: ReminderEvent) -> Result<ReminderEvent> {
+        db.conn.execute(
             "INSERT INTO reminder_events VALUES (?, ?, ?, ?)",
             params![
                 event.id,
@@ -608,8 +609,12 @@ mod arrange {
                 event.timestamp,
             ],
         )?;
-        event.id = Ref::new(conn.last_insert_rowid() as u64);
-        Ok(())
+        event.id = Ref::new(db.conn.last_insert_rowid() as u64);
+        Ok(event)
+    }
+
+    pub fn uuid(n: u64) -> uuid::Uuid {
+        uuid::Uuid::from_u64_pair(n, n)
     }
 }
 
@@ -627,6 +632,235 @@ mod triggered_alerts {
             month_start: 0,
         })?;
         assert_eq!(alerts, vec![]);
+        Ok(())
+    }
+
+    #[test]
+    fn one_alert_one_app_no_sessions() -> Result<()> {
+        let mut db = test_db()?;
+
+        let app = arrange::app(
+            &mut db,
+            App {
+                id: Ref::default(),
+                name: "name".to_string(),
+                description: "desc".to_string(),
+                company: "comp".to_string(),
+                color: "red".to_string(),
+                identity: AppIdentity::Win32 {
+                    path: "path".to_string(),
+                },
+            },
+        )?;
+
+        let _alert = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(VersionedId {
+                    guid: arrange::uuid(1),
+                    version: 1,
+                }),
+                target: Target::App(app.id.clone()),
+                usage_limit: 100,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+            },
+        )?;
+
+        let mut mgr = AlertManager::new(&mut db)?;
+        let alerts = mgr.triggered_alerts(&Times {
+            day_start: 0,
+            week_start: 0,
+            month_start: 0,
+        })?;
+        assert_eq!(alerts, vec![]);
+        Ok(())
+    }
+
+    #[test]
+    fn one_alert_one_app_one_session_no_usages() -> Result<()> {
+        let mut db = test_db()?;
+
+        let app = arrange::app(
+            &mut db,
+            App {
+                id: Ref::default(),
+                name: "name".to_string(),
+                description: "desc".to_string(),
+                company: "comp".to_string(),
+                color: "red".to_string(),
+                identity: AppIdentity::Win32 {
+                    path: "path".to_string(),
+                },
+            },
+        )?;
+
+        let _session = arrange::session(
+            &mut db,
+            Session {
+                id: Ref::default(),
+                app: app.id.clone(),
+                title: "title".to_string(),
+            },
+        )?;
+
+        let _alert = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(VersionedId {
+                    guid: arrange::uuid(1),
+                    version: 1,
+                }),
+                target: Target::App(app.id.clone()),
+                usage_limit: 100,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+            },
+        )?;
+
+        let mut mgr = AlertManager::new(&mut db)?;
+        let alerts = mgr.triggered_alerts(&Times {
+            day_start: 0,
+            week_start: 0,
+            month_start: 0,
+        })?;
+        assert_eq!(alerts, vec![]);
+        Ok(())
+    }
+
+    #[test]
+    fn exactly_one_alert_from_one_usage() -> Result<()> {
+        let mut db = test_db()?;
+
+        let app = arrange::app(
+            &mut db,
+            App {
+                id: Ref::default(),
+                name: "name".to_string(),
+                description: "desc".to_string(),
+                company: "comp".to_string(),
+                color: "red".to_string(),
+                identity: AppIdentity::Win32 {
+                    path: "path".to_string(),
+                },
+            },
+        )?;
+
+        let session = arrange::session(
+            &mut db,
+            Session {
+                id: Ref::default(),
+                app: app.id.clone(),
+                title: "title".to_string(),
+            },
+        )?;
+
+        let _usage = arrange::usage(
+            &mut db,
+            Usage {
+                id: Ref::default(),
+                session: session.id.clone(),
+                start: 0,
+                end: 100,
+            },
+        )?;
+
+        let alert = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(VersionedId {
+                    guid: arrange::uuid(1),
+                    version: 1,
+                }),
+                target: Target::App(app.id.clone()),
+                usage_limit: 100,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+            },
+        )?;
+
+        let mut mgr = AlertManager::new(&mut db)?;
+        let alerts = mgr.triggered_alerts(&Times {
+            day_start: 0,
+            week_start: 0,
+            month_start: 0,
+        })?;
+        assert_eq!(alerts, vec![(alert, None)]);
+        Ok(())
+    }
+
+    #[test]
+    fn halfway_usage_does_not_trigger() -> Result<()> {
+        let mut db = test_db()?;
+
+        let app = arrange::app(
+            &mut db,
+            App {
+                id: Ref::default(),
+                name: "name".to_string(),
+                description: "desc".to_string(),
+                company: "comp".to_string(),
+                color: "red".to_string(),
+                identity: AppIdentity::Win32 {
+                    path: "path".to_string(),
+                },
+            },
+        )?;
+
+        let session = arrange::session(
+            &mut db,
+            Session {
+                id: Ref::default(),
+                app: app.id.clone(),
+                title: "title".to_string(),
+            },
+        )?;
+
+        let _usage = arrange::usage(
+            &mut db,
+            Usage {
+                id: Ref::default(),
+                session: session.id.clone(),
+                start: 0,
+                end: 100,
+            },
+        )?;
+
+        let alert1 = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(VersionedId {
+                    guid: arrange::uuid(1),
+                    version: 1,
+                }),
+                target: Target::App(app.id.clone()),
+                usage_limit: 50,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+            },
+        )?;
+
+        let _alert2 = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(VersionedId {
+                    guid: arrange::uuid(2),
+                    version: 1,
+                }),
+                target: Target::App(app.id.clone()),
+                usage_limit: 51,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+            },
+        )?;
+
+        let mut mgr = AlertManager::new(&mut db)?;
+        let alerts = mgr.triggered_alerts(&Times {
+            day_start: 50,
+            week_start: 50,
+            month_start: 50,
+        })?;
+        assert_eq!(alerts, vec![(alert1, None)]); // alert2 is not triggered
         Ok(())
     }
 }
