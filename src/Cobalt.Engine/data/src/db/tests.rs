@@ -505,17 +505,17 @@ mod arrange {
         Ok(usage)
     }
 
-    pub fn interaction_period(
-        db: &mut Database,
-        mut ip: InteractionPeriod,
-    ) -> Result<InteractionPeriod> {
-        db.conn.execute(
-            "INSERT INTO interaction_periods VALUES (NULL, ?, ?, ?, ?)",
-            params![ip.start, ip.end, ip.mouseclicks, ip.keystrokes],
-        )?;
-        ip.id = Ref::new(db.conn.last_insert_rowid() as u64);
-        Ok(ip)
-    }
+    // pub fn interaction_period(
+    //     db: &mut Database,
+    //     mut ip: InteractionPeriod,
+    // ) -> Result<InteractionPeriod> {
+    //     db.conn.execute(
+    //         "INSERT INTO interaction_periods VALUES (NULL, ?, ?, ?, ?)",
+    //         params![ip.start, ip.end, ip.mouseclicks, ip.keystrokes],
+    //     )?;
+    //     ip.id = Ref::new(db.conn.last_insert_rowid() as u64);
+    //     Ok(ip)
+    // }
 
     pub fn tag(db: &mut Database, mut tag: Tag) -> Result<Tag> {
         db.conn.execute(
@@ -1527,6 +1527,247 @@ mod triggered_alerts {
             month_start: 0,
         })?;
         assert_eq!(alerts, vec![(alert2, None), (alert3, None)]);
+        Ok(())
+    }
+}
+
+mod triggered_reminders {
+    use super::*;
+
+    fn gen_alert(db: &mut Database) -> Result<Ref<Alert>> {
+        let app = arrange::app(
+            db,
+            App {
+                id: Ref::default(),
+                name: "name".to_string(),
+                description: "desc".to_string(),
+                company: "comp".to_string(),
+                color: "red".to_string(),
+                identity: AppIdentity::Win32 {
+                    path: "path".to_string(),
+                },
+            },
+        )?;
+
+        let session = arrange::session(
+            db,
+            Session {
+                id: Ref::default(),
+                app: app.id.clone(),
+                title: "title".to_string(),
+            },
+        )?;
+
+        let _usage = arrange::usage(
+            db,
+            Usage {
+                id: Ref::default(),
+                session: session.id.clone(),
+                start: 50,
+                end: 150,
+            },
+        )?;
+
+        let alert = arrange::alert(
+            db,
+            Alert {
+                id: Ref::new(VersionedId {
+                    guid: arrange::uuid(1),
+                    version: 1,
+                }),
+                target: Target::App(app.id.clone()),
+                usage_limit: 200,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+            },
+        )?;
+        Ok(alert.id)
+    }
+
+    #[test]
+    pub fn no_reminders() -> Result<()> {
+        let mut db = test_db()?;
+
+        let _alert = gen_alert(&mut db)?;
+
+        let mut mgr = AlertManager::new(&mut db)?;
+        let reminders = mgr.triggered_reminders(&Times {
+            day_start: 50,
+            week_start: 0,
+            month_start: 0,
+        })?;
+        assert_eq!(
+            reminders.into_iter().map(|r| r.id).collect::<Vec<_>>(),
+            vec![]
+        );
+        Ok(())
+    }
+
+    #[test]
+    pub fn triggered_correctly() -> Result<()> {
+        let mut db = test_db()?;
+
+        let alert = gen_alert(&mut db)?;
+        let hit = arrange::reminder(
+            &mut db,
+            Reminder {
+                id: Ref::new(VersionedId {
+                    guid: arrange::uuid(1),
+                    version: 1,
+                }),
+                alert: alert.clone(),
+                threshold: 0.50,
+                message: "hello".to_string(),
+            },
+        )?;
+
+        let _not_hit = arrange::reminder(
+            &mut db,
+            Reminder {
+                id: Ref::new(VersionedId {
+                    guid: arrange::uuid(2),
+                    version: 1,
+                }),
+                alert: alert.clone(),
+                threshold: 0.51,
+                message: "hello".to_string(),
+            },
+        )?;
+
+        let mut mgr = AlertManager::new(&mut db)?;
+        let reminders = mgr.triggered_reminders(&Times {
+            day_start: 50,
+            week_start: 0,
+            month_start: 0,
+        })?;
+        assert_eq!(
+            reminders.into_iter().map(|r| r.id).collect::<Vec<_>>(),
+            vec![hit.id]
+        );
+        Ok(())
+    }
+
+    #[test]
+    pub fn only_max_reminder() -> Result<()> {
+        let mut db = test_db()?;
+
+        let alert = gen_alert(&mut db)?;
+
+        let _not_hit = arrange::reminder(
+            &mut db,
+            Reminder {
+                id: Ref::new(VersionedId {
+                    guid: arrange::uuid(1),
+                    version: 1,
+                }),
+                alert: alert.clone(),
+                threshold: 0.50,
+                message: "hello".to_string(),
+            },
+        )?;
+        let hit = arrange::reminder(
+            &mut db,
+            Reminder {
+                id: Ref::new(VersionedId {
+                    guid: arrange::uuid(1),
+                    version: 2,
+                }),
+                alert: alert.clone(),
+                threshold: 0.50,
+                message: "hello".to_string(),
+            },
+        )?;
+
+        let mut mgr = AlertManager::new(&mut db)?;
+        let reminders = mgr.triggered_reminders(&Times {
+            day_start: 50,
+            week_start: 0,
+            month_start: 0,
+        })?;
+        assert_eq!(
+            reminders.into_iter().map(|r| r.id).collect::<Vec<_>>(),
+            vec![hit.id]
+        );
+        Ok(())
+    }
+
+    #[test]
+    pub fn reminder_event_before_start_does_not_matter() -> Result<()> {
+        let mut db = test_db()?;
+
+        let alert = gen_alert(&mut db)?;
+        let hit = arrange::reminder(
+            &mut db,
+            Reminder {
+                id: Ref::new(VersionedId {
+                    guid: arrange::uuid(1),
+                    version: 1,
+                }),
+                alert: alert.clone(),
+                threshold: 0.50,
+                message: "hello".to_string(),
+            },
+        )?;
+
+        arrange::reminder_event(
+            &mut db,
+            ReminderEvent {
+                id: Default::default(),
+                reminder: hit.id.clone(),
+                timestamp: 25,
+            },
+        )?;
+
+        let mut mgr = AlertManager::new(&mut db)?;
+        let reminders = mgr.triggered_reminders(&Times {
+            day_start: 50,
+            week_start: 0,
+            month_start: 0,
+        })?;
+        assert_eq!(
+            reminders.into_iter().map(|r| r.id).collect::<Vec<_>>(),
+            vec![hit.id]
+        );
+        Ok(())
+    }
+
+    #[test]
+    pub fn reminder_event_after_start_matters() -> Result<()> {
+        let mut db = test_db()?;
+
+        let alert = gen_alert(&mut db)?;
+        let hit = arrange::reminder(
+            &mut db,
+            Reminder {
+                id: Ref::new(VersionedId {
+                    guid: arrange::uuid(1),
+                    version: 1,
+                }),
+                alert: alert.clone(),
+                threshold: 0.50,
+                message: "hello".to_string(),
+            },
+        )?;
+
+        arrange::reminder_event(
+            &mut db,
+            ReminderEvent {
+                id: Default::default(),
+                reminder: hit.id.clone(),
+                timestamp: 200,
+            },
+        )?;
+
+        let mut mgr = AlertManager::new(&mut db)?;
+        let reminders = mgr.triggered_reminders(&Times {
+            day_start: 50,
+            week_start: 0,
+            month_start: 0,
+        })?;
+        assert_eq!(
+            reminders.into_iter().map(|r| r.id).collect::<Vec<_>>(),
+            vec![]
+        );
         Ok(())
     }
 }

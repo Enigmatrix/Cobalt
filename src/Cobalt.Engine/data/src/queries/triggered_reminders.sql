@@ -32,7 +32,7 @@ dur(alert_guid, alert_version, range_start, dur) AS (
         AND t.alert_version = al.version
 )
 
-SELECT r.*, re.timestamp
+SELECT r.*
     FROM alerts al
     INNER JOIN dur d
         ON al.guid = d.alert_guid
@@ -41,9 +41,9 @@ SELECT r.*, re.timestamp
         ON al.guid = r.alert_guid
         AND al.version = r.alert_version
         AND d.dur >= al.usage_limit * r.threshold
-    LEFT JOIN reminder_events re
-        ON r.guid = re.reminder_guid
-        AND r.version = re.reminder_version
-        AND re.timestamp >= d.range_start
+    WHERE d.range_start >
+        (SELECT COALESCE(MAX(re.timestamp), 0) FROM reminder_events re
+            WHERE r.guid = re.reminder_guid
+            AND r.version = re.reminder_version)
     GROUP BY r.guid
     HAVING r.version = max(r.version)
