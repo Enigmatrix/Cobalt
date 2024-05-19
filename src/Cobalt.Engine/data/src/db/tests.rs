@@ -1534,6 +1534,7 @@ mod triggered_alerts {
 mod triggered_reminders {
     use super::*;
 
+    // generate an alert which will not fire but the reminder will.
     fn gen_alert(db: &mut Database) -> Result<Ref<Alert>> {
         let app = arrange::app(
             db,
