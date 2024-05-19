@@ -4,7 +4,7 @@ target_apps(alert_guid, alert_version, app_id) AS (
         SELECT al.guid, al.version, coalesce(al.app_id, at.app_id)
         FROM alerts al
         LEFT JOIN _app_tags at
-            ON al.app_id = at.tag_id
+            ON al.tag_id = at.tag_id
 ),
 
 range_start(alert_guid, alert_version, range_start) AS (
