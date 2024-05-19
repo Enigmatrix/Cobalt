@@ -863,4 +863,88 @@ mod triggered_alerts {
         assert_eq!(alerts, vec![(alert1, None)]); // alert2 is not triggered
         Ok(())
     }
+
+    #[test]
+    fn exactly_one_alert_from_one_usage_despite_lower_version_existing() -> Result<()> {
+        let mut db = test_db()?;
+
+        let app = arrange::app(
+            &mut db,
+            App {
+                id: Ref::default(),
+                name: "name".to_string(),
+                description: "desc".to_string(),
+                company: "comp".to_string(),
+                color: "red".to_string(),
+                identity: AppIdentity::Win32 {
+                    path: "path".to_string(),
+                },
+            },
+        )?;
+
+        let session = arrange::session(
+            &mut db,
+            Session {
+                id: Ref::default(),
+                app: app.id.clone(),
+                title: "title".to_string(),
+            },
+        )?;
+
+        let _usage = arrange::usage(
+            &mut db,
+            Usage {
+                id: Ref::default(),
+                session: session.id.clone(),
+                start: 0,
+                end: 100,
+            },
+        )?;
+
+        let _alert1 = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(VersionedId {
+                    guid: arrange::uuid(1),
+                    version: 1,
+                }),
+                target: Target::App(app.id.clone()),
+                usage_limit: 10,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+            },
+        )?;
+
+        let alert2 = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(VersionedId {
+                    guid: arrange::uuid(1),
+                    version: 2,
+                }),
+                target: Target::App(app.id.clone()),
+                usage_limit: 100,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+            },
+        )?;
+
+        let mut mgr = AlertManager::new(&mut db)?;
+        let alerts = mgr.triggered_alerts(&Times {
+            day_start: 0,
+            week_start: 0,
+            month_start: 0,
+        })?;
+        assert_eq!(alerts, vec![(alert2, None)]);
+        Ok(())
+    }
+
+    // test: alert_event exists and after range
+    // test: alert_event exists but before range
+    // test: target tags with 0 apps, 1 app, >=2 apps
+    //   - when one app will trigger
+    //   - when none apps will trigger, but the tag will
+
+    // test: use monthly,weekly instead of daily (still have a daily event as litmus)
+    // test: multiple alerts firing
 }
