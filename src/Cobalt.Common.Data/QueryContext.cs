@@ -2,7 +2,9 @@
 using Cobalt.Common.Data.Entities;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Microsoft.EntityFrameworkCore.ValueGeneration;
 
 namespace Cobalt.Common.Data;
 
@@ -28,6 +30,7 @@ public class QueryContext : DbContext
     public DbSet<Reminder> Reminders { get; set; } = null!;
     public DbSet<AlertEvent> AlertEvents { get; set; } = null!;
     public DbSet<ReminderEvent> ReminderEvents { get; set; } = null!;
+    // TODO create a AlertSequence table instead of the CumulativeIds var shit
 
     // These searches might benefit from FTS or at least a case-insensitive collation
 
@@ -192,7 +195,7 @@ public class QueryContext : DbContext
                     reminder =>
                     {
                         var newReminder = reminder.Clone();
-                        newReminder.Guid = Guid.NewGuid();
+                        newReminder.Id = 0;
                         newReminder.Version = 1;
                         newReminder.Alert = newAlert;
                         newReminder.ReminderEvents.Clear();
@@ -209,6 +212,8 @@ public class QueryContext : DbContext
         }
 
         await SaveChangesAsync();
+        Interlocked.Exchange(ref AlertIdGenerator.CumulativeIds, 0);
+        Interlocked.Exchange(ref ReminderIdGenerator.CumulativeIds, 0);
     }
 
     /// <summary>
@@ -240,6 +245,8 @@ public class QueryContext : DbContext
         }
 
         await SaveChangesAsync();
+        Interlocked.Exchange(ref AlertIdGenerator.CumulativeIds, 0);
+        Interlocked.Exchange(ref ReminderIdGenerator.CumulativeIds, 0);
     }
 
     /// <summary>
@@ -278,8 +285,14 @@ public class QueryContext : DbContext
         // Only take the Alert with the highest Versions
         modelBuilder.Entity<Alert>().HasQueryFilter(alert =>
             alert.Version == Alerts
-                .Where(otherAlert => otherAlert.Guid == alert.Guid)
+                .Where(otherAlert => otherAlert.Id == alert.Id)
                 .Max(otherAlert => otherAlert.Version));
+
+        // Auto-generate Alert Ids
+        modelBuilder.Entity<Alert>()
+            .Property(alert => alert.Id)
+            .HasValueGenerator<AlertIdGenerator>()
+            .ValueGeneratedOnAdd();
 
         // Auto-include Tag relationships
         modelBuilder.Entity<Tag>()
@@ -294,11 +307,43 @@ public class QueryContext : DbContext
             .Navigation(alert => alert.Reminders).AutoInclude();
 
 
+        // Auto-generate Reminder Ids
+        modelBuilder.Entity<Reminder>()
+            .Property(reminder => reminder.Id)
+            .HasValueGenerator<ReminderIdGenerator>()
+            .ValueGeneratedOnAdd();
+
         // Only take the Reminder with the highest Versions
         modelBuilder.Entity<Reminder>().HasQueryFilter(reminder =>
             reminder.Version == Reminders
-                .Where(otherReminder => otherReminder.Guid == reminder.Guid)
+                .Where(otherReminder => otherReminder.Id == reminder.Id)
                 .Max(otherReminder => otherReminder.Version));
+    }
+
+    private class AlertIdGenerator : ValueGenerator
+    {
+        public static int CumulativeIds;
+
+        public override bool GeneratesTemporaryValues => false;
+
+        protected override object? NextValue(EntityEntry entry)
+        {
+            return entry.Context.Database.SqlQuery<long>($"SELECT coalesce(max(id), 0)+1 AS Value FROM alerts")
+                .First() + Interlocked.Add(ref CumulativeIds, 1);
+        }
+    }
+
+    private class ReminderIdGenerator : ValueGenerator
+    {
+        public static int CumulativeIds;
+
+        public override bool GeneratesTemporaryValues => false;
+
+        protected override object? NextValue(EntityEntry entry)
+        {
+            return entry.Context.Database.SqlQuery<long>($"SELECT coalesce(max(id), 0)+1 AS Value FROM reminders")
+                .First() + Interlocked.Add(ref CumulativeIds, 1);
+        }
     }
 
 #if DEBUG

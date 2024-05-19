@@ -46,7 +46,7 @@ public class DataTests : IDisposable
     {
         var alert = new Alert
         {
-            Guid = Guid.NewGuid(),
+            Id = 0,
             Version = 1,
             App = null,
             Tag = null,
@@ -67,7 +67,7 @@ public class DataTests : IDisposable
 
         var reminder1 = new Reminder
         {
-            Guid = Guid.NewGuid(),
+            Id = 0,
             Alert = alert,
             Threshold = 0.2,
             Message = "NO1",
@@ -75,7 +75,7 @@ public class DataTests : IDisposable
         };
         var reminder2 = new Reminder
         {
-            Guid = Guid.NewGuid(),
+            Id = 0,
             Alert = alert,
             Threshold = 0.3,
             Message = "NO2",

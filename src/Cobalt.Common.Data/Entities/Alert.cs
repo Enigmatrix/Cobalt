@@ -38,7 +38,7 @@ public enum TimeFrame
 ///     or a collection of Apps under a <see cref="Tag" />, the actions to take when that limit is reached, and the
 ///     reminders.
 /// </summary>
-[PrimaryKey(nameof(Guid), nameof(Version))]
+[PrimaryKey(nameof(Id), nameof(Version))]
 public class Alert : IEntity
 {
     public App? App { get; set; }
@@ -51,10 +51,9 @@ public class Alert : IEntity
 
     [DefaultValue(1)] public long Version { get; set; }
 
-    // can't autoincrement on integer partial keys, so use random guid instead
-    public required Guid Guid { get; set; }
+    public long Id { get; set; }
 
-    public long Id => HashCode.Combine(Guid, Version);
+    long IEntity.Id => HashCode.Combine(Id, Version);
 
     public Alert Clone()
     {
@@ -62,7 +61,7 @@ public class Alert : IEntity
         {
             App = App,
             Tag = Tag,
-            Guid = Guid,
+            Id = Id,
             UsageLimit = UsageLimit,
             TimeFrame = TimeFrame,
             TriggerAction = TriggerAction,

@@ -110,7 +110,7 @@ public partial class EditAlertDialogViewModel : AlertDialogViewModelBase
         // Delete existing reminders that are not in the final list
         foreach (var reminderVm in _alert.Reminders)
             if (existingReminderVms.Select(vm => vm.Reminder).All(reminder =>
-                    reminder!.Guid != reminderVm.Entity.Guid && reminder.Id != reminderVm.Entity.Id))
+                    reminder!.Id != reminderVm.Entity.Id && reminder.Id != reminderVm.Entity.Id))
                 context.Remove(reminderVm.Entity);
 
         // Update existing reminders that are in the final list and dirty
@@ -129,8 +129,6 @@ public partial class EditAlertDialogViewModel : AlertDialogViewModelBase
                 Alert = alert,
                 Threshold = reminderVm.Threshold,
                 Message = reminderVm.Message!,
-                Version = 1,
-                Guid = Guid.NewGuid()
             });
 
         await context.SaveChangesAsync();
