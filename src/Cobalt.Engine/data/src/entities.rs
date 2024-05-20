@@ -200,26 +200,26 @@ table!(
     Alert,
     "alerts",
     id: VersionedId,
-    ["guid", "version", "app_id", "tag_id", "usage_limit", "time_frame", "trigger_action_dim_duration", "trigger_action_message_content", "trigger_action_tag"]
+    ["id", "version", "app_id", "tag_id", "usage_limit", "time_frame", "trigger_action_dim_duration", "trigger_action_message_content", "trigger_action_tag"]
 );
 
 table!(
     Reminder,
     "reminders",
     id: VersionedId,
-    ["guid", "version", "alert_guid", "alert_version", "threshold", "message"]
+    ["id", "version", "alert_id", "alert_version", "threshold", "message"]
 );
 
 table!(
     AlertEvent,
     "alert_events",
     id: Id,
-    ["id", "alert_guid", "alert_version", "timestamp"]
+    ["id", "alert_id", "alert_version", "timestamp"]
 );
 
 table!(
     ReminderEvent,
     "reminder_events",
     id: Id,
-    ["id", "reminder_guid", "reminder_version", "timestamp"]
+    ["id", "reminder_id", "reminder_version", "timestamp"]
 );

@@ -294,7 +294,7 @@ impl<'a> AlertManager<'a> {
     /// Insert a [AlertEvent]
     pub fn insert_alert_event(&mut self, event: &AlertEvent) -> Result<()> {
         self.insert_alert_event.execute(params![
-            event.alert.guid,
+            event.alert.id,
             event.alert.version,
             event.timestamp,
         ])?;
@@ -304,7 +304,7 @@ impl<'a> AlertManager<'a> {
     /// Insert a [ReminderEvent]
     pub fn insert_reminder_event(&mut self, event: &ReminderEvent) -> Result<()> {
         self.insert_reminder_event.execute(params![
-            event.reminder.guid,
+            event.reminder.id,
             event.reminder.version,
             event.timestamp,
         ])?;
@@ -315,7 +315,7 @@ impl<'a> AlertManager<'a> {
         let app_id: Option<Ref<App>> = row.get(2)?;
         Ok(Alert {
             id: Ref::new(VersionedId {
-                guid: row.get(0)?,
+                id: row.get(0)?,
                 version: row.get(1)?,
             }),
             target: if let Some(app_id) = app_id {
@@ -342,11 +342,11 @@ impl<'a> AlertManager<'a> {
     fn row_to_reminder(row: &rusqlite::Row) -> Result<Reminder, rusqlite::Error> {
         Ok(Reminder {
             id: Ref::new(VersionedId {
-                guid: row.get(0)?,
+                id: row.get(0)?,
                 version: row.get(1)?,
             }),
             alert: Ref::new(VersionedId {
-                guid: row.get(2)?,
+                id: row.get(2)?,
                 version: row.get(3)?,
             }),
             threshold: row.get(4)?,

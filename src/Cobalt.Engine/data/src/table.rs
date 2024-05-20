@@ -68,6 +68,6 @@ pub type Duration = u64;
 
 #[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct VersionedId {
-    pub guid: uuid::Uuid,
+    pub id: u64,
     pub version: u64,
 }

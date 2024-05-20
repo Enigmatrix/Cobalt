@@ -308,7 +308,7 @@ fn target_apps() -> Result<()> {
 fn insert_alert_event() -> Result<()> {
     let mut db = test_db()?;
 
-    let guid = uuid::uuid!("67e55044-10b1-426f-9247-bb680e5fe0c8");
+    let id = 1;
     {
         let mut insert_app = insert_stmt!(db.conn, App)?;
         insert_app.execute(params![
@@ -318,22 +318,12 @@ fn insert_alert_event() -> Result<()> {
             db.conn,
             "INSERT INTO alerts VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
         )?;
-        insert_alert.execute(params![
-            guid,
-            1,
-            1,
-            Option::<Ref<Tag>>::None,
-            100,
-            1,
-            0,
-            0,
-            1
-        ])?;
+        insert_alert.execute(params![id, 1, 1, Option::<Ref<Tag>>::None, 100, 1, 0, 0, 1])?;
     }
 
     let mut alert_event = AlertEvent {
         id: Default::default(),
-        alert: Ref::new(VersionedId { guid, version: 1 }),
+        alert: Ref::new(VersionedId { id: id, version: 1 }),
         timestamp: 1337,
     };
 
@@ -349,7 +339,7 @@ fn insert_alert_event() -> Result<()> {
             Ok(AlertEvent {
                 id: f.get(0)?,
                 alert: Ref::new(VersionedId {
-                    guid: f.get(1)?,
+                    id: f.get(1)?,
                     version: f.get(2)?,
                 }),
                 timestamp: f.get(3)?,
@@ -366,8 +356,8 @@ fn insert_alert_event() -> Result<()> {
 fn insert_reminder_event() -> Result<()> {
     let mut db = test_db()?;
 
-    let alert_guid = uuid::uuid!("67e55044-10b1-426f-9247-bb680e5fe0c8");
-    let reminder_guid = uuid::uuid!("67e55044-10b1-426f-9247-bb680e5fe0c9");
+    let alert_id = 1;
+    let reminder_id = 1;
     {
         let mut insert_app = insert_stmt!(db.conn, App)?;
         insert_app.execute(params![
@@ -380,7 +370,7 @@ fn insert_reminder_event() -> Result<()> {
         let mut insert_reminder =
             prepare_stmt!(db.conn, "INSERT INTO reminders VALUES (?, ?, ?, ?, ?, ?)")?;
         insert_alert.execute(params![
-            alert_guid,
+            alert_id,
             1,
             1,
             Option::<Ref<Tag>>::None,
@@ -390,13 +380,13 @@ fn insert_reminder_event() -> Result<()> {
             0,
             1
         ])?;
-        insert_reminder.execute(params![reminder_guid, 1, alert_guid, 1, 0.75, "hello",])?;
+        insert_reminder.execute(params![reminder_id, 1, alert_id, 1, 0.75, "hello",])?;
     }
 
     let mut reminder_event = ReminderEvent {
         id: Default::default(),
         reminder: Ref::new(VersionedId {
-            guid: reminder_guid,
+            id: reminder_id,
             version: 1,
         }),
         timestamp: 1337,
@@ -414,7 +404,7 @@ fn insert_reminder_event() -> Result<()> {
                 Ok(ReminderEvent {
                     id: f.get(0)?,
                     reminder: Ref::new(VersionedId {
-                        guid: f.get(1)?,
+                        id: f.get(1)?,
                         version: f.get(2)?,
                     }),
                     timestamp: f.get(3)?,
@@ -553,7 +543,7 @@ mod arrange {
         db.conn.execute(
             "INSERT INTO alerts VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
             params![
-                alert.id.guid,
+                alert.id.id,
                 alert.id.version,
                 app_id,
                 tag_id,
@@ -571,9 +561,9 @@ mod arrange {
         db.conn.execute(
             "INSERT INTO reminders VALUES (?, ?, ?, ?, ?, ?)",
             params![
-                reminder.id.guid,
+                reminder.id.id,
                 reminder.id.version,
-                reminder.alert.guid,
+                reminder.alert.id,
                 reminder.alert.version,
                 reminder.threshold,
                 reminder.message,
@@ -585,7 +575,7 @@ mod arrange {
     pub fn alert_event(db: &mut Database, mut event: AlertEvent) -> Result<AlertEvent> {
         db.conn.execute(
             "INSERT INTO alert_events VALUES (NULL, ?, ?, ?)",
-            params![event.alert.guid, event.alert.version, event.timestamp,],
+            params![event.alert.id, event.alert.version, event.timestamp,],
         )?;
         event.id = Ref::new(db.conn.last_insert_rowid() as u64);
         Ok(event)
@@ -594,14 +584,14 @@ mod arrange {
     pub fn reminder_event(db: &mut Database, mut event: ReminderEvent) -> Result<ReminderEvent> {
         db.conn.execute(
             "INSERT INTO reminder_events VALUES (NULL, ?, ?, ?)",
-            params![event.reminder.guid, event.reminder.version, event.timestamp,],
+            params![event.reminder.id, event.reminder.version, event.timestamp,],
         )?;
         event.id = Ref::new(db.conn.last_insert_rowid() as u64);
         Ok(event)
     }
 
-    pub fn uuid(n: u64) -> uuid::Uuid {
-        uuid::Uuid::from_u64_pair(n, n)
+    pub fn to_id(n: u64) -> u64 {
+        n
     }
 }
 
@@ -644,7 +634,7 @@ mod triggered_alerts {
             &mut db,
             Alert {
                 id: Ref::new(VersionedId {
-                    guid: arrange::uuid(1),
+                    id: arrange::to_id(1),
                     version: 1,
                 }),
                 target: Target::App(app.id.clone()),
@@ -695,7 +685,7 @@ mod triggered_alerts {
             &mut db,
             Alert {
                 id: Ref::new(VersionedId {
-                    guid: arrange::uuid(1),
+                    id: arrange::to_id(1),
                     version: 1,
                 }),
                 target: Target::App(app.id.clone()),
@@ -756,7 +746,7 @@ mod triggered_alerts {
             &mut db,
             Alert {
                 id: Ref::new(VersionedId {
-                    guid: arrange::uuid(1),
+                    id: arrange::to_id(1),
                     version: 1,
                 }),
                 target: Target::App(app.id.clone()),
@@ -817,7 +807,7 @@ mod triggered_alerts {
             &mut db,
             Alert {
                 id: Ref::new(VersionedId {
-                    guid: arrange::uuid(1),
+                    id: arrange::to_id(1),
                     version: 1,
                 }),
                 target: Target::App(app.id.clone()),
@@ -831,7 +821,7 @@ mod triggered_alerts {
             &mut db,
             Alert {
                 id: Ref::new(VersionedId {
-                    guid: arrange::uuid(2),
+                    id: arrange::to_id(2),
                     version: 1,
                 }),
                 target: Target::App(app.id.clone()),
@@ -892,7 +882,7 @@ mod triggered_alerts {
             &mut db,
             Alert {
                 id: Ref::new(VersionedId {
-                    guid: arrange::uuid(1),
+                    id: arrange::to_id(1),
                     version: 1,
                 }),
                 target: Target::App(app.id.clone()),
@@ -906,7 +896,7 @@ mod triggered_alerts {
             &mut db,
             Alert {
                 id: Ref::new(VersionedId {
-                    guid: arrange::uuid(1),
+                    id: arrange::to_id(1),
                     version: 2,
                 }),
                 target: Target::App(app.id.clone()),
@@ -967,7 +957,7 @@ mod triggered_alerts {
             &mut db,
             Alert {
                 id: Ref::new(VersionedId {
-                    guid: arrange::uuid(1),
+                    id: arrange::to_id(1),
                     version: 1,
                 }),
                 target: Target::App(app.id.clone()),
@@ -1037,7 +1027,7 @@ mod triggered_alerts {
             &mut db,
             Alert {
                 id: Ref::new(VersionedId {
-                    guid: arrange::uuid(1),
+                    id: arrange::to_id(1),
                     version: 1,
                 }),
                 target: Target::App(app.id.clone()),
@@ -1107,7 +1097,7 @@ mod triggered_alerts {
             &mut db,
             Alert {
                 id: Ref::new(VersionedId {
-                    guid: arrange::uuid(1),
+                    id: arrange::to_id(1),
                     version: 1,
                 }),
                 target: Target::App(app.id.clone()),
@@ -1168,7 +1158,7 @@ mod triggered_alerts {
             &mut db,
             Alert {
                 id: Ref::new(VersionedId {
-                    guid: arrange::uuid(1),
+                    id: arrange::to_id(1),
                     version: 1,
                 }),
                 target: Target::App(app.id.clone()),
@@ -1253,7 +1243,7 @@ mod triggered_alerts {
             &mut db,
             Alert {
                 id: Ref::new(VersionedId {
-                    guid: arrange::uuid(1),
+                    id: arrange::to_id(1),
                     version: 1,
                 }),
                 target: Target::App(app.id.clone()),
@@ -1338,7 +1328,7 @@ mod triggered_alerts {
             &mut db,
             Alert {
                 id: Ref::new(VersionedId {
-                    guid: arrange::uuid(1),
+                    id: arrange::to_id(1),
                     version: 1,
                 }),
                 target: Target::App(app.id.clone()),
@@ -1466,7 +1456,7 @@ mod triggered_alerts {
             &mut db,
             Alert {
                 id: Ref::new(VersionedId {
-                    guid: arrange::uuid(1),
+                    id: arrange::to_id(1),
                     version: 1,
                 }),
                 target: Target::Tag(empty_tag.id.clone()),
@@ -1480,7 +1470,7 @@ mod triggered_alerts {
             &mut db,
             Alert {
                 id: Ref::new(VersionedId {
-                    guid: arrange::uuid(2),
+                    id: arrange::to_id(2),
                     version: 1,
                 }),
                 target: Target::Tag(tag1.id.clone()),
@@ -1494,7 +1484,7 @@ mod triggered_alerts {
             &mut db,
             Alert {
                 id: Ref::new(VersionedId {
-                    guid: arrange::uuid(3),
+                    id: arrange::to_id(3),
                     version: 1,
                 }),
                 target: Target::Tag(tag2.id.clone()),
@@ -1508,7 +1498,7 @@ mod triggered_alerts {
             &mut db,
             Alert {
                 id: Ref::new(VersionedId {
-                    guid: arrange::uuid(4),
+                    id: arrange::to_id(4),
                     version: 1,
                 }),
                 target: Target::Tag(tag1.id.clone()),
@@ -1571,7 +1561,7 @@ mod triggered_reminders {
             db,
             Alert {
                 id: Ref::new(VersionedId {
-                    guid: arrange::uuid(1),
+                    id: arrange::to_id(1),
                     version: 1,
                 }),
                 target: Target::App(app.id.clone()),
@@ -1611,7 +1601,7 @@ mod triggered_reminders {
             &mut db,
             Reminder {
                 id: Ref::new(VersionedId {
-                    guid: arrange::uuid(1),
+                    id: arrange::to_id(1),
                     version: 1,
                 }),
                 alert: alert.clone(),
@@ -1624,7 +1614,7 @@ mod triggered_reminders {
             &mut db,
             Reminder {
                 id: Ref::new(VersionedId {
-                    guid: arrange::uuid(2),
+                    id: arrange::to_id(2),
                     version: 1,
                 }),
                 alert: alert.clone(),
@@ -1656,7 +1646,7 @@ mod triggered_reminders {
             &mut db,
             Reminder {
                 id: Ref::new(VersionedId {
-                    guid: arrange::uuid(1),
+                    id: arrange::to_id(1),
                     version: 1,
                 }),
                 alert: alert.clone(),
@@ -1668,7 +1658,7 @@ mod triggered_reminders {
             &mut db,
             Reminder {
                 id: Ref::new(VersionedId {
-                    guid: arrange::uuid(1),
+                    id: arrange::to_id(1),
                     version: 2,
                 }),
                 alert: alert.clone(),
@@ -1699,7 +1689,7 @@ mod triggered_reminders {
             &mut db,
             Reminder {
                 id: Ref::new(VersionedId {
-                    guid: arrange::uuid(1),
+                    id: arrange::to_id(1),
                     version: 1,
                 }),
                 alert: alert.clone(),
@@ -1739,7 +1729,7 @@ mod triggered_reminders {
             &mut db,
             Reminder {
                 id: Ref::new(VersionedId {
-                    guid: arrange::uuid(1),
+                    id: arrange::to_id(1),
                     version: 1,
                 }),
                 alert: alert.clone(),
