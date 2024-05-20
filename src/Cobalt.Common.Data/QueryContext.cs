@@ -264,8 +264,19 @@ public class QueryContext : DbContext
         configurationBuilder.Properties<TimeSpan>().HaveConversion<TimeSpanToTicksConverter>();
     }
 
+
+    protected void CreateSeq(ModelBuilder modelBuilder, string table)
+    {
+        var seq = modelBuilder.Entity(table);
+        seq.Property<long>("Id");
+        seq.HasData(new { Id = 1L });
+    }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        CreateSeq(modelBuilder, "alert_id_seq");
+        CreateSeq(modelBuilder, "reminder_id_seq");
+
         // The many-to-many relation table should be called _app_tags.
         // Leaving this out generates a table called app_tag
         modelBuilder.Entity<App>()
