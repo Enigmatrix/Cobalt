@@ -128,7 +128,7 @@ public partial class EditAlertDialogViewModel : AlertDialogViewModelBase
             {
                 Alert = alert,
                 Threshold = reminderVm.Threshold,
-                Message = reminderVm.Message!,
+                Message = reminderVm.Message!
             });
 
         await context.SaveChangesAsync();

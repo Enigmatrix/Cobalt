@@ -30,7 +30,6 @@ public class QueryContext : DbContext
     public DbSet<Reminder> Reminders { get; set; } = null!;
     public DbSet<AlertEvent> AlertEvents { get; set; } = null!;
     public DbSet<ReminderEvent> ReminderEvents { get; set; } = null!;
-    // TODO create a AlertSequence table instead of the CumulativeIds var shit
 
     // These searches might benefit from FTS or at least a case-insensitive collation
 
@@ -212,8 +211,6 @@ public class QueryContext : DbContext
         }
 
         await SaveChangesAsync();
-        Interlocked.Exchange(ref AlertIdGenerator.CumulativeIds, 0);
-        Interlocked.Exchange(ref ReminderIdGenerator.CumulativeIds, 0);
     }
 
     /// <summary>
@@ -245,8 +242,6 @@ public class QueryContext : DbContext
         }
 
         await SaveChangesAsync();
-        Interlocked.Exchange(ref AlertIdGenerator.CumulativeIds, 0);
-        Interlocked.Exchange(ref ReminderIdGenerator.CumulativeIds, 0);
     }
 
     /// <summary>
@@ -291,7 +286,7 @@ public class QueryContext : DbContext
         // Auto-generate Alert Ids
         modelBuilder.Entity<Alert>()
             .Property(alert => alert.Id)
-            .HasValueGenerator<AlertIdGenerator>()
+            .HasValueGenerator((_, _) => new IdSeqGenerator("alert_id_seq"))
             .ValueGeneratedOnAdd();
 
         // Auto-include Tag relationships
@@ -310,7 +305,7 @@ public class QueryContext : DbContext
         // Auto-generate Reminder Ids
         modelBuilder.Entity<Reminder>()
             .Property(reminder => reminder.Id)
-            .HasValueGenerator<ReminderIdGenerator>()
+            .HasValueGenerator((_, _) => new IdSeqGenerator("reminder_id_seq"))
             .ValueGeneratedOnAdd();
 
         // Only take the Reminder with the highest Versions
@@ -320,29 +315,15 @@ public class QueryContext : DbContext
                 .Max(otherReminder => otherReminder.Version));
     }
 
-    private class AlertIdGenerator : ValueGenerator
+    private class IdSeqGenerator(string table) : ValueGenerator
     {
-        public static int CumulativeIds;
-
         public override bool GeneratesTemporaryValues => false;
 
         protected override object? NextValue(EntityEntry entry)
         {
-            return entry.Context.Database.SqlQuery<long>($"SELECT coalesce(max(id), 0)+1 AS Value FROM alerts")
-                .First() + Interlocked.Add(ref CumulativeIds, 1);
-        }
-    }
-
-    private class ReminderIdGenerator : ValueGenerator
-    {
-        public static int CumulativeIds;
-
-        public override bool GeneratesTemporaryValues => false;
-
-        protected override object? NextValue(EntityEntry entry)
-        {
-            return entry.Context.Database.SqlQuery<long>($"SELECT coalesce(max(id), 0)+1 AS Value FROM reminders")
-                .First() + Interlocked.Add(ref CumulativeIds, 1);
+            var insertSql = $"UPDATE {table} SET id = id + 1 RETURNING id - 1";
+            var id = entry.Context.Database.SqlQueryRaw<long>(insertSql).AsEnumerable().First();
+            return id;
         }
     }
 
