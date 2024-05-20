@@ -143,20 +143,24 @@ impl Migration for Migration1 {
         tx.execute(
             "CREATE TABLE alert_id_seq (
             id                              INTEGER PRIMARY KEY NOT NULL
-        );
-        INSERT INTO alert_id_seq (id) VALUES (1)",
+        )",
             params![],
         )
         .context("create table alert_id_seq")?;
 
+        tx.execute("INSERT INTO alert_id_seq (id) VALUES (1)", params![])
+            .context("init alert_id_seq")?;
+
         tx.execute(
             "CREATE TABLE reminder_id_seq (
             id                              INTEGER PRIMARY KEY NOT NULL
-        );
-        INSERT INTO reminder_id_seq (id) VALUES (1)",
+        )",
             params![],
         )
         .context("create table reminder_id_seq")?;
+
+        tx.execute("INSERT INTO reminder_id_seq (id) VALUES (1)", params![])
+            .context("init reminder_id_seq")?;
 
         tx.execute(
             "CREATE INDEX usage_start_end ON usages(start ASC, end DESC)",
