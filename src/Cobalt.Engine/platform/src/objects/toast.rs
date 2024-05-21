@@ -7,10 +7,10 @@ use windows::{
 use util::error::Result;
 
 pub struct Progress {
-    title: String,
-    value: f64,
-    value_string_override: String,
-    status: String,
+    pub title: String,
+    pub value: f64,
+    pub value_string_override: String,
+    pub status: String,
 }
 
 pub struct ToastManager;

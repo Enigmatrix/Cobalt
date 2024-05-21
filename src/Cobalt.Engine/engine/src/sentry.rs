@@ -5,7 +5,9 @@ use data::{
     db::{AlertManager, Database, TriggeredAlert},
     entities::{AlertEvent, ReminderEvent, Target, Timestamp, TriggerAction},
 };
-use platform::objects::{Process, ProcessId, Timestamp as PlatformTimestamp, Window};
+use platform::objects::{
+    Process, ProcessId, Progress, Timestamp as PlatformTimestamp, ToastManager, Window,
+};
 use util::error::Result;
 
 use crate::cache::Cache;
@@ -40,7 +42,11 @@ impl<'a> Sentry<'a> {
 
         let reminder_hits = self.mgr.triggered_reminders(&now)?;
         for triggered_reminder in reminder_hits {
-            self.handle_message_action(&triggered_reminder.reminder.message)?;
+            self.handle_reminder_message(
+                &triggered_reminder.name,
+                &triggered_reminder.reminder.message,
+                triggered_reminder.reminder.threshold,
+            )?;
             self.mgr.insert_reminder_event(&ReminderEvent {
                 id: Default::default(),
                 reminder: triggered_reminder.reminder.id,
@@ -112,7 +118,7 @@ impl<'a> Sentry<'a> {
             }
             TriggerAction::Message(msg) => {
                 if timestamp.is_none() {
-                    self.handle_message_action(msg)?;
+                    self.handle_message_action(name, msg)?;
                 }
             }
         }
@@ -130,11 +136,27 @@ impl<'a> Sentry<'a> {
         todo!()
     }
 
-    pub fn handle_message_action(&self, msg: &str) -> Result<()> {
-        todo!()
+    pub fn handle_message_action(&self, name: &str, msg: &str) -> Result<()> {
+        ToastManager::show_basic(name, msg)?;
+        Ok(())
     }
 
     pub fn handle_dim_action(&self, window: Window, dim: f64) -> Result<()> {
         todo!()
+    }
+
+    pub fn handle_reminder_message(&self, name: &str, msg: &str, value: f64) -> Result<()> {
+        ToastManager::show_with_progress(
+            name,
+            msg,
+            Progress {
+                title: String::new(),
+                value,
+                value_string_override: "".to_string(),
+                //status: "1h/1h 40m".to_string(),
+                status: "".to_string(),
+            },
+        )?;
+        Ok(())
     }
 }
