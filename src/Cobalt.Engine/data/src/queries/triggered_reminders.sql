@@ -32,7 +32,11 @@ dur(alert_id, alert_version, range_start, dur) AS (
         AND t.alert_version = al.version
 )
 
-SELECT r.*
+SELECT r.*, (CASE WHEN al.app_id IS NOT NULL THEN (
+    SELECT a.name FROM apps a WHERE a.id = al.app_id
+) ELSE (
+    SELECT t.name FROM tags t WHERE t.id = al.tag_id
+) END) name
     FROM alerts al
     INNER JOIN dur d
         ON al.id = d.alert_id

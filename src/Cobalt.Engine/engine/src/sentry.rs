@@ -2,8 +2,8 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use data::{
-    db::{AlertManager, Database},
-    entities::{Alert, AlertEvent, ReminderEvent, Target, Timestamp, TriggerAction},
+    db::{AlertManager, Database, TriggeredAlert},
+    entities::{AlertEvent, ReminderEvent, Target, Timestamp, TriggerAction},
 };
 use platform::objects::{Process, ProcessId, Timestamp as PlatformTimestamp, Window};
 use util::error::Result;
@@ -34,16 +34,16 @@ impl<'a> Sentry<'a> {
 
     pub fn run(&mut self, now: PlatformTimestamp) -> Result<()> {
         let alerts_hits = self.mgr.triggered_alerts(&now)?;
-        for (alert, event) in alerts_hits {
-            self.handle_alert(&alert, event, now)?;
+        for triggered_alert in alerts_hits {
+            self.handle_alert(&triggered_alert, now)?;
         }
 
         let reminder_hits = self.mgr.triggered_reminders(&now)?;
-        for reminder in reminder_hits {
-            self.handle_message_action(&reminder.message)?;
+        for triggered_reminder in reminder_hits {
+            self.handle_message_action(&triggered_reminder.reminder.message)?;
             self.mgr.insert_reminder_event(&ReminderEvent {
                 id: Default::default(),
-                reminder: reminder.id,
+                reminder: triggered_reminder.reminder.id,
                 timestamp: now.into(),
             })?;
         }
@@ -85,10 +85,14 @@ impl<'a> Sentry<'a> {
 
     pub fn handle_alert(
         &mut self,
-        alert: &Alert,
-        timestamp: Option<Timestamp>,
+        triggered_alert: &TriggeredAlert,
         now: PlatformTimestamp,
     ) -> Result<()> {
+        let TriggeredAlert {
+            alert,
+            timestamp,
+            name,
+        } = triggered_alert;
         match &alert.trigger_action {
             TriggerAction::Kill => {
                 let processes = self.processes_for_target(&alert.target)?;

@@ -762,7 +762,14 @@ mod triggered_alerts {
             week_start: 0,
             month_start: 0,
         })?;
-        assert_eq!(alerts, vec![(alert, None)]);
+        assert_eq!(
+            alerts,
+            vec![TriggeredAlert {
+                alert,
+                timestamp: None,
+                name: "name".to_string()
+            }]
+        );
         Ok(())
     }
 
@@ -837,7 +844,14 @@ mod triggered_alerts {
             week_start: 50,
             month_start: 50,
         })?;
-        assert_eq!(alerts, vec![(alert1, None)]); // alert2 is not triggered
+        assert_eq!(
+            alerts,
+            vec![TriggeredAlert {
+                alert: alert1,
+                timestamp: None,
+                name: "name".to_string()
+            }]
+        ); // alert2 is not triggered
         Ok(())
     }
 
@@ -912,7 +926,14 @@ mod triggered_alerts {
             week_start: 0,
             month_start: 0,
         })?;
-        assert_eq!(alerts, vec![(alert2, None)]);
+        assert_eq!(
+            alerts,
+            vec![TriggeredAlert {
+                alert: alert2,
+                timestamp: None,
+                name: "name".to_string()
+            }]
+        );
         Ok(())
     }
 
@@ -982,7 +1003,14 @@ mod triggered_alerts {
             week_start: 0,
             month_start: 0,
         })?;
-        assert_eq!(alerts, vec![(alert, Some(75))]);
+        assert_eq!(
+            alerts,
+            vec![TriggeredAlert {
+                alert,
+                timestamp: Some(75),
+                name: "name".to_string()
+            }]
+        );
         Ok(())
     }
 
@@ -1052,7 +1080,14 @@ mod triggered_alerts {
             week_start: 0,
             month_start: 0,
         })?;
-        assert_eq!(alerts, vec![(alert, None)]);
+        assert_eq!(
+            alerts,
+            vec![TriggeredAlert {
+                alert,
+                timestamp: None,
+                name: "name".to_string()
+            }]
+        );
         Ok(())
     }
 
@@ -1113,7 +1148,14 @@ mod triggered_alerts {
             week_start: 50,
             month_start: 1000,
         })?;
-        assert_eq!(alerts, vec![(alert, None)]);
+        assert_eq!(
+            alerts,
+            vec![TriggeredAlert {
+                alert,
+                timestamp: None,
+                name: "name".to_string()
+            }]
+        );
         Ok(())
     }
 
@@ -1174,7 +1216,14 @@ mod triggered_alerts {
             week_start: 1000,
             month_start: 50,
         })?;
-        assert_eq!(alerts, vec![(alert, None)]);
+        assert_eq!(
+            alerts,
+            vec![TriggeredAlert {
+                alert,
+                timestamp: None,
+                name: "name".to_string()
+            }]
+        );
         Ok(())
     }
 
@@ -1259,7 +1308,14 @@ mod triggered_alerts {
             week_start: 0,
             month_start: 0,
         })?;
-        assert_eq!(alerts, vec![(alert, None)]);
+        assert_eq!(
+            alerts,
+            vec![TriggeredAlert {
+                alert,
+                timestamp: None,
+                name: "name".to_string()
+            }]
+        );
         Ok(())
     }
 
@@ -1514,7 +1570,21 @@ mod triggered_alerts {
             week_start: 0,
             month_start: 0,
         })?;
-        assert_eq!(alerts, vec![(alert2, None), (alert3, None)]);
+        assert_eq!(
+            alerts,
+            vec![
+                TriggeredAlert {
+                    alert: alert2,
+                    timestamp: None,
+                    name: "tag_name2".to_string()
+                },
+                TriggeredAlert {
+                    alert: alert3,
+                    timestamp: None,
+                    name: "tag_name1".to_string()
+                }
+            ]
+        );
         Ok(())
     }
 }
@@ -1586,7 +1656,10 @@ mod triggered_reminders {
             month_start: 0,
         })?;
         assert_eq!(
-            reminders.into_iter().map(|r| r.id).collect::<Vec<_>>(),
+            reminders
+                .into_iter()
+                .map(|r| (r.reminder.id, r.name))
+                .collect::<Vec<_>>(),
             vec![]
         );
         Ok(())
@@ -1630,8 +1703,11 @@ mod triggered_reminders {
             month_start: 0,
         })?;
         assert_eq!(
-            reminders.into_iter().map(|r| r.id).collect::<Vec<_>>(),
-            vec![hit.id]
+            reminders
+                .into_iter()
+                .map(|r| (r.reminder.id, r.name))
+                .collect::<Vec<_>>(),
+            vec![(hit.id, "name".to_string())]
         );
         Ok(())
     }
@@ -1674,8 +1750,11 @@ mod triggered_reminders {
             month_start: 0,
         })?;
         assert_eq!(
-            reminders.into_iter().map(|r| r.id).collect::<Vec<_>>(),
-            vec![hit.id]
+            reminders
+                .into_iter()
+                .map(|r| (r.reminder.id, r.name))
+                .collect::<Vec<_>>(),
+            vec![(hit.id, "name".to_string())]
         );
         Ok(())
     }
@@ -1714,8 +1793,11 @@ mod triggered_reminders {
             month_start: 0,
         })?;
         assert_eq!(
-            reminders.into_iter().map(|r| r.id).collect::<Vec<_>>(),
-            vec![hit.id]
+            reminders
+                .into_iter()
+                .map(|r| (r.reminder.id, r.name))
+                .collect::<Vec<_>>(),
+            vec![(hit.id, "name".to_string())]
         );
         Ok(())
     }
@@ -1754,7 +1836,10 @@ mod triggered_reminders {
             month_start: 0,
         })?;
         assert_eq!(
-            reminders.into_iter().map(|r| r.id).collect::<Vec<_>>(),
+            reminders
+                .into_iter()
+                .map(|r| (r.reminder.id, r.name))
+                .collect::<Vec<_>>(),
             vec![]
         );
         Ok(())

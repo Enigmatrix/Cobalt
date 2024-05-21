@@ -215,6 +215,19 @@ impl<'a> AppUpdater<'a> {
     }
 }
 
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub struct TriggeredAlert {
+    pub alert: Alert,
+    pub timestamp: Option<Timestamp>,
+    pub name: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct TriggeredReminder {
+    pub reminder: Reminder,
+    pub name: String,
+}
+
 /// Reference to hold statements regarding [Alert] queries
 pub struct AlertManager<'a> {
     get_tag_apps: Statement<'a>,
@@ -260,33 +273,39 @@ impl<'a> AlertManager<'a> {
     // TODO optim: or use a single transaction for the below two.
 
     /// Get all [Alert]s that are triggered, including when they were triggered
-    pub fn triggered_alerts(
-        &mut self,
-        times: &impl TimeSystem,
-    ) -> Result<Vec<(Alert, Option<Timestamp>)>> {
+    pub fn triggered_alerts(&mut self, times: &impl TimeSystem) -> Result<Vec<TriggeredAlert>> {
         let day_start = times.day_start().to_ticks();
         let week_start = times.week_start().to_ticks();
         let month_start = times.month_start().to_ticks();
         let result = self
             .triggered_alerts
             .query_map(params![day_start, week_start, month_start], |row| {
-                Ok((Self::row_to_alert(row)?, row.get(9)?))
+                Ok(TriggeredAlert {
+                    alert: Self::row_to_alert(row)?,
+                    timestamp: row.get(9)?,
+                    name: row.get(10)?,
+                })
             })?
             .collect::<Result<Vec<_>, _>>()?;
         Ok(result)
     }
 
     /// Get all [Reminder]s that are triggered, except those that are already handled
-    pub fn triggered_reminders(&mut self, times: &impl TimeSystem) -> Result<Vec<Reminder>> {
+    pub fn triggered_reminders(
+        &mut self,
+        times: &impl TimeSystem,
+    ) -> Result<Vec<TriggeredReminder>> {
         let day_start = times.day_start().to_ticks();
         let week_start = times.week_start().to_ticks();
         let month_start = times.month_start().to_ticks();
         let result = self
             .triggered_reminders
-            .query_map(
-                params![day_start, week_start, month_start],
-                Self::row_to_reminder,
-            )?
+            .query_map(params![day_start, week_start, month_start], |row| {
+                Ok(TriggeredReminder {
+                    reminder: Self::row_to_reminder(row)?,
+                    name: row.get(6)?,
+                })
+            })?
             .collect::<Result<Vec<_>, _>>()?;
         Ok(result)
     }
