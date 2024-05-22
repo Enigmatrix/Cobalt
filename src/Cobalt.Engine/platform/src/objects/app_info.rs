@@ -120,10 +120,7 @@ mod tests {
         let aumid = "Microsoft.Windows.NarratorQuickStart_8wekyb3d8bbwe!App";
         let app_info = AppInfo::from_uwp(aumid).await?;
         assert_eq!("Narrator", app_info.name);
-        assert_eq!(
-            "Narrator Home",
-            app_info.description
-        );
+        assert_eq!("Narrator Home", app_info.description);
         assert_eq!("Microsoft", app_info.company);
         let logo_size = app_info.logo_size()?;
         let mut logo = Vec::new();

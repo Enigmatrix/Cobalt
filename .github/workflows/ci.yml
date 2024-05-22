@@ -61,15 +61,9 @@ jobs:
           restore-keys: ${{ runner.os }}-cargo-
       - name: Build
         run: cargo build --verbose
-      - name: what
-        run: |
-          Import-Module -Name Appx -UseWindowsPowerShell
-          Get-AppxPackage
-          echo "what\n"
-          Get-AppxPackage -AllUsers
       - name: Test
         run: cargo test --verbose
-      - name: Lint
-        run: |
-          cargo fmt --all -- --check
-          cargo clippy -- -D warnings
+      - name: Lint (Format)
+        run: cargo fmt --all -- --check
+      - name: Lint (Clippy)
+        run: cargo clippy -- -D warnings
