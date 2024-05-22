@@ -63,6 +63,7 @@ jobs:
         run: cargo build --verbose
       - name: what
         run: |
+          Import-Module -Name Appx -UseWindowsPowerShell
           Get-AppxPackage
           echo "what\n"
           Get-AppxPackage -AllUsers
