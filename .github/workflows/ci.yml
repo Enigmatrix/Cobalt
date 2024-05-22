@@ -60,7 +60,7 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-
       - name: Build
-        run: cargo build --frozen --locked --verbose
+        run: cargo build --verbose
       - name: Test
         run: cargo test --frozen --locked --verbose
       - name: Lint (Format)
