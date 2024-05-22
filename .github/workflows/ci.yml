@@ -60,9 +60,9 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-
       - name: Build
-        run: cargo build --verbose
+        run: cargo build --verbose # this might download deps, should be cached
       - name: Test
-        run: cargo test --frozen --locked --verbose
+        run: cargo test --verbose # this also downloads deps, but not cached...
       - name: Lint (Format)
         run: cargo fmt --all -- --check
       - name: Lint (Clippy)
