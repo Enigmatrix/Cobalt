@@ -41,15 +41,10 @@ jobs:
 
     runs-on: windows-latest
 
-    strategy:
-      matrix:
-        toolchain:
-          - nightly
-
     steps:
       - uses: actions/checkout@v4
       - name: Update Rust Toolchain
-        uses: dtolnay/rust-toolchain@${{ matrix.toolchain }}
+        uses: dtolnay/rust-toolchain@nightly
         with:
           components: rustfmt, clippy
       - name: Set up cargo cache
