@@ -101,12 +101,7 @@ impl Window {
         // WS_EX_LAYERED will fail for windows with class style of CS_OWNDC or CS_CLASSDC.
         unsafe { SetWindowLongW(self.hwnd, GWL_EXSTYLE, WS_EX_LAYERED.0 as i32) };
         unsafe {
-            SetLayeredWindowAttributes(
-                self.hwnd,
-                COLORREF(0),
-                (255 as f64 * opaq) as u8,
-                LWA_ALPHA,
-            )?
+            SetLayeredWindowAttributes(self.hwnd, COLORREF(0), (255.0f64 * opaq) as u8, LWA_ALPHA)?
         };
         Ok(())
     }

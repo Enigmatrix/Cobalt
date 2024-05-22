@@ -1,8 +1,7 @@
-use std::ffi::{c_void, OsString};
+use std::ffi::c_void;
 use std::marker::PhantomData;
 use std::mem::MaybeUninit;
 
-use windows::core::PWSTR;
 use windows::Win32::Foundation::UNICODE_STRING;
 
 /// Base trait for buffers meant to be ffi-safe
@@ -31,15 +30,19 @@ pub trait Buffer<T> {
 
 pub trait WideBuffer: Buffer<u16> {
     // reasonable default implementations
-    fn as_pwstr(&mut self) -> PWSTR {
-        PWSTR(self.as_mut_ptr())
-    }
 
-    fn to_os_string(&mut self) -> OsString {
-        use std::os::windows::prelude::OsStringExt;
+    // use std::ffi::OsString;
+    // use windows::core::PWSTR;
 
-        OsString::from_wide(self.as_bytes())
-    }
+    // fn as_pwstr(&mut self) -> PWSTR {
+    //     PWSTR(self.as_mut_ptr())
+    // }
+
+    // fn to_os_string(&mut self) -> OsString {
+    //     use std::os::windows::prelude::OsStringExt;
+
+    //     OsString::from_wide(self.as_bytes())
+    // }
 
     fn to_string_lossy(&mut self) -> String {
         String::from_utf16_lossy(self.as_bytes())
