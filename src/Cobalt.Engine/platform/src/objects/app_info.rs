@@ -117,14 +117,11 @@ mod tests {
 
     #[tokio::test]
     async fn app_info_from_uwp_store() -> Result<()> {
-        let aumid = "Microsoft.WindowsStore_8wekyb3d8bbwe!App";
+        let aumid = "Microsoft.Windows.NarratorQuickStart_8wekyb3d8bbwe!App";
         let app_info = AppInfo::from_uwp(aumid).await?;
-        assert_eq!("Microsoft Store", app_info.name);
-        assert_eq!(
-            "This is the description of Microsoft Store.",
-            app_info.description
-        );
-        assert_eq!("Microsoft Corporation", app_info.company);
+        assert_eq!("Narrator", app_info.name);
+        assert_eq!("Narrator Home", app_info.description);
+        assert_eq!("Microsoft", app_info.company);
         let logo_size = app_info.logo_size()?;
         let mut logo = Vec::new();
         app_info.copy_logo(&mut logo).await?;
