@@ -8,7 +8,8 @@ use windows::{
     Win32::{
         Foundation::{CloseHandle, HANDLE, UNICODE_STRING, WAIT_TIMEOUT},
         System::Threading::{
-            IsImmersiveProcess, OpenProcess, WaitForSingleObject, PROCESS_QUERY_LIMITED_INFORMATION,
+            IsImmersiveProcess, OpenProcess, TerminateProcess, WaitForSingleObject,
+            PROCESS_QUERY_LIMITED_INFORMATION,
         },
     },
 };
@@ -53,6 +54,12 @@ impl Process {
     pub fn path(&self) -> Result<String> {
         self.query_information_string(ProcessImageFileNameWin32)
             .context("get process image file name")
+    }
+
+    /// Kill the [Process]
+    pub fn kill(&self) -> Result<()> {
+        unsafe { TerminateProcess(self.handle, 0)? };
+        Ok(())
     }
 
     #[inline(always)]

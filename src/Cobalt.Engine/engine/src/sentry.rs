@@ -132,8 +132,11 @@ impl<'a> Sentry<'a> {
         Ok(())
     }
 
+    // TODO warn on failure, instead of bubbling up/ panic
+
     pub fn handle_kill_action(&self, process: &Process) -> Result<()> {
-        todo!()
+        process.kill()?;
+        Ok(())
     }
 
     pub fn handle_message_action(&self, name: &str, msg: &str) -> Result<()> {
