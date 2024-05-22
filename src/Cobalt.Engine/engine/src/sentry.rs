@@ -104,7 +104,7 @@ impl<'a> Sentry<'a> {
                 let processes = self.processes_for_target(&alert.target)?;
                 for process in processes {
                     let process = Process::new(process)?;
-                    self.handle_kill_action(process)?;
+                    self.handle_kill_action(&process)?;
                 }
             }
             TriggerAction::Dim(dur) => {
@@ -113,7 +113,7 @@ impl<'a> Sentry<'a> {
                 let end: Timestamp = now.into();
                 let progress = (end - start) as f64 / (*dur as f64);
                 for window in windows {
-                    self.handle_dim_action(window, progress.max(1.0f64))?;
+                    self.handle_dim_action(&window, progress.min(1.0f64))?;
                 }
             }
             TriggerAction::Message(msg) => {
@@ -132,7 +132,7 @@ impl<'a> Sentry<'a> {
         Ok(())
     }
 
-    pub fn handle_kill_action(&self, process: Process) -> Result<()> {
+    pub fn handle_kill_action(&self, process: &Process) -> Result<()> {
         todo!()
     }
 
@@ -141,8 +141,9 @@ impl<'a> Sentry<'a> {
         Ok(())
     }
 
-    pub fn handle_dim_action(&self, window: Window, dim: f64) -> Result<()> {
-        todo!()
+    pub fn handle_dim_action(&self, window: &Window, dim: f64) -> Result<()> {
+        window.dim(1.0f64 - dim)?;
+        Ok(())
     }
 
     pub fn handle_reminder_message(&self, name: &str, msg: &str, value: f64) -> Result<()> {

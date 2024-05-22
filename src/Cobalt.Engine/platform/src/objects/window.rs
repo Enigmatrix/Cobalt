@@ -2,13 +2,14 @@ use std::hash::{Hash, Hasher};
 
 use util::error::{Context, Result};
 use windows::Win32::{
-    Foundation::HWND,
+    Foundation::{COLORREF, HWND},
     Storage::EnhancedStorage::PKEY_AppUserModel_ID,
     System::Com::{CoTaskMemFree, StructuredStorage::PropVariantToStringAlloc},
     UI::{
         Shell::PropertiesSystem::{IPropertyStore, SHGetPropertyStoreForWindow},
         WindowsAndMessaging::{
             GetForegroundWindow, GetWindowTextLengthW, GetWindowTextW, GetWindowThreadProcessId,
+            SetLayeredWindowAttributes, SetWindowLongW, GWL_EXSTYLE, LWA_ALPHA, WS_EX_LAYERED,
         },
     },
 };
@@ -94,5 +95,19 @@ impl Window {
         unsafe { CoTaskMemFree(Some(aumid_raw.as_ptr().cast())) };
 
         Ok(aumid)
+    }
+
+    pub fn dim(&self, opaq: f64) -> Result<()> {
+        // WS_EX_LAYERED will fail for windows with class style of CS_OWNDC or CS_CLASSDC.
+        unsafe { SetWindowLongW(self.hwnd, GWL_EXSTYLE, WS_EX_LAYERED.0 as i32) };
+        unsafe {
+            SetLayeredWindowAttributes(
+                self.hwnd,
+                COLORREF(0),
+                (255 as f64 * opaq) as u8,
+                LWA_ALPHA,
+            )?
+        };
+        Ok(())
     }
 }
