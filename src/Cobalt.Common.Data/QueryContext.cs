@@ -2,7 +2,9 @@
 using Cobalt.Common.Data.Entities;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Microsoft.EntityFrameworkCore.ValueGeneration;
 
 namespace Cobalt.Common.Data;
 
@@ -192,7 +194,7 @@ public class QueryContext : DbContext
                     reminder =>
                     {
                         var newReminder = reminder.Clone();
-                        newReminder.Guid = Guid.NewGuid();
+                        newReminder.Id = 0;
                         newReminder.Version = 1;
                         newReminder.Alert = newAlert;
                         newReminder.ReminderEvents.Clear();
@@ -262,8 +264,19 @@ public class QueryContext : DbContext
         configurationBuilder.Properties<TimeSpan>().HaveConversion<TimeSpanToTicksConverter>();
     }
 
+
+    protected void CreateSeq(ModelBuilder modelBuilder, string table)
+    {
+        var seq = modelBuilder.Entity(table);
+        seq.Property<long>("Id");
+        seq.HasData(new { Id = 1L });
+    }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        CreateSeq(modelBuilder, "alert_id_seq");
+        CreateSeq(modelBuilder, "reminder_id_seq");
+
         // The many-to-many relation table should be called _app_tags.
         // Leaving this out generates a table called app_tag
         modelBuilder.Entity<App>()
@@ -278,8 +291,14 @@ public class QueryContext : DbContext
         // Only take the Alert with the highest Versions
         modelBuilder.Entity<Alert>().HasQueryFilter(alert =>
             alert.Version == Alerts
-                .Where(otherAlert => otherAlert.Guid == alert.Guid)
+                .Where(otherAlert => otherAlert.Id == alert.Id)
                 .Max(otherAlert => otherAlert.Version));
+
+        // Auto-generate Alert Ids
+        modelBuilder.Entity<Alert>()
+            .Property(alert => alert.Id)
+            .HasValueGenerator((_, _) => new IdSeqGenerator("alert_id_seq"))
+            .ValueGeneratedOnAdd();
 
         // Auto-include Tag relationships
         modelBuilder.Entity<Tag>()
@@ -294,11 +313,29 @@ public class QueryContext : DbContext
             .Navigation(alert => alert.Reminders).AutoInclude();
 
 
+        // Auto-generate Reminder Ids
+        modelBuilder.Entity<Reminder>()
+            .Property(reminder => reminder.Id)
+            .HasValueGenerator((_, _) => new IdSeqGenerator("reminder_id_seq"))
+            .ValueGeneratedOnAdd();
+
         // Only take the Reminder with the highest Versions
         modelBuilder.Entity<Reminder>().HasQueryFilter(reminder =>
             reminder.Version == Reminders
-                .Where(otherReminder => otherReminder.Guid == reminder.Guid)
+                .Where(otherReminder => otherReminder.Id == reminder.Id)
                 .Max(otherReminder => otherReminder.Version));
+    }
+
+    private class IdSeqGenerator(string table) : ValueGenerator
+    {
+        public override bool GeneratesTemporaryValues => false;
+
+        protected override object? NextValue(EntityEntry entry)
+        {
+            var insertSql = $"UPDATE {table} SET id = id + 1 RETURNING id - 1";
+            var id = entry.Context.Database.SqlQueryRaw<long>(insertSql).AsEnumerable().First();
+            return id;
+        }
     }
 
 #if DEBUG

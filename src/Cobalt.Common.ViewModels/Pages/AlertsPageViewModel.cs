@@ -56,13 +56,13 @@ public partial class AlertsPageViewModel : PageViewModelBase
     public async Task DeleteAlert(AlertViewModel alertVm)
     {
         await using var context = await Contexts.CreateDbContextAsync();
-        var guid = alertVm.Entity.Guid;
+        var id = alertVm.Entity.Id;
         // no need to do anything special to delete Reminders, AlertEvent and ReminderEvent,
         // they are cascade delete (App and Tag are not since they are nullable)
         await context.Alerts
             .IgnoreAutoIncludes() // otherwise it errors out
             .IgnoreQueryFilters() // ignore max by version constraint
-            .Where(alert => alert.Guid == guid)
+            .Where(alert => alert.Id == id)
             .ExecuteDeleteAsync();
 
         await Alerts.Refresh();

@@ -1,182 +1,204 @@
-use std::collections::hash_map::Entry;
-use std::collections::HashMap;
-use std::future::Future;
+use std::cell::RefCell;
+use std::rc::Rc;
 
 use data::db::{Database, FoundOrInserted, UsageWriter};
-use data::entities::{App, AppIdentity, Ref, Session, Usage};
-use platform::events::{ForegroundChangedEvent, InteractionChangedEvent};
+use data::entities::{AppIdentity, InteractionPeriod, Ref, Session, Usage};
+use platform::events::{ForegroundChangedEvent, InteractionChangedEvent, WindowSession};
 use platform::objects::{Process, ProcessId, Timestamp, Window};
-use std::hash::Hash;
-use util::channels::Sender;
-use util::error::Result;
+use util::config::Config;
+use util::error::{Context, Result};
+use util::future::task::LocalSpawnExt;
+use util::tracing::{info, info_span, trace, ResultTraceExt};
 
-use util::tracing::info;
+use crate::cache::{AppDetails, Cache, SessionDetails};
+use crate::resolver::AppInfoResolver;
 
-use crate::resolver::AppInfoResolverRequest;
-
-pub struct Engine<'a> {
-    // TODO this might be a bad idea, the HWND might be reused by Windows,
-    // so another window could be running with the same HWND after the first one closed...
-    sessions: HashMap<WindowSession, SessionDetails>,
-    // TODO this might be a bad idea, the ProcessId might be reused by Windows,
-    // so another app could be running with the same pid after the first one closed...
-    apps: HashMap<ProcessId, AppDetails>,
+pub struct Engine<'a, S: LocalSpawnExt> {
+    cache: Rc<RefCell<Cache>>,
     current_usage: Usage,
+    active_period_start: Timestamp,
+    config: Config,
     inserter: UsageWriter<'a>,
-    resolver: Sender<AppInfoResolverRequest>,
-}
-
-#[derive(Debug, Clone, Hash, Eq, PartialEq)]
-pub struct WindowSession {
-    window: Window,
-    title: String,
-}
-
-pub struct SessionDetails {
-    session: Ref<Session>,
-}
-
-pub struct AppDetails {
-    app: Ref<App>,
+    spawner: S,
 }
 
 pub enum Event {
     ForegroundChanged(ForegroundChangedEvent),
     InteractionChanged(InteractionChangedEvent),
+    Tick(Timestamp),
 }
 
-impl<'a> Engine<'a> {
+impl<'a, S: LocalSpawnExt> Engine<'a, S> {
     /// Create a new [Engine], which initializes it's first [Usage]
     pub async fn new(
+        cache: Rc<RefCell<Cache>>,
         foreground: Window,
         start: Timestamp,
+        config: Config,
         db: &'a mut Database,
-        resolver: Sender<AppInfoResolverRequest>,
+        spawner: S,
     ) -> Result<Self> {
-        let mut sessions = HashMap::new();
-        let mut apps = HashMap::new();
-        let mut inserter = UsageWriter::new(db)?;
+        let inserter = UsageWriter::new(db)?;
         let title = foreground.title()?;
-        let session_details = Self::create_session_for_window(
-            &mut apps,
-            &mut inserter,
-            &resolver,
-            &foreground,
-            title.clone(),
-        )
-        .await?;
-        let current_usage = Usage {
+        let ws = WindowSession {
+            window: foreground.clone(),
+            title: title.clone(),
+        };
+
+        let mut ret = Self {
+            cache,
+            config,
+            inserter,
+            active_period_start: start,
+            // set a default value, then update it right after
+            current_usage: Default::default(),
+            spawner,
+        };
+
+        ret.current_usage = Usage {
             id: Default::default(),
-            session: session_details.session.clone(),
+            session: ret.get_session_details(ws)?,
             start: start.into(),
             end: start.into(),
         };
-        sessions.insert(
-            WindowSession {
-                window: foreground,
-                title,
-            },
-            session_details,
-        );
-        Ok(Self {
-            sessions,
-            apps,
-            inserter,
-            current_usage,
-            resolver,
-        })
+
+        Ok(ret)
     }
 
     pub async fn handle(&mut self, event: Event) -> Result<()> {
         match event {
-            Event::ForegroundChanged(ForegroundChangedEvent { at, window, title }) => {
+            Event::ForegroundChanged(ForegroundChangedEvent { at, session }) => {
+                info!("fg switch: {:?}", session);
+
                 self.current_usage.end = at.into();
-                self.inserter.insert_usage(&self.current_usage)?;
+                self.inserter
+                    .insert_or_update_usage(&mut self.current_usage)?;
 
-                let ws = WindowSession { window, title };
-                info!("Foreground changed to {:?}", ws);
-                let session_details = self
-                    .sessions
-                    .fallible_get_or_insert_async(ws.clone(), async {
-                        Self::create_session_for_window(
-                            &mut self.apps,
-                            &mut self.inserter,
-                            &self.resolver,
-                            &ws.window,
-                            ws.title,
-                        )
-                        .await
-                    })
-                    .await?;
+                let session_result = self.get_session_details(session);
 
-                self.current_usage = Usage {
-                    id: Default::default(),
-                    session: session_details.session.clone(),
-                    start: at.into(),
-                    end: at.into(),
-                };
+                // If we have an error getting the session, we don't change the current usage.
+                // An alternative would be to insert some sort of 'invalid usage' marker.
+                if let Ok(session) = &session_result {
+                    self.current_usage = Usage {
+                        id: Default::default(),
+                        session: session.clone(),
+                        start: at.into(),
+                        end: at.into(),
+                    };
+                }
+
+                session_result.warn();
+            }
+            Event::Tick(now) => {
+                trace!("tick at {:?}", now);
+
+                self.current_usage.end = now.into();
+                self.inserter
+                    .insert_or_update_usage(&mut self.current_usage)?;
             }
             Event::InteractionChanged(InteractionChangedEvent::BecameIdle {
                 at,
                 recorded_mouse_clicks,
                 recorded_key_presses,
             }) => {
-                info!("Became idle at {:?}", at);
-                // TODO
+                info!("became idle at {:?}", at);
+
+                self.inserter
+                    .insert_interaction_period(&InteractionPeriod {
+                        id: Default::default(),
+                        start: self.active_period_start.into(),
+                        end: at.into(),
+                        mouseclicks: recorded_mouse_clicks,
+                        keystrokes: recorded_key_presses,
+                    })?;
+                // don't need to update active_period_start, as it will be updated when we become active again
             }
             Event::InteractionChanged(InteractionChangedEvent::BecameActive { at }) => {
-                info!("Became active at {:?}", at);
-                // TODO
+                info!("became active at {:?}", at);
+
+                self.active_period_start = at;
             }
         };
         Ok(())
     }
 
-    async fn create_app_for_process(
+    fn get_session_details(&mut self, ws: WindowSession) -> Result<Ref<Session>> {
+        let mut borrow = self.cache.borrow_mut();
+        let session_details = borrow.get_or_insert_session_for_window(ws.clone(), |cache| {
+            Self::create_session_for_window(
+                cache,
+                &self.config,
+                &mut self.inserter,
+                &self.spawner,
+                &ws.window,
+                ws.title,
+            )
+        })?;
+
+        Ok(session_details.session.clone())
+    }
+
+    fn create_app_for_process(
         inserter: &mut UsageWriter<'a>,
-        resolver: &Sender<AppInfoResolverRequest>,
+        config: &Config,
+        spawner: &S,
         pid: ProcessId,
         window: &Window,
     ) -> Result<AppDetails> {
+        let span = info_span!("create_app_for_process", ?pid, ?window);
+        let _guard = span.enter();
+
+        trace!(parent: &span, "create/find");
+
         let process = Process::new(pid)?;
 
-        let identity = if process.is_uwp(None)? {
+        let path = process.path()?;
+        let identity = if process.is_uwp(Some(&path))? {
             AppIdentity::Uwp {
                 aumid: window.aumid()?,
             }
         } else {
-            AppIdentity::Win32 {
-                path: process.path()?,
-            }
+            AppIdentity::Win32 { path }
         };
 
         let found_app = inserter.find_or_insert_app(&identity)?;
-
         let app_id = match found_app {
             FoundOrInserted::Found(id) => id,
             FoundOrInserted::Inserted(id) => {
-                resolver
-                    .send_async(AppInfoResolverRequest::new(id.clone(), identity.clone()))
-                    .await?;
+                {
+                    info!(parent: &span, "created");
+
+                    let config = config.clone();
+                    let id = id.clone();
+
+                    spawner.spawn_local(async move {
+                        AppInfoResolver::update_app(&config, id, identity)
+                            .await
+                            .context("update app with info")
+                            .error();
+                    })?;
+                }
+
                 id
             }
         };
         Ok(AppDetails { app: app_id })
     }
 
-    async fn create_session_for_window(
-        apps: &mut HashMap<ProcessId, AppDetails>,
+    fn create_session_for_window(
+        cache: &mut Cache,
+        config: &Config,
         inserter: &mut UsageWriter<'a>,
-        resolver: &Sender<AppInfoResolverRequest>,
+        spawner: &S,
         window: &Window,
         title: String,
     ) -> Result<SessionDetails> {
+        info!(?window, ?title, "create session for window");
+
         let pid = window.pid()?;
-        let AppDetails { app } = apps
-            .fallible_get_or_insert_async(pid, async {
-                Self::create_app_for_process(inserter, resolver, pid, window).await
-            })
-            .await?;
+        let AppDetails { app } = cache.get_or_insert_app_for_process(pid, |_| {
+            Self::create_app_for_process(inserter, config, spawner, pid, window)
+        })?;
 
         let mut session = Session {
             id: Default::default(),
@@ -187,32 +209,7 @@ impl<'a> Engine<'a> {
 
         Ok(SessionDetails {
             session: session.id,
+            pid,
         })
-    }
-}
-
-trait HashMapExt<K, V> {
-    async fn fallible_get_or_insert_async<'a>(
-        &'a mut self,
-        key: K,
-        create: impl Future<Output = Result<V>>,
-    ) -> Result<&'a mut V>
-    where
-        V: 'a;
-}
-
-impl<K: Eq + Hash + Clone, V> HashMapExt<K, V> for HashMap<K, V> {
-    async fn fallible_get_or_insert_async<'a>(
-        &'a mut self,
-        key: K,
-        create: impl Future<Output = Result<V>>,
-    ) -> Result<&'a mut V>
-    where
-        V: 'a,
-    {
-        match self.entry(key.clone()) {
-            Entry::Occupied(occ) => Ok(occ.into_mut()),
-            Entry::Vacant(vac) => Ok(vac.insert(create.await?)),
-        }
     }
 }

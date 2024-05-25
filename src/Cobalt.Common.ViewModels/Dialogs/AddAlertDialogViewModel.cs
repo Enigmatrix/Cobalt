@@ -45,16 +45,12 @@ public class AddAlertDialogViewModel : AlertDialogViewModelBase
     {
         var alert = new Alert
         {
-            Guid = Guid.NewGuid(),
-            Version = 1,
             TimeFrame = TimeFrame!.Value,
             TriggerAction = TriggerAction!.Inner!,
             UsageLimit = UsageLimit!.Value
         };
         alert.Reminders.AddRange(Reminders.Select(reminder => new Reminder
         {
-            Guid = Guid.NewGuid(),
-            Version = 1,
             Message = reminder.Message!,
             Threshold = reminder.Threshold,
             Alert = alert

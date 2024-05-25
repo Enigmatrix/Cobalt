@@ -1,12 +1,11 @@
 use std::mem::MaybeUninit;
 use std::path::PathBuf;
 
+use util::error::{bail, Context, Result};
 use windows::core::{w, PCWSTR};
 use windows::Win32::Storage::FileSystem::{
     GetFileVersionInfoExW, GetFileVersionInfoSizeExW, VerQueryValueW, FILE_VER_GET_LOCALISED,
 };
-
-use util::error::{bail, Context, Result};
 
 use crate::win32;
 

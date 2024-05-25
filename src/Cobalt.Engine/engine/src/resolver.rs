@@ -1,23 +1,13 @@
-use data::{
-    db::{AppUpdater, Database},
-    entities::{App, AppIdentity, Ref},
-};
+use data::db::{AppUpdater, Database};
+use data::entities::{App, AppIdentity, Ref};
 use platform::objects::AppInfo;
-use rand::{prelude::SliceRandom, rngs::ThreadRng};
-use util::{config::Config, error::Result};
+use rand::prelude::SliceRandom;
+use rand::rngs::ThreadRng;
+use util::config::Config;
+use util::error::Result;
+use util::tracing::info;
 
 pub struct AppInfoResolver;
-
-pub struct AppInfoResolverRequest {
-    app: Ref<App>,
-    identity: AppIdentity,
-}
-
-impl AppInfoResolverRequest {
-    pub fn new(app: Ref<App>, identity: AppIdentity) -> Self {
-        AppInfoResolverRequest { app, identity }
-    }
-}
 
 impl AppInfoResolver {
     async fn resolve(identity: &AppIdentity) -> Result<AppInfo> {
@@ -27,8 +17,9 @@ impl AppInfoResolver {
         }
     }
 
-    pub async fn update_app(config: &Config, req: AppInfoResolverRequest) -> Result<()> {
-        let AppInfoResolverRequest { app, identity } = req;
+    pub async fn update_app(config: &Config, app: Ref<App>, identity: AppIdentity) -> Result<()> {
+        info!("updating app info {:?} ({:?})", app, identity);
+
         let app_info = Self::resolve(&identity).await?;
 
         let mut db = Database::new(config)?;

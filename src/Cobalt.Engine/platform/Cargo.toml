@@ -30,6 +30,8 @@ features = [
     "Storage_Streams",
     "Storage_FileProperties",
     "ApplicationModel",
+    "UI_Notifications",
+    "Data_Xml_Dom",
 ]
 
 [dev-dependencies]

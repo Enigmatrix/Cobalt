@@ -1,15 +1,35 @@
-use std::mem::MaybeUninit;
+use std::mem::{self, MaybeUninit};
 use std::{fmt, ops};
 
+use util::error::Result;
+use util::time::{TimeSystem, ToTicks};
 use windows::Win32::Foundation::{FILETIME, SYSTEMTIME};
 use windows::Win32::System::SystemInformation::{GetSystemTimePreciseAsFileTime, GetTickCount64};
-use windows::Win32::System::Time::FileTimeToSystemTime;
+use windows::Win32::System::Time::{FileTimeToSystemTime, SystemTimeToFileTime};
 
-use util::error::Result;
+// https://github.com/dotnet/runtime/blob/333b3d898dbc4372046f9ba74ad912fba62d55ff/src/libraries/System.Private.CoreLib/src/System/DateTime.cs
+const MICROSECONDS_PER_MILLISECOND: u64 = 1000;
+const TICKS_PER_MICROSECOND: u64 = 10;
+const TICKS_PER_MILLISECOND: u64 = TICKS_PER_MICROSECOND * MICROSECONDS_PER_MILLISECOND;
+
+const HOURS_PER_DAY: u64 = 24;
+const TICKS_PER_SECOND: u64 = TICKS_PER_MILLISECOND * 1000;
+const TICKS_PER_MINUTE: u64 = TICKS_PER_SECOND * 60;
+const TICKS_PER_HOUR: u64 = TICKS_PER_MINUTE * 60;
+const TICKS_PER_DAY: u64 = TICKS_PER_HOUR * HOURS_PER_DAY;
+
+const DAYS_PER_YEAR: u64 = 365;
+const DAYS_PER_4_YEARS: u64 = DAYS_PER_YEAR * 4 + 1;
+const DAYS_PER_100_YEARS: u64 = DAYS_PER_4_YEARS * 25 - 1;
+const DAYS_PER_400_YEARS: u64 = DAYS_PER_100_YEARS * 4 + 1;
+const FILE_TIME_OFFSET: u64 = DAYS_PER_400_YEARS * 4 * TICKS_PER_DAY;
 
 #[derive(Ord, PartialOrd, Eq, PartialEq, Copy, Clone)]
-/// UTC FILETIME, representing the number of 100-nanosecond intervals since January 1, 1601 (UTC).
-pub struct Timestamp(u64);
+/// UTC time representing the number of 100-nanosecond intervals since January 1, 0001 (UTC).
+/// NOT the same sa FILETIME, which is from 1601 instead.
+pub struct Timestamp {
+    ticks: u64,
+}
 
 #[derive(Ord, PartialOrd, Eq, PartialEq, Copy, Clone)]
 /// Duration between Timestamps as the number of 100-nanosecond intervals.
@@ -22,8 +42,8 @@ impl Timestamp {
     /// Get the current [Timestamp]
     pub fn now() -> Timestamp {
         let ft = unsafe { GetSystemTimePreciseAsFileTime() };
-        let ticks = unsafe { *(&ft as *const _ as *const u64) };
-        Timestamp(ticks)
+        let ticks = Self::file_time_to_ticks(ft);
+        Timestamp { ticks }
     }
 
     /// Find the [`Timestamp`] at system boot by subtracting the current [`Timestamp`] from current time from boot.
@@ -39,21 +59,80 @@ impl Timestamp {
     pub fn from_event_millis(millis: u32) -> Timestamp {
         unsafe { BOOT_TIME.assume_init() + Duration::from_millis(millis as i64) }
     }
+
+    fn system_time(&self) -> SYSTEMTIME {
+        let mut sys: SYSTEMTIME = SYSTEMTIME::default();
+        let ft_ticks = self.ticks - FILE_TIME_OFFSET;
+        unsafe {
+            FileTimeToSystemTime(&ft_ticks as *const _ as *const _, &mut sys)
+                .expect("get system time") // should never fail
+        };
+        sys
+    }
+
+    fn from_system_time(sys: SYSTEMTIME) -> Self {
+        let mut ft: FILETIME = FILETIME::default();
+        unsafe { SystemTimeToFileTime(&sys as *const _, &mut ft).expect("get file time") }; // should never fail
+        let ticks = Self::file_time_to_ticks(ft);
+        Timestamp { ticks }
+    }
+
+    fn file_time_to_ticks(ft: FILETIME) -> u64 {
+        let ft_ticks: u64 = unsafe { mem::transmute(ft) };
+        ft_ticks + FILE_TIME_OFFSET
+    }
 }
 
 impl From<Timestamp> for u64 {
     fn from(t: Timestamp) -> Self {
-        t.0
+        t.ticks
+    }
+}
+
+impl ToTicks for Timestamp {
+    fn to_ticks(&self) -> u64 {
+        self.ticks
+    }
+}
+
+impl TimeSystem for Timestamp {
+    type Ticks = Self;
+
+    fn day_start(&self) -> Self {
+        let mut sys = self.system_time();
+        sys.wHour = 0;
+        sys.wMinute = 0;
+        sys.wSecond = 0;
+        sys.wMilliseconds = 0;
+        Self::from_system_time(sys)
+    }
+
+    fn week_start(&self) -> Self {
+        let mut sys = self.system_time();
+        sys.wHour = 0;
+        sys.wMinute = 0;
+        sys.wSecond = 0;
+        sys.wMilliseconds = 0;
+        let mut time = Self::from_system_time(sys);
+        time.ticks -= sys.wDayOfWeek as u64 * TICKS_PER_DAY;
+        time
+    }
+
+    fn month_start(&self) -> Self {
+        let mut sys = self.system_time();
+        sys.wHour = 0;
+        sys.wMinute = 0;
+        sys.wSecond = 0;
+        sys.wMilliseconds = 0;
+        let mut time = Self::from_system_time(sys);
+        time.ticks -= (sys.wDay - 1) as u64 * TICKS_PER_DAY;
+        time
     }
 }
 
 impl fmt::Display for Timestamp {
     fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
-        let mut sys: SYSTEMTIME = SYSTEMTIME::default();
-        unsafe {
-            FileTimeToSystemTime(&self.0 as *const _ as *const FILETIME, &mut sys as *mut _)
-                .expect("FileTimeToSystemTime failed");
-        };
+        let sys = self.system_time();
         write!(
             fmt,
             "{:04}-{:02}-{:02} {:02}:{:02}:{:02}.{:03}Z",
@@ -71,21 +150,25 @@ impl fmt::Debug for Timestamp {
 impl ops::Add<Duration> for Timestamp {
     type Output = Timestamp;
     fn add(self, rhs: Duration) -> Self::Output {
-        Timestamp(self.0 + rhs.0 as u64)
+        Timestamp {
+            ticks: self.ticks + rhs.0 as u64,
+        }
     }
 }
 
 impl ops::Sub<Duration> for Timestamp {
     type Output = Timestamp;
     fn sub(self, rhs: Duration) -> Self::Output {
-        Timestamp(self.0 - rhs.0 as u64)
+        Timestamp {
+            ticks: self.ticks - rhs.0 as u64,
+        }
     }
 }
 
 impl ops::Sub<Timestamp> for Timestamp {
     type Output = Duration;
     fn sub(self, rhs: Timestamp) -> Self::Output {
-        Duration(self.0 as i64 - rhs.0 as i64)
+        Duration(self.ticks as i64 - rhs.ticks as i64)
     }
 }
 
@@ -108,5 +191,60 @@ impl Duration {
 
     pub fn millis(&self) -> u32 {
         (self.0 / 10_000) as u32
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const FEB_18_2000_18_05_20: Timestamp = Timestamp {
+        ticks: 630864939200000000,
+    };
+    // 04/03/2000 09:04:02 - Leap Year, Saturday (Sunday (start) is 27 Feb)
+    const MAR_04_2000_09_04_02: Timestamp = Timestamp {
+        ticks: 630877574420000000,
+    };
+
+    #[test]
+    fn display_is_correct() {
+        assert_eq!("2000-02-18 18:05:20.000Z", FEB_18_2000_18_05_20.to_string());
+        assert_eq!("2000-03-04 09:04:02.000Z", MAR_04_2000_09_04_02.to_string());
+    }
+
+    #[test]
+    fn day_start() {
+        assert_eq!(
+            "2000-02-18 00:00:00.000Z",
+            FEB_18_2000_18_05_20.day_start().to_string()
+        );
+        assert_eq!(
+            "2000-03-04 00:00:00.000Z",
+            MAR_04_2000_09_04_02.day_start().to_string()
+        );
+    }
+
+    #[test]
+    fn week_start() {
+        assert_eq!(
+            "2000-02-13 00:00:00.000Z",
+            FEB_18_2000_18_05_20.week_start().to_string()
+        );
+        assert_eq!(
+            "2000-02-27 00:00:00.000Z",
+            MAR_04_2000_09_04_02.week_start().to_string()
+        );
+    }
+
+    #[test]
+    fn month_start() {
+        assert_eq!(
+            "2000-02-01 00:00:00.000Z",
+            FEB_18_2000_18_05_20.month_start().to_string()
+        );
+        assert_eq!(
+            "2000-03-01 00:00:00.000Z",
+            MAR_04_2000_09_04_02.month_start().to_string()
+        );
     }
 }

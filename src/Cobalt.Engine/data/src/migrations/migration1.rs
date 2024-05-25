@@ -1,6 +1,7 @@
-use super::Migration;
 use rusqlite::{params, Connection};
 use util::error::{bail, Context, Result};
+
+use super::Migration;
 
 pub struct Migration1;
 
@@ -86,16 +87,16 @@ impl Migration for Migration1 {
 
         tx.execute(
             "CREATE TABLE alerts (
-            guid                            TEXT NOT NULL,
+            id                              INTEGER NOT NULL,
             version                         INTEGER NOT NULL,
             app_id                          INTEGER REFERENCES apps(id),
             tag_id                          INTEGER REFERENCES tags(id),
             usage_limit                     INTEGER NOT NULL,
             time_frame                      INTEGER NOT NULL,
-            trigger_action_dim_duration     INTEGER NOT NULL,
-            trigger_action_message_content  INTEGER NOT NULL,
+            trigger_action_dim_duration     INTEGER,
+            trigger_action_message_content  TEXT,
             trigger_action_tag              INTEGER NOT NULL,
-            PRIMARY KEY (guid, version)
+            PRIMARY KEY (id, version)
         )",
             params![],
         )
@@ -103,14 +104,14 @@ impl Migration for Migration1 {
 
         tx.execute(
             "CREATE TABLE reminders (
-            guid                            TEXT NOT NULL,
+            id                              INTEGER NOT NULL,
             version                         INTEGER NOT NULL,
-            alert_guid                      TEXT NOT NULL,
+            alert_id                        INTEGER NOT NULL,
             alert_version                   INTEGER NOT NULL,
             threshold                       REAL NOT NULL,
             message                         TEXT NOT NULL,
-            PRIMARY KEY (guid, version),
-            FOREIGN KEY (alert_guid, alert_version) REFERENCES alerts(guid, version)
+            PRIMARY KEY (id, version),
+            FOREIGN KEY (alert_id, alert_version) REFERENCES alerts(id, version)
         )",
             params![],
         )
@@ -119,10 +120,10 @@ impl Migration for Migration1 {
         tx.execute(
             "CREATE TABLE alert_events (
             id                              INTEGER PRIMARY KEY NOT NULL,
-            alert_guid                      TEXT NOT NULL,
+            alert_id                        INTEGER NOT NULL,
             alert_version                   INTEGER NOT NULL,
             timestamp                       INTEGER NOT NULL,
-            FOREIGN KEY (alert_guid, alert_version) REFERENCES alerts(guid, version)
+            FOREIGN KEY (alert_id, alert_version) REFERENCES alerts(id, version)
         )",
             params![],
         )
@@ -131,14 +132,36 @@ impl Migration for Migration1 {
         tx.execute(
             "CREATE TABLE reminder_events (
             id                              INTEGER PRIMARY KEY NOT NULL,
-            reminder_guid                   TEXT NOT NULL,
+            reminder_id                     INTEGER NOT NULL,
             reminder_version                INTEGER NOT NULL,
             timestamp                       INTEGER NOT NULL,
-            FOREIGN KEY (reminder_guid, reminder_version) REFERENCES reminders(guid, version)
+            FOREIGN KEY (reminder_id, reminder_version) REFERENCES reminders(id, version)
         )",
             params![],
         )
         .context("create table reminder_events")?;
+
+        tx.execute(
+            "CREATE TABLE alert_id_seq (
+            id                              INTEGER PRIMARY KEY NOT NULL
+        )",
+            params![],
+        )
+        .context("create table alert_id_seq")?;
+
+        tx.execute("INSERT INTO alert_id_seq (id) VALUES (1)", params![])
+            .context("init alert_id_seq")?;
+
+        tx.execute(
+            "CREATE TABLE reminder_id_seq (
+            id                              INTEGER PRIMARY KEY NOT NULL
+        )",
+            params![],
+        )
+        .context("create table reminder_id_seq")?;
+
+        tx.execute("INSERT INTO reminder_id_seq (id) VALUES (1)", params![])
+            .context("init reminder_id_seq")?;
 
         tx.execute(
             "CREATE INDEX usage_start_end ON usages(start ASC, end DESC)",

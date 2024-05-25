@@ -1,5 +1,7 @@
+use util::config::Config;
+use util::error::Result;
+
 use crate::objects::{Duration, Timestamp};
-use util::{config::Config, error::Result};
 
 pub struct InteractionWatcher {
     max_idle_duration: Duration,

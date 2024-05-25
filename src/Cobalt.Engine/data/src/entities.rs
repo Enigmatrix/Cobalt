@@ -101,7 +101,7 @@ pub struct Alert {
     pub trigger_action: TriggerAction,
 }
 
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Clone)] // can't impl PartialEq, Eq for f64
 pub struct Reminder {
     pub id: Ref<Self>,
     pub alert: Ref<Alert>,
@@ -109,14 +109,14 @@ pub struct Reminder {
     pub message: String,
 }
 
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct AlertEvent {
     pub id: Ref<Self>,
     pub alert: Ref<Alert>,
     pub timestamp: Timestamp,
 }
 
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct ReminderEvent {
     pub id: Ref<Self>,
     pub reminder: Ref<Reminder>,
@@ -154,9 +154,8 @@ table!(
         "color",
         "identity_is_win32",
         "identity_path_or_aumid",
-        // We do not list icon as a column, as we do not insert nor query icons.
-
-        // "icon"
+        // We do not insert nor query icons, but we put it here anyway
+        "icon"
     ]
 );
 
@@ -201,26 +200,26 @@ table!(
     Alert,
     "alerts",
     id: VersionedId,
-    ["guid", "version", "app_id", "tag_id", "usage_limit", "time_frame", "trigger_action_dim_duration", "trigger_action_message_content", "trigger_action_tag"]
+    ["id", "version", "app_id", "tag_id", "usage_limit", "time_frame", "trigger_action_dim_duration", "trigger_action_message_content", "trigger_action_tag"]
 );
 
 table!(
     Reminder,
     "reminders",
-    id: Id,
-    ["guid", "version", "alert_guid", "alert_version", "threshold", "message"]
+    id: VersionedId,
+    ["id", "version", "alert_id", "alert_version", "threshold", "message"]
 );
 
 table!(
     AlertEvent,
     "alert_events",
-    id: u64,
-    ["id", "alert_guid", "alert_version", "timestamp"]
+    id: Id,
+    ["id", "alert_id", "alert_version", "timestamp"]
 );
 
 table!(
     ReminderEvent,
     "reminder_events",
     id: Id,
-    ["id", "reminder_guid", "reminder_version", "timestamp"]
+    ["id", "reminder_id", "reminder_version", "timestamp"]
 );

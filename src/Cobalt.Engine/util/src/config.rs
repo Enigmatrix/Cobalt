@@ -1,11 +1,10 @@
 use std::time::Duration;
 
-use crate::error::Result;
-use figment::{
-    providers::{Format, Json},
-    Figment,
-};
+use figment::providers::{Format, Json};
+use figment::Figment;
 use serde::Deserialize;
+
+use crate::error::{anyhow, Result};
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "PascalCase")]
@@ -14,15 +13,17 @@ pub struct Config {
     engine_log_filter: String,
     max_idle_duration: Duration,
     poll_duration: Duration,
+    alert_duration: Duration,
 }
 
 impl Config {
-    pub fn connection_string(&self) -> &str {
-        self.connection_strings
+    pub fn connection_string(&self) -> Result<&str> {
+        Ok(self
+            .connection_strings
             .query_context
             .split_once("=")
-            .expect("format of the connection string is Data Source=<path>")
-            .1
+            .ok_or_else(|| anyhow!("format of the connection string is Data Source=<path>"))?
+            .1)
     }
 
     pub fn engine_log_filter(&self) -> &str {
@@ -35,6 +36,10 @@ impl Config {
 
     pub fn poll_duration(&self) -> Duration {
         self.poll_duration
+    }
+
+    pub fn alert_duration(&self) -> Duration {
+        self.alert_duration
     }
 }
 
@@ -53,7 +58,7 @@ pub fn get_config() -> Result<Config> {
 #[test]
 fn extract_query_content_connection_string() -> Result<()> {
     let config = get_config()?;
-    assert_eq!("main.db", config.connection_string());
+    assert_eq!("main.db", config.connection_string()?);
     Ok(())
 }
 
