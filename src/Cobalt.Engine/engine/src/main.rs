@@ -5,7 +5,7 @@ use std::thread;
 use data::db::Database;
 use engine::{Engine, Event};
 use platform::{
-    events::{ForegroundEventWatcher, InteractionWatcher},
+    events::{ForegroundEventWatcher, InteractionWatcher, WindowSession},
     objects::{EventLoop, Timer, Timestamp, Window},
 };
 use util::{
@@ -58,7 +58,7 @@ fn event_loop(
     let poll_dur = config.poll_duration().into();
     let alert_dur = config.alert_duration().into();
 
-    let mut fg_watcher = ForegroundEventWatcher::new(fg)?;
+    let mut fg_watcher = ForegroundEventWatcher::new(WindowSession::new(fg)?)?;
     let mut it_watcher = InteractionWatcher::new(config, now);
 
     let _poll_timer = Timer::new(poll_dur, poll_dur, &mut || {

@@ -1,7 +1,10 @@
 use std::collections::HashMap;
 
 use data::entities::{App, Ref, Session};
-use platform::objects::{ProcessId, Window};
+use platform::{
+    events::WindowSession,
+    objects::{ProcessId, Window},
+};
 use util::error::Result;
 
 pub struct Cache {
@@ -16,12 +19,6 @@ pub struct Cache {
     // A process can have many windows.
     windows: HashMap<ProcessId, Vec<Window>>,
     processes: HashMap<Ref<App>, Vec<ProcessId>>,
-}
-
-#[derive(Debug, Clone, Hash, Eq, PartialEq)]
-pub struct WindowSession {
-    pub window: Window,
-    pub title: String,
 }
 
 pub struct SessionDetails {

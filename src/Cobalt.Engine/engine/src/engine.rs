@@ -3,7 +3,7 @@ use std::rc::Rc;
 
 use data::db::{Database, FoundOrInserted, UsageWriter};
 use data::entities::{AppIdentity, InteractionPeriod, Ref, Session, Usage};
-use platform::events::{ForegroundChangedEvent, InteractionChangedEvent};
+use platform::events::{ForegroundChangedEvent, InteractionChangedEvent, WindowSession};
 use platform::objects::{Process, ProcessId, Timestamp, Window};
 use util::config::Config;
 use util::error::Result;
@@ -11,7 +11,7 @@ use util::future::task::LocalSpawnExt;
 
 use util::tracing::info;
 
-use crate::cache::{AppDetails, Cache, SessionDetails, WindowSession};
+use crate::cache::{AppDetails, Cache, SessionDetails};
 use crate::resolver::AppInfoResolver;
 
 pub struct Engine<'a, S: LocalSpawnExt> {
@@ -68,15 +68,14 @@ impl<'a, S: LocalSpawnExt> Engine<'a, S> {
 
     pub async fn handle(&mut self, event: Event) -> Result<()> {
         match event {
-            Event::ForegroundChanged(ForegroundChangedEvent { at, window, title }) => {
+            Event::ForegroundChanged(ForegroundChangedEvent { at, session }) => {
                 self.current_usage.end = at.into();
                 self.inserter
                     .insert_or_update_usage(&mut self.current_usage)?;
 
-                let ws = WindowSession { window, title };
-                info!("Foreground changed to {:?}", ws);
+                info!("Foreground changed to {:?}", session);
 
-                let session = self.get_session_details(ws)?;
+                let session = self.get_session_details(session)?;
 
                 self.current_usage = Usage {
                     id: Default::default(),
