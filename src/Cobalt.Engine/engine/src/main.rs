@@ -63,8 +63,11 @@ fn event_loop(
 
     let _poll_timer = Timer::new(poll_dur, poll_dur, &mut || {
         let now = Timestamp::now();
+        // if there is a switch event, process it. otherwise, tick to update the usage.
         if let Some(event) = fg_watcher.poll(now)? {
             event_tx.send(Event::ForegroundChanged(event))?;
+        } else {
+            event_tx.send(Event::Tick(now))?;
         }
         if let Some(event) = it_watcher.poll(now)? {
             event_tx.send(Event::InteractionChanged(event))?;

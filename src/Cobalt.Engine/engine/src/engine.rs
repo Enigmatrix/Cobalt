@@ -25,6 +25,7 @@ pub struct Engine<'a, S: LocalSpawnExt> {
 pub enum Event {
     ForegroundChanged(ForegroundChangedEvent),
     InteractionChanged(InteractionChangedEvent),
+    Tick(Timestamp),
 }
 
 impl<'a, S: LocalSpawnExt> Engine<'a, S> {
@@ -67,7 +68,8 @@ impl<'a, S: LocalSpawnExt> Engine<'a, S> {
         match event {
             Event::ForegroundChanged(ForegroundChangedEvent { at, window, title }) => {
                 self.current_usage.end = at.into();
-                self.inserter.insert_usage(&self.current_usage)?;
+                self.inserter
+                    .insert_or_update_usage(&mut self.current_usage)?;
 
                 let ws = WindowSession { window, title };
                 info!("Foreground changed to {:?}", ws);
@@ -80,6 +82,11 @@ impl<'a, S: LocalSpawnExt> Engine<'a, S> {
                     start: at.into(),
                     end: at.into(),
                 };
+            }
+            Event::Tick(now) => {
+                self.current_usage.end = now.into();
+                self.inserter
+                    .insert_or_update_usage(&mut self.current_usage)?;
             }
             Event::InteractionChanged(InteractionChangedEvent::BecameIdle {
                 at,
