@@ -84,7 +84,7 @@ fn insert_usage() -> Result<()> {
         start: 42,
         end: 420,
     };
-    writer.insert_usage(&mut usage)?;
+    writer.insert_or_update_usage(&mut usage)?;
     let usage_from_db = db.conn.query_row("SELECT * FROM usages", params![], |f| {
         Ok(Usage {
             id: f.get(0)?,
@@ -93,8 +93,47 @@ fn insert_usage() -> Result<()> {
             end: f.get(3)?,
         })
     })?;
-    usage.id = Ref::new(1); // not updated by writer
     assert_eq!(usage, usage_from_db);
+    Ok(())
+}
+
+#[test]
+fn update_usage_after_insert_usage() -> Result<()> {
+    let db = test_db()?;
+    let mut writer = UsageWriter::new(&db)?;
+    writer.find_or_insert_app(&AppIdentity::Win32 {
+        path: "notepad.exe".to_string(),
+    })?;
+    let mut sess = Session {
+        id: Default::default(),
+        app: Ref::new(1),
+        title: "TITLE".to_string(),
+    };
+    writer.insert_session(&mut sess)?;
+    let mut usage = Usage {
+        id: Default::default(),
+        session: sess.id.clone(),
+        start: 42,
+        end: 420,
+    };
+    writer.insert_or_update_usage(&mut usage)?;
+    usage.end = 1337;
+    writer.insert_or_update_usage(&mut usage)?;
+
+    let usage_from_db: Vec<_> = db
+        .conn
+        .prepare("SELECT * FROM usages")?
+        .query_map(params![], |f| {
+            Ok(Usage {
+                id: f.get(0)?,
+                session: f.get(1)?,
+                start: f.get(2)?,
+                end: f.get(3)?,
+            })
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
+    assert_eq!(vec![usage], usage_from_db);
+    assert_ne!(usage_from_db[0].end, 420);
     Ok(())
 }
 

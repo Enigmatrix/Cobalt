@@ -72,6 +72,7 @@ pub struct UsageWriter<'a> {
     find_or_insert_app: Statement<'a>,
     insert_session: Statement<'a>,
     insert_usage: Statement<'a>,
+    update_usage: Statement<'a>,
     insert_interaction_period: Statement<'a>,
 }
 
@@ -87,12 +88,14 @@ impl<'a> UsageWriter<'a> {
         )?;
         let insert_session = insert_stmt!(conn, Session)?;
         let insert_usage = insert_stmt!(conn, Usage)?;
+        let update_usage = prepare_stmt!(conn, "UPDATE usages SET end = ? WHERE id = ?")?;
         let insert_interaction_period = insert_stmt!(conn, InteractionPeriod)?;
         Ok(Self {
             conn,
             find_or_insert_app,
             insert_session,
             insert_usage,
+            update_usage,
             insert_interaction_period,
         })
     }
@@ -119,10 +122,15 @@ impl<'a> UsageWriter<'a> {
         Ok(())
     }
 
-    /// Insert a [Usage] into the [Database]
-    pub fn insert_usage(&mut self, usage: &Usage) -> Result<()> {
-        self.insert_usage
-            .execute(params![usage.session, usage.start, usage.end])?;
+    /// Insert or update (only the end timestamp) a [Usage] into the [Database]
+    pub fn insert_or_update_usage(&mut self, usage: &mut Usage) -> Result<()> {
+        if usage.id == Ref::default() {
+            self.insert_usage
+                .execute(params![usage.session, usage.start, usage.end])?;
+            usage.id = Ref::new(self.last_insert_id());
+        } else {
+            self.update_usage.execute(params![usage.end, usage.id])?;
+        }
         Ok(())
     }
 
