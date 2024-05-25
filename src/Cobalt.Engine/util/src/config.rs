@@ -4,7 +4,7 @@ use figment::providers::{Format, Json};
 use figment::Figment;
 use serde::Deserialize;
 
-use crate::error::Result;
+use crate::error::{anyhow, Result};
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "PascalCase")]
@@ -17,12 +17,13 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn connection_string(&self) -> &str {
-        self.connection_strings
+    pub fn connection_string(&self) -> Result<&str> {
+        Ok(self
+            .connection_strings
             .query_context
             .split_once("=")
-            .expect("format of the connection string is Data Source=<path>")
-            .1
+            .ok_or_else(|| anyhow!("format of the connection string is Data Source=<path>"))?
+            .1)
     }
 
     pub fn engine_log_filter(&self) -> &str {
@@ -57,7 +58,7 @@ pub fn get_config() -> Result<Config> {
 #[test]
 fn extract_query_content_connection_string() -> Result<()> {
     let config = get_config()?;
-    assert_eq!("main.db", config.connection_string());
+    assert_eq!("main.db", config.connection_string()?);
     Ok(())
 }
 

@@ -6,9 +6,9 @@ use data::entities::{AppIdentity, InteractionPeriod, Ref, Session, Usage};
 use platform::events::{ForegroundChangedEvent, InteractionChangedEvent, WindowSession};
 use platform::objects::{Process, ProcessId, Timestamp, Window};
 use util::config::Config;
-use util::error::Result;
+use util::error::{Context, Result};
 use util::future::task::LocalSpawnExt;
-use util::tracing::info;
+use util::tracing::{info, trace, ResultTraceExt};
 
 use crate::cache::{AppDetails, Cache, SessionDetails};
 use crate::resolver::AppInfoResolver;
@@ -72,18 +72,25 @@ impl<'a, S: LocalSpawnExt> Engine<'a, S> {
                 self.inserter
                     .insert_or_update_usage(&mut self.current_usage)?;
 
-                info!("Foreground changed to {:?}", session);
+                info!("fg switch: {:?}", session);
 
-                let session = self.get_session_details(session)?;
+                let session_result = self.get_session_details(session);
 
-                self.current_usage = Usage {
-                    id: Default::default(),
-                    session,
-                    start: at.into(),
-                    end: at.into(),
-                };
+                // If we have an error getting the session, we don't change the current usage.
+                // An alternative would be to insert some sort of 'invalid usage' marker.
+                if let Ok(session) = &session_result {
+                    self.current_usage = Usage {
+                        id: Default::default(),
+                        session: session.clone(),
+                        start: at.into(),
+                        end: at.into(),
+                    };
+                }
+
+                session_result.warn();
             }
             Event::Tick(now) => {
+                trace!("tick at {:?}", now);
                 self.current_usage.end = now.into();
                 self.inserter
                     .insert_or_update_usage(&mut self.current_usage)?;
@@ -157,7 +164,8 @@ impl<'a, S: LocalSpawnExt> Engine<'a, S> {
                     spawner.spawn_local(async move {
                         AppInfoResolver::update_app(&config, id, identity)
                             .await
-                            .expect("update app with info")
+                            .context("update app with info")
+                            .error();
                     })?;
                 }
 

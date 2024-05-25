@@ -54,7 +54,7 @@ pub struct Database {
 
 impl Database {
     pub fn new(config: &Config) -> Result<Self> {
-        let path = config.connection_string();
+        let path = config.connection_string()?;
         let mut conn = Connection::open(path).context("open conn")?;
         conn.pragma_update(None, "journal_mode", "WAL")
             .context("enable WAL")?;

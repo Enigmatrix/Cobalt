@@ -5,6 +5,7 @@ use std::path::PathBuf;
 use std::sync::OnceLock;
 
 use util::error::{bail, Context, Result};
+use util::tracing::ResultTraceExt;
 use windows::Wdk::System::Threading::{
     NtQueryInformationProcess, ProcessImageFileNameWin32, PROCESSINFOCLASS,
 };
@@ -144,7 +145,9 @@ impl Process {
 
 impl Drop for Process {
     fn drop(&mut self) {
-        unsafe { CloseHandle(self.handle) }.expect("close process handle");
+        unsafe { CloseHandle(self.handle) }
+            .context("close process handle")
+            .warn();
     }
 }
 #[cfg(test)]

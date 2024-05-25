@@ -7,6 +7,7 @@ use platform::objects::{
     Process, ProcessId, Progress, Timestamp as PlatformTimestamp, ToastManager, Window,
 };
 use util::error::Result;
+use util::tracing::ResultTraceExt;
 
 use crate::cache::Cache;
 
@@ -44,7 +45,8 @@ impl<'a> Sentry<'a> {
                 &triggered_reminder.name,
                 &triggered_reminder.reminder.message,
                 triggered_reminder.reminder.threshold,
-            )?;
+            )
+            .warn();
             self.mgr.insert_reminder_event(&ReminderEvent {
                 id: Default::default(),
                 reminder: triggered_reminder.reminder.id,
@@ -102,7 +104,7 @@ impl<'a> Sentry<'a> {
                 let processes = self.processes_for_target(&alert.target)?;
                 for process in processes {
                     let process = Process::new_killable(process)?;
-                    self.handle_kill_action(&process)?;
+                    self.handle_kill_action(&process).warn();
                 }
             }
             TriggerAction::Dim(dur) => {
@@ -111,12 +113,12 @@ impl<'a> Sentry<'a> {
                 let end: Timestamp = now.into();
                 let progress = (end - start) as f64 / (*dur as f64);
                 for window in windows {
-                    self.handle_dim_action(&window, progress.min(1.0f64))?;
+                    self.handle_dim_action(&window, progress.min(1.0f64)).warn();
                 }
             }
             TriggerAction::Message(msg) => {
                 if timestamp.is_none() {
-                    self.handle_message_action(name, msg)?;
+                    self.handle_message_action(name, msg).warn();
                 }
             }
         }
@@ -129,8 +131,6 @@ impl<'a> Sentry<'a> {
         }
         Ok(())
     }
-
-    // TODO warn on failure, instead of bubbling up/ panic
 
     pub fn handle_kill_action(&self, process: &Process) -> Result<()> {
         process.kill(None)?;

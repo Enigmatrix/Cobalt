@@ -65,14 +65,14 @@ impl Timestamp {
         let ft_ticks = self.ticks - FILE_TIME_OFFSET;
         unsafe {
             FileTimeToSystemTime(&ft_ticks as *const _ as *const _, &mut sys)
-                .expect("get system time")
+                .expect("get system time") // should never fail
         };
         sys
     }
 
     fn from_system_time(sys: SYSTEMTIME) -> Self {
         let mut ft: FILETIME = FILETIME::default();
-        unsafe { SystemTimeToFileTime(&sys as *const _, &mut ft).expect("get file time") };
+        unsafe { SystemTimeToFileTime(&sys as *const _, &mut ft).expect("get file time") }; // should never fail
         let ticks = Self::file_time_to_ticks(ft);
         Timestamp { ticks }
     }

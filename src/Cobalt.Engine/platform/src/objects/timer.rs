@@ -1,6 +1,7 @@
 use std::ffi::c_void;
 
 use util::error::*;
+use util::tracing::ResultTraceExt;
 use windows::Win32::Foundation::{BOOLEAN, HANDLE};
 use windows::Win32::System::Threading::{
     CreateTimerQueueTimer, DeleteTimerQueueTimer, WORKER_THREAD_FLAGS,
@@ -53,6 +54,7 @@ impl Drop for Timer {
             // this deletion to finish execution (esp when we have a running callback in timer)
             DeleteTimerQueueTimer(HANDLE(0), self.handle, HANDLE(-1))
         }
-        .expect("drop timer");
+        .context("drop timer")
+        .warn();
     }
 }

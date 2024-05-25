@@ -8,16 +8,24 @@ use platform::events::{ForegroundEventWatcher, InteractionWatcher, WindowSession
 use platform::objects::{EventLoop, Timer, Timestamp, Window};
 use util::channels::{self, Receiver, Sender};
 use util::config::{self, Config};
-use util::error::Result;
+use util::error::{Context, Result};
 use util::future::executor::{LocalPool, LocalSpawner};
 use util::future::task::LocalSpawnExt;
+use util::tracing::{error, ResultTraceExt};
 
 mod cache;
 mod engine;
 mod resolver;
 mod sentry;
 
-fn main() -> Result<()> {
+fn main() {
+    if let Err(report) = real_main() {
+        error!("fatal error caught in main: {:?}", report);
+        std::process::exit(1);
+    }
+}
+
+fn real_main() -> Result<()> {
     let config = config::get_config()?;
     util::setup(&config)?;
     platform::setup()?;
@@ -31,11 +39,14 @@ fn main() -> Result<()> {
         let config = config.clone();
         let fg = fg.clone();
         thread::spawn(move || {
-            event_loop(&config, event_tx, alert_tx, fg, now).expect("event loop");
+            event_loop(&config, event_tx, alert_tx, fg, now)
+                .context("event loop")
+                .error();
         })
     };
 
     processor(&config, fg, now, event_rx, alert_rx)?;
+    // can't turn this to util::error::Result :/
     ev_thread.join().expect("event loop thread");
     Ok(())
 }
@@ -52,7 +63,8 @@ fn event_loop(
     let poll_dur = config.poll_duration().into();
     let alert_dur = config.alert_duration().into();
 
-    let mut fg_watcher = ForegroundEventWatcher::new(WindowSession::new(fg)?)?;
+    let window_session = WindowSession::new(fg)?;
+    let mut fg_watcher = ForegroundEventWatcher::new(window_session)?;
     let mut it_watcher = InteractionWatcher::new(config, now);
 
     let _poll_timer = Timer::new(poll_dur, poll_dur, &mut || {
@@ -125,7 +137,8 @@ fn processor(
     pool.spawner().spawn_local(async move {
         engine_loop(&_config, _cache, event_rx, &spawner, fg, now)
             .await
-            .expect("engine loop");
+            .context("engine loop")
+            .error();
     })?;
 
     let _config = config.clone();
@@ -133,7 +146,8 @@ fn processor(
     pool.spawner().spawn_local(async move {
         sentry_loop(&_config, _cache, alert_rx)
             .await
-            .expect("sentry loop");
+            .context("sentry loop")
+            .error();
     })?;
 
     pool.run();
