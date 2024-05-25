@@ -1,4 +1,5 @@
 pub use tracing::*;
+use tracing_appender::rolling::daily;
 pub use tracing_subscriber::prelude::*;
 use tracing_subscriber::{fmt, registry, EnvFilter};
 
@@ -47,9 +48,15 @@ impl<T: Default> ResultTraceExt<T> for Result<T> {
 
 pub fn setup(filter_directives: &str) -> Result<()> {
     let filter = EnvFilter::new(filter_directives);
+    let rolling = daily("logs", "Cobalt.Engine.log");
+
+    #[cfg(debug_assertions)]
+    let writers = || rolling.and(std::io::stdout);
+    #[cfg(not(debug_assertions))]
+    let writers = || rolling;
 
     registry()
-        .with(fmt::layer().with_filter(filter)) // default fmt layer
+        .with(fmt::layer().with_writer(writers()).with_filter(filter)) // default fmt layer
         .try_init()
         .context("initialize tracing layers")?;
     Ok(())
