@@ -108,7 +108,7 @@ impl<'a, S: LocalSpawnExt> Engine<'a, S> {
             }
             Event::InteractionChanged(InteractionChangedEvent::BecameActive { at }) => {
                 info!("became active at {:?}", at);
-                self.active_period_start = at.into();
+                self.active_period_start = at;
             }
         };
         Ok(())
