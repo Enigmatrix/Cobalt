@@ -51,6 +51,18 @@ impl Cache {
         })
     }
 
+    pub fn remove_process(&mut self, process: ProcessId) {
+        self.apps.remove(&process);
+        if let Some(windows) = self.windows.remove(&process) {
+            self.sessions.retain(|ws, _| !windows.contains(&ws.window));
+        }
+        self.processes.retain(|_, pids| {
+            // remove pid from list, and remove the entry altogether if it's empty
+            pids.retain(|pid| *pid != process);
+            !pids.is_empty()
+        });
+    }
+
     pub fn get_or_insert_session_for_window(
         &mut self,
         ws: WindowSession,

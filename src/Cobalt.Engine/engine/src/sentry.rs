@@ -103,12 +103,12 @@ impl<'a> Sentry<'a> {
         match &alert.trigger_action {
             TriggerAction::Kill => {
                 let processes = self.processes_for_target(&alert.target)?;
-                for process in processes {
-                    info!(?alert, "killing process {:?}", process);
-                    let process = Process::new_killable(process)?;
+                for pid in processes {
+                    info!(?alert, "killing process {:?}", pid);
+                    let process = Process::new_killable(pid)?;
                     self.handle_kill_action(&process).warn();
+                    self.cache.borrow_mut().remove_process(pid);
                 }
-                // TODO remove processes and window from cache
             }
             TriggerAction::Dim(dur) => {
                 let windows = self.windows_for_target(&alert.target)?;
