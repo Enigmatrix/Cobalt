@@ -1,25 +1,20 @@
 use std::hash::{Hash, Hasher};
 
 use util::error::{Context, Result};
-use windows::Win32::{
-    Foundation::{COLORREF, HWND},
-    Storage::EnhancedStorage::PKEY_AppUserModel_ID,
-    System::Com::{CoTaskMemFree, StructuredStorage::PropVariantToStringAlloc},
-    UI::{
-        Shell::PropertiesSystem::{IPropertyStore, SHGetPropertyStoreForWindow},
-        WindowsAndMessaging::{
-            GetForegroundWindow, GetWindowTextLengthW, GetWindowTextW, GetWindowThreadProcessId,
-            SetLayeredWindowAttributes, SetWindowLongW, GWL_EXSTYLE, LWA_ALPHA, WS_EX_LAYERED,
-        },
-    },
+use windows::Win32::Foundation::{COLORREF, HWND};
+use windows::Win32::Storage::EnhancedStorage::PKEY_AppUserModel_ID;
+use windows::Win32::System::Com::CoTaskMemFree;
+use windows::Win32::System::Com::StructuredStorage::PropVariantToStringAlloc;
+use windows::Win32::UI::Shell::PropertiesSystem::{IPropertyStore, SHGetPropertyStoreForWindow};
+use windows::Win32::UI::WindowsAndMessaging::{
+    GetForegroundWindow, GetWindowTextLengthW, GetWindowTextW, GetWindowThreadProcessId,
+    SetLayeredWindowAttributes, SetWindowLongW, GWL_EXSTYLE, LWA_ALPHA, WS_EX_LAYERED,
 };
 
-use crate::{
-    buf::{buf, Buffer, WideBuffer},
-    error::Win32Error,
-    objects::ProcessId,
-    win32,
-};
+use crate::buf::{buf, Buffer, WideBuffer};
+use crate::error::Win32Error;
+use crate::objects::ProcessId;
+use crate::win32;
 
 /*
  * For the same window, HWND values are the same. If a window is destroyed,

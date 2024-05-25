@@ -8,16 +8,16 @@ use util::error::{bail, Context, Result};
 use windows::Wdk::System::Threading::{
     NtQueryInformationProcess, ProcessImageFileNameWin32, PROCESSINFOCLASS,
 };
-use windows::Win32::UI::Shell::DoEnvironmentSubstW;
-use windows::Win32::{
-    Foundation::{CloseHandle, HANDLE, UNICODE_STRING, WAIT_TIMEOUT},
-    System::Threading::{
-        IsImmersiveProcess, OpenProcess, TerminateProcess, WaitForSingleObject,
-        PROCESS_QUERY_LIMITED_INFORMATION, PROCESS_TERMINATE,
-    },
+use windows::Win32::Foundation::{CloseHandle, HANDLE, UNICODE_STRING, WAIT_TIMEOUT};
+use windows::Win32::System::Threading::{
+    IsImmersiveProcess, OpenProcess, TerminateProcess, WaitForSingleObject,
+    PROCESS_QUERY_LIMITED_INFORMATION, PROCESS_TERMINATE,
 };
+use windows::Win32::UI::Shell::DoEnvironmentSubstW;
 
-use crate::{adapt_size, buf::WideBuffer, error::NtError};
+use crate::adapt_size;
+use crate::buf::WideBuffer;
+use crate::error::NtError;
 
 pub type ProcessId = u32;
 
@@ -149,8 +149,9 @@ impl Drop for Process {
 }
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::process::Command;
+
+    use super::*;
 
     #[test]
     fn kill_notepad() -> Result<()> {

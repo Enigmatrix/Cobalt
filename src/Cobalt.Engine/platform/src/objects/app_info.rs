@@ -4,9 +4,10 @@ use util::error::Result;
 use windows::core::Interface;
 use windows::ApplicationModel::AppInfo as UWPAppInfo;
 use windows::Foundation::Size;
-use windows::Storage::Streams::{Buffer, IBuffer, InputStreamOptions};
-use windows::Storage::{
-    FileProperties::ThumbnailMode, StorageFile, Streams::IRandomAccessStreamWithContentType,
+use windows::Storage::FileProperties::ThumbnailMode;
+use windows::Storage::StorageFile;
+use windows::Storage::Streams::{
+    Buffer, IBuffer, IRandomAccessStreamWithContentType, InputStreamOptions,
 };
 use windows::Win32::System::WinRT::IBufferByteAccess;
 

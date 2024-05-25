@@ -1,10 +1,8 @@
 use std::collections::HashMap;
 
 use data::entities::{App, Ref, Session};
-use platform::{
-    events::WindowSession,
-    objects::{ProcessId, Window},
-};
+use platform::events::WindowSession;
+use platform::objects::{ProcessId, Window};
 use util::error::Result;
 
 pub struct Cache {

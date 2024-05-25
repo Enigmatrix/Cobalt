@@ -1,10 +1,10 @@
-use data::{
-    db::{AppUpdater, Database},
-    entities::{App, AppIdentity, Ref},
-};
+use data::db::{AppUpdater, Database};
+use data::entities::{App, AppIdentity, Ref};
 use platform::objects::AppInfo;
-use rand::{prelude::SliceRandom, rngs::ThreadRng};
-use util::{config::Config, error::Result};
+use rand::prelude::SliceRandom;
+use rand::rngs::ThreadRng;
+use util::config::Config;
+use util::error::Result;
 
 pub struct AppInfoResolver;
 

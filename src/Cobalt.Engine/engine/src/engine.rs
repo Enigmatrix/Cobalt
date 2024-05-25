@@ -8,7 +8,6 @@ use platform::objects::{Process, ProcessId, Timestamp, Window};
 use util::config::Config;
 use util::error::Result;
 use util::future::task::LocalSpawnExt;
-
 use util::tracing::info;
 
 use crate::cache::{AppDetails, Cache, SessionDetails};

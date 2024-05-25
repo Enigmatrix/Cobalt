@@ -1,11 +1,10 @@
 use std::time::Duration;
 
-use crate::error::Result;
-use figment::{
-    providers::{Format, Json},
-    Figment,
-};
+use figment::providers::{Format, Json};
+use figment::Figment;
 use serde::Deserialize;
+
+use crate::error::Result;
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "PascalCase")]

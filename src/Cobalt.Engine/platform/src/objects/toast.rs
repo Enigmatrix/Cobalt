@@ -1,10 +1,7 @@
-use windows::core::Interface;
-use windows::{
-    Data::Xml::Dom::{XmlDocument, XmlElement},
-    UI::Notifications::{ToastNotification, ToastNotificationManager},
-};
-
 use util::error::Result;
+use windows::core::Interface;
+use windows::Data::Xml::Dom::{XmlDocument, XmlElement};
+use windows::UI::Notifications::{ToastNotification, ToastNotificationManager};
 
 pub struct Progress {
     pub title: String,

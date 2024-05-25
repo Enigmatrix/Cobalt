@@ -1,6 +1,7 @@
-use super::Migration;
 use rusqlite::{params, Connection};
 use util::error::{bail, Context, Result};
+
+use super::Migration;
 
 pub struct Migration1;
 

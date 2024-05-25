@@ -1,10 +1,8 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use data::{
-    db::{AlertManager, Database, TriggeredAlert},
-    entities::{AlertEvent, ReminderEvent, Target, Timestamp, TriggerAction},
-};
+use data::db::{AlertManager, Database, TriggeredAlert};
+use data::entities::{AlertEvent, ReminderEvent, Target, Timestamp, TriggerAction};
 use platform::objects::{
     Process, ProcessId, Progress, Timestamp as PlatformTimestamp, ToastManager, Window,
 };

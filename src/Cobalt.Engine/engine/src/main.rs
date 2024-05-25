@@ -4,19 +4,13 @@ use std::thread;
 
 use data::db::Database;
 use engine::{Engine, Event};
-use platform::{
-    events::{ForegroundEventWatcher, InteractionWatcher, WindowSession},
-    objects::{EventLoop, Timer, Timestamp, Window},
-};
-use util::{
-    channels::{self, Receiver, Sender},
-    config::{self, Config},
-    error::Result,
-    future::{
-        executor::{LocalPool, LocalSpawner},
-        task::LocalSpawnExt,
-    },
-};
+use platform::events::{ForegroundEventWatcher, InteractionWatcher, WindowSession};
+use platform::objects::{EventLoop, Timer, Timestamp, Window};
+use util::channels::{self, Receiver, Sender};
+use util::config::{self, Config};
+use util::error::Result;
+use util::future::executor::{LocalPool, LocalSpawner};
+use util::future::task::LocalSpawnExt;
 
 mod cache;
 mod engine;

@@ -1,5 +1,6 @@
-use crate::objects::{Timestamp, Window};
 use util::error::{Context, Result};
+
+use crate::objects::{Timestamp, Window};
 
 pub struct ForegroundEventWatcher {
     session: WindowSession,

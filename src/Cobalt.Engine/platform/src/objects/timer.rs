@@ -1,13 +1,12 @@
 use std::ffi::c_void;
 
+use util::error::*;
 use windows::Win32::Foundation::{BOOLEAN, HANDLE};
 use windows::Win32::System::Threading::{
     CreateTimerQueueTimer, DeleteTimerQueueTimer, WORKER_THREAD_FLAGS,
 };
 
 use crate::objects::Duration;
-
-use util::error::*;
 
 /// Win32-based [Timer]. Needs to be scheduled onto a [EventLoop].
 pub struct Timer {

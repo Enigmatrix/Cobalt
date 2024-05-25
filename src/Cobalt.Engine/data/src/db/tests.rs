@@ -1,6 +1,5 @@
-use crate::entities::Tag;
-
 use super::*;
+use crate::entities::Tag;
 
 fn test_db() -> Result<Database> {
     let mut conn = Connection::open_in_memory()?;

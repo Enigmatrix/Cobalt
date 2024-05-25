@@ -1,20 +1,16 @@
 use std::io::Write;
 
 use rusqlite::{params, Connection, Statement};
-use util::{
-    config::Config,
-    error::{Context, Result},
-    time::{TimeSystem, ToTicks},
-};
+use util::config::Config;
+use util::error::{Context, Result};
+use util::time::{TimeSystem, ToTicks};
 
-use crate::{
-    entities::{
-        Alert, AlertEvent, App, AppIdentity, InteractionPeriod, Ref, Reminder, ReminderEvent,
-        Session, Target, TimeFrame, Timestamp, TriggerAction, Usage, VersionedId,
-    },
-    migrations::Migrator,
-    table::Table,
+use crate::entities::{
+    Alert, AlertEvent, App, AppIdentity, InteractionPeriod, Ref, Reminder, ReminderEvent, Session,
+    Target, TimeFrame, Timestamp, TriggerAction, Usage, VersionedId,
 };
+use crate::migrations::Migrator;
+use crate::table::Table;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum FoundOrInserted<T: Table> {

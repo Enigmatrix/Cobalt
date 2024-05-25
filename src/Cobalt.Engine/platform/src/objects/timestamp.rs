@@ -1,12 +1,11 @@
 use std::mem::{self, MaybeUninit};
 use std::{fmt, ops};
 
+use util::error::Result;
 use util::time::{TimeSystem, ToTicks};
 use windows::Win32::Foundation::{FILETIME, SYSTEMTIME};
 use windows::Win32::System::SystemInformation::{GetSystemTimePreciseAsFileTime, GetTickCount64};
 use windows::Win32::System::Time::{FileTimeToSystemTime, SystemTimeToFileTime};
-
-use util::error::Result;
 
 // https://github.com/dotnet/runtime/blob/333b3d898dbc4372046f9ba74ad912fba62d55ff/src/libraries/System.Private.CoreLib/src/System/DateTime.cs
 const MICROSECONDS_PER_MILLISECOND: u64 = 1000;
