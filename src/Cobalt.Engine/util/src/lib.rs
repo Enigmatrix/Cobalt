@@ -8,6 +8,7 @@ pub mod tracing;
 use crate::config::Config;
 use crate::error::Result;
 
+/// Setup all utils
 pub fn setup(config: &Config) -> Result<()> {
     error::setup()?;
     tracing::setup(config.engine_log_filter())?;
