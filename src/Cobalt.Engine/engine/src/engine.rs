@@ -138,14 +138,13 @@ impl<'a, S: LocalSpawnExt> Engine<'a, S> {
     ) -> Result<AppDetails> {
         let process = Process::new(pid)?;
 
-        let identity = if process.is_uwp(None)? {
+        let path = process.path()?;
+        let identity = if process.is_uwp(Some(&path))? {
             AppIdentity::Uwp {
                 aumid: window.aumid()?,
             }
         } else {
-            AppIdentity::Win32 {
-                path: process.path()?,
-            }
+            AppIdentity::Win32 { path }
         };
 
         let found_app = inserter.find_or_insert_app(&identity)?;
@@ -191,6 +190,7 @@ impl<'a, S: LocalSpawnExt> Engine<'a, S> {
 
         Ok(SessionDetails {
             session: session.id,
+            pid,
         })
     }
 }

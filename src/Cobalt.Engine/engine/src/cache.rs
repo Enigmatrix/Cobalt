@@ -23,6 +23,7 @@ pub struct Cache {
 
 pub struct SessionDetails {
     pub session: Ref<Session>,
+    pub pid: ProcessId,
 }
 
 pub struct AppDetails {
@@ -69,7 +70,7 @@ impl Cache {
 
         let created = { create(self)? };
         self.windows
-            .entry(ws.window.pid()?)
+            .entry(created.pid)
             .or_default()
             .push(ws.window.clone());
 
@@ -122,6 +123,7 @@ fn inner_mut_compiles() {
                 })?;
                 Ok(SessionDetails {
                     session: Ref::new(1),
+                    pid: process,
                 })
             },
         )
