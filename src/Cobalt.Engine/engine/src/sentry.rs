@@ -7,7 +7,7 @@ use platform::objects::{
     Process, ProcessId, Progress, Timestamp as PlatformTimestamp, ToastManager, Window,
 };
 use util::error::Result;
-use util::tracing::ResultTraceExt;
+use util::tracing::{info, ResultTraceExt};
 
 use crate::cache::Cache;
 
@@ -41,6 +41,7 @@ impl<'a> Sentry<'a> {
 
         let reminder_hits = self.mgr.triggered_reminders(&now)?;
         for triggered_reminder in reminder_hits {
+            info!(?triggered_reminder, "send message");
             self.handle_reminder_message(
                 &triggered_reminder.name,
                 &triggered_reminder.reminder.message,
@@ -103,9 +104,11 @@ impl<'a> Sentry<'a> {
             TriggerAction::Kill => {
                 let processes = self.processes_for_target(&alert.target)?;
                 for process in processes {
+                    info!(?alert, "killing process {:?}", process);
                     let process = Process::new_killable(process)?;
                     self.handle_kill_action(&process).warn();
                 }
+                // TODO remove processes and window from cache
             }
             TriggerAction::Dim(dur) => {
                 let windows = self.windows_for_target(&alert.target)?;
@@ -113,11 +116,14 @@ impl<'a> Sentry<'a> {
                 let end: Timestamp = now.into();
                 let progress = (end - start) as f64 / (*dur as f64);
                 for window in windows {
-                    self.handle_dim_action(&window, progress.min(1.0f64)).warn();
+                    let dim_level = 1.0f64 - progress.min(1.0f64);
+                    info!(?alert, "dimming window {:?} to {}", window, dim_level);
+                    self.handle_dim_action(&window, dim_level).warn();
                 }
             }
             TriggerAction::Message(msg) => {
                 if timestamp.is_none() {
+                    info!(?alert, "send message {:?}: {:?}", name, msg);
                     self.handle_message_action(name, msg).warn();
                 }
             }
@@ -143,7 +149,7 @@ impl<'a> Sentry<'a> {
     }
 
     pub fn handle_dim_action(&self, window: &Window, dim: f64) -> Result<()> {
-        window.dim(1.0f64 - dim)?;
+        window.dim(dim)?;
         Ok(())
     }
 

@@ -5,6 +5,7 @@ use rand::prelude::SliceRandom;
 use rand::rngs::ThreadRng;
 use util::config::Config;
 use util::error::Result;
+use util::tracing::info;
 
 pub struct AppInfoResolver;
 
@@ -17,6 +18,8 @@ impl AppInfoResolver {
     }
 
     pub async fn update_app(config: &Config, app: Ref<App>, identity: AppIdentity) -> Result<()> {
+        info!("updating app info {:?} ({:?})", app, identity);
+
         let app_info = Self::resolve(&identity).await?;
 
         let mut db = Database::new(config)?;

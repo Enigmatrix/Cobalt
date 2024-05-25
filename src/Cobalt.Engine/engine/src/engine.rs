@@ -8,7 +8,7 @@ use platform::objects::{Process, ProcessId, Timestamp, Window};
 use util::config::Config;
 use util::error::{Context, Result};
 use util::future::task::LocalSpawnExt;
-use util::tracing::{info, trace, ResultTraceExt};
+use util::tracing::{info, info_span, trace, ResultTraceExt};
 
 use crate::cache::{AppDetails, Cache, SessionDetails};
 use crate::resolver::AppInfoResolver;
@@ -68,11 +68,11 @@ impl<'a, S: LocalSpawnExt> Engine<'a, S> {
     pub async fn handle(&mut self, event: Event) -> Result<()> {
         match event {
             Event::ForegroundChanged(ForegroundChangedEvent { at, session }) => {
+                info!("fg switch: {:?}", session);
+
                 self.current_usage.end = at.into();
                 self.inserter
                     .insert_or_update_usage(&mut self.current_usage)?;
-
-                info!("fg switch: {:?}", session);
 
                 let session_result = self.get_session_details(session);
 
@@ -91,6 +91,7 @@ impl<'a, S: LocalSpawnExt> Engine<'a, S> {
             }
             Event::Tick(now) => {
                 trace!("tick at {:?}", now);
+
                 self.current_usage.end = now.into();
                 self.inserter
                     .insert_or_update_usage(&mut self.current_usage)?;
@@ -101,6 +102,7 @@ impl<'a, S: LocalSpawnExt> Engine<'a, S> {
                 recorded_key_presses,
             }) => {
                 info!("became idle at {:?}", at);
+
                 self.inserter
                     .insert_interaction_period(&InteractionPeriod {
                         id: Default::default(),
@@ -113,6 +115,7 @@ impl<'a, S: LocalSpawnExt> Engine<'a, S> {
             }
             Event::InteractionChanged(InteractionChangedEvent::BecameActive { at }) => {
                 info!("became active at {:?}", at);
+
                 self.active_period_start = at;
             }
         };
@@ -142,6 +145,11 @@ impl<'a, S: LocalSpawnExt> Engine<'a, S> {
         pid: ProcessId,
         window: &Window,
     ) -> Result<AppDetails> {
+        let span = info_span!("create_app_for_process", ?pid, ?window);
+        let _guard = span.enter();
+
+        trace!(parent: &span, "create/find");
+
         let process = Process::new(pid)?;
 
         let path = process.path()?;
@@ -158,6 +166,8 @@ impl<'a, S: LocalSpawnExt> Engine<'a, S> {
             FoundOrInserted::Found(id) => id,
             FoundOrInserted::Inserted(id) => {
                 {
+                    info!(parent: &span, "created");
+
                     let config = config.clone();
                     let id = id.clone();
 
@@ -183,6 +193,8 @@ impl<'a, S: LocalSpawnExt> Engine<'a, S> {
         window: &Window,
         title: String,
     ) -> Result<SessionDetails> {
+        info!(?window, ?title, "create session for window");
+
         let pid = window.pid()?;
         let AppDetails { app } = cache.get_or_insert_app_for_process(pid, |_| {
             Self::create_app_for_process(inserter, config, spawner, pid, window)

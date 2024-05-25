@@ -11,7 +11,7 @@ use util::config::{self, Config};
 use util::error::{Context, Result};
 use util::future::executor::{LocalPool, LocalSpawner};
 use util::future::task::LocalSpawnExt;
-use util::tracing::{error, ResultTraceExt};
+use util::tracing::{error, info, ResultTraceExt};
 
 mod cache;
 mod engine;
@@ -28,6 +28,7 @@ fn main() {
 fn real_main() -> Result<()> {
     let config = config::get_config()?;
     util::setup(&config)?;
+    info!("starting engine");
     platform::setup()?;
 
     let (event_tx, event_rx) = channels::unbounded();
