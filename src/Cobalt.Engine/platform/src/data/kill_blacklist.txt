@@ -1,0 +1,20 @@
+%windir%\explorer.exe
+%windir%\system32\WerFault.exe
+%programfiles%\Internet Explorer\iexplore.exe
+%programfiles(x86)%\Internet Explorer\iexplore.exe
+%windir%\system32\winlogon.exe
+%windir%\system32\wininit.exe
+%windir%\system32\csrss.exe
+%windir%\system32\lsass.exe
+%windir%\system32\smss.exe
+%windir%\system32\services.exe
+%windir%\system32\taskeng.exe
+%windir%\system32\taskhost.exe
+%windir%\system32\dwm.exe
+%windir%\system32\conhost.exe
+%windir%\system32\svchost.exe
+%windir%\system32\sihost.exe
+%programfiles%\Windows Defender\msmpeng.exe
+%programfiles%\Windows Defender\nissrv.exe
+%windir%\system32\backgroundTaskHost.exe
+%windir%\system32\backgroundTransferHost.exe

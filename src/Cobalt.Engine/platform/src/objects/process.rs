@@ -1,16 +1,19 @@
+use std::ffi::OsString;
 use std::mem;
+use std::os::windows::ffi::OsStringExt;
+use std::path::PathBuf;
+use std::sync::OnceLock;
 
-use util::error::{Context, Result};
-use windows::{
-    Wdk::System::Threading::{
-        NtQueryInformationProcess, ProcessImageFileNameWin32, PROCESSINFOCLASS,
-    },
-    Win32::{
-        Foundation::{CloseHandle, HANDLE, UNICODE_STRING, WAIT_TIMEOUT},
-        System::Threading::{
-            IsImmersiveProcess, OpenProcess, TerminateProcess, WaitForSingleObject,
-            PROCESS_QUERY_LIMITED_INFORMATION,
-        },
+use util::error::{bail, Context, Result};
+use windows::Wdk::System::Threading::{
+    NtQueryInformationProcess, ProcessImageFileNameWin32, PROCESSINFOCLASS,
+};
+use windows::Win32::UI::Shell::DoEnvironmentSubstW;
+use windows::Win32::{
+    Foundation::{CloseHandle, HANDLE, UNICODE_STRING, WAIT_TIMEOUT},
+    System::Threading::{
+        IsImmersiveProcess, OpenProcess, TerminateProcess, WaitForSingleObject,
+        PROCESS_QUERY_LIMITED_INFORMATION, PROCESS_TERMINATE,
     },
 };
 
@@ -24,10 +27,51 @@ pub struct Process {
     handle: HANDLE,
 }
 
+static BLACKLIST: OnceLock<Vec<OsString>> = OnceLock::new();
+
+fn is_path_in_blacklist(path: impl Into<PathBuf>) -> bool {
+    let path = path.into();
+    BLACKLIST
+        .get_or_init(kill_blacklist)
+        .iter()
+        .any(|s| s.eq_ignore_ascii_case(path.as_os_str()))
+}
+
+fn kill_blacklist() -> Vec<OsString> {
+    let blacklist_str = include_str!("../data/kill_blacklist.txt");
+    let blacklist = blacklist_str.lines().map(expand_env_str).collect();
+    blacklist
+}
+
+fn expand_env_str(s: &str) -> OsString {
+    let mut len = 128 + s.len() + 1;
+    let wide = s.encode_utf16().chain(Some(0)).collect::<Vec<_>>();
+    let buf = loop {
+        let mut buf = vec![0u16; len];
+        buf[..wide.len()].copy_from_slice(&wide);
+
+        let res = unsafe { DoEnvironmentSubstW(&mut buf) };
+        len = (res & 0xffff) as usize;
+        let res = res >> 16;
+        if res == 1 {
+            unsafe { buf.set_len(len - 1) }; // ignore the null byte
+            break buf;
+        }
+    };
+    OsString::from_wide(&buf)
+}
+
 impl Process {
     /// Create a new [Process]
     pub fn new(pid: ProcessId) -> Result<Self> {
         let access = PROCESS_QUERY_LIMITED_INFORMATION;
+        let handle = unsafe { OpenProcess(access, false, pid)? };
+        Ok(Self { handle })
+    }
+
+    /// Create a new [Process] with access rights
+    pub fn new_killable(pid: ProcessId) -> Result<Self> {
+        let access = PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_TERMINATE;
         let handle = unsafe { OpenProcess(access, false, pid)? };
         Ok(Self { handle })
     }
@@ -57,7 +101,15 @@ impl Process {
     }
 
     /// Kill the [Process]
-    pub fn kill(&self) -> Result<()> {
+    pub fn kill(&self, path: Option<&str>) -> Result<()> {
+        let path = if let Some(path) = path {
+            path
+        } else {
+            &self.path().context("get process path for kill")?
+        };
+        if is_path_in_blacklist(path) {
+            bail!("path in blacklist, cannot kill: {path}")
+        }
         unsafe { TerminateProcess(self.handle, 0)? };
         Ok(())
     }
@@ -93,5 +145,32 @@ impl Process {
 impl Drop for Process {
     fn drop(&mut self) {
         unsafe { CloseHandle(self.handle) }.expect("close process handle");
+    }
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::process::Command;
+
+    #[test]
+    fn kill_notepad() -> Result<()> {
+        let mut notepad = Command::new("notepad.exe").spawn()?;
+        let pid = notepad.id();
+        let proc = Process::new_killable(pid)?;
+        proc.kill(None)?;
+
+        notepad.kill()?;
+        Ok(())
+    }
+
+    #[test]
+    fn dont_kill_explorer() -> Result<()> {
+        let mut explorer = Command::new("explorer.exe").spawn()?;
+        let pid = explorer.id();
+        let proc = Process::new_killable(pid)?;
+        assert!(proc.kill(None).is_err());
+
+        explorer.kill()?;
+        Ok(())
     }
 }

@@ -103,7 +103,7 @@ impl<'a> Sentry<'a> {
             TriggerAction::Kill => {
                 let processes = self.processes_for_target(&alert.target)?;
                 for process in processes {
-                    let process = Process::new(process)?;
+                    let process = Process::new_killable(process)?;
                     self.handle_kill_action(&process)?;
                 }
             }
@@ -135,7 +135,7 @@ impl<'a> Sentry<'a> {
     // TODO warn on failure, instead of bubbling up/ panic
 
     pub fn handle_kill_action(&self, process: &Process) -> Result<()> {
-        process.kill()?;
+        process.kill(None)?;
         Ok(())
     }
 
