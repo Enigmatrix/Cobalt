@@ -2,7 +2,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use data::db::{Database, FoundOrInserted, UsageWriter};
-use data::entities::{AppIdentity, Ref, Session, Usage};
+use data::entities::{AppIdentity, InteractionPeriod, Ref, Session, Usage};
 use platform::events::{ForegroundChangedEvent, InteractionChangedEvent};
 use platform::objects::{Process, ProcessId, Timestamp, Window};
 use util::config::Config;
@@ -17,6 +17,7 @@ use crate::resolver::AppInfoResolver;
 pub struct Engine<'a, S: LocalSpawnExt> {
     cache: Rc<RefCell<Cache>>,
     current_usage: Usage,
+    active_period_start: Timestamp,
     config: Config,
     inserter: UsageWriter<'a>,
     spawner: S,
@@ -49,6 +50,7 @@ impl<'a, S: LocalSpawnExt> Engine<'a, S> {
             cache,
             config,
             inserter,
+            active_period_start: start,
             // set a default value, then update it right after
             current_usage: Default::default(),
             spawner,
@@ -93,14 +95,20 @@ impl<'a, S: LocalSpawnExt> Engine<'a, S> {
                 recorded_mouse_clicks,
                 recorded_key_presses,
             }) => {
-                info!("Became idle at {:?}", at);
-                // TODO
-                let _ = recorded_mouse_clicks;
-                let _ = recorded_key_presses;
+                info!("became idle at {:?}", at);
+                self.inserter
+                    .insert_interaction_period(&InteractionPeriod {
+                        id: Default::default(),
+                        start: self.active_period_start.into(),
+                        end: at.into(),
+                        mouseclicks: recorded_mouse_clicks,
+                        keystrokes: recorded_key_presses,
+                    })?;
+                // don't need to update active_period_start, as it will be updated when we become active again
             }
             Event::InteractionChanged(InteractionChangedEvent::BecameActive { at }) => {
-                info!("Became active at {:?}", at);
-                // TODO
+                info!("became active at {:?}", at);
+                self.active_period_start = at.into();
             }
         };
         Ok(())
