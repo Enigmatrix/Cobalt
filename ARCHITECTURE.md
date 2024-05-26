@@ -8,21 +8,26 @@ information, see the [Engine Dev Guide](./DEV_GUIDE_Engine.md) and the [Viewer D
 ```mermaid
 graph LR
 
-    subgraph Engine
+    subgraph Cobalt.Engine
+        subgraph Engine
+            Sentry
+            Resolver
+            Cache
+        end
+        Engine --> Platform
+        Engine --> EngineData[Data]
     end
 
-    subgraph Viewer
+    subgraph Cobalt
+        UI <--> ViewModels --> ViewerData[Data]
     end
 
-    subgraph Db
-    end
+    Db[(Database)]
+    Win32
 
-    subgraph Win32
-    end
-
-    Engine <-->Db
-    Viewer -->Db
-    Engine -->Win32
+    EngineData <--> Db
+    ViewerData <--> Db
+    Platform --> Win32
 ```
 
 The Engine talks to the Win32 platform to fetch usage events, and saves them to the Db.
