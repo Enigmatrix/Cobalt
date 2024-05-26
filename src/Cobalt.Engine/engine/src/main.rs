@@ -70,25 +70,33 @@ fn event_loop(
     let mut fg_watcher = ForegroundEventWatcher::new(window_session)?;
     let mut it_watcher = InteractionWatcher::new(config, now);
 
-    let _poll_timer = Timer::new(poll_dur, poll_dur, &mut || {
-        let now = Timestamp::now();
-        // if there is a switch event, process it. otherwise, tick to update the usage.
-        if let Some(event) = fg_watcher.poll(now)? {
-            event_tx.send(Event::ForegroundChanged(event))?;
-        } else {
-            event_tx.send(Event::Tick(now))?;
-        }
-        if let Some(event) = it_watcher.poll(now)? {
-            event_tx.send(Event::InteractionChanged(event))?;
-        }
-        Ok(())
-    })?;
+    let _poll_timer = Timer::new(
+        poll_dur,
+        poll_dur,
+        Box::new(move || {
+            let now = Timestamp::now();
+            // if there is a switch event, process it. otherwise, tick to update the usage.
+            if let Some(event) = fg_watcher.poll(now)? {
+                event_tx.send(Event::ForegroundChanged(event))?;
+            } else {
+                event_tx.send(Event::Tick(now))?;
+            }
+            if let Some(event) = it_watcher.poll(now)? {
+                event_tx.send(Event::InteractionChanged(event))?;
+            }
+            Ok(())
+        }),
+    )?;
 
-    let _alert_timer = Timer::new(alert_dur, alert_dur, &mut || {
-        let now = Timestamp::now();
-        alert_tx.send(now)?;
-        Ok(())
-    })?;
+    let _alert_timer = Timer::new(
+        alert_dur,
+        alert_dur,
+        Box::new(move || {
+            let now = Timestamp::now();
+            alert_tx.send(now)?;
+            Ok(())
+        }),
+    )?;
 
     ev.run();
     Ok(())
