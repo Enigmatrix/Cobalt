@@ -11,28 +11,20 @@ use util::tracing::{info, ResultTraceExt};
 
 use crate::cache::Cache;
 
-// Tracks Alerts and Usages
+/// Watcher to track [TriggeredAlert]s and [TriggeredReminder]s and take action on them.
 pub struct Sentry<'a> {
     cache: Rc<RefCell<Cache>>,
     mgr: AlertManager<'a>,
 }
 
-// - move Engine's HashMap caches to a common component. Then Engine only does handle().
-// - Sentry's main loop:
-//     - get list of windows
-//     - remove windows not in that list from the cache
-//     - remove processes with no windows from the cache
-//     - filter list of windows to those visible
-//
-//     - run sql query to get alerts & reminders
-//     - for each alert:
-
 impl<'a> Sentry<'a> {
+    /// Create a new [Sentry] with the given [Cache] and [Database].
     pub fn new(cache: Rc<RefCell<Cache>>, db: &'a mut Database) -> Result<Self> {
         let mgr = AlertManager::new(db)?;
         Ok(Self { cache, mgr })
     }
 
+    /// Run the [Sentry] to check for triggered alerts and reminders and take action on them.
     pub fn run(&mut self, now: PlatformTimestamp) -> Result<()> {
         let alerts_hits = self.mgr.triggered_alerts(&now)?;
         for triggered_alert in alerts_hits {
@@ -58,6 +50,7 @@ impl<'a> Sentry<'a> {
         Ok(())
     }
 
+    /// Get the [ProcessId]s for the given [Target].
     pub fn processes_for_target(&mut self, target: &Target) -> Result<Vec<ProcessId>> {
         let processes = self
             .mgr
@@ -74,6 +67,7 @@ impl<'a> Sentry<'a> {
         Ok(processes)
     }
 
+    /// Get the [Window]s for the given [Target].
     pub fn windows_for_target(&mut self, target: &Target) -> Result<Vec<Window>> {
         let window = self
             .mgr
@@ -90,6 +84,7 @@ impl<'a> Sentry<'a> {
         Ok(window)
     }
 
+    /// Handle the given [TriggeredAlert] and take action on it.
     pub fn handle_alert(
         &mut self,
         triggered_alert: &TriggeredAlert,
@@ -138,21 +133,25 @@ impl<'a> Sentry<'a> {
         Ok(())
     }
 
+    /// Kill the [Process]
     pub fn handle_kill_action(&self, process: &Process) -> Result<()> {
         process.kill(None)?;
         Ok(())
     }
 
+    /// Message the user with the given [TriggeredAlert]'s name and message.
     pub fn handle_message_action(&self, name: &str, msg: &str) -> Result<()> {
         ToastManager::show_basic(name, msg)?;
         Ok(())
     }
 
+    /// Dim the [Window] to the given opacity.
     pub fn handle_dim_action(&self, window: &Window, dim: f64) -> Result<()> {
         window.dim(dim)?;
         Ok(())
     }
 
+    /// Message the user with the given [TriggeredReminder]'s name and message and progress.
     pub fn handle_reminder_message(&self, name: &str, msg: &str, value: f64) -> Result<()> {
         ToastManager::show_with_progress(
             name,

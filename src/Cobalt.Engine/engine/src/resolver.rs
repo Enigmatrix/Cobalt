@@ -7,9 +7,11 @@ use util::config::Config;
 use util::error::Result;
 use util::tracing::info;
 
+/// Resolves application information asynchronously.
 pub struct AppInfoResolver;
 
 impl AppInfoResolver {
+    /// Resolve the application information for the given [AppIdentity].
     async fn resolve(identity: &AppIdentity) -> Result<AppInfo> {
         match identity {
             AppIdentity::Win32 { path } => AppInfo::from_win32(path).await,
@@ -17,6 +19,7 @@ impl AppInfoResolver {
         }
     }
 
+    /// Resolves and updates the application information for the given [AppIdentity] into the [Database].
     pub async fn update_app(config: &Config, app: Ref<App>, identity: AppIdentity) -> Result<()> {
         info!("updating app info {:?} ({:?})", app, identity);
 

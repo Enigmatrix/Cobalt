@@ -6,6 +6,7 @@ use data::db::Database;
 use engine::{Engine, Event};
 use platform::events::{ForegroundEventWatcher, InteractionWatcher, WindowSession};
 use platform::objects::{EventLoop, Timer, Timestamp, Window};
+use sentry::Sentry;
 use util::channels::{self, Receiver, Sender};
 use util::config::{self, Config};
 use util::error::{Context, Result};
@@ -52,6 +53,7 @@ fn real_main() -> Result<()> {
     Ok(())
 }
 
+/// Win32 [EventLoop] thread to poll for events.
 fn event_loop(
     config: &Config,
     event_tx: Sender<Event>,
@@ -92,6 +94,7 @@ fn event_loop(
     Ok(())
 }
 
+/// Processing loop for the [Engine].
 async fn engine_loop(
     config: &Config,
     cache: Rc<RefCell<cache::Cache>>,
@@ -108,19 +111,21 @@ async fn engine_loop(
     }
 }
 
+/// Processing loop for the [Sentry].
 async fn sentry_loop(
     config: &Config,
     cache: Rc<RefCell<cache::Cache>>,
     alert_rx: Receiver<Timestamp>,
 ) -> Result<()> {
     let mut db = Database::new(config)?;
-    let mut sentry = sentry::Sentry::new(cache, &mut db)?;
+    let mut sentry = Sentry::new(cache, &mut db)?;
     loop {
         let at = alert_rx.recv_async().await?;
         sentry.run(at)?;
     }
 }
 
+/// Runs the [Engine] and [Sentry] loops in an asynchronous executor.
 fn processor(
     config: &Config,
     fg: Window,
@@ -156,6 +161,7 @@ fn processor(
     Ok(())
 }
 
+/// Get the foreground [Window], blocking until one is present.
 fn foreground_window() -> Window {
     loop {
         if let Some(window) = Window::foreground() {

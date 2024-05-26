@@ -5,6 +5,7 @@ use platform::events::WindowSession;
 use platform::objects::{ProcessId, Window};
 use util::error::Result;
 
+/// Cache for storing information about windows, processes, apps and sessions.
 pub struct Cache {
     // TODO this might be a bad idea, the HWND might be reused by Windows,
     // so another window could be running with the same HWND after the first one closed...
@@ -19,16 +20,19 @@ pub struct Cache {
     processes: HashMap<Ref<App>, Vec<ProcessId>>,
 }
 
+/// Details about a [Session].
 pub struct SessionDetails {
     pub session: Ref<Session>,
     pub pid: ProcessId,
 }
 
+/// Details about a [App].
 pub struct AppDetails {
     pub app: Ref<App>,
 }
 
 impl Cache {
+    /// Create a new [Cache].
     pub fn new() -> Self {
         Self {
             sessions: HashMap::new(),
@@ -38,10 +42,12 @@ impl Cache {
         }
     }
 
+    /// Get all processes for an [App].
     pub fn processes_for_app(&self, app: &Ref<App>) -> impl Iterator<Item = &ProcessId> {
         self.processes.get(app).into_iter().flat_map(|i| i.iter())
     }
 
+    /// Get all windows for an [App].
     pub fn windows_for_app(&self, app: &Ref<App>) -> impl Iterator<Item = &Window> {
         self.processes_for_app(app).flat_map(|pid| {
             self.windows
@@ -51,6 +57,7 @@ impl Cache {
         })
     }
 
+    /// Remove a process and associated windows from the [Cache].
     pub fn remove_process(&mut self, process: ProcessId) {
         self.apps.remove(&process);
         if let Some(windows) = self.windows.remove(&process) {
@@ -63,6 +70,8 @@ impl Cache {
         });
     }
 
+    /// Get or insert a [SessionDetails] for a [Window], using the create callback
+    /// to make a new [SessionDetails] if not found.
     pub fn get_or_insert_session_for_window(
         &mut self,
         ws: WindowSession,
@@ -87,6 +96,8 @@ impl Cache {
         Ok(self.sessions.entry(ws).or_insert(created))
     }
 
+    /// Get or insert a [AppDetails] for a [ProcessId], using the create callback
+    /// to make a new [AppDetails] if not found.
     pub fn get_or_insert_app_for_process(
         &mut self,
         process: ProcessId,

@@ -8,11 +8,12 @@ use platform::objects::{Process, ProcessId, Timestamp, Window};
 use util::config::Config;
 use util::error::{Context, Result};
 use util::future::task::LocalSpawnExt;
-use util::tracing::{info, info_span, trace, ResultTraceExt};
+use util::tracing::{info, trace, ResultTraceExt};
 
 use crate::cache::{AppDetails, Cache, SessionDetails};
 use crate::resolver::AppInfoResolver;
 
+/// The main [Engine] that processes [Event]s and updates the [Database] with new [Usage]s, [Session]s and [App]s.
 pub struct Engine<'a, S: LocalSpawnExt> {
     cache: Rc<RefCell<Cache>>,
     current_usage: Usage,
@@ -22,6 +23,7 @@ pub struct Engine<'a, S: LocalSpawnExt> {
     spawner: S,
 }
 
+/// Events that the [Engine] can handle.
 pub enum Event {
     ForegroundChanged(ForegroundChangedEvent),
     InteractionChanged(InteractionChangedEvent),
@@ -65,6 +67,7 @@ impl<'a, S: LocalSpawnExt> Engine<'a, S> {
         Ok(ret)
     }
 
+    /// Handle an [Event]
     pub async fn handle(&mut self, event: Event) -> Result<()> {
         match event {
             Event::ForegroundChanged(ForegroundChangedEvent { at, session }) => {
@@ -122,6 +125,7 @@ impl<'a, S: LocalSpawnExt> Engine<'a, S> {
         Ok(())
     }
 
+    /// Get the [Session] details for the given [WindowSession]
     fn get_session_details(&mut self, ws: WindowSession) -> Result<Ref<Session>> {
         let mut borrow = self.cache.borrow_mut();
         let session_details = borrow.get_or_insert_session_for_window(ws.clone(), |cache| {
@@ -130,14 +134,42 @@ impl<'a, S: LocalSpawnExt> Engine<'a, S> {
                 &self.config,
                 &mut self.inserter,
                 &self.spawner,
-                &ws.window,
-                ws.title,
+                ws,
             )
         })?;
 
         Ok(session_details.session.clone())
     }
 
+    /// Create a [Session] for the given [Window]
+    fn create_session_for_window(
+        cache: &mut Cache,
+        config: &Config,
+        inserter: &mut UsageWriter<'a>,
+        spawner: &S,
+        ws: WindowSession,
+    ) -> Result<SessionDetails> {
+        info!(?ws, "insert session");
+
+        let pid = ws.window.pid()?;
+        let AppDetails { app } = cache.get_or_insert_app_for_process(pid, |_| {
+            Self::create_app_for_process(inserter, config, spawner, pid, &ws.window)
+        })?;
+
+        let mut session = Session {
+            id: Default::default(),
+            app: app.clone(),
+            title: ws.title,
+        };
+        inserter.insert_session(&mut session)?;
+
+        Ok(SessionDetails {
+            session: session.id,
+            pid,
+        })
+    }
+
+    /// Create an [App] for the given [ProcessId] and [Window]
     fn create_app_for_process(
         inserter: &mut UsageWriter<'a>,
         config: &Config,
@@ -145,10 +177,7 @@ impl<'a, S: LocalSpawnExt> Engine<'a, S> {
         pid: ProcessId,
         window: &Window,
     ) -> Result<AppDetails> {
-        let span = info_span!("create_app_for_process", ?pid, ?window);
-        let _guard = span.enter();
-
-        trace!(parent: &span, "create/find");
+        trace!(?window, ?pid, "create/find app for process");
 
         let process = Process::new(pid)?;
 
@@ -166,7 +195,7 @@ impl<'a, S: LocalSpawnExt> Engine<'a, S> {
             FoundOrInserted::Found(id) => id,
             FoundOrInserted::Inserted(id) => {
                 {
-                    info!(parent: &span, "created");
+                    info!(?window, ?pid, "inserted app");
 
                     let config = config.clone();
                     let id = id.clone();
@@ -183,33 +212,5 @@ impl<'a, S: LocalSpawnExt> Engine<'a, S> {
             }
         };
         Ok(AppDetails { app: app_id })
-    }
-
-    fn create_session_for_window(
-        cache: &mut Cache,
-        config: &Config,
-        inserter: &mut UsageWriter<'a>,
-        spawner: &S,
-        window: &Window,
-        title: String,
-    ) -> Result<SessionDetails> {
-        info!(?window, ?title, "create session for window");
-
-        let pid = window.pid()?;
-        let AppDetails { app } = cache.get_or_insert_app_for_process(pid, |_| {
-            Self::create_app_for_process(inserter, config, spawner, pid, window)
-        })?;
-
-        let mut session = Session {
-            id: Default::default(),
-            app: app.clone(),
-            title,
-        };
-        inserter.insert_session(&mut session)?;
-
-        Ok(SessionDetails {
-            session: session.id,
-            pid,
-        })
     }
 }
