@@ -12,6 +12,7 @@ use crate::entities::{
 use crate::migrations::Migrator;
 use crate::table::Table;
 
+/// Either we found the row or we just inserted it.
 #[derive(Debug, PartialEq, Eq)]
 pub enum FoundOrInserted<T: Table> {
     Found(Ref<T>),
@@ -48,11 +49,13 @@ macro_rules! insert_stmt {
     }};
 }
 
+/// Database connection stored in the file system.
 pub struct Database {
     conn: Connection,
 }
 
 impl Database {
+    /// Create a new [Database] from the given [Config]
     pub fn new(config: &Config) -> Result<Self> {
         let path = config.connection_string()?;
         let mut conn = Connection::open(path).context("open conn")?;
@@ -63,6 +66,7 @@ impl Database {
     }
 }
 
+/// Reference to hold statements regarding [Usage] and associated entities' queries
 pub struct UsageWriter<'a> {
     conn: &'a Connection,
     find_or_insert_app: Statement<'a>,
@@ -73,6 +77,7 @@ pub struct UsageWriter<'a> {
 }
 
 impl<'a> UsageWriter<'a> {
+    /// Initialize a [UsageWriter] from a given [Database]
     pub fn new(db: &'a Database) -> Result<Self> {
         let conn = &db.conn;
         let find_or_insert_app = prepare_stmt!(
@@ -144,6 +149,7 @@ impl<'a> UsageWriter<'a> {
         Ok(())
     }
 
+    /// Get the last inserted row id
     fn last_insert_id(&self) -> u64 {
         self.conn.last_insert_rowid() as u64
     }
@@ -207,7 +213,7 @@ impl<'a> AppUpdater<'a> {
             rusqlite::DatabaseName::Main,
             "apps",
             "icon",
-            app_id.inner as i64,
+            *app_id as i64,
             false,
         )?)
     }
@@ -219,6 +225,7 @@ impl<'a> AppUpdater<'a> {
     }
 }
 
+/// [Alert] that was triggered from a [Target]
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct TriggeredAlert {
     pub alert: Alert,
@@ -226,13 +233,14 @@ pub struct TriggeredAlert {
     pub name: String,
 }
 
+/// [Reminder] that was triggered from a [Target]
 #[derive(Debug, Clone)]
 pub struct TriggeredReminder {
     pub reminder: Reminder,
     pub name: String,
 }
 
-/// Reference to hold statements regarding [Alert] queries
+/// Reference to hold statements regarding [Alert] and [Reminder] queries
 pub struct AlertManager<'a> {
     get_tag_apps: Statement<'a>,
     triggered_alerts: Statement<'a>,

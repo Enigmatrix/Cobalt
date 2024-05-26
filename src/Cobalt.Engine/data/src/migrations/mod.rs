@@ -3,6 +3,7 @@ use util::error::{Context, Result};
 
 mod migration1;
 
+/// Trait for defining a database migration.
 pub trait Migration {
     fn version(&self) -> u64;
     fn up(&self, conn: &mut Connection) -> Result<()>;
@@ -10,12 +11,14 @@ pub trait Migration {
     fn down(&self, conn: &mut Connection) -> Result<()>;
 }
 
+/// Migrator for applying database migrations.
 pub struct Migrator<'a> {
     conn: &'a mut Connection,
     migrations: Vec<Box<dyn Migration>>,
 }
 
 impl<'a> Migrator<'a> {
+    /// Create a new [Migrator] with the given database connection.
     pub fn new(conn: &'a mut Connection) -> Self {
         let mut migrations: Vec<Box<dyn Migration>> = vec![Box::new(migration1::Migration1)];
         // should already by sorted, but just in case
@@ -23,6 +26,7 @@ impl<'a> Migrator<'a> {
         Self { conn, migrations }
     }
 
+    /// Get the current version of the database based on last run migration.
     pub fn current_version(&self) -> Result<u64> {
         let version = self
             .conn
@@ -34,6 +38,7 @@ impl<'a> Migrator<'a> {
         }
     }
 
+    /// Set the current version of the database based on last run migration.
     pub fn set_current_version(&self, version: u64) -> Result<()> {
         self.conn
             .pragma_update(None, "user_version", version)
@@ -41,6 +46,7 @@ impl<'a> Migrator<'a> {
         Ok(())
     }
 
+    /// Migrate the database to the latest version.
     pub fn migrate(&mut self) -> Result<()> {
         let current_version = self.current_version()?;
 

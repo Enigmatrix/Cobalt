@@ -3,6 +3,7 @@ use util::error::{bail, Context, Result};
 
 use super::Migration;
 
+/// Initial database schema - define the basic entities, relations and indexes.
 pub struct Migration1;
 
 impl Migration for Migration1 {
