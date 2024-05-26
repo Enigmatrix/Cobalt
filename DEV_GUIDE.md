@@ -5,7 +5,7 @@
 ### ER Diagram
 ```mermaid
 erDiagram
-    app {
+    apps {
         int             id PK
         tinyint         initialized "true if details are set"
         tinyint         found   "temp col, true if found by upsert"
@@ -18,79 +18,81 @@ erDiagram
         blob_nullable   icon
     }
 
-    tag {
+    tags {
         int             id PK
         text            name UK
         text            color
     }
 
-    "_app_tag" {
+    "_app_tags" {
         int             app_id PK,FK
         int             tag_id PK,FK
     }
 
-    session {
+    sessions {
         int             id PK
         int             app_id FK
         text            title
     }
 
-    usage {
+    usages {
         int             id PK
         int             session_id FK
         int             start
         int             end
     }
 
-    interaction_period {
+    interaction_periods {
         int             start
         int             end
         int             mouse_clicks
         int             key_strokes
     }
 
-    alert {
-        guid            guid PK
+    alerts {
+        int             id PK
         int             version PK
         int_nullable    app_id FK
         int_nullable    tag_id FK
         int             usage_limit
         int             time_frame      "Daily / Weekly / Monthly"
-        int             trigger_action_tag      "Kill / Dim / Message"
-        text_nullable   trigger_action_message_content     "Content of Message(Content)"
         int_nullable    trigger_action_dim_duration     "Duration of Dim(Duration)"
+        text_nullable   trigger_action_message_content     "Content of Message(Content)"
+        int             trigger_action_tag      "Kill / Dim / Message"
     }
 
-    alert_event {
-        int             guid PK
-        guid            alert_guid FK
+    alert_events {
+        int             id PK
+        int             alert_id FK
         int             alert_version FK
         int             timestamp
     }
 
-    reminder {
-        guid            guid PK
+    reminders {
+        int             id PK
         int             version PK
+        int             alert_id FK
+        int             alert_version FK
         real            threshold
         text            message
     }
 
-    reminder_event {
+    reminder_events {
         int             id PK
-        guid            reminder_guid FK
+        int             reminder_id FK
         int             reminder_version FK
         int             timestamp
     }
 
-    app ||--o{ session : sessions
-    session ||--o{ usage : usages
-    "_app_tag" ||--|{ app : app
-    "_app_tag" ||--|{ tag : tag
-    app ||--o{ alert : "app alerts"
-    tag ||--o{ alert : "tag alerts"
-    alert ||--o{ reminder : reminders
-    alert ||--o{ alert_event : events
-    reminder ||--o{ reminder_event : events
+    apps ||--o{ sessions : sessions
+    sessions ||--o{ usages : usages
+    "_app_tags" ||--|{ apps : app
+    "_app_tags" ||--|{ tags : tag
+    apps ||--o{ alerts : "app alerts"
+    tags ||--o{ alerts : "tag alerts"
+    alerts ||--o{ reminders : reminders
+    alerts ||--o{ alert_events : events
+    reminders ||--o{ reminder_events : events
 ```
 
 ### Entities
@@ -106,7 +108,7 @@ Icons are stored as blobs. Notably, when an App is inserted not all fields might
 1. [AlertEvent](./src/Cobalt.Common.Data/Entities/AlertEvent.cs): A log of the Alert firing. Used to prevent multiple firings of the same alert, and to show the user how useful their alert is.
 1. [ReminderEvent](./src/Cobalt.Common.Data/Entities/ReminderEvent.cs): A log of the Reminder firing. Used to prevent multiple firings of the same reminder, and to show the user how useful their reminder is.
 
-Alert and Reminders have a randomly generated guid and (initially `1`) version as their composite key. This is to tag that an
+Alert and Reminders have an autoincremented id and (initially `1`) version as their composite key. SQLite does not have a seperate sequence type. Thus we make do using the `alert_id_seq` and `reminder_id_seq` tables that have an autoincremented integer primary key, and use them to generate ids by updating them. The version is used to tag that an
 AlertEvent fired for a specific version of an Alert; Alerts will have different versions if they are modified.
 
 If an AlertEvent exists for an Alert's time frame when the usage limit is 5 minutes, it indicates that we do not need to perform the trigger action (e.g. `Message`) again in that time frame.
