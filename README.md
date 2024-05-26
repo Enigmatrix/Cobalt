@@ -7,4 +7,5 @@ View usage statistics of all your apps. Track and determine where you are wastin
 > This branch is for the next version of Cobalt.
 
 ## Architecture
-See the [architecture description](./ARCHITECTURE.md) for more information, and the more featured [developer's guide](./DEV_GUIDE.md) for specifics.
+See the [architecture description](./ARCHITECTURE.md) for more information, and the more featured developer's guides 
+(for [Engine](./DEV_GUIDE_Engine.md) and [Viewer](./DEV_GUIDE_Viewer.md)) for specifics.
