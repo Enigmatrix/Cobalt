@@ -1,5 +1,7 @@
 pub use crate::table::{Color, Duration, Id, Ref, Timestamp, VersionedId};
 
+// Documented in the Cobalt.Common.Data/Entities/*.cs files
+
 #[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct App {
     pub id: Ref<Self>,

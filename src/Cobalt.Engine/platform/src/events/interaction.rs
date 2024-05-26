@@ -3,6 +3,8 @@ use util::error::Result;
 
 use crate::objects::{Duration, Timestamp};
 
+/// Watches for user interaction and notifies when the user becomes idle or active,
+/// including counting mouse_clicks and key_presses.
 pub struct InteractionWatcher {
     max_idle_duration: Duration,
     active: bool,
@@ -13,6 +15,7 @@ pub struct InteractionWatcher {
     key_presses: u64,
 }
 
+/// Event for change in interaction state.
 pub enum InteractionChangedEvent {
     BecameIdle {
         at: Timestamp,
@@ -25,6 +28,7 @@ pub enum InteractionChangedEvent {
 }
 
 impl InteractionWatcher {
+    /// Create a new [InteractionWatcher] with the specified [Config] and current [Timestamp].
     pub fn new(config: &Config, at: Timestamp) -> Self {
         Self {
             max_idle_duration: config.max_idle_duration().into(),
@@ -35,6 +39,7 @@ impl InteractionWatcher {
         }
     }
 
+    /// Poll for a new [`InteractionChangedEvent`].
     pub fn poll(&mut self, at: Timestamp) -> Result<Option<InteractionChangedEvent>> {
         let interaction_gap_duration = at - self.last_interaction;
         if self.active {

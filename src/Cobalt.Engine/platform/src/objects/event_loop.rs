@@ -12,7 +12,7 @@ impl EventLoop {
         EventLoop
     }
 
-    /// Start the [EventLoop]
+    /// Start the [EventLoop]. Runs until WM_QUIT is received.
     pub fn run(&self) {
         let mut msg: MSG = Default::default();
         while unsafe { GetMessageW(&mut msg, HWND::default(), 0, 0).as_bool() } {

@@ -1,97 +1,6 @@
-# Architecture
+# Dev Guide (Viewer)
 
 ## Data
-
-### ER Diagram
-```mermaid
-erDiagram
-    app {
-        int             id PK
-        tinyint         initialized "true if details are set"
-        tinyint         found   "temp col, true if found by upsert"
-        text            name
-        text            description
-        text            company
-        text            color
-        int             identity_is_win32     UK "UNIQUE(is_win32, path_or_aumid)"
-        text            identity_path_or_aumid   UK "UNIQUE(is_win32, path_or_aumid)"
-        blob_nullable   icon
-    }
-
-    tag {
-        int             id PK
-        text            name UK
-        text            color
-    }
-
-    "_app_tag" {
-        int             app_id PK,FK
-        int             tag_id PK,FK
-    }
-
-    session {
-        int             id PK
-        int             app_id FK
-        text            title
-    }
-
-    usage {
-        int             id PK
-        int             session_id FK
-        int             start
-        int             end
-    }
-
-    interaction_period {
-        int             start
-        int             end
-        int             mouse_clicks
-        int             key_strokes
-    }
-
-    alert {
-        guid            guid PK
-        int             version PK
-        int_nullable    app_id FK
-        int_nullable    tag_id FK
-        int             usage_limit
-        int             time_frame      "Daily / Weekly / Monthly"
-        int             trigger_action_tag      "Kill / Dim / Message"
-        text_nullable   trigger_action_message_content     "Content of Message(Content)"
-        int_nullable    trigger_action_dim_duration     "Duration of Dim(Duration)"
-    }
-
-    alert_event {
-        int             guid PK
-        guid            alert_guid FK
-        int             alert_version FK
-        int             timestamp
-    }
-
-    reminder {
-        guid            guid PK
-        int             version PK
-        real            threshold
-        text            message
-    }
-
-    reminder_event {
-        int             id PK
-        guid            reminder_guid FK
-        int             reminder_version FK
-        int             timestamp
-    }
-
-    app ||--o{ session : sessions
-    session ||--o{ usage : usages
-    "_app_tag" ||--|{ app : app
-    "_app_tag" ||--|{ tag : tag
-    app ||--o{ alert : "app alerts"
-    tag ||--o{ alert : "tag alerts"
-    alert ||--o{ reminder : reminders
-    alert ||--o{ alert_event : events
-    reminder ||--o{ reminder_event : events
-```
 
 ### Entities
 
@@ -106,7 +15,7 @@ Icons are stored as blobs. Notably, when an App is inserted not all fields might
 1. [AlertEvent](./src/Cobalt.Common.Data/Entities/AlertEvent.cs): A log of the Alert firing. Used to prevent multiple firings of the same alert, and to show the user how useful their alert is.
 1. [ReminderEvent](./src/Cobalt.Common.Data/Entities/ReminderEvent.cs): A log of the Reminder firing. Used to prevent multiple firings of the same reminder, and to show the user how useful their reminder is.
 
-Alert and Reminders have a randomly generated guid and (initially `1`) version as their composite key. This is to tag that an
+Alert and Reminders have an autoincremented id and (initially `1`) version as their composite key. SQLite does not have a seperate sequence type. Thus we make do using the `alert_id_seq` and `reminder_id_seq` tables that have an autoincremented integer primary key, and use them to generate ids by updating them. The version is used to tag that an
 AlertEvent fired for a specific version of an Alert; Alerts will have different versions if they are modified.
 
 If an AlertEvent exists for an Alert's time frame when the usage limit is 5 minutes, it indicates that we do not need to perform the trigger action (e.g. `Message`) again in that time frame.

@@ -5,20 +5,25 @@ use std::ops::Deref;
 use rusqlite::types::{FromSql, FromSqlResult, ToSqlOutput, ValueRef};
 use rusqlite::{Result, ToSql};
 
+/// Trait for mapping an Entity to a [Table] in the database.
 pub trait Table {
     type Id: Default + Debug + Clone + Eq;
 
+    /// Unique identifier for the [Table]
     fn id(&self) -> &Ref<Self>
     where
         Self: Sized;
 
+    /// Name of the [Table]
     fn name() -> &'static str;
+    /// Column names of the [Table]
     fn columns() -> &'static [&'static str];
 }
 
+/// Reference to a [Table] in the database via its unique identifier.
 #[derive(Default, Debug, Clone)]
 pub struct Ref<T: Table> {
-    pub inner: T::Id,
+    inner: T::Id,
 }
 
 impl<T: Table<Id: PartialEq>> PartialEq for Ref<T> {
@@ -36,6 +41,7 @@ impl<T: Table<Id: Hash>> Hash for Ref<T> {
 }
 
 impl<T: Table> Ref<T> {
+    /// Create a new [Ref] with the given unique identifier
     pub fn new(inner: T::Id) -> Self {
         Self { inner }
     }
@@ -61,11 +67,16 @@ impl<Id: FromSql + 'static, T: Table<Id = Id>> FromSql for Ref<T> {
     }
 }
 
+/// Basic unique identifier - autoincremented integer
 pub type Id = u64;
+/// Color in hexadecimal format
 pub type Color = String;
+/// Timestamp as Windows ticks
 pub type Timestamp = u64;
+/// Duration as Windows ticks
 pub type Duration = u64;
 
+/// Unique identifier with Version
 #[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct VersionedId {
     pub id: u64,

@@ -23,7 +23,7 @@ use crate::win32;
  * We should really be checking if a window is still valid before using it.
  */
 
-/// Representation of a Window on the user's desktop
+/// Representation of a [`Window`] on the user's desktop
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Window {
     hwnd: HWND,
@@ -41,7 +41,8 @@ impl Window {
         Self { hwnd }
     }
 
-    /// Get the foreground [Window] shown on the user's desktop
+    /// Get the foreground [Window] shown on the user's desktop.
+    /// If there is no foreground window or if the window is losing focus, this will return `None`.
     pub fn foreground() -> Option<Self> {
         let fg = unsafe { GetForegroundWindow() };
         if fg == HWND::default() {
@@ -54,7 +55,7 @@ impl Window {
     /// Get the [ProcessId] of the [Window]
     pub fn pid(&self) -> Result<ProcessId> {
         let mut pid = 0;
-        let _tid = win32!(val: unsafe { GetWindowThreadProcessId(self.hwnd, Some(&mut pid)) });
+        let _tid = win32!(val: unsafe { GetWindowThreadProcessId(self.hwnd, Some(&mut pid)) })?;
         Ok(pid)
     }
 
@@ -92,11 +93,17 @@ impl Window {
         Ok(aumid)
     }
 
-    pub fn dim(&self, opaq: f64) -> Result<()> {
+    /// Dim the [Window] by setting its opacity
+    pub fn dim(&self, opacity: f64) -> Result<()> {
         // WS_EX_LAYERED will fail for windows with class style of CS_OWNDC or CS_CLASSDC.
         unsafe { SetWindowLongW(self.hwnd, GWL_EXSTYLE, WS_EX_LAYERED.0 as i32) };
         unsafe {
-            SetLayeredWindowAttributes(self.hwnd, COLORREF(0), (255.0f64 * opaq) as u8, LWA_ALPHA)?
+            SetLayeredWindowAttributes(
+                self.hwnd,
+                COLORREF(0),
+                (255.0f64 * opacity) as u8,
+                LWA_ALPHA,
+            )?
         };
         Ok(())
     }

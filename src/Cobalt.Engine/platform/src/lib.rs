@@ -9,8 +9,10 @@ pub mod objects;
 
 use util::error::Result;
 
+use crate::objects::Timestamp;
+
+/// Setup platform for Windows
 pub fn setup() -> Result<()> {
-    crate::objects::Timestamp::setup()?;
-    // crate::objects::Window::setup()?;
+    Timestamp::setup()?;
     Ok(())
 }

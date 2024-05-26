@@ -13,8 +13,10 @@ use windows::Win32::System::WinRT::IBufferByteAccess;
 
 use crate::objects::FileVersionInfo;
 
+/// Logo of an App, regardless of its type
 pub type Logo = IRandomAccessStreamWithContentType;
 
+/// Information about an App
 pub struct AppInfo {
     pub name: String,
     pub description: String,
@@ -26,14 +28,16 @@ pub const WIN32_IMAGE_SIZE: u32 = 64;
 pub const UWP_IMAGE_SIZE: f32 = 256.0;
 
 impl AppInfo {
+    /// Get the mutable bytes of a buffer of an underlying [`IBuffer`]
     unsafe fn as_mut_bytes(buffer: &IBuffer) -> Result<&mut [u8]> {
         let interop = buffer.cast::<IBufferByteAccess>()?;
         let data = interop.Buffer()?;
         Ok(std::slice::from_raw_parts_mut(data, buffer.Length()? as _))
     }
 
-    pub async fn copy_logo<W: Write>(&self, writer: &mut W) -> Result<()> {
-        let size = 0x1000;
+    /// Copy the logo of the app to a [`Write`]
+    pub async fn copy_logo(&self, writer: &mut impl Write) -> Result<()> {
+        let size = 0x1000; // 1 page (4kb)
         let buffer = Buffer::Create(size)?;
         loop {
             let buffer = self
@@ -49,11 +53,12 @@ impl AppInfo {
         Ok(())
     }
 
+    /// Get the size of the logo
     pub fn logo_size(&self) -> Result<u64> {
         Ok(self.logo.Size()?)
     }
 
-    /// Create a new [AppInfo] of a Win32 progrem from its path
+    /// Create a new [AppInfo] of a Win32 program from its path
     pub async fn from_win32(path: &str) -> Result<Self> {
         let file = StorageFile::GetFileFromPathAsync(&path.into())?.await?;
 

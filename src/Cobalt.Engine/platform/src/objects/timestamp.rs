@@ -26,7 +26,7 @@ const FILE_TIME_OFFSET: u64 = DAYS_PER_400_YEARS * 4 * TICKS_PER_DAY;
 
 #[derive(Ord, PartialOrd, Eq, PartialEq, Copy, Clone)]
 /// UTC time representing the number of 100-nanosecond intervals since January 1, 0001 (UTC).
-/// NOT the same sa FILETIME, which is from 1601 instead.
+/// NOT the same as FILETIME, which is from 1601 instead.
 pub struct Timestamp {
     ticks: u64,
 }
@@ -60,7 +60,8 @@ impl Timestamp {
         unsafe { BOOT_TIME.assume_init() + Duration::from_millis(millis as i64) }
     }
 
-    fn system_time(&self) -> SYSTEMTIME {
+    /// Get the system time from the [`Timestamp`]
+    fn as_system_time(&self) -> SYSTEMTIME {
         let mut sys: SYSTEMTIME = SYSTEMTIME::default();
         let ft_ticks = self.ticks - FILE_TIME_OFFSET;
         unsafe {
@@ -70,6 +71,7 @@ impl Timestamp {
         sys
     }
 
+    /// Create a [`Timestamp`] from a [`SYSTEMTIME`]
     fn from_system_time(sys: SYSTEMTIME) -> Self {
         let mut ft: FILETIME = FILETIME::default();
         unsafe { SystemTimeToFileTime(&sys as *const _, &mut ft).expect("get file time") }; // should never fail
@@ -77,6 +79,7 @@ impl Timestamp {
         Timestamp { ticks }
     }
 
+    /// Convert a [`FILETIME`] to ticks, adjust for the difference between 1601 and 0001
     fn file_time_to_ticks(ft: FILETIME) -> u64 {
         let ft_ticks: u64 = unsafe { mem::transmute(ft) };
         ft_ticks + FILE_TIME_OFFSET
@@ -99,7 +102,7 @@ impl TimeSystem for Timestamp {
     type Ticks = Self;
 
     fn day_start(&self) -> Self {
-        let mut sys = self.system_time();
+        let mut sys = self.as_system_time();
         sys.wHour = 0;
         sys.wMinute = 0;
         sys.wSecond = 0;
@@ -108,7 +111,7 @@ impl TimeSystem for Timestamp {
     }
 
     fn week_start(&self) -> Self {
-        let mut sys = self.system_time();
+        let mut sys = self.as_system_time();
         sys.wHour = 0;
         sys.wMinute = 0;
         sys.wSecond = 0;
@@ -119,7 +122,7 @@ impl TimeSystem for Timestamp {
     }
 
     fn month_start(&self) -> Self {
-        let mut sys = self.system_time();
+        let mut sys = self.as_system_time();
         sys.wHour = 0;
         sys.wMinute = 0;
         sys.wSecond = 0;
@@ -132,7 +135,7 @@ impl TimeSystem for Timestamp {
 
 impl fmt::Display for Timestamp {
     fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
-        let sys = self.system_time();
+        let sys = self.as_system_time();
         write!(
             fmt,
             "{:04}-{:02}-{:02} {:02}:{:02}:{:02}.{:03}Z",
@@ -185,10 +188,12 @@ impl From<Duration> for std::time::Duration {
 }
 
 impl Duration {
+    /// Create a [`Duration`] from milliseconds
     pub const fn from_millis(millis: i64) -> Duration {
         Duration(millis * 10_000)
     }
 
+    /// Get the number of milliseconds in the [`Duration`]
     pub fn millis(&self) -> u32 {
         (self.0 / 10_000) as u32
     }

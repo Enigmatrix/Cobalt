@@ -11,6 +11,7 @@ use crate::win32;
 
 const TRANSLATION_CODEPAGE: PCWSTR = w!("\\VarFileInfo\\Translation\0");
 
+/// Equivalent to the [FileVersionInfo](https://learn.microsoft.com/en-us/dotnet/api/system.diagnostics.fileversioninfo) class in .NET.
 pub struct FileVersionInfo {
     buffer: Box<[MaybeUninit<u8>]>,
     langid: String,
@@ -72,6 +73,7 @@ impl FileVersionInfo {
         bail!(format!("query value for {key} failed"))
     }
 
+    /// Query the [FileVersionInfo] for the specified key, returning the value as the underlying buffer
     fn raw_query_value<T>(
         version_info: &mut [MaybeUninit<u8>],
         key: impl Into<PCWSTR>,

@@ -6,6 +6,7 @@ use serde::Deserialize;
 
 use crate::error::{anyhow, Result};
 
+/// [Config] of the Engine
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct Config {
@@ -17,6 +18,7 @@ pub struct Config {
 }
 
 impl Config {
+    /// Returns the connection string to the query context database
     pub fn connection_string(&self) -> Result<&str> {
         Ok(self
             .connection_strings
@@ -26,18 +28,22 @@ impl Config {
             .1)
     }
 
+    /// Log filter (tracing)
     pub fn engine_log_filter(&self) -> &str {
         &self.engine_log_filter
     }
 
+    /// Maximum idle duration before the interaction period ends
     pub fn max_idle_duration(&self) -> Duration {
         self.max_idle_duration
     }
 
+    /// How often the engine should poll for window switches, interactions, etc.
     pub fn poll_duration(&self) -> Duration {
         self.poll_duration
     }
 
+    /// How often the engine should check for alerts firing
     pub fn alert_duration(&self) -> Duration {
         self.alert_duration
     }
@@ -45,10 +51,11 @@ impl Config {
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "PascalCase")]
-pub struct ConnectionStrings {
+struct ConnectionStrings {
     query_context: String,
 }
 
+/// Get the configuration from the appsettings.json file
 pub fn get_config() -> Result<Config> {
     Ok(Figment::new()
         .merge(Json::file("appsettings.json"))
