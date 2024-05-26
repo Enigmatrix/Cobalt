@@ -5,21 +5,32 @@ use windows::Win32::Foundation::{
     WIN32_ERROR,
 };
 
+/// Trait for converting a type to a [`Result`]
+pub trait IntoResult {
+    type Err: Sized;
+    fn into_result(self) -> Result<(), Self::Err>;
+}
+
+/// Win32 Error (from GetLastError)
 pub struct Win32Error {
     inner: WIN32_ERROR,
 }
 
 impl Win32Error {
+    /// Get the last error raised by an Win32 API call (per-thread)
     fn get_last_error() -> WIN32_ERROR {
         unsafe { GetLastError() }
     }
 
+    /// Get the last error raised by an Win32 API call as [`Win32Error`].
     pub fn last_error() -> Self {
         Self {
             inner: Self::get_last_error(),
         }
     }
 
+    /// Get the last error raised by an Win32 API call as a [`Result`].
+    /// If the error is [`NO_ERROR`], then it is [`Ok`]
     pub fn last_result() -> Result<(), Self> {
         let err = Self::get_last_error();
         if err == NO_ERROR {
@@ -29,6 +40,7 @@ impl Win32Error {
         }
     }
 
+    /// Clear the last error (per-thread)
     pub fn clear_last_err() {
         unsafe { SetLastError(NO_ERROR) }
     }
@@ -48,26 +60,44 @@ impl fmt::Debug for Win32Error {
 
 impl std::error::Error for Win32Error {}
 
+/// [`NTSTATUS`] Error (from return code)
 #[derive(Clone)]
 pub struct NtError {
     inner: NTSTATUS,
 }
 
 impl NtError {
+    /// Create a new [`NtError`] error from a [`NTSTATUS`] return code
     pub fn from(inner: NTSTATUS) -> Self {
         Self { inner }
     }
 
+    /// Check if this error is due to insufficient buffer size
     pub fn insufficient_size(&self) -> bool {
         self.inner == STATUS_INFO_LENGTH_MISMATCH
     }
 
-    pub fn to_result(&self) -> Result<(), Self> {
+    /// Convert this error to a [`Result`].
+    /// If the error is [`STATUS_SUCCESS`], then it is [`Ok`]
+    pub fn into_result(self) -> Result<(), Self> {
         if self.inner == STATUS_SUCCESS {
             Ok(())
         } else {
-            Err(self.clone())
+            Err(self)
         }
+    }
+}
+
+impl IntoResult for NTSTATUS {
+    type Err = NtError;
+    fn into_result(self) -> Result<(), Self::Err> {
+        NtError::from(self).into_result()
+    }
+}
+
+impl From<NtError> for Result<(), NtError> {
+    fn from(value: NtError) -> Self {
+        value.into_result()
     }
 }
 
@@ -86,6 +116,10 @@ impl fmt::Debug for NtError {
 
 impl std::error::Error for NtError {}
 
+/// Macro to wrap around Win32 API calls and check the last result.
+/// Works on calls that return 0 on error using `win32!(val: call())`,
+/// BOOL/wrapper types that are internally zero-value on error using `win32!(wrap: call())`,
+/// null pointer return on error using `win32!(ptr: call())`,
 #[macro_export]
 macro_rules! win32 {
     (val: $e: expr) => {{
@@ -114,6 +148,8 @@ macro_rules! win32 {
     }};
 }
 
+/// Macro to repeatedly call a function with increasing buffer sizes until it succeeds,
+/// until a limit.
 #[macro_export]
 macro_rules! adapt_size {
     ($szi:ident, $bufi:ident -> $e: expr, $max_sz: expr) => {{

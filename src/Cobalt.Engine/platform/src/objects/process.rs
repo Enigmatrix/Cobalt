@@ -18,7 +18,7 @@ use windows::Win32::UI::Shell::DoEnvironmentSubstW;
 
 use crate::adapt_size;
 use crate::buf::WideBuffer;
-use crate::error::NtError;
+use crate::error::IntoResult;
 
 pub type ProcessId = u32;
 
@@ -30,6 +30,7 @@ pub struct Process {
 
 static BLACKLIST: OnceLock<Vec<OsString>> = OnceLock::new();
 
+/// Check if a path is in the blacklist
 fn is_path_in_blacklist(path: impl Into<PathBuf>) -> bool {
     let path = path.into();
     BLACKLIST
@@ -38,12 +39,14 @@ fn is_path_in_blacklist(path: impl Into<PathBuf>) -> bool {
         .any(|s| s.eq_ignore_ascii_case(path.as_os_str()))
 }
 
+/// Get the blacklist for killing processes
 fn kill_blacklist() -> Vec<OsString> {
     let blacklist_str = include_str!("../data/kill_blacklist.txt");
     let blacklist = blacklist_str.lines().map(expand_env_str).collect();
     blacklist
 }
 
+/// Expand environment variables in a string
 fn expand_env_str(s: &str) -> OsString {
     let mut len = 128 + s.len() + 1;
     let wide = s.encode_utf16().chain(Some(0)).collect::<Vec<_>>();
@@ -115,9 +118,9 @@ impl Process {
         Ok(())
     }
 
+    /// Get specific information about a process ([`PROCESSINFOCLASS`]) as a [`String`]
     #[inline(always)]
     fn query_information_string(&self, cls: PROCESSINFOCLASS) -> Result<String> {
-        //PROCESS_INFORMATION_CLASS
         self.query_information(
             cls,
             |us: &mut UNICODE_STRING| us.to_string_lossy(),
@@ -125,6 +128,8 @@ impl Process {
         )
     }
 
+    /// Get specific information about a process ([`PROCESSINFOCLASS`]) using a buffer
+    /// that is sized accordingly, and converts it to a specific type using a callback.
     #[inline(always)]
     fn query_information<T, R, F: Fn(&mut T) -> R>(
         &self,
@@ -133,7 +138,7 @@ impl Process {
         max_size: u32,
     ) -> Result<R> {
         Ok(adapt_size!(len, buf -> unsafe {
-            NtError::from(NtQueryInformationProcess(self.handle, cls, buf, len, &mut len)).to_result().map(|_| {
+            NtQueryInformationProcess(self.handle, cls, buf, len, &mut len).into_result().map(|_| {
                 // unwrap will always succeed as otherwise NtQueryInformationProcess would have failed
                 // and we would have exited.
                 let us = buf.cast::<T>().as_mut().unwrap();

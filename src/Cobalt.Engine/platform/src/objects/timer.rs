@@ -9,14 +9,14 @@ use windows::Win32::System::Threading::{
 
 use crate::objects::Duration;
 
-/// Win32-based [Timer]. Needs to be scheduled onto a [EventLoop].
+/// Win32-based [`Timer`]. Needs to be scheduled onto a [`crate::objects::EventLoop`].
 pub struct Timer {
     handle: HANDLE,
 }
 
 impl Timer {
     /// Create a new [Timer] which calls the callback with the specified due and period.
-    /// ### Safety: callback must last as long as the [Timer], and the callback must not be moved.
+    /// # Safety: callback must last as long as the [Timer], and the callback must not be moved.
     pub fn new<F: FnMut() -> Result<()>>(
         due: Duration,
         period: Duration,

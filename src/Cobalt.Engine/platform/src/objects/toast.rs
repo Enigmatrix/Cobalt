@@ -3,6 +3,10 @@ use windows::core::Interface;
 use windows::Data::Xml::Dom::{XmlDocument, XmlElement};
 use windows::UI::Notifications::{ToastNotification, ToastNotificationManager};
 
+/// Once we get registration settled, we can move away from a singleton pattern.
+
+/// [Progress](https://learn.microsoft.com/en-us/windows/apps/design/shell/tiles-and-notifications/adaptive-interactive-toasts?tabs=xml#progress-bar)
+/// for Toast notifications.
 pub struct Progress {
     pub title: String,
     pub value: f64,
@@ -10,6 +14,9 @@ pub struct Progress {
     pub status: String,
 }
 
+const AUMID: &str = "Cobalt";
+
+/// Toast notification manager using the WinRT APIs.
 pub struct ToastManager;
 
 impl ToastManager {
@@ -26,9 +33,9 @@ impl ToastManager {
     appLogoOverlay.SetAttribute(&"placement".into(), &"appLogoOverride".into())?;
     toastVisualElements.GetAt(0)?.AppendChild(&appLogoOverlay)?;*/
 
+    /// Show a basic toast notification with title and text.
     pub fn show_basic(title: &str, message: &str) -> Result<()> {
-        let aumid = "Cobalt";
-        let mgr = ToastNotificationManager::CreateToastNotifierWithId(&aumid.into())?;
+        let mgr = ToastNotificationManager::CreateToastNotifierWithId(&AUMID.into())?;
 
         let content = XmlDocument::new()?;
         content.LoadXml(
@@ -56,9 +63,9 @@ impl ToastManager {
         Ok(())
     }
 
+    /// Show a basic toast notification with title, text and a progress bar.
     pub fn show_with_progress(title: &str, message: &str, progress: Progress) -> Result<()> {
-        let aumid = "Cobalt";
-        let mgr = ToastNotificationManager::CreateToastNotifierWithId(&aumid.into())?;
+        let mgr = ToastNotificationManager::CreateToastNotifierWithId(&AUMID.into())?;
 
         let content = XmlDocument::new()?;
         content.LoadXml(
