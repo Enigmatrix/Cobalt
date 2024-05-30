@@ -68,7 +68,7 @@ fn event_loop(
 
     let window_session = WindowSession::new(fg)?;
     let mut fg_watcher = ForegroundEventWatcher::new(window_session)?;
-    let mut it_watcher = InteractionWatcher::new(config, now);
+    let it_watcher = InteractionWatcher::init(config, now)?;
 
     let _poll_timer = Timer::new(
         poll_dur,
