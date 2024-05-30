@@ -57,8 +57,8 @@ pub struct InteractionPeriod {
     pub id: Ref<Self>,
     pub start: Timestamp,
     pub end: Timestamp,
-    pub mouseclicks: u64,
-    pub keystrokes: u64,
+    pub mouse_clicks: u64,
+    pub key_strokes: u64,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -195,7 +195,7 @@ table!(
     InteractionPeriod,
     "interaction_periods",
     id: Id,
-    ["id", "start", "end", "mouseclicks", "keystrokes"]
+    ["id", "start", "end", "mouse_clicks", "key_strokes"]
 );
 
 table!(

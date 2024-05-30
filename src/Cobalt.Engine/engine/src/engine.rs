@@ -111,8 +111,8 @@ impl<'a, S: LocalSpawnExt> Engine<'a, S> {
                         id: Default::default(),
                         start: self.active_period_start.into(),
                         end: at.into(),
-                        mouseclicks: recorded_mouse_clicks,
-                        keystrokes: recorded_key_presses,
+                        mouse_clicks: recorded_mouse_clicks,
+                        key_strokes: recorded_key_presses,
                     })?;
                 // don't need to update active_period_start, as it will be updated when we become active again
             }

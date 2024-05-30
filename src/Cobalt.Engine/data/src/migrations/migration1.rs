@@ -59,8 +59,8 @@ impl Migration for Migration1 {
             id                              INTEGER PRIMARY KEY NOT NULL,
             start                           INTEGER NOT NULL,
             end                             INTEGER NOT NULL,
-            mouseclicks                     INTEGER NOT NULL,
-            keystrokes                      INTEGER NOT NULL
+            mouse_clicks                    INTEGER NOT NULL,
+            key_strokes                     INTEGER NOT NULL
         )",
             params![],
         )

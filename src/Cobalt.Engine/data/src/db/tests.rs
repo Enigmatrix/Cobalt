@@ -147,8 +147,8 @@ fn insert_interaction_period() -> Result<()> {
         id: Default::default(),
         start: 42,
         end: 420,
-        mouseclicks: 23,
-        keystrokes: 45,
+        mouse_clicks: 23,
+        key_strokes: 45,
     };
     writer.insert_interaction_period(&ip)?;
     let ip_from_db = db
@@ -158,8 +158,8 @@ fn insert_interaction_period() -> Result<()> {
                 id: f.get(0)?,
                 start: f.get(1)?,
                 end: f.get(2)?,
-                mouseclicks: f.get(3)?,
-                keystrokes: f.get(4)?,
+                mouse_clicks: f.get(3)?,
+                key_strokes: f.get(4)?,
             })
         })?;
     ip.id = Ref::new(1);

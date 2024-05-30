@@ -143,8 +143,8 @@ impl<'a> UsageWriter<'a> {
         self.insert_interaction_period.execute(params![
             interaction_period.start,
             interaction_period.end,
-            interaction_period.mouseclicks,
-            interaction_period.keystrokes
+            interaction_period.mouse_clicks,
+            interaction_period.key_strokes
         ])?;
         Ok(())
     }
