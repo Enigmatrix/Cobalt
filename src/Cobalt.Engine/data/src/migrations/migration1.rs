@@ -191,6 +191,18 @@ impl Migration for Migration1 {
         )
         .context("create unique index app_identity")?;
 
+        tx.execute(
+            "CREATE INDEX alert_event_fks_alert ON alert_events(alert_id, alert_version)",
+            params![],
+        )
+        .context("create index alert_event_fks_alert")?;
+
+        tx.execute(
+            "CREATE INDEX reminder_event_fks_reminder ON reminder_events(reminder_id, reminder_version)",
+            params![],
+        )
+        .context("create index reminder_event_fks_reminder")?;
+
         tx.commit().context("commit transaction")?;
         Ok(())
     }
