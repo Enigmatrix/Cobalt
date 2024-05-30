@@ -164,14 +164,23 @@ impl Migration for Migration1 {
         tx.execute("INSERT INTO reminder_id_seq (id) VALUES (1)", params![])
             .context("init reminder_id_seq")?;
 
+        // Even though sorting by start is the same as sorting by end and vice versa
+        // we need both fields so that these are covering indexes.
+
         tx.execute(
-            "CREATE INDEX usage_start_end ON usages(start ASC, end DESC)",
+            "CREATE INDEX usage_start_end ON usages(session_id, start, end)",
             params![],
         )
         .context("create index usage_start_end")?;
 
         tx.execute(
-            "CREATE INDEX interaction_period_start_end ON interaction_periods(start ASC, end DESC)",
+            "CREATE INDEX usage_end_start ON usages(session_id, end, start)",
+            params![],
+        )
+        .context("create index usage_start_end")?;
+
+        tx.execute(
+            "CREATE INDEX interaction_period_start_end ON interaction_periods(start, end)",
             params![],
         )
         .context("create index interaction_period")?;
@@ -181,6 +190,18 @@ impl Migration for Migration1 {
             params![],
         )
         .context("create unique index app_identity")?;
+
+        tx.execute(
+            "CREATE INDEX alert_event_fks_alert ON alert_events(alert_id, alert_version)",
+            params![],
+        )
+        .context("create index alert_event_fks_alert")?;
+
+        tx.execute(
+            "CREATE INDEX reminder_event_fks_reminder ON reminder_events(reminder_id, reminder_version)",
+            params![],
+        )
+        .context("create index reminder_event_fks_reminder")?;
 
         tx.commit().context("commit transaction")?;
         Ok(())
