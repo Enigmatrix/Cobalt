@@ -172,7 +172,7 @@ fn processor(
 fn foreground_window_session() -> Result<WindowSession> {
     loop {
         if let Some(window) = Window::foreground() {
-            return Ok(WindowSession::new(window)?);
+            return WindowSession::new(window);
         }
     }
 }
