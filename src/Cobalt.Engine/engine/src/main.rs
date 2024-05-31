@@ -35,7 +35,7 @@ fn real_main() -> Result<()> {
     let (event_tx, event_rx) = channels::unbounded();
     let (alert_tx, alert_rx) = channels::unbounded();
     let now = Timestamp::now();
-    let fg = foreground_window();
+    let fg = foreground_window_session()?;
 
     let ev_thread = {
         let config = config.clone();
@@ -58,7 +58,7 @@ fn event_loop(
     config: &Config,
     event_tx: Sender<Event>,
     alert_tx: Sender<Timestamp>,
-    fg: Window,
+    fg: WindowSession,
     now: Timestamp,
 ) -> Result<()> {
     let ev = EventLoop::new();
@@ -66,8 +66,7 @@ fn event_loop(
     let poll_dur = config.poll_duration().into();
     let alert_dur = config.alert_duration().into();
 
-    let window_session = WindowSession::new(fg)?;
-    let mut fg_watcher = ForegroundEventWatcher::new(window_session)?;
+    let mut fg_watcher = ForegroundEventWatcher::new(fg)?;
     let it_watcher = InteractionWatcher::init(config, now)?;
 
     let _poll_timer = Timer::new(
@@ -108,7 +107,7 @@ async fn engine_loop(
     cache: Rc<RefCell<cache::Cache>>,
     rx: Receiver<Event>,
     spawner: &LocalSpawner,
-    fg: Window,
+    fg: WindowSession,
     now: Timestamp,
 ) -> Result<()> {
     let mut db = Database::new(config)?;
@@ -136,7 +135,7 @@ async fn sentry_loop(
 /// Runs the [Engine] and [Sentry] loops in an asynchronous executor.
 fn processor(
     config: &Config,
-    fg: Window,
+    fg: WindowSession,
     now: Timestamp,
     event_rx: Receiver<Event>,
     alert_rx: Receiver<Timestamp>,
@@ -169,11 +168,11 @@ fn processor(
     Ok(())
 }
 
-/// Get the foreground [Window], blocking until one is present.
-fn foreground_window() -> Window {
+/// Get the foreground [Window], and makes it into a [WindowSession] blocking until one is present.
+fn foreground_window_session() -> Result<WindowSession> {
     loop {
         if let Some(window) = Window::foreground() {
-            return window;
+            return Ok(WindowSession::new(window)?);
         }
     }
 }
