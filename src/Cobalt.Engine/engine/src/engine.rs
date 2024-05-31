@@ -34,19 +34,13 @@ impl<'a, S: LocalSpawnExt> Engine<'a, S> {
     /// Create a new [Engine], which initializes it's first [Usage]
     pub async fn new(
         cache: Rc<RefCell<Cache>>,
-        foreground: Window,
+        foreground: WindowSession,
         start: Timestamp,
         config: Config,
         db: &'a mut Database,
         spawner: S,
     ) -> Result<Self> {
         let inserter = UsageWriter::new(db)?;
-        let title = foreground.title()?;
-        let ws = WindowSession {
-            window: foreground.clone(),
-            title: title.clone(),
-        };
-
         let mut ret = Self {
             cache,
             config,
@@ -59,7 +53,7 @@ impl<'a, S: LocalSpawnExt> Engine<'a, S> {
 
         ret.current_usage = Usage {
             id: Default::default(),
-            session: ret.get_session_details(ws)?,
+            session: ret.get_session_details(foreground)?,
             start: start.into(),
             end: start.into(),
         };
