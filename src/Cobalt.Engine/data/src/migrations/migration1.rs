@@ -70,7 +70,7 @@ impl Migration for Migration1 {
             "CREATE TABLE tags (
             id                              INTEGER PRIMARY KEY NOT NULL,
             name                            TEXT NOT NULL,
-            color                           TEXT
+            color                           TEXT NOT NULL
         )",
             params![],
         )
@@ -79,7 +79,7 @@ impl Migration for Migration1 {
         tx.execute(
             "CREATE TABLE _app_tags (
             app_id                          INTEGER NOT NULL REFERENCES apps(id),
-            tag_id                          INTEGER NOT NULL REFERENCES tags(id),
+            tag_id                          INTEGER NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
             PRIMARY KEY (app_id, tag_id)
         )",
             params![],
@@ -113,6 +113,7 @@ impl Migration for Migration1 {
             message                         TEXT NOT NULL,
             PRIMARY KEY (id, version),
             FOREIGN KEY (alert_id, alert_version) REFERENCES alerts(id, version)
+                ON DELETE CASCADE
         )",
             params![],
         )
@@ -125,6 +126,7 @@ impl Migration for Migration1 {
             alert_version                   INTEGER NOT NULL,
             timestamp                       INTEGER NOT NULL,
             FOREIGN KEY (alert_id, alert_version) REFERENCES alerts(id, version)
+                ON DELETE CASCADE
         )",
             params![],
         )
@@ -137,6 +139,7 @@ impl Migration for Migration1 {
             reminder_version                INTEGER NOT NULL,
             timestamp                       INTEGER NOT NULL,
             FOREIGN KEY (reminder_id, reminder_version) REFERENCES reminders(id, version)
+                ON DELETE CASCADE
         )",
             params![],
         )
