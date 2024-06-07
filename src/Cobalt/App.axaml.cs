@@ -9,6 +9,8 @@ using Cobalt.Common.ViewModels.Pages;
 using Cobalt.Extensions;
 using Cobalt.Views;
 using Cobalt.Views.Pages;
+using LiveChartsCore;
+using LiveChartsCore.SkiaSharpView;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using ReactiveUI;
@@ -20,6 +22,12 @@ public class App : Application
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
+
+        LiveCharts.Configure(config => 
+            config 
+                .AddDarkTheme()  
+                // .HasMap<City>((city, index) => new(index, city.Population)) 
+            ); 
     }
 
     public override void OnFrameworkInitializationCompleted()
