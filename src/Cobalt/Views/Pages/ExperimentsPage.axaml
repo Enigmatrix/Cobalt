@@ -6,40 +6,70 @@
                                 xmlns:reactiveUi="http://reactiveui.net"
                                 xmlns:vmPages="clr-namespace:Cobalt.Common.ViewModels.Pages;assembly=Cobalt.Common.ViewModels"
                                 xmlns:fluentUi="clr-namespace:FluentAvalonia.UI.Controls;assembly=FluentAvalonia"
+                                xmlns:data="clr-namespace:Cobalt.Common.Data;assembly=Cobalt.Common.Data"
+                                xmlns:entities="clr-namespace:Cobalt.Common.ViewModels.Entities;assembly=Cobalt.Common.ViewModels"
                                 mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
                                 x:Class="Cobalt.Views.Pages.ExperimentsPage" Padding="8"
                                 x:DataType="vmPages:ExperimentsPageViewModel">
-    <StackPanel Orientation="Vertical">
-        <DockPanel Margin="8,8, 16, 16">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Orientation="Vertical" Spacing="16">
+            <DockPanel Margin="8,8, 16, 16">
 
-            <TextBlock DockPanel.Dock="Left" Theme="{StaticResource TitleTextBlockStyle}" Text="{Binding Name}" />
+                <TextBlock DockPanel.Dock="Left" Theme="{StaticResource TitleTextBlockStyle}" Text="{Binding Name}" />
 
-            <!--
-			<controls:CommandBar DockPanel.Dock="Right" HorizontalAlignment="Right">
-                <controls:CommandBar.PrimaryCommands>
-                    <controls:CommandBarButton>
-                        <controls:CommandBarButton.IconSource>
-                            <controls:SymbolIconSource Symbol="Alert" />
-                        </controls:CommandBarButton.IconSource>
-                    </controls:CommandBarButton>
+                <!--
+			    <controls:CommandBar DockPanel.Dock="Right" HorizontalAlignment="Right">
+                    <controls:CommandBar.PrimaryCommands>
+                        <controls:CommandBarButton>
+                            <controls:CommandBarButton.IconSource>
+                                <controls:SymbolIconSource Symbol="Alert" />
+                            </controls:CommandBarButton.IconSource>
+                        </controls:CommandBarButton>
 
-                </controls:CommandBar.PrimaryCommands>
-            </controls:CommandBar>-->
-        </DockPanel>
+                    </controls:CommandBar.PrimaryCommands>
+                </controls:CommandBar>-->
+            </DockPanel>
 
-        <fluentUi:SettingsExpander IsExpanded="True">
-            <fluentUi:SettingsExpander.Header>
-                <TextBlock Theme="{StaticResource SubtitleTextBlockStyle}" Text="Data" />
-            </fluentUi:SettingsExpander.Header>
-            <fluentUi:SettingsExpander.IconSource>
-                <!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2023 Fonticons, Inc. Icon: database-->
-                <fluentUi:PathIconSource
-                    Data="M40 12C40 9.34893 37.7069 7.35204 34.95 6.09039C32.0832 4.77847 28.2106 4 24 4C19.7894 4 15.9168 4.77847 13.05 6.09039C10.2931 7.35204 8 9.34893 8 12V36.25H8.00685C8.14576 38.7769 10.3804 40.6879 13.05 41.9096C15.9168 43.2215 19.7894 44 24 44C28.2106 44 32.0832 43.2215 34.95 41.9096C37.6196 40.6879 39.8542 38.7769 39.9932 36.25H40V12ZM10.5 12C10.5 10.9232 11.5088 9.54504 14.0903 8.36366C16.562 7.23257 20.0644 6.5 24 6.5C27.9356 6.5 31.438 7.23257 33.9097 8.36366C36.4912 9.54504 37.5 10.9232 37.5 12C37.5 13.0768 36.4912 14.455 33.9097 15.6363C31.438 16.7674 27.9356 17.5 24 17.5C20.0644 17.5 16.562 16.7674 14.0903 15.6363C11.5088 14.455 10.5 13.0768 10.5 12ZM37.5 36C37.5 37.0769 36.4912 38.455 33.9097 39.6363C31.438 40.7674 27.9356 41.5 24 41.5C20.0644 41.5 16.562 40.7674 14.0903 39.6363C11.5088 38.455 10.5 37.0769 10.5 36V16.3939C11.2516 16.9799 12.1247 17.4862 13.05 17.9096C15.9168 19.2215 19.7894 20 24 20C28.2106 20 32.0832 19.2215 34.95 17.9096C35.8753 17.4862 36.7484 16.9799 37.5 16.3939V36Z" />
-            </fluentUi:SettingsExpander.IconSource>
-            <fluentUi:SettingsExpanderItem Content="Update last Usage end to now" IsClickEnabled="True"
-                                           Command="{Binding UpdateAllUsageEndsAsync}" />
-        </fluentUi:SettingsExpander>
+            <fluentUi:SettingsExpander IsExpanded="True">
+                <fluentUi:SettingsExpander.Header>
+                    <TextBlock Theme="{StaticResource SubtitleTextBlockStyle}" Text="Data" />
+                </fluentUi:SettingsExpander.Header>
+                <fluentUi:SettingsExpander.IconSource>
+                    <!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2023 Fonticons, Inc. Icon: database-->
+                    <fluentUi:PathIconSource
+                        Data="M40 12C40 9.34893 37.7069 7.35204 34.95 6.09039C32.0832 4.77847 28.2106 4 24 4C19.7894 4 15.9168 4.77847 13.05 6.09039C10.2931 7.35204 8 9.34893 8 12V36.25H8.00685C8.14576 38.7769 10.3804 40.6879 13.05 41.9096C15.9168 43.2215 19.7894 44 24 44C28.2106 44 32.0832 43.2215 34.95 41.9096C37.6196 40.6879 39.8542 38.7769 39.9932 36.25H40V12ZM10.5 12C10.5 10.9232 11.5088 9.54504 14.0903 8.36366C16.562 7.23257 20.0644 6.5 24 6.5C27.9356 6.5 31.438 7.23257 33.9097 8.36366C36.4912 9.54504 37.5 10.9232 37.5 12C37.5 13.0768 36.4912 14.455 33.9097 15.6363C31.438 16.7674 27.9356 17.5 24 17.5C20.0644 17.5 16.562 16.7674 14.0903 15.6363C11.5088 14.455 10.5 13.0768 10.5 12ZM37.5 36C37.5 37.0769 36.4912 38.455 33.9097 39.6363C31.438 40.7674 27.9356 41.5 24 41.5C20.0644 41.5 16.562 40.7674 14.0903 39.6363C11.5088 38.455 10.5 37.0769 10.5 36V16.3939C11.2516 16.9799 12.1247 17.4862 13.05 17.9096C15.9168 19.2215 19.7894 20 24 20C28.2106 20 32.0832 19.2215 34.95 17.9096C35.8753 17.4862 36.7484 16.9799 37.5 16.3939V36Z" />
+                </fluentUi:SettingsExpander.IconSource>
+                <fluentUi:SettingsExpanderItem Content="Update last Usage end to now" IsClickEnabled="True"
+                                               Command="{Binding UpdateAllUsageEndsAsync}" />
+            </fluentUi:SettingsExpander>
+
+            <fluentUi:SettingsExpander IsExpanded="True">
+                <fluentUi:SettingsExpander.Header>
+                    <TextBlock Theme="{StaticResource SubtitleTextBlockStyle}" Text="App Duration Data Table" />
+                </fluentUi:SettingsExpander.Header>
+                <DataGrid ItemsSource="{Binding AppUsagesPerDay.Value^}"
+                          IsReadOnly="True"
+                          GridLinesVisibility="All" Height="400"
+                          BorderThickness="1" BorderBrush="Gray">
+                    <DataGrid.Columns>
+                        <DataGridTemplateColumn Header="Icon">
+                            <DataTemplate>
+                                <DataTemplate.DataType>
+                                    <x:Type TypeName="data:WithDuration" x:TypeArguments="entities:AppViewModel" />
+                                </DataTemplate.DataType>
+                                <Image Width="16" Height="16"
+                                       VerticalAlignment="Center"
+                                       Source="{Binding Inner.Image.Value^, Converter={StaticResource BytesToImageConverter}}" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTextColumn Header="App Name" Binding="{Binding Inner.Name}" />
+                        <DataGridTextColumn Header="Duration" Binding="{Binding Duration}" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </fluentUi:SettingsExpander>
 
 
-    </StackPanel>
+        </StackPanel>
+
+    </ScrollViewer>
 </reactiveUi:ReactiveUserControl>

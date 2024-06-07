@@ -1,6 +1,10 @@
-﻿using Cobalt.Common.Data;
+﻿using System.Reactive.Disposables;
+using Cobalt.Common.Data;
+using Cobalt.Common.ViewModels.Analysis;
+using Cobalt.Common.ViewModels.Entities;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.EntityFrameworkCore;
+using ReactiveUI;
 
 namespace Cobalt.Common.ViewModels.Pages;
 
@@ -12,9 +16,16 @@ namespace Cobalt.Common.ViewModels.Pages;
 /// </remarks>
 public partial class ExperimentsPageViewModel : PageViewModelBase
 {
-    public ExperimentsPageViewModel(IDbContextFactory<QueryContext> contexts) : base(contexts)
+    public ExperimentsPageViewModel(IEntityViewModelCache entityCache, IDbContextFactory<QueryContext> contexts) :
+        base(contexts)
     {
+        AppUsagesPerDay = Query(context => context.AppDurations(context.Apps, DateTime.Today).ToListAsync(),
+            appDur => appDur.Map(entityCache.App));
+
+        this.WhenActivated((CompositeDisposable dis) => { AppUsagesPerDay.Refresh(); });
     }
+
+    public Query<List<WithDuration<AppViewModel>>> AppUsagesPerDay { get; }
 
     public override string Name => "Experiments";
 
