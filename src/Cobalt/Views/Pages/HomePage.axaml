@@ -4,6 +4,7 @@
                                 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
                                 xmlns:reactiveUi="http://reactiveui.net"
                                 xmlns:vmPages="clr-namespace:Cobalt.Common.ViewModels.Pages;assembly=Cobalt.Common.ViewModels"
+                                xmlns:lvCharts="clr-namespace:LiveChartsCore.SkiaSharpView.Avalonia;assembly=LiveChartsCore.SkiaSharpView.Avalonia"
                                 mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
                                 x:Class="Cobalt.Views.Pages.HomePage" x:DataType="vmPages:HomePageViewModel">
     <ScrollViewer Padding="16">
@@ -23,14 +24,45 @@
                 BorderThickness="1"
                 BorderBrush="{DynamicResource AccentFillColorTertiaryBrush}"
                 Background="{DynamicResource AccentFillColorDefaultBrush}"
-                MinHeight="200">
-                <Grid ColumnDefinitions="*,*,Auto">
-                    <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                MinHeight="260">
+                <Grid ColumnDefinitions="*,*,*,Auto">
+
+
+                    <Grid Grid.Column="0" RowDefinitions="Auto,*" HorizontalAlignment="Stretch">
+                        <TextBlock Grid.Row="0" HorizontalAlignment="Center"
+                                   Foreground="{DynamicResource TextOnAccentFillColorPrimaryBrush}"
+                                   Theme="{StaticResource BodyStrongTextBlockStyle}"
+                                   Text="Today" />
+                        <lvCharts:PieChart Grid.Row="1"
+                                           Series="{Binding AppUsagesPerDay.Value^, Converter={StaticResource PieSeriesConverter}}" />
+                    </Grid>
+
+
+                    <Grid Grid.Column="1" RowDefinitions="Auto,*" HorizontalAlignment="Stretch">
+                        <TextBlock Grid.Row="0" HorizontalAlignment="Center"
+                                   Foreground="{DynamicResource TextOnAccentFillColorPrimaryBrush}"
+                                   Theme="{StaticResource BodyStrongTextBlockStyle}"
+                                   Text="Week" />
+                        <lvCharts:PieChart Grid.Row="1"
+                                           Series="{Binding AppUsagesPerWeek.Value^, Converter={StaticResource PieSeriesConverter}}" />
+                    </Grid>
+
+
+                    <Grid Grid.Column="2" RowDefinitions="Auto,*" HorizontalAlignment="Stretch">
+                        <TextBlock Grid.Row="0" HorizontalAlignment="Center"
+                                   Foreground="{DynamicResource TextOnAccentFillColorPrimaryBrush}"
+                                   Theme="{StaticResource BodyStrongTextBlockStyle}"
+                                   Text="Month" />
+                        <lvCharts:PieChart Grid.Row="1"
+                                           Series="{Binding AppUsagesPerMonth.Value^, Converter={StaticResource PieSeriesConverter}}" />
+                    </Grid>
+
+                    <StackPanel Grid.Column="3" VerticalAlignment="Center">
                         <TextBlock
                             TextAlignment="Right"
                             Theme="{StaticResource CaptionTextBlockStyle}"
                             Foreground="{DynamicResource TextOnAccentFillColorPrimaryBrush}"
-                            Text="Daily" />
+                            Text="Today" />
                         <TextBlock
                             TextAlignment="Right"
                             Theme="{StaticResource SubtitleTextBlockStyle}"
@@ -42,7 +74,19 @@
                             TextAlignment="Right"
                             Theme="{StaticResource CaptionTextBlockStyle}"
                             Foreground="{DynamicResource TextOnAccentFillColorPrimaryBrush}"
-                            Text="Weekly" />
+                            Text="Week" />
+                        <TextBlock
+                            TextAlignment="Right"
+                            Theme="{StaticResource SubtitleTextBlockStyle}"
+                            Foreground="{DynamicResource TextOnAccentFillColorPrimaryBrush}"
+                            Text="29h" />
+
+                        <TextBlock
+                            Margin="0,16,0,0"
+                            TextAlignment="Right"
+                            Theme="{StaticResource CaptionTextBlockStyle}"
+                            Foreground="{DynamicResource TextOnAccentFillColorPrimaryBrush}"
+                            Text="Month" />
                         <TextBlock
                             TextAlignment="Right"
                             Theme="{StaticResource SubtitleTextBlockStyle}"
