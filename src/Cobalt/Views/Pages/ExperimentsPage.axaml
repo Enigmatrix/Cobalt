@@ -48,8 +48,9 @@
                 <fluentUi:SettingsExpander.Header>
                     <TextBlock Theme="{StaticResource SubtitleTextBlockStyle}" Text="App Usage for Today" />
                 </fluentUi:SettingsExpander.Header>
-				<avalonia:PieChart Series="{Binding AppUsagesPerDay.Value^, Converter={StaticResource PieSeriesConverter}}"
-                                   Width="200" Height="200"/>
+                <avalonia:PieChart
+                    Series="{Binding AppUsagesPerDay.Value^, Converter={StaticResource PieSeriesConverter}}"
+                    Width="200" Height="200" />
             </fluentUi:SettingsExpander>
 
             <fluentUi:SettingsExpander IsExpanded="True">
