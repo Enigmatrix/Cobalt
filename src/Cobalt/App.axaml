@@ -8,7 +8,7 @@
     <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
 
     <Application.Styles>
-        <fluentStyle:FluentAvaloniaTheme />
+        <fluentStyle:FluentAvaloniaTheme PreferUserAccentColor="True" />
 
         <StyleInclude Source="Controls/ExtendedSettingsExpander.axaml" />
     </Application.Styles>
