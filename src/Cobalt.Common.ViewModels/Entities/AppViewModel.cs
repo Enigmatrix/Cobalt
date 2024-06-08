@@ -9,7 +9,7 @@ namespace Cobalt.Common.ViewModels.Entities;
 /// <summary>
 ///     ViewModel for the App Entity
 /// </summary>
-public partial class AppViewModel : EditableEntityViewModelBase<App>
+public partial class AppViewModel : EditableEntityViewModelBase<App>, IHasColor, IHasName
 {
     [ObservableProperty] private string _color;
     [ObservableProperty] private string _company;
