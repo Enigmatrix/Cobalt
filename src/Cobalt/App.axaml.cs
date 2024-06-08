@@ -23,11 +23,11 @@ public class App : Application
     {
         AvaloniaXamlLoader.Load(this);
 
-        LiveCharts.Configure(config => 
-            config 
-                .AddDarkTheme()  
-                // .HasMap<City>((city, index) => new(index, city.Population)) 
-            ); 
+        LiveCharts.Configure(config =>
+                config
+                    .AddDarkTheme()
+            // .HasMap<City>((city, index) => new(index, city.Population)) 
+        );
     }
 
     public override void OnFrameworkInitializationCompleted()
