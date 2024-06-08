@@ -63,31 +63,33 @@ public class QueryContext : DbContext
         return await Database.SqlQuery<byte[]?>($"SELECT icon AS Value FROM apps WHERE id={app.Id}").FirstAsync();
     }
 
-    /// <summary>
-    ///     Map an <see cref="App" /> to its <see cref="Usage" /> Duration within a range of time, using a reusable
-    ///     <see cref="Expression" />.
-    /// </summary>
-    /// <param name="start">Start range time. A null value implies no limit on the start time</param>
-    /// <param name="end">End range time. A null value implies no limit on the end time</param>
-    private static Expression<Func<App, long>> AppDurationTicksOnly(DateTime? start = null, DateTime? end = null)
+    // TODO document this
+    private static IQueryable<WithTicks<App>> AppDurationTicksOnly(IQueryable<App> apps, DateTime? start = null,
+        DateTime? end = null)
     {
         var startTicks = (start ?? DateTime.MinValue).Ticks;
         var endTicks = (end ?? DateTime.MaxValue).Ticks;
 
-        return app => app.Sessions.SelectMany(session =>
-                session.Usages
-                    .Select(usage =>
-                        // IEnumerable<TimeSpan>.Sum() and TimeSpan comparisons cannot be translated to a SQL query by EntityFramework.
-                        // ref: https://github.com/dotnet/efcore/issues/27103 and https://github.com/dotnet/efcore/issues/10434 
-                        new
-                        {
-                            StartTicks = EF.Property<long>(usage, nameof(usage.Start)),
-                            EndTicks = EF.Property<long>(usage, nameof(usage.End))
-                        }
-                    ))
-            .Where(usage => usage.EndTicks > startTicks && endTicks >= usage.StartTicks)
-            .Select(usage => Math.Min(endTicks, usage.EndTicks) - Math.Max(startTicks, usage.StartTicks))
-            .Sum();
+        return apps.Select(app => new
+                {
+                    App = app,
+                    Ticks = app.Sessions.AsQueryable()
+                        .SelectMany(session => session.Usages
+                            .Select(usage =>
+                                // IEnumerable<TimeSpan>.Sum() and TimeSpan comparisons cannot be translated to a SQL query by EntityFramework.
+                                // ref: https://github.com/dotnet/efcore/issues/27103 and https://github.com/dotnet/efcore/issues/10434 
+                                new
+                                {
+                                    StartTicks = EF.Property<long>(usage, nameof(usage.Start)),
+                                    EndTicks = EF.Property<long>(usage, nameof(usage.End))
+                                }
+                            ))
+                        .Where(usage => usage.EndTicks > startTicks && endTicks >= usage.StartTicks)
+                        .Select(usage => Math.Min(endTicks, usage.EndTicks) - Math.Max(startTicks, usage.StartTicks))
+                        .Sum()
+                })
+                .Select(appTicks => new WithTicks<App> { Inner = appTicks.App, Ticks = appTicks.Ticks })
+            ;
     }
 
     /// <summary>
@@ -99,16 +101,9 @@ public class QueryContext : DbContext
     public IQueryable<WithDuration<App>> AppDurations(IQueryable<App>? apps = null, DateTime? start = null,
         DateTime? end = null)
     {
-        // Surprisingly, converting long to TimeSpan using the constructor is perfectly valid!
-        Expression<Func<App, long, WithDuration<App>>> convert = (app, dur) =>
-            new WithDuration<App>(app, new TimeSpan(dur));
-
-        var appParam = Expression.Parameter(typeof(App));
-        var reforgedExpr = Expression.Lambda<Func<App, WithDuration<App>>>(
-            Expression.Invoke(convert, appParam, Expression.Invoke(AppDurationTicksOnly(start, end), appParam)),
-            appParam);
-
-        return (apps ?? Apps).Select(reforgedExpr);
+        return AppDurationTicksOnly(apps ?? Apps, start, end)
+            .Where(appTicks => appTicks.Ticks > 0)
+            .Select(appTicks => new WithDuration<App>(appTicks.Inner, new TimeSpan(appTicks.Ticks)));
     }
 
 
@@ -324,6 +319,12 @@ public class QueryContext : DbContext
             reminder.Version == Reminders
                 .Where(otherReminder => otherReminder.Id == reminder.Id)
                 .Max(otherReminder => otherReminder.Version));
+    }
+
+    public record struct WithTicks<T>
+    {
+        public T Inner { get; set; }
+        public long Ticks { get; set; }
     }
 
     private class IdSeqGenerator(string table) : ValueGenerator
