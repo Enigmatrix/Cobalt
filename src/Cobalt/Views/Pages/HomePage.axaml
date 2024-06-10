@@ -60,35 +60,36 @@
 
                     <StackPanel Grid.Column="3" VerticalAlignment="Center">
                         <TextBlock
+                            HorizontalAlignment="Right"
                             TextAlignment="Right"
                             Theme="{StaticResource CaptionTextBlockStyle}"
                             Text="Today" />
                         <TextBlock
                             TextAlignment="Right"
                             Theme="{StaticResource SubtitleTextBlockStyle}"
-						    Text="{Binding DailyUsage.Value^, Converter={StaticResource HumanizeTimeSpanConverter}}" />
-
-						<!--Text="{Binding DailyUsage, Converter={StaticResource HumanizeTimeSpanConverter}}" />-->
+                            Text="{Binding DailyUsage.Value^, Converter={StaticResource HumanizeTimeSpanConverter}}" />
 
                         <TextBlock
                             Margin="0,16,0,0"
+                            HorizontalAlignment="Right"
                             TextAlignment="Right"
                             Theme="{StaticResource CaptionTextBlockStyle}"
                             Text="Week" />
                         <TextBlock
                             TextAlignment="Right"
                             Theme="{StaticResource SubtitleTextBlockStyle}"
-                            Text="29h" />
+                            Text="{Binding WeeklyUsage.Value^, Converter={StaticResource HumanizeTimeSpanConverter}}" />
 
                         <TextBlock
                             Margin="0,16,0,0"
+                            HorizontalAlignment="Right"
                             TextAlignment="Right"
                             Theme="{StaticResource CaptionTextBlockStyle}"
                             Text="Month" />
                         <TextBlock
                             TextAlignment="Right"
                             Theme="{StaticResource SubtitleTextBlockStyle}"
-                            Text="144h" />
+                            Text="{Binding MonthlyUsage.Value^, Converter={StaticResource HumanizeTimeSpanConverter}}" />
                     </StackPanel>
                 </Grid>
             </Border>

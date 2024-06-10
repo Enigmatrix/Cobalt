@@ -29,6 +29,8 @@ public class HomePageViewModel : PageViewModelBase
             appDur => appDur.Map(entityCache.App));
 
         DailyUsage = Query(context => context.UsagesBetween(start: dayStart));
+        WeeklyUsage = Query(context => context.UsagesBetween(start: weekStart));
+        MonthlyUsage = Query(context => context.UsagesBetween(start: monthStart));
 
         this.WhenActivated((CompositeDisposable dis) =>
         {
@@ -37,6 +39,8 @@ public class HomePageViewModel : PageViewModelBase
             AppUsagesPerMonth.Refresh();
 
             DailyUsage.Refresh();
+            WeeklyUsage.Refresh();
+            MonthlyUsage.Refresh();
         });
     }
 
@@ -44,6 +48,8 @@ public class HomePageViewModel : PageViewModelBase
     public Query<List<WithDuration<AppViewModel>>> AppUsagesPerWeek { get; }
     public Query<List<WithDuration<AppViewModel>>> AppUsagesPerMonth { get; }
     public Query<TimeSpan> DailyUsage { get; }
+    public Query<TimeSpan> WeeklyUsage { get; }
+    public Query<TimeSpan> MonthlyUsage { get; }
 
     public override string Name => "Home";
 }
