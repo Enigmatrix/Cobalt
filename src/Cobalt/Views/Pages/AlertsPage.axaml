@@ -81,7 +81,7 @@
         </ScrollViewer.DataTemplates>
         <StackPanel Orientation="Vertical">
 
-            <Grid ColumnDefinitions="Auto,*,Auto">
+            <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,12">
 
                 <TextBlock VerticalAlignment="Center" Grid.Column="0" DockPanel.Dock="Left"
                            Theme="{StaticResource TitleTextBlockStyle}" Text="{Binding Name}" />
@@ -93,7 +93,7 @@
                 </fluentUi:CommandBar>
             </Grid>
 
-            <ItemsControl ItemsSource="{Binding Alerts.Value^}" Margin="0,12,0,0">
+            <ItemsControl ItemsSource="{Binding Alerts.Value^}">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
                         <StackPanel Spacing="12" Orientation="Vertical" />
