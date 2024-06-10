@@ -15,30 +15,35 @@ public class HomePageViewModel : PageViewModelBase
     public HomePageViewModel(IEntityViewModelCache entityCache, IDbContextFactory<QueryContext> contexts) :
         base(contexts)
     {
-        AppUsagesPerDay = Query(context => context.AppDurations(context.Apps, DateTime.Today).ToListAsync(),
+        var dayStart = DateTime.Today;
+        var weekStart = dayStart.AddDays(-(int)dayStart.DayOfWeek);
+        var monthStart = dayStart.AddDays(-dayStart.Day + 1);
+
+        AppUsagesPerDay = Query(context => context.AppDurations(start: dayStart).ToListAsync(),
             appDur => appDur.Map(entityCache.App));
 
-        AppUsagesPerWeek = Query(
-            context => context.AppDurations(context.Apps, DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek))
-                .ToListAsync(),
+        AppUsagesPerWeek = Query(context => context.AppDurations(start: weekStart).ToListAsync(),
             appDur => appDur.Map(entityCache.App));
 
-        AppUsagesPerMonth = Query(
-            context => context.AppDurations(context.Apps, DateTime.Today.AddDays(-DateTime.Today.Day + 1))
-                .ToListAsync(),
+        AppUsagesPerMonth = Query(context => context.AppDurations(start: monthStart).ToListAsync(),
             appDur => appDur.Map(entityCache.App));
+
+        DailyUsage = Query(context => context.UsagesBetween(start: dayStart));
 
         this.WhenActivated((CompositeDisposable dis) =>
         {
             AppUsagesPerDay.Refresh();
             AppUsagesPerWeek.Refresh();
             AppUsagesPerMonth.Refresh();
+
+            DailyUsage.Refresh();
         });
     }
 
     public Query<List<WithDuration<AppViewModel>>> AppUsagesPerDay { get; }
     public Query<List<WithDuration<AppViewModel>>> AppUsagesPerWeek { get; }
     public Query<List<WithDuration<AppViewModel>>> AppUsagesPerMonth { get; }
+    public Query<TimeSpan> DailyUsage { get; }
 
     public override string Name => "Home";
 }

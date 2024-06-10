@@ -66,7 +66,9 @@
                         <TextBlock
                             TextAlignment="Right"
                             Theme="{StaticResource SubtitleTextBlockStyle}"
-                            Text="5h 3m" />
+						    Text="{Binding DailyUsage.Value^, Converter={StaticResource HumanizeTimeSpanConverter}}" />
+
+						<!--Text="{Binding DailyUsage, Converter={StaticResource HumanizeTimeSpanConverter}}" />-->
 
                         <TextBlock
                             Margin="0,16,0,0"

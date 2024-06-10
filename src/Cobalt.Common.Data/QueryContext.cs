@@ -105,6 +105,21 @@ public class QueryContext : DbContext
             .Select(appTicks => new WithDuration<App>(appTicks.Inner, new TimeSpan(appTicks.Ticks)));
     }
 
+    // TODO document this
+    public async Task<TimeSpan> UsagesBetween(IQueryable<Usage>? usages = null, DateTime? start = null,
+        DateTime? end = null)
+    {
+        /*var startTicks = (start ?? DateTime.MinValue);
+        var endTicks = (end ?? DateTime.MaxValue);
+
+        var dur = await (usages ?? Usages)
+            // .Where(usage => usage.EndTicks > startTicks && endTicks >= usage.StartTicks)
+            .Select(usage => (usage.End > endTicks ? endTicks : usage.End) - (startTicks > usage.Start ? startTicks : usage.Start))
+            //.Select(_ => 1L)
+            .SumAsync(x => x.TotalNanoseconds);*/
+        return new TimeSpan();
+    }
+
 
     /// <summary>
     ///     Gets <see cref="Alert" /> and their Durations
