@@ -73,16 +73,7 @@ public class QueryContext : DbContext
                 {
                     App = app,
                     Ticks = app.Sessions.AsQueryable()
-                        .SelectMany(session => session.Usages
-                            .Select(usage =>
-                                // IEnumerable<TimeSpan>.Sum() and TimeSpan comparisons cannot be translated to a SQL query by EntityFramework.
-                                // ref: https://github.com/dotnet/efcore/issues/27103 and https://github.com/dotnet/efcore/issues/10434 
-                                new
-                                {
-                                    StartTicks = EF.Property<long>(usage, nameof(usage.Start)),
-                                    EndTicks = EF.Property<long>(usage, nameof(usage.End))
-                                }
-                            ))
+                        .SelectMany(session => session.Usages)
                         .Where(usage => usage.EndTicks > startTicks && endTicks >= usage.StartTicks)
                         .Select(usage => Math.Min(endTicks, usage.EndTicks) - Math.Max(startTicks, usage.StartTicks))
                         .Sum()
@@ -109,15 +100,14 @@ public class QueryContext : DbContext
     public async Task<TimeSpan> UsagesBetween(IQueryable<Usage>? usages = null, DateTime? start = null,
         DateTime? end = null)
     {
-        /*var startTicks = (start ?? DateTime.MinValue);
-        var endTicks = (end ?? DateTime.MaxValue);
+        var startTicks = (start ?? DateTime.MinValue).Ticks;
+        var endTicks = (end ?? DateTime.MaxValue).Ticks;
 
         var dur = await (usages ?? Usages)
-            // .Where(usage => usage.EndTicks > startTicks && endTicks >= usage.StartTicks)
-            .Select(usage => (usage.End > endTicks ? endTicks : usage.End) - (startTicks > usage.Start ? startTicks : usage.Start))
-            //.Select(_ => 1L)
-            .SumAsync(x => x.TotalNanoseconds);*/
-        return new TimeSpan();
+            .Where(usage => usage.EndTicks > startTicks && endTicks >= usage.StartTicks)
+            .Select(usage => Math.Min(endTicks, usage.EndTicks) - Math.Max(startTicks, usage.StartTicks))
+            .SumAsync();
+        return new TimeSpan(dur);
     }
 
 
@@ -152,17 +142,8 @@ public class QueryContext : DbContext
                             ? alertInfo.Alert.Tag!.Apps.Contains(app)
                             : alertInfo.Alert.App == app)
                     // Copied from AppDurationsTickOnly - can't seem to use the start/end as expressions
-                    .SelectMany(app => app.Sessions.SelectMany(session =>
-                            session.Usages
-                                .Select(usage =>
-                                    // IEnumerable<TimeSpan>.Sum() and TimeSpan comparisons cannot be translated to a SQL query by EntityFramework.
-                                    // ref: https://github.com/dotnet/efcore/issues/27103 and https://github.com/dotnet/efcore/issues/10434 
-                                    new
-                                    {
-                                        StartTicks = EF.Property<long>(usage, nameof(usage.Start)),
-                                        EndTicks = EF.Property<long>(usage, nameof(usage.End))
-                                    }
-                                ))
+                    .SelectMany(app => app.Sessions
+                        .SelectMany(session => session.Usages)
                         .Where(usage =>
                             usage.EndTicks > alertInfo.LimitStartTicks && alertInfo.LimitEndTicks >= usage.StartTicks)
                         .Select(usage =>
