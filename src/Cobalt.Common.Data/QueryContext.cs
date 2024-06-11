@@ -367,8 +367,8 @@ public class QueryContext : DbContext
     /// <param name="newUsageEnd">New last <see cref="Usage" /> End</param>
     public async Task UpdateAllUsageEndsAsync(DateTime newUsageEnd)
     {
-        var usageLastEnd = await Usages.MaxAsync(usage => usage.End);
-        var deltaTicks = (newUsageEnd - usageLastEnd).Ticks;
+        var usageLastEnd = await Usages.MaxAsync(usage => usage.EndTicks);
+        var deltaTicks = newUsageEnd.Ticks - usageLastEnd;
         await Database.ExecuteSqlAsync($"UPDATE usages SET start = start + {deltaTicks}, end = end + {deltaTicks}");
         await SaveChangesAsync();
     }
