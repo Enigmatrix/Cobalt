@@ -53,7 +53,7 @@ public partial class ChartTooltip : UserControl, IChartTooltip<SkiaSharpDrawingC
                 PlacementTarget = _chartControl,
                 Placement = PlacementMode.Pointer,
                 Width = 250,
-                Height = 350,
+                MaxHeight = 350,
                 HorizontalOffset = 10,
                 VerticalOffset = 10,
                 Child = this
@@ -63,11 +63,18 @@ public partial class ChartTooltip : UserControl, IChartTooltip<SkiaSharpDrawingC
             _panel.Children.Add(_mainPopup);
         }
 
-        var allPoints = chart.Series.SelectMany(series => series.Values?.Cast<object>() ?? []);
+        var allPoints = chart.Series.SelectMany(series => series.Values?.Cast<object>() ?? []).ToList();
         // not sure why >1 value is chosen.
-        var chosenPoints = foundPoints.SelectMany(series => series.Context.Series.Values?.Cast<object>() ?? []).Take(1).ToList();
-
-        DataContext = allPoints.Select(model => new TooltipPoint(model, chosenPoints.Contains(model))).ToList();
+        var chosenPoints = foundPoints.SelectMany(series => series.Context.Series.Values?.Cast<object>() ?? [])
+            .ToList();
+        DataContext = chosenPoints
+            .Select(model => new TooltipPoint(model, true))
+            .Concat(allPoints
+                .Except(chosenPoints)
+                .Select(model => new TooltipPoint(model, false))
+                .OrderByDescending(point => point.Duration))
+            .Take(15) // some elements get cut off so I am just going to limit the length
+            .ToList();
 
         _mainPopup.Open();
     }
