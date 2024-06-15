@@ -5,6 +5,7 @@
                                 xmlns:reactiveUi="http://reactiveui.net"
                                 xmlns:vmPages="clr-namespace:Cobalt.Common.ViewModels.Pages;assembly=Cobalt.Common.ViewModels"
                                 xmlns:lvCharts="clr-namespace:LiveChartsCore.SkiaSharpView.Avalonia;assembly=LiveChartsCore.SkiaSharpView.Avalonia"
+                                xmlns:charts="clr-namespace:Cobalt.Charts"
                                 mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
                                 x:Class="Cobalt.Views.Pages.HomePage" x:DataType="vmPages:HomePageViewModel">
     <ScrollViewer Padding="16">
@@ -46,7 +47,11 @@
                                    Theme="{StaticResource BodyStrongTextBlockStyle}"
                                    Text="Week" />
                         <lvCharts:PieChart Grid.Row="1"
-                                           Series="{Binding AppUsagesPerWeek.Value^, Converter={StaticResource PieSeriesConverter}}" />
+                                           Series="{Binding AppUsagesPerWeek.Value^, Converter={StaticResource PieSeriesConverter}}">
+                            <lvCharts:PieChart.Tooltip>
+                                <charts:ChartTooltip />
+                            </lvCharts:PieChart.Tooltip>
+                        </lvCharts:PieChart>
                     </Grid>
 
 
