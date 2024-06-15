@@ -24,8 +24,12 @@ public record class TooltipPoint(object Model, bool Selected)
     public Query<byte[]?> Icon => ((IHasIcon)((IHasInner<object>)Model).Inner).Image;
 }
 
+public record class TooltipContext(IEnumerable<TooltipPoint> Points, int Extra);
+
 public partial class ChartTooltip : UserControl, IChartTooltip<SkiaSharpDrawingContext>
 {
+    private const int TakePoints = 14;
+
     protected static MethodInfo HandlePositionChange =
         typeof(Popup).GetMethod("HandlePositionChange", BindingFlags.Instance | BindingFlags.NonPublic) ??
         throw new Exception("no HandlePositionChange method found on Popup");
@@ -67,14 +71,16 @@ public partial class ChartTooltip : UserControl, IChartTooltip<SkiaSharpDrawingC
         // not sure why >1 value is chosen.
         var chosenPoints = foundPoints.SelectMany(series => series.Context.Series.Values?.Cast<object>() ?? [])
             .ToList();
-        DataContext = chosenPoints
+        var points = chosenPoints
             .Select(model => new TooltipPoint(model, true))
             .Concat(allPoints
                 .Except(chosenPoints)
                 .Select(model => new TooltipPoint(model, false))
                 .OrderByDescending(point => point.Duration))
-            .Take(15) // some elements get cut off so I am just going to limit the length
             .ToList();
+
+        // some elements get cut off so I am just going to limit the length
+        DataContext = new TooltipContext(points.Take(TakePoints).ToList(), points.Count - TakePoints);
 
         _mainPopup.Open();
     }
