@@ -15,6 +15,6 @@ public class IfConverter : IMultiValueConverter
         if (values.Count != 3) return null;
         if (values[0] is not bool cond) return null;
 
-        return cond ? values[0] : values[1];
+        return cond ? values[1] : values[2];
     }
 }

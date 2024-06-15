@@ -1,0 +1,70 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:charts="clr-namespace:Cobalt.Charts"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="Cobalt.Charts.ChartTooltip" Name="Self">
+    <Border CornerRadius="4" Background="{DynamicResource SolidBackgroundFillColorBaseBrush}">
+
+        <ScrollViewer VerticalScrollBarVisibility="Hidden"
+                      DataContext="{Binding #Self.DataContext, DataType={x:Type charts:TooltipContext}}">
+            <StackPanel Orientation="Vertical">
+                <ItemsRepeater Margin="4" ItemsSource="{ReflectionBinding Points}">
+                    <ItemsRepeater.ItemTemplate>
+                        <DataTemplate DataType="charts:TooltipPoint">
+                            <Grid ColumnDefinitions="Auto, Auto, *, Auto">
+                                <Image Width="14" Height="14" Margin="4"
+                                       Source="{Binding Icon.Value^, Converter={StaticResource BytesToImageConverter}}" />
+                                <TextBlock Foreground="{DynamicResource TextFillColorPrimaryBrush}" Grid.Column="1"
+                                           TextTrimming="CharacterEllipsis" MaxWidth="150" Text="{Binding Name}">
+                                    <TextBlock.FontWeight>
+                                        <MultiBinding Converter="{StaticResource IfConverter}">
+                                            <MultiBinding.Bindings>
+                                                <Binding Path="Selected" />
+                                                <Binding>
+                                                    <Binding.Source>
+                                                        <FontWeight>Bold</FontWeight>
+                                                    </Binding.Source>
+                                                </Binding>
+                                                <Binding>
+                                                    <Binding.Source>
+                                                        <FontWeight>Normal</FontWeight>
+                                                    </Binding.Source>
+                                                </Binding>
+                                            </MultiBinding.Bindings>
+                                        </MultiBinding>
+                                    </TextBlock.FontWeight>
+                                </TextBlock>
+                                <TextBlock Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,4,0"
+                                           Grid.Column="3"
+                                           Text="{Binding Duration, Converter={StaticResource HumanizeTimeSpanConverter}}">
+                                    <TextBlock.FontWeight>
+                                        <MultiBinding Converter="{StaticResource IfConverter}">
+                                            <MultiBinding.Bindings>
+                                                <Binding Path="Selected" />
+                                                <Binding>
+                                                    <Binding.Source>
+                                                        <FontWeight>Bold</FontWeight>
+                                                    </Binding.Source>
+                                                </Binding>
+                                                <Binding>
+                                                    <Binding.Source>
+                                                        <FontWeight>Normal</FontWeight>
+                                                    </Binding.Source>
+                                                </Binding>
+                                            </MultiBinding.Bindings>
+                                        </MultiBinding>
+                                    </TextBlock.FontWeight>
+                                </TextBlock>
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsRepeater.ItemTemplate>
+                </ItemsRepeater>
+                <TextBlock IsVisible="{ReflectionBinding !!Extra}"
+                           Text="{ReflectionBinding Extra, StringFormat=+ {0} items}" FontWeight="Bold"
+                           Margin="8,0,8,8" TextAlignment="Right" />
+            </StackPanel>
+        </ScrollViewer>
+    </Border>
+</UserControl>
