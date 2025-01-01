@@ -1,5 +1,4 @@
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import type { Route } from "../alerts/+types/index";
 import { Separator } from "@/components/ui/separator";
 import {
   Breadcrumb,
@@ -7,10 +6,6 @@ import {
   BreadcrumbPage,
   BreadcrumbList,
 } from "@/components/ui/breadcrumb";
-
-export function meta({}: Route.MetaArgs) {
-  return [{ title: "Alerts" }];
-}
 
 export default function Alerts() {
   return (

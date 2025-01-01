@@ -10,10 +10,6 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 
-export function meta({}: Route.MetaArgs) {
-  return [{ title: "Alert" }];
-}
-
 export default function Alert({ params }: Route.ComponentProps) {
   const id = +params.id;
   return (

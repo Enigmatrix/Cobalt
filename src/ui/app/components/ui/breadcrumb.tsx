@@ -1,5 +1,4 @@
 import * as React from "react";
-import { Slot } from "@radix-ui/react-slot";
 import { ChevronRight, MoreHorizontal } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -43,12 +42,9 @@ BreadcrumbItem.displayName = "BreadcrumbItem";
 const BreadcrumbLink = React.forwardRef<
   HTMLAnchorElement,
   React.ComponentPropsWithoutRef<"a"> & {
-    asChild?: boolean;
     href: string;
   }
->(({ asChild, className, href, ...props }, ref) => {
-  const Comp = asChild ? Slot : "a";
-
+>(({ className, href, ...props }, ref) => {
   return (
     <NavLink
       ref={ref}
