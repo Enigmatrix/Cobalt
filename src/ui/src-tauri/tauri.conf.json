@@ -2,12 +2,12 @@
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Cobalt",
   "version": "0.1.0",
-  "identifier": "com.tauri.dev",
+  "identifier": "com.cobalt.enigmatrix",
   "build": {
-    "frontendDist": "../build",
+    "frontendDist": "../build/client",
     "devUrl": "http://localhost:5173",
     "beforeDevCommand": "bun dev",
-    "beforeBuildCommand": "bun build"
+    "beforeBuildCommand": "bun run build"
   },
   "app": {
     "windows": [
