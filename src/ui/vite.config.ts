@@ -14,7 +14,7 @@ export default defineConfig({
   plugins: [reactRouter(), tsconfigPaths()],
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
+      "@": path.resolve(__dirname, "./app"),
     },
   },
 });

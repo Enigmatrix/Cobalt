@@ -1,5 +1,5 @@
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import type { Route } from "./+types/home";
+import type { Route } from "../tags/+types/index";
 import { Separator } from "@/components/ui/separator";
 import {
   Breadcrumb,
@@ -9,10 +9,10 @@ import {
 } from "@/components/ui/breadcrumb";
 
 export function meta({}: Route.MetaArgs) {
-  return [{ title: "Home" }];
+  return [{ title: "Tags" }];
 }
 
-export default function Home() {
+export default function Tags() {
   return (
     <>
       <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
@@ -21,7 +21,7 @@ export default function Home() {
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem className="hidden md:block">
-              <BreadcrumbPage>Home</BreadcrumbPage>
+              <BreadcrumbPage>Tags</BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
