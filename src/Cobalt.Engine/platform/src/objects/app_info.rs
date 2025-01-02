@@ -104,6 +104,8 @@ impl AppInfo {
 #[cfg(test)]
 mod tests {
 
+    use util::future as tokio;
+
     use super::*;
 
     #[tokio::test]

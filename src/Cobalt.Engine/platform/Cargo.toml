@@ -33,6 +33,3 @@ features = [
     "UI_Notifications",
     "Data_Xml_Dom",
 ]
-
-[dev-dependencies]
-tokio = { version = "1.0", features = ["macros", "rt"] }
