@@ -53,7 +53,7 @@ impl<'a, S: LocalSpawnExt> Engine<'a, S> {
 
         ret.current_usage = Usage {
             id: Default::default(),
-            session: ret.get_session_details(foreground)?,
+            session_id: ret.get_session_details(foreground)?,
             start: start.into(),
             end: start.into(),
         };
@@ -78,7 +78,7 @@ impl<'a, S: LocalSpawnExt> Engine<'a, S> {
                 if let Ok(session) = &session_result {
                     self.current_usage = Usage {
                         id: Default::default(),
-                        session: session.clone(),
+                        session_id: session.clone(),
                         start: at.into(),
                         end: at.into(),
                     };
@@ -152,7 +152,7 @@ impl<'a, S: LocalSpawnExt> Engine<'a, S> {
 
         let mut session = Session {
             id: Default::default(),
-            app: app.clone(),
+            app_id: app.clone(),
             title: ws.title,
         };
         inserter.insert_session(&mut session)?;

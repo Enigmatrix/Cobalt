@@ -1,3 +1,4 @@
+use sqlx::prelude::FromRow;
 use sqlx::{query, Row};
 use util::future as tokio;
 
@@ -18,7 +19,7 @@ async fn test_db() -> Result<Database> {
 
 #[tokio::test]
 async fn test_up() -> Result<()> {
-    let db = test_db().await?;
+    test_db().await?;
     Ok(())
 }
 
@@ -72,17 +73,12 @@ async fn insert_session() -> Result<()> {
         .await?;
     let mut sess = Session {
         id: Default::default(),
-        app: Ref::new(1),
+        app_id: Ref::new(1),
         title: "TITLE".to_string(),
     };
     writer.insert_session(&mut sess).await?;
 
-    let sess_from_db = query("SELECT * FROM sessions")
-        .map(|r: SqliteRow| Session {
-            id: r.get(0),
-            app: r.get(1),
-            title: r.get(2),
-        })
+    let sess_from_db = query_as("SELECT * FROM sessions")
         .fetch_all(&mut writer.db.conn)
         .await?;
 
@@ -101,25 +97,19 @@ async fn insert_usage() -> Result<()> {
         .await?;
     let mut sess = Session {
         id: Default::default(),
-        app: Ref::new(1),
+        app_id: Ref::new(1),
         title: "TITLE".to_string(),
     };
     writer.insert_session(&mut sess).await?;
     let mut usage = Usage {
         id: Default::default(),
-        session: sess.id.clone(),
+        session_id: sess.id.clone(),
         start: 42,
         end: 420,
     };
     writer.insert_or_update_usage(&mut usage).await?;
 
-    let usage_from_db = query("SELECT * FROM usages")
-        .map(|r: SqliteRow| Usage {
-            id: r.get(0),
-            session: r.get(1),
-            start: r.get(2),
-            end: r.get(3),
-        })
+    let usage_from_db = query_as("SELECT * FROM usages")
         .fetch_all(&mut writer.db.conn)
         .await?;
     assert_eq!(vec![usage], usage_from_db);
@@ -137,13 +127,13 @@ async fn update_usage_after_insert_usage() -> Result<()> {
         .await?;
     let mut sess = Session {
         id: Default::default(),
-        app: Ref::new(1),
+        app_id: Ref::new(1),
         title: "TITLE".to_string(),
     };
     writer.insert_session(&mut sess).await?;
     let mut usage = Usage {
         id: Default::default(),
-        session: sess.id.clone(),
+        session_id: sess.id.clone(),
         start: 42,
         end: 420,
     };
@@ -151,13 +141,7 @@ async fn update_usage_after_insert_usage() -> Result<()> {
     usage.end = 1337;
     writer.insert_or_update_usage(&mut usage).await?;
 
-    let usage_from_db = query("SELECT * FROM usages")
-        .map(|r: SqliteRow| Usage {
-            id: r.get(0),
-            session: r.get(1),
-            start: r.get(2),
-            end: r.get(3),
-        })
+    let usage_from_db = query_as("SELECT * FROM usages")
         .fetch_all(&mut writer.db.conn)
         .await?;
     assert_eq!(vec![usage], usage_from_db);
@@ -183,14 +167,7 @@ async fn insert_interaction_period() -> Result<()> {
     };
     writer.insert_interaction_period(&ip).await?;
 
-    let ip_from_db = query("SELECT * FROM interaction_periods")
-        .map(|r: SqliteRow| InteractionPeriod {
-            id: r.get(0),
-            start: r.get(1),
-            end: r.get(2),
-            mouse_clicks: r.get(3),
-            key_strokes: r.get(4),
-        })
+    let ip_from_db = query_as("SELECT * FROM interaction_periods")
         .fetch_all(&mut writer.db.conn)
         .await?;
     ip.id = Ref::new(1);
@@ -217,32 +194,24 @@ async fn update_app() -> Result<()> {
     };
     updater.update_app(&app).await?;
 
-    let res: Vec<(bool, _)> = query("SELECT * FROM apps")
-        .map(|r: SqliteRow| {
-            (
-                r.get("initialized"),
-                App {
-                    id: r.get("id"),
-                    name: r.get("name"),
-                    description: r.get("description"),
-                    company: r.get("company"),
-                    color: r.get("color"),
-                    identity: if r.get("identity_is_win32") {
-                        AppIdentity::Win32 {
-                            path: r.get("identity_path_or_aumid"),
-                        }
-                    } else {
-                        AppIdentity::Uwp {
-                            aumid: r.get("identity_path_or_aumid"),
-                        }
-                    },
-                },
-            )
-        })
+    #[derive(FromRow, PartialEq, Eq, Debug)]
+    struct Res {
+        initialized: bool,
+        #[sqlx(flatten)]
+        app: App,
+    }
+
+    let res: Vec<Res> = query_as("SELECT * FROM apps")
         .fetch_all(updater.db.executor())
         .await?;
 
-    assert_eq!(vec![(true, app)], res);
+    assert_eq!(
+        vec![Res {
+            initialized: true,
+            app
+        }],
+        res
+    );
     Ok(())
 }
 

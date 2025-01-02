@@ -100,7 +100,7 @@ impl UsageWriter {
     /// Insert a [Session] into the [Database]
     pub async fn insert_session(&mut self, session: &mut Session) -> Result<()> {
         let res = query("INSERT INTO sessions VALUES (NULL, ?, ?)")
-            .bind(session.app.clone())
+            .bind(session.app_id.clone())
             .bind(session.title.clone())
             .execute(self.db.executor())
             .await?;
@@ -112,7 +112,7 @@ impl UsageWriter {
     pub async fn insert_or_update_usage(&mut self, usage: &mut Usage) -> Result<()> {
         if usage.id == Ref::default() {
             let res = query("INSERT INTO usages VALUES (NULL, ?, ?, ?)")
-                .bind(usage.session.clone())
+                .bind(usage.session_id.clone())
                 .bind(usage.start.clone())
                 .bind(usage.end.clone())
                 .execute(self.db.executor())

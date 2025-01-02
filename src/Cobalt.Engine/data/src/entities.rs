@@ -1,4 +1,6 @@
 use sqlx::prelude::FromRow;
+use sqlx::sqlite::SqliteRow;
+use sqlx::{Result, Row};
 
 pub use crate::table::{Color, Duration, Id, Ref, Timestamp, VersionedId};
 
@@ -13,6 +15,7 @@ pub struct App {
     pub description: String,
     pub company: String,
     pub color: Color,
+    #[sqlx(flatten)]
     pub identity: AppIdentity,
     // pub icon: Blob
 }
@@ -22,6 +25,17 @@ pub struct App {
 pub enum AppIdentity {
     Win32 { path: String },
     Uwp { aumid: String },
+}
+
+impl FromRow<'_, SqliteRow> for AppIdentity {
+    fn from_row(row: &SqliteRow) -> Result<Self> {
+        let text0 = row.get("identity_path_or_aumid");
+        Ok(if row.get("identity_is_win32") {
+            AppIdentity::Win32 { path: text0 }
+        } else {
+            AppIdentity::Uwp { aumid: text0 }
+        })
+    }
 }
 
 impl Default for AppIdentity {
@@ -42,14 +56,14 @@ pub struct Tag {
 #[derive(Default, Debug, Clone, PartialEq, Eq, FromRow)]
 pub struct Session {
     pub id: Ref<Self>,
-    pub app: Ref<App>,
+    pub app_id: Ref<App>,
     pub title: String,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Eq, FromRow)]
 pub struct Usage {
     pub id: Ref<Self>,
-    pub session: Ref<Session>,
+    pub session_id: Ref<Session>,
     pub start: Timestamp,
     pub end: Timestamp,
 }
