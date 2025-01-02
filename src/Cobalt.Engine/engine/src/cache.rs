@@ -1,9 +1,12 @@
 use std::collections::HashMap;
+use std::future::Future;
 
 use data::entities::{App, Ref, Session};
 use platform::events::WindowSession;
 use platform::objects::{ProcessId, Window};
+use scoped_futures::ScopedBoxFuture;
 use util::error::Result;
+use util::future as tokio;
 
 /// Cache for storing information about windows, processes, apps and sessions.
 pub struct Cache {
@@ -72,11 +75,11 @@ impl Cache {
 
     /// Get or insert a [SessionDetails] for a [Window], using the create callback
     /// to make a new [SessionDetails] if not found.
-    pub fn get_or_insert_session_for_window(
-        &mut self,
+    pub async fn get_or_insert_session_for_window<'a>(
+        &'a mut self,
         ws: WindowSession,
-        create: impl FnOnce(&mut Self) -> Result<SessionDetails>,
-    ) -> Result<&mut SessionDetails> {
+        create: impl for<'b> FnOnce(&'b mut Self) -> ScopedBoxFuture<'a, 'b, Result<SessionDetails>>,
+    ) -> Result<&'a mut SessionDetails> {
         // if-let doesn't work since the borrow lasts until end of function,
         // even if we return. Even if I surround this in another block.
 
@@ -87,7 +90,8 @@ impl Cache {
             return Ok(self.sessions.get_mut(&ws).unwrap());
         }
 
-        let created = { create(self)? };
+        let created = { create(self).await? };
+
         self.windows
             .entry(created.pid)
             .or_default()
@@ -98,16 +102,16 @@ impl Cache {
 
     /// Get or insert a [AppDetails] for a [ProcessId], using the create callback
     /// to make a new [AppDetails] if not found.
-    pub fn get_or_insert_app_for_process(
+    pub async fn get_or_insert_app_for_process<F: Future<Output = Result<AppDetails>>>(
         &mut self,
         process: ProcessId,
-        create: impl FnOnce(&mut Self) -> Result<AppDetails>,
+        create: impl FnOnce(&mut Self) -> F,
     ) -> Result<&mut AppDetails> {
         if self.apps.contains_key(&process) {
             return Ok(self.apps.get_mut(&process).unwrap());
         }
 
-        let created = { create(self)? };
+        let created = { create(self).await? };
         self.processes
             .entry(created.app.clone())
             .or_default()
@@ -126,8 +130,10 @@ impl Cache {
     // }
 }
 
-#[test]
-fn inner_mut_compiles() {
+#[tokio::test]
+async fn inner_mut_compiles() {
+    use scoped_futures::ScopedFutureExt;
+
     let window: Window = Window::foreground().unwrap();
     let process: ProcessId = 1;
     let mut cache = Cache::new();
@@ -139,15 +145,21 @@ fn inner_mut_compiles() {
                 title: "".to_string(),
             },
             |cache| {
-                let _app = cache.get_or_insert_app_for_process(process, |_| {
-                    Ok(AppDetails { app: Ref::new(1) })
-                })?;
-                Ok(SessionDetails {
-                    session: Ref::new(1),
-                    pid: process,
-                })
+                async move {
+                    let _app = cache
+                        .get_or_insert_app_for_process(process, |_| async {
+                            Ok(AppDetails { app: Ref::new(1) })
+                        })
+                        .await?;
+                    Ok(SessionDetails {
+                        session: Ref::new(1),
+                        pid: process,
+                    })
+                }
+                .scope_boxed()
             },
         )
+        .await
         .unwrap();
     // cache.get_or_insert_session_for_window(window, async {
     //     let app = cache.get_or_insert_app_for_process(process, async {

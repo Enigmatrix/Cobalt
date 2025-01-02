@@ -1,5 +1,4 @@
-use std::cell::RefCell;
-use std::rc::Rc;
+use std::sync::Arc;
 use std::thread;
 
 use data::db::Database;
@@ -10,8 +9,8 @@ use sentry::Sentry;
 use util::channels::{self, Receiver, Sender};
 use util::config::{self, Config};
 use util::error::{Context, Result};
-use util::future::executor::{LocalPool, LocalSpawner};
-use util::future::task::LocalSpawnExt;
+use util::future::runtime::{Builder, Handle};
+use util::future::sync::Mutex;
 use util::tracing::{error, info, ResultTraceExt};
 
 mod cache;
@@ -104,14 +103,14 @@ fn event_loop(
 /// Processing loop for the [Engine].
 async fn engine_loop(
     config: &Config,
-    cache: Rc<RefCell<cache::Cache>>,
+    cache: Arc<Mutex<cache::Cache>>,
     rx: Receiver<Event>,
-    spawner: &LocalSpawner,
+    spawner: Handle,
     fg: WindowSession,
     now: Timestamp,
 ) -> Result<()> {
-    let mut db = Database::new(config)?;
-    let mut engine = Engine::new(cache, fg, now, config.clone(), &mut db, spawner).await?;
+    let db = Database::new(config).await?;
+    let mut engine = Engine::new(cache, fg, now, config.clone(), db, spawner).await?;
     loop {
         let ev = rx.recv_async().await?;
         engine.handle(ev).await?;
@@ -121,14 +120,14 @@ async fn engine_loop(
 /// Processing loop for the [Sentry].
 async fn sentry_loop(
     config: &Config,
-    cache: Rc<RefCell<cache::Cache>>,
+    cache: Arc<Mutex<cache::Cache>>,
     alert_rx: Receiver<Timestamp>,
 ) -> Result<()> {
-    let mut db = Database::new(config)?;
-    let mut sentry = Sentry::new(cache, &mut db)?;
+    let db = Database::new(config).await?;
+    let mut sentry = Sentry::new(cache, db)?;
     loop {
         let at = alert_rx.recv_async().await?;
-        sentry.run(at)?;
+        sentry.run(at).await?;
     }
 }
 
@@ -140,30 +139,29 @@ fn processor(
     event_rx: Receiver<Event>,
     alert_rx: Receiver<Timestamp>,
 ) -> Result<()> {
-    let mut pool = LocalPool::new();
-    let spawner = pool.spawner();
+    let rt = Builder::new_current_thread().build()?;
+    // let rt = Builder::new_multi_thread().enable_all().build()?;
 
-    let cache = Rc::new(RefCell::new(cache::Cache::new()));
-
-    let _config = config.clone();
-    let _cache = cache.clone();
-    pool.spawner().spawn_local(async move {
-        engine_loop(&_config, _cache, event_rx, &spawner, fg, now)
-            .await
-            .context("engine loop")
-            .error();
-    })?;
+    let cache = Arc::new(Mutex::new(cache::Cache::new()));
 
     let _config = config.clone();
     let _cache = cache.clone();
-    pool.spawner().spawn_local(async move {
+    rt.spawn(async move {
         sentry_loop(&_config, _cache, alert_rx)
             .await
             .context("sentry loop")
             .error();
-    })?;
+    });
 
-    pool.run();
+    let _config = config.clone();
+    let _cache = cache.clone();
+    let _handle = rt.handle().clone();
+    rt.block_on(async move {
+        engine_loop(&_config, _cache, event_rx, _handle, fg, now)
+            .await
+            .context("engine loop")
+            .error();
+    });
 
     Ok(())
 }

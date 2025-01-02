@@ -18,8 +18,8 @@ pub struct InteractionWatcher {
 
     // the below will be modified by Windows Hooks
     last_interaction: Timestamp,
-    mouse_clicks: u64,
-    key_strokes: u64,
+    mouse_clicks: i64,
+    key_strokes: i64,
 
     // Windows Hooks
     _mouse_hook: WindowsHook<MouseLL>,
@@ -30,8 +30,8 @@ pub struct InteractionWatcher {
 pub enum InteractionChangedEvent {
     BecameIdle {
         at: Timestamp,
-        recorded_mouse_clicks: u64,
-        recorded_key_presses: u64,
+        recorded_mouse_clicks: i64,
+        recorded_key_presses: i64,
     },
     BecameActive {
         at: Timestamp,

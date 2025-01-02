@@ -20,13 +20,14 @@ pub trait Migration {
 /// Migrator for applying database migrations.
 pub struct Migrator<'a> {
     db: &'a mut Database,
-    migrations: Vec<Arc<dyn Migration>>,
+    migrations: Vec<Arc<dyn Migration + Send + Sync>>,
 }
 
 impl<'a> Migrator<'a> {
     /// Create a new [Migrator] with the given database connection.
     pub fn new(db: &'a mut Database) -> Self {
-        let mut migrations: Vec<Arc<dyn Migration>> = vec![Arc::new(migration1::Migration1)];
+        let mut migrations: Vec<Arc<dyn Migration + Send + Sync>> =
+            vec![Arc::new(migration1::Migration1)];
         // should already by sorted, but just in case
         migrations.sort_by_key(|migration| migration.version());
         Self { db, migrations }
