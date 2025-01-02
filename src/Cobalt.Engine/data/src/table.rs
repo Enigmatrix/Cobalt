@@ -52,13 +52,13 @@ impl<T: Table> Deref for Ref<T> {
 }
 
 /// Basic unique identifier - autoincremented integer
-pub type Id = u64;
+pub type Id = i64;
 /// Color in hexadecimal format
 pub type Color = String;
 /// Timestamp as Windows ticks
-pub type Timestamp = u64;
+pub type Timestamp = i64;
 /// Duration as Windows ticks
-pub type Duration = u64;
+pub type Duration = i64;
 
 /// Unique identifier with Version
 #[derive(Default, Debug, Clone, PartialEq, Eq, FromRow)]

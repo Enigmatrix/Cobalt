@@ -1,3 +1,4 @@
+use sqlx::{query, Row};
 use util::future as tokio;
 
 use super::*;
@@ -21,240 +22,255 @@ async fn test_up() -> Result<()> {
     Ok(())
 }
 
-// #[test]
-// fn insert_new_app() -> Result<()> {
-//     let db = test_db()?;
-//     let mut writer = UsageWriter::new(&db)?;
-//     let res = writer.find_or_insert_app(&AppIdentity::Win32 {
-//         path: "notepad.exe".to_string(),
-//     })?;
-//     assert_eq!(res, FoundOrInserted::Inserted(Ref::<App>::new(1)));
-//     let (init, path): (bool, String) = db.conn.query_row("SELECT * FROM apps", params![], |f| {
-//         Ok((f.get("initialized")?, f.get("identity_path_or_aumid")?))
-//     })?;
-//     assert_eq!("notepad.exe", path);
-//     assert_eq!(false, init);
-//     Ok(())
-// }
+#[tokio::test]
+async fn insert_new_app() -> Result<()> {
+    let db = test_db().await?;
+    let mut writer = UsageWriter::new(db)?;
+    let res = writer
+        .find_or_insert_app(&AppIdentity::Win32 {
+            path: "notepad.exe".to_string(),
+        })
+        .await?;
+    assert_eq!(res, FoundOrInserted::Inserted(Ref::<App>::new(1)));
 
-// #[test]
-// fn found_old_app() -> Result<()> {
-//     let db = test_db()?;
-//     let mut writer = UsageWriter::new(&db)?;
-//     let res = writer.find_or_insert_app(&AppIdentity::Win32 {
-//         path: "notepad.exe".to_string(),
-//     })?;
-//     assert_eq!(res, FoundOrInserted::Inserted(Ref::<App>::new(1)));
-//     let res = writer.find_or_insert_app(&AppIdentity::Win32 {
-//         path: "notepad.exe".to_string(),
-//     })?;
-//     assert_eq!(res, FoundOrInserted::Found(Ref::<App>::new(1)));
-//     Ok(())
-// }
+    let res: Vec<(bool, String)> = query("SELECT * FROM apps")
+        .map(|r: SqliteRow| (r.get("initialized"), r.get("identity_path_or_aumid")))
+        .fetch_all(&mut writer.db.conn)
+        .await?;
 
-// #[test]
-// fn insert_session() -> Result<()> {
-//     let db = test_db()?;
-//     let mut writer = UsageWriter::new(&db)?;
-//     writer.find_or_insert_app(&AppIdentity::Win32 {
-//         path: "notepad.exe".to_string(),
-//     })?;
-//     let mut sess = Session {
-//         id: Default::default(),
-//         app: Ref::new(1),
-//         title: "TITLE".to_string(),
-//     };
-//     writer.insert_session(&mut sess)?;
-//     let sess_from_db = db
-//         .conn
-//         .query_row("SELECT * FROM sessions", params![], |f| {
-//             Ok(Session {
-//                 id: f.get(0)?,
-//                 app: f.get(1)?,
-//                 title: f.get(2)?,
-//             })
-//         })?;
-//     assert_eq!(sess, sess_from_db);
-//     Ok(())
-// }
+    assert_eq!(vec![(false, "notepad.exe".to_string())], res);
+    Ok(())
+}
 
-// #[test]
-// fn insert_usage() -> Result<()> {
-//     let db = test_db()?;
-//     let mut writer = UsageWriter::new(&db)?;
-//     writer.find_or_insert_app(&AppIdentity::Win32 {
-//         path: "notepad.exe".to_string(),
-//     })?;
-//     let mut sess = Session {
-//         id: Default::default(),
-//         app: Ref::new(1),
-//         title: "TITLE".to_string(),
-//     };
-//     writer.insert_session(&mut sess)?;
-//     let mut usage = Usage {
-//         id: Default::default(),
-//         session: sess.id.clone(),
-//         start: 42,
-//         end: 420,
-//     };
-//     writer.insert_or_update_usage(&mut usage)?;
-//     let usage_from_db = db.conn.query_row("SELECT * FROM usages", params![], |f| {
-//         Ok(Usage {
-//             id: f.get(0)?,
-//             session: f.get(1)?,
-//             start: f.get(2)?,
-//             end: f.get(3)?,
-//         })
-//     })?;
-//     assert_eq!(usage, usage_from_db);
-//     Ok(())
-// }
+#[tokio::test]
+async fn found_old_app() -> Result<()> {
+    let db = test_db().await?;
+    let mut writer = UsageWriter::new(db)?;
+    let res = writer
+        .find_or_insert_app(&AppIdentity::Win32 {
+            path: "notepad.exe".to_string(),
+        })
+        .await?;
+    assert_eq!(res, FoundOrInserted::Inserted(Ref::<App>::new(1)));
+    let res = writer
+        .find_or_insert_app(&AppIdentity::Win32 {
+            path: "notepad.exe".to_string(),
+        })
+        .await?;
+    assert_eq!(res, FoundOrInserted::Found(Ref::<App>::new(1)));
+    Ok(())
+}
 
-// #[test]
-// fn update_usage_after_insert_usage() -> Result<()> {
-//     let db = test_db()?;
-//     let mut writer = UsageWriter::new(&db)?;
-//     writer.find_or_insert_app(&AppIdentity::Win32 {
-//         path: "notepad.exe".to_string(),
-//     })?;
-//     let mut sess = Session {
-//         id: Default::default(),
-//         app: Ref::new(1),
-//         title: "TITLE".to_string(),
-//     };
-//     writer.insert_session(&mut sess)?;
-//     let mut usage = Usage {
-//         id: Default::default(),
-//         session: sess.id.clone(),
-//         start: 42,
-//         end: 420,
-//     };
-//     writer.insert_or_update_usage(&mut usage)?;
-//     usage.end = 1337;
-//     writer.insert_or_update_usage(&mut usage)?;
+#[tokio::test]
+async fn insert_session() -> Result<()> {
+    let db = test_db().await?;
+    let mut writer = UsageWriter::new(db)?;
+    writer
+        .find_or_insert_app(&AppIdentity::Win32 {
+            path: "notepad.exe".to_string(),
+        })
+        .await?;
+    let mut sess = Session {
+        id: Default::default(),
+        app: Ref::new(1),
+        title: "TITLE".to_string(),
+    };
+    writer.insert_session(&mut sess).await?;
 
-//     let usage_from_db: Vec<_> = db
-//         .conn
-//         .prepare("SELECT * FROM usages")?
-//         .query_map(params![], |f| {
-//             Ok(Usage {
-//                 id: f.get(0)?,
-//                 session: f.get(1)?,
-//                 start: f.get(2)?,
-//                 end: f.get(3)?,
-//             })
-//         })?
-//         .collect::<Result<Vec<_>, _>>()?;
-//     assert_eq!(vec![usage], usage_from_db);
-//     assert_ne!(usage_from_db[0].end, 420);
-//     Ok(())
-// }
+    let sess_from_db = query("SELECT * FROM sessions")
+        .map(|r: SqliteRow| Session {
+            id: r.get(0),
+            app: r.get(1),
+            title: r.get(2),
+        })
+        .fetch_all(&mut writer.db.conn)
+        .await?;
 
-// #[test]
-// fn insert_interaction_period() -> Result<()> {
-//     let db = test_db()?;
-//     let mut writer = UsageWriter::new(&db)?;
-//     writer.find_or_insert_app(&AppIdentity::Win32 {
-//         path: "notepad.exe".to_string(),
-//     })?;
-//     let mut ip = InteractionPeriod {
-//         id: Default::default(),
-//         start: 42,
-//         end: 420,
-//         mouse_clicks: 23,
-//         key_strokes: 45,
-//     };
-//     writer.insert_interaction_period(&ip)?;
-//     let ip_from_db = db
-//         .conn
-//         .query_row("SELECT * FROM interaction_periods", params![], |f| {
-//             Ok(InteractionPeriod {
-//                 id: f.get(0)?,
-//                 start: f.get(1)?,
-//                 end: f.get(2)?,
-//                 mouse_clicks: f.get(3)?,
-//                 key_strokes: f.get(4)?,
-//             })
-//         })?;
-//     ip.id = Ref::new(1);
-//     assert_eq!(ip, ip_from_db);
-//     Ok(())
-// }
+    assert_eq!(vec![sess], sess_from_db);
+    Ok(())
+}
 
-// #[test]
-// fn update_app() -> Result<()> {
-//     let mut db = test_db()?;
-//     let mut writer = UsageWriter::new(&db)?;
-//     let identity = AppIdentity::Win32 {
-//         path: "notepad.exe".to_string(),
-//     };
-//     writer.find_or_insert_app(&identity)?;
-//     drop(writer);
-//     let mut updater = AppUpdater::new(&mut db)?;
-//     let app = App {
-//         id: Ref::new(1),
-//         name: "name".to_string(),
-//         description: "desc".to_string(),
-//         company: "comp".to_string(),
-//         color: "red".to_string(),
-//         identity: identity.clone(), // ignored by query
-//     };
-//     updater.update_app(&app)?;
-//     drop(updater);
+#[tokio::test]
+async fn insert_usage() -> Result<()> {
+    let db = test_db().await?;
+    let mut writer = UsageWriter::new(db)?;
+    writer
+        .find_or_insert_app(&AppIdentity::Win32 {
+            path: "notepad.exe".to_string(),
+        })
+        .await?;
+    let mut sess = Session {
+        id: Default::default(),
+        app: Ref::new(1),
+        title: "TITLE".to_string(),
+    };
+    writer.insert_session(&mut sess).await?;
+    let mut usage = Usage {
+        id: Default::default(),
+        session: sess.id.clone(),
+        start: 42,
+        end: 420,
+    };
+    writer.insert_or_update_usage(&mut usage).await?;
 
-//     let (init, app_from_db): (bool, _) =
-//         db.conn.query_row("SELECT * FROM apps", params![], |f| {
-//             Ok((
-//                 f.get("initialized")?,
-//                 App {
-//                     id: f.get("id")?,
-//                     name: f.get("name")?,
-//                     description: f.get("description")?,
-//                     company: f.get("company")?,
-//                     color: f.get("color")?,
-//                     identity: if f.get("identity_is_win32")? {
-//                         AppIdentity::Win32 {
-//                             path: f.get("identity_path_or_aumid")?,
-//                         }
-//                     } else {
-//                         AppIdentity::Uwp {
-//                             aumid: f.get("identity_path_or_aumid")?,
-//                         }
-//                     },
-//                 },
-//             ))
-//         })?;
+    let usage_from_db = query("SELECT * FROM usages")
+        .map(|r: SqliteRow| Usage {
+            id: r.get(0),
+            session: r.get(1),
+            start: r.get(2),
+            end: r.get(3),
+        })
+        .fetch_all(&mut writer.db.conn)
+        .await?;
+    assert_eq!(vec![usage], usage_from_db);
+    Ok(())
+}
 
-//     assert_eq!(true, init);
-//     assert_eq!(app, app_from_db);
-//     Ok(())
-// }
+#[tokio::test]
+async fn update_usage_after_insert_usage() -> Result<()> {
+    let db = test_db().await?;
+    let mut writer = UsageWriter::new(db)?;
+    writer
+        .find_or_insert_app(&AppIdentity::Win32 {
+            path: "notepad.exe".to_string(),
+        })
+        .await?;
+    let mut sess = Session {
+        id: Default::default(),
+        app: Ref::new(1),
+        title: "TITLE".to_string(),
+    };
+    writer.insert_session(&mut sess).await?;
+    let mut usage = Usage {
+        id: Default::default(),
+        session: sess.id.clone(),
+        start: 42,
+        end: 420,
+    };
+    writer.insert_or_update_usage(&mut usage).await?;
+    usage.end = 1337;
+    writer.insert_or_update_usage(&mut usage).await?;
 
-// #[test]
-// fn update_app_icon() -> Result<()> {
-//     let mut db = test_db()?;
-//     let mut writer = UsageWriter::new(&db)?;
-//     let identity = AppIdentity::Win32 {
-//         path: "notepad.exe".to_string(),
-//     };
-//     writer.find_or_insert_app(&identity)?;
-//     drop(writer);
+    let usage_from_db = query("SELECT * FROM usages")
+        .map(|r: SqliteRow| Usage {
+            id: r.get(0),
+            session: r.get(1),
+            start: r.get(2),
+            end: r.get(3),
+        })
+        .fetch_all(&mut writer.db.conn)
+        .await?;
+    assert_eq!(vec![usage], usage_from_db);
+    assert_ne!(usage_from_db[0].end, 420);
+    Ok(())
+}
 
-//     let icon = &[42, 233].repeat(50); // 50 * 2 = 100 bytes length
+#[tokio::test]
+async fn insert_interaction_period() -> Result<()> {
+    let db = test_db().await?;
+    let mut writer = UsageWriter::new(db)?;
+    writer
+        .find_or_insert_app(&AppIdentity::Win32 {
+            path: "notepad.exe".to_string(),
+        })
+        .await?;
+    let mut ip = InteractionPeriod {
+        id: Default::default(),
+        start: 42,
+        end: 420,
+        mouse_clicks: 23,
+        key_strokes: 45,
+    };
+    writer.insert_interaction_period(&ip).await?;
 
-//     {
-//         let mut updater = AppUpdater::new(&mut db)?;
-//         let mut writer = updater.app_icon_writer(Ref::new(1), icon.len() as u64)?;
-//         writer.write_all(&icon)?;
-//     }
+    let ip_from_db = query("SELECT * FROM interaction_periods")
+        .map(|r: SqliteRow| InteractionPeriod {
+            id: r.get(0),
+            start: r.get(1),
+            end: r.get(2),
+            mouse_clicks: r.get(3),
+            key_strokes: r.get(4),
+        })
+        .fetch_all(&mut writer.db.conn)
+        .await?;
+    ip.id = Ref::new(1);
+    assert_eq!(vec![ip], ip_from_db);
+    Ok(())
+}
 
-//     let icon_from_db: Vec<u8> = db
-//         .conn
-//         .query_row("SELECT icon FROM apps", params![], |f| f.get("icon"))?;
+#[tokio::test]
+async fn update_app() -> Result<()> {
+    let db = test_db().await?;
+    let mut writer = UsageWriter::new(db)?;
+    let identity = AppIdentity::Win32 {
+        path: "notepad.exe".to_string(),
+    };
+    writer.find_or_insert_app(&identity).await?;
+    let mut updater = AppUpdater::new(writer.db)?;
+    let app = App {
+        id: Ref::new(1),
+        name: "name".to_string(),
+        description: "desc".to_string(),
+        company: "comp".to_string(),
+        color: "red".to_string(),
+        identity: identity.clone(), // ignored by query
+    };
+    updater.update_app(&app).await?;
 
-//     assert_eq!(icon, &icon_from_db);
-//     Ok(())
-// }
+    let res: Vec<(bool, _)> = query("SELECT * FROM apps")
+        .map(|r: SqliteRow| {
+            (
+                r.get("initialized"),
+                App {
+                    id: r.get("id"),
+                    name: r.get("name"),
+                    description: r.get("description"),
+                    company: r.get("company"),
+                    color: r.get("color"),
+                    identity: if r.get("identity_is_win32") {
+                        AppIdentity::Win32 {
+                            path: r.get("identity_path_or_aumid"),
+                        }
+                    } else {
+                        AppIdentity::Uwp {
+                            aumid: r.get("identity_path_or_aumid"),
+                        }
+                    },
+                },
+            )
+        })
+        .fetch_all(updater.db.executor())
+        .await?;
+
+    assert_eq!(vec![(true, app)], res);
+    Ok(())
+}
+
+#[tokio::test]
+async fn update_app_icon() -> Result<()> {
+    let db = test_db().await?;
+    let mut writer = UsageWriter::new(db)?;
+    let identity = AppIdentity::Win32 {
+        path: "notepad.exe".to_string(),
+    };
+    writer.find_or_insert_app(&identity).await?;
+
+    let icon = [42, 233].repeat(50); // 50 * 2 = 100 bytes length
+
+    let mut db = {
+        let mut updater = AppUpdater::new(writer.db)?;
+        updater.update_app_icon(Ref::new(1), &icon).await?;
+        updater.db
+    };
+
+    let icon_from_db: Vec<Vec<u8>> = query("SELECT icon FROM apps")
+        .map(|r: SqliteRow| r.get("icon"))
+        .fetch_all(db.executor())
+        .await?;
+
+    assert_eq!(vec![icon], icon_from_db);
+    Ok(())
+}
 
 // #[test]
 // fn target_apps() -> Result<()> {

@@ -59,8 +59,8 @@ pub struct InteractionPeriod {
     pub id: Ref<Self>,
     pub start: Timestamp,
     pub end: Timestamp,
-    pub mouse_clicks: u64,
-    pub key_strokes: u64,
+    pub mouse_clicks: i64,
+    pub key_strokes: i64,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

@@ -1,8 +1,11 @@
 use std::io::Write;
 use std::str::FromStr;
 
-use sqlx::sqlite::{SqliteConnectOptions, SqliteJournalMode};
-use sqlx::{query_as, ConnectOptions, Connection, Executor, Sqlite, SqliteConnection, Transaction};
+use sqlx::sqlite::{SqliteConnectOptions, SqliteJournalMode, SqliteRow};
+use sqlx::{
+    query, query_as, ConnectOptions, Connection, Executor, Row, Sqlite, SqliteConnection,
+    Transaction,
+};
 use util::config::Config;
 use util::error::{Context, Result};
 use util::time::{TimeSystem, ToTicks};
@@ -59,162 +62,141 @@ impl Database {
     }
 }
 
-// /// Reference to hold statements regarding [Usage] and associated entities' queries
-// pub struct UsageWriter {
-//     db: Database,
-// }
+/// Reference to hold statements regarding [Usage] and associated entities' queries
+pub struct UsageWriter {
+    db: Database,
+}
 
-// impl UsageWriter {
-//     /// Initialize a [UsageWriter] from a given [Database]
-//     pub fn new(db: Database) -> Result<Self> {
-//         // let conn = &db.conn;
-//         // let find_or_insert_app = prepare_stmt!(
-//         //     conn,
-//         //     // We set found=1 to force this query to return a result row regardless of
-//         //     // conflict result.
-//         //     "INSERT INTO apps (identity_is_win32, identity_path_or_aumid) VALUES (?, ?) ON CONFLICT
-//         //         DO UPDATE SET found = 1 RETURNING id, found"
-//         // )?;
-//         // let insert_session = insert_stmt!(conn, Session)?;
-//         // let insert_usage = insert_stmt!(conn, Usage)?;
-//         // let update_usage = prepare_stmt!(conn, "UPDATE usages SET end = ? WHERE id = ?")?;
-//         // let insert_interaction_period = insert_stmt!(conn, InteractionPeriod)?;
-//         Ok(Self { db })
-//     }
+impl UsageWriter {
+    /// Initialize a [UsageWriter] from a given [Database]
+    pub fn new(db: Database) -> Result<Self> {
+        Ok(Self { db })
+    }
 
-//     /// Find or insert a [App] by its [AppIdentity]
-//     pub async fn find_or_insert_app(
-//         &mut self,
-//         identity: &AppIdentity,
-//     ) -> Result<FoundOrInserted<App>> {
-//         let (tag, text0) = Self::destructure_identity(identity);
-//         let (app_id, found): (Ref<App>, bool) = query_as(
-//             // We set found=1 to force this query to return a result row regardless of
-//             // conflict result.
-//             "INSERT INTO apps (identity_is_win32, identity_path_or_aumid) VALUES (?, ?) ON CONFLICT
-//                 DO UPDATE SET found = 1 RETURNING id, found",
-//         )
-//         .bind(tag)
-//         .bind(text0)
-//         .fetch_one(self.db.executor())
-//         .await?;
+    /// Find or insert a [App] by its [AppIdentity]
+    pub async fn find_or_insert_app(
+        &mut self,
+        identity: &AppIdentity,
+    ) -> Result<FoundOrInserted<App>> {
+        let (tag, text0) = Self::destructure_identity(identity);
+        let (app_id, found): (Ref<App>, bool) = query_as(
+            // We set found=1 to force this query to return a result row regardless of
+            // conflict result.
+            "INSERT INTO apps (identity_is_win32, identity_path_or_aumid) VALUES (?, ?) ON CONFLICT
+                DO UPDATE SET found = 1 RETURNING id, found",
+        )
+        .bind(tag)
+        .bind(text0)
+        .fetch_one(self.db.executor())
+        .await?;
 
-//         Ok(if found {
-//             FoundOrInserted::Found(app_id)
-//         } else {
-//             FoundOrInserted::Inserted(app_id)
-//         })
-//     }
+        Ok(if found {
+            FoundOrInserted::Found(app_id)
+        } else {
+            FoundOrInserted::Inserted(app_id)
+        })
+    }
 
-// /// Insert a [Session] into the [Database]
-// pub fn insert_session(&mut self, session: &mut Session) -> Result<()> {
-//     self.insert_session
-//         .execute(params![session.app, session.title])?;
-//     session.id = Ref::new(self.last_insert_id());
-//     Ok(())
-// }
+    /// Insert a [Session] into the [Database]
+    pub async fn insert_session(&mut self, session: &mut Session) -> Result<()> {
+        let res = query("INSERT INTO sessions VALUES (NULL, ?, ?)")
+            .bind(session.app.clone())
+            .bind(session.title.clone())
+            .execute(self.db.executor())
+            .await?;
+        session.id = Ref::new(res.last_insert_rowid());
+        Ok(())
+    }
 
-// /// Insert or update (only the end timestamp) a [Usage] into the [Database]
-// pub fn insert_or_update_usage(&mut self, usage: &mut Usage) -> Result<()> {
-//     if usage.id == Ref::default() {
-//         self.insert_usage
-//             .execute(params![usage.session, usage.start, usage.end])?;
-//         usage.id = Ref::new(self.last_insert_id());
-//     } else {
-//         self.update_usage.execute(params![usage.end, usage.id])?;
-//     }
-//     Ok(())
-// }
+    /// Insert or update (only the end timestamp) a [Usage] into the [Database]
+    pub async fn insert_or_update_usage(&mut self, usage: &mut Usage) -> Result<()> {
+        if usage.id == Ref::default() {
+            let res = query("INSERT INTO usages VALUES (NULL, ?, ?, ?)")
+                .bind(usage.session.clone())
+                .bind(usage.start.clone())
+                .bind(usage.end.clone())
+                .execute(self.db.executor())
+                .await?;
+            usage.id = Ref::new(res.last_insert_rowid());
+        } else {
+            query("UPDATE usages SET end = ? WHERE id = ?")
+                .bind(usage.end.clone())
+                .bind(usage.id.clone())
+                .execute(self.db.executor())
+                .await?;
+        }
+        Ok(())
+    }
 
-// /// Insert a [InteractionPeriod] into the [Database]
-// pub fn insert_interaction_period(
-//     &mut self,
-//     interaction_period: &InteractionPeriod,
-// ) -> Result<()> {
-//     self.insert_interaction_period.execute(params![
-//         interaction_period.start,
-//         interaction_period.end,
-//         interaction_period.mouse_clicks,
-//         interaction_period.key_strokes
-//     ])?;
-//     Ok(())
-// }
+    /// Insert a [InteractionPeriod] into the [Database]
+    pub async fn insert_interaction_period(
+        &mut self,
+        interaction_period: &InteractionPeriod,
+    ) -> Result<()> {
+        query("INSERT INTO interaction_periods VALUES (NULL, ?, ?, ?, ?)")
+            .bind(interaction_period.start.clone())
+            .bind(interaction_period.end.clone())
+            .bind(interaction_period.mouse_clicks.clone())
+            .bind(interaction_period.key_strokes.clone())
+            .execute(self.db.executor())
+            .await?;
+        Ok(())
+    }
 
-// /// Get the last inserted row id
-// fn last_insert_id(&self) -> u64 {
-//     self.conn.last_insert_rowid() as u64
-// }
+    fn destructure_identity(identity: &AppIdentity) -> (i64, &str) {
+        match identity {
+            AppIdentity::Win32 { path } => (1, path),
+            AppIdentity::Uwp { aumid } => (0, aumid),
+        }
+    }
+}
 
-//     fn destructure_identity(identity: &AppIdentity) -> (i64, &str) {
-//         match identity {
-//             AppIdentity::Win32 { path } => (1, path),
-//             AppIdentity::Uwp { aumid } => (0, aumid),
-//         }
-//     }
-// }
+/// Reference to hold statements regarding [App] updates
+pub struct AppUpdater {
+    db: Database,
+}
 
-// /// Reference to hold statements regarding [App] updates
-// pub struct AppUpdater<'a> {
-//     conn: &'a Connection,
-//     update_app: Statement<'a>,
-//     update_app_icon_size: Statement<'a>,
-// }
+impl AppUpdater {
+    /// Initialize a [AppUpdater] from a given [Database]
+    pub fn new(db: Database) -> Result<Self> {
+        Ok(Self { db })
+    }
 
-// impl<'a> AppUpdater<'a> {
-//     /// Initialize a [AppUpdater] from a given [Database]
-//     pub fn new(db: &'a mut Database) -> Result<Self> {
-//         let conn = &db.conn;
-//         Ok(Self {
-//             update_app: prepare_stmt!(
-//                 conn,
-//                 "UPDATE apps SET
-//                     name = ?,
-//                     description = ?,
-//                     company = ?,
-//                     color = ?,
-//                     initialized = 1
-//                 WHERE id = ?"
-//             )?,
-//             update_app_icon_size: prepare_stmt!(
-//                 conn,
-//                 "UPDATE apps SET
-//                     icon = ZEROBLOB(?)
-//                 WHERE id = ?"
-//             )?,
-//             conn,
-//         })
-//     }
+    /// Update the [App] with additional information
+    pub async fn update_app(&mut self, app: &App) -> Result<()> {
+        query(
+            "UPDATE apps SET
+                    name = ?,
+                    description = ?,
+                    company = ?,
+                    color = ?,
+                    initialized = 1
+                WHERE id = ?",
+        )
+        .bind(app.name.clone())
+        .bind(app.description.clone())
+        .bind(app.company.clone())
+        .bind(app.color.clone())
+        .bind(app.id.clone())
+        .execute(self.db.executor())
+        .await?;
+        Ok(())
+    }
 
-//     /// Update the [App] with additional information
-//     pub fn update_app(&mut self, app: &App) -> Result<()> {
-//         self.update_app.execute(params![
-//             app.name,
-//             app.description,
-//             app.company,
-//             app.color,
-//             app.id
-//         ])?;
-//         Ok(())
-//     }
-
-//     /// Get a reference to the [App] icon's writer
-//     pub fn app_icon_writer(&mut self, app_id: Ref<App>, size: u64) -> Result<impl Write + 'a> {
-//         self.update_app_icon_size(app_id.clone(), size)?;
-//         Ok(self.conn.blob_open(
-//             rusqlite::DatabaseName::Main,
-//             "apps",
-//             "icon",
-//             *app_id as i64,
-//             false,
-//         )?)
-//     }
-
-//     /// Update the [App] with additional information
-//     fn update_app_icon_size(&mut self, id: Ref<App>, icon_size: u64) -> Result<()> {
-//         self.update_app_icon_size.execute(params![icon_size, id])?;
-//         Ok(())
-//     }
-// }
+    /// Get a reference to the [App] icon's writer
+    pub async fn update_app_icon(&mut self, app_id: Ref<App>, icon: &[u8]) -> Result<()> {
+        query(
+            "UPDATE apps SET
+                    icon = ?
+                WHERE id = ?",
+        )
+        .bind(icon)
+        .bind(app_id)
+        .execute(self.db.executor())
+        .await?;
+        Ok(())
+    }
+}
 
 // /// [Alert] that was triggered from a [Target]
 // #[derive(Debug, PartialEq, Eq, Clone)]
