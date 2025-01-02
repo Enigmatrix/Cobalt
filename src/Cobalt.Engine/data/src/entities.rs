@@ -1,7 +1,8 @@
 use sqlx::prelude::FromRow;
 use sqlx::sqlite::SqliteRow;
-use sqlx::{Result, Row};
+use sqlx::{Result, Row, Type};
 
+use crate::table::{AlertVersionedId, ReminderVersionedId};
 pub use crate::table::{Color, Duration, Id, Ref, Timestamp, VersionedId};
 
 // Documented in the Cobalt.Common.Data/Entities/*.cs files
@@ -83,13 +84,23 @@ pub enum Target {
     Tag(Ref<Tag>),
 }
 
+impl FromRow<'_, SqliteRow> for Target {
+    fn from_row(row: &SqliteRow) -> Result<Self> {
+        Ok(if let Some(app_id) = row.get("app_id") {
+            Target::App(app_id)
+        } else {
+            Target::Tag(row.get("tag_id"))
+        })
+    }
+}
+
 impl Default for Target {
     fn default() -> Self {
         Self::App(Default::default())
     }
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, Type)] // TODO this Type impl is sus
 pub enum TimeFrame {
     #[default]
     Daily = 0,
@@ -104,6 +115,20 @@ pub enum TriggerAction {
     Message(String),
 }
 
+impl FromRow<'_, SqliteRow> for TriggerAction {
+    fn from_row(row: &SqliteRow) -> Result<Self> {
+        let tag = row.get("trigger_action_tag");
+        match tag {
+            0 => Ok(Self::Kill),
+            1 => Ok(Self::Dim(row.get("trigger_action_dim_duration"))),
+            2 => Ok(Self::Message(row.get("trigger_action_message_content"))),
+            tag => Err(sqlx::Error::Decode(
+                format!("Unknown trigger action tag = {tag}").into(),
+            )),
+        }
+    }
+}
+
 impl Default for TriggerAction {
     fn default() -> Self {
         Self::Kill
@@ -112,17 +137,22 @@ impl Default for TriggerAction {
 
 #[derive(Default, Debug, Clone, PartialEq, Eq, FromRow)]
 pub struct Alert {
+    #[sqlx(flatten)]
     pub id: Ref<Self>,
+    #[sqlx(flatten)]
     pub target: Target,
     pub usage_limit: Duration,
     pub time_frame: TimeFrame,
+    #[sqlx(flatten)]
     pub trigger_action: TriggerAction,
 }
 
 #[derive(Default, Debug, Clone, FromRow)] // can't impl PartialEq, Eq for f64
 pub struct Reminder {
+    #[sqlx(flatten)]
     pub id: Ref<Self>,
-    pub alert: Ref<Alert>,
+    #[sqlx(flatten)]
+    pub alert: AlertVersionedId,
     pub threshold: f64,
     pub message: String,
 }
@@ -130,14 +160,16 @@ pub struct Reminder {
 #[derive(Default, Debug, Clone, PartialEq, Eq, FromRow)]
 pub struct AlertEvent {
     pub id: Ref<Self>,
-    pub alert: Ref<Alert>,
+    #[sqlx(flatten)]
+    pub alert: AlertVersionedId,
     pub timestamp: Timestamp,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Eq, FromRow)]
 pub struct ReminderEvent {
     pub id: Ref<Self>,
-    pub reminder: Ref<Reminder>,
+    #[sqlx(flatten)]
+    pub reminder: ReminderVersionedId,
     pub timestamp: Timestamp,
 }
 

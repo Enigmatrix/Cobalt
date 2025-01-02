@@ -3,7 +3,6 @@ use sqlx::{query, Row};
 use util::future as tokio;
 
 use super::*;
-use crate::entities::Tag;
 
 async fn test_db() -> Result<Database> {
     let conn = SqliteConnectOptions::new()
