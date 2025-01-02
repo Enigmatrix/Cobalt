@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use sqlx::prelude::FromRow;
 use sqlx::sqlite::{SqliteConnectOptions, SqliteJournalMode, SqliteRow};
 use sqlx::{
@@ -44,6 +46,8 @@ impl Database {
             .filename(path)
             .create_if_missing(true)
             .journal_mode(SqliteJournalMode::Wal)
+            .log_statements(log::LevelFilter::Trace)
+            .log_slow_statements(log::LevelFilter::Info, Duration::from_secs(1))
             .connect()
             .await?;
         let mut ret = Self { conn };
