@@ -21,7 +21,7 @@ pub trait Table {
 /// Reference to a [Table] in the database via its unique identifier.
 #[derive(Default, Debug, Clone, Type)]
 #[sqlx(transparent)]
-pub struct Ref<T: Table>(T::Id);
+pub struct Ref<T: Table>(pub T::Id);
 
 impl<T: Table<Id: PartialEq>> PartialEq for Ref<T> {
     fn eq(&self, other: &Self) -> bool {
@@ -73,24 +73,60 @@ pub type Duration = i64;
 /// Unique identifier with Version
 #[derive(Default, Debug, Clone, PartialEq, Eq, FromRow)]
 pub struct VersionedId {
-    pub id: u64,
-    pub version: u64,
+    pub id: i64,
+    pub version: i64,
 }
 
 // TODO when sqlx flatten gets a prefix remove this and use VersionId
 #[derive(Default, Debug, Clone, PartialEq, Eq, FromRow)]
 pub struct ReminderVersionedId {
     #[sqlx(rename = "reminder_id")]
-    pub id: u64,
+    pub id: i64,
     #[sqlx(rename = "reminder_version")]
-    pub version: u64,
+    pub version: i64,
 }
 
 // TODO when sqlx flatten gets a prefix remove this and use VersionId
 #[derive(Default, Debug, Clone, PartialEq, Eq, FromRow)]
 pub struct AlertVersionedId {
     #[sqlx(rename = "alert_id")]
-    pub id: u64,
+    pub id: i64,
     #[sqlx(rename = "alert_version")]
-    pub version: u64,
+    pub version: i64,
+}
+
+impl From<VersionedId> for ReminderVersionedId {
+    fn from(value: VersionedId) -> Self {
+        ReminderVersionedId {
+            id: value.id,
+            version: value.id,
+        }
+    }
+}
+
+impl From<VersionedId> for AlertVersionedId {
+    fn from(value: VersionedId) -> Self {
+        AlertVersionedId {
+            id: value.id,
+            version: value.id,
+        }
+    }
+}
+
+impl From<ReminderVersionedId> for VersionedId {
+    fn from(value: ReminderVersionedId) -> Self {
+        VersionedId {
+            id: value.id,
+            version: value.id,
+        }
+    }
+}
+
+impl From<AlertVersionedId> for VersionedId {
+    fn from(value: AlertVersionedId) -> Self {
+        VersionedId {
+            id: value.id,
+            version: value.id,
+        }
+    }
 }

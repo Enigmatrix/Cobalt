@@ -100,7 +100,8 @@ impl Default for Target {
     }
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Eq, Type)] // TODO this Type impl is sus
+#[derive(Default, Debug, Clone, PartialEq, Eq, Type)]
+#[repr(i64)]
 pub enum TimeFrame {
     #[default]
     Daily = 0,

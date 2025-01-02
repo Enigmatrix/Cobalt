@@ -3,6 +3,8 @@ use sqlx::{query, Row};
 use util::future as tokio;
 
 use super::*;
+use crate::entities::Tag;
+use crate::table::{AlertVersionedId, ReminderVersionedId};
 
 async fn test_db() -> Result<Database> {
     let conn = SqliteConnectOptions::new()
@@ -240,1644 +242,1816 @@ async fn update_app_icon() -> Result<()> {
     Ok(())
 }
 
-// #[test]
-// fn target_apps() -> Result<()> {
-//     let mut db = test_db()?;
-//     {
-//         let mut insert_app = insert_stmt!(db.conn, App)?;
-//         insert_app.execute(params![
-//             true, true, "name1", "desc1", "comp1", "red1", 1, "path1", false
-//         ])?;
-//         insert_app.execute(params![
-//             true, true, "name2", "desc2", "comp2", "red2", 0, "aumid2", false
-//         ])?;
-//         insert_app.execute(params![
-//             true, true, "name3", "desc3", "comp3", "red3", 1, "path3", false
-//         ])?;
-
-//         let mut insert_tag = insert_stmt!(db.conn, Tag)?;
-//         insert_tag.execute(params!["tag_name1", "blue1"])?;
-//         insert_tag.execute(params!["tag_name2", "blue2"])?;
-//         insert_tag.execute(params!["tag_name3", "blue3"])?;
-//         insert_tag.execute(params!["tag_name4", "blue4"])?;
-
-//         let mut insert_app_tag = prepare_stmt!(
-//             db.conn,
-//             "INSERT INTO _app_tags(app_id, tag_id) VALUES (?, ?)"
-//         )?;
-//         insert_app_tag.execute(params![1, 1])?;
-//         insert_app_tag.execute(params![2, 1])?;
-//         insert_app_tag.execute(params![2, 2])?;
-//         insert_app_tag.execute(params![3, 2])?;
-//         insert_app_tag.execute(params![1, 3])?;
-//     }
-
-//     let mut mgr = AlertManager::new(&mut db)?;
-
-//     let app1 = App {
-//         id: Ref::new(1),
-//         name: "name1".to_string(),
-//         description: "desc1".to_string(),
-//         company: "comp1".to_string(),
-//         color: "red1".to_string(),
-//         identity: AppIdentity::Win32 {
-//             path: "path1".to_string(),
-//         },
-//     };
-//     let app2 = App {
-//         id: Ref::new(2),
-//         name: "name2".to_string(),
-//         description: "desc2".to_string(),
-//         company: "comp2".to_string(),
-//         color: "red2".to_string(),
-//         identity: AppIdentity::Uwp {
-//             aumid: "aumid2".to_string(),
-//         },
-//     };
-//     let app3 = App {
-//         id: Ref::new(3),
-//         name: "name3".to_string(),
-//         description: "desc3".to_string(),
-//         company: "comp3".to_string(),
-//         color: "red3".to_string(),
-//         identity: AppIdentity::Win32 {
-//             path: "path3".to_string(),
-//         },
-//     };
-
-//     assert_eq!(
-//         mgr.target_apps(&Target::App(Ref::new(1)))?,
-//         vec![app1.id.clone()],
-//     );
-
-//     assert_eq!(
-//         mgr.target_apps(&Target::App(Ref::new(2)))?,
-//         vec![app2.id.clone()],
-//     );
-
-//     assert_eq!(
-//         mgr.target_apps(&Target::App(Ref::new(3)))?,
-//         vec![app3.id.clone()],
-//     );
-
-//     assert_eq!(
-//         mgr.target_apps(&Target::Tag(Ref::new(1)))?,
-//         vec![app1.id.clone(), app2.id.clone()],
-//     );
-
-//     assert_eq!(
-//         mgr.target_apps(&Target::Tag(Ref::new(2)))?,
-//         vec![app2.id.clone(), app3.id.clone()],
-//     );
-
-//     assert_eq!(
-//         mgr.target_apps(&Target::Tag(Ref::new(3)))?,
-//         vec![app1.id.clone()],
-//     );
-
-//     assert_eq!(mgr.target_apps(&Target::Tag(Ref::new(4)))?, Vec::new());
-
-//     Ok(())
-// }
-
-// #[test]
-// fn insert_alert_event() -> Result<()> {
-//     let mut db = test_db()?;
-
-//     let id = 1;
-//     {
-//         let mut insert_app = insert_stmt!(db.conn, App)?;
-//         insert_app.execute(params![
-//             true, true, "name1", "desc1", "comp1", "red1", 1, "path1", false
-//         ])?;
-//         let mut insert_alert = prepare_stmt!(
-//             db.conn,
-//             "INSERT INTO alerts VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
-//         )?;
-//         insert_alert.execute(params![id, 1, 1, Option::<Ref<Tag>>::None, 100, 1, 0, 0, 1])?;
-//     }
-
-//     let mut alert_event = AlertEvent {
-//         id: Default::default(),
-//         alert: Ref::new(VersionedId { id: id, version: 1 }),
-//         timestamp: 1337,
-//     };
-
-//     {
-//         let mut mgr = AlertManager::new(&mut db)?;
-
-//         mgr.insert_alert_event(&alert_event)?;
-//     }
-
-//     let alert_event_from_db = db
-//         .conn
-//         .query_row("SELECT * FROM alert_events", params![], |f| {
-//             Ok(AlertEvent {
-//                 id: f.get(0)?,
-//                 alert: Ref::new(VersionedId {
-//                     id: f.get(1)?,
-//                     version: f.get(2)?,
-//                 }),
-//                 timestamp: f.get(3)?,
-//             })
-//         })?;
-//     alert_event.id = Ref::new(1);
-
-//     assert_eq!(alert_event, alert_event_from_db);
-
-//     Ok(())
-// }
-
-// #[test]
-// fn insert_reminder_event() -> Result<()> {
-//     let mut db = test_db()?;
-
-//     let alert_id = 1;
-//     let reminder_id = 1;
-//     {
-//         let mut insert_app = insert_stmt!(db.conn, App)?;
-//         insert_app.execute(params![
-//             true, true, "name1", "desc1", "comp1", "red1", 1, "path1", false
-//         ])?;
-//         let mut insert_alert = prepare_stmt!(
-//             db.conn,
-//             "INSERT INTO alerts VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
-//         )?;
-//         let mut insert_reminder =
-//             prepare_stmt!(db.conn, "INSERT INTO reminders VALUES (?, ?, ?, ?, ?, ?)")?;
-//         insert_alert.execute(params![
-//             alert_id,
-//             1,
-//             1,
-//             Option::<Ref<Tag>>::None,
-//             100,
-//             1,
-//             0,
-//             0,
-//             1
-//         ])?;
-//         insert_reminder.execute(params![reminder_id, 1, alert_id, 1, 0.75, "hello",])?;
-//     }
-
-//     let mut reminder_event = ReminderEvent {
-//         id: Default::default(),
-//         reminder: Ref::new(VersionedId {
-//             id: reminder_id,
-//             version: 1,
-//         }),
-//         timestamp: 1337,
-//     };
-
-//     {
-//         let mut mgr = AlertManager::new(&mut db)?;
-
-//         mgr.insert_reminder_event(&reminder_event)?;
-//     }
-
-//     let reminder_event_from_db =
-//         db.conn
-//             .query_row("SELECT * FROM reminder_events", params![], |f| {
-//                 Ok(ReminderEvent {
-//                     id: f.get(0)?,
-//                     reminder: Ref::new(VersionedId {
-//                         id: f.get(1)?,
-//                         version: f.get(2)?,
-//                     }),
-//                     timestamp: f.get(3)?,
-//                 })
-//             })?;
-//     reminder_event.id = Ref::new(1);
-
-//     assert_eq!(reminder_event, reminder_event_from_db);
-
-//     Ok(())
-// }
-
-// struct Times {
-//     day_start: u64,
-//     week_start: u64,
-//     month_start: u64,
-// }
-
-// struct Tick(u64);
-
-// impl ToTicks for Tick {
-//     fn to_ticks(&self) -> u64 {
-//         self.0
-//     }
-// }
-
-// impl TimeSystem for Times {
-//     type Ticks = Tick;
-
-//     fn day_start(&self) -> Self::Ticks {
-//         Tick(self.day_start)
-//     }
-
-//     fn week_start(&self) -> Self::Ticks {
-//         Tick(self.week_start)
-//     }
-
-//     fn month_start(&self) -> Self::Ticks {
-//         Tick(self.month_start)
-//     }
-// }
-
-// mod arrange {
-//     use super::*;
-
-//     pub fn app(db: &mut Database, mut app: App) -> Result<App> {
-//         db.conn.execute(
-//             "INSERT INTO apps VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, NULL)",
-//             params![
-//                 false,
-//                 false,
-//                 app.name,
-//                 app.description,
-//                 app.company,
-//                 app.color,
-//                 if let AppIdentity::Win32 { .. } = app.identity {
-//                     1
-//                 } else {
-//                     0
-//                 },
-//                 match &app.identity {
-//                     AppIdentity::Win32 { path } => path,
-//                     AppIdentity::Uwp { aumid } => aumid,
-//                 },
-//             ],
-//         )?;
-//         app.id = Ref::new(db.conn.last_insert_rowid() as u64);
-//         Ok(app)
-//     }
-
-//     pub fn session(db: &mut Database, mut session: Session) -> Result<Session> {
-//         db.conn.execute(
-//             "INSERT INTO sessions VALUES (NULL, ?, ?)",
-//             params![session.app, session.title],
-//         )?;
-//         session.id = Ref::new(db.conn.last_insert_rowid() as u64);
-//         Ok(session)
-//     }
-
-//     pub fn usage(db: &mut Database, mut usage: Usage) -> Result<Usage> {
-//         db.conn.execute(
-//             "INSERT INTO usages VALUES (NULL, ?, ?, ?)",
-//             params![usage.session, usage.start, usage.end],
-//         )?;
-//         usage.id = Ref::new(db.conn.last_insert_rowid() as u64);
-//         Ok(usage)
-//     }
-
-//     // pub fn interaction_period(
-//     //     db: &mut Database,
-//     //     mut ip: InteractionPeriod,
-//     // ) -> Result<InteractionPeriod> {
-//     //     db.conn.execute(
-//     //         "INSERT INTO interaction_periods VALUES (NULL, ?, ?, ?, ?)",
-//     //         params![ip.start, ip.end, ip.mouseclicks, ip.keystrokes],
-//     //     )?;
-//     //     ip.id = Ref::new(db.conn.last_insert_rowid() as u64);
-//     //     Ok(ip)
-//     // }
-
-//     pub fn tag(db: &mut Database, mut tag: Tag) -> Result<Tag> {
-//         db.conn.execute(
-//             "INSERT INTO tags VALUES (NULL, ?, ?)",
-//             params![tag.name, tag.color],
-//         )?;
-//         tag.id = Ref::new(db.conn.last_insert_rowid() as u64);
-//         Ok(tag)
-//     }
-
-//     pub fn app_tags(db: &mut Database, app_id: Ref<App>, tag_id: Ref<Tag>) -> Result<()> {
-//         db.conn.execute(
-//             "INSERT INTO _app_tags VALUES (?, ?)",
-//             params![app_id, tag_id],
-//         )?;
-//         Ok(())
-//     }
-
-//     pub fn alert(db: &mut Database, alert: Alert) -> Result<Alert> {
-//         let time_frame = match alert.time_frame {
-//             TimeFrame::Daily => 0,
-//             TimeFrame::Weekly => 1,
-//             TimeFrame::Monthly => 2,
-//         };
-
-//         let (dim_duration, message_content, tag) = match &alert.trigger_action {
-//             TriggerAction::Kill => (None, None, 0),
-//             TriggerAction::Dim(dur) => (Some(dur), None, 1),
-//             TriggerAction::Message(content) => (None, Some(content), 2),
-//         };
-
-//         let (app_id, tag_id) = match alert.target.clone() {
-//             Target::App(app) => (Some(app), None),
-//             Target::Tag(tag) => (None, Some(tag)),
-//         };
-
-//         db.conn.execute(
-//             "INSERT INTO alerts VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-//             params![
-//                 alert.id.id,
-//                 alert.id.version,
-//                 app_id,
-//                 tag_id,
-//                 alert.usage_limit,
-//                 time_frame,
-//                 dim_duration,
-//                 message_content,
-//                 tag
-//             ],
-//         )?;
-//         Ok(alert)
-//     }
-
-//     pub fn reminder(db: &mut Database, reminder: Reminder) -> Result<Reminder> {
-//         db.conn.execute(
-//             "INSERT INTO reminders VALUES (?, ?, ?, ?, ?, ?)",
-//             params![
-//                 reminder.id.id,
-//                 reminder.id.version,
-//                 reminder.alert.id,
-//                 reminder.alert.version,
-//                 reminder.threshold,
-//                 reminder.message,
-//             ],
-//         )?;
-//         Ok(reminder)
-//     }
-
-//     pub fn alert_event(db: &mut Database, mut event: AlertEvent) -> Result<AlertEvent> {
-//         db.conn.execute(
-//             "INSERT INTO alert_events VALUES (NULL, ?, ?, ?)",
-//             params![event.alert.id, event.alert.version, event.timestamp,],
-//         )?;
-//         event.id = Ref::new(db.conn.last_insert_rowid() as u64);
-//         Ok(event)
-//     }
-
-//     pub fn reminder_event(db: &mut Database, mut event: ReminderEvent) -> Result<ReminderEvent> {
-//         db.conn.execute(
-//             "INSERT INTO reminder_events VALUES (NULL, ?, ?, ?)",
-//             params![event.reminder.id, event.reminder.version, event.timestamp,],
-//         )?;
-//         event.id = Ref::new(db.conn.last_insert_rowid() as u64);
-//         Ok(event)
-//     }
-
-//     pub fn to_id(n: u64) -> u64 {
-//         n
-//     }
-// }
-
-// mod triggered_alerts {
-//     use super::*;
-
-//     #[test]
-//     fn no_alerts() -> Result<()> {
-//         let mut db = test_db()?;
-
-//         let mut mgr = AlertManager::new(&mut db)?;
-//         let alerts = mgr.triggered_alerts(&Times {
-//             day_start: 0,
-//             week_start: 0,
-//             month_start: 0,
-//         })?;
-//         assert_eq!(alerts, vec![]);
-//         Ok(())
-//     }
-
-//     #[test]
-//     fn one_alert_one_app_no_sessions() -> Result<()> {
-//         let mut db = test_db()?;
-
-//         let app = arrange::app(
-//             &mut db,
-//             App {
-//                 id: Ref::default(),
-//                 name: "name".to_string(),
-//                 description: "desc".to_string(),
-//                 company: "comp".to_string(),
-//                 color: "red".to_string(),
-//                 identity: AppIdentity::Win32 {
-//                     path: "path".to_string(),
-//                 },
-//             },
-//         )?;
-
-//         let _alert = arrange::alert(
-//             &mut db,
-//             Alert {
-//                 id: Ref::new(VersionedId {
-//                     id: arrange::to_id(1),
-//                     version: 1,
-//                 }),
-//                 target: Target::App(app.id.clone()),
-//                 usage_limit: 100,
-//                 time_frame: TimeFrame::Daily,
-//                 trigger_action: TriggerAction::Kill,
-//             },
-//         )?;
-
-//         let mut mgr = AlertManager::new(&mut db)?;
-//         let alerts = mgr.triggered_alerts(&Times {
-//             day_start: 0,
-//             week_start: 0,
-//             month_start: 0,
-//         })?;
-//         assert_eq!(alerts, vec![]);
-//         Ok(())
-//     }
-
-//     #[test]
-//     fn one_alert_one_app_one_session_no_usages() -> Result<()> {
-//         let mut db = test_db()?;
-
-//         let app = arrange::app(
-//             &mut db,
-//             App {
-//                 id: Ref::default(),
-//                 name: "name".to_string(),
-//                 description: "desc".to_string(),
-//                 company: "comp".to_string(),
-//                 color: "red".to_string(),
-//                 identity: AppIdentity::Win32 {
-//                     path: "path".to_string(),
-//                 },
-//             },
-//         )?;
-
-//         let _session = arrange::session(
-//             &mut db,
-//             Session {
-//                 id: Ref::default(),
-//                 app: app.id.clone(),
-//                 title: "title".to_string(),
-//             },
-//         )?;
-
-//         let _alert = arrange::alert(
-//             &mut db,
-//             Alert {
-//                 id: Ref::new(VersionedId {
-//                     id: arrange::to_id(1),
-//                     version: 1,
-//                 }),
-//                 target: Target::App(app.id.clone()),
-//                 usage_limit: 100,
-//                 time_frame: TimeFrame::Daily,
-//                 trigger_action: TriggerAction::Kill,
-//             },
-//         )?;
-
-//         let mut mgr = AlertManager::new(&mut db)?;
-//         let alerts = mgr.triggered_alerts(&Times {
-//             day_start: 0,
-//             week_start: 0,
-//             month_start: 0,
-//         })?;
-//         assert_eq!(alerts, vec![]);
-//         Ok(())
-//     }
-
-//     #[test]
-//     fn triggered_correctly() -> Result<()> {
-//         let mut db = test_db()?;
-
-//         let app = arrange::app(
-//             &mut db,
-//             App {
-//                 id: Ref::default(),
-//                 name: "name".to_string(),
-//                 description: "desc".to_string(),
-//                 company: "comp".to_string(),
-//                 color: "red".to_string(),
-//                 identity: AppIdentity::Win32 {
-//                     path: "path".to_string(),
-//                 },
-//             },
-//         )?;
-
-//         let session = arrange::session(
-//             &mut db,
-//             Session {
-//                 id: Ref::default(),
-//                 app: app.id.clone(),
-//                 title: "title".to_string(),
-//             },
-//         )?;
-
-//         let _usage = arrange::usage(
-//             &mut db,
-//             Usage {
-//                 id: Ref::default(),
-//                 session: session.id.clone(),
-//                 start: 0,
-//                 end: 100,
-//             },
-//         )?;
-
-//         let alert = arrange::alert(
-//             &mut db,
-//             Alert {
-//                 id: Ref::new(VersionedId {
-//                     id: arrange::to_id(1),
-//                     version: 1,
-//                 }),
-//                 target: Target::App(app.id.clone()),
-//                 usage_limit: 100,
-//                 time_frame: TimeFrame::Daily,
-//                 trigger_action: TriggerAction::Kill,
-//             },
-//         )?;
-
-//         let mut mgr = AlertManager::new(&mut db)?;
-//         let alerts = mgr.triggered_alerts(&Times {
-//             day_start: 0,
-//             week_start: 0,
-//             month_start: 0,
-//         })?;
-//         assert_eq!(
-//             alerts,
-//             vec![TriggeredAlert {
-//                 alert,
-//                 timestamp: None,
-//                 name: "name".to_string()
-//             }]
-//         );
-//         Ok(())
-//     }
-
-//     #[test]
-//     fn halfway_usage_does_not_trigger() -> Result<()> {
-//         let mut db = test_db()?;
-
-//         let app = arrange::app(
-//             &mut db,
-//             App {
-//                 id: Ref::default(),
-//                 name: "name".to_string(),
-//                 description: "desc".to_string(),
-//                 company: "comp".to_string(),
-//                 color: "red".to_string(),
-//                 identity: AppIdentity::Win32 {
-//                     path: "path".to_string(),
-//                 },
-//             },
-//         )?;
-
-//         let session = arrange::session(
-//             &mut db,
-//             Session {
-//                 id: Ref::default(),
-//                 app: app.id.clone(),
-//                 title: "title".to_string(),
-//             },
-//         )?;
-
-//         let _usage = arrange::usage(
-//             &mut db,
-//             Usage {
-//                 id: Ref::default(),
-//                 session: session.id.clone(),
-//                 start: 0,
-//                 end: 100,
-//             },
-//         )?;
-
-//         let alert1 = arrange::alert(
-//             &mut db,
-//             Alert {
-//                 id: Ref::new(VersionedId {
-//                     id: arrange::to_id(1),
-//                     version: 1,
-//                 }),
-//                 target: Target::App(app.id.clone()),
-//                 usage_limit: 50,
-//                 time_frame: TimeFrame::Daily,
-//                 trigger_action: TriggerAction::Kill,
-//             },
-//         )?;
-
-//         let _alert2 = arrange::alert(
-//             &mut db,
-//             Alert {
-//                 id: Ref::new(VersionedId {
-//                     id: arrange::to_id(2),
-//                     version: 1,
-//                 }),
-//                 target: Target::App(app.id.clone()),
-//                 usage_limit: 51,
-//                 time_frame: TimeFrame::Daily,
-//                 trigger_action: TriggerAction::Kill,
-//             },
-//         )?;
-
-//         let mut mgr = AlertManager::new(&mut db)?;
-//         let alerts = mgr.triggered_alerts(&Times {
-//             day_start: 50,
-//             week_start: 50,
-//             month_start: 50,
-//         })?;
-//         assert_eq!(
-//             alerts,
-//             vec![TriggeredAlert {
-//                 alert: alert1,
-//                 timestamp: None,
-//                 name: "name".to_string()
-//             }]
-//         ); // alert2 is not triggered
-//         Ok(())
-//     }
-
-//     #[test]
-//     fn exactly_one_alert_from_one_usage_despite_lower_version_existing() -> Result<()> {
-//         let mut db = test_db()?;
-
-//         let app = arrange::app(
-//             &mut db,
-//             App {
-//                 id: Ref::default(),
-//                 name: "name".to_string(),
-//                 description: "desc".to_string(),
-//                 company: "comp".to_string(),
-//                 color: "red".to_string(),
-//                 identity: AppIdentity::Win32 {
-//                     path: "path".to_string(),
-//                 },
-//             },
-//         )?;
-
-//         let session = arrange::session(
-//             &mut db,
-//             Session {
-//                 id: Ref::default(),
-//                 app: app.id.clone(),
-//                 title: "title".to_string(),
-//             },
-//         )?;
-
-//         let _usage = arrange::usage(
-//             &mut db,
-//             Usage {
-//                 id: Ref::default(),
-//                 session: session.id.clone(),
-//                 start: 0,
-//                 end: 100,
-//             },
-//         )?;
-
-//         let _alert1 = arrange::alert(
-//             &mut db,
-//             Alert {
-//                 id: Ref::new(VersionedId {
-//                     id: arrange::to_id(1),
-//                     version: 1,
-//                 }),
-//                 target: Target::App(app.id.clone()),
-//                 usage_limit: 10,
-//                 time_frame: TimeFrame::Daily,
-//                 trigger_action: TriggerAction::Kill,
-//             },
-//         )?;
-
-//         let alert2 = arrange::alert(
-//             &mut db,
-//             Alert {
-//                 id: Ref::new(VersionedId {
-//                     id: arrange::to_id(1),
-//                     version: 2,
-//                 }),
-//                 target: Target::App(app.id.clone()),
-//                 usage_limit: 100,
-//                 time_frame: TimeFrame::Daily,
-//                 trigger_action: TriggerAction::Kill,
-//             },
-//         )?;
-
-//         let mut mgr = AlertManager::new(&mut db)?;
-//         let alerts = mgr.triggered_alerts(&Times {
-//             day_start: 0,
-//             week_start: 0,
-//             month_start: 0,
-//         })?;
-//         assert_eq!(
-//             alerts,
-//             vec![TriggeredAlert {
-//                 alert: alert2,
-//                 timestamp: None,
-//                 name: "name".to_string()
-//             }]
-//         );
-//         Ok(())
-//     }
-
-//     #[test]
-//     fn alert_event_after_start() -> Result<()> {
-//         let mut db = test_db()?;
-
-//         let app = arrange::app(
-//             &mut db,
-//             App {
-//                 id: Ref::default(),
-//                 name: "name".to_string(),
-//                 description: "desc".to_string(),
-//                 company: "comp".to_string(),
-//                 color: "red".to_string(),
-//                 identity: AppIdentity::Win32 {
-//                     path: "path".to_string(),
-//                 },
-//             },
-//         )?;
-
-//         let session = arrange::session(
-//             &mut db,
-//             Session {
-//                 id: Ref::default(),
-//                 app: app.id.clone(),
-//                 title: "title".to_string(),
-//             },
-//         )?;
-
-//         let _usage = arrange::usage(
-//             &mut db,
-//             Usage {
-//                 id: Ref::default(),
-//                 session: session.id.clone(),
-//                 start: 0,
-//                 end: 100,
-//             },
-//         )?;
-
-//         let alert = arrange::alert(
-//             &mut db,
-//             Alert {
-//                 id: Ref::new(VersionedId {
-//                     id: arrange::to_id(1),
-//                     version: 1,
-//                 }),
-//                 target: Target::App(app.id.clone()),
-//                 usage_limit: 50,
-//                 time_frame: TimeFrame::Daily,
-//                 trigger_action: TriggerAction::Kill,
-//             },
-//         )?;
-
-//         let _alert_event = arrange::alert_event(
-//             &mut db,
-//             AlertEvent {
-//                 id: Ref::default(),
-//                 alert: alert.id.clone(),
-//                 timestamp: 75,
-//             },
-//         )?;
-
-//         let mut mgr = AlertManager::new(&mut db)?;
-//         let alerts = mgr.triggered_alerts(&Times {
-//             day_start: 50,
-//             week_start: 0,
-//             month_start: 0,
-//         })?;
-//         assert_eq!(
-//             alerts,
-//             vec![TriggeredAlert {
-//                 alert,
-//                 timestamp: Some(75),
-//                 name: "name".to_string()
-//             }]
-//         );
-//         Ok(())
-//     }
-
-//     #[test]
-//     fn alert_event_before_start() -> Result<()> {
-//         let mut db = test_db()?;
-
-//         let app = arrange::app(
-//             &mut db,
-//             App {
-//                 id: Ref::default(),
-//                 name: "name".to_string(),
-//                 description: "desc".to_string(),
-//                 company: "comp".to_string(),
-//                 color: "red".to_string(),
-//                 identity: AppIdentity::Win32 {
-//                     path: "path".to_string(),
-//                 },
-//             },
-//         )?;
-
-//         let session = arrange::session(
-//             &mut db,
-//             Session {
-//                 id: Ref::default(),
-//                 app: app.id.clone(),
-//                 title: "title".to_string(),
-//             },
-//         )?;
-
-//         let _usage = arrange::usage(
-//             &mut db,
-//             Usage {
-//                 id: Ref::default(),
-//                 session: session.id.clone(),
-//                 start: 0,
-//                 end: 100,
-//             },
-//         )?;
-
-//         let alert = arrange::alert(
-//             &mut db,
-//             Alert {
-//                 id: Ref::new(VersionedId {
-//                     id: arrange::to_id(1),
-//                     version: 1,
-//                 }),
-//                 target: Target::App(app.id.clone()),
-//                 usage_limit: 50,
-//                 time_frame: TimeFrame::Daily,
-//                 trigger_action: TriggerAction::Kill,
-//             },
-//         )?;
-
-//         let _alert_event = arrange::alert_event(
-//             &mut db,
-//             AlertEvent {
-//                 id: Ref::default(),
-//                 alert: alert.id.clone(),
-//                 timestamp: 25,
-//             },
-//         )?;
-
-//         let mut mgr = AlertManager::new(&mut db)?;
-//         let alerts = mgr.triggered_alerts(&Times {
-//             day_start: 50,
-//             week_start: 0,
-//             month_start: 0,
-//         })?;
-//         assert_eq!(
-//             alerts,
-//             vec![TriggeredAlert {
-//                 alert,
-//                 timestamp: None,
-//                 name: "name".to_string()
-//             }]
-//         );
-//         Ok(())
-//     }
-
-//     #[test]
-//     fn weekly_event_triggered() -> Result<()> {
-//         let mut db = test_db()?;
-
-//         let app = arrange::app(
-//             &mut db,
-//             App {
-//                 id: Ref::default(),
-//                 name: "name".to_string(),
-//                 description: "desc".to_string(),
-//                 company: "comp".to_string(),
-//                 color: "red".to_string(),
-//                 identity: AppIdentity::Win32 {
-//                     path: "path".to_string(),
-//                 },
-//             },
-//         )?;
-
-//         let session = arrange::session(
-//             &mut db,
-//             Session {
-//                 id: Ref::default(),
-//                 app: app.id.clone(),
-//                 title: "title".to_string(),
-//             },
-//         )?;
-
-//         let _usage = arrange::usage(
-//             &mut db,
-//             Usage {
-//                 id: Ref::default(),
-//                 session: session.id.clone(),
-//                 start: 0,
-//                 end: 100,
-//             },
-//         )?;
-
-//         let alert = arrange::alert(
-//             &mut db,
-//             Alert {
-//                 id: Ref::new(VersionedId {
-//                     id: arrange::to_id(1),
-//                     version: 1,
-//                 }),
-//                 target: Target::App(app.id.clone()),
-//                 usage_limit: 50,
-//                 time_frame: TimeFrame::Weekly,
-//                 trigger_action: TriggerAction::Kill,
-//             },
-//         )?;
-
-//         let mut mgr = AlertManager::new(&mut db)?;
-//         let alerts = mgr.triggered_alerts(&Times {
-//             day_start: 1000,
-//             week_start: 50,
-//             month_start: 1000,
-//         })?;
-//         assert_eq!(
-//             alerts,
-//             vec![TriggeredAlert {
-//                 alert,
-//                 timestamp: None,
-//                 name: "name".to_string()
-//             }]
-//         );
-//         Ok(())
-//     }
-
-//     #[test]
-//     fn monthly_event_triggered() -> Result<()> {
-//         let mut db = test_db()?;
-
-//         let app = arrange::app(
-//             &mut db,
-//             App {
-//                 id: Ref::default(),
-//                 name: "name".to_string(),
-//                 description: "desc".to_string(),
-//                 company: "comp".to_string(),
-//                 color: "red".to_string(),
-//                 identity: AppIdentity::Win32 {
-//                     path: "path".to_string(),
-//                 },
-//             },
-//         )?;
-
-//         let session = arrange::session(
-//             &mut db,
-//             Session {
-//                 id: Ref::default(),
-//                 app: app.id.clone(),
-//                 title: "title".to_string(),
-//             },
-//         )?;
-
-//         let _usage = arrange::usage(
-//             &mut db,
-//             Usage {
-//                 id: Ref::default(),
-//                 session: session.id.clone(),
-//                 start: 0,
-//                 end: 100,
-//             },
-//         )?;
-
-//         let alert = arrange::alert(
-//             &mut db,
-//             Alert {
-//                 id: Ref::new(VersionedId {
-//                     id: arrange::to_id(1),
-//                     version: 1,
-//                 }),
-//                 target: Target::App(app.id.clone()),
-//                 usage_limit: 50,
-//                 time_frame: TimeFrame::Monthly,
-//                 trigger_action: TriggerAction::Kill,
-//             },
-//         )?;
-
-//         let mut mgr = AlertManager::new(&mut db)?;
-//         let alerts = mgr.triggered_alerts(&Times {
-//             day_start: 1000,
-//             week_start: 1000,
-//             month_start: 50,
-//         })?;
-//         assert_eq!(
-//             alerts,
-//             vec![TriggeredAlert {
-//                 alert,
-//                 timestamp: None,
-//                 name: "name".to_string()
-//             }]
-//         );
-//         Ok(())
-//     }
-
-//     #[test]
-//     fn multiple_usages() -> Result<()> {
-//         let mut db = test_db()?;
-
-//         let app = arrange::app(
-//             &mut db,
-//             App {
-//                 id: Ref::default(),
-//                 name: "name".to_string(),
-//                 description: "desc".to_string(),
-//                 company: "comp".to_string(),
-//                 color: "red".to_string(),
-//                 identity: AppIdentity::Win32 {
-//                     path: "path".to_string(),
-//                 },
-//             },
-//         )?;
-
-//         let session = arrange::session(
-//             &mut db,
-//             Session {
-//                 id: Ref::default(),
-//                 app: app.id.clone(),
-//                 title: "title".to_string(),
-//             },
-//         )?;
-
-//         arrange::usage(
-//             &mut db,
-//             Usage {
-//                 id: Ref::default(),
-//                 session: session.id.clone(),
-//                 start: 0,
-//                 end: 10,
-//             },
-//         )?;
-
-//         // 25 units
-//         arrange::usage(
-//             &mut db,
-//             Usage {
-//                 id: Ref::default(),
-//                 session: session.id.clone(),
-//                 start: 10,
-//                 end: 75,
-//             },
-//         )?;
-
-//         // 25 units
-//         for i in 0..25 {
-//             arrange::usage(
-//                 &mut db,
-//                 Usage {
-//                     id: Ref::default(),
-//                     session: session.id.clone(),
-//                     start: 200 + i,
-//                     end: 200 + i + 1,
-//                 },
-//             )?;
-//         }
-
-//         let alert = arrange::alert(
-//             &mut db,
-//             Alert {
-//                 id: Ref::new(VersionedId {
-//                     id: arrange::to_id(1),
-//                     version: 1,
-//                 }),
-//                 target: Target::App(app.id.clone()),
-//                 usage_limit: 50,
-//                 time_frame: TimeFrame::Daily,
-//                 trigger_action: TriggerAction::Kill,
-//             },
-//         )?;
-
-//         let mut mgr = AlertManager::new(&mut db)?;
-//         let alerts = mgr.triggered_alerts(&Times {
-//             day_start: 50,
-//             week_start: 0,
-//             month_start: 0,
-//         })?;
-//         assert_eq!(
-//             alerts,
-//             vec![TriggeredAlert {
-//                 alert,
-//                 timestamp: None,
-//                 name: "name".to_string()
-//             }]
-//         );
-//         Ok(())
-//     }
-
-//     #[test]
-//     fn multiple_usages_less_than_usage_limit() -> Result<()> {
-//         let mut db = test_db()?;
-
-//         let app = arrange::app(
-//             &mut db,
-//             App {
-//                 id: Ref::default(),
-//                 name: "name".to_string(),
-//                 description: "desc".to_string(),
-//                 company: "comp".to_string(),
-//                 color: "red".to_string(),
-//                 identity: AppIdentity::Win32 {
-//                     path: "path".to_string(),
-//                 },
-//             },
-//         )?;
-
-//         let session = arrange::session(
-//             &mut db,
-//             Session {
-//                 id: Ref::default(),
-//                 app: app.id.clone(),
-//                 title: "title".to_string(),
-//             },
-//         )?;
-
-//         arrange::usage(
-//             &mut db,
-//             Usage {
-//                 id: Ref::default(),
-//                 session: session.id.clone(),
-//                 start: 0,
-//                 end: 10,
-//             },
-//         )?;
-
-//         // 10 units
-//         arrange::usage(
-//             &mut db,
-//             Usage {
-//                 id: Ref::default(),
-//                 session: session.id.clone(),
-//                 start: 65,
-//                 end: 75,
-//             },
-//         )?;
-
-//         // 25 units
-//         for i in 0..25 {
-//             arrange::usage(
-//                 &mut db,
-//                 Usage {
-//                     id: Ref::default(),
-//                     session: session.id.clone(),
-//                     start: 200 + i,
-//                     end: 200 + i + 1,
-//                 },
-//             )?;
-//         }
-
-//         let _alert = arrange::alert(
-//             &mut db,
-//             Alert {
-//                 id: Ref::new(VersionedId {
-//                     id: arrange::to_id(1),
-//                     version: 1,
-//                 }),
-//                 target: Target::App(app.id.clone()),
-//                 usage_limit: 50,
-//                 time_frame: TimeFrame::Daily,
-//                 trigger_action: TriggerAction::Kill,
-//             },
-//         )?;
-
-//         let mut mgr = AlertManager::new(&mut db)?;
-//         let alerts = mgr.triggered_alerts(&Times {
-//             day_start: 50,
-//             week_start: 0,
-//             month_start: 0,
-//         })?;
-//         assert_eq!(alerts, vec![]);
-//         Ok(())
-//     }
-
-//     #[test]
-//     fn using_tags() -> Result<()> {
-//         let mut db = test_db()?;
-
-//         let app1 = arrange::app(
-//             &mut db,
-//             App {
-//                 id: Ref::default(),
-//                 name: "name".to_string(),
-//                 description: "desc".to_string(),
-//                 company: "comp".to_string(),
-//                 color: "red".to_string(),
-//                 identity: AppIdentity::Win32 {
-//                     path: "path".to_string(),
-//                 },
-//             },
-//         )?;
-
-//         let app2 = arrange::app(
-//             &mut db,
-//             App {
-//                 id: Ref::default(),
-//                 name: "name2".to_string(),
-//                 description: "desc2".to_string(),
-//                 company: "comp2".to_string(),
-//                 color: "red2".to_string(),
-//                 identity: AppIdentity::Uwp {
-//                     aumid: "aumid2".to_string(),
-//                 },
-//             },
-//         )?;
-
-//         let empty_tag = arrange::tag(
-//             &mut db,
-//             Tag {
-//                 id: Ref::default(),
-//                 name: "emptytag".to_string(),
-//                 color: "e1".to_string(),
-//             },
-//         )?;
-//         let tag1 = arrange::tag(
-//             &mut db,
-//             Tag {
-//                 id: Ref::default(),
-//                 name: "tag_name1".to_string(),
-//                 color: "blue1".to_string(),
-//             },
-//         )?;
-//         arrange::app_tags(&mut db, app1.id.clone(), tag1.id.clone())?;
-//         let tag2 = arrange::tag(
-//             &mut db,
-//             Tag {
-//                 id: Ref::default(),
-//                 name: "tag_name2".to_string(),
-//                 color: "blue2".to_string(),
-//             },
-//         )?;
-//         arrange::app_tags(&mut db, app1.id.clone(), tag2.id.clone())?;
-//         arrange::app_tags(&mut db, app2.id.clone(), tag2.id.clone())?;
-
-//         // emptytag = []
-//         // tag1 = [app1]
-//         // tag2 = [app1, app2]
-
-//         let session = arrange::session(
-//             &mut db,
-//             Session {
-//                 id: Ref::default(),
-//                 app: app1.id.clone(),
-//                 title: "title".to_string(),
-//             },
-//         )?
-//         .id;
-
-//         arrange::usage(
-//             &mut db,
-//             Usage {
-//                 id: Ref::default(),
-//                 session,
-//                 start: 0,
-//                 end: 100,
-//             },
-//         )?;
-
-//         let session = arrange::session(
-//             &mut db,
-//             Session {
-//                 id: Ref::default(),
-//                 app: app2.id.clone(),
-//                 title: "title2".to_string(),
-//             },
-//         )?
-//         .id;
-
-//         arrange::usage(
-//             &mut db,
-//             Usage {
-//                 id: Ref::default(),
-//                 session,
-//                 start: 0,
-//                 end: 100,
-//             },
-//         )?;
-
-//         let _empty = arrange::alert(
-//             &mut db,
-//             Alert {
-//                 id: Ref::new(VersionedId {
-//                     id: arrange::to_id(1),
-//                     version: 1,
-//                 }),
-//                 target: Target::Tag(empty_tag.id.clone()),
-//                 usage_limit: 100,
-//                 time_frame: TimeFrame::Daily,
-//                 trigger_action: TriggerAction::Kill,
-//             },
-//         )?;
-
-//         let _alert1 = arrange::alert(
-//             &mut db,
-//             Alert {
-//                 id: Ref::new(VersionedId {
-//                     id: arrange::to_id(2),
-//                     version: 1,
-//                 }),
-//                 target: Target::Tag(tag1.id.clone()),
-//                 usage_limit: 120,
-//                 time_frame: TimeFrame::Daily,
-//                 trigger_action: TriggerAction::Kill,
-//             },
-//         )?;
-
-//         let alert2 = arrange::alert(
-//             &mut db,
-//             Alert {
-//                 id: Ref::new(VersionedId {
-//                     id: arrange::to_id(3),
-//                     version: 1,
-//                 }),
-//                 target: Target::Tag(tag2.id.clone()),
-//                 usage_limit: 200,
-//                 time_frame: TimeFrame::Daily,
-//                 trigger_action: TriggerAction::Kill,
-//             },
-//         )?;
-
-//         let alert3 = arrange::alert(
-//             &mut db,
-//             Alert {
-//                 id: Ref::new(VersionedId {
-//                     id: arrange::to_id(4),
-//                     version: 1,
-//                 }),
-//                 target: Target::Tag(tag1.id.clone()),
-//                 usage_limit: 100,
-//                 time_frame: TimeFrame::Daily,
-//                 trigger_action: TriggerAction::Kill,
-//             },
-//         )?;
-
-//         let mut mgr = AlertManager::new(&mut db)?;
-//         let alerts = mgr.triggered_alerts(&Times {
-//             day_start: 0,
-//             week_start: 0,
-//             month_start: 0,
-//         })?;
-//         assert_eq!(
-//             alerts,
-//             vec![
-//                 TriggeredAlert {
-//                     alert: alert2,
-//                     timestamp: None,
-//                     name: "tag_name2".to_string()
-//                 },
-//                 TriggeredAlert {
-//                     alert: alert3,
-//                     timestamp: None,
-//                     name: "tag_name1".to_string()
-//                 }
-//             ]
-//         );
-//         Ok(())
-//     }
-// }
-
-// mod triggered_reminders {
-//     use super::*;
-
-//     // generate an alert which will not fire but the reminder will.
-//     fn gen_alert(db: &mut Database) -> Result<Ref<Alert>> {
-//         let app = arrange::app(
-//             db,
-//             App {
-//                 id: Ref::default(),
-//                 name: "name".to_string(),
-//                 description: "desc".to_string(),
-//                 company: "comp".to_string(),
-//                 color: "red".to_string(),
-//                 identity: AppIdentity::Win32 {
-//                     path: "path".to_string(),
-//                 },
-//             },
-//         )?;
-
-//         let session = arrange::session(
-//             db,
-//             Session {
-//                 id: Ref::default(),
-//                 app: app.id.clone(),
-//                 title: "title".to_string(),
-//             },
-//         )?;
-
-//         let _usage = arrange::usage(
-//             db,
-//             Usage {
-//                 id: Ref::default(),
-//                 session: session.id.clone(),
-//                 start: 50,
-//                 end: 150,
-//             },
-//         )?;
-
-//         let alert = arrange::alert(
-//             db,
-//             Alert {
-//                 id: Ref::new(VersionedId {
-//                     id: arrange::to_id(1),
-//                     version: 1,
-//                 }),
-//                 target: Target::App(app.id.clone()),
-//                 usage_limit: 200,
-//                 time_frame: TimeFrame::Daily,
-//                 trigger_action: TriggerAction::Kill,
-//             },
-//         )?;
-//         Ok(alert.id)
-//     }
-
-//     #[test]
-//     pub fn no_reminders() -> Result<()> {
-//         let mut db = test_db()?;
-
-//         let _alert = gen_alert(&mut db)?;
-
-//         let mut mgr = AlertManager::new(&mut db)?;
-//         let reminders = mgr.triggered_reminders(&Times {
-//             day_start: 50,
-//             week_start: 0,
-//             month_start: 0,
-//         })?;
-//         assert_eq!(
-//             reminders
-//                 .into_iter()
-//                 .map(|r| (r.reminder.id, r.name))
-//                 .collect::<Vec<_>>(),
-//             vec![]
-//         );
-//         Ok(())
-//     }
-
-//     #[test]
-//     pub fn triggered_correctly() -> Result<()> {
-//         let mut db = test_db()?;
-
-//         let alert = gen_alert(&mut db)?;
-//         let hit = arrange::reminder(
-//             &mut db,
-//             Reminder {
-//                 id: Ref::new(VersionedId {
-//                     id: arrange::to_id(1),
-//                     version: 1,
-//                 }),
-//                 alert: alert.clone(),
-//                 threshold: 0.50,
-//                 message: "hello".to_string(),
-//             },
-//         )?;
-
-//         let _not_hit = arrange::reminder(
-//             &mut db,
-//             Reminder {
-//                 id: Ref::new(VersionedId {
-//                     id: arrange::to_id(2),
-//                     version: 1,
-//                 }),
-//                 alert: alert.clone(),
-//                 threshold: 0.51,
-//                 message: "hello".to_string(),
-//             },
-//         )?;
-
-//         let mut mgr = AlertManager::new(&mut db)?;
-//         let reminders = mgr.triggered_reminders(&Times {
-//             day_start: 50,
-//             week_start: 0,
-//             month_start: 0,
-//         })?;
-//         assert_eq!(
-//             reminders
-//                 .into_iter()
-//                 .map(|r| (r.reminder.id, r.name))
-//                 .collect::<Vec<_>>(),
-//             vec![(hit.id, "name".to_string())]
-//         );
-//         Ok(())
-//     }
-
-//     #[test]
-//     pub fn only_max_reminder() -> Result<()> {
-//         let mut db = test_db()?;
-
-//         let alert = gen_alert(&mut db)?;
-
-//         let _not_hit = arrange::reminder(
-//             &mut db,
-//             Reminder {
-//                 id: Ref::new(VersionedId {
-//                     id: arrange::to_id(1),
-//                     version: 1,
-//                 }),
-//                 alert: alert.clone(),
-//                 threshold: 0.50,
-//                 message: "hello".to_string(),
-//             },
-//         )?;
-//         let hit = arrange::reminder(
-//             &mut db,
-//             Reminder {
-//                 id: Ref::new(VersionedId {
-//                     id: arrange::to_id(1),
-//                     version: 2,
-//                 }),
-//                 alert: alert.clone(),
-//                 threshold: 0.50,
-//                 message: "hello".to_string(),
-//             },
-//         )?;
-
-//         let mut mgr = AlertManager::new(&mut db)?;
-//         let reminders = mgr.triggered_reminders(&Times {
-//             day_start: 50,
-//             week_start: 0,
-//             month_start: 0,
-//         })?;
-//         assert_eq!(
-//             reminders
-//                 .into_iter()
-//                 .map(|r| (r.reminder.id, r.name))
-//                 .collect::<Vec<_>>(),
-//             vec![(hit.id, "name".to_string())]
-//         );
-//         Ok(())
-//     }
-
-//     #[test]
-//     pub fn reminder_event_before_start_does_not_matter() -> Result<()> {
-//         let mut db = test_db()?;
-
-//         let alert = gen_alert(&mut db)?;
-//         let hit = arrange::reminder(
-//             &mut db,
-//             Reminder {
-//                 id: Ref::new(VersionedId {
-//                     id: arrange::to_id(1),
-//                     version: 1,
-//                 }),
-//                 alert: alert.clone(),
-//                 threshold: 0.50,
-//                 message: "hello".to_string(),
-//             },
-//         )?;
-
-//         arrange::reminder_event(
-//             &mut db,
-//             ReminderEvent {
-//                 id: Default::default(),
-//                 reminder: hit.id.clone(),
-//                 timestamp: 25,
-//             },
-//         )?;
-
-//         let mut mgr = AlertManager::new(&mut db)?;
-//         let reminders = mgr.triggered_reminders(&Times {
-//             day_start: 50,
-//             week_start: 0,
-//             month_start: 0,
-//         })?;
-//         assert_eq!(
-//             reminders
-//                 .into_iter()
-//                 .map(|r| (r.reminder.id, r.name))
-//                 .collect::<Vec<_>>(),
-//             vec![(hit.id, "name".to_string())]
-//         );
-//         Ok(())
-//     }
-
-//     #[test]
-//     pub fn reminder_event_after_start_matters() -> Result<()> {
-//         let mut db = test_db()?;
-
-//         let alert = gen_alert(&mut db)?;
-//         let hit = arrange::reminder(
-//             &mut db,
-//             Reminder {
-//                 id: Ref::new(VersionedId {
-//                     id: arrange::to_id(1),
-//                     version: 1,
-//                 }),
-//                 alert: alert.clone(),
-//                 threshold: 0.50,
-//                 message: "hello".to_string(),
-//             },
-//         )?;
-
-//         arrange::reminder_event(
-//             &mut db,
-//             ReminderEvent {
-//                 id: Default::default(),
-//                 reminder: hit.id.clone(),
-//                 timestamp: 200,
-//             },
-//         )?;
-
-//         let mut mgr = AlertManager::new(&mut db)?;
-//         let reminders = mgr.triggered_reminders(&Times {
-//             day_start: 50,
-//             week_start: 0,
-//             month_start: 0,
-//         })?;
-//         assert_eq!(
-//             reminders
-//                 .into_iter()
-//                 .map(|r| (r.reminder.id, r.name))
-//                 .collect::<Vec<_>>(),
-//             vec![]
-//         );
-//         Ok(())
-//     }
-// }
+async fn insert_app_raw(
+    db: &mut Database,
+    a0: bool,
+    a1: bool,
+    a2: &str,
+    a3: &str,
+    a4: &str,
+    a5: &str,
+    a6: u32,
+    a7: &str,
+    a8: bool,
+) -> Result<Ref<App>> {
+    let res = query("INSERT INTO apps VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+        .bind(a0)
+        .bind(a1)
+        .bind(a2)
+        .bind(a3)
+        .bind(a4)
+        .bind(a5)
+        .bind(a6)
+        .bind(a7)
+        .bind(a8)
+        .execute(db.executor())
+        .await?;
+    Ok(Ref::new(res.last_insert_rowid()))
+}
+
+async fn insert_alert_raw(
+    db: &mut Database,
+    id: i64,
+    vers: i64,
+    a0: Option<i64>,
+    a1: Option<i64>,
+    a2: i64,
+    a3: i64,
+    a4: i64,
+    a5: &str,
+    a6: i64,
+) -> Result<()> {
+    query("INSERT INTO alerts VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
+        .bind(id)
+        .bind(vers)
+        .bind(a0)
+        .bind(a1)
+        .bind(a2)
+        .bind(a3)
+        .bind(a4)
+        .bind(a5)
+        .bind(a6)
+        .execute(db.executor())
+        .await?;
+    Ok(())
+}
+
+async fn insert_reminder_raw(
+    db: &mut Database,
+    id: i64,
+    vers: i64,
+    a0: i64,
+    a1: i64,
+    a2: f64,
+    a3: &str,
+) -> Result<()> {
+    query("INSERT INTO reminders VALUES (?, ?, ?, ?, ?, ?)")
+        .bind(id)
+        .bind(vers)
+        .bind(a0)
+        .bind(a1)
+        .bind(a2)
+        .bind(a3)
+        .execute(db.executor())
+        .await?;
+    Ok(())
+}
+
+async fn insert_tag_raw(db: &mut Database, a0: &str, a1: &str) -> Result<Ref<Tag>> {
+    let res = query("INSERT INTO tags VALUES (NULL, ?, ?)")
+        .bind(a0)
+        .bind(a1)
+        .execute(db.executor())
+        .await?;
+    Ok(Ref::new(res.last_insert_rowid()))
+}
+
+async fn insert_app_tag_raw(db: &mut Database, a0: i64, a1: i64) -> Result<()> {
+    query("INSERT INTO _app_tags VALUES (?, ?)")
+        .bind(a0)
+        .bind(a1)
+        .execute(db.executor())
+        .await?;
+    Ok(())
+}
+
+#[tokio::test]
+async fn target_apps() -> Result<()> {
+    let mut db = test_db().await?;
+    {
+        insert_app_raw(
+            &mut db, true, true, "name1", "desc1", "comp1", "red1", 1, "path1", false,
+        )
+        .await?;
+        insert_app_raw(
+            &mut db, true, true, "name2", "desc2", "comp2", "red2", 0, "aumid2", false,
+        )
+        .await?;
+        insert_app_raw(
+            &mut db, true, true, "name3", "desc3", "comp3", "red3", 1, "path3", false,
+        )
+        .await?;
+
+        insert_tag_raw(&mut db, "tag_name1", "blue1").await?;
+        insert_tag_raw(&mut db, "tag_name2", "blue2").await?;
+        insert_tag_raw(&mut db, "tag_name3", "blue3").await?;
+        insert_tag_raw(&mut db, "tag_name4", "blue4").await?;
+
+        insert_app_tag_raw(&mut db, 1, 1).await?;
+        insert_app_tag_raw(&mut db, 2, 1).await?;
+        insert_app_tag_raw(&mut db, 2, 2).await?;
+        insert_app_tag_raw(&mut db, 3, 2).await?;
+        insert_app_tag_raw(&mut db, 1, 3).await?;
+    }
+
+    let mut mgr = AlertManager::new(db)?;
+
+    let app1 = App {
+        id: Ref::new(1),
+        name: "name1".to_string(),
+        description: "desc1".to_string(),
+        company: "comp1".to_string(),
+        color: "red1".to_string(),
+        identity: AppIdentity::Win32 {
+            path: "path1".to_string(),
+        },
+    };
+    let app2 = App {
+        id: Ref::new(2),
+        name: "name2".to_string(),
+        description: "desc2".to_string(),
+        company: "comp2".to_string(),
+        color: "red2".to_string(),
+        identity: AppIdentity::Uwp {
+            aumid: "aumid2".to_string(),
+        },
+    };
+    let app3 = App {
+        id: Ref::new(3),
+        name: "name3".to_string(),
+        description: "desc3".to_string(),
+        company: "comp3".to_string(),
+        color: "red3".to_string(),
+        identity: AppIdentity::Win32 {
+            path: "path3".to_string(),
+        },
+    };
+
+    assert_eq!(
+        mgr.target_apps(&Target::App(Ref::new(1))).await?,
+        vec![app1.id.clone()],
+    );
+
+    assert_eq!(
+        mgr.target_apps(&Target::App(Ref::new(2))).await?,
+        vec![app2.id.clone()],
+    );
+
+    assert_eq!(
+        mgr.target_apps(&Target::App(Ref::new(3))).await?,
+        vec![app3.id.clone()],
+    );
+
+    assert_eq!(
+        mgr.target_apps(&Target::Tag(Ref::new(1))).await?,
+        vec![app1.id.clone(), app2.id.clone()],
+    );
+
+    assert_eq!(
+        mgr.target_apps(&Target::Tag(Ref::new(2))).await?,
+        vec![app2.id.clone(), app3.id.clone()],
+    );
+
+    assert_eq!(
+        mgr.target_apps(&Target::Tag(Ref::new(3))).await?,
+        vec![app1.id.clone()],
+    );
+
+    assert_eq!(
+        mgr.target_apps(&Target::Tag(Ref::new(4))).await?,
+        Vec::new()
+    );
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn insert_alert_event() -> Result<()> {
+    let mut db = test_db().await?;
+
+    let id = 1;
+    {
+        insert_app_raw(
+            &mut db, true, true, "name1", "desc1", "comp1", "red1", 1, "path1", false,
+        )
+        .await?;
+        insert_alert_raw(&mut db, id, 1, Some(1), None, 100, 1, 0, "", 1).await?;
+    }
+
+    let mut alert_event = AlertEvent {
+        id: Default::default(),
+        alert: AlertVersionedId { id: id, version: 1 },
+        timestamp: 1337,
+    };
+
+    let mut db = {
+        let mut mgr = AlertManager::new(db)?;
+
+        mgr.insert_alert_event(&alert_event).await?;
+        mgr.db
+    };
+
+    let alert_events_from_db = query_as("SELECT * FROM alert_events")
+        .fetch_all(db.executor())
+        .await?;
+    alert_event.id = Ref::new(1);
+
+    assert_eq!(vec![alert_event], alert_events_from_db);
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn insert_reminder_event() -> Result<()> {
+    let mut db = test_db().await?;
+
+    let alert_id = 1;
+    let reminder_id = 1;
+    {
+        insert_app_raw(
+            &mut db, true, true, "name1", "desc1", "comp1", "red1", 1, "path1", false,
+        )
+        .await?;
+        insert_alert_raw(&mut db, alert_id, 1, Some(1), None, 100, 1, 0, "", 1).await?;
+        insert_reminder_raw(&mut db, reminder_id, 1, alert_id, 1, 0.75, "hello").await?;
+    }
+
+    let mut reminder_event = ReminderEvent {
+        id: Default::default(),
+        reminder: ReminderVersionedId {
+            id: reminder_id,
+            version: 1,
+        },
+        timestamp: 1337,
+    };
+
+    let mut db = {
+        let mut mgr = AlertManager::new(db)?;
+
+        mgr.insert_reminder_event(&reminder_event).await?;
+        mgr.db
+    };
+
+    let reminder_events_from_db = query_as("SELECT * FROM reminder_events")
+        .fetch_all(db.executor())
+        .await?;
+    reminder_event.id = Ref::new(1);
+
+    assert_eq!(vec![reminder_event], reminder_events_from_db);
+
+    Ok(())
+}
+
+struct Times {
+    day_start: u64,
+    week_start: u64,
+    month_start: u64,
+}
+
+struct Tick(u64);
+
+impl ToTicks for Tick {
+    fn to_ticks(&self) -> u64 {
+        self.0
+    }
+}
+
+impl TimeSystem for Times {
+    type Ticks = Tick;
+
+    fn day_start(&self) -> Self::Ticks {
+        Tick(self.day_start)
+    }
+
+    fn week_start(&self) -> Self::Ticks {
+        Tick(self.week_start)
+    }
+
+    fn month_start(&self) -> Self::Ticks {
+        Tick(self.month_start)
+    }
+}
+
+mod arrange {
+    use super::*;
+    use crate::entities::{TimeFrame, TriggerAction};
+
+    pub async fn app(db: &mut Database, mut app: App) -> Result<App> {
+        app.id = insert_app_raw(
+            db,
+            false,
+            false,
+            &app.name,
+            &app.description,
+            &app.company,
+            &app.color,
+            if let AppIdentity::Win32 { .. } = app.identity {
+                1
+            } else {
+                0
+            },
+            match &app.identity {
+                AppIdentity::Win32 { path } => path,
+                AppIdentity::Uwp { aumid } => aumid,
+            },
+            false,
+        )
+        .await?;
+        Ok(app)
+    }
+
+    pub async fn session(db: &mut Database, mut session: Session) -> Result<Session> {
+        let res = query("INSERT INTO sessions VALUES (NULL, ?, ?)")
+            .bind(session.app_id.clone())
+            .bind(session.title.clone())
+            .execute(db.executor())
+            .await?;
+        session.id = Ref::new(res.last_insert_rowid());
+        Ok(session)
+    }
+
+    pub async fn usage(db: &mut Database, mut usage: Usage) -> Result<Usage> {
+        let res = query("INSERT INTO usages VALUES (NULL, ?, ?, ?)")
+            .bind(usage.session_id.clone())
+            .bind(usage.start.clone())
+            .bind(usage.end.clone())
+            .execute(db.executor())
+            .await?;
+        usage.id = Ref::new(res.last_insert_rowid());
+        Ok(usage)
+    }
+
+    // pub fn interaction_period(
+    //     db: &mut Database,
+    //     mut ip: InteractionPeriod,
+    // ) -> Result<InteractionPeriod> {
+    //     db.conn.execute(
+    //         "INSERT INTO interaction_periods VALUES (NULL, ?, ?, ?, ?)",
+    //         params![ip.start, ip.end, ip.mouseclicks, ip.keystrokes],
+    //     )?;
+    //     ip.id = Ref::new(db.conn.last_insert_rowid() as u64);
+    //     Ok(ip)
+    // }
+
+    pub async fn tag(db: &mut Database, mut tag: Tag) -> Result<Tag> {
+        tag.id = insert_tag_raw(db, &tag.name, &tag.color).await?;
+        Ok(tag)
+    }
+
+    pub async fn app_tags(db: &mut Database, app_id: Ref<App>, tag_id: Ref<Tag>) -> Result<()> {
+        insert_app_tag_raw(db, app_id.0, tag_id.0).await?;
+        Ok(())
+    }
+
+    pub async fn alert(db: &mut Database, alert: Alert) -> Result<Alert> {
+        let time_frame = match alert.time_frame {
+            TimeFrame::Daily => 0,
+            TimeFrame::Weekly => 1,
+            TimeFrame::Monthly => 2,
+        };
+
+        let (dim_duration, message_content, tag) = match &alert.trigger_action {
+            TriggerAction::Kill => (None, None, 0),
+            TriggerAction::Dim(dur) => (Some(dur.clone()), None, 1),
+            TriggerAction::Message(content) => (None, Some(content.to_string()), 2),
+        };
+
+        let (app_id, tag_id) = match alert.target.clone() {
+            Target::App(app) => (Some(app.0), None),
+            Target::Tag(tag) => (None, Some(tag.0)),
+        };
+
+        insert_alert_raw(
+            db,
+            alert.id.id,
+            alert.id.version,
+            app_id,
+            tag_id,
+            alert.usage_limit,
+            time_frame,
+            dim_duration.unwrap_or(0),
+            &message_content.unwrap_or("".to_string()),
+            tag,
+        )
+        .await?;
+        Ok(alert)
+    }
+
+    pub async fn reminder(db: &mut Database, reminder: Reminder) -> Result<Reminder> {
+        insert_reminder_raw(
+            db,
+            reminder.id.id,
+            reminder.id.version,
+            reminder.alert.id,
+            reminder.alert.version,
+            reminder.threshold,
+            &reminder.message,
+        )
+        .await?;
+        Ok(reminder)
+    }
+
+    pub async fn alert_event(db: &mut Database, mut event: AlertEvent) -> Result<AlertEvent> {
+        let res = query("INSERT INTO alert_events VALUES (NULL, ?, ?, ?)")
+            .bind(event.alert.id.clone())
+            .bind(event.alert.version.clone())
+            .bind(event.timestamp.clone())
+            .execute(db.executor())
+            .await?;
+        event.id = Ref::new(res.last_insert_rowid());
+        Ok(event)
+    }
+
+    pub async fn reminder_event(
+        db: &mut Database,
+        mut event: ReminderEvent,
+    ) -> Result<ReminderEvent> {
+        let res = query("INSERT INTO reminder_events VALUES (NULL, ?, ?, ?)")
+            .bind(event.reminder.id.clone())
+            .bind(event.reminder.version.clone())
+            .bind(event.timestamp.clone())
+            .execute(db.executor())
+            .await?;
+        event.id = Ref::new(res.last_insert_rowid());
+        Ok(event)
+    }
+
+    pub fn to_id(n: i64) -> i64 {
+        n
+    }
+}
+
+mod triggered_alerts {
+    use super::*;
+    use crate::entities::{TimeFrame, TriggerAction};
+    use crate::table::VersionedId;
+
+    #[tokio::test]
+    async fn no_alerts() -> Result<()> {
+        let db = test_db().await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let alerts = mgr
+            .triggered_alerts(&Times {
+                day_start: 0,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+        assert_eq!(alerts, vec![]);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn one_alert_one_app_no_sessions() -> Result<()> {
+        let mut db = test_db().await?;
+
+        let app = arrange::app(
+            &mut db,
+            App {
+                id: Ref::default(),
+                name: "name".to_string(),
+                description: "desc".to_string(),
+                company: "comp".to_string(),
+                color: "red".to_string(),
+                identity: AppIdentity::Win32 {
+                    path: "path".to_string(),
+                },
+            },
+        )
+        .await?;
+
+        let _alert = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(VersionedId {
+                    id: arrange::to_id(1),
+                    version: 1,
+                }),
+                target: Target::App(app.id.clone()),
+                usage_limit: 100,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+            },
+        )
+        .await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let alerts = mgr
+            .triggered_alerts(&Times {
+                day_start: 0,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+        assert_eq!(alerts, vec![]);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn one_alert_one_app_one_session_no_usages() -> Result<()> {
+        let mut db = test_db().await?;
+
+        let app = arrange::app(
+            &mut db,
+            App {
+                id: Ref::default(),
+                name: "name".to_string(),
+                description: "desc".to_string(),
+                company: "comp".to_string(),
+                color: "red".to_string(),
+                identity: AppIdentity::Win32 {
+                    path: "path".to_string(),
+                },
+            },
+        )
+        .await?;
+
+        let _session = arrange::session(
+            &mut db,
+            Session {
+                id: Ref::default(),
+                app_id: app.id.clone(),
+                title: "title".to_string(),
+            },
+        )
+        .await?;
+
+        let _alert = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(VersionedId {
+                    id: arrange::to_id(1),
+                    version: 1,
+                }),
+                target: Target::App(app.id.clone()),
+                usage_limit: 100,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+            },
+        )
+        .await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let alerts = mgr
+            .triggered_alerts(&Times {
+                day_start: 0,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+        assert_eq!(alerts, vec![]);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn triggered_correctly() -> Result<()> {
+        let mut db = test_db().await?;
+
+        let app = arrange::app(
+            &mut db,
+            App {
+                id: Ref::default(),
+                name: "name".to_string(),
+                description: "desc".to_string(),
+                company: "comp".to_string(),
+                color: "red".to_string(),
+                identity: AppIdentity::Win32 {
+                    path: "path".to_string(),
+                },
+            },
+        )
+        .await?;
+
+        let session = arrange::session(
+            &mut db,
+            Session {
+                id: Ref::default(),
+                app_id: app.id.clone(),
+                title: "title".to_string(),
+            },
+        )
+        .await?;
+
+        let _usage = arrange::usage(
+            &mut db,
+            Usage {
+                id: Ref::default(),
+                session_id: session.id.clone(),
+                start: 0,
+                end: 100,
+            },
+        )
+        .await?;
+
+        let alert = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(VersionedId {
+                    id: arrange::to_id(1),
+                    version: 1,
+                }),
+                target: Target::App(app.id.clone()),
+                usage_limit: 100,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+            },
+        )
+        .await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let alerts = mgr
+            .triggered_alerts(&Times {
+                day_start: 0,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+        assert_eq!(
+            alerts,
+            vec![TriggeredAlert {
+                alert,
+                timestamp: None,
+                name: "name".to_string()
+            }]
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn halfway_usage_does_not_trigger() -> Result<()> {
+        let mut db = test_db().await?;
+
+        let app = arrange::app(
+            &mut db,
+            App {
+                id: Ref::default(),
+                name: "name".to_string(),
+                description: "desc".to_string(),
+                company: "comp".to_string(),
+                color: "red".to_string(),
+                identity: AppIdentity::Win32 {
+                    path: "path".to_string(),
+                },
+            },
+        )
+        .await?;
+
+        let session = arrange::session(
+            &mut db,
+            Session {
+                id: Ref::default(),
+                app_id: app.id.clone(),
+                title: "title".to_string(),
+            },
+        )
+        .await?;
+
+        let _usage = arrange::usage(
+            &mut db,
+            Usage {
+                id: Ref::default(),
+                session_id: session.id.clone(),
+                start: 0,
+                end: 100,
+            },
+        )
+        .await?;
+
+        let alert1 = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(VersionedId {
+                    id: arrange::to_id(1),
+                    version: 1,
+                }),
+                target: Target::App(app.id.clone()),
+                usage_limit: 50,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+            },
+        )
+        .await?;
+
+        let _alert2 = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(VersionedId {
+                    id: arrange::to_id(2),
+                    version: 1,
+                }),
+                target: Target::App(app.id.clone()),
+                usage_limit: 51,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+            },
+        )
+        .await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let alerts = mgr
+            .triggered_alerts(&Times {
+                day_start: 50,
+                week_start: 50,
+                month_start: 50,
+            })
+            .await?;
+        assert_eq!(
+            alerts,
+            vec![TriggeredAlert {
+                alert: alert1,
+                timestamp: None,
+                name: "name".to_string()
+            }]
+        ); // alert2 is not triggered
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn exactly_one_alert_from_one_usage_despite_lower_version_existing() -> Result<()> {
+        let mut db = test_db().await?;
+
+        let app = arrange::app(
+            &mut db,
+            App {
+                id: Ref::default(),
+                name: "name".to_string(),
+                description: "desc".to_string(),
+                company: "comp".to_string(),
+                color: "red".to_string(),
+                identity: AppIdentity::Win32 {
+                    path: "path".to_string(),
+                },
+            },
+        )
+        .await?;
+
+        let session = arrange::session(
+            &mut db,
+            Session {
+                id: Ref::default(),
+                app_id: app.id.clone(),
+                title: "title".to_string(),
+            },
+        )
+        .await?;
+
+        let _usage = arrange::usage(
+            &mut db,
+            Usage {
+                id: Ref::default(),
+                session_id: session.id.clone(),
+                start: 0,
+                end: 100,
+            },
+        )
+        .await?;
+
+        let _alert1 = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(VersionedId {
+                    id: arrange::to_id(1),
+                    version: 1,
+                }),
+                target: Target::App(app.id.clone()),
+                usage_limit: 10,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+            },
+        )
+        .await?;
+
+        let alert2 = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(VersionedId {
+                    id: arrange::to_id(1),
+                    version: 2,
+                }),
+                target: Target::App(app.id.clone()),
+                usage_limit: 100,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+            },
+        )
+        .await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let alerts = mgr
+            .triggered_alerts(&Times {
+                day_start: 0,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+        assert_eq!(
+            alerts,
+            vec![TriggeredAlert {
+                alert: alert2,
+                timestamp: None,
+                name: "name".to_string()
+            }]
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn alert_event_after_start() -> Result<()> {
+        let mut db = test_db().await?;
+
+        let app = arrange::app(
+            &mut db,
+            App {
+                id: Ref::default(),
+                name: "name".to_string(),
+                description: "desc".to_string(),
+                company: "comp".to_string(),
+                color: "red".to_string(),
+                identity: AppIdentity::Win32 {
+                    path: "path".to_string(),
+                },
+            },
+        )
+        .await?;
+
+        let session = arrange::session(
+            &mut db,
+            Session {
+                id: Ref::default(),
+                app_id: app.id.clone(),
+                title: "title".to_string(),
+            },
+        )
+        .await?;
+
+        let _usage = arrange::usage(
+            &mut db,
+            Usage {
+                id: Ref::default(),
+                session_id: session.id.clone(),
+                start: 0,
+                end: 100,
+            },
+        )
+        .await?;
+
+        let alert = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(VersionedId {
+                    id: arrange::to_id(1),
+                    version: 1,
+                }),
+                target: Target::App(app.id.clone()),
+                usage_limit: 50,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+            },
+        )
+        .await?;
+
+        let _alert_event = arrange::alert_event(
+            &mut db,
+            AlertEvent {
+                id: Ref::default(),
+                alert: alert.id.0.clone().into(),
+                timestamp: 75,
+            },
+        )
+        .await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let alerts = mgr
+            .triggered_alerts(&Times {
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+        assert_eq!(
+            alerts,
+            vec![TriggeredAlert {
+                alert,
+                timestamp: Some(75),
+                name: "name".to_string()
+            }]
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn alert_event_before_start() -> Result<()> {
+        let mut db = test_db().await?;
+
+        let app = arrange::app(
+            &mut db,
+            App {
+                id: Ref::default(),
+                name: "name".to_string(),
+                description: "desc".to_string(),
+                company: "comp".to_string(),
+                color: "red".to_string(),
+                identity: AppIdentity::Win32 {
+                    path: "path".to_string(),
+                },
+            },
+        )
+        .await?;
+
+        let session = arrange::session(
+            &mut db,
+            Session {
+                id: Ref::default(),
+                app_id: app.id.clone(),
+                title: "title".to_string(),
+            },
+        )
+        .await?;
+
+        let _usage = arrange::usage(
+            &mut db,
+            Usage {
+                id: Ref::default(),
+                session_id: session.id.clone(),
+                start: 0,
+                end: 100,
+            },
+        )
+        .await?;
+
+        let alert = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(VersionedId {
+                    id: arrange::to_id(1),
+                    version: 1,
+                }),
+                target: Target::App(app.id.clone()),
+                usage_limit: 50,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+            },
+        )
+        .await?;
+
+        let _alert_event = arrange::alert_event(
+            &mut db,
+            AlertEvent {
+                id: Ref::default(),
+                alert: alert.id.0.clone().into(),
+                timestamp: 25,
+            },
+        )
+        .await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let alerts = mgr
+            .triggered_alerts(&Times {
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+        assert_eq!(
+            alerts,
+            vec![TriggeredAlert {
+                alert,
+                timestamp: None,
+                name: "name".to_string()
+            }]
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn weekly_event_triggered() -> Result<()> {
+        let mut db = test_db().await?;
+
+        let app = arrange::app(
+            &mut db,
+            App {
+                id: Ref::default(),
+                name: "name".to_string(),
+                description: "desc".to_string(),
+                company: "comp".to_string(),
+                color: "red".to_string(),
+                identity: AppIdentity::Win32 {
+                    path: "path".to_string(),
+                },
+            },
+        )
+        .await?;
+
+        let session = arrange::session(
+            &mut db,
+            Session {
+                id: Ref::default(),
+                app_id: app.id.clone(),
+                title: "title".to_string(),
+            },
+        )
+        .await?;
+
+        let _usage = arrange::usage(
+            &mut db,
+            Usage {
+                id: Ref::default(),
+                session_id: session.id.clone(),
+                start: 0,
+                end: 100,
+            },
+        )
+        .await?;
+
+        let alert = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(VersionedId {
+                    id: arrange::to_id(1),
+                    version: 1,
+                }),
+                target: Target::App(app.id.clone()),
+                usage_limit: 50,
+                time_frame: TimeFrame::Weekly,
+                trigger_action: TriggerAction::Kill,
+            },
+        )
+        .await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let alerts = mgr
+            .triggered_alerts(&Times {
+                day_start: 1000,
+                week_start: 50,
+                month_start: 1000,
+            })
+            .await?;
+        assert_eq!(
+            alerts,
+            vec![TriggeredAlert {
+                alert,
+                timestamp: None,
+                name: "name".to_string()
+            }]
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn monthly_event_triggered() -> Result<()> {
+        let mut db = test_db().await?;
+
+        let app = arrange::app(
+            &mut db,
+            App {
+                id: Ref::default(),
+                name: "name".to_string(),
+                description: "desc".to_string(),
+                company: "comp".to_string(),
+                color: "red".to_string(),
+                identity: AppIdentity::Win32 {
+                    path: "path".to_string(),
+                },
+            },
+        )
+        .await?;
+
+        let session = arrange::session(
+            &mut db,
+            Session {
+                id: Ref::default(),
+                app_id: app.id.clone(),
+                title: "title".to_string(),
+            },
+        )
+        .await?;
+
+        let _usage = arrange::usage(
+            &mut db,
+            Usage {
+                id: Ref::default(),
+                session_id: session.id.clone(),
+                start: 0,
+                end: 100,
+            },
+        )
+        .await?;
+
+        let alert = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(VersionedId {
+                    id: arrange::to_id(1),
+                    version: 1,
+                }),
+                target: Target::App(app.id.clone()),
+                usage_limit: 50,
+                time_frame: TimeFrame::Monthly,
+                trigger_action: TriggerAction::Kill,
+            },
+        )
+        .await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let alerts = mgr
+            .triggered_alerts(&Times {
+                day_start: 1000,
+                week_start: 1000,
+                month_start: 50,
+            })
+            .await?;
+        assert_eq!(
+            alerts,
+            vec![TriggeredAlert {
+                alert,
+                timestamp: None,
+                name: "name".to_string()
+            }]
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn multiple_usages() -> Result<()> {
+        let mut db = test_db().await?;
+
+        let app = arrange::app(
+            &mut db,
+            App {
+                id: Ref::default(),
+                name: "name".to_string(),
+                description: "desc".to_string(),
+                company: "comp".to_string(),
+                color: "red".to_string(),
+                identity: AppIdentity::Win32 {
+                    path: "path".to_string(),
+                },
+            },
+        )
+        .await?;
+
+        let session = arrange::session(
+            &mut db,
+            Session {
+                id: Ref::default(),
+                app_id: app.id.clone(),
+                title: "title".to_string(),
+            },
+        )
+        .await?;
+
+        arrange::usage(
+            &mut db,
+            Usage {
+                id: Ref::default(),
+                session_id: session.id.clone(),
+                start: 0,
+                end: 10,
+            },
+        )
+        .await?;
+
+        // 25 units
+        arrange::usage(
+            &mut db,
+            Usage {
+                id: Ref::default(),
+                session_id: session.id.clone(),
+                start: 10,
+                end: 75,
+            },
+        )
+        .await?;
+
+        // 25 units
+        for i in 0..25 {
+            arrange::usage(
+                &mut db,
+                Usage {
+                    id: Ref::default(),
+                    session_id: session.id.clone(),
+                    start: 200 + i,
+                    end: 200 + i + 1,
+                },
+            )
+            .await?;
+        }
+
+        let alert = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(VersionedId {
+                    id: arrange::to_id(1),
+                    version: 1,
+                }),
+                target: Target::App(app.id.clone()),
+                usage_limit: 50,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+            },
+        )
+        .await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let alerts = mgr
+            .triggered_alerts(&Times {
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+        assert_eq!(
+            alerts,
+            vec![TriggeredAlert {
+                alert,
+                timestamp: None,
+                name: "name".to_string()
+            }]
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn multiple_usages_less_than_usage_limit() -> Result<()> {
+        let mut db = test_db().await?;
+
+        let app = arrange::app(
+            &mut db,
+            App {
+                id: Ref::default(),
+                name: "name".to_string(),
+                description: "desc".to_string(),
+                company: "comp".to_string(),
+                color: "red".to_string(),
+                identity: AppIdentity::Win32 {
+                    path: "path".to_string(),
+                },
+            },
+        )
+        .await?;
+
+        let session = arrange::session(
+            &mut db,
+            Session {
+                id: Ref::default(),
+                app_id: app.id.clone(),
+                title: "title".to_string(),
+            },
+        )
+        .await?;
+
+        arrange::usage(
+            &mut db,
+            Usage {
+                id: Ref::default(),
+                session_id: session.id.clone(),
+                start: 0,
+                end: 10,
+            },
+        )
+        .await?;
+
+        // 10 units
+        arrange::usage(
+            &mut db,
+            Usage {
+                id: Ref::default(),
+                session_id: session.id.clone(),
+                start: 65,
+                end: 75,
+            },
+        )
+        .await?;
+
+        // 25 units
+        for i in 0..25 {
+            arrange::usage(
+                &mut db,
+                Usage {
+                    id: Ref::default(),
+                    session_id: session.id.clone(),
+                    start: 200 + i,
+                    end: 200 + i + 1,
+                },
+            )
+            .await?;
+        }
+
+        let _alert = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(VersionedId {
+                    id: arrange::to_id(1),
+                    version: 1,
+                }),
+                target: Target::App(app.id.clone()),
+                usage_limit: 50,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+            },
+        )
+        .await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let alerts = mgr
+            .triggered_alerts(&Times {
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+        assert_eq!(alerts, vec![]);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn using_tags() -> Result<()> {
+        let mut db = test_db().await?;
+
+        let app1 = arrange::app(
+            &mut db,
+            App {
+                id: Ref::default(),
+                name: "name".to_string(),
+                description: "desc".to_string(),
+                company: "comp".to_string(),
+                color: "red".to_string(),
+                identity: AppIdentity::Win32 {
+                    path: "path".to_string(),
+                },
+            },
+        )
+        .await?;
+
+        let app2 = arrange::app(
+            &mut db,
+            App {
+                id: Ref::default(),
+                name: "name2".to_string(),
+                description: "desc2".to_string(),
+                company: "comp2".to_string(),
+                color: "red2".to_string(),
+                identity: AppIdentity::Uwp {
+                    aumid: "aumid2".to_string(),
+                },
+            },
+        )
+        .await?;
+
+        let empty_tag = arrange::tag(
+            &mut db,
+            Tag {
+                id: Ref::default(),
+                name: "emptytag".to_string(),
+                color: "e1".to_string(),
+            },
+        )
+        .await?;
+        let tag1 = arrange::tag(
+            &mut db,
+            Tag {
+                id: Ref::default(),
+                name: "tag_name1".to_string(),
+                color: "blue1".to_string(),
+            },
+        )
+        .await?;
+        arrange::app_tags(&mut db, app1.id.clone(), tag1.id.clone()).await?;
+        let tag2 = arrange::tag(
+            &mut db,
+            Tag {
+                id: Ref::default(),
+                name: "tag_name2".to_string(),
+                color: "blue2".to_string(),
+            },
+        )
+        .await?;
+        arrange::app_tags(&mut db, app1.id.clone(), tag2.id.clone()).await?;
+        arrange::app_tags(&mut db, app2.id.clone(), tag2.id.clone()).await?;
+
+        // emptytag = []
+        // tag1 = [app1]
+        // tag2 = [app1, app2]
+
+        let session = arrange::session(
+            &mut db,
+            Session {
+                id: Ref::default(),
+                app_id: app1.id.clone(),
+                title: "title".to_string(),
+            },
+        )
+        .await?
+        .id;
+
+        arrange::usage(
+            &mut db,
+            Usage {
+                id: Ref::default(),
+                session_id: session,
+                start: 0,
+                end: 100,
+            },
+        )
+        .await?;
+
+        let session = arrange::session(
+            &mut db,
+            Session {
+                id: Ref::default(),
+                app_id: app2.id.clone(),
+                title: "title2".to_string(),
+            },
+        )
+        .await?
+        .id;
+
+        arrange::usage(
+            &mut db,
+            Usage {
+                id: Ref::default(),
+                session_id: session,
+                start: 0,
+                end: 100,
+            },
+        )
+        .await?;
+
+        let _empty = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(VersionedId {
+                    id: arrange::to_id(1),
+                    version: 1,
+                }),
+                target: Target::Tag(empty_tag.id.clone()),
+                usage_limit: 100,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+            },
+        )
+        .await?;
+
+        let _alert1 = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(VersionedId {
+                    id: arrange::to_id(2),
+                    version: 1,
+                }),
+                target: Target::Tag(tag1.id.clone()),
+                usage_limit: 120,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+            },
+        )
+        .await?;
+
+        let alert2 = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(VersionedId {
+                    id: arrange::to_id(3),
+                    version: 1,
+                }),
+                target: Target::Tag(tag2.id.clone()),
+                usage_limit: 200,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+            },
+        )
+        .await?;
+
+        let alert3 = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(VersionedId {
+                    id: arrange::to_id(4),
+                    version: 1,
+                }),
+                target: Target::Tag(tag1.id.clone()),
+                usage_limit: 100,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+            },
+        )
+        .await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let alerts = mgr
+            .triggered_alerts(&Times {
+                day_start: 0,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+        assert_eq!(
+            alerts,
+            vec![
+                TriggeredAlert {
+                    alert: alert2,
+                    timestamp: None,
+                    name: "tag_name2".to_string()
+                },
+                TriggeredAlert {
+                    alert: alert3,
+                    timestamp: None,
+                    name: "tag_name1".to_string()
+                }
+            ]
+        );
+        Ok(())
+    }
+}
+
+mod triggered_reminders {
+    use super::*;
+    use crate::entities::{TimeFrame, TriggerAction};
+    use crate::table::VersionedId;
+
+    // generate an alert which will not fire but the reminder will.
+    async fn gen_alert(db: &mut Database) -> Result<Ref<Alert>> {
+        let app = arrange::app(
+            db,
+            App {
+                id: Ref::default(),
+                name: "name".to_string(),
+                description: "desc".to_string(),
+                company: "comp".to_string(),
+                color: "red".to_string(),
+                identity: AppIdentity::Win32 {
+                    path: "path".to_string(),
+                },
+            },
+        )
+        .await?;
+
+        let session = arrange::session(
+            db,
+            Session {
+                id: Ref::default(),
+                app_id: app.id.clone(),
+                title: "title".to_string(),
+            },
+        )
+        .await?;
+
+        let _usage = arrange::usage(
+            db,
+            Usage {
+                id: Ref::default(),
+                session_id: session.id.clone(),
+                start: 50,
+                end: 150,
+            },
+        )
+        .await?;
+
+        let alert = arrange::alert(
+            db,
+            Alert {
+                id: Ref::new(VersionedId {
+                    id: arrange::to_id(1),
+                    version: 1,
+                }),
+                target: Target::App(app.id.clone()),
+                usage_limit: 200,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+            },
+        )
+        .await?;
+        Ok(alert.id)
+    }
+
+    #[tokio::test]
+    pub async fn no_reminders() -> Result<()> {
+        let mut db = test_db().await?;
+
+        let _alert = gen_alert(&mut db).await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let reminders = mgr
+            .triggered_reminders(&Times {
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+        assert_eq!(
+            reminders
+                .into_iter()
+                .map(|r| (r.reminder.id, r.name))
+                .collect::<Vec<_>>(),
+            vec![]
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    pub async fn triggered_correctly() -> Result<()> {
+        let mut db = test_db().await?;
+
+        let alert = gen_alert(&mut db).await?;
+        let hit = arrange::reminder(
+            &mut db,
+            Reminder {
+                id: Ref::new(VersionedId {
+                    id: arrange::to_id(1),
+                    version: 1,
+                }),
+                alert: alert.0.clone().into(),
+                threshold: 0.50,
+                message: "hello".to_string(),
+            },
+        )
+        .await?;
+
+        let _not_hit = arrange::reminder(
+            &mut db,
+            Reminder {
+                id: Ref::new(VersionedId {
+                    id: arrange::to_id(2),
+                    version: 1,
+                }),
+                alert: alert.0.clone().into(),
+                threshold: 0.51,
+                message: "hello".to_string(),
+            },
+        )
+        .await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let reminders = mgr
+            .triggered_reminders(&Times {
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+        assert_eq!(
+            reminders
+                .into_iter()
+                .map(|r| (r.reminder.id, r.name))
+                .collect::<Vec<_>>(),
+            vec![(hit.id, "name".to_string())]
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    pub async fn only_max_reminder() -> Result<()> {
+        let mut db = test_db().await?;
+
+        let alert = gen_alert(&mut db).await?;
+
+        let _not_hit = arrange::reminder(
+            &mut db,
+            Reminder {
+                id: Ref::new(VersionedId {
+                    id: arrange::to_id(1),
+                    version: 1,
+                }),
+                alert: alert.0.clone().into(),
+                threshold: 0.50,
+                message: "hello".to_string(),
+            },
+        )
+        .await?;
+        let hit = arrange::reminder(
+            &mut db,
+            Reminder {
+                id: Ref::new(VersionedId {
+                    id: arrange::to_id(1),
+                    version: 2,
+                }),
+                alert: alert.0.clone().into(),
+                threshold: 0.50,
+                message: "hello".to_string(),
+            },
+        )
+        .await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let reminders = mgr
+            .triggered_reminders(&Times {
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+        assert_eq!(
+            reminders
+                .into_iter()
+                .map(|r| (r.reminder.id, r.name))
+                .collect::<Vec<_>>(),
+            vec![(hit.id, "name".to_string())]
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    pub async fn reminder_event_before_start_does_not_matter() -> Result<()> {
+        let mut db = test_db().await?;
+
+        let alert = gen_alert(&mut db).await?;
+        let hit = arrange::reminder(
+            &mut db,
+            Reminder {
+                id: Ref::new(VersionedId {
+                    id: arrange::to_id(1),
+                    version: 1,
+                }),
+                alert: alert.0.clone().into(),
+                threshold: 0.50,
+                message: "hello".to_string(),
+            },
+        )
+        .await?;
+
+        arrange::reminder_event(
+            &mut db,
+            ReminderEvent {
+                id: Default::default(),
+                reminder: hit.id.0.clone().into(),
+                timestamp: 25,
+            },
+        )
+        .await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let reminders = mgr
+            .triggered_reminders(&Times {
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+        assert_eq!(
+            reminders
+                .into_iter()
+                .map(|r| (r.reminder.id, r.name))
+                .collect::<Vec<_>>(),
+            vec![(hit.id, "name".to_string())]
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    pub async fn reminder_event_after_start_matters() -> Result<()> {
+        let mut db = test_db().await?;
+
+        let alert = gen_alert(&mut db).await?;
+        let hit = arrange::reminder(
+            &mut db,
+            Reminder {
+                id: Ref::new(VersionedId {
+                    id: arrange::to_id(1),
+                    version: 1,
+                }),
+                alert: alert.0.clone().into(),
+                threshold: 0.50,
+                message: "hello".to_string(),
+            },
+        )
+        .await?;
+
+        arrange::reminder_event(
+            &mut db,
+            ReminderEvent {
+                id: Default::default(),
+                reminder: hit.id.0.clone().into(),
+                timestamp: 200,
+            },
+        )
+        .await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let reminders = mgr
+            .triggered_reminders(&Times {
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+        assert_eq!(
+            reminders
+                .into_iter()
+                .map(|r| (r.reminder.id, r.name))
+                .collect::<Vec<_>>(),
+            vec![]
+        );
+        Ok(())
+    }
+}

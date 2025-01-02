@@ -1,6 +1,4 @@
-use std::io::Write;
-use std::str::FromStr;
-
+use sqlx::prelude::FromRow;
 use sqlx::sqlite::{SqliteConnectOptions, SqliteJournalMode, SqliteRow};
 use sqlx::{
     query, query_as, ConnectOptions, Connection, Executor, Row, Sqlite, SqliteConnection,
@@ -12,7 +10,7 @@ use util::time::{TimeSystem, ToTicks};
 
 use crate::entities::{
     Alert, AlertEvent, App, AppIdentity, InteractionPeriod, Ref, Reminder, ReminderEvent, Session,
-    Target, TimeFrame, Timestamp, TriggerAction, Usage, VersionedId,
+    Target, Timestamp, Usage,
 };
 use crate::migrations::Migrator;
 use crate::table::Table;
@@ -198,166 +196,108 @@ impl AppUpdater {
     }
 }
 
-// /// [Alert] that was triggered from a [Target]
-// #[derive(Debug, PartialEq, Eq, Clone)]
-// pub struct TriggeredAlert {
-//     pub alert: Alert,
-//     pub timestamp: Option<Timestamp>,
-//     pub name: String,
-// }
+/// [Alert] that was triggered from a [Target]
+#[derive(Debug, PartialEq, Eq, Clone, FromRow)]
+pub struct TriggeredAlert {
+    #[sqlx(flatten)]
+    pub alert: Alert,
+    pub timestamp: Option<Timestamp>,
+    pub name: String,
+}
 
-// /// [Reminder] that was triggered from a [Target]
-// #[derive(Debug, Clone)]
-// pub struct TriggeredReminder {
-//     pub reminder: Reminder,
-//     pub name: String,
-// }
+/// [Reminder] that was triggered from a [Target]
+#[derive(Debug, Clone, FromRow)]
+pub struct TriggeredReminder {
+    #[sqlx(flatten)]
+    pub reminder: Reminder,
+    pub name: String,
+}
 
-// /// Reference to hold statements regarding [Alert] and [Reminder] queries
-// pub struct AlertManager<'a> {
-//     get_tag_apps: Statement<'a>,
-//     triggered_alerts: Statement<'a>,
-//     triggered_reminders: Statement<'a>,
-//     insert_alert_event: Statement<'a>,
-//     insert_reminder_event: Statement<'a>,
-// }
+/// Reference to hold statements regarding [Alert] and [Reminder] queries
+pub struct AlertManager {
+    db: Database,
+}
 
-// impl<'a> AlertManager<'a> {
-//     /// Initialize a [AlertManager] from a given [Database]
-//     pub fn new(db: &'a mut Database) -> Result<Self> {
-//         let conn = &db.conn;
-//         let get_tag_apps = prepare_stmt!(conn, "SELECT app_id FROM _app_tags WHERE tag_id = ?")?;
-//         let triggered_alerts =
-//             prepare_stmt!(conn, include_str!("../queries/triggered_alerts.sql"))?;
-//         let triggered_reminders =
-//             prepare_stmt!(conn, include_str!("../queries/triggered_reminders.sql"))?;
-//         let insert_alert_event = insert_stmt!(conn, AlertEvent)?;
-//         let insert_reminder_event = insert_stmt!(conn, ReminderEvent)?;
-//         Ok(Self {
-//             get_tag_apps,
-//             triggered_alerts,
-//             triggered_reminders,
-//             insert_alert_event,
-//             insert_reminder_event,
-//         })
-//     }
+impl AlertManager {
+    /// Initialize a [AlertManager] from a given [Database]
+    pub fn new(db: Database) -> Result<Self> {
+        Ok(Self { db })
+    }
 
-//     /// Gets all [App]s under the [Target]
-//     pub fn target_apps(&mut self, target: &Target) -> Result<Vec<Ref<App>>> {
-//         Ok(match target {
-//             Target::Tag(tag) => self
-//                 .get_tag_apps
-//                 .query_map(params![tag], |row| row.get(0))?
-//                 .collect::<Result<Vec<_>, _>>()?,
-//             // this will only return one result, but we get a row iterator nonetheless
-//             Target::App(app) => vec![app.clone()],
-//         })
-//     }
+    /// Gets all [App]s under the [Target]
+    pub async fn target_apps(&mut self, target: &Target) -> Result<Vec<Ref<App>>> {
+        Ok(match target {
+            Target::Tag(tag) => {
+                query("SELECT app_id FROM _app_tags WHERE tag_id = ?")
+                    .bind(tag.clone())
+                    .map(|r: SqliteRow| r.get(0))
+                    .fetch_all(self.db.executor())
+                    .await?
+            }
+            // this will only return one result, but we get a row iterator nonetheless
+            Target::App(app) => vec![app.clone()],
+        })
+    }
 
-//     // TODO optim: use a single query to get all triggered alerts and reminders
-//     // TODO optim: or use a single transaction for the below two.
+    // TODO optim: use a single query to get all triggered alerts and reminders
+    // TODO optim: or use a single transaction for the below two.
 
-//     /// Get all [Alert]s that are triggered, including when they were triggered
-//     pub fn triggered_alerts(&mut self, times: &impl TimeSystem) -> Result<Vec<TriggeredAlert>> {
-//         let day_start = times.day_start().to_ticks();
-//         let week_start = times.week_start().to_ticks();
-//         let month_start = times.month_start().to_ticks();
-//         let result = self
-//             .triggered_alerts
-//             .query_map(params![day_start, week_start, month_start], |row| {
-//                 Ok(TriggeredAlert {
-//                     alert: Self::row_to_alert(row)?,
-//                     timestamp: row.get(9)?,
-//                     name: row.get(10)?,
-//                 })
-//             })?
-//             .collect::<Result<Vec<_>, _>>()?;
-//         Ok(result)
-//     }
+    /// Get all [Alert]s that are triggered, including when they were triggered
+    pub async fn triggered_alerts(
+        &mut self,
+        times: &impl TimeSystem,
+    ) -> Result<Vec<TriggeredAlert>> {
+        let day_start = times.day_start().to_ticks() as i64;
+        let week_start = times.week_start().to_ticks() as i64;
+        let month_start = times.month_start().to_ticks() as i64;
+        let result = query_as(include_str!("../queries/triggered_alerts.sql"))
+            .bind(day_start)
+            .bind(week_start)
+            .bind(month_start)
+            .fetch_all(self.db.executor())
+            .await?;
+        Ok(result)
+    }
 
-//     /// Get all [Reminder]s that are triggered, except those that are already handled
-//     pub fn triggered_reminders(
-//         &mut self,
-//         times: &impl TimeSystem,
-//     ) -> Result<Vec<TriggeredReminder>> {
-//         let day_start = times.day_start().to_ticks();
-//         let week_start = times.week_start().to_ticks();
-//         let month_start = times.month_start().to_ticks();
-//         let result = self
-//             .triggered_reminders
-//             .query_map(params![day_start, week_start, month_start], |row| {
-//                 Ok(TriggeredReminder {
-//                     reminder: Self::row_to_reminder(row)?,
-//                     name: row.get(6)?,
-//                 })
-//             })?
-//             .collect::<Result<Vec<_>, _>>()?;
-//         Ok(result)
-//     }
+    /// Get all [Reminder]s that are triggered, except those that are already handled
+    pub async fn triggered_reminders(
+        &mut self,
+        times: &impl TimeSystem,
+    ) -> Result<Vec<TriggeredReminder>> {
+        let day_start = times.day_start().to_ticks() as i64;
+        let week_start = times.week_start().to_ticks() as i64;
+        let month_start = times.month_start().to_ticks() as i64;
+        let result = query_as(include_str!("../queries/triggered_reminders.sql"))
+            .bind(day_start)
+            .bind(week_start)
+            .bind(month_start)
+            .fetch_all(self.db.executor())
+            .await?;
+        Ok(result)
+    }
 
-//     /// Insert a [AlertEvent]
-//     pub fn insert_alert_event(&mut self, event: &AlertEvent) -> Result<()> {
-//         self.insert_alert_event.execute(params![
-//             event.alert.id,
-//             event.alert.version,
-//             event.timestamp,
-//         ])?;
-//         Ok(())
-//     }
+    /// Insert a [AlertEvent]
+    pub async fn insert_alert_event(&mut self, event: &AlertEvent) -> Result<()> {
+        query("INSERT INTO alert_events VALUES (NULL, ?, ?, ?)")
+            .bind(event.alert.id.clone())
+            .bind(event.alert.version.clone())
+            .bind(event.timestamp.clone())
+            .execute(self.db.executor())
+            .await?;
+        Ok(())
+    }
 
-//     /// Insert a [ReminderEvent]
-//     pub fn insert_reminder_event(&mut self, event: &ReminderEvent) -> Result<()> {
-//         self.insert_reminder_event.execute(params![
-//             event.reminder.id,
-//             event.reminder.version,
-//             event.timestamp,
-//         ])?;
-//         Ok(())
-//     }
-
-//     fn row_to_alert(row: &rusqlite::Row) -> Result<Alert, rusqlite::Error> {
-//         let app_id: Option<Ref<App>> = row.get(2)?;
-//         Ok(Alert {
-//             id: Ref::new(VersionedId {
-//                 id: row.get(0)?,
-//                 version: row.get(1)?,
-//             }),
-//             target: if let Some(app_id) = app_id {
-//                 Target::App(app_id)
-//             } else {
-//                 Target::Tag(row.get(3)?)
-//             },
-//             usage_limit: row.get(4)?,
-//             time_frame: match row.get(5)? {
-//                 0 => TimeFrame::Daily,
-//                 1 => TimeFrame::Weekly,
-//                 2 => TimeFrame::Monthly,
-//                 _ => unreachable!("time frame"),
-//             },
-//             trigger_action: match row.get(8)? {
-//                 0 => TriggerAction::Kill,
-//                 1 => TriggerAction::Dim(row.get(6)?),
-//                 2 => TriggerAction::Message(row.get(7)?),
-//                 _ => unreachable!("trigger action"),
-//             },
-//         })
-//     }
-
-//     fn row_to_reminder(row: &rusqlite::Row) -> Result<Reminder, rusqlite::Error> {
-//         Ok(Reminder {
-//             id: Ref::new(VersionedId {
-//                 id: row.get(0)?,
-//                 version: row.get(1)?,
-//             }),
-//             alert: Ref::new(VersionedId {
-//                 id: row.get(2)?,
-//                 version: row.get(3)?,
-//             }),
-//             threshold: row.get(4)?,
-//             message: row.get(5)?,
-//         })
-//     }
-// }
+    /// Insert a [ReminderEvent]
+    pub async fn insert_reminder_event(&mut self, event: &ReminderEvent) -> Result<()> {
+        query("INSERT INTO reminder_events VALUES (NULL, ?, ?, ?)")
+            .bind(event.reminder.id.clone())
+            .bind(event.reminder.version.clone())
+            .bind(event.timestamp.clone())
+            .execute(self.db.executor())
+            .await?;
+        Ok(())
+    }
+}
 
 #[cfg(test)]
 mod tests;
