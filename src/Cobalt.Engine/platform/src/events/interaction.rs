@@ -1,3 +1,4 @@
+use std::cell::SyncUnsafeCell;
 use std::ffi::c_void;
 
 use util::config::Config;
@@ -38,16 +39,30 @@ pub enum InteractionChangedEvent {
     },
 }
 
-static mut INTERACTION_INSTANCE: Option<InteractionWatcher> = None;
+// # Safety
+// Since we are single-threaded, this is safe - otherwise we need Mutex/Locks.
+// The `Sync`UnsafeCell is needed to satisfy the compiler.
+static INTERACTION_INSTANCE: SyncUnsafeCell<Option<InteractionWatcher>> = SyncUnsafeCell::new(None);
 
 fn interaction_instance() -> &'static mut InteractionWatcher {
-    unsafe { INTERACTION_INSTANCE.as_mut().unwrap() }
+    unsafe {
+        INTERACTION_INSTANCE
+            .get()
+            .as_mut()
+            .and_then(|i| i.as_mut())
+            .unwrap()
+    }
 }
 
 impl InteractionWatcher {
     /// Create a new [InteractionWatcher] with the specified [Config] and current [Timestamp].
     pub fn init(config: &Config, at: Timestamp) -> Result<&'static mut Self> {
-        if unsafe { INTERACTION_INSTANCE.is_some() } {
+        if unsafe {
+            INTERACTION_INSTANCE
+                .get()
+                .as_ref()
+                .is_some_and(|i| i.is_some())
+        } {
             bail!("InteractionWatcher already initialized");
         }
         let instance = Self {
@@ -59,7 +74,7 @@ impl InteractionWatcher {
             _mouse_hook: WindowsHook::global().context("mouse ll windows hook")?,
             _keyboard_hook: WindowsHook::global().context("keyboard ll windows hook")?,
         };
-        unsafe { INTERACTION_INSTANCE = Some(instance) };
+        unsafe { *INTERACTION_INSTANCE.get() = Some(instance) };
         Ok(interaction_instance())
     }
 
