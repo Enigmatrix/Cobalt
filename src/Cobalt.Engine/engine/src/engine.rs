@@ -125,8 +125,8 @@ impl Engine {
 
     /// Get the [Session] details for the given [WindowSession]
     async fn get_session_details(&mut self, ws: WindowSession) -> Result<Ref<Session>> {
-        let mut borrow = self.cache.lock().await;
-        let session_details = borrow
+        let mut cache = self.cache.lock().await;
+        let session_details = cache
             .get_or_insert_session_for_window(ws.clone(), |cache| {
                 async {
                     Self::create_session_for_window(
