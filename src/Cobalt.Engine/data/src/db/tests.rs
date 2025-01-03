@@ -450,7 +450,7 @@ async fn insert_alert_event() -> Result<()> {
 
     let mut alert_event = AlertEvent {
         id: Default::default(),
-        alert: AlertVersionedId { id: id, version: 1 },
+        alert: AlertVersionedId { id, version: 1 },
         timestamp: 1337,
     };
 
@@ -583,8 +583,8 @@ mod arrange {
     pub async fn usage(db: &mut Database, mut usage: Usage) -> Result<Usage> {
         let res = query("INSERT INTO usages VALUES (NULL, ?, ?, ?)")
             .bind(usage.session_id.clone())
-            .bind(usage.start.clone())
-            .bind(usage.end.clone())
+            .bind(usage.start)
+            .bind(usage.end)
             .execute(db.executor())
             .await?;
         usage.id = Ref::new(res.last_insert_rowid());
@@ -622,7 +622,7 @@ mod arrange {
 
         let (dim_duration, message_content, tag) = match &alert.trigger_action {
             TriggerAction::Kill => (None, None, 0),
-            TriggerAction::Dim(dur) => (Some(dur.clone()), None, 1),
+            TriggerAction::Dim(dur) => (Some(*dur), None, 1),
             TriggerAction::Message(content) => (None, Some(content.to_string()), 2),
         };
 
@@ -663,9 +663,9 @@ mod arrange {
 
     pub async fn alert_event(db: &mut Database, mut event: AlertEvent) -> Result<AlertEvent> {
         let res = query("INSERT INTO alert_events VALUES (NULL, ?, ?, ?)")
-            .bind(event.alert.id.clone())
-            .bind(event.alert.version.clone())
-            .bind(event.timestamp.clone())
+            .bind(event.alert.id)
+            .bind(event.alert.version)
+            .bind(event.timestamp)
             .execute(db.executor())
             .await?;
         event.id = Ref::new(res.last_insert_rowid());
@@ -677,9 +677,9 @@ mod arrange {
         mut event: ReminderEvent,
     ) -> Result<ReminderEvent> {
         let res = query("INSERT INTO reminder_events VALUES (NULL, ?, ?, ?)")
-            .bind(event.reminder.id.clone())
-            .bind(event.reminder.version.clone())
-            .bind(event.timestamp.clone())
+            .bind(event.reminder.id)
+            .bind(event.reminder.version)
+            .bind(event.timestamp)
             .execute(db.executor())
             .await?;
         event.id = Ref::new(res.last_insert_rowid());

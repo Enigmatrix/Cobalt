@@ -76,7 +76,7 @@ impl<T, B: Buffer<T>> WithLength<T, B> {
 
 impl<T, B: Buffer<T>> Buffer<T> for WithLength<T, B> {
     fn as_bytes(&mut self) -> &mut [T] {
-        return &mut self.inner.as_bytes()[..self.length];
+        &mut self.inner.as_bytes()[..self.length]
     }
 }
 

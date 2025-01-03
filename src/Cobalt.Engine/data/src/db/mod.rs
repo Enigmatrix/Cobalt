@@ -60,7 +60,7 @@ impl Database {
     }
 
     pub(crate) async fn transaction(&mut self) -> Result<Transaction<'_, Sqlite>> {
-        Ok(self.conn.begin().await.context("begin transaction")?)
+        self.conn.begin().await.context("begin transaction")
     }
 }
 
@@ -115,14 +115,14 @@ impl UsageWriter {
         if usage.id == Ref::default() {
             let res = query("INSERT INTO usages VALUES (NULL, ?, ?, ?)")
                 .bind(usage.session_id.clone())
-                .bind(usage.start.clone())
-                .bind(usage.end.clone())
+                .bind(usage.start)
+                .bind(usage.end)
                 .execute(self.db.executor())
                 .await?;
             usage.id = Ref::new(res.last_insert_rowid());
         } else {
             query("UPDATE usages SET end = ? WHERE id = ?")
-                .bind(usage.end.clone())
+                .bind(usage.end)
                 .bind(usage.id.clone())
                 .execute(self.db.executor())
                 .await?;
@@ -136,10 +136,10 @@ impl UsageWriter {
         interaction_period: &InteractionPeriod,
     ) -> Result<()> {
         query("INSERT INTO interaction_periods VALUES (NULL, ?, ?, ?, ?)")
-            .bind(interaction_period.start.clone())
-            .bind(interaction_period.end.clone())
-            .bind(interaction_period.mouse_clicks.clone())
-            .bind(interaction_period.key_strokes.clone())
+            .bind(interaction_period.start)
+            .bind(interaction_period.end)
+            .bind(interaction_period.mouse_clicks)
+            .bind(interaction_period.key_strokes)
             .execute(self.db.executor())
             .await?;
         Ok(())
@@ -283,9 +283,9 @@ impl AlertManager {
     /// Insert a [AlertEvent]
     pub async fn insert_alert_event(&mut self, event: &AlertEvent) -> Result<()> {
         query("INSERT INTO alert_events VALUES (NULL, ?, ?, ?)")
-            .bind(event.alert.id.clone())
-            .bind(event.alert.version.clone())
-            .bind(event.timestamp.clone())
+            .bind(event.alert.id)
+            .bind(event.alert.version)
+            .bind(event.timestamp)
             .execute(self.db.executor())
             .await?;
         Ok(())
@@ -294,9 +294,9 @@ impl AlertManager {
     /// Insert a [ReminderEvent]
     pub async fn insert_reminder_event(&mut self, event: &ReminderEvent) -> Result<()> {
         query("INSERT INTO reminder_events VALUES (NULL, ?, ?, ?)")
-            .bind(event.reminder.id.clone())
-            .bind(event.reminder.version.clone())
-            .bind(event.timestamp.clone())
+            .bind(event.reminder.id)
+            .bind(event.reminder.version)
+            .bind(event.timestamp)
             .execute(self.db.executor())
             .await?;
         Ok(())
