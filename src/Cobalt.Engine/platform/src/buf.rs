@@ -124,7 +124,7 @@ impl<T, const N: usize> Buffer<T> for SmartBuf<T, N> {
             SmartBuf::Stack { stack, len } => &mut stack[..*len],
             SmartBuf::Heap { heap } => &mut heap[..],
         };
-        unsafe { MaybeUninit::slice_assume_init_mut(uninit_buf) }
+        unsafe { uninit_buf.assume_init_mut() }
     }
 }
 
