@@ -28,9 +28,6 @@ impl AppInfoResolver {
         let db = Database::new(config).await?;
         let mut updater = AppUpdater::new(db)?;
 
-        // TODO merge this update icon with update app
-        updater.update_app_icon(app.clone(), &app_info.logo).await?;
-
         let app = App {
             id: app,
             name: app_info.name,
@@ -39,7 +36,7 @@ impl AppInfoResolver {
             color: Self::random_color(),
             identity,
         };
-        updater.update_app(&app).await?;
+        updater.update_app(&app, &app_info.logo).await?;
         Ok(())
     }
 

@@ -164,14 +164,15 @@ impl AppUpdater {
         Ok(Self { db })
     }
 
-    /// Update the [App] with additional information
-    pub async fn update_app(&mut self, app: &App) -> Result<()> {
+    /// Update the [App] with additional information, including its icon
+    pub async fn update_app(&mut self, app: &App, icon: &[u8]) -> Result<()> {
         query(
             "UPDATE apps SET
                     name = ?,
                     description = ?,
                     company = ?,
                     color = ?,
+                    icon = ?,
                     initialized = 1
                 WHERE id = ?",
         )
@@ -179,21 +180,8 @@ impl AppUpdater {
         .bind(app.description.clone())
         .bind(app.company.clone())
         .bind(app.color.clone())
-        .bind(app.id.clone())
-        .execute(self.db.executor())
-        .await?;
-        Ok(())
-    }
-
-    /// Get a reference to the [App] icon's writer
-    pub async fn update_app_icon(&mut self, app_id: Ref<App>, icon: &[u8]) -> Result<()> {
-        query(
-            "UPDATE apps SET
-                    icon = ?
-                WHERE id = ?",
-        )
         .bind(icon)
-        .bind(app_id)
+        .bind(app.id.clone())
         .execute(self.db.executor())
         .await?;
         Ok(())

@@ -185,6 +185,7 @@ async fn update_app() -> Result<()> {
     };
     writer.find_or_insert_app(&identity).await?;
     let mut updater = AppUpdater::new(writer.db)?;
+    let icon = [42, 233].repeat(50); // 50 * 2 = 100 bytes length
     let app = App {
         id: Ref::new(1),
         name: "name".to_string(),
@@ -193,13 +194,14 @@ async fn update_app() -> Result<()> {
         color: "red".to_string(),
         identity: identity.clone(), // ignored by query
     };
-    updater.update_app(&app).await?;
+    updater.update_app(&app, &icon).await?;
 
     #[derive(FromRow, PartialEq, Eq, Debug)]
     struct Res {
         initialized: bool,
         #[sqlx(flatten)]
         app: App,
+        icon: Vec<u8>,
     }
 
     let res: Vec<Res> = query_as("SELECT * FROM apps")
@@ -209,36 +211,11 @@ async fn update_app() -> Result<()> {
     assert_eq!(
         vec![Res {
             initialized: true,
-            app
+            app,
+            icon
         }],
         res
     );
-    Ok(())
-}
-
-#[tokio::test]
-async fn update_app_icon() -> Result<()> {
-    let db = test_db().await?;
-    let mut writer = UsageWriter::new(db)?;
-    let identity = AppIdentity::Win32 {
-        path: "notepad.exe".to_string(),
-    };
-    writer.find_or_insert_app(&identity).await?;
-
-    let icon = [42, 233].repeat(50); // 50 * 2 = 100 bytes length
-
-    let mut db = {
-        let mut updater = AppUpdater::new(writer.db)?;
-        updater.update_app_icon(Ref::new(1), &icon).await?;
-        updater.db
-    };
-
-    let icon_from_db: Vec<Vec<u8>> = query("SELECT icon FROM apps")
-        .map(|r: SqliteRow| r.get("icon"))
-        .fetch_all(db.executor())
-        .await?;
-
-    assert_eq!(vec![icon], icon_from_db);
     Ok(())
 }
 
