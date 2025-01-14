@@ -1,6 +1,5 @@
-use std::ops::Deref;
-
 use util::error::Result;
+use windows::core::AgileReference;
 use windows::ApplicationModel::AppInfo as UWPAppInfo;
 use windows::Foundation::Size;
 use windows::Storage::FileProperties::ThumbnailMode;
@@ -20,30 +19,22 @@ pub struct AppInfo {
 pub const WIN32_IMAGE_SIZE: u32 = 64;
 pub const UWP_IMAGE_SIZE: f32 = 256.0;
 
-// TODO this is a stupid hack
-struct UnsafeSendSync<T>(T);
-impl<T> Deref for UnsafeSendSync<T> {
-    type Target = T;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-unsafe impl<T> Send for UnsafeSendSync<T> {}
-unsafe impl<T> Sync for UnsafeSendSync<T> {}
-
 impl AppInfo {
     /// Create a new [AppInfo] of a Win32 program from its path
     pub async fn from_win32(path: &str) -> Result<Self> {
-        let file = UnsafeSendSync(StorageFile::GetFileFromPathAsync(&path.into())?.await?);
+        let file = AgileReference::new(&StorageFile::GetFileFromPathAsync(&path.into())?.await?)?;
 
         let mut fv = FileVersionInfo::new(path)?;
 
         let logo = file
+            .resolve()?
             .GetThumbnailAsyncOverloadDefaultOptions(ThumbnailMode::SingleItem, WIN32_IMAGE_SIZE)?;
-        let logo = UnsafeSendSync(logo.await?);
-        let size = logo.Size()? as usize;
-        let reader = DataReader::CreateDataReader(&logo.0)?;
+        let (size, reader) = {
+            let logo = logo.await?;
+            let size = logo.Size()? as usize;
+            let reader = DataReader::CreateDataReader(&logo)?;
+            (size, reader)
+        };
         reader.LoadAsync(size as u32)?.await?;
         let mut logo = vec![0u8; size];
         reader.ReadBytes(&mut logo)?;
@@ -63,17 +54,19 @@ impl AppInfo {
         let display_info = app_info.DisplayInfo()?;
         let package = app_info.Package()?;
 
-        let logo = UnsafeSendSync(
-            display_info
+        let (size, reader) = {
+            let logo = display_info
                 .GetLogo(Size {
                     Width: UWP_IMAGE_SIZE,
                     Height: UWP_IMAGE_SIZE,
                 })?
                 .OpenReadAsync()?
-                .await?,
-        );
-        let size = logo.Size()? as usize;
-        let reader = DataReader::CreateDataReader(&logo.0)?;
+                .await?;
+            let size = logo.Size()? as usize;
+            let reader = DataReader::CreateDataReader(&logo)?;
+            (size, reader)
+        };
+
         reader.LoadAsync(size as u32)?.await?;
         let mut logo = vec![0u8; size];
         reader.ReadBytes(&mut logo)?;
