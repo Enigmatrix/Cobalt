@@ -92,6 +92,12 @@ impl From<Timestamp> for u64 {
     }
 }
 
+impl From<Timestamp> for i64 {
+    fn from(t: Timestamp) -> Self {
+        t.ticks as i64
+    }
+}
+
 impl ToTicks for Timestamp {
     fn to_ticks(&self) -> u64 {
         self.ticks

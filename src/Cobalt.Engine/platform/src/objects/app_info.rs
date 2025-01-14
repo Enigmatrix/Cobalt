@@ -1,73 +1,43 @@
-use std::io::Write;
-
 use util::error::Result;
-use windows::core::Interface;
+use windows::core::AgileReference;
 use windows::ApplicationModel::AppInfo as UWPAppInfo;
 use windows::Foundation::Size;
 use windows::Storage::FileProperties::ThumbnailMode;
 use windows::Storage::StorageFile;
-use windows::Storage::Streams::{
-    Buffer, IBuffer, IRandomAccessStreamWithContentType, InputStreamOptions,
-};
-use windows::Win32::System::WinRT::IBufferByteAccess;
+use windows::Storage::Streams::DataReader;
 
 use crate::objects::FileVersionInfo;
-
-/// Logo of an App, regardless of its type
-pub type Logo = IRandomAccessStreamWithContentType;
 
 /// Information about an App
 pub struct AppInfo {
     pub name: String,
     pub description: String,
     pub company: String,
-    logo: Logo,
+    pub logo: Vec<u8>,
 }
 
 pub const WIN32_IMAGE_SIZE: u32 = 64;
 pub const UWP_IMAGE_SIZE: f32 = 256.0;
 
 impl AppInfo {
-    /// Get the mutable bytes of a buffer of an underlying [`IBuffer`]
-    unsafe fn as_mut_bytes(buffer: &IBuffer) -> Result<&mut [u8]> {
-        let interop = buffer.cast::<IBufferByteAccess>()?;
-        let data = interop.Buffer()?;
-        Ok(std::slice::from_raw_parts_mut(data, buffer.Length()? as _))
-    }
-
-    /// Copy the logo of the app to a [`Write`]
-    pub async fn copy_logo(&self, writer: &mut impl Write) -> Result<()> {
-        let size = 0x1000; // 1 page (4kb)
-        let buffer = Buffer::Create(size)?;
-        loop {
-            let buffer = self
-                .logo
-                .ReadAsync(&buffer, size, InputStreamOptions::ReadAhead)?
-                .await?;
-            let buf = unsafe { Self::as_mut_bytes(&buffer)? };
-            if buf.is_empty() {
-                break;
-            }
-            writer.write_all(buf)?;
-        }
-        Ok(())
-    }
-
-    /// Get the size of the logo
-    pub fn logo_size(&self) -> Result<u64> {
-        Ok(self.logo.Size()?)
-    }
-
     /// Create a new [AppInfo] of a Win32 program from its path
     pub async fn from_win32(path: &str) -> Result<Self> {
-        let file = StorageFile::GetFileFromPathAsync(&path.into())?.await?;
+        let file = AgileReference::new(&StorageFile::GetFileFromPathAsync(&path.into())?.await?)?;
 
         let mut fv = FileVersionInfo::new(path)?;
 
         let logo = file
-            .GetThumbnailAsyncOverloadDefaultOptions(ThumbnailMode::SingleItem, WIN32_IMAGE_SIZE)?
-            .await?
-            .cast()?;
+            .resolve()?
+            .GetThumbnailAsyncOverloadDefaultOptions(ThumbnailMode::SingleItem, WIN32_IMAGE_SIZE)?;
+        let (size, reader) = {
+            let logo = logo.await?;
+            let size = logo.Size()? as usize;
+            let reader = DataReader::CreateDataReader(&logo)?;
+            (size, reader)
+        };
+        reader.LoadAsync(size as u32)?.await?;
+        let mut logo = vec![0u8; size];
+        reader.ReadBytes(&mut logo)?;
 
         Ok(AppInfo {
             // not sure why FileDescription is the actual name of the app...
@@ -84,13 +54,22 @@ impl AppInfo {
         let display_info = app_info.DisplayInfo()?;
         let package = app_info.Package()?;
 
-        let logo = display_info
-            .GetLogo(Size {
-                Width: UWP_IMAGE_SIZE,
-                Height: UWP_IMAGE_SIZE,
-            })?
-            .OpenReadAsync()?
-            .await?;
+        let (size, reader) = {
+            let logo = display_info
+                .GetLogo(Size {
+                    Width: UWP_IMAGE_SIZE,
+                    Height: UWP_IMAGE_SIZE,
+                })?
+                .OpenReadAsync()?
+                .await?;
+            let size = logo.Size()? as usize;
+            let reader = DataReader::CreateDataReader(&logo)?;
+            (size, reader)
+        };
+
+        reader.LoadAsync(size as u32)?.await?;
+        let mut logo = vec![0u8; size];
+        reader.ReadBytes(&mut logo)?;
 
         Ok(AppInfo {
             name: display_info.DisplayName()?.to_string_lossy(),
@@ -104,6 +83,8 @@ impl AppInfo {
 #[cfg(test)]
 mod tests {
 
+    use util::future as tokio;
+
     use super::*;
 
     #[tokio::test]
@@ -113,11 +94,7 @@ mod tests {
         assert_eq!("Notepad", app_info.name);
         assert_eq!("Microsoft® Windows® Operating System", app_info.description);
         assert_eq!("Microsoft Corporation", app_info.company);
-        let logo_size = app_info.logo_size()?;
-        let mut logo = Vec::new();
-        app_info.copy_logo(&mut logo).await?;
-        assert_ne!(0, logo_size);
-        assert_eq!(logo_size as usize, logo.len());
+        assert_ne!(0, app_info.logo.len());
         Ok(())
     }
 
@@ -128,11 +105,7 @@ mod tests {
         assert_eq!("Narrator", app_info.name);
         assert_eq!("Narrator Home", app_info.description);
         assert_eq!("Microsoft", app_info.company);
-        let logo_size = app_info.logo_size()?;
-        let mut logo = Vec::new();
-        app_info.copy_logo(&mut logo).await?;
-        assert_ne!(0, logo_size);
-        assert_eq!(logo_size as usize, logo.len());
+        assert_ne!(0, app_info.logo.len());
         Ok(())
     }
 }

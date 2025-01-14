@@ -1,5 +1,4 @@
-use std::cell::RefCell;
-use std::rc::Rc;
+use std::sync::Arc;
 
 use data::db::{AlertManager, Database, TriggeredAlert};
 use data::entities::{AlertEvent, ReminderEvent, Target, Timestamp, TriggerAction};
@@ -7,31 +6,32 @@ use platform::objects::{
     Process, ProcessId, Progress, Timestamp as PlatformTimestamp, ToastManager, Window,
 };
 use util::error::Result;
+use util::future::sync::Mutex;
 use util::tracing::{info, ResultTraceExt};
 
 use crate::cache::Cache;
 
 /// Watcher to track [TriggeredAlert]s and [TriggeredReminder]s and take action on them.
-pub struct Sentry<'a> {
-    cache: Rc<RefCell<Cache>>,
-    mgr: AlertManager<'a>,
+pub struct Sentry {
+    cache: Arc<Mutex<Cache>>,
+    mgr: AlertManager,
 }
 
-impl<'a> Sentry<'a> {
+impl Sentry {
     /// Create a new [Sentry] with the given [Cache] and [Database].
-    pub fn new(cache: Rc<RefCell<Cache>>, db: &'a mut Database) -> Result<Self> {
+    pub fn new(cache: Arc<Mutex<Cache>>, db: Database) -> Result<Self> {
         let mgr = AlertManager::new(db)?;
         Ok(Self { cache, mgr })
     }
 
     /// Run the [Sentry] to check for triggered alerts and reminders and take action on them.
-    pub fn run(&mut self, now: PlatformTimestamp) -> Result<()> {
-        let alerts_hits = self.mgr.triggered_alerts(&now)?;
+    pub async fn run(&mut self, now: PlatformTimestamp) -> Result<()> {
+        let alerts_hits = self.mgr.triggered_alerts(&now).await?;
         for triggered_alert in alerts_hits {
-            self.handle_alert(&triggered_alert, now)?;
+            self.handle_alert(&triggered_alert, now).await?;
         }
 
-        let reminder_hits = self.mgr.triggered_reminders(&now)?;
+        let reminder_hits = self.mgr.triggered_reminders(&now).await?;
         for triggered_reminder in reminder_hits {
             info!(?triggered_reminder, "send message");
             self.handle_reminder_message(
@@ -40,52 +40,50 @@ impl<'a> Sentry<'a> {
                 triggered_reminder.reminder.threshold,
             )
             .warn();
-            self.mgr.insert_reminder_event(&ReminderEvent {
-                id: Default::default(),
-                reminder: triggered_reminder.reminder.id,
-                timestamp: now.into(),
-            })?;
+            self.mgr
+                .insert_reminder_event(&ReminderEvent {
+                    id: Default::default(),
+                    reminder: triggered_reminder.reminder.id.0.into(),
+                    timestamp: now.into(),
+                })
+                .await?;
         }
 
         Ok(())
     }
 
     /// Get the [ProcessId]s for the given [Target].
-    pub fn processes_for_target(&mut self, target: &Target) -> Result<Vec<ProcessId>> {
+    pub async fn processes_for_target(&mut self, target: &Target) -> Result<Vec<ProcessId>> {
+        let cache = self.cache.lock().await;
         let processes = self
             .mgr
-            .target_apps(target)?
+            .target_apps(target)
+            .await?
             .iter()
             .flat_map(move |app| {
-                self.cache
-                    .borrow()
-                    .processes_for_app(app)
-                    .cloned()
-                    .collect::<Vec<_>>() // ew
+                cache.processes_for_app(app).cloned().collect::<Vec<_>>() // ew
             })
             .collect();
         Ok(processes)
     }
 
     /// Get the [Window]s for the given [Target].
-    pub fn windows_for_target(&mut self, target: &Target) -> Result<Vec<Window>> {
+    pub async fn windows_for_target(&mut self, target: &Target) -> Result<Vec<Window>> {
+        let cache = self.cache.lock().await;
         let window = self
             .mgr
-            .target_apps(target)?
+            .target_apps(target)
+            .await?
             .iter()
             .flat_map(move |app| {
-                self.cache
-                    .borrow()
-                    .windows_for_app(app)
-                    .cloned()
-                    .collect::<Vec<_>>() // ew
+                cache.windows_for_app(app).cloned().collect::<Vec<_>>() // ew
             })
             .collect();
         Ok(window)
     }
 
     /// Handle the given [TriggeredAlert] and take action on it.
-    pub fn handle_alert(
+    pub async fn handle_alert(
         &mut self,
         triggered_alert: &TriggeredAlert,
         now: PlatformTimestamp,
@@ -97,16 +95,17 @@ impl<'a> Sentry<'a> {
         } = triggered_alert;
         match &alert.trigger_action {
             TriggerAction::Kill => {
-                let processes = self.processes_for_target(&alert.target)?;
+                let processes = self.processes_for_target(&alert.target).await?;
+                let mut cache = self.cache.lock().await;
                 for pid in processes {
                     info!(?alert, "killing process {:?}", pid);
                     let process = Process::new_killable(pid)?;
                     self.handle_kill_action(&process).warn();
-                    self.cache.borrow_mut().remove_process(pid);
+                    cache.remove_process(pid);
                 }
             }
             TriggerAction::Dim(dur) => {
-                let windows = self.windows_for_target(&alert.target)?;
+                let windows = self.windows_for_target(&alert.target).await?;
                 let start = timestamp.unwrap_or(now.into());
                 let end: Timestamp = now.into();
                 let progress = (end - start) as f64 / (*dur as f64);
@@ -124,11 +123,13 @@ impl<'a> Sentry<'a> {
             }
         }
         if timestamp.is_none() {
-            self.mgr.insert_alert_event(&AlertEvent {
-                id: Default::default(),
-                alert: alert.id.clone(),
-                timestamp: now.into(),
-            })?;
+            self.mgr
+                .insert_alert_event(&AlertEvent {
+                    id: Default::default(),
+                    alert: alert.id.0.clone().into(),
+                    timestamp: now.into(),
+                })
+                .await?;
         }
         Ok(())
     }

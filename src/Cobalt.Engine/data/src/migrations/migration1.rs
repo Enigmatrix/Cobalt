@@ -1,18 +1,21 @@
-use rusqlite::{params, Connection};
+use async_trait::async_trait;
+use sqlx::Executor;
 use util::error::{bail, Context, Result};
 
 use super::Migration;
+use crate::db::Database;
 
 /// Initial database schema - define the basic entities, relations and indexes.
 pub struct Migration1;
 
+#[async_trait]
 impl Migration for Migration1 {
-    fn version(&self) -> u64 {
+    fn version(&self) -> i64 {
         1
     }
 
-    fn up(&self, conn: &mut Connection) -> Result<()> {
-        let tx = conn.transaction().context("create transaction")?;
+    async fn up(&self, db: &mut Database) -> Result<()> {
+        let mut tx = db.transaction().await?;
 
         // all information fields of app are nullable, except identity
         tx.execute(
@@ -28,8 +31,8 @@ impl Migration for Migration1 {
             identity_path_or_aumid          TEXT NOT NULL,
             icon                            BLOB
         )",
-            params![],
         )
+        .await
         .context("create table apps")?;
 
         // cmd_line can be NULL
@@ -39,8 +42,8 @@ impl Migration for Migration1 {
             app_id                          INTEGER NOT NULL REFERENCES apps(id),
             title                           TEXT NOT NULL
         )",
-            params![],
         )
+        .await
         .context("create table sessions")?;
 
         tx.execute(
@@ -50,8 +53,8 @@ impl Migration for Migration1 {
             start                           INTEGER NOT NULL,
             end                             INTEGER NOT NULL
         )",
-            params![],
         )
+        .await
         .context("create table usages")?;
 
         tx.execute(
@@ -62,8 +65,8 @@ impl Migration for Migration1 {
             mouse_clicks                    INTEGER NOT NULL,
             key_strokes                     INTEGER NOT NULL
         )",
-            params![],
         )
+        .await
         .context("create table interaction_periods")?;
 
         tx.execute(
@@ -72,8 +75,8 @@ impl Migration for Migration1 {
             name                            TEXT NOT NULL,
             color                           TEXT NOT NULL
         )",
-            params![],
         )
+        .await
         .context("create table tags")?;
 
         tx.execute(
@@ -82,8 +85,8 @@ impl Migration for Migration1 {
             tag_id                          INTEGER NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
             PRIMARY KEY (app_id, tag_id)
         )",
-            params![],
         )
+        .await
         .context("create table _app_tags")?;
 
         tx.execute(
@@ -99,8 +102,8 @@ impl Migration for Migration1 {
             trigger_action_tag              INTEGER NOT NULL,
             PRIMARY KEY (id, version)
         )",
-            params![],
         )
+        .await
         .context("create table alerts")?;
 
         tx.execute(
@@ -115,8 +118,8 @@ impl Migration for Migration1 {
             FOREIGN KEY (alert_id, alert_version) REFERENCES alerts(id, version)
                 ON DELETE CASCADE
         )",
-            params![],
         )
+        .await
         .context("create table alerts")?;
 
         tx.execute(
@@ -128,8 +131,8 @@ impl Migration for Migration1 {
             FOREIGN KEY (alert_id, alert_version) REFERENCES alerts(id, version)
                 ON DELETE CASCADE
         )",
-            params![],
         )
+        .await
         .context("create table alert_events")?;
 
         tx.execute(
@@ -141,84 +144,69 @@ impl Migration for Migration1 {
             FOREIGN KEY (reminder_id, reminder_version) REFERENCES reminders(id, version)
                 ON DELETE CASCADE
         )",
-            params![],
         )
+        .await
         .context("create table reminder_events")?;
 
         tx.execute(
             "CREATE TABLE alert_id_seq (
             id                              INTEGER PRIMARY KEY NOT NULL
         )",
-            params![],
         )
+        .await
         .context("create table alert_id_seq")?;
 
-        tx.execute("INSERT INTO alert_id_seq (id) VALUES (1)", params![])
+        tx.execute("INSERT INTO alert_id_seq (id) VALUES (1)")
+            .await
             .context("init alert_id_seq")?;
 
         tx.execute(
             "CREATE TABLE reminder_id_seq (
             id                              INTEGER PRIMARY KEY NOT NULL
         )",
-            params![],
         )
+        .await
         .context("create table reminder_id_seq")?;
 
-        tx.execute("INSERT INTO reminder_id_seq (id) VALUES (1)", params![])
+        tx.execute("INSERT INTO reminder_id_seq (id) VALUES (1)")
+            .await
             .context("init reminder_id_seq")?;
 
         // Even though sorting by start is the same as sorting by end and vice versa
         // we need both fields so that these are covering indexes.
 
-        tx.execute(
-            "CREATE INDEX usage_start_end ON usages(session_id, start, end)",
-            params![],
-        )
-        .context("create index usage_start_end")?;
+        tx.execute("CREATE INDEX usage_start_end ON usages(session_id, start, end)")
+            .await
+            .context("create index usage_start_end")?;
 
-        tx.execute(
-            "CREATE INDEX usage_end_start ON usages(session_id, end, start)",
-            params![],
-        )
-        .context("create index usage_start_end")?;
+        tx.execute("CREATE INDEX usage_end_start ON usages(session_id, end, start)")
+            .await
+            .context("create index usage_start_end")?;
 
-        tx.execute(
-            "CREATE INDEX interaction_period_start_end ON interaction_periods(start, end)",
-            params![],
-        )
-        .context("create index interaction_period")?;
+        tx.execute("CREATE INDEX interaction_period_start_end ON interaction_periods(start, end)")
+            .await
+            .context("create index interaction_period")?;
 
         tx.execute(
             "CREATE UNIQUE INDEX app_identity ON apps(identity_is_win32, identity_path_or_aumid)",
-            params![],
         )
+        .await
         .context("create unique index app_identity")?;
 
-        tx.execute(
-            "CREATE INDEX alert_event_fks_alert ON alert_events(alert_id, alert_version)",
-            params![],
-        )
-        .context("create index alert_event_fks_alert")?;
+        tx.execute("CREATE INDEX alert_event_fks_alert ON alert_events(alert_id, alert_version)")
+            .await
+            .context("create index alert_event_fks_alert")?;
 
         tx.execute(
-            "CREATE INDEX reminder_event_fks_reminder ON reminder_events(reminder_id, reminder_version)",
-            params![],
-        )
+            "CREATE INDEX reminder_event_fks_reminder ON reminder_events(reminder_id, reminder_version)")
+        .await
         .context("create index reminder_event_fks_reminder")?;
 
-        tx.commit().context("commit transaction")?;
+        tx.commit().await.context("commit transaction")?;
         Ok(())
     }
 
-    fn down(&self, _conn: &mut Connection) -> Result<()> {
+    async fn down(&self, _db: &mut Database) -> Result<()> {
         bail!("down on base migration")
     }
-}
-
-#[test]
-fn test_up() -> Result<()> {
-    let mut conn = Connection::open_in_memory()?;
-    let m1 = Migration1;
-    m1.up(&mut conn)?;
-    Ok(())
 }

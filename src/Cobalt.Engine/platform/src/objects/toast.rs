@@ -3,7 +3,7 @@ use windows::core::Interface;
 use windows::Data::Xml::Dom::{XmlDocument, XmlElement};
 use windows::UI::Notifications::{ToastNotification, ToastNotificationManager};
 
-/// Once we get registration settled, we can move away from a singleton pattern.
+// Once we get registration settled, we can move away from a singleton pattern.
 
 /// [Progress](https://learn.microsoft.com/en-us/windows/apps/design/shell/tiles-and-notifications/adaptive-interactive-toasts?tabs=xml#progress-bar)
 /// for Toast notifications.

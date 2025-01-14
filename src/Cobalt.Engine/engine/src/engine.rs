@@ -1,26 +1,27 @@
-use std::cell::RefCell;
-use std::rc::Rc;
+use std::sync::Arc;
 
 use data::db::{Database, FoundOrInserted, UsageWriter};
 use data::entities::{AppIdentity, InteractionPeriod, Ref, Session, Usage};
 use platform::events::{ForegroundChangedEvent, InteractionChangedEvent, WindowSession};
 use platform::objects::{Process, ProcessId, Timestamp, Window};
+use scoped_futures::ScopedFutureExt;
 use util::config::Config;
 use util::error::{Context, Result};
-use util::future::task::LocalSpawnExt;
+use util::future::runtime::Handle;
+use util::future::sync::Mutex;
 use util::tracing::{info, trace, ResultTraceExt};
 
 use crate::cache::{AppDetails, Cache, SessionDetails};
 use crate::resolver::AppInfoResolver;
 
 /// The main [Engine] that processes [Event]s and updates the [Database] with new [Usage]s, [Session]s and [App]s.
-pub struct Engine<'a, S: LocalSpawnExt> {
-    cache: Rc<RefCell<Cache>>,
+pub struct Engine {
+    cache: Arc<Mutex<Cache>>,
     current_usage: Usage,
     active_period_start: Timestamp,
     config: Config,
-    inserter: UsageWriter<'a>,
-    spawner: S,
+    inserter: UsageWriter,
+    spawner: Handle,
 }
 
 /// Events that the [Engine] can handle.
@@ -30,15 +31,15 @@ pub enum Event {
     Tick(Timestamp),
 }
 
-impl<'a, S: LocalSpawnExt> Engine<'a, S> {
+impl Engine {
     /// Create a new [Engine], which initializes it's first [Usage]
     pub async fn new(
-        cache: Rc<RefCell<Cache>>,
+        cache: Arc<Mutex<Cache>>,
         foreground: WindowSession,
         start: Timestamp,
         config: Config,
-        db: &'a mut Database,
-        spawner: S,
+        db: Database,
+        spawner: Handle,
     ) -> Result<Self> {
         let inserter = UsageWriter::new(db)?;
         let mut ret = Self {
@@ -53,7 +54,7 @@ impl<'a, S: LocalSpawnExt> Engine<'a, S> {
 
         ret.current_usage = Usage {
             id: Default::default(),
-            session: ret.get_session_details(foreground)?,
+            session_id: ret.get_session_details(foreground).await?,
             start: start.into(),
             end: start.into(),
         };
@@ -69,16 +70,17 @@ impl<'a, S: LocalSpawnExt> Engine<'a, S> {
 
                 self.current_usage.end = at.into();
                 self.inserter
-                    .insert_or_update_usage(&mut self.current_usage)?;
+                    .insert_or_update_usage(&mut self.current_usage)
+                    .await?;
 
-                let session_result = self.get_session_details(session);
+                let session_result = self.get_session_details(session).await;
 
                 // If we have an error getting the session, we don't change the current usage.
                 // An alternative would be to insert some sort of 'invalid usage' marker.
                 if let Ok(session) = &session_result {
                     self.current_usage = Usage {
                         id: Default::default(),
-                        session: session.clone(),
+                        session_id: session.clone(),
                         start: at.into(),
                         end: at.into(),
                     };
@@ -91,7 +93,8 @@ impl<'a, S: LocalSpawnExt> Engine<'a, S> {
 
                 self.current_usage.end = now.into();
                 self.inserter
-                    .insert_or_update_usage(&mut self.current_usage)?;
+                    .insert_or_update_usage(&mut self.current_usage)
+                    .await?;
             }
             Event::InteractionChanged(InteractionChangedEvent::BecameIdle {
                 at,
@@ -107,7 +110,8 @@ impl<'a, S: LocalSpawnExt> Engine<'a, S> {
                         end: at.into(),
                         mouse_clicks: recorded_mouse_clicks,
                         key_strokes: recorded_key_presses,
-                    })?;
+                    })
+                    .await?;
                 // don't need to update active_period_start, as it will be updated when we become active again
             }
             Event::InteractionChanged(InteractionChangedEvent::BecameActive { at }) => {
@@ -120,42 +124,50 @@ impl<'a, S: LocalSpawnExt> Engine<'a, S> {
     }
 
     /// Get the [Session] details for the given [WindowSession]
-    fn get_session_details(&mut self, ws: WindowSession) -> Result<Ref<Session>> {
-        let mut borrow = self.cache.borrow_mut();
-        let session_details = borrow.get_or_insert_session_for_window(ws.clone(), |cache| {
-            Self::create_session_for_window(
-                cache,
-                &self.config,
-                &mut self.inserter,
-                &self.spawner,
-                ws,
-            )
-        })?;
+    async fn get_session_details(&mut self, ws: WindowSession) -> Result<Ref<Session>> {
+        let mut cache = self.cache.lock().await;
+        let session_details = cache
+            .get_or_insert_session_for_window(ws.clone(), |cache| {
+                async {
+                    Self::create_session_for_window(
+                        cache,
+                        &self.config,
+                        &mut self.inserter,
+                        &self.spawner,
+                        ws,
+                    )
+                    .await
+                }
+                .scope_boxed()
+            })
+            .await?;
 
         Ok(session_details.session.clone())
     }
 
     /// Create a [Session] for the given [Window]
-    fn create_session_for_window(
+    async fn create_session_for_window(
         cache: &mut Cache,
         config: &Config,
-        inserter: &mut UsageWriter<'a>,
-        spawner: &S,
+        inserter: &mut UsageWriter,
+        spawner: &Handle,
         ws: WindowSession,
     ) -> Result<SessionDetails> {
         info!(?ws, "insert session");
 
         let pid = ws.window.pid()?;
-        let AppDetails { app } = cache.get_or_insert_app_for_process(pid, |_| {
-            Self::create_app_for_process(inserter, config, spawner, pid, &ws.window)
-        })?;
+        let AppDetails { app } = cache
+            .get_or_insert_app_for_process(pid, |_| async {
+                Self::create_app_for_process(inserter, config, spawner, pid, &ws.window).await
+            })
+            .await?;
 
         let mut session = Session {
             id: Default::default(),
-            app: app.clone(),
+            app_id: app.clone(),
             title: ws.title,
         };
-        inserter.insert_session(&mut session)?;
+        inserter.insert_session(&mut session).await?;
 
         Ok(SessionDetails {
             session: session.id,
@@ -164,10 +176,10 @@ impl<'a, S: LocalSpawnExt> Engine<'a, S> {
     }
 
     /// Create an [App] for the given [ProcessId] and [Window]
-    fn create_app_for_process(
-        inserter: &mut UsageWriter<'a>,
+    async fn create_app_for_process(
+        inserter: &mut UsageWriter,
         config: &Config,
-        spawner: &S,
+        spawner: &Handle,
         pid: ProcessId,
         window: &Window,
     ) -> Result<AppDetails> {
@@ -184,7 +196,7 @@ impl<'a, S: LocalSpawnExt> Engine<'a, S> {
             AppIdentity::Win32 { path }
         };
 
-        let found_app = inserter.find_or_insert_app(&identity)?;
+        let found_app = inserter.find_or_insert_app(&identity).await?;
         let app_id = match found_app {
             FoundOrInserted::Found(id) => id,
             FoundOrInserted::Inserted(id) => {
@@ -194,12 +206,12 @@ impl<'a, S: LocalSpawnExt> Engine<'a, S> {
                     let config = config.clone();
                     let id = id.clone();
 
-                    spawner.spawn_local(async move {
+                    spawner.spawn(async move {
                         AppInfoResolver::update_app(&config, id, identity)
                             .await
                             .context("update app with info")
                             .error();
-                    })?;
+                    });
                 }
 
                 id

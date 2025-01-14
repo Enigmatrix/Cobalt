@@ -25,12 +25,8 @@ impl AppInfoResolver {
 
         let app_info = Self::resolve(&identity).await?;
 
-        let mut db = Database::new(config)?;
-        let mut updater = AppUpdater::new(&mut db)?;
-
-        let icon_size = app_info.logo_size()?;
-        let mut icon = updater.app_icon_writer(app.clone(), icon_size)?;
-        app_info.copy_logo(&mut icon).await?;
+        let db = Database::new(config).await?;
+        let mut updater = AppUpdater::new(db)?;
 
         let app = App {
             id: app,
@@ -40,7 +36,7 @@ impl AppInfoResolver {
             color: Self::random_color(),
             identity,
         };
-        updater.update_app(&app)?;
+        updater.update_app(&app, &app_info.logo).await?;
         Ok(())
     }
 
