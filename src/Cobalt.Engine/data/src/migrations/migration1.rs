@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use sqlx::query;
+use sqlx::Executor;
 use util::error::{bail, Context, Result};
 
 use super::Migration;
@@ -18,7 +18,7 @@ impl Migration for Migration1 {
         let mut tx = db.transaction().await?;
 
         // all information fields of app are nullable, except identity
-        query(
+        tx.execute(
             "CREATE TABLE apps (
             id                              INTEGER PRIMARY KEY NOT NULL,
             initialized                     TINYINT NOT NULL DEFAULT FALSE,
@@ -32,23 +32,21 @@ impl Migration for Migration1 {
             icon                            BLOB
         )",
         )
-        .execute(&mut *tx)
         .await
         .context("create table apps")?;
 
         // cmd_line can be NULL
-        query(
+        tx.execute(
             "CREATE TABLE sessions (
             id                              INTEGER PRIMARY KEY NOT NULL,
             app_id                          INTEGER NOT NULL REFERENCES apps(id),
             title                           TEXT NOT NULL
         )",
         )
-        .execute(&mut *tx)
         .await
         .context("create table sessions")?;
 
-        query(
+        tx.execute(
             "CREATE TABLE usages (
             id                              INTEGER PRIMARY KEY NOT NULL,
             session_id                      INTEGER NOT NULL REFERENCES sessions(id),
@@ -56,11 +54,10 @@ impl Migration for Migration1 {
             end                             INTEGER NOT NULL
         )",
         )
-        .execute(&mut *tx)
         .await
         .context("create table usages")?;
 
-        query(
+        tx.execute(
             "CREATE TABLE interaction_periods (
             id                              INTEGER PRIMARY KEY NOT NULL,
             start                           INTEGER NOT NULL,
@@ -69,33 +66,30 @@ impl Migration for Migration1 {
             key_strokes                     INTEGER NOT NULL
         )",
         )
-        .execute(&mut *tx)
         .await
         .context("create table interaction_periods")?;
 
-        query(
+        tx.execute(
             "CREATE TABLE tags (
             id                              INTEGER PRIMARY KEY NOT NULL,
             name                            TEXT NOT NULL,
             color                           TEXT NOT NULL
         )",
         )
-        .execute(&mut *tx)
         .await
         .context("create table tags")?;
 
-        query(
+        tx.execute(
             "CREATE TABLE _app_tags (
             app_id                          INTEGER NOT NULL REFERENCES apps(id),
             tag_id                          INTEGER NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
             PRIMARY KEY (app_id, tag_id)
         )",
         )
-        .execute(&mut *tx)
         .await
         .context("create table _app_tags")?;
 
-        query(
+        tx.execute(
             "CREATE TABLE alerts (
             id                              INTEGER NOT NULL,
             version                         INTEGER NOT NULL,
@@ -109,11 +103,10 @@ impl Migration for Migration1 {
             PRIMARY KEY (id, version)
         )",
         )
-        .execute(&mut *tx)
         .await
         .context("create table alerts")?;
 
-        query(
+        tx.execute(
             "CREATE TABLE reminders (
             id                              INTEGER NOT NULL,
             version                         INTEGER NOT NULL,
@@ -126,11 +119,10 @@ impl Migration for Migration1 {
                 ON DELETE CASCADE
         )",
         )
-        .execute(&mut *tx)
         .await
         .context("create table alerts")?;
 
-        query(
+        tx.execute(
             "CREATE TABLE alert_events (
             id                              INTEGER PRIMARY KEY NOT NULL,
             alert_id                        INTEGER NOT NULL,
@@ -140,11 +132,10 @@ impl Migration for Migration1 {
                 ON DELETE CASCADE
         )",
         )
-        .execute(&mut *tx)
         .await
         .context("create table alert_events")?;
 
-        query(
+        tx.execute(
             "CREATE TABLE reminder_events (
             id                              INTEGER PRIMARY KEY NOT NULL,
             reminder_id                     INTEGER NOT NULL,
@@ -154,71 +145,60 @@ impl Migration for Migration1 {
                 ON DELETE CASCADE
         )",
         )
-        .execute(&mut *tx)
         .await
         .context("create table reminder_events")?;
 
-        query(
+        tx.execute(
             "CREATE TABLE alert_id_seq (
             id                              INTEGER PRIMARY KEY NOT NULL
         )",
         )
-        .execute(&mut *tx)
         .await
         .context("create table alert_id_seq")?;
 
-        query("INSERT INTO alert_id_seq (id) VALUES (1)")
-            .execute(&mut *tx)
+        tx.execute("INSERT INTO alert_id_seq (id) VALUES (1)")
             .await
             .context("init alert_id_seq")?;
 
-        query(
+        tx.execute(
             "CREATE TABLE reminder_id_seq (
             id                              INTEGER PRIMARY KEY NOT NULL
         )",
         )
-        .execute(&mut *tx)
         .await
         .context("create table reminder_id_seq")?;
 
-        query("INSERT INTO reminder_id_seq (id) VALUES (1)")
-            .execute(&mut *tx)
+        tx.execute("INSERT INTO reminder_id_seq (id) VALUES (1)")
             .await
             .context("init reminder_id_seq")?;
 
         // Even though sorting by start is the same as sorting by end and vice versa
         // we need both fields so that these are covering indexes.
 
-        query("CREATE INDEX usage_start_end ON usages(session_id, start, end)")
-            .execute(&mut *tx)
+        tx.execute("CREATE INDEX usage_start_end ON usages(session_id, start, end)")
             .await
             .context("create index usage_start_end")?;
 
-        query("CREATE INDEX usage_end_start ON usages(session_id, end, start)")
-            .execute(&mut *tx)
+        tx.execute("CREATE INDEX usage_end_start ON usages(session_id, end, start)")
             .await
             .context("create index usage_start_end")?;
 
-        query("CREATE INDEX interaction_period_start_end ON interaction_periods(start, end)")
-            .execute(&mut *tx)
+        tx.execute("CREATE INDEX interaction_period_start_end ON interaction_periods(start, end)")
             .await
             .context("create index interaction_period")?;
 
-        query(
+        tx.execute(
             "CREATE UNIQUE INDEX app_identity ON apps(identity_is_win32, identity_path_or_aumid)",
         )
-        .execute(&mut *tx)
         .await
         .context("create unique index app_identity")?;
 
-        query("CREATE INDEX alert_event_fks_alert ON alert_events(alert_id, alert_version)")
-            .execute(&mut *tx)
+        tx.execute("CREATE INDEX alert_event_fks_alert ON alert_events(alert_id, alert_version)")
             .await
             .context("create index alert_event_fks_alert")?;
 
-        query(
+        tx.execute(
             "CREATE INDEX reminder_event_fks_reminder ON reminder_events(reminder_id, reminder_version)")
-        .execute(&mut *tx)
         .await
         .context("create index reminder_event_fks_reminder")?;
 
