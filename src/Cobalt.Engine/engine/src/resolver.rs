@@ -35,8 +35,9 @@ impl AppInfoResolver {
             company: app_info.company,
             color: Self::random_color(),
             identity,
+            icon: Some(app_info.logo),
         };
-        updater.update_app(&app, &app_info.logo).await?;
+        updater.update_app(&app).await?;
         Ok(())
     }
 

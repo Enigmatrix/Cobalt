@@ -165,7 +165,7 @@ impl AppUpdater {
     }
 
     /// Update the [App] with additional information, including its icon
-    pub async fn update_app(&mut self, app: &App, icon: &[u8]) -> Result<()> {
+    pub async fn update_app(&mut self, app: &App) -> Result<()> {
         query(
             "UPDATE apps SET
                     name = ?,
@@ -176,12 +176,12 @@ impl AppUpdater {
                     initialized = 1
                 WHERE id = ?",
         )
-        .bind(app.name.clone())
-        .bind(app.description.clone())
-        .bind(app.company.clone())
-        .bind(app.color.clone())
-        .bind(icon)
-        .bind(app.id.clone())
+        .bind(&app.name)
+        .bind(&app.description)
+        .bind(&app.company)
+        .bind(&app.color)
+        .bind(app.icon.as_ref())
+        .bind(&app.id)
         .execute(self.db.executor())
         .await?;
         Ok(())

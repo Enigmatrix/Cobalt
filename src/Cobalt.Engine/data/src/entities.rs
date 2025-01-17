@@ -18,7 +18,7 @@ pub struct App {
     pub color: Color,
     #[sqlx(flatten)]
     pub identity: AppIdentity,
-    // pub icon: Blob
+    pub icon: Option<Vec<u8>>,
 }
 
 /// Unique identity of an App, outside of the Database (on the FileSystem/Registry)
