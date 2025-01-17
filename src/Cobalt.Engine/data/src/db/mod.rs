@@ -102,8 +102,8 @@ impl UsageWriter {
     /// Insert a [Session] into the [Database]
     pub async fn insert_session(&mut self, session: &mut Session) -> Result<()> {
         let res = query("INSERT INTO sessions VALUES (NULL, ?, ?)")
-            .bind(session.app_id.clone())
-            .bind(session.title.clone())
+            .bind(&session.app_id)
+            .bind(&session.title)
             .execute(self.db.executor())
             .await?;
         session.id = Ref::new(res.last_insert_rowid());
@@ -114,7 +114,7 @@ impl UsageWriter {
     pub async fn insert_or_update_usage(&mut self, usage: &mut Usage) -> Result<()> {
         if usage.id == Ref::default() {
             let res = query("INSERT INTO usages VALUES (NULL, ?, ?, ?)")
-                .bind(usage.session_id.clone())
+                .bind(&usage.session_id)
                 .bind(usage.start)
                 .bind(usage.end)
                 .execute(self.db.executor())
@@ -123,7 +123,7 @@ impl UsageWriter {
         } else {
             query("UPDATE usages SET end = ? WHERE id = ?")
                 .bind(usage.end)
-                .bind(usage.id.clone())
+                .bind(&usage.id)
                 .execute(self.db.executor())
                 .await?;
         }
@@ -221,7 +221,7 @@ impl AlertManager {
         Ok(match target {
             Target::Tag(tag) => {
                 query("SELECT app_id FROM _app_tags WHERE tag_id = ?")
-                    .bind(tag.clone())
+                    .bind(tag)
                     .map(|r: SqliteRow| r.get(0))
                     .fetch_all(self.db.executor())
                     .await?
