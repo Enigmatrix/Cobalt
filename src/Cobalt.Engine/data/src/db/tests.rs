@@ -3,10 +3,9 @@ use sqlx::{query, Row};
 use util::future as tokio;
 
 use super::*;
-use crate::entities::Tag;
 use crate::table::{AlertVersionedId, ReminderVersionedId};
 
-async fn test_db() -> Result<Database> {
+pub async fn test_db() -> Result<Database> {
     let conn = SqliteConnectOptions::new()
         .in_memory(true)
         .create_if_missing(true)
@@ -523,7 +522,7 @@ impl TimeSystem for Times {
     }
 }
 
-mod arrange {
+pub mod arrange {
     use super::*;
     use crate::entities::{TimeFrame, TriggerAction};
 

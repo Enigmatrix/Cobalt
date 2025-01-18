@@ -12,7 +12,7 @@ use util::time::{TimeSystem, ToTicks};
 
 use crate::entities::{
     Alert, AlertEvent, App, AppIdentity, InteractionPeriod, Ref, Reminder, ReminderEvent, Session,
-    Target, Timestamp, Usage,
+    Tag, Target, Timestamp, Usage,
 };
 use crate::migrations::Migrator;
 use crate::table::Table;
@@ -23,6 +23,8 @@ pub enum FoundOrInserted<T: Table> {
     Found(Ref<T>),
     Inserted(Ref<T>),
 }
+
+mod repo;
 
 impl<T: Table> From<FoundOrInserted<T>> for Ref<T> {
     fn from(value: FoundOrInserted<T>) -> Self {
@@ -291,5 +293,7 @@ impl AlertManager {
     }
 }
 
+#[cfg(test)]
+mod repo_tests;
 #[cfg(test)]
 mod tests;
