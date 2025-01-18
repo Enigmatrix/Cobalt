@@ -13,6 +13,19 @@ struct AppTag {
     tag_id: Ref<Tag>,
 }
 
+#[derive(FromRow)]
+pub struct WithDuration<T: Table> {
+    id: Ref<T>,
+    duration: crate::table::Duration,
+}
+
+#[derive(FromRow)]
+pub struct WithGroupedDuration<T: Table> {
+    id: Ref<T>,
+    group: crate::table::Timestamp,
+    duration: crate::table::Duration,
+}
+
 // Entities with extra information embedded.
 mod infused {
     pub struct App {
@@ -105,5 +118,78 @@ impl Repository {
         }
 
         Ok(tags)
+    }
+
+    // TODO test these
+
+    /// Gets all [App]s and its total usage duration in a start-end range.
+    /// Assumes start <= end.
+    pub async fn get_app_durations(
+        &mut self,
+        start: Option<Timestamp>,
+        end: Option<Timestamp>,
+    ) -> Result<Vec<WithDuration<App>>> {
+        let start = start.unwrap_or(0);
+        let end = end.unwrap_or(i64::MAX);
+
+        let app_durs = query_as(
+            "SELECT a.id AS id,
+                COALESCE(SUM(MIN(u.end, ?) - MAX(u.start, ?)), 0) AS duration
+            FROM apps a
+            INNER JOIN sessions s ON a.id = s.app_id
+            INNER JOIN usages u ON s.id = u.session_id
+            WHERE u.end > ? AND u.start <= ?
+            GROUP BY a.id",
+        )
+        // TODO named bindings ..?
+        .bind(end)
+        .bind(start)
+        .bind(start)
+        .bind(end)
+        .fetch_all(self.db.executor())
+        .await?;
+
+        Ok(app_durs)
+    }
+
+    // TODO test these
+
+    /// Gets all [App]s and its total usage duration in a start-end range,
+    /// grouped per period. Assumes start <= end, and that start and end are
+    /// aligned in multiples of period.
+    pub async fn get_app_durations_per_period(
+        &mut self,
+        start: Option<Timestamp>,
+        end: Option<Timestamp>,
+        period: crate::table::Duration,
+    ) -> Result<Vec<WithGroupedDuration<App>>> {
+        let start = start.unwrap_or(0);
+        let end = end.unwrap_or(i64::MAX);
+
+        let app_durs = query_as(
+            "SELECT a.id AS id,
+                CAST(u.start / ? AS INT) * ? AS `group`,
+                COALESCE(
+                    SUM(MIN(u.end, (CAST(u.start / ? AS INT) + 1) * ?)
+                        - MAX(u.start, ?)), 0) AS duration
+            FROM apps a
+            INNER JOIN sessions s ON a.id = s.app_id
+            INNER JOIN usages u ON s.id = u.session_id
+            WHERE u.end > ? AND u.start <= ?
+            GROUP BY CAST(u.start / ? AS INT), a.id",
+        )
+        // TODO named bindings ..?
+        .bind(period)
+        .bind(period)
+        .bind(period)
+        .bind(period)
+        .bind(start)
+        .bind(start)
+        .bind(end)
+        .bind(period)
+        .fetch_all(self.db.executor())
+        .await?;
+
+        Ok(app_durs)
     }
 }
