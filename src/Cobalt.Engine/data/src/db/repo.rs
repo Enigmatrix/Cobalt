@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use serde::Serialize;
+
 use super::*;
 
 /// TODO
@@ -13,13 +15,13 @@ struct AppTag {
     tag_id: Ref<Tag>,
 }
 
-#[derive(FromRow)]
+#[derive(FromRow, Serialize)]
 pub struct WithDuration<T: Table> {
     id: Ref<T>,
     duration: crate::table::Duration,
 }
 
-#[derive(FromRow)]
+#[derive(FromRow, Serialize)]
 pub struct WithGroupedDuration<T: Table> {
     id: Ref<T>,
     group: crate::table::Timestamp,
@@ -27,12 +29,16 @@ pub struct WithGroupedDuration<T: Table> {
 }
 
 // Entities with extra information embedded.
-mod infused {
+pub mod infused {
+    use super::*;
+
+    #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
     pub struct App {
         pub inner: super::App,
         pub tags: Vec<super::Ref<super::Tag>>,
     }
 
+    #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
     pub struct Tag {
         pub inner: super::Tag,
         pub apps: Vec<super::Ref<super::App>>,

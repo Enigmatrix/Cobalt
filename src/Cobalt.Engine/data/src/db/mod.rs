@@ -24,7 +24,7 @@ pub enum FoundOrInserted<T: Table> {
     Inserted(Ref<T>),
 }
 
-mod repo;
+pub mod repo;
 
 impl<T: Table> From<FoundOrInserted<T>> for Ref<T> {
     fn from(value: FoundOrInserted<T>) -> Self {
