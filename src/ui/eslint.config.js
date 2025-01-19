@@ -9,5 +9,5 @@ export default [
   { languageOptions: { globals: globals.browser } },
   pluginJs.configs.recommended,
   ...tseslint.configs.recommended,
-  pluginReact.configs.flat['jsx-runtime'],
+  pluginReact.configs.flat["jsx-runtime"],
 ];
