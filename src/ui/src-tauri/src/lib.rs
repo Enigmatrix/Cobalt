@@ -16,7 +16,11 @@ pub fn run() {
             Ok(())
         })
         .manage(state::AppState::default())
-        .invoke_handler(tauri::generate_handler![state::init_state, repo::get_apps,])
+        .invoke_handler(tauri::generate_handler![
+            state::init_state,
+            repo::get_apps,
+            repo::get_tags
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
