@@ -1,4 +1,5 @@
 import {
+  Await,
   isRouteErrorResponse,
   Links,
   Meta,
@@ -11,7 +12,9 @@ import type { Route } from "./+types/root";
 import stylesheet from "./app.css?url";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
-import { ThemeProvider } from "./components/theme-provider";
+import { ThemeProvider } from "@/components/theme-provider";
+import { Suspense, useMemo } from "react";
+import { initState } from "@/lib/state";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -46,14 +49,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+  const initStatePromise = useMemo(initState, []);
   return (
     <ThemeProvider defaultTheme="dark">
-      <SidebarProvider>
-        <AppSidebar />
-        <SidebarInset>
-          <Outlet />
-        </SidebarInset>
-      </SidebarProvider>
+      <Suspense fallback={<div>TODO Loading State</div>}>
+        <Await resolve={initStatePromise}>
+          <SidebarProvider>
+            <AppSidebar />
+            <SidebarInset>
+              <Outlet />
+            </SidebarInset>
+          </SidebarProvider>
+        </Await>
+      </Suspense>
     </ThemeProvider>
   );
 }
