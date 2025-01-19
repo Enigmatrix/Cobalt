@@ -22,7 +22,7 @@ type AppState = {
   setTags: (tags: Record<Ref<Tag>, Tag>) => void;
 };
 
-const useAppState = create<AppState>((set) => {
+export const useAppState = create<AppState>((set) => {
   return {
     apps: [],
     tags: [],
