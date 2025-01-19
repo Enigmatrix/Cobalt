@@ -34,12 +34,14 @@ pub mod infused {
 
     #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
     pub struct App {
+        #[serde(flatten)]
         pub inner: super::App,
         pub tags: Vec<super::Ref<super::Tag>>,
     }
 
     #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
     pub struct Tag {
+        #[serde(flatten)]
         pub inner: super::Tag,
         pub apps: Vec<super::Ref<super::App>>,
     }
