@@ -21,6 +21,7 @@
     "@radix-ui/react-tooltip": "^1.1.6",
     "@react-router/node": "^7.1.1",
     "@react-router/serve": "^7.1.1",
+    "@tauri-apps/api": "^2.2.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "isbot": "^5.1.17",
