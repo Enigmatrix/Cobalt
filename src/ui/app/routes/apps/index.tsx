@@ -7,10 +7,29 @@ import {
   BreadcrumbList,
 } from "@/components/ui/breadcrumb";
 import { useAppState } from "@/lib/state";
-import type { App } from "@/lib/entities";
+import type { App, Ref, Tag } from "@/lib/entities";
 import { useMemo } from "react";
 import { Buffer } from "buffer";
 import { CircleHelp } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+
+function TagItem({ tagId }: { tagId: Ref<Tag> }) {
+  const tag = useAppState((state) => state.tags[tagId]); // TODO check if this even works
+
+  return (
+    <Badge
+      variant="outline"
+      style={{
+        borderColor: tag.color,
+        color: tag.color,
+        backgroundColor: "rgba(255, 255, 255, 0.2)",
+      }}
+      className="truncate max-w-16"
+    >
+      {tag.name}
+    </Badge>
+  );
+}
 
 function AppListItem({ app }: { app: App }) {
   const icon = useMemo(
@@ -34,17 +53,23 @@ function AppListItem({ app }: { app: App }) {
         )}
 
         <div className="flex flex-col">
-          <div className="inline-flex place-items-baseline gap-2">
-            <div className="text-lg font-semibold max-w-72 truncate">
-              {app.name}
-            </div>
-            <div>-</div>
-            <div className="text-sm max-w-48 truncate text-white/75">
-              {app.company}
-            </div>
+          <div className="text-lg font-semibold max-w-72 truncate">
+            {app.name}
           </div>
-          <div className="text-sm max-w-[40rem] truncate text-white/50">
-            {app.description}
+          <span className="inline-flex gap-1 items-center text-white/50 text-sm">
+            <p className="max-w-48 truncate">{app.company}</p>
+            {app.description && (
+              <>
+                <p>|</p>
+                <p className=" max-w-[40rem] truncate">{app.description}</p>
+              </>
+            )}
+          </span>
+          {/* TODO show horizontal scrolling on too many tags */}
+          <div>
+            {app.tags.map((tagId) => (
+              <TagItem key={tagId} tagId={tagId} />
+            ))}
           </div>
         </div>
       </div>
