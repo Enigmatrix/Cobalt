@@ -1,5 +1,4 @@
-// TODO do this per entity
-export type Ref<T> = number;
+export type Ref<T> = number & { __type: T };
 
 export type Color = string;
 export type Timestamp = number;

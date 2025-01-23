@@ -4,7 +4,6 @@ import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
-  SidebarGroup,
   SidebarGroupContent,
   SidebarHeader,
   SidebarMenu,
@@ -14,7 +13,6 @@ import {
 } from "@/components/ui/sidebar";
 import { NavLink, useLocation } from "react-router";
 import { Bell, History, Home, List, Settings, Tag } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 const data = {
   footer: [
@@ -74,8 +72,6 @@ function AppSidebarItem({ title, url, icon }: (typeof data.navMain)[0]) {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { pathname } = useLocation();
-
   return (
     <Sidebar {...props}>
       <SidebarHeader></SidebarHeader>
