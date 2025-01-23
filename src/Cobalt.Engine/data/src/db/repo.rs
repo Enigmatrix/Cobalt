@@ -136,7 +136,7 @@ impl Repository {
         &mut self,
         start: Option<Timestamp>,
         end: Option<Timestamp>,
-    ) -> Result<Vec<WithDuration<App>>> {
+    ) -> Result<HashMap<Ref<App>, WithDuration<App>>> {
         let start = start.unwrap_or(0);
         let end = end.unwrap_or(i64::MAX);
 
@@ -157,7 +157,10 @@ impl Repository {
         .fetch_all(self.db.executor())
         .await?;
 
-        Ok(app_durs)
+        Ok(app_durs
+            .into_iter()
+            .map(|app_dur: WithDuration<App>| (app_dur.id.clone(), app_dur))
+            .collect())
     }
 
     // TODO test these
@@ -170,7 +173,7 @@ impl Repository {
         start: Option<Timestamp>,
         end: Option<Timestamp>,
         period: crate::table::Duration,
-    ) -> Result<Vec<WithGroupedDuration<App>>> {
+    ) -> Result<HashMap<Ref<App>, Vec<WithGroupedDuration<App>>>> {
         let start = start.unwrap_or(0);
         let end = end.unwrap_or(i64::MAX);
 
@@ -198,6 +201,14 @@ impl Repository {
         .fetch_all(self.db.executor())
         .await?;
 
-        Ok(app_durs)
+        Ok(app_durs.into_iter().fold(
+            HashMap::new(),
+            |mut acc, app_dur: WithGroupedDuration<App>| {
+                acc.entry(app_dur.id.clone())
+                    .or_insert_with(Vec::new)
+                    .push(app_dur);
+                acc
+            },
+        ))
     }
 }
