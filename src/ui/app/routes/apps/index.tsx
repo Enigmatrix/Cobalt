@@ -41,7 +41,7 @@ function AppListItem({ app }: { app: App }) {
   );
 
   return (
-    <div className="h-24 shadow-sm rounded-sm bg-muted flex ">
+    <div className="h-24 shadow-sm rounded-sm bg-muted flex overflow-auto">
       <div className="flex-1 flex items-center gap-2 p-4">
         {icon ? (
           <div
