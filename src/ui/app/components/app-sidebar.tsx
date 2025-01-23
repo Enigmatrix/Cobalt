@@ -3,6 +3,7 @@ import * as React from "react";
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -13,36 +14,33 @@ import {
 } from "@/components/ui/sidebar";
 import { NavLink, useLocation } from "react-router";
 
-// This is sample data.
 const data = {
-  versions: ["1.0.1", "1.1.0-alpha", "2.0.0-beta1"],
+  footer: [
+    {
+      title: "Settings",
+      url: "/settings",
+    },
+  ],
   navMain: [
     {
-      title: "Cobalt",
-      url: "#",
-      items: [
-        {
-          title: "Home",
-          url: "/",
-          isActive: true,
-        },
-        {
-          title: "Apps",
-          url: "/apps",
-        },
-        {
-          title: "Tags",
-          url: "/tags",
-        },
-        {
-          title: "Alerts",
-          url: "/alerts",
-        },
-        {
-          title: "History",
-          url: "/history",
-        },
-      ],
+      title: "Home",
+      url: "/",
+    },
+    {
+      title: "Apps",
+      url: "/apps",
+    },
+    {
+      title: "Tags",
+      url: "/tags",
+    },
+    {
+      title: "Alerts",
+      url: "/alerts",
+    },
+    {
+      title: "History",
+      url: "/history",
     },
   ],
 };
@@ -52,27 +50,37 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   return (
     <Sidebar {...props}>
-      {/* <SidebarHeader>
-      </SidebarHeader> */}
       <SidebarContent>
-        {/* We create a SidebarGroup for each parent. */}
-        {data.navMain.map((item) => (
-          <SidebarGroup key={item.title}>
-            <SidebarGroupLabel>{item.title}</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {item.items.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild isActive={item.url === pathname}>
-                      <NavLink to={item.url}>{item.title}</NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        ))}
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {data.navMain.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild isActive={item.url === pathname}>
+                    <NavLink to={item.url}>{item.title}</NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
+
+      <SidebarFooter>
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {data.footer.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton isActive={item.url === pathname}>
+                    <NavLink to={item.url}>{item.title}</NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   );
