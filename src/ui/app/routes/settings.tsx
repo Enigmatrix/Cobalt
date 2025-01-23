@@ -7,7 +7,7 @@ import {
   BreadcrumbList,
 } from "@/components/ui/breadcrumb";
 
-export default function History() {
+export default function Settings() {
   return (
     <>
       <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
@@ -16,7 +16,7 @@ export default function History() {
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem className="hidden md:block">
-              <BreadcrumbPage>History</BreadcrumbPage>
+              <BreadcrumbPage>Settings</BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>

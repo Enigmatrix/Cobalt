@@ -20,4 +20,5 @@ export default [
     route(":id", "routes/alerts/[id].tsx"),
   ]),
   route("history", "routes/history.tsx"),
+  route("settings", "routes/settings.tsx"),
 ] satisfies RouteConfig;
