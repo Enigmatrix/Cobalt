@@ -14,6 +14,8 @@ import { CircleHelp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { FixedSizeList as List } from "react-window";
 import AutoSizer from "react-virtualized-auto-sizer";
+import { cn } from "@/lib/utils";
+import { NavLink } from "react-router";
 
 function TagItem({ tagId }: { tagId: Ref<Tag> }) {
   const tag = useAppState((state) => state.tags[tagId]); // TODO check if this even works
@@ -65,7 +67,15 @@ function AppListItem({ app }: { app: App }) {
   );
 
   return (
-    <div className="h-20 shadow-sm rounded-sm bg-muted flex overflow-auto">
+    <NavLink
+      to={`/apps/${app.id}`}
+      className={cn(
+        "h-20 shadow-sm rounded-md flex overflow-auto",
+        "ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+        "disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none cursor-pointer",
+        "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+      )}
+    >
       <div className="flex-1 flex items-center gap-2 p-4">
         {icon ? (
           <div
@@ -98,7 +108,7 @@ function AppListItem({ app }: { app: App }) {
           </span>
         </div>
       </div>
-    </div>
+    </NavLink>
   );
 }
 
