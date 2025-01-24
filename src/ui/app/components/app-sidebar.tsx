@@ -12,10 +12,27 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import { NavLink, useLocation } from "react-router";
-import { Bell, History, Home, List, Settings, Tag } from "lucide-react";
+import {
+  Bell,
+  FlaskConical,
+  History,
+  Home,
+  List,
+  Settings,
+  Tag,
+} from "lucide-react";
 
 const data = {
   footer: [
+    ...(import.meta.env.DEV
+      ? [
+          {
+            title: "Experiments",
+            url: "/experiments",
+            icon: <FlaskConical />,
+          },
+        ]
+      : []),
     {
       title: "Settings",
       url: "/settings",

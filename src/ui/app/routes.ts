@@ -21,4 +21,7 @@ export default [
   ]),
   route("history", "routes/history.tsx"),
   route("settings", "routes/settings.tsx"),
+  ...(import.meta.env.DEV
+    ? [route("experiments", "routes/experiments.tsx")]
+    : []),
 ] satisfies RouteConfig;
