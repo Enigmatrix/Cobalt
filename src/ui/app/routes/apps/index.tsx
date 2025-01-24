@@ -8,10 +8,12 @@ import {
 } from "@/components/ui/breadcrumb";
 import { useAppState } from "@/lib/state";
 import type { App, Ref, Tag } from "@/lib/entities";
-import { useMemo } from "react";
+import { useMemo, type CSSProperties, type ReactNode } from "react";
 import { Buffer } from "buffer";
 import { CircleHelp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { FixedSizeList as List } from "react-window";
+import AutoSizer from "react-virtualized-auto-sizer";
 
 function TagItem({ tagId }: { tagId: Ref<Tag> }) {
   const tag = useAppState((state) => state.tags[tagId]); // TODO check if this even works
@@ -27,6 +29,29 @@ function TagItem({ tagId }: { tagId: Ref<Tag> }) {
     >
       {tag.name}
     </Badge>
+  );
+}
+
+// Virtual list item for react-window. Actual height in style
+// is ignored, instead we use h-24 and h-28 (if last, to show bottom gap).
+// There is a h-4 gap at the top of each item.
+function VirtualListItem({
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  style: { height, ...style },
+  children,
+}: {
+  style: CSSProperties;
+  children?: ReactNode;
+}) {
+  return (
+    // Due to how virtualization works, the last:h-28 triggers for the last item
+    // in the *window*, it just happens that due to overscanning that last item
+    // is hidden unless it's the actual last item in the list.
+    <div className="flex flex-col px-4 h-24 last:h-28" style={style}>
+      {/* gap */}
+      <div className="h-4" />
+      {children}
+    </div>
   );
 }
 
@@ -52,8 +77,10 @@ function AppListItem({ app }: { app: App }) {
         )}
 
         <div className="flex flex-col">
-          <div className="text-lg font-semibold max-w-72 truncate inline-flex items-center gap-2">
-            {app.name}
+          <div className="inline-flex items-center gap-2">
+            <div className="text-lg font-semibold max-w-72 truncate">
+              {app.name}
+            </div>
             <>
               {app.tags.map((tagId) => (
                 <TagItem key={tagId} tagId={tagId} />
@@ -100,10 +127,23 @@ export default function Apps() {
         </Breadcrumb>
       </header>
 
-      <div className="flex flex-1 flex-col gap-4 p-4">
-        {appsSorted.map((app) => (
-          <AppListItem key={app.id} app={app} />
-        ))}
+      <div className="flex flex-1 flex-col max-w-full overflow-hidden">
+        <AutoSizer>
+          {({ height, width }) => (
+            <List
+              height={height}
+              width={width}
+              itemSize={96} // 24rem, manually calculated
+              itemCount={appsSorted.length}
+            >
+              {({ index, style }) => (
+                <VirtualListItem style={style}>
+                  <AppListItem app={appsSorted[index]} />
+                </VirtualListItem>
+              )}
+            </List>
+          )}
+        </AutoSizer>
       </div>
     </>
   );
