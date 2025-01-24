@@ -9,13 +9,12 @@ import {
 import { useAppState } from "@/lib/state";
 import type { App, Ref, Tag } from "@/lib/entities";
 import { useMemo, type CSSProperties, type ReactNode } from "react";
-import { Buffer } from "buffer";
-import { CircleHelp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { FixedSizeList as List } from "react-window";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { cn } from "@/lib/utils";
 import { NavLink } from "react-router";
+import AppIcon from "@/components/app-icon";
 
 function TagItem({ tagId }: { tagId: Ref<Tag> }) {
   const tag = useAppState((state) => state.tags[tagId]); // TODO check if this even works
@@ -58,14 +57,6 @@ function VirtualListItem({
 }
 
 function AppListItem({ app }: { app: App }) {
-  const icon = useMemo(
-    () =>
-      app.icon
-        ? 'url("data:;base64,' + Buffer.from(app.icon).toString("base64") + '")'
-        : undefined,
-    [app.icon]
-  );
-
   return (
     <NavLink
       to={`/apps/${app.id}`}
@@ -77,14 +68,7 @@ function AppListItem({ app }: { app: App }) {
       )}
     >
       <div className="flex-1 flex items-center gap-2 p-4">
-        {icon ? (
-          <div
-            className="mx-2 h-10 w-10 bg-no-repeat bg-center bg-cover"
-            style={{ backgroundImage: icon }}
-          />
-        ) : (
-          <CircleHelp className="mx-2 h-10 w-10" />
-        )}
+        <AppIcon buffer={app.icon} className="mx-2 h-10 w-10" />
 
         <div className="flex flex-col">
           <div className="inline-flex items-center gap-2">
