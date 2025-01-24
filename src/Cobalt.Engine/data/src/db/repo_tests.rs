@@ -124,7 +124,13 @@ async fn get_apps() -> Result<()> {
     arrange::app_tags(&mut db, Ref::new(4), Ref::new(4)).await?;
 
     let mut repo = Repository::new(db)?;
-    let apps = repo.get_apps().await?;
+    let apps = repo
+        .get_apps(Times {
+            day_start: 0,
+            week_start: 0,
+            month_start: 0,
+        })
+        .await?;
     let from_db: HashMap<_, _> = apps
         .values()
         .map(|app| (app.inner.id.clone(), app.tags.clone()))
@@ -262,7 +268,14 @@ async fn get_tags() -> Result<()> {
     arrange::app_tags(&mut db, Ref::new(4), Ref::new(4)).await?;
 
     let mut repo = Repository::new(db)?;
-    let tags = repo.get_tags().await?;
+    // TODO test: durations for these
+    let tags = repo
+        .get_tags(Times {
+            day_start: 0,
+            week_start: 0,
+            month_start: 0,
+        })
+        .await?;
     let from_db: HashMap<_, _> = tags
         .values()
         .map(|tag| (tag.inner.id.clone(), tag.apps.clone()))

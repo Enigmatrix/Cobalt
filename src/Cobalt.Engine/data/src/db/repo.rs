@@ -32,20 +32,49 @@ pub struct WithGroupedDuration<T: Table> {
 pub mod infused {
     use super::*;
 
-    #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-    pub struct App {
-        #[serde(flatten)]
-        pub inner: super::App,
-        pub tags: Vec<super::Ref<super::Tag>>,
+    #[derive(Debug, Clone, PartialEq, Eq, Serialize, FromRow)]
+    pub struct UsageInfo {
+        pub usage_today: crate::table::Duration,
+        pub usage_week: crate::table::Duration,
+        pub usage_month: crate::table::Duration,
     }
 
-    #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+    #[derive(Debug, Clone, PartialEq, Eq, Serialize, FromRow)]
+    pub struct App {
+        #[sqlx(flatten)]
+        #[serde(flatten)]
+        pub inner: super::App,
+        #[sqlx(skip)]
+        pub tags: Vec<super::Ref<super::Tag>>,
+        #[sqlx(flatten)]
+        usages: UsageInfo,
+    }
+
+    #[derive(Debug, Clone, PartialEq, Eq, Serialize, FromRow)]
     pub struct Tag {
+        #[sqlx(flatten)]
         #[serde(flatten)]
         pub inner: super::Tag,
+        #[sqlx(skip)]
         pub apps: Vec<super::Ref<super::App>>,
+        #[sqlx(flatten)]
+        usages: UsageInfo,
     }
 }
+
+const APP_DUR: &str = "(SELECT 
+            COALESCE(SUM(u.end - MAX(u.start, p.start)), 0) AS duration
+        FROM (SELECT ? AS start) p
+        INNER JOIN sessions s ON s.app_id = a.id
+        INNER JOIN usages u ON u.session_id = s.id
+        WHERE u.end > p.start)";
+
+const TAG_DUR: &str = "(SELECT 
+            COALESCE(SUM(u.end - MAX(u.start, p.start)), 0) AS duration
+        FROM _app_tags at, (SELECT ? AS start) p
+        INNER JOIN sessions s ON s.app_id = at.app_id
+        INNER JOIN usages u ON u.session_id = s.id
+        WHERE u.end > p.start AND at.tag_id = t.id)";
 
 impl Repository {
     /// Initialize a [Repository] from a given [Database]
@@ -54,28 +83,30 @@ impl Repository {
     }
 
     /// Gets all [App]s from the database
-    pub async fn get_apps(&mut self) -> Result<HashMap<Ref<App>, infused::App>> {
+    pub async fn get_apps(
+        &mut self,
+        ts: impl TimeSystem,
+    ) -> Result<HashMap<Ref<App>, infused::App>> {
         // 1+N (well, 1+1) query pattern here - introduces a little gap for
         // race condition but doesn't matter much. This query pattern doesn't
         // significantly affect the performance of the application for SQLite
         // compared to other DB formats.
 
         // TODO should we filter by `initialized`?
-        let apps: Vec<App> = query_as("SELECT * FROM apps")
-            .fetch_all(self.db.executor())
-            .await?;
+        let apps: Vec<infused::App> = query_as(&format!(
+            "SELECT a.*,
+                {APP_DUR} usage_today, {APP_DUR} usage_week, {APP_DUR} usage_month
+            FROM apps a"
+        ))
+        .bind(ts.day_start().to_ticks() as i64)
+        .bind(ts.week_start().to_ticks() as i64)
+        .bind(ts.month_start().to_ticks() as i64)
+        .fetch_all(self.db.executor())
+        .await?;
 
         let mut apps: HashMap<_, _> = apps
             .into_iter()
-            .map(|app| {
-                (
-                    app.id.clone(),
-                    infused::App {
-                        inner: app,
-                        tags: Vec::new(),
-                    },
-                )
-            })
+            .map(|app| (app.inner.id.clone(), app))
             .collect();
 
         let app_tags: Vec<AppTag> = query_as("SELECT * FROM _app_tags")
@@ -94,22 +125,24 @@ impl Repository {
     }
 
     /// Gets all [Tag]s from the database
-    pub async fn get_tags(&mut self) -> Result<HashMap<Ref<Tag>, infused::Tag>> {
-        let tags: Vec<Tag> = query_as("SELECT * FROM tags")
-            .fetch_all(self.db.executor())
-            .await?;
+    pub async fn get_tags(
+        &mut self,
+        ts: impl TimeSystem,
+    ) -> Result<HashMap<Ref<Tag>, infused::Tag>> {
+        let tags: Vec<infused::Tag> = query_as(&format!(
+            "SELECT t.*,
+                {TAG_DUR} usage_today, {TAG_DUR} usage_week, {TAG_DUR} usage_month
+            FROM tags t"
+        ))
+        .bind(ts.day_start().to_ticks() as i64)
+        .bind(ts.week_start().to_ticks() as i64)
+        .bind(ts.month_start().to_ticks() as i64)
+        .fetch_all(self.db.executor())
+        .await?;
 
         let mut tags: HashMap<_, _> = tags
             .into_iter()
-            .map(|tag| {
-                (
-                    tag.id.clone(),
-                    infused::Tag {
-                        inner: tag,
-                        apps: Vec::new(),
-                    },
-                )
-            })
+            .map(|tag| (tag.inner.id.clone(), tag))
             .collect();
 
         // TODO don't bother collecting this
@@ -140,18 +173,16 @@ impl Repository {
         let start = start.unwrap_or(0);
         let end = end.unwrap_or(i64::MAX);
 
+        // TODO actual named bindings please!
         let app_durs = query_as(
             "SELECT a.id AS id,
-                COALESCE(SUM(MIN(u.end, ?) - MAX(u.start, ?)), 0) AS duration
-            FROM apps a
+                COALESCE(SUM(MIN(u.end, p.end) - MAX(u.start, p.start)), 0) AS duration
+            FROM apps a, (SELECT ? AS start, ? AS end) p
             INNER JOIN sessions s ON a.id = s.app_id
             INNER JOIN usages u ON s.id = u.session_id
-            WHERE u.end > ? AND u.start <= ?
+            WHERE u.end > p.start AND u.start <= p.end
             GROUP BY a.id",
         )
-        // TODO named bindings ..?
-        .bind(end)
-        .bind(start)
         .bind(start)
         .bind(end)
         .fetch_all(self.db.executor())
@@ -177,27 +208,22 @@ impl Repository {
         let start = start.unwrap_or(0);
         let end = end.unwrap_or(i64::MAX);
 
+        // TODO actual named bindings please!
         let app_durs = query_as(
             "SELECT a.id AS id,
-                CAST(u.start / ? AS INT) * ? AS `group`,
+                CAST(u.start / p.period AS INT) * p.period AS `group`,
                 COALESCE(
-                    SUM(MIN(u.end, (CAST(u.start / ? AS INT) + 1) * ?)
-                        - MAX(u.start, ?)), 0) AS duration
-            FROM apps a
+                    SUM(MIN(u.end, (CAST(u.start / p.period AS INT) + 1) * p.period)
+                        - MAX(u.start, p.start)), 0) AS duration
+            FROM apps a, (SELECT ? AS period, ? AS start, ? AS end) p
             INNER JOIN sessions s ON a.id = s.app_id
             INNER JOIN usages u ON s.id = u.session_id
-            WHERE u.end > ? AND u.start <= ?
-            GROUP BY CAST(u.start / ? AS INT), a.id",
+            WHERE u.end > p.start AND u.start <= p.end
+            GROUP BY CAST(u.start / p.period AS INT), a.id",
         )
-        // TODO named bindings ..?
         .bind(period)
-        .bind(period)
-        .bind(period)
-        .bind(period)
-        .bind(start)
         .bind(start)
         .bind(end)
-        .bind(period)
         .fetch_all(self.db.executor())
         .await?;
 
