@@ -24,7 +24,6 @@ function TagItem({ tagId }: { tagId: Ref<Tag> }) {
         color: tag.color,
         backgroundColor: "rgba(255, 255, 255, 0.2)",
       }}
-      className="truncate max-w-16"
     >
       {tag.name}
     </Badge>
@@ -41,22 +40,27 @@ function AppListItem({ app }: { app: App }) {
   );
 
   return (
-    <div className="h-24 shadow-sm rounded-sm bg-muted flex overflow-auto">
+    <div className="h-20 shadow-sm rounded-sm bg-muted flex overflow-auto">
       <div className="flex-1 flex items-center gap-2 p-4">
         {icon ? (
           <div
-            className="mx-2 h-12 w-12 bg-no-repeat bg-center bg-cover"
+            className="mx-2 h-10 w-10 bg-no-repeat bg-center bg-cover"
             style={{ backgroundImage: icon }}
           />
         ) : (
-          <CircleHelp className="mx-2 h-12 w-12 " />
+          <CircleHelp className="mx-2 h-10 w-10" />
         )}
 
         <div className="flex flex-col">
-          <div className="text-lg font-semibold max-w-72 truncate">
+          <div className="text-lg font-semibold max-w-72 truncate inline-flex items-center gap-2">
             {app.name}
+            <>
+              {app.tags.map((tagId) => (
+                <TagItem key={tagId} tagId={tagId} />
+              ))}
+            </>
           </div>
-          <span className="inline-flex gap-1 items-center text-white/50 text-sm">
+          <span className="inline-flex gap-1 items-center text-white/50 text-xs">
             <p className="max-w-48 truncate">{app.company}</p>
             {app.description && (
               <>
@@ -65,12 +69,6 @@ function AppListItem({ app }: { app: App }) {
               </>
             )}
           </span>
-          {/* TODO show horizontal scrolling on too many tags */}
-          <div>
-            {app.tags.map((tagId) => (
-              <TagItem key={tagId} tagId={tagId} />
-            ))}
-          </div>
         </div>
       </div>
     </div>
