@@ -8,6 +8,12 @@ export type AppIdentity =
   | { Uwp: { aumid: string } }
   | { Win32: { path: string } };
 
+export interface UsageInfo {
+  usage_today: number;
+  usage_week: number;
+  usage_month: number;
+}
+
 export interface App {
   id: Ref<App>;
   name: string;
@@ -17,6 +23,7 @@ export interface App {
   identity: AppIdentity;
   icon: Buffer;
   tags: Ref<Tag>[];
+  usages: UsageInfo;
 }
 
 export interface Tag {
@@ -24,4 +31,5 @@ export interface Tag {
   name: string;
   color: string;
   apps: Ref<App>[];
+  usages: UsageInfo;
 }

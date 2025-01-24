@@ -77,6 +77,14 @@ function AppListItem({ app }: { app: App }) {
 
 export default function Apps() {
   const apps = useAppState((state) => state.apps);
+  const appsSorted = useMemo(() => {
+    const appValues = Object.values(apps);
+    // descending order of usage_today.
+    appValues.sort(
+      (app1, app2) => app2.usages.usage_today - app1.usages.usage_today
+    );
+    return appValues;
+  }, [apps]);
 
   return (
     <>
@@ -93,7 +101,7 @@ export default function Apps() {
       </header>
 
       <div className="flex flex-1 flex-col gap-4 p-4">
-        {Object.values(apps).map((app) => (
+        {appsSorted.map((app) => (
           <AppListItem key={app.id} app={app} />
         ))}
       </div>
