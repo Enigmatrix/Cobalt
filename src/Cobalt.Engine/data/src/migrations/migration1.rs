@@ -148,7 +148,11 @@ impl Migration for Migration1 {
         .await
         .context("create table reminder_events")?;
 
-        tx.execute("CREATE INDEX usage_start_end ON usages(session_id, start, end)")
+        tx.execute("CREATE INDEX usage_start_session_end ON usages(start, session_id, end)")
+            .await
+            .context("create index usage_start_end")?;
+
+        tx.execute("CREATE INDEX usage_end_session_start ON usages(end, session_id, start)")
             .await
             .context("create index usage_start_end")?;
 
