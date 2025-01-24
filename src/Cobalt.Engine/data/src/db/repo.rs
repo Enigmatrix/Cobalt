@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::i64;
 
 use serde::Serialize;
 
@@ -62,19 +63,22 @@ pub mod infused {
     }
 }
 
-const APP_DUR: &str = "(SELECT 
-            COALESCE(SUM(u.end - MAX(u.start, p.start)), 0) AS duration
-        FROM (SELECT ? AS start) p
-        INNER JOIN sessions s ON s.app_id = a.id
-        INNER JOIN usages u ON u.session_id = s.id
-        WHERE u.end > p.start)";
+const APP_DUR: &str = "SELECT a.id AS id,
+                COALESCE(SUM(MIN(u.end, p.end) - MAX(u.start, p.start)), 0) AS duration
+            FROM apps a, (SELECT ? AS start, ? AS end) p
+            INNER JOIN sessions s ON a.id = s.app_id
+            INNER JOIN usages u ON s.id = u.session_id
+            WHERE u.end > p.start AND u.start <= p.end
+            GROUP BY a.id";
 
-const TAG_DUR: &str = "(SELECT 
-            COALESCE(SUM(u.end - MAX(u.start, p.start)), 0) AS duration
-        FROM _app_tags at, (SELECT ? AS start) p
-        INNER JOIN sessions s ON s.app_id = at.app_id
-        INNER JOIN usages u ON u.session_id = s.id
-        WHERE u.end > p.start AND at.tag_id = t.id)";
+const TAG_DUR: &str = "SELECT at.tag_id AS id,
+                COALESCE(SUM(MIN(u.end, p.end) - MAX(u.start, p.start)), 0) AS duration
+            FROM _app_tags at, (SELECT ? AS start, ? AS end) p
+            INNER JOIN apps a ON a.id = at.app_id
+            INNER JOIN sessions s ON a.id = s.app_id
+            INNER JOIN usages u ON s.id = u.session_id
+            WHERE u.end > p.start AND u.start <= p.end
+            GROUP BY at.tag_id";
 
 impl Repository {
     /// Initialize a [Repository] from a given [Database]
@@ -94,13 +98,25 @@ impl Repository {
 
         // TODO should we filter by `initialized`?
         let apps: Vec<infused::App> = query_as(&format!(
-            "SELECT a.*,
-                {APP_DUR} usage_today, {APP_DUR} usage_week, {APP_DUR} usage_month
-            FROM apps a"
+            "WITH
+                usage_daily(id, dur) AS ({APP_DUR}),
+                usage_week(id, dur) AS ({APP_DUR}),
+                usage_month(id, dur) AS ({APP_DUR})
+            SELECT a.*,
+                COALESCE(d.dur, 0) AS usage_today,
+                COALESCE(w.dur, 0) AS usage_week,
+                COALESCE(m.dur, 0) AS usage_month
+            FROM apps a
+            LEFT JOIN usage_daily d ON a.id = d.id
+            LEFT JOIN usage_week  w ON a.id = w.id
+            LEFT JOIN usage_month m ON a.id = m.id"
         ))
         .bind(ts.day_start().to_ticks() as i64)
+        .bind(i64::MAX)
         .bind(ts.week_start().to_ticks() as i64)
+        .bind(i64::MAX)
         .bind(ts.month_start().to_ticks() as i64)
+        .bind(i64::MAX)
         .fetch_all(self.db.executor())
         .await?;
 
@@ -130,13 +146,25 @@ impl Repository {
         ts: impl TimeSystem,
     ) -> Result<HashMap<Ref<Tag>, infused::Tag>> {
         let tags: Vec<infused::Tag> = query_as(&format!(
-            "SELECT t.*,
-                {TAG_DUR} usage_today, {TAG_DUR} usage_week, {TAG_DUR} usage_month
-            FROM tags t"
+            "WITH
+                usage_daily(id, dur) AS ({TAG_DUR}),
+                usage_week(id, dur) AS ({TAG_DUR}),
+                usage_month(id, dur) AS ({TAG_DUR})
+            SELECT t.*,
+                COALESCE(d.dur, 0) AS usage_today,
+                COALESCE(w.dur, 0) AS usage_week,
+                COALESCE(m.dur, 0) AS usage_month
+            FROM tags t
+            LEFT JOIN usage_daily d ON t.id = d.id
+            LEFT JOIN usage_week  w ON t.id = w.id
+            LEFT JOIN usage_month m ON t.id = m.id"
         ))
         .bind(ts.day_start().to_ticks() as i64)
+        .bind(i64::MAX)
         .bind(ts.week_start().to_ticks() as i64)
+        .bind(i64::MAX)
         .bind(ts.month_start().to_ticks() as i64)
+        .bind(i64::MAX)
         .fetch_all(self.db.executor())
         .await?;
 
