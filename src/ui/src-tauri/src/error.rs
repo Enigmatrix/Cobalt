@@ -2,7 +2,7 @@ use serde::Serialize;
 
 #[derive(Serialize)]
 pub struct AppError {
-    stack: Vec<String>
+    stack: Vec<String>,
 }
 pub type AppResult<T> = Result<T, AppError>;
 

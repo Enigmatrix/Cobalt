@@ -120,6 +120,24 @@ impl Repository {
         Ok(Self { db })
     }
 
+    /// Update all [Usage]s, such that the last usage's end is equal to `last`
+    pub async fn update_usages_set_last(&mut self, last: Timestamp) -> Result<()> {
+        let last_usage: i64 = self
+            .db
+            .executor()
+            .fetch_one("SELECT MAX(end) FROM usages")
+            .await?
+            .get(0);
+        let delta = last - last_usage;
+        query("UPDATE usages SET start = start + ?, end = end + ?")
+            .persistent(false)
+            .bind(delta)
+            .bind(delta)
+            .execute(self.db.executor())
+            .await?;
+        Ok(())
+    }
+
     /// Gets all [App]s from the database
     pub async fn get_apps(
         &mut self,

@@ -6,6 +6,21 @@ import {
   BreadcrumbPage,
   BreadcrumbList,
 } from "@/components/ui/breadcrumb";
+import { Button } from "@/components/ui/button";
+import { invoke } from "@tauri-apps/api/core";
+import { refresh } from "@/lib/state";
+
+async function copySeedDb() {
+  await invoke("copy_seed_db");
+}
+
+async function updateUsagesEnd() {
+  await invoke("update_usages_end");
+}
+
+async function refreshState() {
+  await refresh();
+}
 
 export default function Experiments() {
   return (
@@ -27,7 +42,17 @@ export default function Experiments() {
           <div className="aspect-video rounded-xl bg-muted/50" />
           <div className="aspect-video rounded-xl bg-muted/50" />
         </div>
-        <div className="min-h-[100vh] flex-1 rounded-xl bg-muted/50 md:min-h-min" />
+        <div className="min-h-[100vh] flex-1 rounded-xl bg-muted/50 md:min-h-min flex flex-col gap-4 p-4">
+          <Button onClick={copySeedDb} variant="outline">
+            Copy seed.db
+          </Button>
+          <Button onClick={updateUsagesEnd} variant="outline">
+            Set last usage to now
+          </Button>
+          <Button onClick={refreshState} variant="outline">
+            Refresh
+          </Button>
+        </div>
       </div>
     </>
   );
