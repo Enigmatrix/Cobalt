@@ -8,13 +8,25 @@ import {
 } from "@/components/ui/breadcrumb";
 import { useAppState } from "@/lib/state";
 import type { App, Ref, Tag } from "@/lib/entities";
-import { useMemo, type CSSProperties, type ReactNode } from "react";
+import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { FixedSizeList as List } from "react-window";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { cn } from "@/lib/utils";
 import { NavLink } from "react-router";
 import AppIcon from "@/components/app-icon";
+import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { ArrowDownUp, Filter, SortAsc, SortDesc } from "lucide-react";
+import _ from "lodash";
 
 function TagItem({ tagId }: { tagId: Ref<Tag> }) {
   const tag = useAppState((state) => state.tags[tagId]); // TODO check if this even works
@@ -96,16 +108,30 @@ function AppListItem({ app }: { app: App }) {
   );
 }
 
+enum SortDirection {
+  Ascending = "asc",
+  Descending = "desc",
+}
+
+type SortProperty =
+  | "name"
+  | "company"
+  | "usages.usage_today"
+  | "usages.usage_week"
+  | "usages.usage_month";
+
 export default function Apps() {
   const apps = useAppState((state) => state.apps);
+  const [sortDirection, setSortDirection] = useState<SortDirection>(
+    SortDirection.Descending
+  );
+  const [sortProperty, setSortProperty] =
+    useState<SortProperty>("usages.usage_today");
+
   const appsSorted = useMemo(() => {
     const appValues = Object.values(apps);
-    // descending order of usage_today.
-    appValues.sort(
-      (app1, app2) => app2.usages.usage_today - app1.usages.usage_today
-    );
-    return appValues;
-  }, [apps]);
+    return _.orderBy(appValues, [sortProperty], [sortDirection]);
+  }, [apps, sortDirection, sortProperty]);
 
   return (
     <>
@@ -119,12 +145,63 @@ export default function Apps() {
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
+
+        <div className="flex-1" />
+
+        <Input className=" max-w-80" placeholder="Search..." />
+
+        <DropdownMenu>
+          <DropdownMenuTrigger>
+            <Button variant="ghost">
+              <ArrowDownUp size={16} />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuRadioGroup
+              value={sortDirection}
+              onValueChange={(v) => setSortDirection(v as SortDirection)}
+            >
+              <DropdownMenuRadioItem value={SortDirection.Ascending}>
+                <div className="inline-flex items-center gap-2">
+                  <SortAsc size={16} />
+                  <span>Ascending</span>
+                </div>
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value={SortDirection.Descending}>
+                <div className="inline-flex items-center gap-2">
+                  <SortDesc size={16} />
+                  <span>Descending</span>
+                </div>
+              </DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuRadioGroup
+              value={sortProperty}
+              onValueChange={(v) => setSortProperty(v as SortProperty)}
+            >
+              <DropdownMenuRadioItem value="name">Name</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="company">
+                Company
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="usages.usage_today">
+                Usage Today
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="usages.usage_week">
+                Usage Week
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="usages.usage_month">
+                Usage Month
+              </DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </header>
 
       <div className="flex flex-1 flex-col max-w-full overflow-hidden">
         <AutoSizer>
           {({ height, width }) => (
             <List
+              itemData={appsSorted} // this is to trigger a rerender on sort/filter
               height={height}
               width={width}
               itemSize={96} // 24rem, manually calculated
