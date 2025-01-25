@@ -27,6 +27,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ArrowDownUp, Filter, SortAsc, SortDesc } from "lucide-react";
 import _ from "lodash";
+import fuzzysort from "fuzzysort";
 
 function TagItem({ tagId }: { tagId: Ref<Tag> }) {
   const tag = useAppState((state) => state.tags[tagId]); // TODO check if this even works
@@ -127,11 +128,25 @@ export default function Apps() {
   );
   const [sortProperty, setSortProperty] =
     useState<SortProperty>("usages.usage_today");
+  const [search, setSearch] = useState<string>("");
+
+  const appValues = useMemo(() => Object.values(apps), [apps]);
+
+  const appsFiltered = useMemo(() => {
+    if (search) {
+      const results = fuzzysort.go(search, appValues, {
+        keys: ["name", "company", "description"],
+      });
+      // ignore fuzzy-search sorting.
+      return _.map(results, "obj");
+    } else {
+      return appValues;
+    }
+  }, [appValues, search]);
 
   const appsSorted = useMemo(() => {
-    const appValues = Object.values(apps);
-    return _.orderBy(appValues, [sortProperty], [sortDirection]);
-  }, [apps, sortDirection, sortProperty]);
+    return _.orderBy(appsFiltered, [sortProperty], [sortDirection]);
+  }, [appsFiltered, sortDirection, sortProperty]);
 
   return (
     <>
@@ -148,7 +163,12 @@ export default function Apps() {
 
         <div className="flex-1" />
 
-        <Input className=" max-w-80" placeholder="Search..." />
+        <Input
+          className=" max-w-80"
+          placeholder="Search..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
 
         <DropdownMenu>
           <DropdownMenuTrigger>
