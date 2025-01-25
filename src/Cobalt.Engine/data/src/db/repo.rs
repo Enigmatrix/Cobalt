@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 use std::i64;
+use std::ops::Deref;
+use std::str::FromStr;
 
 use serde::Serialize;
 
@@ -8,12 +10,6 @@ use super::*;
 /// TODO
 pub struct Repository {
     db: Database,
-}
-
-#[derive(FromRow)]
-struct AppTag {
-    app_id: Ref<App>,
-    tag_id: Ref<Tag>,
 }
 
 #[derive(FromRow, Serialize)]
@@ -27,6 +23,45 @@ pub struct WithGroupedDuration<T: Table> {
     id: Ref<T>,
     group: crate::table::Timestamp,
     duration: crate::table::Duration,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize)]
+pub struct RefVec<T: Table>(pub Vec<Ref<T>>);
+
+impl<T: Table> Deref for RefVec<T> {
+    type Target = Vec<Ref<T>>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl<'r, T: Table<Id: FromStr<Err: std::fmt::Debug>>> sqlx::Decode<'r, Sqlite> for RefVec<T> {
+    fn decode(
+        value: <Sqlite as sqlx::Database>::ValueRef<'r>,
+    ) -> std::result::Result<Self, sqlx::error::BoxDynError> {
+        let str = <String as sqlx::Decode<'r, Sqlite>>::decode(value)?;
+        if str.is_empty() {
+            return Ok(Self(Vec::new()));
+        }
+
+        let inner = str
+            .split(',')
+            .map(|id| Ref::new(id.parse().unwrap()))
+            .collect();
+
+        Ok(Self(inner))
+    }
+}
+
+impl<T: Table> sqlx::Type<Sqlite> for RefVec<T> {
+    fn type_info() -> <Sqlite as sqlx::Database>::TypeInfo {
+        <String as sqlx::Type<Sqlite>>::type_info()
+    }
+
+    fn compatible(ty: &<Sqlite as sqlx::Database>::TypeInfo) -> bool {
+        <String as sqlx::Type<Sqlite>>::compatible(ty)
+    }
 }
 
 // Entities with extra information embedded.
@@ -45,8 +80,7 @@ pub mod infused {
         #[sqlx(flatten)]
         #[serde(flatten)]
         pub inner: super::App,
-        #[sqlx(skip)]
-        pub tags: Vec<super::Ref<super::Tag>>,
+        pub tags: RefVec<super::Tag>,
         #[sqlx(flatten)]
         usages: UsageInfo,
     }
@@ -56,8 +90,7 @@ pub mod infused {
         #[sqlx(flatten)]
         #[serde(flatten)]
         pub inner: super::Tag,
-        #[sqlx(skip)]
-        pub apps: Vec<super::Ref<super::App>>,
+        pub apps: RefVec<super::App>,
         #[sqlx(flatten)]
         usages: UsageInfo,
     }
@@ -102,14 +135,16 @@ impl Repository {
                 usage_daily(id, dur) AS ({APP_DUR}),
                 usage_week(id, dur) AS ({APP_DUR}),
                 usage_month(id, dur) AS ({APP_DUR})
-            SELECT a.*,
+            SELECT a.*, GROUP_CONCAT(at.tag_id, ',') tags,
                 COALESCE(d.dur, 0) AS usage_today,
                 COALESCE(w.dur, 0) AS usage_week,
                 COALESCE(m.dur, 0) AS usage_month
             FROM apps a
-            LEFT JOIN usage_daily d ON a.id = d.id
-            LEFT JOIN usage_week  w ON a.id = w.id
-            LEFT JOIN usage_month m ON a.id = m.id"
+                LEFT JOIN usage_daily d ON a.id = d.id
+                LEFT JOIN usage_week  w ON a.id = w.id
+                LEFT JOIN usage_month m ON a.id = m.id
+                LEFT JOIN _app_tags at ON a.id = at.app_id
+            GROUP BY a.id"
         ))
         .bind(ts.day_start().to_ticks() as i64)
         .bind(i64::MAX)
@@ -120,22 +155,10 @@ impl Repository {
         .fetch_all(self.db.executor())
         .await?;
 
-        let mut apps: HashMap<_, _> = apps
+        let apps: HashMap<_, _> = apps
             .into_iter()
             .map(|app| (app.inner.id.clone(), app))
             .collect();
-
-        let app_tags: Vec<AppTag> = query_as("SELECT * FROM _app_tags")
-            .fetch_all(self.db.executor())
-            .await?;
-
-        for app_tag in app_tags {
-            if let Some(app) = apps.get_mut(&app_tag.app_id) {
-                app.tags.push(app_tag.tag_id);
-            }
-            // else branch is taken rarely due to race condition e.g.
-            // new app was inserted between the two statements.
-        }
 
         Ok(apps)
     }
@@ -150,14 +173,16 @@ impl Repository {
                 usage_daily(id, dur) AS ({TAG_DUR}),
                 usage_week(id, dur) AS ({TAG_DUR}),
                 usage_month(id, dur) AS ({TAG_DUR})
-            SELECT t.*,
+            SELECT t.*, GROUP_CONCAT(at.app_id, ',') apps,
                 COALESCE(d.dur, 0) AS usage_today,
                 COALESCE(w.dur, 0) AS usage_week,
                 COALESCE(m.dur, 0) AS usage_month
             FROM tags t
-            LEFT JOIN usage_daily d ON t.id = d.id
-            LEFT JOIN usage_week  w ON t.id = w.id
-            LEFT JOIN usage_month m ON t.id = m.id"
+                LEFT JOIN usage_daily d ON t.id = d.id
+                LEFT JOIN usage_week  w ON t.id = w.id
+                LEFT JOIN usage_month m ON t.id = m.id
+                LEFT JOIN _app_tags at ON t.id = at.tag_id
+            GROUP BY t.id"
         ))
         .bind(ts.day_start().to_ticks() as i64)
         .bind(i64::MAX)
@@ -168,23 +193,10 @@ impl Repository {
         .fetch_all(self.db.executor())
         .await?;
 
-        let mut tags: HashMap<_, _> = tags
+        let tags: HashMap<_, _> = tags
             .into_iter()
             .map(|tag| (tag.inner.id.clone(), tag))
             .collect();
-
-        // TODO don't bother collecting this
-        let app_tags: Vec<AppTag> = query_as("SELECT * FROM _app_tags")
-            .fetch_all(self.db.executor())
-            .await?;
-
-        for app_tag in app_tags {
-            if let Some(tag) = tags.get_mut(&app_tag.tag_id) {
-                tag.apps.push(app_tag.app_id);
-            }
-            // else branch is taken rarely due to race condition e.g.
-            // new tag was inserted between the two statements.
-        }
 
         Ok(tags)
     }

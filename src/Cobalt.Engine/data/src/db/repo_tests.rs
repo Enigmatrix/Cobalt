@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use repo::Repository;
+use repo::*;
 use util::future as tokio;
 
 use super::tests::*;
@@ -144,7 +144,7 @@ async fn get_apps() -> Result<()> {
             (4, vec![4]),
         ]
         .into_iter()
-        .map(|(k, v)| (Ref::new(k), v.into_iter().map(Ref::new).collect()))
+        .map(|(k, v)| (Ref::new(k), RefVec(v.into_iter().map(Ref::new).collect())))
         .collect()
     );
     Ok(())
@@ -289,7 +289,7 @@ async fn get_tags() -> Result<()> {
             (4, vec![4]),
         ]
         .into_iter()
-        .map(|(k, v)| (Ref::new(k), v.into_iter().map(Ref::new).collect()))
+        .map(|(k, v)| (Ref::new(k), RefVec(v.into_iter().map(Ref::new).collect())))
         .collect()
     );
     Ok(())
