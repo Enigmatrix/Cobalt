@@ -8,7 +8,13 @@ import {
 } from "@/components/ui/breadcrumb";
 import { useAppState } from "@/lib/state";
 import type { App, Ref, Tag } from "@/lib/entities";
-import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
+import {
+  memo,
+  useMemo,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 import { Badge } from "@/components/ui/badge";
 import { FixedSizeList as List } from "react-window";
 import AutoSizer from "react-virtualized-auto-sizer";
@@ -147,6 +153,14 @@ export default function Apps() {
     return _.orderBy(appsFiltered, [sortProperty], [sortDirection]);
   }, [appsFiltered, sortDirection, sortProperty]);
 
+  const ListItem = memo(
+    ({ index, style }: { index: number; style: CSSProperties }) => (
+      <VirtualListItem style={style}>
+        <AppListItem app={appsSorted[index]} />
+      </VirtualListItem>
+    )
+  );
+
   return (
     <>
       <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
@@ -226,11 +240,7 @@ export default function Apps() {
               itemSize={96} // 24rem, manually calculated
               itemCount={appsSorted.length}
             >
-              {({ index, style }) => (
-                <VirtualListItem style={style}>
-                  <AppListItem app={appsSorted[index]} />
-                </VirtualListItem>
-              )}
+              {ListItem}
             </List>
           )}
         </AutoSizer>
