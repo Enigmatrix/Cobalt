@@ -40,6 +40,12 @@ import _ from "lodash";
 import fuzzysort from "fuzzysort";
 import { Text } from "@/components/ui/text";
 import type { ClassValue } from "clsx";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 function TagItem({ tagId }: { tagId: Ref<Tag> }) {
   const tag = useAppState((state) => state.tags[tagId]); // TODO check if this even works
@@ -98,6 +104,8 @@ function useWidth(
   return width;
 }
 
+// Assumes rendered items are same height. Height of this container
+// must be manually set to height of the rendered item.
 function HorizontalOverflowList<T>({
   className,
   items,
@@ -147,7 +155,18 @@ function HorizontalOverflowList<T>({
               hidden: index !== overflowIndex - 1,
             })}
           >
-            {renderOverflowSign(overflowItems)}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger>
+                  {renderOverflowSign(overflowItems)}
+                </TooltipTrigger>
+                <TooltipContent>
+                  <div className="flex flex-col gap-2 py-2">
+                    {overflowItems.map(renderOverflowItem)}
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </div>
       ))}
@@ -179,7 +198,7 @@ function AppListItem({ app }: { app: App }) {
               <TagItem key={tagId} tagId={tagId} />
             )}
             renderOverflowSign={(items) => (
-              <Badge className="whitespace-nowrap ml-1 bg-white/20 text-white/60 rounded-md">{`+${items.length}`}</Badge>
+              <Badge className="whitespace-nowrap ml-1 bg-white/20 hover:bg-white/30 text-white/60 rounded-md">{`+${items.length}`}</Badge>
             )}
           />
         </div>
