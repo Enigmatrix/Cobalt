@@ -28,6 +28,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowDownUp, Filter, SortAsc, SortDesc } from "lucide-react";
 import _ from "lodash";
 import fuzzysort from "fuzzysort";
+import { Text } from "@/components/ui/text";
 
 function TagItem({ tagId }: { tagId: Ref<Tag> }) {
   const tag = useAppState((state) => state.tags[tagId]); // TODO check if this even works
@@ -42,7 +43,7 @@ function TagItem({ tagId }: { tagId: Ref<Tag> }) {
       }}
       className="whitespace-nowrap"
     >
-      {tag.name}
+      <Text className="max-w-32">{tag.name}</Text>
     </Badge>
   );
 }
@@ -86,21 +87,20 @@ function AppListItem({ app }: { app: App }) {
 
         <div className="flex flex-col">
           <div className="inline-flex items-center gap-2">
-            <div className="text-lg font-semibold max-w-72 truncate">
-              {app.name}
-            </div>
-            <div className="inline-flex items-center gap-1 max-w-80"> {/* overflow-auto or whatever should be here */}
+            <Text className="text-lg font-semibold max-w-72">{app.name}</Text>
+            <div className="inline-flex items-center gap-1 max-w-80">
+              {/* overflow-auto or whatever should be here */}
               {app.tags.map((tagId) => (
                 <TagItem key={tagId} tagId={tagId} />
               ))}
             </div>
           </div>
           <span className="inline-flex gap-1 items-center text-white/50 text-xs">
-            <p className="max-w-48 truncate">{app.company}</p>
+            <Text className="max-w-48">{app.company}</Text>
             {app.description && (
               <>
                 <p>|</p>
-                <p className=" max-w-[40rem] truncate">{app.description}</p>
+                <Text className="max-w-[40rem]">{app.description}</Text>
               </>
             )}
           </span>
