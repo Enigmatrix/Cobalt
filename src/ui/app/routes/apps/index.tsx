@@ -35,6 +35,7 @@ import { ArrowDownUp, Filter, SortAsc, SortDesc } from "lucide-react";
 import _ from "lodash";
 import fuzzysort from "fuzzysort";
 import { Text } from "@/components/ui/text";
+import type { ClassValue } from "clsx";
 
 function TagItem({ tagId }: { tagId: Ref<Tag> }) {
   const tag = useAppState((state) => state.tags[tagId]); // TODO check if this even works
@@ -77,6 +78,43 @@ function VirtualListItem({
   );
 }
 
+function HorizontalOverflowList<T>({
+  className,
+  items,
+  renderItem,
+  renderOverflowItem,
+  renderOverflowSign,
+}: {
+  className: ClassValue;
+  items: T[];
+  renderItem: (item: T) => ReactNode;
+  renderOverflowItem: (item: T) => ReactNode;
+  renderOverflowSign: (overflowItems: T[]) => ReactNode;
+}) {
+  const [overflowIndex, setOverflowIndex] = useState(0);
+  const overflowItems = useMemo(() => items.slice(overflowIndex), [items, overflowIndex]);
+
+  return (
+    <div>
+      <div className="absolute">
+        <div
+          className={cn(
+            "flex flex-wrap items-center overflow-hidden",
+            className
+          )}
+        >
+          {items.map(renderItem)}
+        </div>
+      </div>
+
+      <div className="-left-8 -top-6 relative">
+        {renderOverflowSign(overflowItems)}
+        {JSON.stringify(overflowItems)}
+      </div>
+    </div>
+  );
+}
+
 function AppListItem({ app }: { app: App }) {
   return (
     <NavLink
@@ -93,12 +131,20 @@ function AppListItem({ app }: { app: App }) {
       <div className="flex flex-col min-w-0">
         <div className="inline-flex items-center gap-2">
           <Text className="text-lg font-semibold max-w-72">{app.name}</Text>
-          <div className="inline-flex items-center gap-1 max-w-80">
-            {/* overflow-auto or whatever should be here */}
-            {app.tags.map((tagId) => (
+          <HorizontalOverflowList
+            className="gap-1 max-w-80 h-6"
+            items={app.tags}
+            renderItem={(tagId) => <TagItem key={tagId} tagId={tagId} />}
+            renderOverflowItem={(tagId) => (
               <TagItem key={tagId} tagId={tagId} />
-            ))}
-          </div>
+            )}
+            renderOverflowSign={(items) => (
+              <Badge
+                variant="outline"
+                className="whitespace-nowrap"
+              >{`+${items.length}`}</Badge>
+            )}
+          />
         </div>
         <span className="inline-flex gap-1 items-center text-white/50 text-xs">
           <Text className="max-w-48">{app.company}</Text>
