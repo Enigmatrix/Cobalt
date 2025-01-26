@@ -26,6 +26,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "fuzzysort": "^3.1.0",
+    "immer": "^10.1.1",
     "isbot": "^5.1.17",
     "lodash": "^4.17.21",
     "lucide-react": "^0.469.0",
