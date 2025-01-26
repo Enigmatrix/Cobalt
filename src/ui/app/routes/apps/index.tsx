@@ -116,43 +116,41 @@ function HorizontalOverflowList<T>({
   useLayoutEffect(() => {
     if (!ref.current) return;
     const items = ref.current.children;
+    const firstItem = items.item(0) as HTMLElement;
+    const offsetLeft = firstItem?.offsetLeft;
+    const offsetTop = firstItem?.offsetTop;
     const overflowIndex = _.findIndex(
       items,
       (item) =>
-        (item as HTMLElement).offsetLeft === 0 &&
-        (item as HTMLElement).offsetTop !== 0
+        (item as HTMLElement).offsetLeft === offsetLeft &&
+        (item as HTMLElement).offsetTop !== offsetTop
     );
     setOverflowIndex(overflowIndex);
-    if (overflowIndex !== -1) {
-      const element = items.item(overflowIndex - 1) as HTMLElement;
-      setOverflowWidth(element.offsetLeft + element.offsetWidth);
-    }
-  }, [width]);
+  }, [width, ref]);
   const [overflowIndex, setOverflowIndex] = useState(0);
-  const [overflowWidth, setOverflowWidth] = useState(0);
   const overflowItems = useMemo(
     () => items.slice(overflowIndex),
     [items, overflowIndex]
   );
 
   return (
-    <div>
-      <div className="absolute">
-        <div
-          ref={ref}
-          className={cn(
-            "flex flex-wrap items-center overflow-hidden",
-            className
-          )}
-        >
-          {items.map(renderItem)}
-        </div>
-      </div>
+    <div
+      ref={ref}
+      className={cn("flex flex-wrap items-center overflow-hidden", className)}
+    >
+      {items.map((item, index) => (
+        <div className="flex items-center">
+          {renderItem(item)}
 
-      <div className="relative" style={{ left: overflowWidth }}>
-        {renderOverflowSign(overflowItems)}
-        {JSON.stringify(overflowItems)}
-      </div>
+          <div
+            className={cn({
+              hidden: index !== overflowIndex - 1,
+            })}
+          >
+            {renderOverflowSign(overflowItems)}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -174,17 +172,14 @@ function AppListItem({ app }: { app: App }) {
         <div className="inline-flex items-center gap-2">
           <Text className="text-lg font-semibold max-w-72">{app.name}</Text>
           <HorizontalOverflowList
-            className="gap-1 max-w-80 h-6"
+            className="gap-1 max-w-96 h-6"
             items={app.tags}
             renderItem={(tagId) => <TagItem key={tagId} tagId={tagId} />}
             renderOverflowItem={(tagId) => (
               <TagItem key={tagId} tagId={tagId} />
             )}
             renderOverflowSign={(items) => (
-              <Badge
-                variant="outline"
-                className="whitespace-nowrap"
-              >{`+${items.length}`}</Badge>
+              <Badge className="whitespace-nowrap ml-1 bg-white/20 text-white/60 rounded-md">{`+${items.length}`}</Badge>
             )}
           />
         </div>
