@@ -40,6 +40,7 @@ function TagItem({ tagId }: { tagId: Ref<Tag> }) {
         color: tag.color,
         backgroundColor: "rgba(255, 255, 255, 0.2)",
       }}
+      className="whitespace-nowrap"
     >
       {tag.name}
     </Badge>
@@ -88,11 +89,11 @@ function AppListItem({ app }: { app: App }) {
             <div className="text-lg font-semibold max-w-72 truncate">
               {app.name}
             </div>
-            <>
+            <div className="inline-flex items-center gap-1 max-w-80"> {/* overflow-auto or whatever should be here */}
               {app.tags.map((tagId) => (
                 <TagItem key={tagId} tagId={tagId} />
               ))}
-            </>
+            </div>
           </div>
           <span className="inline-flex gap-1 items-center text-white/50 text-xs">
             <p className="max-w-48 truncate">{app.company}</p>
