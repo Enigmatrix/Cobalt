@@ -1,4 +1,6 @@
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import useResizeObserver from "@react-hook/resize-observer";
+
 import { Separator } from "@/components/ui/separator";
 import {
   Breadcrumb,
@@ -10,7 +12,9 @@ import { useAppState } from "@/lib/state";
 import type { App, Ref, Tag } from "@/lib/entities";
 import {
   memo,
+  useLayoutEffect,
   useMemo,
+  useRef,
   useState,
   type CSSProperties,
   type ReactNode,
@@ -78,6 +82,22 @@ function VirtualListItem({
   );
 }
 
+function useWidth(
+  target: React.RefObject<HTMLElement | null>,
+  initWidth?: number
+) {
+  const [width, setWidth] = useState(initWidth || 0);
+
+  useLayoutEffect(() => {
+    if (!target?.current) return;
+    setWidth(target.current.getBoundingClientRect().width);
+  }, [target]);
+
+  // Where the magic happens
+  useResizeObserver(target, (entry) => setWidth(entry.contentRect.width));
+  return width;
+}
+
 function HorizontalOverflowList<T>({
   className,
   items,
@@ -91,13 +111,35 @@ function HorizontalOverflowList<T>({
   renderOverflowItem: (item: T) => ReactNode;
   renderOverflowSign: (overflowItems: T[]) => ReactNode;
 }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const width = useWidth(ref);
+  useLayoutEffect(() => {
+    if (!ref.current) return;
+    const items = ref.current.children;
+    const overflowIndex = _.findIndex(
+      items,
+      (item) =>
+        (item as HTMLElement).offsetLeft === 0 &&
+        (item as HTMLElement).offsetTop !== 0
+    );
+    setOverflowIndex(overflowIndex);
+    if (overflowIndex !== -1) {
+      const element = items.item(overflowIndex - 1) as HTMLElement;
+      setOverflowWidth(element.offsetLeft + element.offsetWidth);
+    }
+  }, [width]);
   const [overflowIndex, setOverflowIndex] = useState(0);
-  const overflowItems = useMemo(() => items.slice(overflowIndex), [items, overflowIndex]);
+  const [overflowWidth, setOverflowWidth] = useState(0);
+  const overflowItems = useMemo(
+    () => items.slice(overflowIndex),
+    [items, overflowIndex]
+  );
 
   return (
     <div>
       <div className="absolute">
         <div
+          ref={ref}
           className={cn(
             "flex flex-wrap items-center overflow-hidden",
             className
@@ -107,7 +149,7 @@ function HorizontalOverflowList<T>({
         </div>
       </div>
 
-      <div className="-left-8 -top-6 relative">
+      <div className="relative" style={{ left: overflowWidth }}>
         {renderOverflowSign(overflowItems)}
         {JSON.stringify(overflowItems)}
       </div>
