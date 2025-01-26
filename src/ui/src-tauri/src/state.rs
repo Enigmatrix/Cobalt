@@ -1,6 +1,7 @@
 use data::db::repo::Repository;
 use data::db::Database;
-use tauri::async_runtime::Mutex;
+use serde::{Deserialize, Serialize};
+use tauri::async_runtime::RwLock;
 use util::config::{get_config, Config};
 use util::error::*;
 
@@ -9,9 +10,27 @@ use crate::error::*;
 #[tauri::command]
 /// Initiailize the app state. Should only be called once
 pub async fn init_state(state: tauri::State<'_, AppState>) -> AppResult<()> {
-    let mut state = state.lock().await;
+    let mut state = state.write().await;
     *state = Initable::Init(AppStateInner::new().await?);
     AppResult::Ok(())
+}
+
+/// Query options from the frontend
+#[derive(Deserialize, Serialize)]
+pub struct QueryOptions {
+    /// The current time 'now'.
+    pub now: Option<data::entities::Timestamp>,
+}
+
+impl QueryOptions {
+    /// Get the current time 'now' from the options
+    pub fn get_now(&self) -> platform::objects::Timestamp {
+        if let Some(now) = self.now {
+            now.into()
+        } else {
+            platform::objects::Timestamp::now()
+        }
+    }
 }
 
 /// The real app state
@@ -27,6 +46,12 @@ impl AppStateInner {
         let db = Database::new(&config).await?;
         let repo = Repository::new(db)?;
         Ok(Self { repo, config })
+    }
+
+    /// Gets the repo with options
+    pub async fn get_repo(&self) -> Result<Repository> {
+        let db = Database::new(&self.config).await?;
+        Ok(Repository::new(db)?)
     }
 }
 
@@ -57,4 +82,4 @@ impl<T> Initable<T> {
 }
 
 /// App State wrapped for use
-pub type AppState = Mutex<Initable<AppStateInner>>;
+pub type AppState = RwLock<Initable<AppStateInner>>;

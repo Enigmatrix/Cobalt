@@ -98,6 +98,18 @@ impl From<Timestamp> for i64 {
     }
 }
 
+impl From<u64> for Timestamp {
+    fn from(t: u64) -> Self {
+        Self { ticks: t }
+    }
+}
+
+impl From<i64> for Timestamp {
+    fn from(t: i64) -> Self {
+        Self { ticks: t as u64 }
+    }
+}
+
 impl ToTicks for Timestamp {
     fn to_ticks(&self) -> i64 {
         self.ticks as i64

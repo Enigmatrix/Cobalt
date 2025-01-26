@@ -6,21 +6,34 @@ use tauri::State;
 use util::error::Context;
 
 use crate::error::AppResult;
-use crate::state::{init_state, AppState, Initable};
+use crate::state::{init_state, AppState, Initable, QueryOptions};
 
 #[tauri::command]
-pub async fn get_apps(state: State<'_, AppState>) -> AppResult<HashMap<Ref<App>, infused::App>> {
-    let now = platform::objects::Timestamp::now();
-    let mut state = state.lock().await;
-    let res = state.assume_init_mut().repo.get_apps(now).await?;
+pub async fn get_apps(
+    state: State<'_, AppState>,
+    query_options: QueryOptions,
+) -> AppResult<HashMap<Ref<App>, infused::App>> {
+    let now = query_options.get_now();
+    let mut repo = {
+        let state = state.read().await;
+        state.assume_init().get_repo().await?
+    };
+    let res = repo.get_apps(now).await?;
     Ok(res)
 }
 
 #[tauri::command]
-pub async fn get_tags(state: State<'_, AppState>) -> AppResult<HashMap<Ref<Tag>, infused::Tag>> {
-    let now = platform::objects::Timestamp::now();
-    let mut state = state.lock().await;
-    let res = state.assume_init_mut().repo.get_tags(now).await?;
+pub async fn get_tags(
+    state: State<'_, AppState>,
+
+    query_options: QueryOptions,
+) -> AppResult<HashMap<Ref<Tag>, infused::Tag>> {
+    let now = query_options.get_now();
+    let mut repo = {
+        let state = state.read().await;
+        state.assume_init().get_repo().await?
+    };
+    let res = repo.get_tags(now).await?;
     Ok(res)
 }
 
@@ -28,7 +41,7 @@ pub async fn get_tags(state: State<'_, AppState>) -> AppResult<HashMap<Ref<Tag>,
 pub async fn copy_seed_db(state: State<'_, AppState>) -> AppResult<()> {
     // drop previous state - also drops the db connection
     {
-        let mut state = state.lock().await;
+        let mut state = state.write().await;
         *state = Initable::Uninit;
     }
 
@@ -42,7 +55,7 @@ pub async fn copy_seed_db(state: State<'_, AppState>) -> AppResult<()> {
 #[tauri::command]
 pub async fn update_usages_end(state: State<'_, AppState>) -> AppResult<()> {
     let now = platform::objects::Timestamp::now();
-    let mut state = state.lock().await;
+    let mut state = state.write().await;
     state
         .assume_init_mut()
         .repo
