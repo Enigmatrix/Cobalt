@@ -76,35 +76,33 @@ function AppListItem({ app }: { app: App }) {
     <NavLink
       to={`/apps/${app.id}`}
       className={cn(
-        "h-20 shadow-sm rounded-md flex overflow-auto",
+        "h-20 shadow-sm rounded-md flex items-center gap-2 p-4",
         "ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
         "disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none cursor-pointer",
         "bg-secondary text-secondary-foreground hover:bg-secondary/80"
       )}
     >
-      <div className="flex-1 flex items-center gap-2 p-4">
-        <AppIcon buffer={app.icon} className="mx-2 h-10 w-10" />
+      <AppIcon buffer={app.icon} className="mx-2 h-10 w-10 flex-shrink-0" />
 
-        <div className="flex flex-col">
-          <div className="inline-flex items-center gap-2">
-            <Text className="text-lg font-semibold max-w-72">{app.name}</Text>
-            <div className="inline-flex items-center gap-1 max-w-80">
-              {/* overflow-auto or whatever should be here */}
-              {app.tags.map((tagId) => (
-                <TagItem key={tagId} tagId={tagId} />
-              ))}
-            </div>
+      <div className="flex flex-col min-w-0">
+        <div className="inline-flex items-center gap-2">
+          <Text className="text-lg font-semibold max-w-72">{app.name}</Text>
+          <div className="inline-flex items-center gap-1 max-w-80">
+            {/* overflow-auto or whatever should be here */}
+            {app.tags.map((tagId) => (
+              <TagItem key={tagId} tagId={tagId} />
+            ))}
           </div>
-          <span className="inline-flex gap-1 items-center text-white/50 text-xs">
-            <Text className="max-w-48">{app.company}</Text>
-            {app.description && (
-              <>
-                <p>|</p>
-                <Text className="max-w-[40rem]">{app.description}</Text>
-              </>
-            )}
-          </span>
         </div>
+        <span className="inline-flex gap-1 items-center text-white/50 text-xs">
+          <Text className="max-w-48">{app.company}</Text>
+          {app.description && (
+            <>
+              <p>|</p>
+              <Text className="max-w-[40rem]">{app.description}</Text>
+            </>
+          )}
+        </span>
       </div>
     </NavLink>
   );
