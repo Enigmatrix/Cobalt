@@ -6,8 +6,12 @@ import {
   BreadcrumbPage,
   BreadcrumbList,
 } from "@/components/ui/breadcrumb";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ThemeSwitch } from "@/components/theme-switch";
+import { useTheme } from "@/components/theme-provider";
 
 export default function Settings() {
+  const { theme, setTheme } = useTheme();
   return (
     <>
       <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
@@ -22,12 +26,27 @@ export default function Settings() {
         </Breadcrumb>
       </header>
       <div className="flex flex-1 flex-col gap-4 p-4">
-        <div className="grid auto-rows-min gap-4 md:grid-cols-3">
-          <div className="aspect-video rounded-xl bg-muted/50" />
-          <div className="aspect-video rounded-xl bg-muted/50" />
-          <div className="aspect-video rounded-xl bg-muted/50" />
-        </div>
-        <div className="min-h-[100vh] flex-1 rounded-xl bg-muted/50 md:min-h-min" />
+        <Card>
+          <CardHeader>
+            <CardTitle>Appearance</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center">
+              <div>
+                <h3 className="text-lg font-semibold text-card-foreground/80">
+                  Theme
+                </h3>
+                <p className="text-sm text-card-foreground/50">
+                  Choose a theme for the app
+                </p>
+              </div>
+
+              <div className="flex-1"></div>
+
+              <ThemeSwitch value={theme} onValueChange={setTheme} />
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </>
   );
