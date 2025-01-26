@@ -1,6 +1,5 @@
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import useResizeObserver from "@react-hook/resize-observer";
-
 import { Separator } from "@/components/ui/separator";
 import {
   Breadcrumb,
@@ -147,7 +146,7 @@ function HorizontalOverflowList<T>({
       className={cn("flex flex-wrap items-center overflow-hidden", className)}
     >
       {items.map((item, index) => (
-        <div className="flex items-center">
+        <div className="flex items-center" key={index}>
           {renderItem(item)}
 
           <div
@@ -286,8 +285,8 @@ export default function Apps() {
         />
 
         <DropdownMenu>
-          <DropdownMenuTrigger>
-            <Button variant="ghost">
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon">
               <ArrowDownUp size={16} />
             </Button>
           </DropdownMenuTrigger>
