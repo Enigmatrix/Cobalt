@@ -14,7 +14,7 @@ import { dateTimeToTicks, durationToTicks } from "@/lib/time";
 import { DateTime, Duration } from "luxon";
 import { useEffect, useState } from "react";
 import _ from "lodash";
-import type { App, WithGroupedDuration } from "@/lib/entities";
+import type { App, Ref, WithGroupedDuration } from "@/lib/entities";
 import { AppUsageBarChart } from "@/components/app-usage-chart";
 
 async function copySeedDb() {
@@ -31,7 +31,9 @@ async function refreshState() {
 
 export default function Experiments() {
   const [data, setData] = useState<WithGroupedDuration<App>[]>([]);
+  const [data6, setData6] = useState<WithGroupedDuration<App>[]>([]);
   const apps = useAppState((state) => state.apps);
+  const chrome = apps[6 as unknown as Ref<App>] as App;
   useEffect(() => {
     getAppDurationsPerPeriod({
       period: durationToTicks(Duration.fromDurationLike({ day: 1 })),
@@ -40,8 +42,10 @@ export default function Experiments() {
       ),
     }).then((apps) => {
       setData(_(apps).values().flatten().value());
+      setData6(_(apps[chrome.id]).flatten().value());
     });
   }, []);
+  console.log("data", data);
   return (
     <>
       <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
@@ -71,9 +75,18 @@ export default function Experiments() {
           <div className="aspect-video rounded-xl bg-muted/50" />
           <div className="aspect-video rounded-xl bg-muted/50" />
         </div>
+
         <div className="min-h-[100vh] flex-1 rounded-xl bg-muted/50 md:min-h-min flex flex-col gap-4 p-4">
           <AppUsageBarChart
             data={data}
+            apps={apps}
+            onHover={() => console.log("")}
+          />
+        </div>
+        <div className="min-h-[100vh] flex-1 rounded-xl bg-muted/50 md:min-h-min flex flex-col gap-4 p-4">
+          <AppUsageBarChart
+            data={data6}
+            singleApp={6 as unknown as Ref<App>}
             apps={apps}
             onHover={() => console.log("")}
           />
