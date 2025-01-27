@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
-use data::db::repo::infused;
-use data::entities::{App, Ref, Tag};
+use data::db::repo::{infused, WithDuration, WithGroupedDuration};
+use data::entities::{App, Duration, Ref, Tag, Timestamp};
 use tauri::State;
 use util::error::Context;
 
@@ -25,7 +25,6 @@ pub async fn get_apps(
 #[tauri::command]
 pub async fn get_tags(
     state: State<'_, AppState>,
-
     query_options: QueryOptions,
 ) -> AppResult<HashMap<Ref<Tag>, infused::Tag>> {
     let now = query_options.get_now();
@@ -34,6 +33,39 @@ pub async fn get_tags(
         state.assume_init().get_repo().await?
     };
     let res = repo.get_tags(now).await?;
+    Ok(res)
+}
+
+#[tauri::command]
+pub async fn get_app_durations(
+    state: State<'_, AppState>,
+    _query_options: QueryOptions,
+    start: Option<Timestamp>,
+    end: Option<Timestamp>,
+) -> AppResult<HashMap<Ref<App>, WithDuration<App>>> {
+    let mut repo = {
+        let state = state.read().await;
+        state.assume_init().get_repo().await?
+    };
+    let res = repo.get_app_durations(start, end).await?;
+    Ok(res)
+}
+
+#[tauri::command]
+pub async fn get_app_durations_per_period(
+    state: State<'_, AppState>,
+    _query_options: QueryOptions,
+    start: Option<Timestamp>,
+    end: Option<Timestamp>,
+    period: Duration,
+) -> AppResult<HashMap<Ref<App>, Vec<WithGroupedDuration<App>>>> {
+    let mut repo = {
+        let state = state.read().await;
+        state.assume_init().get_repo().await?
+    };
+    let res = repo
+        .get_app_durations_per_period(start, end, period)
+        .await?;
     Ok(res)
 }
 

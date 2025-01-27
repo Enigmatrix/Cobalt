@@ -4,6 +4,17 @@ export type Color = string;
 export type Timestamp = number;
 export type Duration = number;
 
+export interface WithDuration<T> {
+  id: Ref<T>;
+  duration: Duration;
+}
+
+export interface WithGroupedDuration<T> {
+  id: Ref<T>;
+  duration: Duration;
+  group: Timestamp;
+}
+
 export type AppIdentity =
   | { Uwp: { aumid: string } }
   | { Win32: { path: string } };

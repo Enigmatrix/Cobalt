@@ -1,8 +1,9 @@
 import { invoke } from "@tauri-apps/api/core";
 import { create } from "zustand";
-import type { App, Ref, Tag } from "./entities";
+import type { App, Ref, Tag } from "@/lib/entities";
 import { DateTime } from "luxon";
-import { toTicks } from "./time";
+import { toTicks } from "@/lib/time";
+import { getApps, getTags } from "@/lib/repo";
 
 export async function initState() {
   // init rust-side state
@@ -13,9 +14,10 @@ export async function initState() {
 export async function refresh() {
   const state = useAppState.getState();
   const now = DateTime.now();
+  const options = { now: toTicks(now) };
   const [apps, tags] = await Promise.all([
-    await invoke("get_apps", { queryOptions: { now: toTicks(now) } }),
-    await invoke("get_tags", { queryOptions: { now: toTicks(now) } }),
+    getApps({ options }),
+    getTags({ options }),
   ]);
   state.setApps(apps as Record<Ref<App>, App>);
   state.setTags(tags as Record<Ref<Tag>, Tag>);

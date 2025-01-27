@@ -20,6 +20,8 @@ pub fn run() {
             state::init_state,
             repo::get_apps,
             repo::get_tags,
+            repo::get_app_durations,
+            repo::get_app_durations_per_period,
             repo::copy_seed_db,
             repo::update_usages_end
         ])
