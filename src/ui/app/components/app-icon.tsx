@@ -3,6 +3,12 @@ import { CircleHelp } from "lucide-react";
 import { useMemo } from "react";
 import { Buffer } from "buffer";
 
+export function toDataUrl(buffer?: Buffer) {
+  return buffer
+    ? "data:;base64," + Buffer.from(buffer).toString("base64")
+    : undefined;
+}
+
 export default function AppIcon({
   buffer,
   className,
@@ -10,13 +16,10 @@ export default function AppIcon({
   buffer?: Buffer;
   className?: string;
 }) {
-  const icon = useMemo(
-    () =>
-      buffer
-        ? 'url("data:;base64,' + Buffer.from(buffer).toString("base64") + '")'
-        : undefined,
-    [buffer]
-  );
+  const icon = useMemo(() => {
+    const dataUrl = toDataUrl(buffer);
+    return dataUrl ? `url(${dataUrl})` : undefined;
+  }, [buffer]);
 
   return icon ? (
     <div
