@@ -2,7 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { create } from "zustand";
 import type { App, Ref, Tag } from "@/lib/entities";
 import { DateTime } from "luxon";
-import { toTicks } from "@/lib/time";
+import { dateTimeToTicks } from "@/lib/time";
 import { getApps, getTags } from "@/lib/repo";
 
 export async function initState() {
@@ -14,7 +14,7 @@ export async function initState() {
 export async function refresh() {
   const state = useAppState.getState();
   const now = DateTime.now();
-  const options = { now: toTicks(now) };
+  const options = { now: dateTimeToTicks(now) };
   const [apps, tags] = await Promise.all([
     getApps({ options }),
     getTags({ options }),
