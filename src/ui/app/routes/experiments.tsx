@@ -8,7 +8,14 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import { invoke } from "@tauri-apps/api/core";
-import { refresh } from "@/lib/state";
+import { refresh, useAppState } from "@/lib/state";
+import { getAppDurationsPerPeriod } from "@/lib/repo";
+import { dateTimeToTicks, durationToTicks } from "@/lib/time";
+import { DateTime, Duration } from "luxon";
+import { useEffect, useState } from "react";
+import _ from "lodash";
+import type { App, WithGroupedDuration } from "@/lib/entities";
+import { AppUsageBarChart } from "@/components/app-usage-chart";
 
 async function copySeedDb() {
   await invoke("copy_seed_db");
@@ -23,6 +30,18 @@ async function refreshState() {
 }
 
 export default function Experiments() {
+  const [data, setData] = useState<WithGroupedDuration<App>[]>([]);
+  const apps = useAppState((state) => state.apps);
+  useEffect(() => {
+    getAppDurationsPerPeriod({
+      period: durationToTicks(Duration.fromDurationLike({ day: 1 })),
+      start: dateTimeToTicks(
+        DateTime.now().minus(Duration.fromObject({ week: 1 }))
+      ),
+    }).then((apps) => {
+      setData(_(apps).values().flatten().value());
+    });
+  }, []);
   return (
     <>
       <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
@@ -38,20 +57,26 @@ export default function Experiments() {
       </header>
       <div className="flex flex-1 flex-col gap-4 p-4">
         <div className="grid auto-rows-min gap-4 md:grid-cols-3">
-          <div className="aspect-video rounded-xl bg-muted/50" />
+          <div className="aspect-video rounded-xl bg-muted/50">
+            <Button onClick={copySeedDb} variant="outline">
+              Copy seed.db
+            </Button>
+            <Button onClick={updateUsagesEnd} variant="outline">
+              Set last usage to now
+            </Button>
+            <Button onClick={refreshState} variant="outline">
+              Refresh
+            </Button>
+          </div>
           <div className="aspect-video rounded-xl bg-muted/50" />
           <div className="aspect-video rounded-xl bg-muted/50" />
         </div>
         <div className="min-h-[100vh] flex-1 rounded-xl bg-muted/50 md:min-h-min flex flex-col gap-4 p-4">
-          <Button onClick={copySeedDb} variant="outline">
-            Copy seed.db
-          </Button>
-          <Button onClick={updateUsagesEnd} variant="outline">
-            Set last usage to now
-          </Button>
-          <Button onClick={refreshState} variant="outline">
-            Refresh
-          </Button>
+          <AppUsageBarChart
+            data={data}
+            apps={apps}
+            onHover={() => console.log("")}
+          />
         </div>
       </div>
     </>
