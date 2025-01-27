@@ -16,6 +16,7 @@ export const AppUsageChartTooltipContent = React.forwardRef<
       nameKey?: string;
       labelKey?: string;
       hoveredApp?: Ref<App> | null;
+      maximumApps?: number;
     }
 >(
   (
@@ -26,6 +27,7 @@ export const AppUsageChartTooltipContent = React.forwardRef<
       hideIndicator = false,
       formatter,
       hoveredApp,
+      maximumApps,
     },
     ref
   ) => {
@@ -74,7 +76,7 @@ export const AppUsageChartTooltipContent = React.forwardRef<
           </div>
         )}
         <div className="grid gap-1.5">
-          {payload.map((item, index) => {
+          {payload.slice(0, maximumApps).map((item, index) => {
             return (
               <div
                 key={item.dataKey}
@@ -109,6 +111,11 @@ export const AppUsageChartTooltipContent = React.forwardRef<
               </div>
             );
           })}
+          {maximumApps !== undefined && payload.length > maximumApps && (
+            <span className="text-muted-foreground">
+              + {payload.length - maximumApps} more
+            </span>
+          )}
         </div>
       </div>
     );

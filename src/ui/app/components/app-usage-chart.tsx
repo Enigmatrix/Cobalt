@@ -94,7 +94,11 @@ export function AppUsageBarChart({
         />
         <ChartTooltip
           content={
-            <AppUsageChartTooltipContent hoveredApp={hoveredApp} hideLabel />
+            <AppUsageChartTooltipContent
+              hoveredApp={hoveredApp}
+              maximumApps={10}
+              hideLabel
+            />
           }
         />
         {involvedApps.map((app) => (
