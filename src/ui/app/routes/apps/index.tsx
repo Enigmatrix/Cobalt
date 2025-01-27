@@ -275,10 +275,10 @@ export default function Apps() {
           </BreadcrumbList>
         </Breadcrumb>
 
-        <div className="flex-1" />
+        <div className="xl:flex-1 flex-none" />
 
         <SearchBar
-          className="max-w-80"
+          className="max-w-80 m-auto xl:m-0"
           placeholder="Search..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
