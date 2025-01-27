@@ -24,7 +24,7 @@ import AutoSizer from "react-virtualized-auto-sizer";
 import { cn } from "@/lib/utils";
 import { NavLink } from "react-router";
 import AppIcon from "@/components/app-icon";
-import { Input } from "@/components/ui/input";
+import { SearchBar } from "@/components/search-bar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -277,8 +277,8 @@ export default function Apps() {
 
         <div className="flex-1" />
 
-        <Input
-          className=" max-w-80"
+        <SearchBar
+          className="max-w-80"
           placeholder="Search..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
