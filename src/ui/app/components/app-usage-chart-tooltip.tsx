@@ -17,6 +17,7 @@ export const AppUsageChartTooltipContent = React.forwardRef<
       labelKey?: string;
       hoveredApp?: Ref<App> | null;
       maximumApps?: number;
+      singleApp?: Ref<App>;
     }
 >(
   (
@@ -28,6 +29,7 @@ export const AppUsageChartTooltipContent = React.forwardRef<
       formatter,
       hoveredApp,
       maximumApps,
+      singleApp,
     },
     ref
   ) => {
@@ -41,6 +43,34 @@ export const AppUsageChartTooltipContent = React.forwardRef<
     const totalUsage = _(payload[0]?.payload || {})
       .toPairs()
       .reduce((acc, [key, value]) => (key !== "key" ? acc + value : acc), 0);
+
+    if (singleApp !== undefined) {
+      return (
+        <div
+          ref={ref}
+          className={cn(
+            "grid min-w-[8rem] items-start gap-1.5 rounded-lg border border-border/50 bg-background px-2.5 py-1.5 text-xs shadow-xl",
+            className
+          )}
+        >
+          <div className="flex items-center gap-2 py-2 mb-1">
+            <AppIcon
+              buffer={apps[singleApp].icon}
+              className="w-6 h-6 shrink-0 ml-2 mr-1"
+            />
+            <span className="text-muted-foreground truncate max-w-52 text-base">
+              {apps[singleApp].name}
+            </span>
+            <div className="flex-1"></div>
+            <div className="flex flex-col items-center">
+              <span className=" text-sm">
+                {toHumanDuration(payload[0]?.payload[singleApp] || 0)}
+              </span>
+            </div>
+          </div>
+        </div>
+      );
+    }
 
     return (
       <div

@@ -15,6 +15,7 @@ import { AppUsageChartTooltipContent } from "@/components/app-usage-chart-toolti
 export interface AppUsageBarChartProps {
   data: WithGroupedDuration<App>[];
   apps: Record<Ref<App>, App>;
+  singleApp?: Ref<App>;
   onHover: (app: Ref<App>, duration: WithGroupedDuration<App>) => void;
 }
 
@@ -26,6 +27,7 @@ type AppUsageBarChartData = {
 export function AppUsageBarChart({
   data: unflattenedData,
   apps,
+  singleApp,
   onHover,
 }: AppUsageBarChartProps) {
   const involvedApps = useMemo(
@@ -97,6 +99,7 @@ export function AppUsageBarChart({
             <AppUsageChartTooltipContent
               hoveredApp={hoveredApp}
               maximumApps={10}
+              singleApp={singleApp}
               hideLabel
             />
           }
@@ -111,10 +114,12 @@ export function AppUsageBarChart({
             onMouseEnter={() => setHoveredApp(app)}
             onMouseLeave={() => setHoveredApp(null)}
           >
-            <LabelList
-              dataKey={() => apps[app]}
-              content={renderCustomizedLabel}
-            />
+            {singleApp === undefined && (
+              <LabelList
+                dataKey={() => apps[app]}
+                content={renderCustomizedLabel}
+              />
+            )}
           </Bar>
         ))}
       </BarChart>
