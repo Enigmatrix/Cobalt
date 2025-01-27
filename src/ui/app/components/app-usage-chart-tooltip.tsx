@@ -15,62 +15,103 @@ export const AppUsageChartTooltipContent = React.forwardRef<
       hideIndicator?: boolean;
       nameKey?: string;
       labelKey?: string;
+      hoveredApp?: Ref<App> | null;
     }
->(({ active, payload, className, hideIndicator = false, formatter }, ref) => {
-  const apps = useAppState((state) => state.apps);
+>(
+  (
+    {
+      active,
+      payload,
+      className,
+      hideIndicator = false,
+      formatter,
+      hoveredApp,
+    },
+    ref
+  ) => {
+    const apps = useAppState((state) => state.apps);
 
-  if (!active || !payload?.length) {
-    return null;
-  }
+    if (!active || !payload?.length) {
+      return null;
+    }
 
-  payload = _.orderBy(payload, "value", "desc");
+    payload = _.orderBy(payload, "value", "desc");
+    const totalUsage = _(payload[0]?.payload || {})
+      .toPairs()
+      .reduce((acc, [key, value]) => (key !== "key" ? acc + value : acc), 0);
 
-  return (
-    <div
-      ref={ref}
-      className={cn(
-        "grid min-w-[8rem] items-start gap-1.5 rounded-lg border border-border/50 bg-background px-2.5 py-1.5 text-xs shadow-xl",
-        className
-      )}
-    >
-      <div className="grid gap-1.5">
-        {payload.map((item, index) => {
-          return (
-            <div
-              key={item.dataKey}
-              className={cn(
-                "flex w-full flex-wrap items-stretch gap-2 [&>svg]:h-2.5 [&>svg]:w-2.5 [&>svg]:text-muted-foreground"
-              )}
-            >
-              {formatter && item?.value !== undefined && item.name ? (
-                formatter(item.value, item.name, item, index, item.payload)
-              ) : (
-                <>
-                  {!hideIndicator && (
-                    <AppIcon
-                      buffer={apps[item.dataKey as Ref<App>].icon}
-                      className="w-4 h-4 shrink-0"
-                    />
-                  )}
-                  <div className="flex flex-1 justify-between items-center">
-                    <div className="grid gap-1.5">
-                      <span className="text-muted-foreground truncate max-w-52">
-                        {item.name}
-                      </span>
-                    </div>
-                    {item.value && (
-                      <span className="font-mono font-medium tabular-nums text-foreground ml-2">
-                        {toHumanDuration(item.value as number)}
-                      </span>
-                    )}
-                  </div>
-                </>
-              )}
+    return (
+      <div
+        ref={ref}
+        className={cn(
+          "grid min-w-[8rem] items-start gap-1.5 rounded-lg border border-border/50 bg-background px-2.5 py-1.5 text-xs shadow-xl",
+          className
+        )}
+      >
+        {hoveredApp && payload.length > 0 && (
+          <div className="flex items-center gap-2 border-b border-secondary-foreground/50 py-2 mb-1">
+            <AppIcon
+              buffer={apps[hoveredApp].icon}
+              className="w-6 h-6 shrink-0 ml-2 mr-1"
+            />
+            <span className="text-muted-foreground truncate max-w-52 text-base">
+              {apps[hoveredApp].name}
+            </span>
+            <div className="flex-1"></div>
+            <div className="flex flex-col items-center">
+              <span className="font-semibold text-sm">
+                {toHumanDuration(payload[0]?.payload[hoveredApp] || 0)}
+              </span>
+              <span className="text-xs">/ {toHumanDuration(totalUsage)}</span>
             </div>
-          );
-        })}
+          </div>
+        )}
+        {!hoveredApp && totalUsage && (
+          <div className="border-b border-secondary-foreground/50 py-2 mb-1 flex justify-end">
+            <span className="font-semibold">
+              Total: {toHumanDuration(totalUsage)}
+            </span>
+          </div>
+        )}
+        <div className="grid gap-1.5">
+          {payload.map((item, index) => {
+            return (
+              <div
+                key={item.dataKey}
+                className={cn(
+                  "flex w-full flex-wrap items-stretch gap-2 [&>svg]:h-2.5 [&>svg]:w-2.5 [&>svg]:text-muted-foreground"
+                )}
+              >
+                {formatter && item?.value !== undefined && item.name ? (
+                  formatter(item.value, item.name, item, index, item.payload)
+                ) : (
+                  <>
+                    {!hideIndicator && (
+                      <AppIcon
+                        buffer={apps[item.dataKey as Ref<App>].icon}
+                        className="w-4 h-4 shrink-0"
+                      />
+                    )}
+                    <div className="flex flex-1 justify-between items-center">
+                      <div className="grid gap-1.5">
+                        <span className="text-muted-foreground truncate max-w-52">
+                          {item.name}
+                        </span>
+                      </div>
+                      {item.value && (
+                        <span className="font-mono font-medium tabular-nums text-foreground ml-2">
+                          {toHumanDuration(item.value as number)}
+                        </span>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
-    </div>
-  );
-});
+    );
+  }
+);
 AppUsageChartTooltipContent.displayName = "AppUsageChartTooltipContent";

@@ -1,6 +1,6 @@
 import type { App, Ref, WithGroupedDuration } from "@/lib/entities";
 import _ from "lodash";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Bar, BarChart, CartesianGrid, LabelList, XAxis } from "recharts";
 import {
   type ChartConfig,
@@ -49,6 +49,8 @@ export function AppUsageBarChart({
       .value();
   }, [unflattenedData]);
 
+  const [hoveredApp, setHoveredApp] = useState<Ref<App> | null>(null);
+
   const config = {} satisfies ChartConfig; // TODO: generate config
 
   const renderCustomizedLabel: ContentType = (props) => {
@@ -74,6 +76,7 @@ export function AppUsageBarChart({
         width={radius * 2}
         height={radius * 2}
         href={toDataUrl(app.icon)}
+        pointerEvents="none"
       />
     );
   };
@@ -89,7 +92,11 @@ export function AppUsageBarChart({
           axisLine={false}
           tickFormatter={(value) => ticksToDateTime(value).toFormat("dd MMM")}
         />
-        <ChartTooltip content={<AppUsageChartTooltipContent hideLabel />} />
+        <ChartTooltip
+          content={
+            <AppUsageChartTooltipContent hoveredApp={hoveredApp} hideLabel />
+          }
+        />
         {involvedApps.map((app) => (
           <Bar
             key={app}
@@ -97,6 +104,8 @@ export function AppUsageBarChart({
             stackId="a"
             fill={apps[app].color}
             name={apps[app].name}
+            onMouseEnter={() => setHoveredApp(app)}
+            onMouseLeave={() => setHoveredApp(null)}
           >
             <LabelList
               dataKey={() => apps[app]}
