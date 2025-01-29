@@ -1,8 +1,14 @@
 import humanizeDuration from "pretty-ms";
 import { DateTime, Duration } from "luxon";
 
-export function toHumanDuration(ticks: number): string {
-  return humanizeDuration(ticks / 10_000, { unitCount: 2 });
+export function toHumanDuration(
+  ticks: number,
+  showSymbolForZero: boolean = true,
+  symbolForZero: string = "-"
+): string {
+  return ticks === 0 && showSymbolForZero
+    ? symbolForZero
+    : humanizeDuration(ticks / 10_000, { unitCount: 2 });
 }
 
 export function dateTimeToTicks(ts: DateTime): number {
