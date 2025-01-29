@@ -19,6 +19,10 @@ export function durationToTicks(ts: Duration): number {
   return ts.toMillis() * 10_000;
 }
 
+export function ticksToDuration(ts: number): Duration {
+  return Duration.fromMillis(ts / 10_000);
+}
+
 export function ticksToDateTime(ticks: number): DateTime {
   return DateTime.fromMillis(ticks / 10_000 - 62_135_596_800_000);
 }

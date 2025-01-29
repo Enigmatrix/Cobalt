@@ -34,18 +34,20 @@ export default function Experiments() {
   const [data6, setData6] = useState<WithGroupedDuration<App>[]>([]);
   const apps = useAppState((state) => state.apps);
   const chrome = apps[6 as unknown as Ref<App>] as App;
+  const now = DateTime.now().startOf("day").plus({ day: 1, hours: 8 }); // TODO 8 hours is wrong.
+
+  const periodTicks = durationToTicks(Duration.fromDurationLike({ day: 1 }));
+  const minTicks = dateTimeToTicks(now.minus({ week: 1 }));
+  const maxTicks = dateTimeToTicks(now);
   useEffect(() => {
     getAppDurationsPerPeriod({
-      period: durationToTicks(Duration.fromDurationLike({ day: 1 })),
-      start: dateTimeToTicks(
-        DateTime.now().minus(Duration.fromObject({ week: 1 }))
-      ),
+      period: periodTicks,
+      start: minTicks,
     }).then((apps) => {
       setData(_(apps).values().flatten().value());
       setData6(_(apps[chrome.id]).flatten().value());
     });
   }, []);
-  console.log("data", data);
   return (
     <>
       <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
@@ -78,13 +80,17 @@ export default function Experiments() {
 
         <div className="min-h-[100vh] flex-1 rounded-xl bg-muted/50 md:min-h-min flex flex-col gap-4 p-4">
           <AppUsageBarChart
+            periodTicks={periodTicks}
             data={data}
             apps={apps}
+            rangeMinTicks={minTicks}
+            rangeMaxTicks={maxTicks}
             onHover={() => console.log("")}
           />
         </div>
         <div className="min-h-[100vh] flex-1 rounded-xl bg-muted/50 md:min-h-min flex flex-col gap-4 p-4">
           <AppUsageBarChart
+            periodTicks={periodTicks}
             data={data6}
             singleApp={6 as unknown as Ref<App>}
             apps={apps}
