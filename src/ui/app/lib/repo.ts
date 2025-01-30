@@ -41,8 +41,8 @@ export async function getAppDurations({
   end,
 }: {
   options?: QueryOptions;
-  start?: Timestamp;
-  end?: Timestamp;
+  start: Timestamp;
+  end: Timestamp;
 }): Promise<Record<Ref<App>, WithDuration<App>>> {
   const queryOptions = getQueryOptions(options);
   return await invoke("get_app_durations", { start, end, queryOptions });
@@ -55,8 +55,8 @@ export async function getAppDurationsPerPeriod({
   period,
 }: {
   options?: QueryOptions;
-  start?: Timestamp;
-  end?: Timestamp;
+  start: Timestamp;
+  end: Timestamp;
   period: Duration;
 }): Promise<Record<Ref<App>, WithGroupedDuration<App>[]>> {
   const queryOptions = getQueryOptions(options);

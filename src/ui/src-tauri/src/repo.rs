@@ -40,8 +40,8 @@ pub async fn get_tags(
 pub async fn get_app_durations(
     state: State<'_, AppState>,
     _query_options: QueryOptions,
-    start: Option<Timestamp>,
-    end: Option<Timestamp>,
+    start: Timestamp,
+    end: Timestamp,
 ) -> AppResult<HashMap<Ref<App>, WithDuration<App>>> {
     let mut repo = {
         let state = state.read().await;
@@ -55,8 +55,8 @@ pub async fn get_app_durations(
 pub async fn get_app_durations_per_period(
     state: State<'_, AppState>,
     _query_options: QueryOptions,
-    start: Option<Timestamp>,
-    end: Option<Timestamp>,
+    start: Timestamp,
+    end: Timestamp,
     period: Duration,
 ) -> AppResult<HashMap<Ref<App>, Vec<WithGroupedDuration<App>>>> {
     let mut repo = {
