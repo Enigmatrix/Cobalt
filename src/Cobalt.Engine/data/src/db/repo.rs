@@ -244,7 +244,7 @@ impl Repository {
             "SELECT a.id AS id,
                 CAST(MAX(u.start - p.start, 0) / p.period AS INT) * p.period + p.start AS `group`,
                 COALESCE(
-                    SUM(MIN(u.end, (CAST(MAX(u.start - p.start, 0) / p.period AS INT) + 1) * p.period + p.start)
+                    SUM(MIN(MIN(u.end, p.end), (CAST(MAX(u.start - p.start, 0) / p.period AS INT) + 1) * p.period + p.start)
                         - MAX(u.start, p.start)), 0) AS duration
             FROM apps a, (SELECT ? AS period, ? AS start, ? AS end) p
                 INNER JOIN sessions s ON a.id = s.app_id

@@ -382,6 +382,25 @@ fn durmap(durs: Vec<(Ref<App>, i64)>) -> HashMap<Ref<App>, WithDuration<App>> {
         .collect()
 }
 
+fn durmapperiod(
+    durs: Vec<(Ref<App>, Vec<(i64, i64)>)>,
+) -> HashMap<Ref<App>, Vec<WithGroupedDuration<App>>> {
+    durs.into_iter()
+        .map(|(id, durs)| {
+            (
+                id.clone(),
+                durs.into_iter()
+                    .map(|(group, duration)| WithGroupedDuration {
+                        id: id.clone(),
+                        group,
+                        duration,
+                    })
+                    .collect(),
+            )
+        })
+        .collect()
+}
+
 #[tokio::test]
 async fn get_app_durations() -> Result<()> {
     let mut db = test_db().await?;
@@ -475,6 +494,128 @@ async fn get_app_durations() -> Result<()> {
     let app_durations = repo.get_app_durations(100, 150).await?;
     assert_eq!(
         durmap(vec![(app1.clone(), 50), (app2.clone(), 0)]),
+        app_durations
+    );
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn get_app_durations_per_period() -> Result<()> {
+    let mut db = test_db().await?;
+
+    let app1 = arrange::app(
+        &mut db,
+        App {
+            id: Ref::new(1),
+            name: "name".to_string(),
+            description: "desc".to_string(),
+            company: "comp".to_string(),
+            color: "red".to_string(),
+            identity: AppIdentity::Win32 {
+                path: "path1".to_string(),
+            },
+            icon: None,
+        },
+    )
+    .await?
+    .id;
+
+    let app2 = arrange::app(
+        &mut db,
+        App {
+            id: Ref::new(2),
+            name: "name".to_string(),
+            description: "desc".to_string(),
+            company: "comp".to_string(),
+            color: "red".to_string(),
+            identity: AppIdentity::Win32 {
+                path: "path2".to_string(),
+            },
+            icon: None,
+        },
+    )
+    .await?
+    .id;
+
+    usages(&mut db, app1.clone(), vec![(10, 110)]).await?;
+
+    let mut repo = Repository::new(db)?;
+
+    // test intersections + no usage found for app2
+
+    let app_durations = repo.get_app_durations_per_period(0, 200, 150).await?;
+    assert_eq!(
+        durmapperiod(vec![(app1.clone(), vec![(0, 100)])]),
+        app_durations
+    );
+
+    let app_durations = repo.get_app_durations_per_period(0, 100, 100).await?;
+    assert_eq!(
+        durmapperiod(vec![(app1.clone(), vec![(0, 90)])]),
+        app_durations
+    );
+
+    let app_durations = repo.get_app_durations_per_period(0, 50, 100).await?;
+    assert_eq!(
+        durmapperiod(vec![(app1.clone(), vec![(0, 40)])]),
+        app_durations
+    );
+
+    let app_durations = repo.get_app_durations_per_period(100, 200, 100).await?;
+    assert_eq!(
+        durmapperiod(vec![(app1.clone(), vec![(100, 10)])]),
+        app_durations
+    );
+
+    let app_durations = repo.get_app_durations_per_period(50, 250, 100).await?;
+    assert_eq!(
+        durmapperiod(vec![(app1.clone(), vec![(50, 60)])]),
+        app_durations
+    );
+
+    let app_durations = repo.get_app_durations_per_period(-250, 50, 200).await?;
+    assert_eq!(
+        durmapperiod(vec![(app1.clone(), vec![(-50, 40)])]),
+        app_durations
+    );
+
+    // add usage for app2 which is out of range. rerun the same tests.
+    usages(&mut repo.db, app2.clone(), vec![(400, 500)]).await?;
+
+    let app_durations = repo.get_app_durations_per_period(0, 200, 150).await?;
+    assert_eq!(
+        durmapperiod(vec![(app1.clone(), vec![(0, 100)])]),
+        app_durations
+    );
+
+    let app_durations = repo.get_app_durations_per_period(0, 100, 100).await?;
+    assert_eq!(
+        durmapperiod(vec![(app1.clone(), vec![(0, 90)])]),
+        app_durations
+    );
+
+    let app_durations = repo.get_app_durations_per_period(0, 50, 100).await?;
+    assert_eq!(
+        durmapperiod(vec![(app1.clone(), vec![(0, 40)])]),
+        app_durations
+    );
+
+    let app_durations = repo.get_app_durations_per_period(100, 200, 100).await?;
+    assert_eq!(
+        durmapperiod(vec![(app1.clone(), vec![(100, 10)])]),
+        app_durations
+    );
+
+    let app_durations = repo.get_app_durations_per_period(50, 250, 100).await?;
+    assert_eq!(
+        durmapperiod(vec![(app1.clone(), vec![(50, 60)])]),
+        app_durations
+    );
+
+    let app_durations = repo.get_app_durations_per_period(-250, 50, 200).await?;
+    assert_eq!(
+        durmapperiod(vec![(app1.clone(), vec![(-50, 40)])]),
         app_durations
     );
 
