@@ -228,8 +228,6 @@ impl Repository {
             .collect())
     }
 
-    // TODO test these
-
     /// Gets all [App]s and its total usage duration in a start-end range,
     /// grouped per period. Assumes start <= end, and that start and end are
     /// aligned in multiples of period.

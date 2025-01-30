@@ -501,7 +501,7 @@ async fn get_app_durations() -> Result<()> {
 }
 
 #[tokio::test]
-async fn get_app_durations_per_period() -> Result<()> {
+async fn get_app_durations_per_period_singular_ts_test() -> Result<()> {
     let mut db = test_db().await?;
 
     let app1 = arrange::app(
@@ -619,5 +619,58 @@ async fn get_app_durations_per_period() -> Result<()> {
         app_durations
     );
 
+    // test multiple groupings per usage period
+
+    let app_durations = repo.get_app_durations_per_period(10, 50, 10).await?;
+    assert_eq!(
+        durmapperiod(vec![(
+            app1.clone(),
+            vec![(10, 10), (20, 10), (30, 10), (40, 10)]
+        )]),
+        app_durations
+    );
+
+    // misaligned end
+
+    let app_durations = repo.get_app_durations_per_period(10, 49, 10).await?;
+    assert_eq!(
+        durmapperiod(vec![(
+            app1.clone(),
+            vec![(10, 10), (20, 10), (30, 10), (40, 9)]
+        )]),
+        app_durations
+    );
+
+    let app_durations = repo.get_app_durations_per_period(10, 51, 10).await?;
+    assert_eq!(
+        durmapperiod(vec![(
+            app1.clone(),
+            vec![(10, 10), (20, 10), (30, 10), (40, 10), (50, 1)]
+        )]),
+        app_durations
+    );
+
+    // misaligned start
+
+    let app_durations = repo.get_app_durations_per_period(9, 50, 10).await?;
+    assert_eq!(
+        durmapperiod(vec![(
+            app1.clone(),
+            vec![(9, 9), (19, 10), (29, 10), (39, 10), (49, 1)]
+        )]),
+        app_durations
+    );
+
+    let app_durations = repo.get_app_durations_per_period(11, 50, 10).await?;
+    assert_eq!(
+        durmapperiod(vec![(
+            app1.clone(),
+            vec![(11, 10), (21, 10), (31, 10), (41, 9)]
+        )]),
+        app_durations
+    );
+
     Ok(())
 }
+
+// TODO multiple ts test
