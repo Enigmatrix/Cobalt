@@ -529,6 +529,30 @@ pub mod arrange {
     pub async fn app(db: &mut Database, mut app: App) -> Result<App> {
         app.id = insert_app_raw(
             db,
+            true,
+            false,
+            &app.name,
+            &app.description,
+            &app.company,
+            &app.color,
+            if let AppIdentity::Win32 { .. } = app.identity {
+                1
+            } else {
+                0
+            },
+            match &app.identity {
+                AppIdentity::Win32 { path } => path,
+                AppIdentity::Uwp { aumid } => aumid,
+            },
+            app.icon.clone(),
+        )
+        .await?;
+        Ok(app)
+    }
+
+    pub async fn app_uninit(db: &mut Database, mut app: App) -> Result<App> {
+        app.id = insert_app_raw(
+            db,
             false,
             false,
             &app.name,

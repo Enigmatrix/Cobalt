@@ -74,6 +74,22 @@ async fn get_apps() -> Result<()> {
     )
     .await?;
 
+    arrange::app_uninit(
+        &mut db,
+        App {
+            id: Ref::new(5),
+            name: "name".to_string(),
+            description: "desc".to_string(),
+            company: "comp".to_string(),
+            color: "red".to_string(),
+            identity: AppIdentity::Win32 {
+                path: "path5".to_string(),
+            },
+            icon: None,
+        },
+    )
+    .await?;
+
     arrange::tag(
         &mut db,
         Tag {
@@ -122,6 +138,8 @@ async fn get_apps() -> Result<()> {
     arrange::app_tags(&mut db, Ref::new(3), Ref::new(3)).await?;
 
     arrange::app_tags(&mut db, Ref::new(4), Ref::new(4)).await?;
+
+    arrange::app_tags(&mut db, Ref::new(5), Ref::new(4)).await?;
 
     let mut repo = Repository::new(db)?;
     let apps = repo
@@ -218,6 +236,38 @@ async fn get_tags() -> Result<()> {
     )
     .await?;
 
+    arrange::app(
+        &mut db,
+        App {
+            id: Ref::new(5),
+            name: "name".to_string(),
+            description: "desc".to_string(),
+            company: "comp".to_string(),
+            color: "red".to_string(),
+            identity: AppIdentity::Win32 {
+                path: "path5".to_string(),
+            },
+            icon: None,
+        },
+    )
+    .await?;
+
+    arrange::app_uninit(
+        &mut db,
+        App {
+            id: Ref::new(6),
+            name: "name".to_string(),
+            description: "desc".to_string(),
+            company: "comp".to_string(),
+            color: "red".to_string(),
+            identity: AppIdentity::Win32 {
+                path: "path6".to_string(),
+            },
+            icon: None,
+        },
+    )
+    .await?;
+
     arrange::tag(
         &mut db,
         Tag {
@@ -261,6 +311,7 @@ async fn get_tags() -> Result<()> {
     arrange::app_tags(&mut db, Ref::new(1), Ref::new(1)).await?;
     arrange::app_tags(&mut db, Ref::new(2), Ref::new(1)).await?;
     arrange::app_tags(&mut db, Ref::new(3), Ref::new(1)).await?;
+    arrange::app_tags(&mut db, Ref::new(6), Ref::new(1)).await?;
 
     arrange::app_tags(&mut db, Ref::new(1), Ref::new(3)).await?;
     arrange::app_tags(&mut db, Ref::new(3), Ref::new(3)).await?;
@@ -283,7 +334,7 @@ async fn get_tags() -> Result<()> {
     assert_eq!(
         from_db,
         vec![
-            (1, vec![1, 2, 3]),
+            (1, vec![1, 2, 3, 6]),
             (2, vec![]),
             (3, vec![1, 3]),
             (4, vec![4]),

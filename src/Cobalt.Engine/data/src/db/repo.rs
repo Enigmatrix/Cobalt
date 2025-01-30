@@ -128,7 +128,6 @@ impl Repository {
         // significantly affect the performance of the application for SQLite
         // compared to other DB formats.
 
-        // TODO should we filter by `initialized`?
         let apps: Vec<infused::App> = query_as(&format!(
             "WITH
                 usage_daily(id, dur) AS ({APP_DUR}),
@@ -143,6 +142,7 @@ impl Repository {
                 LEFT JOIN usage_week  w ON a.id = w.id
                 LEFT JOIN usage_month m ON a.id = m.id
                 LEFT JOIN _app_tags at ON a.id = at.app_id
+            WHERE a.initialized = 1
             GROUP BY a.id"
         ))
         .bind(ts.day_start().to_ticks())
