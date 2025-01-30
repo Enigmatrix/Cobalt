@@ -145,11 +145,11 @@ impl Repository {
                 LEFT JOIN _app_tags at ON a.id = at.app_id
             GROUP BY a.id"
         ))
-        .bind(ts.day_start().to_ticks() as i64)
+        .bind(ts.day_start().to_ticks())
         .bind(i64::MAX)
-        .bind(ts.week_start().to_ticks() as i64)
+        .bind(ts.week_start().to_ticks())
         .bind(i64::MAX)
-        .bind(ts.month_start().to_ticks() as i64)
+        .bind(ts.month_start().to_ticks())
         .bind(i64::MAX)
         .fetch_all(self.db.executor())
         .await?;
@@ -183,11 +183,11 @@ impl Repository {
                 LEFT JOIN _app_tags at ON t.id = at.tag_id
             GROUP BY t.id"
         ))
-        .bind(ts.day_start().to_ticks() as i64)
+        .bind(ts.day_start().to_ticks())
         .bind(i64::MAX)
-        .bind(ts.week_start().to_ticks() as i64)
+        .bind(ts.week_start().to_ticks())
         .bind(i64::MAX)
-        .bind(ts.month_start().to_ticks() as i64)
+        .bind(ts.month_start().to_ticks())
         .bind(i64::MAX)
         .fetch_all(self.db.executor())
         .await?;

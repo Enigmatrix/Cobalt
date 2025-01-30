@@ -1,6 +1,6 @@
 /// Convert the time to ticks.
 pub trait ToTicks {
-    fn to_ticks(&self) -> u64;
+    fn to_ticks(&self) -> i64;
 }
 
 /// Some time system that can be used to get the start of the day, week, month, etc.

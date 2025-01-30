@@ -493,15 +493,15 @@ async fn insert_reminder_event() -> Result<()> {
 }
 
 pub struct Times {
-    pub day_start: u64,
-    pub week_start: u64,
-    pub month_start: u64,
+    pub day_start: i64,
+    pub week_start: i64,
+    pub month_start: i64,
 }
 
-pub struct Tick(u64);
+pub struct Tick(i64);
 
 impl ToTicks for Tick {
-    fn to_ticks(&self) -> u64 {
+    fn to_ticks(&self) -> i64 {
         self.0
     }
 }
