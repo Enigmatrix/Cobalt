@@ -244,15 +244,15 @@ impl Repository {
         // TODO actual named bindings please!
         let app_durs = query_as(
             "SELECT a.id AS id,
-                CAST(u.start / p.period AS INT) * p.period AS `group`,
+                CAST(MAX(u.start - p.start, 0) / p.period AS INT) * p.period + p.start AS `group`,
                 COALESCE(
-                    SUM(MIN(u.end, (CAST(u.start / p.period AS INT) + 1) * p.period)
+                    SUM(MIN(u.end, (CAST(MAX(u.start - p.start, 0) / p.period AS INT) + 1) * p.period + p.start)
                         - MAX(u.start, p.start)), 0) AS duration
             FROM apps a, (SELECT ? AS period, ? AS start, ? AS end) p
             INNER JOIN sessions s ON a.id = s.app_id
             INNER JOIN usages u ON s.id = u.session_id
             WHERE u.end > p.start AND u.start <= p.end
-            GROUP BY CAST(u.start / p.period AS INT), a.id",
+            GROUP BY CAST((u.start - p.start) / p.period AS INT), a.id",
         )
         .bind(period)
         .bind(start)
