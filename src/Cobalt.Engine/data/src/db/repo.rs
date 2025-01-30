@@ -8,20 +8,20 @@ use super::*;
 
 /// Collection of methods to do large, complicated queries against apps etc.
 pub struct Repository {
-    db: Database,
+    pub(crate) db: Database,
 }
 
-#[derive(FromRow, Serialize)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, FromRow, Serialize)]
 pub struct WithDuration<T: Table> {
-    id: Ref<T>,
-    duration: crate::table::Duration,
+    pub id: Ref<T>,
+    pub duration: crate::table::Duration,
 }
 
-#[derive(FromRow, Serialize)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, FromRow, Serialize)]
 pub struct WithGroupedDuration<T: Table> {
-    id: Ref<T>,
-    group: crate::table::Timestamp,
-    duration: crate::table::Duration,
+    pub id: Ref<T>,
+    pub group: crate::table::Timestamp,
+    pub duration: crate::table::Duration,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize)]
