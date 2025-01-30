@@ -5,6 +5,7 @@ use util::future as tokio;
 
 use super::tests::*;
 use super::*;
+use crate::db::tests::arrange::*;
 
 #[tokio::test]
 async fn get_apps() -> Result<()> {
@@ -344,5 +345,138 @@ async fn get_tags() -> Result<()> {
         .map(|(k, v)| (Ref::new(k), RefVec(v.into_iter().map(Ref::new).collect())))
         .collect()
     );
+    Ok(())
+}
+
+// Inserts start-end usages into the database as single sessions
+async fn usages(db: &mut Database, app_id: Ref<App>, usages: Vec<(i64, i64)>) -> Result<()> {
+    for (start, end) in usages {
+        let sid = session(
+            db,
+            Session {
+                id: Ref::new(0),
+                app_id: app_id.clone(),
+                title: "".to_string(),
+            },
+        )
+        .await?
+        .id;
+
+        usage(
+            db,
+            Usage {
+                id: Ref::new(0),
+                session_id: sid,
+                start,
+                end,
+            },
+        )
+        .await?;
+    }
+    Ok(())
+}
+
+fn durmap(durs: Vec<(Ref<App>, i64)>) -> HashMap<Ref<App>, WithDuration<App>> {
+    durs.into_iter()
+        .map(|(id, duration)| (id.clone(), WithDuration { id, duration }))
+        .collect()
+}
+
+#[tokio::test]
+async fn get_app_durations() -> Result<()> {
+    let mut db = test_db().await?;
+
+    let app1 = arrange::app(
+        &mut db,
+        App {
+            id: Ref::new(1),
+            name: "name".to_string(),
+            description: "desc".to_string(),
+            company: "comp".to_string(),
+            color: "red".to_string(),
+            identity: AppIdentity::Win32 {
+                path: "path1".to_string(),
+            },
+            icon: None,
+        },
+    )
+    .await?
+    .id;
+
+    let app2 = arrange::app(
+        &mut db,
+        App {
+            id: Ref::new(2),
+            name: "name".to_string(),
+            description: "desc".to_string(),
+            company: "comp".to_string(),
+            color: "red".to_string(),
+            identity: AppIdentity::Win32 {
+                path: "path2".to_string(),
+            },
+            icon: None,
+        },
+    )
+    .await?
+    .id;
+
+    usages(&mut db, app1.clone(), vec![(10, 110)]).await?;
+
+    let mut repo = Repository::new(db)?;
+
+    // test intersections + no usage found for app
+
+    let app_durations = repo.get_app_durations(0, 120).await?;
+    assert_eq!(
+        durmap(vec![(app1.clone(), 100), (app2.clone(), 0)]),
+        app_durations
+    );
+
+    let app_durations = repo.get_app_durations(20, 120).await?;
+    assert_eq!(
+        durmap(vec![(app1.clone(), 90), (app2.clone(), 0)]),
+        app_durations
+    );
+
+    let app_durations = repo.get_app_durations(0, 90).await?;
+    assert_eq!(
+        durmap(vec![(app1.clone(), 80), (app2.clone(), 0)]),
+        app_durations
+    );
+
+    // test multiple
+
+    usages(
+        &mut repo.db,
+        app1.clone(),
+        vec![(110, 130), (130, 180), (220, 300)],
+    )
+    .await?;
+    usages(&mut repo.db, app2.clone(), vec![(180, 220)]).await?;
+
+    let app_durations = repo.get_app_durations(0, 300).await?;
+    assert_eq!(
+        durmap(vec![(app1.clone(), 250), (app2.clone(), 40)]),
+        app_durations
+    );
+
+    let app_durations = repo.get_app_durations(10, 301).await?;
+    assert_eq!(
+        durmap(vec![(app1.clone(), 250), (app2.clone(), 40)]),
+        app_durations
+    );
+
+    let app_durations = repo.get_app_durations(100, 200).await?;
+    assert_eq!(
+        durmap(vec![(app1.clone(), 80), (app2.clone(), 20)]),
+        app_durations
+    );
+
+    let app_durations = repo.get_app_durations(100, 150).await?;
+    assert_eq!(
+        durmap(vec![(app1.clone(), 50), (app2.clone(), 0)]),
+        app_durations
+    );
+
     Ok(())
 }

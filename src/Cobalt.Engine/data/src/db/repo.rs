@@ -200,8 +200,6 @@ impl Repository {
         Ok(tags)
     }
 
-    // TODO test these
-
     /// Gets all [App]s and its total usage duration in a start-end range.
     /// Assumes start <= end.
     pub async fn get_app_durations(
@@ -209,16 +207,16 @@ impl Repository {
         start: Timestamp,
         end: Timestamp,
     ) -> Result<HashMap<Ref<App>, WithDuration<App>>> {
+        // yes, we need to do this WITH expression and COALESCE
+        // once more so that all apps are present in the result.
+
         // TODO actual named bindings please!
-        let app_durs = query_as(
-            "SELECT a.id AS id,
-                COALESCE(SUM(MIN(u.end, p.end) - MAX(u.start, p.start)), 0) AS duration
-            FROM apps a, (SELECT ? AS start, ? AS end) p
-            INNER JOIN sessions s ON a.id = s.app_id
-            INNER JOIN usages u ON s.id = u.session_id
-            WHERE u.end > p.start AND u.start <= p.end
-            GROUP BY a.id",
-        )
+        let app_durs = query_as(&format!(
+            "WITH appdur(id, dur) AS ({APP_DUR})
+            SELECT a.*, COALESCE(d.dur, 0) AS duration
+            FROM apps a
+                LEFT JOIN appdur d ON a.id = d.id"
+        ))
         .bind(start)
         .bind(end)
         .fetch_all(self.db.executor())
@@ -249,9 +247,9 @@ impl Repository {
                     SUM(MIN(u.end, (CAST(MAX(u.start - p.start, 0) / p.period AS INT) + 1) * p.period + p.start)
                         - MAX(u.start, p.start)), 0) AS duration
             FROM apps a, (SELECT ? AS period, ? AS start, ? AS end) p
-            INNER JOIN sessions s ON a.id = s.app_id
-            INNER JOIN usages u ON s.id = u.session_id
-            WHERE u.end > p.start AND u.start <= p.end
+                INNER JOIN sessions s ON a.id = s.app_id
+                INNER JOIN usages u ON s.id = u.session_id
+                WHERE u.end > p.start AND u.start <= p.end
             GROUP BY CAST((u.start - p.start) / p.period AS INT), a.id",
         )
         .bind(period)
