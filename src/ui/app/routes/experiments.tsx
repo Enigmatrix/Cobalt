@@ -34,20 +34,22 @@ export default function Experiments() {
   const [data6, setData6] = useState<WithGroupedDuration<App>[]>([]);
   const apps = useAppState((state) => state.apps);
   const chrome = apps[6 as unknown as Ref<App>] as App;
-  const now = DateTime.now().startOf("day").plus({ day: 1, hours: 8 }); // TODO 8 hours is wrong.
+  const now = DateTime.now().startOf("day").plus({ day: 1 });
 
   const periodTicks = durationToTicks(Duration.fromDurationLike({ day: 1 }));
   const minTicks = dateTimeToTicks(now.minus({ week: 1 }));
   const maxTicks = dateTimeToTicks(now);
+  console.log('minTicks', minTicks, 'maxTicks', maxTicks)
   useEffect(() => {
     getAppDurationsPerPeriod({
       period: periodTicks,
       start: minTicks,
+      end: maxTicks,
     }).then((apps) => {
       setData(_(apps).values().flatten().value());
       setData6(_(apps[chrome.id]).flatten().value());
     });
-  }, []);
+  }, [periodTicks, minTicks, maxTicks]);
   return (
     <>
       <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
