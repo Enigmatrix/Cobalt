@@ -142,6 +142,7 @@ async fn get_apps() -> Result<()> {
     arrange::app_tags(&mut db, Ref::new(5), Ref::new(4)).await?;
 
     let mut repo = Repository::new(db)?;
+    // TODO test: durations for these
     let apps = repo
         .get_apps(Times {
             day_start: 0,

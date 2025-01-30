@@ -6,7 +6,7 @@ use serde::Serialize;
 
 use super::*;
 
-/// TODO
+/// Collection of methods to do large, complicated queries against apps etc.
 pub struct Repository {
     db: Database,
 }
