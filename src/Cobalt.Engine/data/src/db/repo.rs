@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::i64;
 use std::ops::Deref;
 use std::str::FromStr;
 
@@ -207,12 +206,9 @@ impl Repository {
     /// Assumes start <= end.
     pub async fn get_app_durations(
         &mut self,
-        start: Option<Timestamp>,
-        end: Option<Timestamp>,
+        start: Timestamp,
+        end: Timestamp,
     ) -> Result<HashMap<Ref<App>, WithDuration<App>>> {
-        let start = start.unwrap_or(0);
-        let end = end.unwrap_or(i64::MAX);
-
         // TODO actual named bindings please!
         let app_durs = query_as(
             "SELECT a.id AS id,
@@ -241,13 +237,10 @@ impl Repository {
     /// aligned in multiples of period.
     pub async fn get_app_durations_per_period(
         &mut self,
-        start: Option<Timestamp>,
-        end: Option<Timestamp>,
+        start: Timestamp,
+        end: Timestamp,
         period: crate::table::Duration,
     ) -> Result<HashMap<Ref<App>, Vec<WithGroupedDuration<App>>>> {
-        let start = start.unwrap_or(0);
-        let end = end.unwrap_or(i64::MAX);
-
         // TODO actual named bindings please!
         let app_durs = query_as(
             "SELECT a.id AS id,
@@ -270,9 +263,7 @@ impl Repository {
         Ok(app_durs.into_iter().fold(
             HashMap::new(),
             |mut acc, app_dur: WithGroupedDuration<App>| {
-                acc.entry(app_dur.id.clone())
-                    .or_insert_with(Vec::new)
-                    .push(app_dur);
+                acc.entry(app_dur.id.clone()).or_default().push(app_dur);
                 acc
             },
         ))
