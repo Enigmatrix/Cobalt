@@ -673,4 +673,84 @@ async fn get_app_durations_per_period_singular_ts_test() -> Result<()> {
     Ok(())
 }
 
-// TODO multiple ts test
+#[tokio::test]
+async fn get_app_durations_per_period_multiple_ts_test() -> Result<()> {
+    let mut db = test_db().await?;
+
+    let app1 = arrange::app(
+        &mut db,
+        App {
+            id: Ref::new(1),
+            name: "name".to_string(),
+            description: "desc".to_string(),
+            company: "comp".to_string(),
+            color: "red".to_string(),
+            identity: AppIdentity::Win32 {
+                path: "path1".to_string(),
+            },
+            icon: None,
+        },
+    )
+    .await?
+    .id;
+
+    let app2 = arrange::app(
+        &mut db,
+        App {
+            id: Ref::new(2),
+            name: "name".to_string(),
+            description: "desc".to_string(),
+            company: "comp".to_string(),
+            color: "red".to_string(),
+            identity: AppIdentity::Win32 {
+                path: "path2".to_string(),
+            },
+            icon: None,
+        },
+    )
+    .await?
+    .id;
+
+    usages(
+        &mut db,
+        app1.clone(),
+        vec![(10, 110), (130, 200), (220, 240), (240, 1000)],
+    )
+    .await?;
+    usages(&mut db, app2.clone(), vec![(110, 130), (200, 220)]).await?;
+
+    let mut repo = Repository::new(db)?;
+
+    let app_durations = repo.get_app_durations_per_period(0, 300, 50).await?;
+    assert_eq!(
+        durmapperiod(vec![
+            (
+                app1.clone(),
+                vec![
+                    (0, 40),
+                    (50, 50),
+                    (100, 30),
+                    (150, 50),
+                    (200, 30),
+                    (250, 50)
+                ]
+            ),
+            (app2.clone(), vec![(100, 20), (200, 20)])
+        ]),
+        app_durations
+    );
+
+    let app_durations = repo.get_app_durations_per_period(10, 500, 100).await?;
+    assert_eq!(
+        durmapperiod(vec![
+            (
+                app1.clone(),
+                vec![(10, 100), (110, 70), (210, 90), (310, 100), (410, 90)]
+            ),
+            (app2.clone(), vec![(110, 30), (210, 10)])
+        ]),
+        app_durations
+    );
+
+    Ok(())
+}

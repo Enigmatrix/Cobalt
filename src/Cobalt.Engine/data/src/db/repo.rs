@@ -210,7 +210,6 @@ impl Repository {
         // yes, we need to do this WITH expression and COALESCE
         // once more so that all apps are present in the result.
 
-        // TODO actual named bindings please!
         let app_durs = query_as(&format!(
             "WITH appdur(id, dur) AS ({APP_DUR})
             SELECT a.*, COALESCE(d.dur, 0) AS duration
@@ -237,18 +236,38 @@ impl Repository {
         end: Timestamp,
         period: crate::table::Duration,
     ) -> Result<HashMap<Ref<App>, Vec<WithGroupedDuration<App>>>> {
-        // TODO actual named bindings please!
+        // This expression is surprisingly slow compared to its previous
+        // iteration (tho more correct ofc). Fix it later.
         let app_durs = query_as(
-            "SELECT a.id AS id,
-                CAST(MAX(u.start - p.start, 0) / p.period AS INT) * p.period + p.start AS `group`,
-                COALESCE(
-                    SUM(MIN(MIN(u.end, p.end), (CAST(MAX(u.start - p.start, 0) / p.period AS INT) + 1) * p.period + p.start)
-                        - MAX(u.start, p.start)), 0) AS duration
-            FROM apps a, (SELECT ? AS period, ? AS start, ? AS end) p
+            "WITH RECURSIVE
+            params(period, start, end) AS (SELECT ?, ?, ?),
+            period_intervals AS (
+                SELECT a.id AS id,
+                    p.start + (p.period * CAST((u.start - p.start) / p.period AS INT)) AS period_start,
+                    p.start + (p.period * (CAST((u.start - p.start) / p.period AS INT) + 1)) AS period_end,
+                    u.start AS usage_start,
+                    MIN(u.end, p.end) AS usage_end
+                FROM apps a, params p
                 INNER JOIN sessions s ON a.id = s.app_id
                 INNER JOIN usages u ON s.id = u.session_id
                 WHERE u.end > p.start AND u.start <= p.end
-            GROUP BY CAST((u.start - p.start) / p.period AS INT), a.id",
+
+                UNION ALL
+
+                SELECT id,
+                    period_start + p.period AS period_start,
+                    period_end + p.period AS period_end,
+                    usage_start,
+                    usage_end
+                FROM period_intervals, params p
+                WHERE period_start + p.period < MIN(usage_end, p.end)
+            )
+
+            SELECT id,
+                period_start AS `group`,
+                SUM(MIN(period_end, usage_end) - MAX(period_start, usage_start)) AS duration
+            FROM period_intervals
+            GROUP BY id, period_start;",
         )
         .bind(period)
         .bind(start)
