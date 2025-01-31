@@ -1,0 +1,85 @@
+use data::db::repo::Repository;
+use data::db::Database;
+use serde::{Deserialize, Serialize};
+use tauri::async_runtime::RwLock;
+use util::config::{get_config, Config};
+use util::error::*;
+
+use crate::error::*;
+
+#[tauri::command]
+/// Initiailize the app state. Should only be called once
+pub async fn init_state(state: tauri::State<'_, AppState>) -> AppResult<()> {
+    let mut state = state.write().await;
+    *state = Initable::Init(AppStateInner::new().await?);
+    AppResult::Ok(())
+}
+
+/// Query options from the frontend
+#[derive(Deserialize, Serialize)]
+pub struct QueryOptions {
+    /// The current time 'now'.
+    pub now: Option<data::entities::Timestamp>,
+}
+
+impl QueryOptions {
+    /// Get the current time 'now' from the options
+    pub fn get_now(&self) -> platform::objects::Timestamp {
+        if let Some(now) = self.now {
+            now.into()
+        } else {
+            platform::objects::Timestamp::now()
+        }
+    }
+}
+
+/// The real app state
+pub struct AppStateInner {
+    pub repo: Repository,
+    pub config: Config,
+}
+
+impl AppStateInner {
+    /// Create a new app state
+    pub async fn new() -> Result<Self> {
+        let config = get_config()?;
+        let db = Database::new(&config).await?;
+        let repo = Repository::new(db)?;
+        Ok(Self { repo, config })
+    }
+
+    /// Gets the repo with options
+    pub async fn get_repo(&self) -> Result<Repository> {
+        let db = Database::new(&self.config).await?;
+        Ok(Repository::new(db)?)
+    }
+}
+
+#[derive(Default)]
+/// Represents data that be in Uninit or Init state
+pub enum Initable<T> {
+    #[default]
+    Uninit,
+    Init(T),
+}
+
+impl<T> Initable<T> {
+    /// Assume the data inside is already initialized
+    pub fn assume_init(&self) -> &T {
+        match self {
+            Initable::Init(inner) => inner,
+            Initable::Uninit => panic!("Uninitialized state accessed"),
+        }
+    }
+
+    /// Assume the data inside is already initialized
+    pub fn assume_init_mut(&mut self) -> &mut T {
+        match self {
+            Initable::Init(inner) => inner,
+            Initable::Uninit => panic!("Uninitialized state accessed"),
+        }
+    }
+}
+
+/// App State wrapped for use
+pub type AppState = RwLock<Initable<AppStateInner>>;

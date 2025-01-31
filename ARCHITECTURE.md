@@ -19,7 +19,7 @@ graph LR
     end
 
     subgraph Cobalt
-        UI <--> ViewModels --> ViewerData[Data]
+        UI <--> Tauri --> ViewerData[Data]
     end
 
     Db[(Database)]

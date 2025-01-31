@@ -1,5 +1,4 @@
 [workspace]
 resolver = "2"
-members = [
-    "src/Cobalt.Engine/*"
-]
+members = ["src/*"]
+exclude = ["src/ui"]
