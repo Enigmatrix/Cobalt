@@ -39,7 +39,7 @@ function CardUsage({
 
 export default function App({ params }: Route.ComponentProps) {
   const id = +params.id;
-  const app = useAppState((state) => state.apps[id as Ref<App>]);
+  const app = useAppState((state) => state.apps[id as Ref<App>])!;
   return (
     <>
       <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">

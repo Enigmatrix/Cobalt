@@ -8,7 +8,7 @@ import {
   BreadcrumbList,
 } from "@/components/ui/breadcrumb";
 import { useAppState } from "@/lib/state";
-import type { App, Ref, Tag } from "@/lib/entities";
+import type { App, Tag } from "@/lib/entities";
 import {
   memo,
   useLayoutEffect,
@@ -46,9 +46,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-function TagItem({ tagId }: { tagId: Ref<Tag> }) {
-  const tag = useAppState((state) => state.tags[tagId]); // TODO check if this even works
-
+function TagItem({ tag }: { tag: Tag }) {
   return (
     <Badge
       variant="outline"
@@ -174,6 +172,14 @@ function HorizontalOverflowList<T>({
 }
 
 function AppListItem({ app }: { app: App }) {
+  const allTags = useAppState((state) => state.tags);
+  const tags = useMemo(
+    () =>
+      app.tags
+        .map((tagId) => allTags[tagId])
+        .filter((tag) => tag !== undefined), // filter stale tags
+    [allTags, app.tags]
+  );
   return (
     <NavLink
       to={`/apps/${app.id}`}
@@ -191,11 +197,9 @@ function AppListItem({ app }: { app: App }) {
           <Text className="text-lg font-semibold max-w-72">{app.name}</Text>
           <HorizontalOverflowList
             className="gap-1 max-w-96 h-6"
-            items={app.tags}
-            renderItem={(tagId) => <TagItem key={tagId} tagId={tagId} />}
-            renderOverflowItem={(tagId) => (
-              <TagItem key={tagId} tagId={tagId} />
-            )}
+            items={tags}
+            renderItem={(tag) => <TagItem key={tag.id} tag={tag} />}
+            renderOverflowItem={(tag) => <TagItem key={tag.id} tag={tag} />}
             renderOverflowSign={(items) => (
               <Badge className="whitespace-nowrap ml-1 bg-white/20 hover:bg-white/30 text-white/60 rounded-md">{`+${items.length}`}</Badge>
             )}
@@ -251,7 +255,10 @@ export default function Apps() {
   }, [appValues, search]);
 
   const appsSorted = useMemo(() => {
-    return _.orderBy(appsFiltered, [sortProperty], [sortDirection]);
+    return _(appsFiltered)
+      .orderBy([sortProperty], [sortDirection])
+      .filter((app) => app !== undefined) // filter stale apps
+      .value();
   }, [appsFiltered, sortDirection, sortProperty]);
 
   const ListItem = memo(
