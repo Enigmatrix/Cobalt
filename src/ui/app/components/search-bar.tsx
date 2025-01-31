@@ -6,7 +6,7 @@ import { Search } from "lucide-react";
 const SearchBar = React.forwardRef<
   HTMLInputElement,
   React.ComponentProps<"input">
->(({ className, type, ...props }, ref) => {
+>(({ className, ...props }, ref) => {
   return (
     <div
       className={cn(
