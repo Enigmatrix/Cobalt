@@ -147,24 +147,23 @@ function HorizontalOverflowList<T>({
         <div className="flex items-center" key={index}>
           {renderItem(item)}
 
-          <div
-            className={cn({
-              hidden: index !== overflowIndex - 1,
-            })}
-          >
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger>
-                  {renderOverflowSign(overflowItems)}
-                </TooltipTrigger>
-                <TooltipContent>
-                  <div className="flex flex-col gap-2 py-2">
-                    {overflowItems.map(renderOverflowItem)}
-                  </div>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger
+                asChild
+                className={cn({
+                  hidden: index !== overflowIndex - 1,
+                })}
+              >
+                {renderOverflowSign(overflowItems)}
+              </TooltipTrigger>
+              <TooltipContent>
+                <div className="flex flex-col gap-2 py-2">
+                  {overflowItems.map(renderOverflowItem)}
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       ))}
     </div>
@@ -187,7 +186,7 @@ function AppListItem({ app }: { app: App }) {
         "h-20 shadow-sm rounded-md flex items-center gap-2 p-4",
         "ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
         "disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none cursor-pointer",
-        "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+        "bg-primary-foreground text-primary hover:bg-primary/10 border-border border"
       )}
     >
       <AppIcon buffer={app.icon} className="mx-2 h-10 w-10 flex-shrink-0" />
@@ -201,11 +200,17 @@ function AppListItem({ app }: { app: App }) {
             renderItem={(tag) => <TagItem key={tag.id} tag={tag} />}
             renderOverflowItem={(tag) => <TagItem key={tag.id} tag={tag} />}
             renderOverflowSign={(items) => (
-              <Badge className="whitespace-nowrap ml-1 bg-white/20 hover:bg-white/30 text-white/60 rounded-md">{`+${items.length}`}</Badge>
+              <Badge
+                variant="outline"
+                style={{
+                  backgroundColor: "rgba(255, 255, 255, 0.2)",
+                }}
+                className="whitespace-nowrap ml-1 text-primary/60 rounded-md"
+              >{`+${items.length}`}</Badge>
             )}
           />
         </div>
-        <span className="inline-flex gap-1 items-center text-white/50 text-xs">
+        <span className="inline-flex gap-1 items-center text-xs text-primary/50">
           <Text className="max-w-48">{app.company}</Text>
           {app.description && (
             <>
