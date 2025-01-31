@@ -23,11 +23,16 @@ export async function refresh() {
   state.setTags(tags as Record<Ref<Tag>, Tag>);
 }
 
+// Entity store with T|undefined values. This is because
+// the store can be stale.
+export type EntityStore<T> = Record<Ref<T>, T | undefined>;
+export type EntityMap<T, V> = Record<Ref<T>, V | undefined>;
+
 type AppState = {
-  apps: Record<Ref<App>, App>;
-  tags: Record<Ref<Tag>, Tag>;
-  setApps: (apps: Record<Ref<App>, App>) => void;
-  setTags: (tags: Record<Ref<Tag>, Tag>) => void;
+  apps: EntityStore<App>;
+  tags: EntityStore<Tag>;
+  setApps: (apps: EntityStore<App>) => void;
+  setTags: (tags: EntityStore<Tag>) => void;
 };
 
 export const useAppState = create<AppState>((set) => {

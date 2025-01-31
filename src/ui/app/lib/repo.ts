@@ -1,6 +1,5 @@
 import type {
   Duration,
-  Ref,
   Timestamp,
   WithDuration,
   WithGroupedDuration,
@@ -8,6 +7,7 @@ import type {
   Tag,
 } from "@/lib/entities";
 import { invoke } from "@tauri-apps/api/core";
+import type { EntityMap, EntityStore } from "./state";
 
 interface QueryOptions {
   now?: Timestamp;
@@ -21,7 +21,7 @@ export async function getApps({
   options,
 }: {
   options?: QueryOptions;
-}): Promise<Record<Ref<App>, App>> {
+}): Promise<EntityStore<App>> {
   const queryOptions = getQueryOptions(options);
   return await invoke("get_apps", { queryOptions });
 }
@@ -30,7 +30,7 @@ export async function getTags({
   options,
 }: {
   options?: QueryOptions;
-}): Promise<Record<Ref<Tag>, Tag>> {
+}): Promise<EntityStore<Tag>> {
   const queryOptions = getQueryOptions(options);
   return await invoke("get_tags", { queryOptions });
 }
@@ -43,7 +43,7 @@ export async function getAppDurations({
   options?: QueryOptions;
   start: Timestamp;
   end: Timestamp;
-}): Promise<Record<Ref<App>, WithDuration<App>>> {
+}): Promise<EntityMap<App, WithDuration<App>>> {
   const queryOptions = getQueryOptions(options);
   return await invoke("get_app_durations", { start, end, queryOptions });
 }
@@ -58,7 +58,7 @@ export async function getAppDurationsPerPeriod({
   start: Timestamp;
   end: Timestamp;
   period: Duration;
-}): Promise<Record<Ref<App>, WithGroupedDuration<App>[]>> {
+}): Promise<EntityMap<App, WithGroupedDuration<App>>> {
   const queryOptions = getQueryOptions(options);
   return await invoke("get_app_durations_per_period", {
     queryOptions,
