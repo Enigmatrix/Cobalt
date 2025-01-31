@@ -45,6 +45,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { toHumanDuration } from "@/lib/time";
 
 function TagItem({ tag }: { tag: Tag }) {
   return (
@@ -219,6 +220,17 @@ function AppListItem({ app }: { app: App }) {
             </>
           )}
         </span>
+      </div>
+
+      <div className="flex-1" />
+
+      <div className="flex py-2 rounded-md">
+        <div className="flex flex-col items-end m-auto">
+          <div className="text-xs text-primary/50">Today</div>
+          <div className="text-base min-w-8 text-center">
+            {toHumanDuration(app.usages.usage_today)}
+          </div>
+        </div>
       </div>
     </NavLink>
   );
