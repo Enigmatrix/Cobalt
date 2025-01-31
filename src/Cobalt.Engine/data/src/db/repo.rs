@@ -112,6 +112,8 @@ const TAG_DUR: &str = "SELECT at.tag_id AS id,
             WHERE u.end > p.start AND u.start <= p.end
             GROUP BY at.tag_id";
 
+// TODO when we sqlx has named parameters, fixup our queries to use them.
+
 impl Repository {
     /// Initialize a [Repository] from a given [Database]
     pub fn new(db: Database) -> Result<Self> {
