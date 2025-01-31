@@ -6,12 +6,14 @@ use sqlx::{Result, Row, Type};
 use crate::table::{AlertVersionedId, ReminderVersionedId};
 pub use crate::table::{Color, Duration, Id, Ref, Timestamp, VersionedId};
 
-// Documented in the Cobalt.Common.Data/Entities/*.cs files
-
+/// An app that has run on the computer.
 #[derive(Default, Debug, Clone, PartialEq, Eq, FromRow, Serialize)]
 pub struct App {
     pub id: Ref<Self>,
+    // /// true if the app details have finalized.
+    // /// else, all fields except id, identity and initialized are empty
     // pub initialized: bool,
+    // /// only used for [UsageWriter::find_or_insert_app]
     // pub found: bool,
     pub name: String,
     pub description: String,
@@ -22,7 +24,7 @@ pub struct App {
     pub icon: Option<Vec<u8>>,
 }
 
-/// Unique identity of an App, outside of the Database (on the FileSystem/Registry)
+/// Unique identity of an [App], outside of the Database (on the FileSystem/Registry)
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub enum AppIdentity {
     Win32 { path: String },
@@ -48,6 +50,7 @@ impl Default for AppIdentity {
     }
 }
 
+/// Collection of [App] with a name
 #[derive(Default, Debug, Clone, PartialEq, Eq, FromRow, Serialize)]
 pub struct Tag {
     pub id: Ref<Self>,
@@ -55,6 +58,7 @@ pub struct Tag {
     pub color: Color,
 }
 
+/// Non-continuous session of [App] usage
 #[derive(Default, Debug, Clone, PartialEq, Eq, FromRow, Serialize)]
 pub struct Session {
     pub id: Ref<Self>,
@@ -62,6 +66,7 @@ pub struct Session {
     pub title: String,
 }
 
+/// Continuous usage of [App] in a [Session]
 #[derive(Default, Debug, Clone, PartialEq, Eq, FromRow, Serialize)]
 pub struct Usage {
     pub id: Ref<Self>,
@@ -70,6 +75,7 @@ pub struct Usage {
     pub end: Timestamp,
 }
 
+/// A period of continuous usage without idling
 #[derive(Default, Debug, Clone, PartialEq, Eq, FromRow, Serialize)]
 pub struct InteractionPeriod {
     pub id: Ref<Self>,
@@ -79,6 +85,7 @@ pub struct InteractionPeriod {
     pub key_strokes: i64,
 }
 
+/// Target of an [Alert]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub enum Target {
     App(Ref<App>),
@@ -101,6 +108,7 @@ impl Default for Target {
     }
 }
 
+/// How long the monitoring duration should be for an [Alert]
 #[derive(Default, Debug, Clone, PartialEq, Eq, Type, Serialize)]
 #[repr(i64)]
 pub enum TimeFrame {
@@ -110,6 +118,7 @@ pub enum TimeFrame {
     Monthly = 2,
 }
 
+/// Action to take once the [Alert]'s usage_limit has been reached.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub enum TriggerAction {
     Kill,
@@ -137,6 +146,9 @@ impl Default for TriggerAction {
     }
 }
 
+/// Monitoring record describing an usage limit for how long you use an [App]
+/// or a collection of [App]s under a [Tag], the actions to take when that
+/// limit is reached, and the reminders
 #[derive(Default, Debug, Clone, PartialEq, Eq, FromRow, Serialize)]
 pub struct Alert {
     #[sqlx(flatten)]
@@ -149,6 +161,7 @@ pub struct Alert {
     pub trigger_action: TriggerAction,
 }
 
+/// Notifications to send upon a certain threshold of an [Alert]'s usage_limit
 #[derive(Default, Debug, Clone, FromRow, Serialize)] // can't impl PartialEq, Eq for f64
 pub struct Reminder {
     #[sqlx(flatten)]
@@ -159,6 +172,7 @@ pub struct Reminder {
     pub message: String,
 }
 
+/// An instance of [Alert] triggering.
 #[derive(Default, Debug, Clone, PartialEq, Eq, FromRow, Serialize)]
 pub struct AlertEvent {
     pub id: Ref<Self>,
@@ -167,6 +181,7 @@ pub struct AlertEvent {
     pub timestamp: Timestamp,
 }
 
+/// An instance of [Reminder] triggering.
 #[derive(Default, Debug, Clone, PartialEq, Eq, FromRow, Serialize)]
 pub struct ReminderEvent {
     pub id: Ref<Self>,
