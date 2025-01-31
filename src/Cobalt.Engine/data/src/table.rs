@@ -2,12 +2,13 @@ use std::fmt::Debug;
 use std::hash::{Hash, Hasher};
 use std::ops::Deref;
 
+use serde::Serialize;
 use sqlx::prelude::{FromRow, Type};
 use sqlx::sqlite::SqliteRow;
 
 /// Trait for mapping an Entity to a [Table] in the database.
 pub trait Table {
-    type Id: Default + Debug + Clone + Eq;
+    type Id: Default + Debug + Clone + Hash + PartialEq + Eq + Serialize;
 
     /// Unique identifier for the [Table]
     fn id(&self) -> &Ref<Self>
@@ -19,7 +20,7 @@ pub trait Table {
 }
 
 /// Reference to a [Table] in the database via its unique identifier.
-#[derive(Default, Debug, Clone, Type)]
+#[derive(Default, Debug, Clone, Type, Serialize)]
 #[sqlx(transparent)]
 pub struct Ref<T: Table>(pub T::Id);
 
@@ -71,14 +72,14 @@ pub type Timestamp = i64;
 pub type Duration = i64;
 
 /// Unique identifier with Version
-#[derive(Default, Debug, Clone, PartialEq, Eq, FromRow)]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, FromRow, Serialize)]
 pub struct VersionedId {
     pub id: i64,
     pub version: i64,
 }
 
 // TODO when sqlx flatten gets a prefix remove this and use VersionId
-#[derive(Default, Debug, Clone, PartialEq, Eq, FromRow)]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, FromRow, Serialize)]
 pub struct ReminderVersionedId {
     #[sqlx(rename = "reminder_id")]
     pub id: i64,
@@ -87,7 +88,7 @@ pub struct ReminderVersionedId {
 }
 
 // TODO when sqlx flatten gets a prefix remove this and use VersionId
-#[derive(Default, Debug, Clone, PartialEq, Eq, FromRow)]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, FromRow, Serialize)]
 pub struct AlertVersionedId {
     #[sqlx(rename = "alert_id")]
     pub id: i64,

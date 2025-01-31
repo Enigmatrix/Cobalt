@@ -3,10 +3,9 @@ use sqlx::{query, Row};
 use util::future as tokio;
 
 use super::*;
-use crate::entities::Tag;
 use crate::table::{AlertVersionedId, ReminderVersionedId};
 
-async fn test_db() -> Result<Database> {
+pub async fn test_db() -> Result<Database> {
     let conn = SqliteConnectOptions::new()
         .in_memory(true)
         .create_if_missing(true)
@@ -193,8 +192,9 @@ async fn update_app() -> Result<()> {
         company: "comp".to_string(),
         color: "red".to_string(),
         identity: identity.clone(), // ignored by query
+        icon: Some(icon.clone()),
     };
-    updater.update_app(&app, &icon).await?;
+    updater.update_app(&app).await?;
 
     #[derive(FromRow, PartialEq, Eq, Debug)]
     struct Res {
@@ -229,7 +229,7 @@ async fn insert_app_raw(
     a5: &str,
     a6: u32,
     a7: &str,
-    a8: bool,
+    a8: Option<Vec<u8>>,
 ) -> Result<Ref<App>> {
     let res = query("INSERT INTO apps VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
         .bind(a0)
@@ -317,15 +317,15 @@ async fn target_apps() -> Result<()> {
     let mut db = test_db().await?;
     {
         insert_app_raw(
-            &mut db, true, true, "name1", "desc1", "comp1", "red1", 1, "path1", false,
+            &mut db, true, true, "name1", "desc1", "comp1", "red1", 1, "path1", None,
         )
         .await?;
         insert_app_raw(
-            &mut db, true, true, "name2", "desc2", "comp2", "red2", 0, "aumid2", false,
+            &mut db, true, true, "name2", "desc2", "comp2", "red2", 0, "aumid2", None,
         )
         .await?;
         insert_app_raw(
-            &mut db, true, true, "name3", "desc3", "comp3", "red3", 1, "path3", false,
+            &mut db, true, true, "name3", "desc3", "comp3", "red3", 1, "path3", None,
         )
         .await?;
 
@@ -352,6 +352,7 @@ async fn target_apps() -> Result<()> {
         identity: AppIdentity::Win32 {
             path: "path1".to_string(),
         },
+        icon: None,
     };
     let app2 = App {
         id: Ref::new(2),
@@ -362,6 +363,7 @@ async fn target_apps() -> Result<()> {
         identity: AppIdentity::Uwp {
             aumid: "aumid2".to_string(),
         },
+        icon: None,
     };
     let app3 = App {
         id: Ref::new(3),
@@ -372,6 +374,7 @@ async fn target_apps() -> Result<()> {
         identity: AppIdentity::Win32 {
             path: "path3".to_string(),
         },
+        icon: None,
     };
 
     assert_eq!(
@@ -419,7 +422,7 @@ async fn insert_alert_event() -> Result<()> {
     let id = 1;
     {
         insert_app_raw(
-            &mut db, true, true, "name1", "desc1", "comp1", "red1", 1, "path1", false,
+            &mut db, true, true, "name1", "desc1", "comp1", "red1", 1, "path1", None,
         )
         .await?;
         insert_alert_raw(&mut db, id, 1, Some(1), None, 100, 1, 0, "", 1).await?;
@@ -456,7 +459,7 @@ async fn insert_reminder_event() -> Result<()> {
     let reminder_id = 1;
     {
         insert_app_raw(
-            &mut db, true, true, "name1", "desc1", "comp1", "red1", 1, "path1", false,
+            &mut db, true, true, "name1", "desc1", "comp1", "red1", 1, "path1", None,
         )
         .await?;
         insert_alert_raw(&mut db, alert_id, 1, Some(1), None, 100, 1, 0, "", 1).await?;
@@ -489,16 +492,16 @@ async fn insert_reminder_event() -> Result<()> {
     Ok(())
 }
 
-struct Times {
-    day_start: u64,
-    week_start: u64,
-    month_start: u64,
+pub struct Times {
+    pub day_start: i64,
+    pub week_start: i64,
+    pub month_start: i64,
 }
 
-struct Tick(u64);
+pub struct Tick(i64);
 
 impl ToTicks for Tick {
-    fn to_ticks(&self) -> u64 {
+    fn to_ticks(&self) -> i64 {
         self.0
     }
 }
@@ -519,11 +522,35 @@ impl TimeSystem for Times {
     }
 }
 
-mod arrange {
+pub mod arrange {
     use super::*;
     use crate::entities::{TimeFrame, TriggerAction};
 
     pub async fn app(db: &mut Database, mut app: App) -> Result<App> {
+        app.id = insert_app_raw(
+            db,
+            true,
+            false,
+            &app.name,
+            &app.description,
+            &app.company,
+            &app.color,
+            if let AppIdentity::Win32 { .. } = app.identity {
+                1
+            } else {
+                0
+            },
+            match &app.identity {
+                AppIdentity::Win32 { path } => path,
+                AppIdentity::Uwp { aumid } => aumid,
+            },
+            app.icon.clone(),
+        )
+        .await?;
+        Ok(app)
+    }
+
+    pub async fn app_uninit(db: &mut Database, mut app: App) -> Result<App> {
         app.id = insert_app_raw(
             db,
             false,
@@ -541,7 +568,7 @@ mod arrange {
                 AppIdentity::Win32 { path } => path,
                 AppIdentity::Uwp { aumid } => aumid,
             },
-            false,
+            app.icon.clone(),
         )
         .await?;
         Ok(app)
@@ -704,6 +731,7 @@ mod triggered_alerts {
                 identity: AppIdentity::Win32 {
                     path: "path".to_string(),
                 },
+                icon: None,
             },
         )
         .await?;
@@ -750,6 +778,7 @@ mod triggered_alerts {
                 identity: AppIdentity::Win32 {
                     path: "path".to_string(),
                 },
+                icon: None,
             },
         )
         .await?;
@@ -806,6 +835,7 @@ mod triggered_alerts {
                 identity: AppIdentity::Win32 {
                     path: "path".to_string(),
                 },
+                icon: None,
             },
         )
         .await?;
@@ -880,6 +910,7 @@ mod triggered_alerts {
                 identity: AppIdentity::Win32 {
                     path: "path".to_string(),
                 },
+                icon: None,
             },
         )
         .await?;
@@ -969,6 +1000,7 @@ mod triggered_alerts {
                 identity: AppIdentity::Win32 {
                     path: "path".to_string(),
                 },
+                icon: None,
             },
         )
         .await?;
@@ -1058,6 +1090,7 @@ mod triggered_alerts {
                 identity: AppIdentity::Win32 {
                     path: "path".to_string(),
                 },
+                icon: None,
             },
         )
         .await?;
@@ -1142,6 +1175,7 @@ mod triggered_alerts {
                 identity: AppIdentity::Win32 {
                     path: "path".to_string(),
                 },
+                icon: None,
             },
         )
         .await?;
@@ -1226,6 +1260,7 @@ mod triggered_alerts {
                 identity: AppIdentity::Win32 {
                     path: "path".to_string(),
                 },
+                icon: None,
             },
         )
         .await?;
@@ -1300,6 +1335,7 @@ mod triggered_alerts {
                 identity: AppIdentity::Win32 {
                     path: "path".to_string(),
                 },
+                icon: None,
             },
         )
         .await?;
@@ -1374,6 +1410,7 @@ mod triggered_alerts {
                 identity: AppIdentity::Win32 {
                     path: "path".to_string(),
                 },
+                icon: None,
             },
         )
         .await?;
@@ -1474,6 +1511,7 @@ mod triggered_alerts {
                 identity: AppIdentity::Win32 {
                     path: "path".to_string(),
                 },
+                icon: None,
             },
         )
         .await?;
@@ -1567,6 +1605,7 @@ mod triggered_alerts {
                 identity: AppIdentity::Win32 {
                     path: "path".to_string(),
                 },
+                icon: None,
             },
         )
         .await?;
@@ -1582,6 +1621,7 @@ mod triggered_alerts {
                 identity: AppIdentity::Uwp {
                     aumid: "aumid2".to_string(),
                 },
+                icon: None,
             },
         )
         .await?;
@@ -1770,6 +1810,7 @@ mod triggered_reminders {
                 identity: AppIdentity::Win32 {
                     path: "path".to_string(),
                 },
+                icon: None,
             },
         )
         .await?;

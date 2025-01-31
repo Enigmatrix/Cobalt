@@ -1,3 +1,4 @@
+use serde::Serialize;
 use sqlx::prelude::FromRow;
 use sqlx::sqlite::SqliteRow;
 use sqlx::{Result, Row, Type};
@@ -7,7 +8,7 @@ pub use crate::table::{Color, Duration, Id, Ref, Timestamp, VersionedId};
 
 // Documented in the Cobalt.Common.Data/Entities/*.cs files
 
-#[derive(Default, Debug, Clone, PartialEq, Eq, FromRow)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, FromRow, Serialize)]
 pub struct App {
     pub id: Ref<Self>,
     // pub initialized: bool,
@@ -18,11 +19,11 @@ pub struct App {
     pub color: Color,
     #[sqlx(flatten)]
     pub identity: AppIdentity,
-    // pub icon: Blob
+    pub icon: Option<Vec<u8>>,
 }
 
 /// Unique identity of an App, outside of the Database (on the FileSystem/Registry)
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub enum AppIdentity {
     Win32 { path: String },
     Uwp { aumid: String },
@@ -47,21 +48,21 @@ impl Default for AppIdentity {
     }
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Eq, FromRow)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, FromRow, Serialize)]
 pub struct Tag {
     pub id: Ref<Self>,
     pub name: String,
     pub color: Color,
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Eq, FromRow)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, FromRow, Serialize)]
 pub struct Session {
     pub id: Ref<Self>,
     pub app_id: Ref<App>,
     pub title: String,
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Eq, FromRow)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, FromRow, Serialize)]
 pub struct Usage {
     pub id: Ref<Self>,
     pub session_id: Ref<Session>,
@@ -69,7 +70,7 @@ pub struct Usage {
     pub end: Timestamp,
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Eq, FromRow)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, FromRow, Serialize)]
 pub struct InteractionPeriod {
     pub id: Ref<Self>,
     pub start: Timestamp,
@@ -78,7 +79,7 @@ pub struct InteractionPeriod {
     pub key_strokes: i64,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub enum Target {
     App(Ref<App>),
     Tag(Ref<Tag>),
@@ -100,7 +101,7 @@ impl Default for Target {
     }
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Eq, Type)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, Type, Serialize)]
 #[repr(i64)]
 pub enum TimeFrame {
     #[default]
@@ -109,7 +110,7 @@ pub enum TimeFrame {
     Monthly = 2,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub enum TriggerAction {
     Kill,
     Dim(Duration),
@@ -136,7 +137,7 @@ impl Default for TriggerAction {
     }
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Eq, FromRow)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, FromRow, Serialize)]
 pub struct Alert {
     #[sqlx(flatten)]
     pub id: Ref<Self>,
@@ -148,7 +149,7 @@ pub struct Alert {
     pub trigger_action: TriggerAction,
 }
 
-#[derive(Default, Debug, Clone, FromRow)] // can't impl PartialEq, Eq for f64
+#[derive(Default, Debug, Clone, FromRow, Serialize)] // can't impl PartialEq, Eq for f64
 pub struct Reminder {
     #[sqlx(flatten)]
     pub id: Ref<Self>,
@@ -158,7 +159,7 @@ pub struct Reminder {
     pub message: String,
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Eq, FromRow)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, FromRow, Serialize)]
 pub struct AlertEvent {
     pub id: Ref<Self>,
     #[sqlx(flatten)]
@@ -166,7 +167,7 @@ pub struct AlertEvent {
     pub timestamp: Timestamp,
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Eq, FromRow)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, FromRow, Serialize)]
 pub struct ReminderEvent {
     pub id: Ref<Self>,
     #[sqlx(flatten)]

@@ -12,7 +12,7 @@ use util::time::{TimeSystem, ToTicks};
 
 use crate::entities::{
     Alert, AlertEvent, App, AppIdentity, InteractionPeriod, Ref, Reminder, ReminderEvent, Session,
-    Target, Timestamp, Usage,
+    Tag, Target, Timestamp, Usage,
 };
 use crate::migrations::Migrator;
 use crate::table::Table;
@@ -23,6 +23,8 @@ pub enum FoundOrInserted<T: Table> {
     Found(Ref<T>),
     Inserted(Ref<T>),
 }
+
+pub mod repo;
 
 impl<T: Table> From<FoundOrInserted<T>> for Ref<T> {
     fn from(value: FoundOrInserted<T>) -> Self {
@@ -102,8 +104,8 @@ impl UsageWriter {
     /// Insert a [Session] into the [Database]
     pub async fn insert_session(&mut self, session: &mut Session) -> Result<()> {
         let res = query("INSERT INTO sessions VALUES (NULL, ?, ?)")
-            .bind(session.app_id.clone())
-            .bind(session.title.clone())
+            .bind(&session.app_id)
+            .bind(&session.title)
             .execute(self.db.executor())
             .await?;
         session.id = Ref::new(res.last_insert_rowid());
@@ -114,7 +116,7 @@ impl UsageWriter {
     pub async fn insert_or_update_usage(&mut self, usage: &mut Usage) -> Result<()> {
         if usage.id == Ref::default() {
             let res = query("INSERT INTO usages VALUES (NULL, ?, ?, ?)")
-                .bind(usage.session_id.clone())
+                .bind(&usage.session_id)
                 .bind(usage.start)
                 .bind(usage.end)
                 .execute(self.db.executor())
@@ -123,7 +125,7 @@ impl UsageWriter {
         } else {
             query("UPDATE usages SET end = ? WHERE id = ?")
                 .bind(usage.end)
-                .bind(usage.id.clone())
+                .bind(&usage.id)
                 .execute(self.db.executor())
                 .await?;
         }
@@ -165,7 +167,7 @@ impl AppUpdater {
     }
 
     /// Update the [App] with additional information, including its icon
-    pub async fn update_app(&mut self, app: &App, icon: &[u8]) -> Result<()> {
+    pub async fn update_app(&mut self, app: &App) -> Result<()> {
         query(
             "UPDATE apps SET
                     name = ?,
@@ -176,12 +178,12 @@ impl AppUpdater {
                     initialized = 1
                 WHERE id = ?",
         )
-        .bind(app.name.clone())
-        .bind(app.description.clone())
-        .bind(app.company.clone())
-        .bind(app.color.clone())
-        .bind(icon)
-        .bind(app.id.clone())
+        .bind(&app.name)
+        .bind(&app.description)
+        .bind(&app.company)
+        .bind(&app.color)
+        .bind(app.icon.as_ref())
+        .bind(&app.id)
         .execute(self.db.executor())
         .await?;
         Ok(())
@@ -221,7 +223,7 @@ impl AlertManager {
         Ok(match target {
             Target::Tag(tag) => {
                 query("SELECT app_id FROM _app_tags WHERE tag_id = ?")
-                    .bind(tag.clone())
+                    .bind(tag)
                     .map(|r: SqliteRow| r.get(0))
                     .fetch_all(self.db.executor())
                     .await?
@@ -239,9 +241,9 @@ impl AlertManager {
         &mut self,
         times: &impl TimeSystem,
     ) -> Result<Vec<TriggeredAlert>> {
-        let day_start = times.day_start().to_ticks() as i64;
-        let week_start = times.week_start().to_ticks() as i64;
-        let month_start = times.month_start().to_ticks() as i64;
+        let day_start = times.day_start().to_ticks();
+        let week_start = times.week_start().to_ticks();
+        let month_start = times.month_start().to_ticks();
         let result = query_as(include_str!("../queries/triggered_alerts.sql"))
             .bind(day_start)
             .bind(week_start)
@@ -256,9 +258,9 @@ impl AlertManager {
         &mut self,
         times: &impl TimeSystem,
     ) -> Result<Vec<TriggeredReminder>> {
-        let day_start = times.day_start().to_ticks() as i64;
-        let week_start = times.week_start().to_ticks() as i64;
-        let month_start = times.month_start().to_ticks() as i64;
+        let day_start = times.day_start().to_ticks();
+        let week_start = times.week_start().to_ticks();
+        let month_start = times.month_start().to_ticks();
         let result = query_as(include_str!("../queries/triggered_reminders.sql"))
             .bind(day_start)
             .bind(week_start)
@@ -291,5 +293,7 @@ impl AlertManager {
     }
 }
 
+#[cfg(test)]
+mod repo_tests;
 #[cfg(test)]
 mod tests;

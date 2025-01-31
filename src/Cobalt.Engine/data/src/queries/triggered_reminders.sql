@@ -23,7 +23,7 @@ dur(alert_id, alert_version, range_start, dur) AS (
         COALESCE(SUM(u.end - MAX(u.start, t.range_start)), 0)
         FROM target_apps ta
         INNER JOIN sessions s ON s.app_id = ta.app_id
-        INNER JOIN usages u INDEXED BY usage_end_start ON u.session_id = s.id
+        INNER JOIN usages u ON u.session_id = s.id
         WHERE ta.alert_id = al.id
             AND ta.alert_version = al.version
             AND u.end > t.range_start) dur
