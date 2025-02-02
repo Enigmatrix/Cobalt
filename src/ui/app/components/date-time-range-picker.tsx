@@ -14,6 +14,7 @@ import { Separator } from "@/components/ui/separator";
 import { DateTime } from "luxon";
 import { Input } from "@/components/ui/input";
 import { Label } from "./ui/label";
+
 type DatePickerWithRangeProps = {
   className?: string;
   date?: DateRange;
@@ -171,7 +172,7 @@ export function DatePickerWithRange({
               onClick={() =>
                 setDate({
                   from: now.startOf("day").toJSDate(),
-                  to: now.endOf("day").toJSDate(),
+                  to: now.plus({ day: 1 }).startOf("day").toJSDate(),
                 })
               }
             >
@@ -184,7 +185,7 @@ export function DatePickerWithRange({
               onClick={() =>
                 setDate({
                   from: now.minus({ day: 1 }).startOf("day").toJSDate(),
-                  to: now.minus({ day: 1 }).endOf("day").toJSDate(),
+                  to: now.startOf("day").toJSDate(),
                 })
               }
             >
@@ -198,7 +199,7 @@ export function DatePickerWithRange({
               onClick={() =>
                 setDate({
                   from: now.startOf("week").toJSDate(),
-                  to: now.endOf("week").toJSDate(),
+                  to: now.plus({ week: 1 }).startOf("week").toJSDate(),
                 })
               }
             >
@@ -211,7 +212,7 @@ export function DatePickerWithRange({
               onClick={() =>
                 setDate({
                   from: now.minus({ week: 1 }).startOf("week").toJSDate(),
-                  to: now.minus({ week: 1 }).endOf("week").toJSDate(),
+                  to: now.startOf("week").toJSDate(),
                 })
               }
             >
@@ -225,7 +226,7 @@ export function DatePickerWithRange({
               onClick={() =>
                 setDate({
                   from: now.startOf("month").toJSDate(),
-                  to: now.endOf("month").toJSDate(),
+                  to: now.plus({ month: 1 }).startOf("month").toJSDate(),
                 })
               }
             >
@@ -238,7 +239,7 @@ export function DatePickerWithRange({
               onClick={() =>
                 setDate({
                   from: now.minus({ month: 1 }).startOf("month").toJSDate(),
-                  to: now.minus({ month: 1 }).endOf("month").toJSDate(),
+                  to: now.startOf("month").toJSDate(),
                 })
               }
             >
@@ -252,7 +253,7 @@ export function DatePickerWithRange({
               onClick={() =>
                 setDate({
                   from: now.startOf("year").toJSDate(),
-                  to: now.endOf("year").toJSDate(),
+                  to: now.plus({ year: 1 }).startOf("year").toJSDate(),
                 })
               }
             >
@@ -265,7 +266,7 @@ export function DatePickerWithRange({
               onClick={() =>
                 setDate({
                   from: now.minus({ year: 1 }).startOf("year").toJSDate(),
-                  to: now.minus({ year: 1 }).endOf("year").toJSDate(),
+                  to: now.startOf("year").toJSDate(),
                 })
               }
             >
