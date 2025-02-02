@@ -1,5 +1,4 @@
 import * as React from "react";
-import { format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import type { DateRange as RDateRange } from "react-day-picker";
 
@@ -29,6 +28,18 @@ const htmlFormat = (date: Date) => {
 const validDateFormat = (str: string) =>
   DateTime.fromFormat(str, "yyyy-MM-dd'T'HH:mm").isValid ||
   DateTime.fromFormat(str, "yyyy-MM-dd'T'HH:mm:ss").isValid;
+
+const formatHuman = (date: Date) => {
+  const dt = DateTime.fromJSDate(date);
+  // if time part is 00:00:00, then return date part only
+  if (dt.toFormat("HH:mm:ss") === "00:00:00") {
+    return dt.toFormat("LLL dd, y");
+  }
+  if (dt.toFormat("ss") === "00") {
+    return dt.toFormat("LLL dd, y hh:mm a");
+  }
+  return dt.toFormat("LLL dd, y hh:mm:ss a");
+};
 
 export function DatePickerWithRange({
   className,
@@ -98,7 +109,7 @@ export function DatePickerWithRange({
             id="date"
             variant={"outline"}
             className={cn(
-              "w-[300px] justify-start text-left font-normal",
+              "min-w-[300px] justify-start text-left font-normal",
               !date && "text-muted-foreground"
             )}
           >
@@ -106,11 +117,13 @@ export function DatePickerWithRange({
             {date?.from ? (
               date.to ? (
                 <>
-                  {format(date.from, "LLL dd, y")} -{" "}
-                  {format(date.to, "LLL dd, y")}
+                  {formatHuman(date.from)} - {formatHuman(date.to)}
                 </>
               ) : (
-                format(date.from, "LLL dd, y")
+                <>
+                  {formatHuman(date.from)} -{" "}
+                  <div className="text-muted-foreground">Pick end time</div>
+                </>
               )
             ) : (
               <span>Pick a time range</span>
