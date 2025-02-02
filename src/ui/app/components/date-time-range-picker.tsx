@@ -15,7 +15,7 @@ import { DateTime } from "luxon";
 import { Input } from "@/components/ui/input";
 import { Label } from "./ui/label";
 
-type DatePickerWithRangeProps = {
+type DateTimeRangePickerProps = {
   className?: string;
   date?: DateRange;
   setDate: React.Dispatch<React.SetStateAction<DateRange | undefined>>;
@@ -43,13 +43,13 @@ const formatHuman = (date: Date) => {
   return dt.toFormat("LLL dd, y hh:mm:ss a");
 };
 
-export function DatePickerWithRange({
+export function DateTimeRangePicker({
   className,
   date,
   setDate: setDateInner,
   disabled,
   ...props
-}: DatePickerWithRangeProps) {
+}: DateTimeRangePickerProps) {
   const now = DateTime.now();
 
   const [fromStr, setFromStrInner] = React.useState("");
