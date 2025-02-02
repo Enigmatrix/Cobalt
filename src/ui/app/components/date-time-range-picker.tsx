@@ -13,6 +13,8 @@ import {
 } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import { DateTime } from "luxon";
+import { Input } from "@/components/ui/input";
+import { Label } from "./ui/label";
 type DatePickerWithRangeProps = {
   className?: string;
   date?: DateRange;
@@ -21,13 +23,73 @@ type DatePickerWithRangeProps = {
 
 export type DateRange = RDateRange;
 
+const htmlFormat = (date: Date) => {
+  return DateTime.fromJSDate(date).toFormat("yyyy-MM-dd'T'HH:mm:ss");
+};
+const validDateFormat = (str: string) =>
+  DateTime.fromFormat(str, "yyyy-MM-dd'T'HH:mm").isValid ||
+  DateTime.fromFormat(str, "yyyy-MM-dd'T'HH:mm:ss").isValid;
+
 export function DatePickerWithRange({
   className,
   date,
-  setDate,
+  setDate: setDateInner,
   ...props
 }: DatePickerWithRangeProps) {
   const now = DateTime.now();
+
+  const [fromStr, setFromStrInner] = React.useState("");
+  const [toStr, setToStrInner] = React.useState("");
+
+  const setDate: React.Dispatch<React.SetStateAction<DateRange | undefined>> =
+    React.useCallback(
+      (
+        dateArg:
+          | DateRange
+          | undefined
+          | ((f: DateRange | undefined) => DateRange | undefined)
+      ) => {
+        if (typeof dateArg === "function") {
+          setDateInner((date) => {
+            const newDate = dateArg(date);
+            setFromStrInner(newDate?.from ? htmlFormat(newDate.from) : "");
+            setToStrInner(newDate?.to ? htmlFormat(newDate.to) : "");
+            return newDate;
+          });
+        } else {
+          setFromStrInner(dateArg?.from ? htmlFormat(dateArg.from) : "");
+          setToStrInner(dateArg?.to ? htmlFormat(dateArg.to) : "");
+          setDateInner(dateArg);
+        }
+      },
+      [setDateInner]
+    );
+
+  const setFromStr = React.useCallback(
+    (fromStr: string) => {
+      setFromStrInner(fromStr);
+      if (validDateFormat(fromStr)) {
+        setDateInner((date) => ({
+          from: new Date(fromStr),
+          to: date?.to,
+        }));
+      }
+    },
+    [setDateInner]
+  );
+
+  const setToStr = React.useCallback(
+    (toStr: string) => {
+      setToStrInner(toStr);
+      if (validDateFormat(toStr)) {
+        setDateInner((date) => ({
+          to: new Date(toStr),
+          from: date?.from,
+        }));
+      }
+    },
+    [setDateInner]
+  );
   return (
     <div className={cn("grid gap-2", className)} {...props}>
       <Popover>
@@ -56,7 +118,29 @@ export function DatePickerWithRange({
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0 flex" align="start">
-          <div>
+          <div className="flex flex-col">
+            <div className="flex">
+              <div className="flex-1 p-4">
+                <Label>From</Label>
+                <Input
+                  type="datetime-local"
+                  step="1"
+                  className="mt-2"
+                  value={fromStr}
+                  onChange={(e) => setFromStr(e.target.value)}
+                />
+              </div>
+              <div className="flex-1 p-4">
+                <Label>To</Label>
+                <Input
+                  type="datetime-local"
+                  step="1"
+                  className="mt-2"
+                  value={toStr}
+                  onChange={(e) => setToStr(e.target.value)}
+                />
+              </div>
+            </div>
             <Calendar
               initialFocus
               mode="range"
