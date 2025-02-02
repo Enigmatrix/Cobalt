@@ -19,6 +19,7 @@ type DatePickerWithRangeProps = {
   className?: string;
   date?: DateRange;
   setDate: React.Dispatch<React.SetStateAction<DateRange | undefined>>;
+  disabled?: boolean;
 } & React.HTMLAttributes<HTMLDivElement>;
 
 export type DateRange = RDateRange;
@@ -46,6 +47,7 @@ export function DatePickerWithRange({
   className,
   date,
   setDate: setDateInner,
+  disabled,
   ...props
 }: DatePickerWithRangeProps) {
   const now = DateTime.now();
@@ -105,7 +107,7 @@ export function DatePickerWithRange({
   return (
     <div className={cn("grid gap-2", className)} {...props}>
       <Popover>
-        <PopoverTrigger asChild>
+        <PopoverTrigger asChild disabled={disabled}>
           <Button
             id="date"
             variant={"outline"}
