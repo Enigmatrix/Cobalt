@@ -9,11 +9,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { invoke } from "@tauri-apps/api/core";
 import { refresh } from "@/lib/state";
-import {
-  DatePickerWithRange,
-  type DateRange,
-} from "@/components/date-time-range-picker";
-import React from "react";
 
 async function copySeedDb() {
   await invoke("copy_seed_db");
@@ -28,7 +23,6 @@ async function refreshState() {
 }
 
 export default function Experiments() {
-  const [date, setDate] = React.useState<DateRange | undefined>(undefined);
   return (
     <>
       <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
@@ -58,8 +52,6 @@ export default function Experiments() {
           <Button onClick={refreshState} variant="outline">
             Refresh
           </Button>
-          <DatePickerWithRange date={date} setDate={setDate} />
-          {JSON.stringify(date)}
         </div>
       </div>
     </>
