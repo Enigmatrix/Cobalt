@@ -58,7 +58,7 @@ export async function getAppDurationsPerPeriod({
   start: Timestamp;
   end: Timestamp;
   period: Duration;
-}): Promise<EntityMap<App, WithGroupedDuration<App>>> {
+}): Promise<EntityMap<App, WithGroupedDuration<App>[]>> {
   const queryOptions = getQueryOptions(options);
   return await invoke("get_app_durations_per_period", {
     queryOptions,
