@@ -1,28 +1,21 @@
 import type { App, Ref, WithGroupedDuration } from "@/lib/entities";
 import _ from "lodash";
 import { useMemo, useState } from "react";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  LabelList,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { Bar, BarChart, CartesianGrid, LabelList, XAxis } from "recharts";
 import {
   type ChartConfig,
   ChartContainer,
   ChartTooltip,
 } from "@/components/ui/chart";
-import { ticksToDateTime, ticksToDuration } from "@/lib/time";
+import { ticksToDateTime } from "@/lib/time";
 import type { ContentType } from "recharts/types/component/Label";
 import { toDataUrl } from "./app-icon";
 import { AppUsageChartTooltipContent } from "@/components/app-usage-chart-tooltip";
 import { DateTime } from "luxon";
-import { useAppState } from "@/lib/state";
+import { useAppState, type EntityMap } from "@/lib/state";
 
 export interface AppUsageBarChartProps {
-  data: WithGroupedDuration<App>[];
+  data: EntityMap<App, WithGroupedDuration<App>[]>;
   periodTicks: number;
   singleAppId?: Ref<App>;
   rangeMinTicks?: number;
@@ -47,16 +40,17 @@ export function AppUsageBarChart({
 
   const involvedApps = useMemo(
     () =>
-      _(unflattenedData)
-        .map((d) => d.id)
-        .uniq()
-        .map((id) => apps[id])
-        .filter((app) => app !== undefined) // stale data
-        .value(),
+      Object.keys(unflattenedData)
+        .map((id) => apps[id as unknown as Ref<App>])
+        .filter((app) => app !== undefined), // stale data
     [unflattenedData]
   );
+  // data is grouped by app, we regroup by timestamp.
   const data: AppUsageBarChartData[] = useMemo(() => {
     let ret = _(unflattenedData)
+      .values()
+      .filter((x) => x !== undefined) // stale data
+      .flatten()
       .groupBy((d) => d.group)
       .mapValues((durs) => {
         return _.fromPairs([
@@ -119,8 +113,6 @@ export function AppUsageBarChart({
       />
     );
   };
-
-  const period = ticksToDuration(periodTicks).toMillis();
 
   return (
     <ChartContainer config={config}>
