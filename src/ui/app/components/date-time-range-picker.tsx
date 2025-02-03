@@ -10,7 +10,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Separator } from "@/components/ui/separator";
 import { DateTime } from "luxon";
 import { Input } from "@/components/ui/input";
 import { Label } from "./ui/label";
@@ -20,7 +19,10 @@ type DateTimeRangePickerProps = {
   className?: string;
   date?: DateRange;
   setDate: React.Dispatch<React.SetStateAction<DateRange | undefined>>;
-  disabled?: boolean;
+  formatDateRange?: (
+    date: DateRange | undefined,
+    ranges: QuickRange[]
+  ) => React.ReactNode;
 } & ButtonProps;
 
 export type DateRange = RDateRange;
@@ -116,7 +118,7 @@ export function DateTimeRangePicker({
   className,
   date,
   setDate: setDateInner,
-  disabled,
+  formatDateRange: formatDateRangeInner,
   ...props
 }: DateTimeRangePickerProps) {
   const today = DateTime.now().startOf("day");
@@ -179,7 +181,7 @@ export function DateTimeRangePicker({
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild disabled={disabled}>
+      <PopoverTrigger asChild>
         <Button
           id="date"
           variant={"outline"}
@@ -191,7 +193,7 @@ export function DateTimeRangePicker({
           {...props}
         >
           <CalendarIcon />
-          {formatDateRange(date, quickRanges)}
+          {(formatDateRangeInner ?? formatDateRange)(date, quickRanges)}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0 flex" align="start">
