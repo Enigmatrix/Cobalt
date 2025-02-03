@@ -21,6 +21,7 @@ type DurationPickerProps = {
   className?: string;
   duration?: Duration;
   setDuration: React.Dispatch<React.SetStateAction<Duration | undefined>>;
+  showIcon?: boolean;
 } & ButtonProps;
 
 const formatHuman = (duration: Duration) => {
@@ -36,6 +37,7 @@ export function DurationPicker({
   className,
   duration,
   setDuration,
+  showIcon = true,
   ...props
 }: DurationPickerProps) {
   const [open, setOpen] = React.useState(false);
@@ -120,7 +122,7 @@ export function DurationPicker({
           )}
           {...props}
         >
-          <Hourglass />
+          {showIcon && <Hourglass />}
           {duration ? (
             <>{formatHuman(duration)}</>
           ) : (

@@ -19,6 +19,7 @@ type DateTimeRangePickerProps = {
   className?: string;
   date?: DateRange;
   setDate: React.Dispatch<React.SetStateAction<DateRange | undefined>>;
+  showIcon?: boolean;
   formatDateRange?: (
     date: DateRange | undefined,
     ranges: QuickRange[]
@@ -119,6 +120,7 @@ export function DateTimeRangePicker({
   date,
   setDate: setDateInner,
   formatDateRange: formatDateRangeInner,
+  showIcon = true,
   ...props
 }: DateTimeRangePickerProps) {
   const today = DateTime.now().startOf("day");
@@ -192,7 +194,7 @@ export function DateTimeRangePicker({
           )}
           {...props}
         >
-          <CalendarIcon />
+          {showIcon && <CalendarIcon />}
           {(formatDateRangeInner ?? formatDateRange)(date, quickRanges)}
         </Button>
       </PopoverTrigger>
