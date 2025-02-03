@@ -14,6 +14,7 @@ import { Separator } from "@/components/ui/separator";
 import { DateTime } from "luxon";
 import { Input } from "@/components/ui/input";
 import { Label } from "./ui/label";
+import { toHumanDateTime } from "@/lib/time";
 
 type DateTimeRangePickerProps = {
   className?: string;
@@ -33,14 +34,7 @@ const validDateFormat = (str: string) =>
 
 const formatHuman = (date: Date) => {
   const dt = DateTime.fromJSDate(date);
-  // if time part is 00:00:00, then return date part only
-  if (dt.toFormat("HH:mm:ss") === "00:00:00") {
-    return dt.toFormat("LLL dd, y");
-  }
-  if (dt.toFormat("ss") === "00") {
-    return dt.toFormat("LLL dd, y hh:mm a");
-  }
-  return dt.toFormat("LLL dd, y hh:mm:ss a");
+  return toHumanDateTime(dt);
 };
 
 export function DateTimeRangePicker({
