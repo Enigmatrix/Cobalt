@@ -45,6 +45,10 @@ export const AppUsageChartTooltipContent = React.forwardRef<
       .reduce((acc, [key, value]) => (key !== "key" ? acc + value : acc), 0);
 
     if (singleAppId !== undefined) {
+      const singleApp = apps[singleAppId];
+      if (!singleApp) {
+        return null;
+      }
       return (
         <div
           ref={ref}
@@ -55,11 +59,11 @@ export const AppUsageChartTooltipContent = React.forwardRef<
         >
           <div className="flex items-center gap-2 py-2 mb-1">
             <AppIcon
-              buffer={apps[singleAppId].icon}
+              buffer={singleApp.icon}
               className="w-6 h-6 shrink-0 ml-2 mr-1"
             />
             <span className="text-muted-foreground truncate max-w-52 text-base">
-              {apps[singleAppId].name}
+              {singleApp.name}
             </span>
             <div className="flex-1"></div>
             <div className="flex flex-col items-center">
@@ -83,11 +87,12 @@ export const AppUsageChartTooltipContent = React.forwardRef<
         {hoveredAppId && payload.length > 0 && (
           <div className="flex items-center gap-2 border-b border-secondary-foreground/50 py-2 mb-1">
             <AppIcon
-              buffer={apps[hoveredAppId].icon}
+              buffer={apps[hoveredAppId]!.icon} // cannot be stale - we filter stale data out
               className="w-6 h-6 shrink-0 ml-2 mr-1"
             />
             <span className="text-muted-foreground truncate max-w-52 text-base">
-              {apps[hoveredAppId].name}
+              {apps[hoveredAppId]!.name}{" "}
+              {/* cannot be stale - we filter stale data out */}
             </span>
             <div className="flex-1"></div>
             <div className="flex flex-col items-center">
@@ -120,7 +125,7 @@ export const AppUsageChartTooltipContent = React.forwardRef<
                   <>
                     {!hideIndicator && (
                       <AppIcon
-                        buffer={apps[item.dataKey as Ref<App>].icon}
+                        buffer={apps[item.dataKey as Ref<App>]!.icon} // cannot be stale - we filter stale data out
                         className="w-4 h-4 shrink-0"
                       />
                     )}

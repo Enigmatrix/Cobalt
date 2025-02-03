@@ -46,7 +46,13 @@ export function AppUsageBarChart({
   const apps = useAppState((state) => state.apps);
 
   const involvedApps = useMemo(
-    () => _.uniq(unflattenedData.map((d) => d.id)),
+    () =>
+      _(unflattenedData)
+        .map((d) => d.id)
+        .uniq()
+        .map((id) => apps[id])
+        .filter((app) => app !== undefined) // stale data
+        .value(),
     [unflattenedData]
   );
   const data: AppUsageBarChartData[] = useMemo(() => {
@@ -141,19 +147,17 @@ export function AppUsageBarChart({
         />
         {involvedApps.map((app) => (
           <Bar
-            key={app}
-            dataKey={app}
+            key={app.id}
+            dataKey={app.id}
             stackId="a"
-            fill={apps[app].color}
-            name={apps[app].name}
-            onMouseEnter={() => setHoveredAppId(app)}
+            fill={app.color}
+            name={app.name}
+            onMouseEnter={() => setHoveredAppId(app.id)}
             onMouseLeave={() => setHoveredAppId(null)}
+            radius={4}
           >
             {singleAppId === undefined && (
-              <LabelList
-                dataKey={() => apps[app]}
-                content={renderCustomizedLabel}
-              />
+              <LabelList dataKey={() => app} content={renderCustomizedLabel} />
             )}
           </Bar>
         ))}
