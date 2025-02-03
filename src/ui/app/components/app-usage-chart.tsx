@@ -31,6 +31,7 @@ export interface AppUsageBarChartProps {
   hideXAxis?: boolean;
   gridVertical?: boolean;
   gridHorizontal?: boolean;
+  gradientBars?: boolean;
   onHover: (data?: WithGroupedDuration<App>) => void;
 }
 
@@ -49,6 +50,7 @@ export function AppUsageBarChart({
   hideXAxis = false,
   gridVertical = false,
   gridHorizontal = false,
+  gradientBars = false,
   onHover,
 }: AppUsageBarChartProps) {
   const apps = useAppState((state) => state.apps);
@@ -132,6 +134,19 @@ export function AppUsageBarChart({
   return (
     <ChartContainer config={config}>
       <BarChart accessibilityLayer data={data}>
+        <defs>
+          {gradientBars &&
+            involvedApps.map((app) => (
+              <linearGradient
+                key={app.id}
+                id={`gradient-${app.id}`}
+                gradientTransform="rotate(90)"
+              >
+                <stop offset="50%" stopColor={app.color} />
+                <stop offset="95%" stopColor={app.color} stopOpacity={0.7} />
+              </linearGradient>
+            ))}
+        </defs>
         <CartesianGrid vertical={gridVertical} horizontal={gridHorizontal} />
         <XAxis
           dataKey="key"
@@ -163,8 +178,9 @@ export function AppUsageBarChart({
             key={app.id}
             dataKey={app.id}
             stackId="a"
-            fill={app.color}
+            fill={gradientBars ? `url(#gradient-${app.id})` : app.color}
             name={app.name}
+            isAnimationActive={false}
             onMouseEnter={(e) => {
               setHoveredAppId(app.id);
               onHover({
