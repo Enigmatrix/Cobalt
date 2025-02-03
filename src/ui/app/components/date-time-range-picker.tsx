@@ -32,10 +32,85 @@ const validDateFormat = (str: string) =>
   DateTime.fromFormat(str, "yyyy-MM-dd'T'HH:mm").isValid ||
   DateTime.fromFormat(str, "yyyy-MM-dd'T'HH:mm:ss").isValid;
 
+const formatDateRange = (date: DateRange | undefined, ranges: QuickRange[]) => {
+  if (date?.from !== undefined && date.to !== undefined) {
+    const range = ranges.find(
+      (r) => +r.from === +(date.from ?? 0) && +r.to === +(date.to ?? 0)
+    );
+    if (range) {
+      return range.label;
+    }
+    return (
+      <>
+        {formatHuman(date.from)} - {formatHuman(date.to)}
+      </>
+    );
+  }
+  return date?.from ? (
+    <>
+      {formatHuman(date.from)} -{" "}
+      <div className="text-muted-foreground">Pick end time</div>
+    </>
+  ) : (
+    <span>Pick a time range</span>
+  );
+};
+
 const formatHuman = (date: Date) => {
   const dt = DateTime.fromJSDate(date);
   return toHumanDateTime(dt);
 };
+
+type QuickRange = {
+  label: string;
+  from: Date;
+  to: Date;
+};
+
+function generateRanges(today: DateTime): QuickRange[] {
+  return [
+    {
+      label: "Today",
+      from: today.startOf("day").toJSDate(),
+      to: today.plus({ day: 1 }).startOf("day").toJSDate(),
+    },
+    {
+      label: "Yesterday",
+      from: today.minus({ day: 1 }).startOf("day").toJSDate(),
+      to: today.startOf("day").toJSDate(),
+    },
+    {
+      label: "This Week",
+      from: today.startOf("week").toJSDate(),
+      to: today.plus({ week: 1 }).startOf("week").toJSDate(),
+    },
+    {
+      label: "Last Week",
+      from: today.minus({ week: 1 }).startOf("week").toJSDate(),
+      to: today.startOf("week").toJSDate(),
+    },
+    {
+      label: "This Month",
+      from: today.startOf("month").toJSDate(),
+      to: today.plus({ month: 1 }).startOf("month").toJSDate(),
+    },
+    {
+      label: "Last Month",
+      from: today.minus({ month: 1 }).startOf("month").toJSDate(),
+      to: today.startOf("month").toJSDate(),
+    },
+    {
+      label: "This Year",
+      from: today.startOf("year").toJSDate(),
+      to: today.plus({ year: 1 }).startOf("year").toJSDate(),
+    },
+    {
+      label: "Last Year",
+      from: today.minus({ year: 1 }).startOf("year").toJSDate(),
+      to: today.startOf("year").toJSDate(),
+    },
+  ];
+}
 
 export function DateTimeRangePicker({
   className,
@@ -44,7 +119,9 @@ export function DateTimeRangePicker({
   disabled,
   ...props
 }: DateTimeRangePickerProps) {
-  const now = DateTime.now();
+  const today = DateTime.now().startOf("day");
+
+  const [open, setOpen] = React.useState(false);
 
   const [fromStr, setFromStrInner] = React.useState("");
   const [toStr, setToStrInner] = React.useState("");
@@ -98,8 +175,10 @@ export function DateTimeRangePicker({
     },
     [setDateInner]
   );
+  const quickRanges = React.useMemo(() => generateRanges(today), [today]);
+
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild disabled={disabled}>
         <Button
           id="date"
@@ -112,20 +191,7 @@ export function DateTimeRangePicker({
           {...props}
         >
           <CalendarIcon />
-          {date?.from ? (
-            date.to ? (
-              <>
-                {formatHuman(date.from)} - {formatHuman(date.to)}
-              </>
-            ) : (
-              <>
-                {formatHuman(date.from)} -{" "}
-                <div className="text-muted-foreground">Pick end time</div>
-              </>
-            )
-          ) : (
-            <span>Pick a time range</span>
-          )}
+          {formatDateRange(date, quickRanges)}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0 flex" align="start">
@@ -162,112 +228,31 @@ export function DateTimeRangePicker({
           />
         </div>
         <div className="flex flex-col p-2 gap-2">
+          {quickRanges.map((range) => (
+            <Button
+              key={range.label}
+              variant="outline"
+              size="sm"
+              className="w-full justify-end min-w-32"
+              onClick={() =>
+                setDate({
+                  from: range.from,
+                  to: range.to,
+                })
+              }
+            >
+              {range.label}
+            </Button>
+          ))}
           <Button
-            variant="outline"
+            variant="destructive"
             size="sm"
-            className="w-full"
-            onClick={() =>
-              setDate({
-                from: now.startOf("day").toJSDate(),
-                to: now.plus({ day: 1 }).startOf("day").toJSDate(),
-              })
-            }
+            onClick={() => {
+              setDate(undefined);
+              setOpen(false);
+            }}
           >
-            Today
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full"
-            onClick={() =>
-              setDate({
-                from: now.minus({ day: 1 }).startOf("day").toJSDate(),
-                to: now.startOf("day").toJSDate(),
-              })
-            }
-          >
-            Yesterday
-          </Button>
-          <Separator />
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full"
-            onClick={() =>
-              setDate({
-                from: now.startOf("week").toJSDate(),
-                to: now.plus({ week: 1 }).startOf("week").toJSDate(),
-              })
-            }
-          >
-            This Week
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full"
-            onClick={() =>
-              setDate({
-                from: now.minus({ week: 1 }).startOf("week").toJSDate(),
-                to: now.startOf("week").toJSDate(),
-              })
-            }
-          >
-            Last Week
-          </Button>
-          <Separator />
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full"
-            onClick={() =>
-              setDate({
-                from: now.startOf("month").toJSDate(),
-                to: now.plus({ month: 1 }).startOf("month").toJSDate(),
-              })
-            }
-          >
-            This Month
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full"
-            onClick={() =>
-              setDate({
-                from: now.minus({ month: 1 }).startOf("month").toJSDate(),
-                to: now.startOf("month").toJSDate(),
-              })
-            }
-          >
-            Last Month
-          </Button>
-          <Separator />
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full"
-            onClick={() =>
-              setDate({
-                from: now.startOf("year").toJSDate(),
-                to: now.plus({ year: 1 }).startOf("year").toJSDate(),
-              })
-            }
-          >
-            This Year
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full"
-            onClick={() =>
-              setDate({
-                from: now.minus({ year: 1 }).startOf("year").toJSDate(),
-                to: now.startOf("year").toJSDate(),
-              })
-            }
-          >
-            Last Year
+            Clear
           </Button>
         </div>
       </PopoverContent>
