@@ -11,6 +11,10 @@ export function toHumanDuration(
     : humanizeDuration(ticks / 10_000, { unitCount: 2 });
 }
 
+export function toHumanDurationFull(duration: Duration): string {
+  return humanizeDuration(duration.toMillis(), { hideYear: true });
+}
+
 export function dateTimeToTicks(ts: DateTime): number {
   return (ts.toMillis() + 62_135_596_800_000) * 10_000;
 }

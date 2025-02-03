@@ -8,10 +8,14 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Duration } from "luxon";
-import { Label } from "./ui/label";
-import { Input } from "./ui/input";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import parse from "parse-duration";
-import { Separator } from "./ui/separator";
+import { Separator } from "@/components/ui/separator";
+import { toHumanDurationFull } from "@/lib/time";
+
+// disable parsing of these units
+["y", "mo", "ms", "us", "ns"].forEach((u) => (parse.unit[u] = 0));
 
 type DurationPickerProps = {
   className?: string;
@@ -20,9 +24,7 @@ type DurationPickerProps = {
 } & ButtonProps;
 
 const formatHuman = (duration: Duration) => {
-  return duration.rescale().toHuman({
-    unitDisplay: "short",
-  });
+  return toHumanDurationFull(duration);
 };
 
 function daysStr(duration?: Duration) {
@@ -36,6 +38,7 @@ export function DurationPicker({
   setDuration,
   ...props
 }: DurationPickerProps) {
+  const [open, setOpen] = React.useState(false);
   const [quickInput, setQuickInputInner] = React.useState("");
   function setQuickInput(value: string) {
     setQuickInputInner(value);
@@ -59,13 +62,13 @@ export function DurationPicker({
 
   const [days, setDaysInner] = React.useState(daysStr(duration));
   const [hours, setHoursInner] = React.useState(
-    (duration?.hours || 0).toString()
+    (duration?.rescale()?.hours || 0).toString()
   );
   const [minutes, setMinutesInner] = React.useState(
-    (duration?.minutes || 0).toString()
+    (duration?.rescale()?.minutes || 0).toString()
   );
   const [seconds, setSecondsInner] = React.useState(
-    (duration?.seconds || 0).toString()
+    (duration?.rescale()?.seconds || 0).toString()
   );
 
   const setDays = (value: string) => {
@@ -105,7 +108,7 @@ export function DurationPicker({
   }
 
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           id="date"
@@ -183,6 +186,22 @@ export function DurationPicker({
               className="col-span-2"
               onBlur={resetText}
             />
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="destructive"
+              onClick={() => {
+                setDuration(undefined);
+                setQuickInput("");
+                setDaysInner("0");
+                setHoursInner("0");
+                setMinutesInner("0");
+                setSecondsInner("0");
+                setOpen(false);
+              }}
+            >
+              Clear
+            </Button>
           </div>
         </div>
       </PopoverContent>
