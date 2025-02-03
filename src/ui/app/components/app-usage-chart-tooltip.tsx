@@ -1,11 +1,12 @@
 import React from "react";
 import * as RechartsPrimitive from "recharts";
 import { cn } from "@/lib/utils";
-import { toHumanDuration } from "@/lib/time";
+import { toHumanDateTime, toHumanDuration } from "@/lib/time";
 import _ from "lodash";
 import type { App, Ref } from "@/lib/entities";
 import AppIcon from "./app-icon";
 import { useAppState } from "@/lib/state";
+import { DateTime } from "luxon";
 
 export const AppUsageChartTooltipContent = React.forwardRef<
   HTMLDivElement,
@@ -44,9 +45,13 @@ export const AppUsageChartTooltipContent = React.forwardRef<
       .toPairs()
       .reduce((acc, [key, value]) => (key !== "key" ? acc + value : acc), 0);
 
+    const dtMills = payload[0]?.payload.key as number | undefined;
+    const dt = dtMills ? DateTime.fromMillis(dtMills) : undefined;
+
     if (singleAppId !== undefined) {
       const singleApp = apps[singleAppId];
-      if (!singleApp) {
+      const singlePayload = payload[0];
+      if (!singleApp || !singlePayload) {
         return null;
       }
       return (
@@ -62,13 +67,20 @@ export const AppUsageChartTooltipContent = React.forwardRef<
               buffer={singleApp.icon}
               className="w-6 h-6 shrink-0 ml-2 mr-1"
             />
-            <span className="text-muted-foreground truncate max-w-52 text-base">
-              {singleApp.name}
-            </span>
+            <div className="flex flex-col">
+              <span className="text-muted-foreground truncate max-w-52 text-base">
+                {singleApp.name}
+              </span>
+              {dt && (
+                <div className="text-xs text-muted-foreground">
+                  {toHumanDateTime(dt)}
+                </div>
+              )}
+            </div>
             <div className="flex-1"></div>
             <div className="flex flex-col items-center">
               <span className=" text-sm">
-                {toHumanDuration(payload[0]?.payload[singleAppId] || 0)}
+                {toHumanDuration(singlePayload?.payload[singleAppId] || 0)}
               </span>
             </div>
           </div>
@@ -90,10 +102,17 @@ export const AppUsageChartTooltipContent = React.forwardRef<
               buffer={apps[hoveredAppId]!.icon} // cannot be stale - we filter stale data out
               className="w-6 h-6 shrink-0 ml-2 mr-1"
             />
-            <span className="text-muted-foreground truncate max-w-52 text-base">
-              {apps[hoveredAppId]!.name}{" "}
-              {/* cannot be stale - we filter stale data out */}
-            </span>
+            <div className="flex flex-col">
+              <span className="text-muted-foreground truncate max-w-52 text-base">
+                {apps[hoveredAppId]!.name}{" "}
+                {/* cannot be stale - we filter stale data out */}
+              </span>
+              {dt && (
+                <div className="text-xs text-muted-foreground">
+                  {toHumanDateTime(dt)}
+                </div>
+              )}
+            </div>
             <div className="flex-1"></div>
             <div className="flex flex-col items-center">
               <span className="font-semibold text-sm">
@@ -104,10 +123,15 @@ export const AppUsageChartTooltipContent = React.forwardRef<
           </div>
         )}
         {!hoveredAppId && totalUsage && (
-          <div className="border-b border-secondary-foreground/50 py-2 mb-1 flex justify-end">
+          <div className="flex-col border-b border-secondary-foreground/50 py-2 mb-1 flex items-end">
             <span className="font-semibold">
               Total: {toHumanDuration(totalUsage)}
             </span>
+            {dt && (
+              <div className="text-xs text-muted-foreground">
+                {toHumanDateTime(dt)}
+              </div>
+            )}
           </div>
         )}
         <div className="grid gap-1.5">
