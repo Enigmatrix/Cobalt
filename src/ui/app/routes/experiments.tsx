@@ -38,11 +38,13 @@ export default function Experiments() {
   const apps = useAppState((state) => state.apps);
   const chrome = apps[6 as unknown as Ref<App>] as App;
   const now = DateTime.now().startOf("day").plus({ day: 1 });
+  const [hover, setHover] = useState<WithGroupedDuration<App> | undefined>(
+    undefined
+  );
 
   const periodTicks = durationToTicks(Duration.fromDurationLike({ day: 1 }));
   const minTicks = dateTimeToTicks(now.minus({ week: 1 }));
   const maxTicks = dateTimeToTicks(now);
-  console.log("minTicks", minTicks, "maxTicks", maxTicks);
   useEffect(() => {
     getAppDurationsPerPeriod({
       period: periodTicks,
@@ -89,9 +91,10 @@ export default function Experiments() {
             periodTicks={periodTicks}
             rangeMinTicks={minTicks}
             rangeMaxTicks={maxTicks}
-            onHover={() => console.log("")}
+            onHover={setHover}
           />
         </div>
+        {JSON.stringify(hover)}
         <div className="min-h-[100vh] flex-1 rounded-xl bg-muted/50 md:min-h-min flex flex-col gap-4 p-4">
           <AppUsageBarChart
             data={data6}

@@ -28,7 +28,7 @@ export interface AppUsageBarChartProps {
   rangeMinTicks?: number;
   rangeMaxTicks?: number;
   maxYIsPeriod?: boolean;
-  onHover: (app: Ref<App>, duration: WithGroupedDuration<App>) => void;
+  onHover: (data?: WithGroupedDuration<App>) => void;
 }
 
 type AppUsageBarChartData = {
@@ -158,8 +158,18 @@ export function AppUsageBarChart({
             stackId="a"
             fill={app.color}
             name={app.name}
-            onMouseEnter={() => setHoveredAppId(app.id)}
-            onMouseLeave={() => setHoveredAppId(null)}
+            onMouseEnter={(e) => {
+              setHoveredAppId(app.id);
+              onHover({
+                id: app.id,
+                duration: e[app.id],
+                group: e.key,
+              });
+            }}
+            onMouseLeave={() => {
+              setHoveredAppId(null);
+              onHover(undefined);
+            }}
             radius={4}
           >
             {singleAppId === undefined && (
