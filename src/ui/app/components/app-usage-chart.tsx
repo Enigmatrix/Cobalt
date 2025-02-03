@@ -28,6 +28,9 @@ export interface AppUsageBarChartProps {
   rangeMinTicks?: number;
   rangeMaxTicks?: number;
   maxYIsPeriod?: boolean;
+  hideXAxis?: boolean;
+  gridVertical?: boolean;
+  gridHorizontal?: boolean;
   onHover: (data?: WithGroupedDuration<App>) => void;
 }
 
@@ -43,6 +46,9 @@ export function AppUsageBarChart({
   rangeMinTicks,
   rangeMaxTicks,
   maxYIsPeriod = false,
+  hideXAxis = false,
+  gridVertical = false,
+  gridHorizontal = false,
   onHover,
 }: AppUsageBarChartProps) {
   const apps = useAppState((state) => state.apps);
@@ -126,9 +132,10 @@ export function AppUsageBarChart({
   return (
     <ChartContainer config={config}>
       <BarChart accessibilityLayer data={data}>
-        <CartesianGrid vertical={false} />
+        <CartesianGrid vertical={gridVertical} horizontal={gridHorizontal} />
         <XAxis
           dataKey="key"
+          hide={hideXAxis}
           tickLine={false}
           // tickMargin={10}
           axisLine={false}

@@ -98,6 +98,7 @@ export default function Experiments() {
         <div className="min-h-[100vh] flex-1 rounded-xl bg-muted/50 md:min-h-min flex flex-col gap-4 p-4">
           <AppUsageBarChart
             data={data6}
+            hideXAxis
             singleAppId={6 as unknown as Ref<App>}
             periodTicks={periodTicks}
             rangeMinTicks={minTicks}
