@@ -1,7 +1,14 @@
 import type { App, Ref, WithGroupedDuration } from "@/lib/entities";
 import _ from "lodash";
 import { useMemo, useState } from "react";
-import { Bar, BarChart, CartesianGrid, LabelList, XAxis } from "recharts";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  LabelList,
+  XAxis,
+  YAxis,
+} from "recharts";
 import {
   type ChartConfig,
   ChartContainer,
@@ -16,10 +23,11 @@ import { useAppState, type EntityMap } from "@/lib/state";
 
 export interface AppUsageBarChartProps {
   data: EntityMap<App, WithGroupedDuration<App>[]>;
-  periodTicks: number;
   singleAppId?: Ref<App>;
+  periodTicks: number;
   rangeMinTicks?: number;
   rangeMaxTicks?: number;
+  maxYIsPeriod?: boolean;
   onHover: (app: Ref<App>, duration: WithGroupedDuration<App>) => void;
 }
 
@@ -30,10 +38,11 @@ type AppUsageBarChartData = {
 
 export function AppUsageBarChart({
   data: unflattenedData,
-  periodTicks,
   singleAppId,
-  rangeMinTicks: minTicks,
-  rangeMaxTicks: maxTicks,
+  periodTicks,
+  rangeMinTicks,
+  rangeMaxTicks,
+  maxYIsPeriod = false,
   onHover,
 }: AppUsageBarChartProps) {
   const apps = useAppState((state) => state.apps);
@@ -62,11 +71,11 @@ export function AppUsageBarChart({
       })
       .value();
 
-    if (minTicks !== undefined && maxTicks !== undefined) {
+    if (rangeMinTicks !== undefined && rangeMaxTicks !== undefined) {
       // fill up gaps in the time range.
       ret = _.merge(
         ret,
-        _(_.range(minTicks, maxTicks, periodTicks))
+        _(_.range(rangeMinTicks, rangeMaxTicks, periodTicks))
           .map((t) => {
             return [t, { key: ticksToDateTime(t).toMillis() }];
           })
@@ -80,7 +89,7 @@ export function AppUsageBarChart({
       .flatten()
       .sortBy((d) => d.key)
       .value();
-  }, [unflattenedData, minTicks, maxTicks, periodTicks]);
+  }, [unflattenedData, rangeMinTicks, rangeMaxTicks, periodTicks]);
 
   const [hoveredAppId, setHoveredAppId] = useState<Ref<App> | null>(null);
 
@@ -126,6 +135,11 @@ export function AppUsageBarChart({
           tickFormatter={(value) =>
             DateTime.fromMillis(value).toFormat("dd MMM")
           }
+        />
+        <YAxis
+          type="number"
+          hide
+          domain={["dataMin", maxYIsPeriod ? periodTicks : "dataMax"]}
         />
         <ChartTooltip
           content={
