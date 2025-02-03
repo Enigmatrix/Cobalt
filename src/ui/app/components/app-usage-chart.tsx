@@ -19,12 +19,12 @@ import type { ContentType } from "recharts/types/component/Label";
 import { toDataUrl } from "./app-icon";
 import { AppUsageChartTooltipContent } from "@/components/app-usage-chart-tooltip";
 import { DateTime } from "luxon";
+import { useAppState } from "@/lib/state";
 
 export interface AppUsageBarChartProps {
   data: WithGroupedDuration<App>[];
-  apps: Record<Ref<App>, App>;
   periodTicks: number;
-  singleApp?: Ref<App>;
+  singleAppId?: Ref<App>;
   rangeMinTicks?: number;
   rangeMaxTicks?: number;
   onHover: (app: Ref<App>, duration: WithGroupedDuration<App>) => void;
@@ -37,13 +37,14 @@ type AppUsageBarChartData = {
 
 export function AppUsageBarChart({
   data: unflattenedData,
-  apps,
   periodTicks,
-  singleApp,
+  singleAppId,
   rangeMinTicks: minTicks,
   rangeMaxTicks: maxTicks,
   onHover,
 }: AppUsageBarChartProps) {
+  const apps = useAppState((state) => state.apps);
+
   const involvedApps = useMemo(
     () => _.uniq(unflattenedData.map((d) => d.id)),
     [unflattenedData]
@@ -81,7 +82,7 @@ export function AppUsageBarChart({
       .value();
   }, [unflattenedData, minTicks, maxTicks, periodTicks]);
 
-  const [hoveredApp, setHoveredApp] = useState<Ref<App> | null>(null);
+  const [hoveredAppId, setHoveredAppId] = useState<Ref<App> | null>(null);
 
   const config = {} satisfies ChartConfig; // TODO: generate config
 
@@ -131,9 +132,9 @@ export function AppUsageBarChart({
         <ChartTooltip
           content={
             <AppUsageChartTooltipContent
-              hoveredApp={hoveredApp}
               maximumApps={10}
-              singleApp={singleApp}
+              hoveredAppId={hoveredAppId}
+              singleAppId={singleAppId}
               hideLabel
             />
           }
@@ -145,10 +146,10 @@ export function AppUsageBarChart({
             stackId="a"
             fill={apps[app].color}
             name={apps[app].name}
-            onMouseEnter={() => setHoveredApp(app)}
-            onMouseLeave={() => setHoveredApp(null)}
+            onMouseEnter={() => setHoveredAppId(app)}
+            onMouseLeave={() => setHoveredAppId(null)}
           >
-            {singleApp === undefined && (
+            {singleAppId === undefined && (
               <LabelList
                 dataKey={() => apps[app]}
                 content={renderCustomizedLabel}

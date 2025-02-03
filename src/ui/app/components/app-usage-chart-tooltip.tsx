@@ -15,9 +15,9 @@ export const AppUsageChartTooltipContent = React.forwardRef<
       hideIndicator?: boolean;
       nameKey?: string;
       labelKey?: string;
-      hoveredApp?: Ref<App> | null;
       maximumApps?: number;
-      singleApp?: Ref<App>;
+      hoveredAppId: Ref<App> | null;
+      singleAppId?: Ref<App>;
     }
 >(
   (
@@ -27,9 +27,9 @@ export const AppUsageChartTooltipContent = React.forwardRef<
       className,
       hideIndicator = false,
       formatter,
-      hoveredApp,
+      hoveredAppId,
       maximumApps,
-      singleApp,
+      singleAppId,
     },
     ref
   ) => {
@@ -44,7 +44,7 @@ export const AppUsageChartTooltipContent = React.forwardRef<
       .toPairs()
       .reduce((acc, [key, value]) => (key !== "key" ? acc + value : acc), 0);
 
-    if (singleApp !== undefined) {
+    if (singleAppId !== undefined) {
       return (
         <div
           ref={ref}
@@ -55,16 +55,16 @@ export const AppUsageChartTooltipContent = React.forwardRef<
         >
           <div className="flex items-center gap-2 py-2 mb-1">
             <AppIcon
-              buffer={apps[singleApp].icon}
+              buffer={apps[singleAppId].icon}
               className="w-6 h-6 shrink-0 ml-2 mr-1"
             />
             <span className="text-muted-foreground truncate max-w-52 text-base">
-              {apps[singleApp].name}
+              {apps[singleAppId].name}
             </span>
             <div className="flex-1"></div>
             <div className="flex flex-col items-center">
               <span className=" text-sm">
-                {toHumanDuration(payload[0]?.payload[singleApp] || 0)}
+                {toHumanDuration(payload[0]?.payload[singleAppId] || 0)}
               </span>
             </div>
           </div>
@@ -80,25 +80,25 @@ export const AppUsageChartTooltipContent = React.forwardRef<
           className
         )}
       >
-        {hoveredApp && payload.length > 0 && (
+        {hoveredAppId && payload.length > 0 && (
           <div className="flex items-center gap-2 border-b border-secondary-foreground/50 py-2 mb-1">
             <AppIcon
-              buffer={apps[hoveredApp].icon}
+              buffer={apps[hoveredAppId].icon}
               className="w-6 h-6 shrink-0 ml-2 mr-1"
             />
             <span className="text-muted-foreground truncate max-w-52 text-base">
-              {apps[hoveredApp].name}
+              {apps[hoveredAppId].name}
             </span>
             <div className="flex-1"></div>
             <div className="flex flex-col items-center">
               <span className="font-semibold text-sm">
-                {toHumanDuration(payload[0]?.payload[hoveredApp] || 0)}
+                {toHumanDuration(payload[0]?.payload[hoveredAppId] || 0)}
               </span>
               <span className="text-xs">/ {toHumanDuration(totalUsage)}</span>
             </div>
           </div>
         )}
-        {!hoveredApp && totalUsage && (
+        {!hoveredAppId && totalUsage && (
           <div className="border-b border-secondary-foreground/50 py-2 mb-1 flex justify-end">
             <span className="font-semibold">
               Total: {toHumanDuration(totalUsage)}

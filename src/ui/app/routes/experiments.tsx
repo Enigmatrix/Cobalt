@@ -39,7 +39,7 @@ export default function Experiments() {
   const periodTicks = durationToTicks(Duration.fromDurationLike({ day: 1 }));
   const minTicks = dateTimeToTicks(now.minus({ week: 1 }));
   const maxTicks = dateTimeToTicks(now);
-  console.log('minTicks', minTicks, 'maxTicks', maxTicks)
+  console.log("minTicks", minTicks, "maxTicks", maxTicks);
   useEffect(() => {
     getAppDurationsPerPeriod({
       period: periodTicks,
@@ -84,7 +84,6 @@ export default function Experiments() {
           <AppUsageBarChart
             periodTicks={periodTicks}
             data={data}
-            apps={apps}
             rangeMinTicks={minTicks}
             rangeMaxTicks={maxTicks}
             onHover={() => console.log("")}
@@ -94,8 +93,7 @@ export default function Experiments() {
           <AppUsageBarChart
             periodTicks={periodTicks}
             data={data6}
-            singleApp={6 as unknown as Ref<App>}
-            apps={apps}
+            singleAppId={6 as unknown as Ref<App>}
             onHover={() => console.log("")}
           />
         </div>
