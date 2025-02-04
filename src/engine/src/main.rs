@@ -1,3 +1,5 @@
+#![windows_subsystem = "windows"] // disable console window
+
 use std::sync::Arc;
 use std::thread;
 
