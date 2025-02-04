@@ -7,10 +7,11 @@ import {
   BreadcrumbPage,
   BreadcrumbList,
 } from "@/components/ui/breadcrumb";
-import { useAppState } from "@/lib/state";
-import type { App, Tag } from "@/lib/entities";
+import { useAppState, type EntityMap } from "@/lib/state";
+import type { App, Tag, WithGroupedDuration } from "@/lib/entities";
 import {
   memo,
+  useEffect,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -45,7 +46,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { toHumanDuration } from "@/lib/time";
+import { dateTimeToTicks, durationToTicks, toHumanDuration } from "@/lib/time";
+import { getAppDurationsPerPeriod } from "@/lib/repo";
+import { DateTime, Duration } from "luxon";
+import { AppUsageBarChart } from "@/components/app-usage-chart";
 
 function TagItem({ tag }: { tag: Tag }) {
   return (
@@ -171,7 +175,19 @@ function HorizontalOverflowList<T>({
   );
 }
 
-function AppListItem({ app }: { app: App }) {
+function AppListItem({
+  app,
+  usages,
+  start,
+  end,
+  period,
+}: {
+  app: App;
+  usages: EntityMap<App, WithGroupedDuration<App>[]>;
+  start: DateTime;
+  end: DateTime;
+  period: Duration;
+}) {
   const allTags = useAppState((state) => state.tags);
   const tags = useMemo(
     () =>
@@ -179,6 +195,10 @@ function AppListItem({ app }: { app: App }) {
         .map((tagId) => allTags[tagId])
         .filter((tag) => tag !== undefined), // filter stale tags
     [allTags, app.tags]
+  );
+  const singleUsage = useMemo(
+    () => ({ [app.id]: usages[app.id] }),
+    [usages, app.id]
   );
   return (
     <NavLink
@@ -224,8 +244,20 @@ function AppListItem({ app }: { app: App }) {
 
       <div className="flex-1" />
 
-      <div className="flex py-2 rounded-md">
-        <div className="flex flex-col items-end m-auto">
+      <AppUsageBarChart
+        hideXAxis
+        gradientBars
+        maxYIsPeriod
+        data={singleUsage}
+        singleAppId={app.id}
+        rangeMinTicks={dateTimeToTicks(start)}
+        rangeMaxTicks={dateTimeToTicks(end)}
+        periodTicks={durationToTicks(period)}
+        className="min-w-48 aspect-auto h-20"
+      />
+
+      <div className="flex py-2 rounded-md min-w-20">
+        <div className="flex flex-col items-end ml-auto my-auto">
           <div className="text-xs text-primary/50">Today</div>
           <div className="text-base min-w-8 text-center">
             {toHumanDuration(app.usages.usage_today)}
@@ -278,10 +310,33 @@ export default function Apps() {
       .value();
   }, [appsFiltered, sortDirection, sortProperty]);
 
+  const today = useMemo(() => DateTime.now().startOf("day"), []);
+  const period = useMemo(() => Duration.fromObject({ hour: 1 }), []);
+  const [start, end] = useMemo(
+    () => [today, today.endOf("day")],
+    [today, period]
+  );
+  const [usages, setUsages] = useState<
+    EntityMap<App, WithGroupedDuration<App>[]>
+  >({});
+  useEffect(() => {
+    getAppDurationsPerPeriod({
+      start,
+      end,
+      period,
+    }).then((usages) => setUsages(usages));
+  }, [start, end, period]);
+
   const ListItem = memo(
     ({ index, style }: { index: number; style: CSSProperties }) => (
       <VirtualListItem style={style}>
-        <AppListItem app={appsSorted[index]} />
+        <AppListItem
+          app={appsSorted[index]}
+          start={start}
+          end={end}
+          period={period}
+          usages={usages}
+        />
       </VirtualListItem>
     )
   );
