@@ -204,7 +204,7 @@ function AppListItem({
     <NavLink
       to={`/apps/${app.id}`}
       className={cn(
-        "h-20 shadow-sm rounded-md flex items-center gap-2 p-4",
+        "h-20 shadow-sm rounded-md flex items-center gap-2 p-4 @container",
         "ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
         "disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none cursor-pointer",
         "bg-primary-foreground text-primary hover:bg-primary/10 border-border border"
@@ -253,10 +253,10 @@ function AppListItem({
         rangeMinTicks={dateTimeToTicks(start)}
         rangeMaxTicks={dateTimeToTicks(end)}
         periodTicks={durationToTicks(period)}
-        className="min-w-48 aspect-auto h-20"
+        className="min-w-48 aspect-auto h-20 max-lg:hidden"
       />
 
-      <div className="flex py-2 rounded-md min-w-20">
+      <div className="flex py-2 rounded-md lg:min-w-20">
         <div className="flex flex-col items-end ml-auto my-auto">
           <div className="text-xs text-primary/50">Today</div>
           <div className="text-base min-w-8 text-center">
