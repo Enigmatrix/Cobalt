@@ -244,26 +244,30 @@ function AppListItem({
 
       <div className="flex-1" />
 
-      <AppUsageBarChart
-        hideXAxis
-        gradientBars
-        maxYIsPeriod
-        data={singleUsage}
-        singleAppId={app.id}
-        rangeMinTicks={dateTimeToTicks(start)}
-        rangeMaxTicks={dateTimeToTicks(end)}
-        periodTicks={durationToTicks(period)}
-        className="min-w-48 aspect-auto h-20 max-lg:hidden"
-      />
+      {app.usages.usage_today > 0 ? (
+        <>
+          <AppUsageBarChart
+            hideXAxis
+            gradientBars
+            maxYIsPeriod
+            data={singleUsage}
+            singleAppId={app.id}
+            rangeMinTicks={dateTimeToTicks(start)}
+            rangeMaxTicks={dateTimeToTicks(end)}
+            periodTicks={durationToTicks(period)}
+            className="min-w-48 aspect-auto h-20 max-lg:hidden"
+          />
 
-      <div className="flex py-2 rounded-md lg:min-w-20">
-        <div className="flex flex-col items-end ml-auto my-auto">
-          <div className="text-xs text-primary/50">Today</div>
-          <div className="text-base min-w-8 text-center">
-            {toHumanDuration(app.usages.usage_today)}
+          <div className="flex py-2 rounded-md lg:min-w-20">
+            <div className="flex flex-col items-end ml-auto my-auto">
+              <div className="text-xs text-primary/50">Today</div>
+              <div className="text-base min-w-8 text-center">
+                {toHumanDuration(app.usages.usage_today)}
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
+        </>
+      ) : null}
     </NavLink>
   );
 }
