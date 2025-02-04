@@ -63,7 +63,7 @@ export const AppUsageChartTooltipContent = React.forwardRef<
             className
           )}
         >
-          <div className="flex items-center gap-2 py-2 mb-1">
+          <div className="flex items-center gap-2 py-2">
             <AppIcon
               buffer={singleApp.icon}
               className="w-6 h-6 shrink-0 ml-2 mr-1"
@@ -79,7 +79,7 @@ export const AppUsageChartTooltipContent = React.forwardRef<
               )}
             </div>
             <div className="flex-1"></div>
-            <div className="flex flex-col items-center">
+            <div className="flex flex-col items-center shrink-0 min-w-max">
               <span className="text-muted-foreground text-sm tracking-tighter">
                 {toHumanDuration(singlePayload?.payload[singleAppId] || 0)}
               </span>
@@ -115,7 +115,7 @@ export const AppUsageChartTooltipContent = React.forwardRef<
               )}
             </div>
             <div className="flex-1"></div>
-            <div className="flex flex-col items-center text-muted-foreground tracking-tighter">
+            <div className="flex flex-col items-center text-muted-foreground tracking-tighter shrink-0 min-w-max">
               <span className="font-semibold text-sm">
                 {toHumanDuration(payload[0]?.payload[hoveredAppId] || 0)}
               </span>
