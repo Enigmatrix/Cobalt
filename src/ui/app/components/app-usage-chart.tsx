@@ -32,7 +32,8 @@ export interface AppUsageBarChartProps {
   gridVertical?: boolean;
   gridHorizontal?: boolean;
   gradientBars?: boolean;
-  onHover: (data?: WithGroupedDuration<App>) => void;
+  className?: string;
+  onHover?: (data?: WithGroupedDuration<App>) => void;
 }
 
 type AppUsageBarChartData = {
@@ -51,6 +52,7 @@ export function AppUsageBarChart({
   gridVertical = false,
   gridHorizontal = false,
   gradientBars = false,
+  className,
   onHover,
 }: AppUsageBarChartProps) {
   const apps = useAppState((state) => state.apps);
@@ -132,7 +134,7 @@ export function AppUsageBarChart({
   };
 
   return (
-    <ChartContainer config={config}>
+    <ChartContainer config={config} className={className}>
       <BarChart accessibilityLayer data={data}>
         <defs>
           {gradientBars &&
@@ -183,7 +185,7 @@ export function AppUsageBarChart({
             isAnimationActive={false}
             onMouseEnter={(e) => {
               setHoveredAppId(app.id);
-              onHover({
+              onHover?.({
                 id: app.id,
                 duration: e[app.id],
                 group: e.key,
@@ -191,7 +193,7 @@ export function AppUsageBarChart({
             }}
             onMouseLeave={() => {
               setHoveredAppId(null);
-              onHover(undefined);
+              onHover?.(undefined);
             }}
             radius={4}
           >
