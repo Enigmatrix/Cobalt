@@ -25,6 +25,7 @@
         "lodash": "^4.17.21",
         "lucide-react": "^0.474.0",
         "luxon": "^3.5.0",
+        "parse-duration": "^2.1.2",
         "pretty-ms": "^9.2.0",
         "react": "^19.0.0",
         "react-day-picker": "8.10.1",
@@ -984,6 +985,8 @@
     "pako": ["pako@0.2.9", "", {}, "sha512-NUcwaKxUxWrZLpDG+z/xZaCgQITkA/Dv4V/T6bw7VON6l1Xz/VnrBqrYjZQ12TamKHzITTfOEIYUj48y2KXImA=="],
 
     "parent-module": ["parent-module@1.0.1", "", { "dependencies": { "callsites": "^3.0.0" } }, "sha512-GQ2EWRpQV8/o+Aw8YqtfZZPfNRWZYkbidE9k5rpl/hC3vtHHBfGm2Ifi6qWV+coDGkrUKZAxE3Lot5kcsRlh+g=="],
+
+    "parse-duration": ["parse-duration@2.1.2", "", {}, "sha512-XGWdREkk2jn40JKcGpNvUBoPd7PZ5HIQmidTSYj3tkXzbnqqeN4oG172tUHmRuUo6agyQy5DY3ddu6mDXyoqqg=="],
 
     "parse-ms": ["parse-ms@4.0.0", "", {}, "sha512-TXfryirbmq34y8QBwgqCVLi+8oA3oWx2eAnSn62ITyEhEYaWRlVZ2DvMM9eZbMs/RfxPu/PK/aBLyGj4IrqMHw=="],
 
