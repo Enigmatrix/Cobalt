@@ -14,7 +14,7 @@ import {
   ChartContainer,
   ChartTooltip,
 } from "@/components/ui/chart";
-import { ticksToDateTime } from "@/lib/time";
+import { ticksToDateTime, toHumanDateTime } from "@/lib/time";
 import type { ContentType } from "recharts/types/component/Label";
 import { toDataUrl } from "./app-icon";
 import { AppUsageChartTooltipContent } from "@/components/app-usage-chart-tooltip";
@@ -33,6 +33,7 @@ export interface AppUsageBarChartProps {
   gridHorizontal?: boolean;
   gradientBars?: boolean;
   className?: string;
+  dateTimeFormatter?: (dt: DateTime) => string;
   onHover?: (data?: WithGroupedDuration<App>) => void;
 }
 
@@ -52,6 +53,7 @@ export function AppUsageBarChart({
   gridVertical = false,
   gridHorizontal = false,
   gradientBars = false,
+  dateTimeFormatter = toHumanDateTime,
   className,
   onHover,
 }: AppUsageBarChartProps) {
@@ -157,7 +159,7 @@ export function AppUsageBarChart({
           // tickMargin={10}
           axisLine={false}
           tickFormatter={(value) =>
-            DateTime.fromMillis(value).toFormat("dd MMM")
+            dateTimeFormatter(DateTime.fromMillis(value))
           }
         />
         <YAxis
