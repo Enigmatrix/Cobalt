@@ -32,6 +32,7 @@ export interface AppUsageBarChartProps {
   gridVertical?: boolean;
   gridHorizontal?: boolean;
   gradientBars?: boolean;
+  animationsEnabled?: boolean;
   className?: string;
   dateTimeFormatter?: (dt: DateTime) => string;
   onHover?: (data?: WithGroupedDuration<App>) => void;
@@ -54,6 +55,7 @@ export function AppUsageBarChart({
   gridHorizontal = false,
   gradientBars = false,
   dateTimeFormatter = toHumanDateTime,
+  animationsEnabled = true,
   className,
   onHover,
 }: AppUsageBarChartProps) {
@@ -186,7 +188,7 @@ export function AppUsageBarChart({
             stackId="a"
             fill={gradientBars ? `url(#gradient-${app.id})` : app.color}
             name={app.name}
-            isAnimationActive={false}
+            isAnimationActive={animationsEnabled}
             onMouseEnter={(e) => {
               setHoveredAppId(app.id);
               onHover?.({

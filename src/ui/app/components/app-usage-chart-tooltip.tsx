@@ -41,6 +41,7 @@ export const AppUsageChartTooltipContent = React.forwardRef<
     }
 
     payload = _.orderBy(payload, "value", "desc");
+    // this total usage might not be accurate if there are stale apps!
     const totalUsage = _(payload[0]?.payload || {})
       .toPairs()
       .reduce((acc, [key, value]) => (key !== "key" ? acc + value : acc), 0);
