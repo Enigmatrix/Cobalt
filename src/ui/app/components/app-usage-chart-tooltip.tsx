@@ -69,18 +69,18 @@ export const AppUsageChartTooltipContent = React.forwardRef<
               className="w-6 h-6 shrink-0 ml-2 mr-1"
             />
             <div className="flex flex-col">
-              <span className="text-muted-foreground truncate max-w-52 text-base">
+              <span className="truncate max-w-52 text-base">
                 {singleApp.name}
               </span>
               {dt && (
-                <div className="text-xs text-muted-foreground">
+                <div className="text-xs text-muted-foreground tracking-tighter">
                   {toHumanDateTime(dt)}
                 </div>
               )}
             </div>
             <div className="flex-1"></div>
             <div className="flex flex-col items-center">
-              <span className=" text-sm">
+              <span className="text-muted-foreground text-sm tracking-tighter">
                 {toHumanDuration(singlePayload?.payload[singleAppId] || 0)}
               </span>
             </div>
@@ -104,18 +104,18 @@ export const AppUsageChartTooltipContent = React.forwardRef<
               className="w-6 h-6 shrink-0 ml-2 mr-1"
             />
             <div className="flex flex-col">
-              <span className="text-muted-foreground truncate max-w-52 text-base">
-                {apps[hoveredAppId]!.name}{" "}
+              <span className="truncate max-w-52 text-base">
+                {apps[hoveredAppId]!.name}
                 {/* cannot be stale - we filter stale data out */}
               </span>
               {dt && (
-                <div className="text-xs text-muted-foreground">
+                <div className="text-xs text-muted-foreground tracking-tighter">
                   {toHumanDateTime(dt)}
                 </div>
               )}
             </div>
             <div className="flex-1"></div>
-            <div className="flex flex-col items-center">
+            <div className="flex flex-col items-center text-muted-foreground tracking-tighter">
               <span className="font-semibold text-sm">
                 {toHumanDuration(payload[0]?.payload[hoveredAppId] || 0)}
               </span>

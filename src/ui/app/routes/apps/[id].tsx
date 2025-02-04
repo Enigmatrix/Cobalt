@@ -29,7 +29,7 @@ function CardUsage({
         <div className="text-sm md:text-base lg:text-lg text-primary/50">
           {title}
         </div>
-        <div className="text-2xl md:text-3xl lg:text-5xl font-semibold">
+        <div className="text-2xl md:text-3xl lg:text-5xl font-semibold tracking-tighter">
           {toHumanDuration(usage)}
         </div>
       </div>
