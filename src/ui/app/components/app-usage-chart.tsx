@@ -166,6 +166,8 @@ export function AppUsageBarChart({
           domain={["dataMin", maxYIsPeriod ? periodTicks : "dataMax"]}
         />
         <ChartTooltip
+          allowEscapeViewBox={{ x: true, y: true }}
+          wrapperStyle={{ zIndex: 1000 }}
           content={
             <AppUsageChartTooltipContent
               maximumApps={10}
