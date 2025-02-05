@@ -1,10 +1,10 @@
 use std::time::Duration;
 
+use sqlx::pool::PoolConnection;
 use sqlx::prelude::FromRow;
 use sqlx::sqlite::{SqliteConnectOptions, SqliteJournalMode, SqliteRow};
 use sqlx::{
-    query, query_as, ConnectOptions, Connection, Executor, Row, Sqlite, SqliteConnection,
-    Transaction,
+    query, query_as, ConnectOptions, Connection, Executor, Row, Sqlite, SqlitePool, Transaction,
 };
 use util::config::Config;
 use util::error::{Context, Result};
@@ -35,32 +35,53 @@ impl<T: Table> From<FoundOrInserted<T>> for Ref<T> {
     }
 }
 
-/// Database connection stored in the file system.
-pub struct Database {
-    conn: SqliteConnection,
+/// Pool of [Database]s. Clones share the same pool.
+#[derive(Clone)]
+pub struct DatabasePool {
+    pool: SqlitePool,
 }
 
-impl Database {
-    /// Create a new [Database] from the given [Config]
+impl DatabasePool {
+    /// Create a new [DatabasePool] from a [Config]
     pub async fn new(config: &Config) -> Result<Self> {
         let path = config.connection_string()?;
-        let conn = SqliteConnectOptions::new()
+        let opts = SqliteConnectOptions::new()
             .filename(path)
             .create_if_missing(true)
             .journal_mode(SqliteJournalMode::Wal)
             .log_statements(log::LevelFilter::Trace)
-            .log_slow_statements(log::LevelFilter::Info, Duration::from_secs(1))
-            .connect()
-            .await?;
-        let mut ret = Self { conn };
-        Migrator::new(&mut ret).migrate().await.context("migrate")?;
-        Ok(ret)
+            .log_slow_statements(log::LevelFilter::Info, Duration::from_secs(1));
+        let pool = SqlitePool::connect_with(opts).await?;
+        let conn = pool.acquire().await?;
+        let mut db = Database { conn };
+        Migrator::new(&mut db).migrate().await.context("migrate")?;
+        Ok(Self { pool })
     }
 
+    /// Get a new [Database] from the pool
+    pub async fn get_db(&self) -> Result<Database> {
+        let conn = self.pool.acquire().await?;
+        Database::new(conn)
+    }
+}
+
+/// Database connection stored in the file system.
+pub struct Database {
+    conn: PoolConnection<Sqlite>,
+}
+
+impl Database {
+    /// Create a new [Database]
+    pub(crate) fn new(conn: PoolConnection<Sqlite>) -> Result<Self> {
+        Ok(Self { conn })
+    }
+
+    /// Expose the inner [Executor]
     pub(crate) fn executor(&mut self) -> impl Executor<'_, Database = Sqlite> {
-        &mut self.conn
+        &mut *self.conn
     }
 
+    /// Start a new [Transaction]
     pub(crate) async fn transaction(&mut self) -> Result<Transaction<'_, Sqlite>> {
         self.conn.begin().await.context("begin transaction")
     }

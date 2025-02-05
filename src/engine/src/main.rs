@@ -6,7 +6,7 @@
 use std::sync::Arc;
 use std::thread;
 
-use data::db::Database;
+use data::db::DatabasePool;
 use engine::{Engine, Event};
 use platform::events::{ForegroundEventWatcher, InteractionWatcher, WindowSession};
 use platform::objects::{EventLoop, Timer, Timestamp, Window};
@@ -107,15 +107,15 @@ fn event_loop(
 
 /// Processing loop for the [Engine].
 async fn engine_loop(
-    config: &Config,
+    db_pool: DatabasePool,
     cache: Arc<Mutex<cache::Cache>>,
     rx: Receiver<Event>,
     spawner: Handle,
     fg: WindowSession,
     now: Timestamp,
 ) -> Result<()> {
-    let db = Database::new(config).await?;
-    let mut engine = Engine::new(cache, fg, now, config.clone(), db, spawner).await?;
+    let db = db_pool.get_db().await?;
+    let mut engine = Engine::new(cache, db_pool, fg, now, db, spawner).await?;
     loop {
         let ev = rx.recv_async().await?;
         engine.handle(ev).await?;
@@ -124,11 +124,11 @@ async fn engine_loop(
 
 /// Processing loop for the [Sentry].
 async fn sentry_loop(
-    config: &Config,
+    db_pool: DatabasePool,
     cache: Arc<Mutex<cache::Cache>>,
     alert_rx: Receiver<Timestamp>,
 ) -> Result<()> {
-    let db = Database::new(config).await?;
+    let db = db_pool.get_db().await?;
     let mut sentry = Sentry::new(cache, db)?;
     loop {
         let at = alert_rx.recv_async().await?;
@@ -149,26 +149,29 @@ fn processor(
 
     let cache = Arc::new(Mutex::new(cache::Cache::new()));
 
-    let _config = config.clone();
-    let _cache = cache.clone();
-    rt.spawn(async move {
-        sentry_loop(&_config, _cache, alert_rx)
-            .await
-            .context("sentry loop")
-            .error();
-    });
+    let handle = rt.handle().clone();
+    let res: Result<()> = rt.block_on(async move {
+        let db_pool = DatabasePool::new(config).await?;
 
-    let _config = config.clone();
-    let _cache = cache.clone();
-    let _handle = rt.handle().clone();
-    rt.block_on(async move {
-        engine_loop(&_config, _cache, event_rx, _handle, fg, now)
-            .await
-            .context("engine loop")
-            .error();
-    });
+        let sentry_handle = {
+            let cache = cache.clone();
+            let db_pool = db_pool.clone();
+            handle.spawn(async {
+                sentry_loop(db_pool, cache, alert_rx)
+                    .await
+                    .context("sentry loop")
+                    .error();
+            })
+        };
 
-    Ok(())
+        engine_loop(db_pool, cache, event_rx, handle, fg, now)
+            .await
+            .context("engine loop")?;
+
+        sentry_handle.await?;
+        Ok(())
+    });
+    res
 }
 
 /// Get the foreground [Window], and makes it into a [WindowSession] blocking until one is present.

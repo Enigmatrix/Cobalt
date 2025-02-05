@@ -1,8 +1,8 @@
 use data::db::repo::Repository;
-use data::db::Database;
+use data::db::DatabasePool;
 use serde::{Deserialize, Serialize};
 use tauri::async_runtime::RwLock;
-use util::config::{get_config, Config};
+use util::config::get_config;
 use util::error::*;
 
 use crate::error::*;
@@ -35,22 +35,21 @@ impl QueryOptions {
 
 /// The real app state
 pub struct AppStateInner {
-    pub repo: Repository,
-    pub config: Config,
+    pub db_pool: DatabasePool,
+    // pub config: Config,
 }
 
 impl AppStateInner {
     /// Create a new app state
     pub async fn new() -> Result<Self> {
         let config = get_config()?;
-        let db = Database::new(&config).await?;
-        let repo = Repository::new(db)?;
-        Ok(Self { repo, config })
+        let db_pool = DatabasePool::new(&config).await?;
+        Ok(Self { db_pool })
     }
 
     /// Gets the repo with options
     pub async fn get_repo(&self) -> Result<Repository> {
-        let db = Database::new(&self.config).await?;
+        let db = self.db_pool.get_db().await?;
         Ok(Repository::new(db)?)
     }
 }

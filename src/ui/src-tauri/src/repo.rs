@@ -90,7 +90,8 @@ pub async fn update_usages_end(state: State<'_, AppState>) -> AppResult<()> {
     let mut state = state.write().await;
     state
         .assume_init_mut()
-        .repo
+        .get_repo()
+        .await?
         .update_usages_set_last(now.into())
         .await?;
     Ok(())
