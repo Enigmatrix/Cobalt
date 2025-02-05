@@ -156,17 +156,34 @@ fn processor(
         let sentry_handle = {
             let cache = cache.clone();
             let db_pool = db_pool.clone();
-            handle.spawn(async {
-                sentry_loop(db_pool, cache, alert_rx)
-                    .await
-                    .context("sentry loop")
-                    .error();
+            handle.spawn(async move {
+                for attempt in 0.. {
+                    if attempt > 0 {
+                        info!("restarting sentry loop");
+                    }
+                    sentry_loop(db_pool.clone(), cache.clone(), alert_rx.clone())
+                        .await
+                        .context("sentry loop")
+                        .error();
+                }
             })
         };
 
-        engine_loop(db_pool, cache, event_rx, handle, fg, now)
+        for attempt in 0.. {
+            if attempt > 0 {
+                info!("restarting engine loop");
+            }
+            engine_loop(
+                db_pool.clone(),
+                cache.clone(),
+                event_rx.clone(),
+                handle.clone(),
+                fg.clone(),
+                now,
+            )
             .await
             .context("engine loop")?;
+        }
 
         sentry_handle.await?;
         Ok(())
