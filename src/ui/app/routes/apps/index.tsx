@@ -1,5 +1,4 @@
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import useResizeObserver from "@react-hook/resize-observer";
 import { Separator } from "@/components/ui/separator";
 import {
   Breadcrumb,
@@ -50,6 +49,7 @@ import { dateTimeToTicks, durationToTicks, toHumanDuration } from "@/lib/time";
 import { getAppDurationsPerPeriod } from "@/lib/repo";
 import { DateTime, Duration } from "luxon";
 import { AppUsageBarChart } from "@/components/app-usage-chart";
+import { useWidth } from "@/hooks/use-width";
 
 function TagItem({ tag }: { tag: Tag }) {
   return (
@@ -88,22 +88,6 @@ function VirtualListItem({
       {children}
     </div>
   );
-}
-
-function useWidth(
-  target: React.RefObject<HTMLElement | null>,
-  initWidth?: number
-) {
-  const [width, setWidth] = useState(initWidth || 0);
-
-  useLayoutEffect(() => {
-    if (!target?.current) return;
-    setWidth(target.current.getBoundingClientRect().width);
-  }, [target]);
-
-  // Where the magic happens
-  useResizeObserver(target, (entry) => setWidth(entry.contentRect.width));
-  return width;
 }
 
 // Assumes rendered items are same height. Height of this container
