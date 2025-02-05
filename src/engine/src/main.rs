@@ -144,7 +144,7 @@ fn processor(
     event_rx: Receiver<Event>,
     alert_rx: Receiver<Timestamp>,
 ) -> Result<()> {
-    let rt = Builder::new_current_thread().build()?;
+    let rt = Builder::new_current_thread().enable_time().build()?;
     // let rt = Builder::new_multi_thread().enable_all().build()?;
 
     let cache = Arc::new(Mutex::new(cache::Cache::new()));
