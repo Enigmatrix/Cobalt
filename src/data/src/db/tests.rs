@@ -9,9 +9,9 @@ pub async fn test_db() -> Result<Database> {
     let conn = SqliteConnectOptions::new()
         .in_memory(true)
         .create_if_missing(true)
-        .journal_mode(SqliteJournalMode::Wal)
-        .connect()
-        .await?;
+        .journal_mode(SqliteJournalMode::Wal);
+    let pool = SqlitePool::connect_with(conn).await?;
+    let conn = pool.acquire().await?;
     let mut ret = Database { conn };
     Migrator::new(&mut ret).migrate().await.context("migrate")?;
     Ok(ret)
@@ -36,7 +36,7 @@ async fn insert_new_app() -> Result<()> {
 
     let res: Vec<(bool, String)> = query("SELECT * FROM apps")
         .map(|r: SqliteRow| (r.get("initialized"), r.get("identity_path_or_aumid")))
-        .fetch_all(&mut writer.db.conn)
+        .fetch_all(writer.db.executor())
         .await?;
 
     assert_eq!(vec![(false, "notepad.exe".to_string())], res);
@@ -79,7 +79,7 @@ async fn insert_session() -> Result<()> {
     writer.insert_session(&mut sess).await?;
 
     let sess_from_db = query_as("SELECT * FROM sessions")
-        .fetch_all(&mut writer.db.conn)
+        .fetch_all(writer.db.executor())
         .await?;
 
     assert_eq!(vec![sess], sess_from_db);
@@ -110,7 +110,7 @@ async fn insert_usage() -> Result<()> {
     writer.insert_or_update_usage(&mut usage).await?;
 
     let usage_from_db = query_as("SELECT * FROM usages")
-        .fetch_all(&mut writer.db.conn)
+        .fetch_all(writer.db.executor())
         .await?;
     assert_eq!(vec![usage], usage_from_db);
     Ok(())
@@ -142,7 +142,7 @@ async fn update_usage_after_insert_usage() -> Result<()> {
     writer.insert_or_update_usage(&mut usage).await?;
 
     let usage_from_db = query_as("SELECT * FROM usages")
-        .fetch_all(&mut writer.db.conn)
+        .fetch_all(writer.db.executor())
         .await?;
     assert_eq!(vec![usage], usage_from_db);
     assert_ne!(usage_from_db[0].end, 420);
@@ -168,7 +168,7 @@ async fn insert_interaction_period() -> Result<()> {
     writer.insert_interaction_period(&ip).await?;
 
     let ip_from_db = query_as("SELECT * FROM interaction_periods")
-        .fetch_all(&mut writer.db.conn)
+        .fetch_all(writer.db.executor())
         .await?;
     ip.id = Ref::new(1);
     assert_eq!(vec![ip], ip_from_db);

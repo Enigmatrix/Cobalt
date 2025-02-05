@@ -55,18 +55,36 @@ impl<T: Default> ResultTraceExt<T> for Result<T> {
 
 /// Setup the tracing layer with the given filter directives.
 pub fn setup(filter_directives: &str) -> Result<()> {
-    let filter = EnvFilter::new(filter_directives);
     let rolling = daily("logs", "Cobalt.Engine.log");
 
-    #[cfg(debug_assertions)]
-    let writers = || rolling.and(std::io::stdout);
-    #[cfg(not(debug_assertions))]
-    let writers = || rolling;
+    // Create a non-colored layer for file output
+    let file_layer = fmt::layer()
+        .with_ansi(false)
+        .with_writer(rolling)
+        .with_filter(EnvFilter::new(filter_directives));
 
-    registry()
-        .with(fmt::layer().with_writer(writers()).with_filter(filter)) // default fmt layer
-        .try_init()
-        .context("initialize tracing layers")?;
+    #[cfg(debug_assertions)]
+    {
+        // Create a colored layer for stdout
+        let stdout_layer = fmt::layer()
+            .with_writer(std::io::stdout)
+            .with_filter(EnvFilter::new(filter_directives));
+
+        registry()
+            .with(stdout_layer)
+            .with(file_layer)
+            .try_init()
+            .context("initialize tracing layers")?;
+    }
+
+    #[cfg(not(debug_assertions))]
+    {
+        registry()
+            .with(file_layer)
+            .try_init()
+            .context("initialize tracing layers")?;
+    }
+
     Ok(())
 }
 

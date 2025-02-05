@@ -1,11 +1,10 @@
 use std::sync::Arc;
 
-use data::db::{Database, FoundOrInserted, UsageWriter};
+use data::db::{Database, DatabasePool, FoundOrInserted, UsageWriter};
 use data::entities::{AppIdentity, InteractionPeriod, Ref, Session, Usage};
 use platform::events::{ForegroundChangedEvent, InteractionChangedEvent, WindowSession};
 use platform::objects::{Process, ProcessId, Timestamp, Window};
 use scoped_futures::ScopedFutureExt;
-use util::config::Config;
 use util::error::{Context, Result};
 use util::future::runtime::Handle;
 use util::future::sync::Mutex;
@@ -19,7 +18,7 @@ pub struct Engine {
     cache: Arc<Mutex<Cache>>,
     current_usage: Usage,
     active_period_start: Timestamp,
-    config: Config,
+    db_pool: DatabasePool,
     inserter: UsageWriter,
     spawner: Handle,
 }
@@ -35,16 +34,16 @@ impl Engine {
     /// Create a new [Engine], which initializes it's first [Usage]
     pub async fn new(
         cache: Arc<Mutex<Cache>>,
+        db_pool: DatabasePool,
         foreground: WindowSession,
         start: Timestamp,
-        config: Config,
         db: Database,
         spawner: Handle,
     ) -> Result<Self> {
         let inserter = UsageWriter::new(db)?;
         let mut ret = Self {
             cache,
-            config,
+            db_pool,
             inserter,
             active_period_start: start,
             // set a default value, then update it right after
@@ -131,7 +130,7 @@ impl Engine {
                 async {
                     Self::create_session_for_window(
                         cache,
-                        &self.config,
+                        self.db_pool.clone(),
                         &mut self.inserter,
                         &self.spawner,
                         ws,
@@ -148,7 +147,7 @@ impl Engine {
     /// Create a [Session] for the given [Window]
     async fn create_session_for_window(
         cache: &mut Cache,
-        config: &Config,
+        db_pool: DatabasePool,
         inserter: &mut UsageWriter,
         spawner: &Handle,
         ws: WindowSession,
@@ -158,7 +157,7 @@ impl Engine {
         let pid = ws.window.pid()?;
         let AppDetails { app } = cache
             .get_or_insert_app_for_process(pid, |_| async {
-                Self::create_app_for_process(inserter, config, spawner, pid, &ws.window).await
+                Self::create_app_for_process(inserter, db_pool, spawner, pid, &ws.window).await
             })
             .await?;
 
@@ -178,7 +177,7 @@ impl Engine {
     /// Create an [App] for the given [ProcessId] and [Window]
     async fn create_app_for_process(
         inserter: &mut UsageWriter,
-        config: &Config,
+        db_pool: DatabasePool,
         spawner: &Handle,
         pid: ProcessId,
         window: &Window,
@@ -203,11 +202,10 @@ impl Engine {
                 {
                     info!(?window, ?pid, "inserted app");
 
-                    let config = config.clone();
                     let id = id.clone();
 
                     spawner.spawn(async move {
-                        AppInfoResolver::update_app(&config, id, identity)
+                        AppInfoResolver::update_app(db_pool, id, identity)
                             .await
                             .context("update app with info")
                             .error();

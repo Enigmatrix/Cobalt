@@ -1,9 +1,8 @@
-use data::db::{AppUpdater, Database};
+use data::db::{AppUpdater, DatabasePool};
 use data::entities::{App, AppIdentity, Ref};
 use platform::objects::AppInfo;
 use rand::prelude::SliceRandom;
 use rand::rngs::ThreadRng;
-use util::config::Config;
 use util::error::Result;
 use util::tracing::info;
 
@@ -20,12 +19,16 @@ impl AppInfoResolver {
     }
 
     /// Resolves and updates the application information for the given [AppIdentity] into the [Database].
-    pub async fn update_app(config: &Config, app: Ref<App>, identity: AppIdentity) -> Result<()> {
+    pub async fn update_app(
+        db_pool: DatabasePool,
+        app: Ref<App>,
+        identity: AppIdentity,
+    ) -> Result<()> {
         info!("updating app info {:?} ({:?})", app, identity);
 
         let app_info = Self::resolve(&identity).await?;
 
-        let db = Database::new(config).await?;
+        let db = db_pool.get_db().await?;
         let mut updater = AppUpdater::new(db)?;
 
         let app = App {
