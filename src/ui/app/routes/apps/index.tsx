@@ -11,9 +11,7 @@ import type { App, Tag, WithGroupedDuration } from "@/lib/entities";
 import {
   memo,
   useEffect,
-  useLayoutEffect,
   useMemo,
-  useRef,
   useState,
   type CSSProperties,
   type ReactNode,
@@ -38,18 +36,11 @@ import { ArrowDownUp, Filter, SortAsc, SortDesc } from "lucide-react";
 import _ from "lodash";
 import fuzzysort from "fuzzysort";
 import { Text } from "@/components/ui/text";
-import type { ClassValue } from "clsx";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { dateTimeToTicks, durationToTicks, toHumanDuration } from "@/lib/time";
 import { getAppDurationsPerPeriod } from "@/lib/repo";
 import { DateTime, Duration } from "luxon";
 import { AppUsageBarChart } from "@/components/app-usage-chart";
-import { useWidth } from "@/hooks/use-width";
+import { HorizontalOverflowList } from "@/components/overflow-list";
 
 function TagItem({ tag }: { tag: Tag }) {
   return (
@@ -86,75 +77,6 @@ function VirtualListItem({
       {/* gap */}
       <div className="h-4" />
       {children}
-    </div>
-  );
-}
-
-// Assumes rendered items are same height. Height of this container
-// must be manually set to height of the rendered item.
-function HorizontalOverflowList<T>({
-  className,
-  items,
-  renderItem,
-  renderOverflowItem,
-  renderOverflowSign,
-}: {
-  className: ClassValue;
-  items: T[];
-  renderItem: (item: T) => ReactNode;
-  renderOverflowItem: (item: T) => ReactNode;
-  renderOverflowSign: (overflowItems: T[]) => ReactNode;
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-  const width = useWidth(ref);
-  useLayoutEffect(() => {
-    if (!ref.current) return;
-    const items = ref.current.children;
-    const firstItem = items.item(0) as HTMLElement;
-    const offsetLeft = firstItem?.offsetLeft;
-    const offsetTop = firstItem?.offsetTop;
-    const overflowIndex = _.findIndex(
-      items,
-      (item) =>
-        (item as HTMLElement).offsetLeft === offsetLeft &&
-        (item as HTMLElement).offsetTop !== offsetTop
-    );
-    setOverflowIndex(overflowIndex);
-  }, [width, ref]);
-  const [overflowIndex, setOverflowIndex] = useState(0);
-  const overflowItems = useMemo(
-    () => items.slice(overflowIndex),
-    [items, overflowIndex]
-  );
-
-  return (
-    <div
-      ref={ref}
-      className={cn("flex flex-wrap items-center overflow-hidden", className)}
-    >
-      {items.map((item, index) => (
-        <div className="flex items-center" key={index}>
-          {renderItem(item)}
-
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger
-                asChild
-                className={cn({
-                  hidden: index !== overflowIndex - 1,
-                })}
-              >
-                {renderOverflowSign(overflowItems)}
-              </TooltipTrigger>
-              <TooltipContent>
-                <div className="flex flex-col gap-2 py-2">
-                  {overflowItems.map(renderOverflowItem)}
-                </div>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
-      ))}
     </div>
   );
 }
