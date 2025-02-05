@@ -26,10 +26,10 @@ function CardUsage({
   return (
     <div className="aspect-video rounded-xl bg-muted/50 flex">
       <div className="flex flex-col items-center m-auto">
-        <div className="text-sm md:text-base lg:text-lg text-white/50">
+        <div className="text-sm md:text-base lg:text-lg text-primary/50">
           {title}
         </div>
-        <div className="text-2xl md:text-3xl lg:text-5xl font-semibold">
+        <div className="text-2xl md:text-3xl lg:text-5xl font-semibold tracking-tighter">
           {toHumanDuration(usage)}
         </div>
       </div>

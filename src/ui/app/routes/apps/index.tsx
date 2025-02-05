@@ -1,5 +1,4 @@
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import useResizeObserver from "@react-hook/resize-observer";
 import { Separator } from "@/components/ui/separator";
 import {
   Breadcrumb,
@@ -7,13 +6,12 @@ import {
   BreadcrumbPage,
   BreadcrumbList,
 } from "@/components/ui/breadcrumb";
-import { useAppState } from "@/lib/state";
-import type { App, Tag } from "@/lib/entities";
+import { useAppState, type EntityMap } from "@/lib/state";
+import type { App, Tag, WithGroupedDuration } from "@/lib/entities";
 import {
   memo,
-  useLayoutEffect,
+  useEffect,
   useMemo,
-  useRef,
   useState,
   type CSSProperties,
   type ReactNode,
@@ -38,13 +36,11 @@ import { ArrowDownUp, Filter, SortAsc, SortDesc } from "lucide-react";
 import _ from "lodash";
 import fuzzysort from "fuzzysort";
 import { Text } from "@/components/ui/text";
-import type { ClassValue } from "clsx";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { dateTimeToTicks, durationToTicks, toHumanDuration } from "@/lib/time";
+import { getAppDurationsPerPeriod } from "@/lib/repo";
+import { DateTime, Duration } from "luxon";
+import { AppUsageBarChart } from "@/components/app-usage-chart";
+import { HorizontalOverflowList } from "@/components/overflow-list";
 
 function TagItem({ tag }: { tag: Tag }) {
   return (
@@ -85,93 +81,19 @@ function VirtualListItem({
   );
 }
 
-function useWidth(
-  target: React.RefObject<HTMLElement | null>,
-  initWidth?: number
-) {
-  const [width, setWidth] = useState(initWidth || 0);
-
-  useLayoutEffect(() => {
-    if (!target?.current) return;
-    setWidth(target.current.getBoundingClientRect().width);
-  }, [target]);
-
-  // Where the magic happens
-  useResizeObserver(target, (entry) => setWidth(entry.contentRect.width));
-  return width;
-}
-
-// Assumes rendered items are same height. Height of this container
-// must be manually set to height of the rendered item.
-function HorizontalOverflowList<T>({
-  className,
-  items,
-  renderItem,
-  renderOverflowItem,
-  renderOverflowSign,
+function AppListItem({
+  app,
+  usages,
+  start,
+  end,
+  period,
 }: {
-  className: ClassValue;
-  items: T[];
-  renderItem: (item: T) => ReactNode;
-  renderOverflowItem: (item: T) => ReactNode;
-  renderOverflowSign: (overflowItems: T[]) => ReactNode;
+  app: App;
+  usages: EntityMap<App, WithGroupedDuration<App>[]>;
+  start: DateTime;
+  end: DateTime;
+  period: Duration;
 }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const width = useWidth(ref);
-  useLayoutEffect(() => {
-    if (!ref.current) return;
-    const items = ref.current.children;
-    const firstItem = items.item(0) as HTMLElement;
-    const offsetLeft = firstItem?.offsetLeft;
-    const offsetTop = firstItem?.offsetTop;
-    const overflowIndex = _.findIndex(
-      items,
-      (item) =>
-        (item as HTMLElement).offsetLeft === offsetLeft &&
-        (item as HTMLElement).offsetTop !== offsetTop
-    );
-    setOverflowIndex(overflowIndex);
-  }, [width, ref]);
-  const [overflowIndex, setOverflowIndex] = useState(0);
-  const overflowItems = useMemo(
-    () => items.slice(overflowIndex),
-    [items, overflowIndex]
-  );
-
-  return (
-    <div
-      ref={ref}
-      className={cn("flex flex-wrap items-center overflow-hidden", className)}
-    >
-      {items.map((item, index) => (
-        <div className="flex items-center" key={index}>
-          {renderItem(item)}
-
-          <div
-            className={cn({
-              hidden: index !== overflowIndex - 1,
-            })}
-          >
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger>
-                  {renderOverflowSign(overflowItems)}
-                </TooltipTrigger>
-                <TooltipContent>
-                  <div className="flex flex-col gap-2 py-2">
-                    {overflowItems.map(renderOverflowItem)}
-                  </div>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function AppListItem({ app }: { app: App }) {
   const allTags = useAppState((state) => state.tags);
   const tags = useMemo(
     () =>
@@ -180,14 +102,18 @@ function AppListItem({ app }: { app: App }) {
         .filter((tag) => tag !== undefined), // filter stale tags
     [allTags, app.tags]
   );
+  const singleUsage = useMemo(
+    () => ({ [app.id]: usages[app.id] }),
+    [usages, app.id]
+  );
   return (
     <NavLink
       to={`/apps/${app.id}`}
       className={cn(
-        "h-20 shadow-sm rounded-md flex items-center gap-2 p-4",
+        "h-20 shadow-sm rounded-md flex items-center gap-2 p-4 @container",
         "ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
         "disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none cursor-pointer",
-        "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+        "bg-primary-foreground text-primary hover:bg-primary/10 border-border border"
       )}
     >
       <AppIcon buffer={app.icon} className="mx-2 h-10 w-10 flex-shrink-0" />
@@ -201,11 +127,17 @@ function AppListItem({ app }: { app: App }) {
             renderItem={(tag) => <TagItem key={tag.id} tag={tag} />}
             renderOverflowItem={(tag) => <TagItem key={tag.id} tag={tag} />}
             renderOverflowSign={(items) => (
-              <Badge className="whitespace-nowrap ml-1 bg-white/20 hover:bg-white/30 text-white/60 rounded-md">{`+${items.length}`}</Badge>
+              <Badge
+                variant="outline"
+                style={{
+                  backgroundColor: "rgba(255, 255, 255, 0.2)",
+                }}
+                className="whitespace-nowrap ml-1 text-primary/60 rounded-md"
+              >{`+${items.length}`}</Badge>
             )}
           />
         </div>
-        <span className="inline-flex gap-1 items-center text-white/50 text-xs">
+        <span className="inline-flex gap-1 items-center text-xs text-primary/50">
           <Text className="max-w-48">{app.company}</Text>
           {app.description && (
             <>
@@ -215,6 +147,33 @@ function AppListItem({ app }: { app: App }) {
           )}
         </span>
       </div>
+
+      <div className="flex-1" />
+
+      {app.usages.usage_today > 0 ? (
+        <>
+          <AppUsageBarChart
+            hideXAxis
+            gradientBars
+            maxYIsPeriod
+            data={singleUsage}
+            singleAppId={app.id}
+            rangeMinTicks={dateTimeToTicks(start)}
+            rangeMaxTicks={dateTimeToTicks(end)}
+            periodTicks={durationToTicks(period)}
+            className="min-w-48 aspect-auto h-20 max-lg:hidden"
+          />
+
+          <div className="flex py-2 rounded-md lg:min-w-20">
+            <div className="flex flex-col items-end ml-auto my-auto">
+              <div className="text-xs text-primary/50">Today</div>
+              <div className="text-lg min-w-8 text-center tracking-tighter">
+                {toHumanDuration(app.usages.usage_today)}
+              </div>
+            </div>
+          </div>
+        </>
+      ) : null}
     </NavLink>
   );
 }
@@ -261,10 +220,33 @@ export default function Apps() {
       .value();
   }, [appsFiltered, sortDirection, sortProperty]);
 
+  const today = useMemo(() => DateTime.now().startOf("day"), []);
+  const period = useMemo(() => Duration.fromObject({ hour: 1 }), []);
+  const [start, end] = useMemo(
+    () => [today, today.endOf("day")],
+    [today, period]
+  );
+  const [usages, setUsages] = useState<
+    EntityMap<App, WithGroupedDuration<App>[]>
+  >({});
+  useEffect(() => {
+    getAppDurationsPerPeriod({
+      start,
+      end,
+      period,
+    }).then((usages) => setUsages(usages));
+  }, [start, end, period]);
+
   const ListItem = memo(
     ({ index, style }: { index: number; style: CSSProperties }) => (
       <VirtualListItem style={style}>
-        <AppListItem app={appsSorted[index]} />
+        <AppListItem
+          app={appsSorted[index]}
+          start={start}
+          end={end}
+          period={period}
+          usages={usages}
+        />
       </VirtualListItem>
     )
   );

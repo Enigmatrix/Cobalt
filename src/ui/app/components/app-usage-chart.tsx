@@ -14,7 +14,7 @@ import {
   ChartContainer,
   ChartTooltip,
 } from "@/components/ui/chart";
-import { ticksToDateTime } from "@/lib/time";
+import { ticksToDateTime, toHumanDateTime } from "@/lib/time";
 import type { ContentType } from "recharts/types/component/Label";
 import { toDataUrl } from "./app-icon";
 import { AppUsageChartTooltipContent } from "@/components/app-usage-chart-tooltip";
@@ -32,7 +32,10 @@ export interface AppUsageBarChartProps {
   gridVertical?: boolean;
   gridHorizontal?: boolean;
   gradientBars?: boolean;
-  onHover: (data?: WithGroupedDuration<App>) => void;
+  animationsEnabled?: boolean;
+  className?: string;
+  dateTimeFormatter?: (dt: DateTime) => string;
+  onHover?: (data?: WithGroupedDuration<App>) => void;
 }
 
 type AppUsageBarChartData = {
@@ -51,6 +54,9 @@ export function AppUsageBarChart({
   gridVertical = false,
   gridHorizontal = false,
   gradientBars = false,
+  dateTimeFormatter = toHumanDateTime,
+  animationsEnabled = true,
+  className,
   onHover,
 }: AppUsageBarChartProps) {
   const apps = useAppState((state) => state.apps);
@@ -132,7 +138,7 @@ export function AppUsageBarChart({
   };
 
   return (
-    <ChartContainer config={config}>
+    <ChartContainer config={config} className={className}>
       <BarChart accessibilityLayer data={data}>
         <defs>
           {gradientBars &&
@@ -155,7 +161,7 @@ export function AppUsageBarChart({
           // tickMargin={10}
           axisLine={false}
           tickFormatter={(value) =>
-            DateTime.fromMillis(value).toFormat("dd MMM")
+            dateTimeFormatter(DateTime.fromMillis(value))
           }
         />
         <YAxis
@@ -164,6 +170,8 @@ export function AppUsageBarChart({
           domain={["dataMin", maxYIsPeriod ? periodTicks : "dataMax"]}
         />
         <ChartTooltip
+          allowEscapeViewBox={{ x: true, y: true }}
+          wrapperStyle={{ zIndex: 1000 }}
           content={
             <AppUsageChartTooltipContent
               maximumApps={10}
@@ -180,10 +188,10 @@ export function AppUsageBarChart({
             stackId="a"
             fill={gradientBars ? `url(#gradient-${app.id})` : app.color}
             name={app.name}
-            isAnimationActive={false}
+            isAnimationActive={animationsEnabled}
             onMouseEnter={(e) => {
               setHoveredAppId(app.id);
-              onHover({
+              onHover?.({
                 id: app.id,
                 duration: e[app.id],
                 group: e.key,
@@ -191,7 +199,7 @@ export function AppUsageBarChart({
             }}
             onMouseLeave={() => {
               setHoveredAppId(null);
-              onHover(undefined);
+              onHover?.(undefined);
             }}
             radius={4}
           >
