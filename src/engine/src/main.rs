@@ -182,7 +182,8 @@ fn processor(
                 now,
             )
             .await
-            .context("engine loop")?;
+            .context("engine loop")
+            .error();
         }
 
         sentry_handle.await?;
