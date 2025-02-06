@@ -4,11 +4,13 @@ import type { App, Ref, Tag } from "@/lib/entities";
 import { DateTime } from "luxon";
 import { dateTimeToTicks } from "@/lib/time";
 import { getApps, getTags } from "@/lib/repo";
+import { checkForUpdatesBackground } from "@/lib/updater";
 
 export async function initState() {
   // init rust-side state
   await invoke("init_state");
   await refresh();
+  checkForUpdatesBackground();
 }
 
 export async function refresh() {
