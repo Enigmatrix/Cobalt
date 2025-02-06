@@ -28,6 +28,19 @@ type DateTimeRangePickerProps = {
 
 export type DateRange = RDateRange;
 
+export function useDateTimeRange() {
+  const [date, setDate] = React.useState<DateRange | undefined>(undefined);
+  const range = React.useMemo(() => {
+    if (date?.from !== undefined && date.to !== undefined) {
+      return {
+        from: DateTime.fromJSDate(date.from),
+        to: DateTime.fromJSDate(date.to),
+      };
+    }
+  }, [date]);
+  return { range, date, setDate };
+}
+
 const htmlFormat = (date: Date) => {
   return DateTime.fromJSDate(date).toFormat("yyyy-MM-dd'T'HH:mm:ss");
 };
