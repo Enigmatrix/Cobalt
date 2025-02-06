@@ -34,7 +34,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { ArrowDownUp, Filter, SortAsc, SortDesc } from "lucide-react";
 import _ from "lodash";
-import fuzzysort from "fuzzysort";
 import { Text } from "@/components/ui/text";
 import { dateTimeToTicks, durationToTicks, toHumanDuration } from "@/lib/time";
 import { getAppDurationsPerPeriod } from "@/lib/repo";
@@ -43,6 +42,7 @@ import { AppUsageBarChart } from "@/components/app-usage-chart";
 import { HorizontalOverflowList } from "@/components/overflow-list";
 import { useToday } from "@/hooks/use-today";
 import { useRefresh } from "@/hooks/use-refresh";
+import { useSearch } from "@/hooks/use-search";
 
 const period = Duration.fromObject({ hour: 1 });
 
@@ -206,22 +206,13 @@ export default function Apps() {
   );
   const [sortProperty, setSortProperty] =
     useState<SortProperty>("usages.usage_today");
-  const [search, setSearch] = useState<string>("");
 
   const appValues = useMemo(() => Object.values(apps), [apps]);
-
-  const appsFiltered = useMemo(() => {
-    if (search) {
-      const results = fuzzysort.go(search, appValues, {
-        keys: ["name", "company", "description"],
-      });
-      // ignore fuzzy-search sorting.
-      return _.map(results, "obj");
-    } else {
-      return appValues;
-    }
-  }, [appValues, search]);
-
+  const [search, setSearch, appsFiltered] = useSearch(appValues, [
+    "name",
+    "company",
+    "description",
+  ]);
   const appsSorted = useMemo(() => {
     return _(appsFiltered)
       .orderBy([sortProperty], [sortDirection])
