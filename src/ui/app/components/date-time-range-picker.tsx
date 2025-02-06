@@ -238,12 +238,13 @@ export function DateTimeRangePicker({
               variant="outline"
               size="sm"
               className="w-full justify-end min-w-32"
-              onClick={() =>
+              onClick={() => {
                 setDate({
                   from: range.from,
                   to: range.to,
-                })
-              }
+                });
+                setOpen(false);
+              }}
             >
               {range.label}
             </Button>
