@@ -94,7 +94,6 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         with:
           projectPath: src/ui
-          includeUpdaterJson: true
           tauriScript: bun tauri
       - name: Build Tauri App (nightly)
         if: github.ref == 'refs/heads/main'
