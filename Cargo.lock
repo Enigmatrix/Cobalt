@@ -116,7 +116,7 @@ checksum = "34ac096ce696dc2fcabef30516bb13c0a68a11d30131d3df6f04711467681b04"
 
 [[package]]
 name = "app"
-version = "0.1.0"
+version = "0.5.0"
 dependencies = [
  "data",
  "log",
@@ -817,7 +817,7 @@ dependencies = [
 
 [[package]]
 name = "data"
-version = "0.1.0"
+version = "0.5.0"
 dependencies = [
  "async-trait",
  "log",
@@ -1038,7 +1038,7 @@ checksum = "4ef6b89e5b37196644d8796de5268852ff179b44e96276cf4290264843743bb7"
 
 [[package]]
 name = "engine"
-version = "0.1.0"
+version = "0.5.0"
 dependencies = [
  "data",
  "platform",
@@ -3113,7 +3113,7 @@ checksum = "d231b230927b5e4ad203db57bbcbee2802f6bce620b1e4a9024a07d94e2907ec"
 
 [[package]]
 name = "platform"
-version = "0.1.0"
+version = "0.5.0"
 dependencies = [
  "util",
  "windows 0.56.0",
@@ -5346,7 +5346,7 @@ checksum = "b6c140620e7ffbb22c2dee59cafe6084a59b5ffc27a8859a5f0d494b5d52b6be"
 
 [[package]]
 name = "util"
-version = "0.1.0"
+version = "0.5.0"
 dependencies = [
  "color-eyre",
  "figment",
