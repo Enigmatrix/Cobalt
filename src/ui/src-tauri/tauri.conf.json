@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Cobalt",
-  "version": "0.1.0",
+  "version": "0.5.0",
   "identifier": "com.cobalt.enigmatrix",
   "build": {
     "frontendDist": "../build/client",
@@ -13,8 +13,6 @@
     "windows": [
       {
         "title": "Cobalt",
-        "width": 800,
-        "height": 600,
         "resizable": true,
         "fullscreen": false
       }
@@ -23,17 +21,7 @@
       "csp": null
     }
   },
-  "plugins": {
-    "updater": {
-      "active": true,
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDJBNDMyRTVERjNEOTREQkEKUldTNlRkbnpYUzVES3EzOTFaeTQwZ1d5Um5uTGQvaFgrcUR4OFJRbTgyRlY3ZFlsbFZRcm8rNEYK",
-      "endpoints": [
-        "https://github.com/Enigmatrix/Cobalt/releases/latest/download/latest.json"
-      ]
-    }
-  },
   "bundle": {
-    "createUpdaterArtifacts": true,
     "active": true,
     "targets": "all",
     "icon": [
