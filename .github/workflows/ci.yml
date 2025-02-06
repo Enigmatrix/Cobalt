@@ -22,6 +22,8 @@ jobs:
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.2.2
 
       - name: Install Dependencies
         run: bun install --frozen-lockfile
@@ -71,6 +73,8 @@ jobs:
         # rerun js deps
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.2.2
       - name: Install Dependencies
         working-directory: src/ui
         run: bun install --frozen-lockfile
