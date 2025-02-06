@@ -99,12 +99,14 @@ function AppListItem({
   period: Duration;
 }) {
   const allTags = useAppState((state) => state.tags);
+  const { handleStaleTags } = useRefresh();
   const tags = useMemo(
     () =>
-      app.tags
+      _(app.tags)
         .map((tagId) => allTags[tagId])
-        .filter((tag) => tag !== undefined), // filter stale tags
-    [allTags, app.tags]
+        .thru(handleStaleTags)
+        .value(),
+    [handleStaleTags, allTags, app.tags]
   );
   const singleUsage = useMemo(
     () => ({ [app.id]: usages[app.id] }),
@@ -196,7 +198,7 @@ type SortProperty =
 
 export default function Apps() {
   const today = useToday();
-  const { refreshToken } = useRefresh();
+  const { refreshToken, handleStaleApps } = useRefresh();
   const apps = useAppState((state) => state.apps);
 
   const [sortDirection, setSortDirection] = useState<SortDirection>(
@@ -223,9 +225,9 @@ export default function Apps() {
   const appsSorted = useMemo(() => {
     return _(appsFiltered)
       .orderBy([sortProperty], [sortDirection])
-      .filter((app) => app !== undefined) // filter stale apps
+      .thru(handleStaleApps)
       .value();
-  }, [appsFiltered, sortDirection, sortProperty]);
+  }, [appsFiltered, sortDirection, sortProperty, handleStaleApps]);
 
   const [start, end] = useMemo(() => [today, today.endOf("day")], [today]);
 

@@ -20,6 +20,7 @@ import { toDataUrl } from "./app-icon";
 import { AppUsageChartTooltipContent } from "@/components/app-usage-chart-tooltip";
 import { DateTime } from "luxon";
 import { useAppState, type EntityMap } from "@/lib/state";
+import { useRefresh } from "@/hooks/use-refresh";
 
 export interface AppUsageBarChartProps {
   data: EntityMap<App, WithGroupedDuration<App>[]>;
@@ -60,19 +61,22 @@ export function AppUsageBarChart({
   onHover,
 }: AppUsageBarChartProps) {
   const apps = useAppState((state) => state.apps);
+  const { handleStaleApps } = useRefresh();
 
   const involvedApps = useMemo(
     () =>
-      Object.keys(unflattenedData)
+      _(unflattenedData)
+        .keys()
         .map((id) => apps[id as unknown as Ref<App>])
-        .filter((app) => app !== undefined), // stale data
-    [unflattenedData]
+        .thru(handleStaleApps)
+        .value(),
+    [handleStaleApps, unflattenedData]
   );
   // data is grouped by app, we regroup by timestamp.
   const data: AppUsageBarChartData[] = useMemo(() => {
     let ret = _(unflattenedData)
       .values()
-      .filter((x) => x !== undefined) // stale data
+      .thru(handleStaleApps)
       .flatten()
       .groupBy((d) => d.group)
       .mapValues((durs) => {
@@ -103,7 +107,13 @@ export function AppUsageBarChart({
       .flatten()
       .sortBy((d) => d.key)
       .value();
-  }, [unflattenedData, rangeMinTicks, rangeMaxTicks, periodTicks]);
+  }, [
+    unflattenedData,
+    handleStaleApps,
+    rangeMinTicks,
+    rangeMaxTicks,
+    periodTicks,
+  ]);
 
   const [hoveredAppId, setHoveredAppId] = useState<Ref<App> | null>(null);
 
