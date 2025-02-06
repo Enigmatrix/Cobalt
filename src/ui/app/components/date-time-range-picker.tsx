@@ -14,6 +14,7 @@ import { DateTime } from "luxon";
 import { Input } from "@/components/ui/input";
 import { Label } from "./ui/label";
 import { toHumanDateTime } from "@/lib/time";
+import { useToday } from "@/hooks/use-today";
 
 type DateTimeRangePickerProps = {
   className?: string;
@@ -136,7 +137,7 @@ export function DateTimeRangePicker({
   showIcon = true,
   ...props
 }: DateTimeRangePickerProps) {
-  const today = DateTime.now().startOf("day");
+  const today = useToday();
 
   const [open, setOpen] = React.useState(false);
 

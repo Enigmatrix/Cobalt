@@ -34,13 +34,17 @@ import {
 import { Button } from "@/components/ui/button";
 import { ArrowDownUp, Filter, SortAsc, SortDesc } from "lucide-react";
 import _ from "lodash";
-import fuzzysort from "fuzzysort";
 import { Text } from "@/components/ui/text";
 import { dateTimeToTicks, durationToTicks, toHumanDuration } from "@/lib/time";
 import { getAppDurationsPerPeriod } from "@/lib/repo";
 import { DateTime, Duration } from "luxon";
 import { AppUsageBarChart } from "@/components/app-usage-chart";
 import { HorizontalOverflowList } from "@/components/overflow-list";
+import { useToday } from "@/hooks/use-today";
+import { useRefresh } from "@/hooks/use-refresh";
+import { useSearch } from "@/hooks/use-search";
+
+const period = Duration.fromObject({ hour: 1 });
 
 function TagItem({ tag }: { tag: Tag }) {
   return (
@@ -95,12 +99,14 @@ function AppListItem({
   period: Duration;
 }) {
   const allTags = useAppState((state) => state.tags);
+  const { handleStaleTags } = useRefresh();
   const tags = useMemo(
     () =>
-      app.tags
+      _(app.tags)
         .map((tagId) => allTags[tagId])
-        .filter((tag) => tag !== undefined), // filter stale tags
-    [allTags, app.tags]
+        .thru(handleStaleTags)
+        .value(),
+    [handleStaleTags, allTags, app.tags]
   );
   const singleUsage = useMemo(
     () => ({ [app.id]: usages[app.id] }),
@@ -191,51 +197,42 @@ type SortProperty =
   | "usages.usage_month";
 
 export default function Apps() {
+  const today = useToday();
+  const { refreshToken, handleStaleApps } = useRefresh();
   const apps = useAppState((state) => state.apps);
+
   const [sortDirection, setSortDirection] = useState<SortDirection>(
     SortDirection.Descending
   );
   const [sortProperty, setSortProperty] =
     useState<SortProperty>("usages.usage_today");
-  const [search, setSearch] = useState<string>("");
 
   const appValues = useMemo(() => Object.values(apps), [apps]);
-
-  const appsFiltered = useMemo(() => {
-    if (search) {
-      const results = fuzzysort.go(search, appValues, {
-        keys: ["name", "company", "description"],
-      });
-      // ignore fuzzy-search sorting.
-      return _.map(results, "obj");
-    } else {
-      return appValues;
-    }
-  }, [appValues, search]);
-
+  const [search, setSearch, appsFiltered] = useSearch(appValues, [
+    "name",
+    "company",
+    "description",
+  ]);
   const appsSorted = useMemo(() => {
     return _(appsFiltered)
       .orderBy([sortProperty], [sortDirection])
-      .filter((app) => app !== undefined) // filter stale apps
+      .thru(handleStaleApps)
       .value();
-  }, [appsFiltered, sortDirection, sortProperty]);
+  }, [appsFiltered, sortDirection, sortProperty, handleStaleApps]);
 
-  const today = useMemo(() => DateTime.now().startOf("day"), []);
-  const period = useMemo(() => Duration.fromObject({ hour: 1 }), []);
-  const [start, end] = useMemo(
-    () => [today, today.endOf("day")],
-    [today, period]
-  );
+  const [start, end] = useMemo(() => [today, today.endOf("day")], [today]);
+
   const [usages, setUsages] = useState<
     EntityMap<App, WithGroupedDuration<App>[]>
   >({});
+
   useEffect(() => {
     getAppDurationsPerPeriod({
       start,
       end,
       period,
     }).then((usages) => setUsages(usages));
-  }, [start, end, period]);
+  }, [today, period, refreshToken]);
 
   const ListItem = memo(
     ({ index, style }: { index: number; style: CSSProperties }) => (
