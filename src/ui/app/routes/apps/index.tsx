@@ -41,6 +41,10 @@ import { getAppDurationsPerPeriod } from "@/lib/repo";
 import { DateTime, Duration } from "luxon";
 import { AppUsageBarChart } from "@/components/app-usage-chart";
 import { HorizontalOverflowList } from "@/components/overflow-list";
+import { useToday } from "@/hooks/use-today";
+import { useRefresh } from "@/hooks/use-refresh";
+
+const period = Duration.fromObject({ hour: 1 });
 
 function TagItem({ tag }: { tag: Tag }) {
   return (
@@ -191,7 +195,10 @@ type SortProperty =
   | "usages.usage_month";
 
 export default function Apps() {
+  const today = useToday();
+  const { refreshToken } = useRefresh();
   const apps = useAppState((state) => state.apps);
+
   const [sortDirection, setSortDirection] = useState<SortDirection>(
     SortDirection.Descending
   );
@@ -220,22 +227,19 @@ export default function Apps() {
       .value();
   }, [appsFiltered, sortDirection, sortProperty]);
 
-  const today = useMemo(() => DateTime.now().startOf("day"), []);
-  const period = useMemo(() => Duration.fromObject({ hour: 1 }), []);
-  const [start, end] = useMemo(
-    () => [today, today.endOf("day")],
-    [today, period]
-  );
+  const [start, end] = useMemo(() => [today, today.endOf("day")], [today]);
+
   const [usages, setUsages] = useState<
     EntityMap<App, WithGroupedDuration<App>[]>
   >({});
+
   useEffect(() => {
     getAppDurationsPerPeriod({
       start,
       end,
       period,
     }).then((usages) => setUsages(usages));
-  }, [start, end, period]);
+  }, [today, period, refreshToken]);
 
   const ListItem = memo(
     ({ index, style }: { index: number; style: CSSProperties }) => (
