@@ -8,7 +8,7 @@ export function useRefresh() {
     function <T>(data: (T | undefined)[]) {
       return data.filter((x) => x !== undefined);
     },
-    [lastRefresh]
+    [lastRefresh],
   );
 
   return {

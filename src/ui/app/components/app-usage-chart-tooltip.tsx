@@ -32,7 +32,7 @@ export const AppUsageChartTooltipContent = React.forwardRef<
       maximumApps,
       singleAppId,
     },
-    ref
+    ref,
   ) => {
     const apps = useAppState((state) => state.apps);
 
@@ -60,7 +60,7 @@ export const AppUsageChartTooltipContent = React.forwardRef<
           ref={ref}
           className={cn(
             "grid min-w-[8rem] items-start gap-1.5 rounded-lg border border-border/50 bg-background px-2.5 py-1.5 text-xs shadow-xl",
-            className
+            className,
           )}
         >
           <div className="flex items-center gap-2 py-2">
@@ -94,7 +94,7 @@ export const AppUsageChartTooltipContent = React.forwardRef<
         ref={ref}
         className={cn(
           "grid min-w-[8rem] items-start gap-1.5 rounded-lg border border-border/50 bg-background px-2.5 py-1.5 text-xs shadow-xl",
-          className
+          className,
         )}
       >
         {hoveredAppId && payload.length > 0 && (
@@ -141,7 +141,7 @@ export const AppUsageChartTooltipContent = React.forwardRef<
               <div
                 key={item.dataKey}
                 className={cn(
-                  "flex w-full flex-wrap items-stretch gap-2 [&>svg]:h-2.5 [&>svg]:w-2.5 [&>svg]:text-muted-foreground"
+                  "flex w-full flex-wrap items-stretch gap-2 [&>svg]:h-2.5 [&>svg]:w-2.5 [&>svg]:text-muted-foreground",
                 )}
               >
                 {formatter && item?.value !== undefined && item.name ? (
@@ -179,6 +179,6 @@ export const AppUsageChartTooltipContent = React.forwardRef<
         </div>
       </div>
     );
-  }
+  },
 );
 AppUsageChartTooltipContent.displayName = "AppUsageChartTooltipContent";

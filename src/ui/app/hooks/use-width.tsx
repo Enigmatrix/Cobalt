@@ -3,7 +3,7 @@ import { useState, useLayoutEffect } from "react";
 
 export function useWidth(
   target: React.RefObject<HTMLElement | null>,
-  initWidth?: number
+  initWidth?: number,
 ) {
   const [width, setWidth] = useState(initWidth || 0);
 

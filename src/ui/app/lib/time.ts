@@ -4,7 +4,7 @@ import { DateTime, Duration } from "luxon";
 export function toHumanDuration(
   ticks: number,
   showSymbolForZero: boolean = true,
-  symbolForZero: string = "-"
+  symbolForZero: string = "-",
 ): string {
   return ticks === 0 && showSymbolForZero
     ? symbolForZero

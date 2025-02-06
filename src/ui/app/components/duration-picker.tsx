@@ -64,13 +64,13 @@ export function DurationPicker({
 
   const [days, setDaysInner] = React.useState(daysStr(duration));
   const [hours, setHoursInner] = React.useState(
-    (duration?.rescale()?.hours || 0).toString()
+    (duration?.rescale()?.hours || 0).toString(),
   );
   const [minutes, setMinutesInner] = React.useState(
-    (duration?.rescale()?.minutes || 0).toString()
+    (duration?.rescale()?.minutes || 0).toString(),
   );
   const [seconds, setSecondsInner] = React.useState(
-    (duration?.rescale()?.seconds || 0).toString()
+    (duration?.rescale()?.seconds || 0).toString(),
   );
 
   const setDays = (value: string) => {
@@ -105,7 +105,7 @@ export function DurationPicker({
         .set({
           [unit]: value === "" ? 0 : Number.parseInt(value),
         })
-        .rescale()
+        .rescale(),
     );
   }
 
@@ -118,7 +118,7 @@ export function DurationPicker({
           className={cn(
             "min-w-[300px] justify-start text-left font-normal",
             !duration && "text-muted-foreground",
-            className
+            className,
           )}
           {...props}
         >
