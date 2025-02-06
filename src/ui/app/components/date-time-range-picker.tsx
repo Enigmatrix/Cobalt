@@ -219,7 +219,7 @@ export function DateTimeRangePicker({
               <Input
                 type="datetime-local"
                 step="1"
-                className="mt-2"
+                className="mt-2 [&:not(dark)]:[color-scheme:light] dark:[color-scheme:dark]"
                 value={fromStr}
                 onChange={(e) => setFromStr(e.target.value)}
               />
@@ -229,7 +229,7 @@ export function DateTimeRangePicker({
               <Input
                 type="datetime-local"
                 step="1"
-                className="mt-2"
+                className="mt-2 [&:not(dark)]:[color-scheme:light] dark:[color-scheme:dark]"
                 value={toStr}
                 onChange={(e) => setToStr(e.target.value)}
               />
