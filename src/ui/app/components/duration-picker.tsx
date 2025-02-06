@@ -132,7 +132,7 @@ export function DurationPicker({
       </PopoverTrigger>
       <PopoverContent className="w-auto p-4 flex flex-col gap-4" align="start">
         <div>
-          <Label className="font-semibold">Quick input</Label>
+          <Label className="">Quick input</Label>
           <Input
             value={quickInput}
             onChange={(e) => setQuickInput(e.target.value)}
