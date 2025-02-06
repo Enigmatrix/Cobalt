@@ -86,9 +86,19 @@ jobs:
       - name: Install Dependencies
         working-directory: src/ui
         run: bun install --frozen-lockfile
-      - name: Build Tauri App
+
+      - name: Build Tauri App only
+        if: github.ref != 'refs/heads/main'
         uses: tauri-apps/tauri-action@v0
         with:
           projectPath: src/ui
           includeUpdaterJson: true
           tauriScript: bun tauri
+      - name: Build Tauri App (nightly)
+        if: github.ref == 'refs/heads/main'
+        uses: tauri-apps/tauri-action@v0
+        with:
+          projectPath: src/ui
+          includeUpdaterJson: true
+          tauriScript: bun tauri
+          tagName: nightly
