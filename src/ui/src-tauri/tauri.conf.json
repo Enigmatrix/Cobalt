@@ -1,7 +1,6 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Cobalt",
-  "version": "0.5.0",
   "identifier": "com.cobalt.enigmatrix",
   "build": {
     "frontendDist": "../build/client",
