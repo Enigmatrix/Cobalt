@@ -46,6 +46,8 @@ jobs:
 
   rust:
     runs-on: windows-latest
+    permissions:
+      contents: write
 
     steps:
       - uses: actions/checkout@v4
@@ -97,6 +99,8 @@ jobs:
       - name: Build Tauri App (nightly)
         if: github.ref == 'refs/heads/main'
         uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           projectPath: src/ui
           includeUpdaterJson: true
