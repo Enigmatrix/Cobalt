@@ -14,7 +14,8 @@ pub fn run() {
                 )?;
             }
             #[cfg(desktop)]
-            app.handle().plugin(tauri_plugin_updater::Builder::new().build())?;
+            app.handle()
+                .plugin(tauri_plugin_updater::Builder::new().build())?;
             Ok(())
         })
         .manage(state::AppState::default())
