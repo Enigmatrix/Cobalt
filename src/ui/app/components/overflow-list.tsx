@@ -43,14 +43,14 @@ export function HorizontalOverflowList<T>({
       items,
       (item) =>
         (item as HTMLElement).offsetLeft === offsetLeft &&
-        (item as HTMLElement).offsetTop !== offsetTop
+        (item as HTMLElement).offsetTop !== offsetTop,
     );
     setOverflowIndex(overflowIndex);
   }, [width, ref]);
   const [overflowIndex, setOverflowIndex] = useState(0);
   const overflowItems = useMemo(
     () => items.slice(overflowIndex),
-    [items, overflowIndex]
+    [items, overflowIndex],
   );
 
   return (

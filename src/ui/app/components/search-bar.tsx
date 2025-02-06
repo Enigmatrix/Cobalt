@@ -11,7 +11,7 @@ const SearchBar = React.forwardRef<
     <div
       className={cn(
         "flex items-center pl-3 rounded-md border border-input bg-background w-full h-10",
-        className
+        className,
       )}
     >
       <Search size={16} />

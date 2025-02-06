@@ -23,7 +23,7 @@ type DateTimeRangePickerProps = {
   showIcon?: boolean;
   formatDateRange?: (
     date: DateRange | undefined,
-    ranges: QuickRange[]
+    ranges: QuickRange[],
   ) => React.ReactNode;
 } & ButtonProps;
 
@@ -52,7 +52,7 @@ const validDateFormat = (str: string) =>
 const formatDateRange = (date: DateRange | undefined, ranges: QuickRange[]) => {
   if (date?.from !== undefined && date.to !== undefined) {
     const range = ranges.find(
-      (r) => +r.from === +(date.from ?? 0) && +r.to === +(date.to ?? 0)
+      (r) => +r.from === +(date.from ?? 0) && +r.to === +(date.to ?? 0),
     );
     if (range) {
       return range.label;
@@ -150,7 +150,7 @@ export function DateTimeRangePicker({
         dateArg:
           | DateRange
           | undefined
-          | ((f: DateRange | undefined) => DateRange | undefined)
+          | ((f: DateRange | undefined) => DateRange | undefined),
       ) => {
         if (typeof dateArg === "function") {
           setDateInner((date) => {
@@ -165,7 +165,7 @@ export function DateTimeRangePicker({
           setDateInner(dateArg);
         }
       },
-      [setDateInner]
+      [setDateInner],
     );
 
   const setFromStr = React.useCallback(
@@ -178,7 +178,7 @@ export function DateTimeRangePicker({
         }));
       }
     },
-    [setDateInner]
+    [setDateInner],
   );
 
   const setToStr = React.useCallback(
@@ -191,7 +191,7 @@ export function DateTimeRangePicker({
         }));
       }
     },
-    [setDateInner]
+    [setDateInner],
   );
   const quickRanges = React.useMemo(() => generateRanges(today), [today]);
 
@@ -204,7 +204,7 @@ export function DateTimeRangePicker({
           className={cn(
             "min-w-[300px] justify-start text-left font-normal",
             !date && "text-muted-foreground",
-            className
+            className,
           )}
           {...props}
         >

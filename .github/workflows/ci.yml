@@ -10,9 +10,44 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  rust:
-
+  
+  js:
     runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: src/ui
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '23.5.0'
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.2.2
+
+      - name: Install Dependencies
+        run: bun install --frozen-lockfile
+        
+      # don't bother building the js side - tauri will do that
+
+      - name: Type Check
+        run: bun typecheck
+
+      - name: Format Check
+        run: bun format
+
+      - name: Lint Check
+        run: bun lint
+
+
+  rust:
+    runs-on: windows-latest
+    permissions:
+      contents: write
 
     steps:
       - uses: actions/checkout@v4
@@ -40,3 +75,34 @@ jobs:
         run: cargo fmt --all -- --check
       - name: Lint (Clippy)
         run: cargo clippy --frozen --locked -- -D warnings
+
+        # rerun js deps
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '23.5.0'
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.2.2
+      - name: Install Dependencies
+        working-directory: src/ui
+        run: bun install --frozen-lockfile
+
+      - name: Build Tauri App only
+        if: github.ref != 'refs/heads/main'
+        uses: tauri-apps/tauri-action@v0
+        with:
+          projectPath: src/ui
+          includeUpdaterJson: true
+          tauriScript: bun tauri
+      - name: Build Tauri App (nightly)
+        if: github.ref == 'refs/heads/main'
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: src/ui
+          includeUpdaterJson: true
+          tauriScript: bun tauri
+          tagName: nightly

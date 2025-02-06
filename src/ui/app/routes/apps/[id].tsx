@@ -17,7 +17,6 @@ import { toHumanDuration } from "@/lib/time";
 function CardUsage({
   title,
   usage,
-  totalUsage,
 }: {
   title: string;
   usage: number;
