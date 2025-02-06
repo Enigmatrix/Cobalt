@@ -32,7 +32,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { ArrowDownUp, Filter, SortAsc, SortDesc } from "lucide-react";
+import { ArrowDownUp, SortAsc, SortDesc } from "lucide-react";
 import _ from "lodash";
 import { Text } from "@/components/ui/text";
 import { dateTimeToTicks, durationToTicks, toHumanDuration } from "@/lib/time";
