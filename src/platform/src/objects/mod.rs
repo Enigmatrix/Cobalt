@@ -5,6 +5,7 @@ mod process;
 mod timer;
 mod timestamp;
 mod toast;
+mod user;
 mod window;
 mod windows_hook;
 
@@ -15,5 +16,6 @@ pub use process::*;
 pub use timer::*;
 pub use timestamp::*;
 pub use toast::*;
+pub use user::*;
 pub use window::*;
 pub use windows_hook::*;

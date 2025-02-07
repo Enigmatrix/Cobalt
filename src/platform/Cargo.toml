@@ -23,6 +23,7 @@ features = [
     "Win32_Storage_FileSystem",
     "Win32_System_WinRT",
     "Win32_System_Time",
+    "Win32_System_WindowsProgramming",
 
     "Foundation",
     "Foundation_Collections",
