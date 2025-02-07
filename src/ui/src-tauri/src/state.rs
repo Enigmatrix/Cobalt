@@ -11,6 +11,10 @@ use crate::error::*;
 /// Initiailize the app state. Should only be called once
 pub async fn init_state(state: tauri::State<'_, AppState>) -> AppResult<()> {
     let mut state = state.write().await;
+    if let &Initable::Init(_) = &*state {
+        // do not reinit
+        return AppResult::Ok(());
+    }
     *state = Initable::Init(AppStateInner::new().await?);
     AppResult::Ok(())
 }
