@@ -1,6 +1,7 @@
 mod error;
 mod repo;
 mod state;
+mod tracing;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -19,7 +20,8 @@ pub fn run() {
             repo::get_app_durations,
             repo::get_app_durations_per_period,
             repo::copy_seed_db,
-            repo::update_usages_end
+            repo::update_usages_end,
+            tracing::log,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

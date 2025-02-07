@@ -47,6 +47,7 @@ impl AppStateInner {
     /// Create a new app state
     pub async fn new() -> Result<Self> {
         let config = get_config()?;
+        util::setup(&config)?;
         let db_pool = DatabasePool::new(&config).await?;
         Ok(Self { db_pool })
     }
