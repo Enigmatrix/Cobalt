@@ -9,7 +9,7 @@ use std::thread;
 use data::db::DatabasePool;
 use engine::{Engine, Event};
 use platform::events::{ForegroundEventWatcher, InteractionWatcher, WindowSession};
-use platform::objects::{EventLoop, Timer, Timestamp, Window};
+use platform::objects::{EventLoop, Timer, Timestamp, User, Window};
 use sentry::Sentry;
 use util::channels::{self, Receiver, Sender};
 use util::config::{self, Config};
@@ -35,6 +35,7 @@ fn real_main() -> Result<()> {
     util::setup(&config)?;
     info!("starting engine");
     platform::setup()?;
+    info!("running as {:?}", User::current()?);
 
     let (event_tx, event_rx) = channels::unbounded();
     let (alert_tx, alert_rx) = channels::unbounded();
