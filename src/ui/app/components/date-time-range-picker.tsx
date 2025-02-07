@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/popover";
 import { DateTime } from "luxon";
 import { Input } from "@/components/ui/input";
-import { Label } from "./ui/label";
+import { Label } from "@/components/ui/label";
 import { toHumanDateTime } from "@/lib/time";
 import { useToday } from "@/hooks/use-today";
 

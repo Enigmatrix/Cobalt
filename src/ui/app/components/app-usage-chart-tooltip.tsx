@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { toHumanDateTime, toHumanDuration } from "@/lib/time";
 import _ from "lodash";
 import type { App, Ref } from "@/lib/entities";
-import AppIcon from "./app-icon";
+import AppIcon from "@/components/app-icon";
 import { useAppState } from "@/lib/state";
 import { DateTime } from "luxon";
 
