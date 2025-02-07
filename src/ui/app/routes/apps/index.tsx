@@ -173,7 +173,7 @@ function AppListItem({
           <div className="flex py-2 rounded-md lg:min-w-20">
             <div className="flex flex-col items-end ml-auto my-auto">
               <div className="text-xs text-card-foreground/50">Today</div>
-              <div className="text-lg min-w-8 text-center tracking-tighter">
+              <div className="text-lg min-w-8 text-center whitespace-nowrap tracking-tighter">
                 {toHumanDuration(app.usages.usage_today)}
               </div>
             </div>
