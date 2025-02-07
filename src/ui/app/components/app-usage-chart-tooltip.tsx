@@ -59,7 +59,7 @@ export const AppUsageChartTooltipContent = React.forwardRef<
         <div
           ref={ref}
           className={cn(
-            "grid min-w-[8rem] items-start gap-1.5 rounded-lg border border-border/50 bg-background px-2.5 py-1.5 text-xs shadow-xl",
+            "grid min-w-[8rem] items-start gap-1.5 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs shadow-xl",
             className,
           )}
         >
@@ -93,12 +93,12 @@ export const AppUsageChartTooltipContent = React.forwardRef<
       <div
         ref={ref}
         className={cn(
-          "grid min-w-[8rem] items-start gap-1.5 rounded-lg border border-border/50 bg-background px-2.5 py-1.5 text-xs shadow-xl",
+          "grid min-w-[8rem] items-start gap-1.5 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs shadow-xl",
           className,
         )}
       >
         {hoveredAppId && payload.length > 0 && (
-          <div className="flex items-center gap-2 border-b border-secondary-foreground/50 py-2 mb-1">
+          <div className="flex items-center gap-2 border-b border-border py-2 mb-1">
             <AppIcon
               buffer={apps[hoveredAppId]!.icon} // cannot be stale - we filter stale data out
               className="w-6 h-6 shrink-0 ml-2 mr-1"
@@ -115,7 +115,7 @@ export const AppUsageChartTooltipContent = React.forwardRef<
               )}
             </div>
             <div className="flex-1"></div>
-            <div className="flex flex-col items-center text-muted-foreground tracking-tighter shrink-0 min-w-max">
+            <div className="flex flex-col items-end text-muted-foreground tracking-tighter shrink-0 min-w-max">
               <span className="font-semibold text-sm">
                 {toHumanDuration(payload[0]?.payload[hoveredAppId] || 0)}
               </span>
@@ -124,7 +124,7 @@ export const AppUsageChartTooltipContent = React.forwardRef<
           </div>
         )}
         {!hoveredAppId && totalUsage && (
-          <div className="flex-col border-b border-secondary-foreground/50 py-2 mb-1 flex items-end">
+          <div className="flex-col border-b border-border py-2 mb-1 flex items-end">
             <span className="font-semibold">
               Total: {toHumanDuration(totalUsage)}
             </span>

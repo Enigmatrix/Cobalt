@@ -119,7 +119,7 @@ function AppListItem({
         "h-20 shadow-sm rounded-md flex items-center gap-2 p-4 @container",
         "ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
         "disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none cursor-pointer",
-        "bg-primary-foreground text-primary hover:bg-primary/10 border-border border",
+        "bg-card text-card-foreground hover:bg-muted/75 border-border border",
       )}
     >
       <AppIcon buffer={app.icon} className="mx-2 h-10 w-10 flex-shrink-0" />
@@ -138,12 +138,12 @@ function AppListItem({
                 style={{
                   backgroundColor: "rgba(255, 255, 255, 0.2)",
                 }}
-                className="whitespace-nowrap ml-1 text-primary/60 rounded-md"
+                className="whitespace-nowrap ml-1 text-card-foreground/60 rounded-md"
               >{`+${items.length}`}</Badge>
             )}
           />
         </div>
-        <span className="inline-flex gap-1 items-center text-xs text-primary/50">
+        <span className="inline-flex gap-1 items-center text-xs text-card-foreground/50">
           <Text className="max-w-48">{app.company}</Text>
           {app.description && (
             <>
@@ -172,7 +172,7 @@ function AppListItem({
 
           <div className="flex py-2 rounded-md lg:min-w-20">
             <div className="flex flex-col items-end ml-auto my-auto">
-              <div className="text-xs text-primary/50">Today</div>
+              <div className="text-xs text-card-foreground/50">Today</div>
               <div className="text-lg min-w-8 text-center tracking-tighter">
                 {toHumanDuration(app.usages.usage_today)}
               </div>
