@@ -68,9 +68,9 @@ export const useAppState = create<AppState>((set) => {
       await updateApp(app);
 
       set((state) =>
-        produce(
-          (draft) => (draft.apps[app.id] = { ...draft.apps[app.id], ...app }),
-        )(state),
+        produce((draft: AppState) => {
+          draft.apps[app.id] = { ...draft.apps[app.id], ...app };
+        })(state),
       );
     },
 
