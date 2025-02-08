@@ -54,3 +54,7 @@ export function toHumanDateTime(dt: DateTime): string {
   }
   return dt.toFormat("LLL dd, y hh:mm:ss a");
 }
+
+export function toHumanDateTimeFull(dt: DateTime): string {
+  return dt.toFormat("LLL dd, y hh:mm:ss a");
+}

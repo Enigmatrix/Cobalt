@@ -1,13 +1,13 @@
 import React from "react";
 import * as RechartsPrimitive from "recharts";
 import { cn } from "@/lib/utils";
-import { toHumanDateTime } from "@/lib/time";
 import _ from "lodash";
 import type { App, Ref } from "@/lib/entities";
 import AppIcon from "@/components/app-icon";
 import { useAppState } from "@/lib/state";
 import { DateTime } from "luxon";
 import { DurationText } from "@/components/duration-text";
+import { DateTimeText } from "./time-text";
 
 export const AppUsageChartTooltipContent = React.forwardRef<
   HTMLDivElement,
@@ -74,9 +74,10 @@ export const AppUsageChartTooltipContent = React.forwardRef<
                 {singleApp.name}
               </span>
               {dt && (
-                <div className="text-xs text-muted-foreground tracking-tighter">
-                  {toHumanDateTime(dt)}
-                </div>
+                <DateTimeText
+                  className="text-xs text-muted-foreground"
+                  datetime={dt}
+                />
               )}
             </div>
             <div className="flex-1"></div>
@@ -111,11 +112,13 @@ export const AppUsageChartTooltipContent = React.forwardRef<
                 {/* cannot be stale - we filter stale data out */}
               </span>
               {dt && (
-                <div className="text-xs text-muted-foreground tracking-tighter">
-                  {toHumanDateTime(dt)}
-                </div>
+                <DateTimeText
+                  className="text-xs text-muted-foreground"
+                  datetime={dt}
+                />
               )}
             </div>
+
             <div className="flex-1"></div>
             <div className="flex flex-col items-end text-muted-foreground shrink-0 min-w-max">
               <DurationText
@@ -137,9 +140,10 @@ export const AppUsageChartTooltipContent = React.forwardRef<
             </span>
 
             {dt && (
-              <div className="text-xs text-muted-foreground">
-                {toHumanDateTime(dt)}
-              </div>
+              <DateTimeText
+                className="text-xs text-muted-foreground"
+                datetime={dt}
+              />
             )}
           </div>
         )}
