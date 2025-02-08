@@ -12,7 +12,9 @@ export async function initState() {
   await invoke("init_state");
   info("rust-side state initialized");
   await refresh();
-  checkForUpdatesBackground();
+  if (import.meta.env.PROD) {
+    checkForUpdatesBackground();
+  }
 }
 
 export async function refresh() {
