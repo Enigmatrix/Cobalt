@@ -6,9 +6,9 @@ import type {
   Tag,
 } from "@/lib/entities";
 import { invoke } from "@tauri-apps/api/core";
-import type { EntityMap, EntityStore } from "./state";
+import type { EntityMap, EntityStore } from "@/lib/state";
 import type { DateTime, Duration } from "luxon";
-import { dateTimeToTicks, durationToTicks } from "./time";
+import { dateTimeToTicks, durationToTicks } from "@/lib/time";
 
 interface QueryOptions {
   now?: Timestamp;

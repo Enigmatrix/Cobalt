@@ -5,12 +5,16 @@ import { DateTime } from "luxon";
 import { dateTimeToTicks } from "@/lib/time";
 import { getApps, getTags } from "@/lib/repo";
 import { checkForUpdatesBackground } from "@/lib/updater";
+import { info } from "@/lib/log";
 
 export async function initState() {
   // init rust-side state
   await invoke("init_state");
+  info("rust-side state initialized");
   await refresh();
-  checkForUpdatesBackground();
+  if (import.meta.env.PROD) {
+    checkForUpdatesBackground();
+  }
 }
 
 export async function refresh() {
@@ -24,6 +28,7 @@ export async function refresh() {
   state.setApps(apps as Record<Ref<App>, App>);
   state.setTags(tags as Record<Ref<Tag>, Tag>);
   state.setLastRefresh(now);
+  info("refresh completed");
 }
 
 // Entity store with T|undefined values. This is because

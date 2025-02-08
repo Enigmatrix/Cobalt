@@ -77,7 +77,7 @@ function AppSidebarItem({ title, url, icon }: (typeof data.navMain)[0]) {
         <NavLink to={url} className="text-lg inline-flex items-center">
           <div className="h-4 w-1 ml-1">
             {isActive ? (
-              <div className="bg-blue-500 h-full rounded-sm w-1"></div>
+              <div className="bg-primary h-full rounded-sm w-1"></div>
             ) : null}
           </div>
           {icon}

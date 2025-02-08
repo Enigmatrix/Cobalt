@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use tauri::async_runtime::RwLock;
 use util::config::get_config;
 use util::error::*;
+use util::Target;
 
 use crate::error::*;
 
@@ -11,12 +12,16 @@ use crate::error::*;
 /// Initiailize the app state. Should only be called once
 pub async fn init_state(state: tauri::State<'_, AppState>) -> AppResult<()> {
     let mut state = state.write().await;
+    if let &Initable::Init(_) = &*state {
+        // do not reinit
+        return AppResult::Ok(());
+    }
     *state = Initable::Init(AppStateInner::new().await?);
     AppResult::Ok(())
 }
 
 /// Query options from the frontend
-#[derive(Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct QueryOptions {
     /// The current time 'now'.
     pub now: Option<data::entities::Timestamp>,
@@ -43,6 +48,7 @@ impl AppStateInner {
     /// Create a new app state
     pub async fn new() -> Result<Self> {
         let config = get_config()?;
+        util::setup(&config, Target::Ui)?;
         let db_pool = DatabasePool::new(&config).await?;
         Ok(Self { db_pool })
     }

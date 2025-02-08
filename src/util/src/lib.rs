@@ -8,9 +8,14 @@ pub mod tracing;
 use crate::config::Config;
 use crate::error::Result;
 
+pub enum Target {
+    Ui,
+    Engine,
+}
+
 /// Setup all utils
-pub fn setup(config: &Config) -> Result<()> {
+pub fn setup(config: &Config, target: Target) -> Result<()> {
     error::setup()?;
-    tracing::setup(config.engine_log_filter())?;
+    tracing::setup(config, target)?;
     Ok(())
 }
