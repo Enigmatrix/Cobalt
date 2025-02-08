@@ -92,6 +92,7 @@ function CardUsage({
 export default function App({ params }: Route.ComponentProps) {
   const id = +params.id;
   const app = useAppState((state) => state.apps[id as Ref<App>])!;
+  const removeAppTag = useAppState((state) => state.removeAppTag);
 
   const allTags = useAppState((state) => state.tags);
   const { handleStaleTags } = useRefresh();
@@ -191,7 +192,12 @@ export default function App({ params }: Route.ComponentProps) {
                 className="gap-2 max-w-full h-8"
                 items={tags}
                 renderItem={(tag) => (
-                  <MiniTagItem key={tag.id} tag={tag} className="h-8" />
+                  <MiniTagItem
+                    key={tag.id}
+                    tag={tag}
+                    className="h-8"
+                    remove={async () => await removeAppTag(app.id, tag.id)}
+                  />
                 )}
                 renderOverflowItem={(tag) => (
                   <MiniTagItem key={tag.id} tag={tag} className="h-8" />
