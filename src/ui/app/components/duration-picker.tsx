@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import parse from "parse-duration";
 import { Separator } from "@/components/ui/separator";
-import { toHumanDurationFull } from "@/lib/time";
+import { durationToTicks, toHumanDurationFull } from "@/lib/time";
 
 // disable parsing of these units
 ["y", "mo", "ms", "us", "ns"].forEach((u) => (parse.unit[u] = 0));
@@ -25,7 +25,7 @@ type DurationPickerProps = {
 } & ButtonProps;
 
 const formatHuman = (duration: Duration) => {
-  return toHumanDurationFull(duration);
+  return toHumanDurationFull(durationToTicks(duration));
 };
 
 function daysStr(duration?: Duration) {

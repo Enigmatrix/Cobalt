@@ -8,11 +8,24 @@ export function toHumanDuration(
 ): string {
   return ticks === 0 && showSymbolForZero
     ? symbolForZero
-    : humanizeDuration(ticks / 10_000, { unitCount: 2 });
+    : humanizeDuration(ticks / 10_000, {
+        unitCount: 2,
+        hideYear: true,
+        separateMilliseconds: true,
+      });
 }
 
-export function toHumanDurationFull(duration: Duration): string {
-  return humanizeDuration(duration.toMillis(), { hideYear: true });
+export function toHumanDurationFull(
+  ticks: number,
+  showSymbolForZero: boolean = true,
+  symbolForZero: string = "-",
+): string {
+  return ticks === 0 && showSymbolForZero
+    ? symbolForZero
+    : humanizeDuration(ticks / 10_000, {
+        hideYear: true,
+        separateMilliseconds: true,
+      });
 }
 
 export function dateTimeToTicks(ts: DateTime): number {
@@ -39,5 +52,9 @@ export function toHumanDateTime(dt: DateTime): string {
   if (dt.toFormat("ss") === "00") {
     return dt.toFormat("LLL dd, y hh:mm a");
   }
+  return dt.toFormat("LLL dd, y hh:mm:ss a");
+}
+
+export function toHumanDateTimeFull(dt: DateTime): string {
   return dt.toFormat("LLL dd, y hh:mm:ss a");
 }

@@ -35,7 +35,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowDownUp, SortAsc, SortDesc } from "lucide-react";
 import _ from "lodash";
 import { Text } from "@/components/ui/text";
-import { dateTimeToTicks, durationToTicks, toHumanDuration } from "@/lib/time";
+import { dateTimeToTicks, durationToTicks } from "@/lib/time";
 import { getAppDurationsPerPeriod } from "@/lib/repo";
 import { DateTime, Duration } from "luxon";
 import { AppUsageBarChart } from "@/components/app-usage-chart";
@@ -43,6 +43,7 @@ import { HorizontalOverflowList } from "@/components/overflow-list";
 import { useToday } from "@/hooks/use-today";
 import { useRefresh } from "@/hooks/use-refresh";
 import { useSearch } from "@/hooks/use-search";
+import { DurationText } from "@/components/duration-text";
 
 const period = Duration.fromObject({ hour: 1 });
 
@@ -173,9 +174,10 @@ function AppListItem({
           <div className="flex py-2 rounded-md lg:min-w-20">
             <div className="flex flex-col items-end ml-auto my-auto">
               <div className="text-xs text-card-foreground/50">Today</div>
-              <div className="text-lg min-w-8 text-center whitespace-nowrap tracking-tighter">
-                {toHumanDuration(app.usages.usage_today)}
-              </div>
+              <DurationText
+                className="text-lg min-w-8 text-center whitespace-nowrap"
+                ticks={app.usages.usage_today}
+              />
             </div>
           </div>
         </>
