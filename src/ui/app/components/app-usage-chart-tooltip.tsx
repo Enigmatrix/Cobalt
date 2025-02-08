@@ -1,12 +1,13 @@
 import React from "react";
 import * as RechartsPrimitive from "recharts";
 import { cn } from "@/lib/utils";
-import { toHumanDateTime, toHumanDuration } from "@/lib/time";
+import { toHumanDateTime } from "@/lib/time";
 import _ from "lodash";
 import type { App, Ref } from "@/lib/entities";
 import AppIcon from "@/components/app-icon";
 import { useAppState } from "@/lib/state";
 import { DateTime } from "luxon";
+import { DurationText } from "@/components/duration-text";
 
 export const AppUsageChartTooltipContent = React.forwardRef<
   HTMLDivElement,
@@ -80,9 +81,10 @@ export const AppUsageChartTooltipContent = React.forwardRef<
             </div>
             <div className="flex-1"></div>
             <div className="flex flex-col items-center shrink-0 min-w-max">
-              <span className="text-muted-foreground text-sm tracking-tighter">
-                {toHumanDuration(singlePayload?.payload[singleAppId] || 0)}
-              </span>
+              <DurationText
+                className="text-muted-foreground text-sm"
+                ticks={singlePayload?.payload[singleAppId] || 0}
+              />
             </div>
           </div>
         </div>
@@ -115,19 +117,25 @@ export const AppUsageChartTooltipContent = React.forwardRef<
               )}
             </div>
             <div className="flex-1"></div>
-            <div className="flex flex-col items-end text-muted-foreground tracking-tighter shrink-0 min-w-max">
-              <span className="font-semibold text-sm">
-                {toHumanDuration(payload[0]?.payload[hoveredAppId] || 0)}
+            <div className="flex flex-col items-end text-muted-foreground shrink-0 min-w-max">
+              <DurationText
+                className="font-semibold text-sm"
+                ticks={payload[0]?.payload[hoveredAppId] || 0}
+              />
+              <span className="inline-flex items-center gap-1 text-xs">
+                <p>/</p>
+                <DurationText ticks={totalUsage} />
               </span>
-              <span className="text-xs">/ {toHumanDuration(totalUsage)}</span>
             </div>
           </div>
         )}
         {!hoveredAppId && totalUsage && (
           <div className="flex-col border-b border-border py-2 mb-1 flex items-end">
-            <span className="font-semibold">
-              Total: {toHumanDuration(totalUsage)}
+            <span className="inline-flex items-center gap-1 font-semibold">
+              <p>Total:</p>
+              <DurationText ticks={totalUsage} />
             </span>
+
             {dt && (
               <div className="text-xs text-muted-foreground">
                 {toHumanDateTime(dt)}
@@ -161,9 +169,10 @@ export const AppUsageChartTooltipContent = React.forwardRef<
                         </span>
                       </div>
                       {item.value && (
-                        <span className="font-mono font-medium tabular-nums text-foreground ml-2">
-                          {toHumanDuration(item.value as number)}
-                        </span>
+                        <DurationText
+                          className="font-mono font-medium tabular-nums text-foreground ml-2"
+                          ticks={item.value as number}
+                        />
                       )}
                     </div>
                   </>

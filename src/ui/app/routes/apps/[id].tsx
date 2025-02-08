@@ -12,7 +12,7 @@ import {
 import { useAppState } from "@/lib/state";
 import type { App, Ref } from "@/lib/entities";
 import AppIcon from "@/components/app-icon";
-import { toHumanDuration } from "@/lib/time";
+import { DurationText } from "@/components/duration-text";
 
 function CardUsage({
   title,
@@ -28,9 +28,10 @@ function CardUsage({
         <div className="text-sm md:text-base lg:text-lg text-foreground/50">
           {title}
         </div>
-        <div className="text-2xl md:text-3xl lg:text-5xl font-semibold tracking-tighter">
-          {toHumanDuration(usage)}
-        </div>
+        <DurationText
+          className="text-2xl md:text-3xl lg:text-5xl font-semibold"
+          ticks={usage}
+        />
       </div>
     </div>
   );
