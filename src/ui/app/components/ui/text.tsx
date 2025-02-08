@@ -6,7 +6,7 @@ export function Text({
   className,
 }: {
   children: string;
-  className: ClassValue;
+  className?: ClassValue;
 }) {
   return (
     <div className={cn("truncate", className)} title={children}>
