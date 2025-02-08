@@ -10,7 +10,12 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { useAppState, type EntityMap } from "@/lib/state";
-import type { App, Ref, WithGroupedDuration } from "@/lib/entities";
+import {
+  isUwp,
+  type App,
+  type Ref,
+  type WithGroupedDuration,
+} from "@/lib/entities";
 import AppIcon from "@/components/app-icon";
 import { DurationText } from "@/components/duration-text";
 import { AppUsageBarChart } from "@/components/app-usage-chart";
@@ -20,6 +25,11 @@ import { Duration, type DateTime } from "luxon";
 import { useRefresh } from "@/hooks/use-refresh";
 import { dateTimeToTicks, durationToTicks } from "@/lib/time";
 import { useToday } from "@/hooks/use-today";
+import { HorizontalOverflowList } from "@/components/overflow-list";
+import { MiniTagItem } from ".";
+import _ from "lodash";
+import { Badge } from "@/components/ui/badge";
+import { Text } from "@/components/ui/text";
 
 function CardUsage({
   title,
@@ -79,6 +89,18 @@ function CardUsage({
 export default function App({ params }: Route.ComponentProps) {
   const id = +params.id;
   const app = useAppState((state) => state.apps[id as Ref<App>])!;
+
+  const allTags = useAppState((state) => state.tags);
+  const { handleStaleTags } = useRefresh();
+  const tags = useMemo(
+    () =>
+      _(app.tags)
+        .map((tagId) => allTags[tagId])
+        .thru(handleStaleTags)
+        .value(),
+    [handleStaleTags, allTags, app.tags],
+  );
+
   const today = useToday();
   const [dayStart, dayEnd, dayPeriod, dayFormatter] = useMemo(
     () => [
@@ -122,13 +144,80 @@ export default function App({ params }: Route.ComponentProps) {
             <BreadcrumbItem>
               <BreadcrumbPage className="inline-flex items-center">
                 <AppIcon buffer={app.icon} className="w-5 h-5 mr-2" />
-                {app.name}
+                <Text>{app.name}</Text>
               </BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
       </header>
       <div className="flex flex-1 flex-col gap-4 p-4">
+        {/* App Info */}
+        <div className="rounded-xl bg-muted/50 p-6">
+          <div className="flex flex-col gap-4">
+            {/* Header with name and icon */}
+            <div className="flex items-center gap-4">
+              <AppIcon buffer={app.icon} className="w-12 h-12" />
+              <div className="flex-1 min-w-0 shrink">
+                <h1 className="text-2xl font-semibold">
+                  <Text>{app.name}</Text>
+                </h1>
+                <p className="text-muted-foreground">
+                  <Text>{app.company}</Text>
+                </p>
+              </div>
+              <div
+                style={{ background: app.color }}
+                className="text-sm font-medium text-white rounded-full px-3 py-1"
+              >
+                {app.color}
+              </div>
+            </div>
+
+            {/* Description */}
+            {app.description && (
+              <p className="text-muted-foreground">
+                <Text>{app.description}</Text>
+              </p>
+            )}
+
+            {/* Tags */}
+            {tags.length > 0 && (
+              <HorizontalOverflowList
+                className="gap-2 max-w-full h-8"
+                items={tags}
+                renderItem={(tag) => (
+                  <MiniTagItem key={tag.id} tag={tag} className="h-8" />
+                )}
+                renderOverflowItem={(tag) => (
+                  <MiniTagItem key={tag.id} tag={tag} className="h-8" />
+                )}
+                renderOverflowSign={(items) => (
+                  <Badge
+                    variant="outline"
+                    style={{
+                      backgroundColor: "rgba(255, 255, 255, 0.2)",
+                    }}
+                    className="whitespace-nowrap ml-2 text-muted-foreground rounded-md h-8"
+                  >{`+${items.length}`}</Badge>
+                )}
+              />
+            )}
+
+            {/* App Identity */}
+            <div className="text-sm inline-flex border-border border rounded-lg overflow-hidden max-w-fit min-w-0">
+              <div className="bg-muted px-3 py-1.5 border-r border-border font-medium">
+                {isUwp(app.identity) ? "UWP" : "Win32"}
+              </div>
+
+              <Text className="font-mono px-3 py-1.5 bg-muted/30 text-muted-foreground">
+                {isUwp(app.identity)
+                  ? app.identity.Uwp.aumid
+                  : app.identity.Win32.path}
+              </Text>
+            </div>
+          </div>
+        </div>
+
         <div className="grid auto-rows-min gap-4 md:grid-cols-3">
           <CardUsage
             title="Today"
