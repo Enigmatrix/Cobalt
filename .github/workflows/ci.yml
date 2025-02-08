@@ -46,8 +46,6 @@ jobs:
 
   rust:
     runs-on: windows-latest
-    permissions:
-      contents: write
 
     steps:
       - uses: actions/checkout@v4
@@ -76,7 +74,27 @@ jobs:
       - name: Lint (Clippy)
         run: cargo clippy --frozen --locked -- -D warnings
 
-        # rerun js deps
+  tauri:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update Rust Toolchain
+        uses: dtolnay/rust-toolchain@nightly
+      - name: Set up cargo cache
+        uses: actions/cache@v4
+        continue-on-error: false
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
