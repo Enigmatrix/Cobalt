@@ -30,6 +30,9 @@ import { MiniTagItem } from ".";
 import _ from "lodash";
 import { Badge } from "@/components/ui/badge";
 import { Text } from "@/components/ui/text";
+import { Button } from "@/components/ui/button";
+import { Check, Copy } from "lucide-react";
+import { useClipboard } from "@/hooks/use-clipboard";
 
 function CardUsage({
   title,
@@ -130,6 +133,8 @@ export default function App({ params }: Route.ComponentProps) {
     [today],
   );
 
+  const { copy, hasCopied } = useClipboard();
+
   return (
     <>
       <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
@@ -204,16 +209,29 @@ export default function App({ params }: Route.ComponentProps) {
             )}
 
             {/* App Identity */}
-            <div className="text-sm inline-flex border-border border rounded-lg overflow-hidden max-w-fit min-w-0">
+            <div className="text-sm inline-flex border-border border rounded-lg overflow-hidden max-w-fit min-w-0 bg-muted/30 items-center">
               <div className="bg-muted px-3 py-1.5 border-r border-border font-medium">
                 {isUwp(app.identity) ? "UWP" : "Win32"}
               </div>
 
-              <Text className="font-mono px-3 py-1.5 bg-muted/30 text-muted-foreground">
+              <Text className="font-mono pl-3 pr-1 py-1.5 text-muted-foreground">
                 {isUwp(app.identity)
                   ? app.identity.Uwp.aumid
                   : app.identity.Win32.path}
               </Text>
+              <Button
+                variant="ghost"
+                className="h-auto p-2 rounded-none rounded-r-lg text-muted-foreground"
+                onClick={() =>
+                  copy(
+                    isUwp(app.identity)
+                      ? app.identity.Uwp.aumid
+                      : app.identity.Win32.path,
+                  )
+                }
+              >
+                {hasCopied ? <Check /> : <Copy />}
+              </Button>
             </div>
           </div>
         </div>
