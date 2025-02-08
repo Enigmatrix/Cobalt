@@ -46,7 +46,13 @@ import { DurationText } from "@/components/duration-text";
 
 const period = Duration.fromObject({ hour: 1 });
 
-export function MiniTagItem({ tag }: { tag: Tag }) {
+export function MiniTagItem({
+  tag,
+  className,
+}: {
+  tag: Tag;
+  className?: string;
+}) {
   return (
     <Badge
       variant="outline"
@@ -55,7 +61,7 @@ export function MiniTagItem({ tag }: { tag: Tag }) {
         color: tag.color,
         backgroundColor: "rgba(255, 255, 255, 0.2)",
       }}
-      className="whitespace-nowrap"
+      className={cn("whitespace-nowrap", className)}
     >
       <Text className="max-w-32">{tag.name}</Text>
     </Badge>
