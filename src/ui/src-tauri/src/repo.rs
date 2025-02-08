@@ -4,11 +4,13 @@ use data::db::repo::{infused, WithDuration, WithGroupedDuration};
 use data::entities::{App, Duration, Ref, Tag, Timestamp};
 use tauri::State;
 use util::error::Context;
+use util::tracing;
 
 use crate::error::AppResult;
 use crate::state::{init_state, AppState, Initable, QueryOptions};
 
 #[tauri::command]
+#[tracing::instrument(err, skip(state))]
 pub async fn get_apps(
     state: State<'_, AppState>,
     query_options: QueryOptions,
@@ -23,6 +25,7 @@ pub async fn get_apps(
 }
 
 #[tauri::command]
+#[tracing::instrument(err, skip(state))]
 pub async fn get_tags(
     state: State<'_, AppState>,
     query_options: QueryOptions,
@@ -37,6 +40,7 @@ pub async fn get_tags(
 }
 
 #[tauri::command]
+#[tracing::instrument(err, skip(state))]
 pub async fn get_app_durations(
     state: State<'_, AppState>,
     _query_options: QueryOptions,
@@ -52,6 +56,7 @@ pub async fn get_app_durations(
 }
 
 #[tauri::command]
+#[tracing::instrument(err, skip(state))]
 pub async fn get_app_durations_per_period(
     state: State<'_, AppState>,
     _query_options: QueryOptions,
@@ -70,6 +75,7 @@ pub async fn get_app_durations_per_period(
 }
 
 #[tauri::command]
+#[tracing::instrument(err, skip(state))]
 pub async fn copy_seed_db(state: State<'_, AppState>) -> AppResult<()> {
     // drop previous state - also drops the db connection
     {
@@ -85,6 +91,7 @@ pub async fn copy_seed_db(state: State<'_, AppState>) -> AppResult<()> {
 }
 
 #[tauri::command]
+#[tracing::instrument(err, skip(state))]
 pub async fn update_usages_end(state: State<'_, AppState>) -> AppResult<()> {
     let now = platform::objects::Timestamp::now();
     let mut state = state.write().await;

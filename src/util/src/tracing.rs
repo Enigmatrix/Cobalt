@@ -1,5 +1,6 @@
 pub use tracing::*;
 use tracing_appender::rolling::daily;
+use tracing_subscriber::fmt::format::FmtSpan;
 pub use tracing_subscriber::prelude::*;
 use tracing_subscriber::{fmt, registry, EnvFilter};
 
@@ -67,6 +68,7 @@ pub fn setup(config: &Config, target: Target) -> Result<()> {
     // Create a non-colored layer for file output
     let file_layer = fmt::layer()
         .with_ansi(false)
+        .with_span_events(FmtSpan::NEW | FmtSpan::CLOSE)
         .with_writer(rolling)
         .with_filter(EnvFilter::new(filter_directives));
 
@@ -74,6 +76,7 @@ pub fn setup(config: &Config, target: Target) -> Result<()> {
     {
         // Create a colored layer for stdout
         let stdout_layer = fmt::layer()
+            .with_span_events(FmtSpan::NEW | FmtSpan::CLOSE)
             .with_writer(std::io::stdout)
             .with_filter(EnvFilter::new(filter_directives));
 

@@ -21,7 +21,7 @@ pub async fn init_state(state: tauri::State<'_, AppState>) -> AppResult<()> {
 }
 
 /// Query options from the frontend
-#[derive(Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct QueryOptions {
     /// The current time 'now'.
     pub now: Option<data::entities::Timestamp>,
