@@ -218,7 +218,7 @@ export default function Apps() {
       end,
       period,
     }).then((usages) => setUsages(usages));
-  }, [today, period, refreshToken]);
+  }, [start, end, period, refreshToken]);
 
   const ListItem = memo(
     ({ index, style }: { index: number; style: CSSProperties }) => (

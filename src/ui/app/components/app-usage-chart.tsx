@@ -167,9 +167,7 @@ export function AppUsageBarChart({
         <XAxis
           dataKey="key"
           hide={hideXAxis}
-          tickLine={false}
-          // tickMargin={10}
-          axisLine={false}
+          tickMargin={10}
           tickFormatter={(value) =>
             dateTimeFormatter(DateTime.fromMillis(value))
           }
