@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::ops::Deref;
 use std::str::FromStr;
 
+use infused::UpdatedApp;
 use serde::Serialize;
 
 use super::*;
@@ -65,13 +66,25 @@ impl<T: Table> sqlx::Type<Sqlite> for RefVec<T> {
 
 // Entities with extra information embedded.
 pub mod infused {
+    use serde::Deserialize;
+
     use super::*;
+    use crate::table::Color;
 
     #[derive(Debug, Clone, PartialEq, Eq, Serialize, FromRow)]
     pub struct UsageInfo {
         pub usage_today: crate::table::Duration,
         pub usage_week: crate::table::Duration,
         pub usage_month: crate::table::Duration,
+    }
+
+    #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+    pub struct UpdatedApp {
+        pub id: Ref<super::App>,
+        pub name: String,
+        pub description: String,
+        pub company: String,
+        pub color: Color,
     }
 
     #[derive(Debug, Clone, PartialEq, Eq, Serialize, FromRow)]
@@ -299,5 +312,54 @@ impl Repository {
                 acc
             },
         ))
+    }
+
+    /// Update the [App] with additional information
+    pub async fn update_app(&mut self, app: &UpdatedApp) -> Result<()> {
+        query(
+            "UPDATE apps SET
+                    name = ?,
+                    description = ?,
+                    company = ?,
+                    color = ?,
+                    initialized = 1
+                WHERE id = ?",
+        )
+        .bind(&app.name)
+        .bind(&app.description)
+        .bind(&app.company)
+        .bind(&app.color)
+        .bind(&app.id)
+        .execute(self.db.executor())
+        .await?;
+        Ok(())
+    }
+
+    /// Add a [Tag] to an [App]
+    pub async fn add_app_tag(&mut self, app_id: &Ref<App>, tag_id: &Ref<Tag>) -> Result<()> {
+        let res = query("INSERT INTO _app_tags VALUES (?, ?)")
+            .bind(app_id)
+            .bind(tag_id)
+            .execute(self.db.executor())
+            .await;
+        if let Err(err) = res {
+            // ignore UNIQUE constraint failed errors
+            if err.to_string().contains("UNIQUE constraint failed") {
+                return Ok(());
+            }
+            Err(err.into())
+        } else {
+            Ok(())
+        }
+    }
+
+    /// Remove a [Tag] from an [App]
+    pub async fn remove_app_tag(&mut self, app_id: &Ref<App>, tag_id: &Ref<Tag>) -> Result<()> {
+        query("DELETE FROM _app_tags WHERE app_id = ? AND tag_id = ?")
+            .bind(app_id)
+            .bind(tag_id)
+            .execute(self.db.executor())
+            .await?;
+        Ok(())
     }
 }
