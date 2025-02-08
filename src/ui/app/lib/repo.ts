@@ -4,6 +4,7 @@ import type {
   WithGroupedDuration,
   App,
   Tag,
+  Ref,
 } from "@/lib/entities";
 import { invoke } from "@tauri-apps/api/core";
 import type { EntityMap, EntityStore } from "@/lib/state";
@@ -71,4 +72,29 @@ export async function getAppDurationsPerPeriod({
     end: dateTimeToTicks(end),
     period: durationToTicks(period),
   });
+}
+
+export async function updateApp(app: App): Promise<void> {
+  const updatedApp = {
+    id: app.id,
+    name: app.name,
+    description: app.description,
+    company: app.company,
+    color: app.color,
+  };
+  return await invoke("update_app", { app: updatedApp });
+}
+
+export async function addAppTag(
+  appId: Ref<App>,
+  tagId: Ref<Tag>,
+): Promise<void> {
+  return await invoke("add_app_tag", { appId, tagId });
+}
+
+export async function removeAppTag(
+  appId: Ref<App>,
+  tagId: Ref<Tag>,
+): Promise<void> {
+  return await invoke("remove_app_tag", { appId, tagId });
 }
