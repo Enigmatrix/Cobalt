@@ -12,6 +12,7 @@ use crate::error::{anyhow, Result};
 pub struct Config {
     connection_strings: ConnectionStrings,
     engine_log_filter: String,
+    ui_log_filter: String,
     max_idle_duration: Duration,
     poll_duration: Duration,
     alert_duration: Duration,
@@ -28,9 +29,14 @@ impl Config {
             .1)
     }
 
-    /// Log filter (tracing)
+    /// Engine Log filter (tracing)
     pub fn engine_log_filter(&self) -> &str {
         &self.engine_log_filter
+    }
+
+    /// UI Log filter (tracing)
+    pub fn ui_log_filter(&self) -> &str {
+        &self.ui_log_filter
     }
 
     /// Maximum idle duration before the interaction period ends

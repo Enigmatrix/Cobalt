@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use tauri::async_runtime::RwLock;
 use util::config::get_config;
 use util::error::*;
+use util::Target;
 
 use crate::error::*;
 
@@ -47,7 +48,7 @@ impl AppStateInner {
     /// Create a new app state
     pub async fn new() -> Result<Self> {
         let config = get_config()?;
-        util::setup(&config)?;
+        util::setup(&config, Target::Ui)?;
         let db_pool = DatabasePool::new(&config).await?;
         Ok(Self { db_pool })
     }

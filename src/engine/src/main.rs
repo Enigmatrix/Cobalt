@@ -17,6 +17,7 @@ use util::error::{Context, Result};
 use util::future::runtime::{Builder, Handle};
 use util::future::sync::Mutex;
 use util::tracing::{error, info, ResultTraceExt};
+use util::Target;
 
 mod cache;
 mod engine;
@@ -32,7 +33,7 @@ fn main() {
 
 fn real_main() -> Result<()> {
     let config = config::get_config()?;
-    util::setup(&config)?;
+    util::setup(&config, Target::Engine)?;
     info!("starting engine");
     platform::setup()?;
 

@@ -3,7 +3,9 @@ use tracing_appender::rolling::daily;
 pub use tracing_subscriber::prelude::*;
 use tracing_subscriber::{fmt, registry, EnvFilter};
 
+use crate::config::Config;
 use crate::error::*;
+use crate::Target;
 
 /// Extension trait for [Result] to log the error, warn, info, debug,
 /// or trace straight to the log.
@@ -54,8 +56,13 @@ impl<T: Default> ResultTraceExt<T> for Result<T> {
 }
 
 /// Setup the tracing layer with the given filter directives.
-pub fn setup(filter_directives: &str) -> Result<()> {
-    let rolling = daily("logs", "Cobalt.Engine.log");
+pub fn setup(config: &Config, target: Target) -> Result<()> {
+    let (filter_directives, log_file) = match target {
+        Target::Ui => (config.ui_log_filter(), "Cobalt.Ui.log"),
+        Target::Engine => (config.engine_log_filter(), "Cobalt.Engine.log"),
+    };
+
+    let rolling = daily("logs", log_file);
 
     // Create a non-colored layer for file output
     let file_layer = fmt::layer()
