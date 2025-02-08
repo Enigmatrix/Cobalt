@@ -33,6 +33,7 @@ import { Text } from "@/components/ui/text";
 import { Button } from "@/components/ui/button";
 import { Check, Copy } from "lucide-react";
 import { useClipboard } from "@/hooks/use-clipboard";
+import { EditableText } from "@/components/editable-text";
 
 function CardUsage({
   title,
@@ -93,6 +94,7 @@ export default function App({ params }: Route.ComponentProps) {
   const id = +params.id;
   const app = useAppState((state) => state.apps[id as Ref<App>])!;
   const removeAppTag = useAppState((state) => state.removeAppTag);
+  const updateApp = useAppState((state) => state.updateApp);
 
   const allTags = useAppState((state) => state.tags);
   const { handleStaleTags } = useRefresh();
@@ -162,15 +164,17 @@ export default function App({ params }: Route.ComponentProps) {
           <div className="flex flex-col gap-4">
             {/* Header with name and icon */}
             <div className="flex items-center gap-4">
-              <AppIcon buffer={app.icon} className="w-12 h-12" />
-              <div className="flex-1 min-w-0 shrink">
-                <h1 className="text-2xl font-semibold">
-                  <Text>{app.name}</Text>
-                </h1>
-                <p className="text-muted-foreground">
-                  <Text>{app.company}</Text>
-                </p>
+              <AppIcon buffer={app.icon} className="w-12 h-12 shrink-0" />
+              <div className="min-w-0 shrink flex flex-col">
+                <EditableText
+                  text={app.name}
+                  className="text-2xl font-semibold grow-0"
+                  buttonClassName="ml-1"
+                  onSubmit={async (v) => await updateApp({ ...app, name: v })}
+                />
+                <Text className="text-muted-foreground">{app.company}</Text>
               </div>
+              <div className="flex-1" />
               <div
                 style={{ background: app.color }}
                 className="text-sm font-medium text-white rounded-full px-3 py-1"
@@ -180,11 +184,14 @@ export default function App({ params }: Route.ComponentProps) {
             </div>
 
             {/* Description */}
-            {app.description && (
-              <p className="text-muted-foreground">
-                <Text>{app.description}</Text>
-              </p>
-            )}
+            <EditableText
+              className="text-muted-foreground self-start"
+              buttonClassName="text-muted-foreground/50"
+              text={app.description}
+              onSubmit={async (v) =>
+                await updateApp({ ...app, description: v })
+              }
+            />
 
             {/* Tags */}
             {tags.length > 0 && (
