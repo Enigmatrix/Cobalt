@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { Button } from "./ui/button";
 import { Edit2, Check } from "lucide-react";
 import type { ClassValue } from "clsx";

@@ -1,7 +1,6 @@
 import * as React from "react";
 import { Copy, Check } from "lucide-react";
 
-import { cn } from "@/lib/utils";
 import * as ColorUtils from "@/lib/color-utils";
 import { Button } from "@/components/ui/button";
 import {
