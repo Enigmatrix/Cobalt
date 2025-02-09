@@ -1,6 +1,7 @@
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import type { Route } from "../apps/+types/[id]";
 import { Separator } from "@/components/ui/separator";
+import { useThrottledCallback } from "use-debounce";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -19,7 +20,7 @@ import {
 import AppIcon from "@/components/app-icon";
 import { DurationText } from "@/components/duration-text";
 import { AppUsageBarChart } from "@/components/app-usage-chart";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { getAppDurationsPerPeriod } from "@/lib/repo";
 import { Duration, type DateTime } from "luxon";
 import { useRefresh } from "@/hooks/use-refresh";
@@ -34,6 +35,7 @@ import { Button } from "@/components/ui/button";
 import { Check, Copy } from "lucide-react";
 import { useClipboard } from "@/hooks/use-clipboard";
 import { EditableText } from "@/components/editable-text";
+import { ColorPicker } from "@/components/color-picker";
 
 function CardUsage({
   title,
@@ -135,6 +137,19 @@ export default function App({ params }: Route.ComponentProps) {
     ],
     [today],
   );
+  const [color, setColorInner] = useState(app.color);
+
+  const debouncedUpdateColor = useThrottledCallback(async (color: string) => {
+    await updateApp({ ...app, color });
+  }, 500);
+
+  const setColor = useCallback(
+    async (color: string) => {
+      setColorInner(color);
+      await debouncedUpdateColor(color);
+    },
+    [updateApp, setColorInner],
+  );
 
   const { copy, hasCopied } = useClipboard();
 
@@ -175,12 +190,11 @@ export default function App({ params }: Route.ComponentProps) {
                 <Text className="text-muted-foreground">{app.company}</Text>
               </div>
               <div className="flex-1" />
-              <div
-                style={{ background: app.color }}
-                className="text-sm font-medium text-white rounded-full px-3 py-1"
-              >
-                {app.color}
-              </div>
+              <ColorPicker
+                className="w-fit"
+                color={color}
+                onChange={setColor}
+              />
             </div>
 
             {/* Description */}

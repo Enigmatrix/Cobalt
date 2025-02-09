@@ -12,16 +12,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
 
 interface ColorPickerProps {
   color?: string;
   onChange?: (value: string) => void;
+  className?: string;
 }
 
 type ColorMode = "hex" | "rgba" | "hsla";
 type CopyState = { [key in ColorMode]: boolean };
 
-export function ColorPicker({ color = "#000000", onChange }: ColorPickerProps) {
+export function ColorPicker({
+  color = "#000000",
+  onChange,
+  className,
+}: ColorPickerProps) {
   const [currentColor, setCurrentColor] = React.useState(color);
   const [colorMode, setColorMode] = React.useState<ColorMode>("hex");
   const [copied, setCopied] = React.useState<CopyState>({
@@ -134,7 +140,10 @@ export function ColorPicker({ color = "#000000", onChange }: ColorPickerProps) {
       <PopoverTrigger asChild>
         <Button
           variant="outline"
-          className="w-[240px] justify-start text-left font-normal"
+          className={cn(
+            "w-[240px] justify-start text-left font-normal",
+            className,
+          )}
         >
           <div className="w-full flex items-center gap-2">
             <div
