@@ -53,6 +53,7 @@ import {
 } from "@/components/ui/popover";
 import { SearchBar } from "@/components/search-bar";
 import { useSearch } from "@/hooks/use-search";
+import { CreateTagDialog } from "@/components/create-tag-dialog";
 
 function ChooseTagPopover({
   tagId,
@@ -68,6 +69,7 @@ function ChooseTagPopover({
     () => handleStaleTags(_(allTags).values().flatten().value()),
     [allTags],
   );
+  const createTag = useAppState((state) => state.createTag);
   const [query, setQuery, filteredTags] = useSearch(tags, ["name"]);
 
   const setTagId = useCallback(
@@ -101,7 +103,7 @@ function ChooseTagPopover({
                 <div
                   key={tag.id}
                   className="flex cursor-pointer hover:bg-muted p-2 rounded-md gap-2"
-                  onClick={() => setTagId(tag.id)}
+                  onClick={async () => await setTagId(tag.id)}
                   style={{ color: tag.color }}
                 >
                   <TagIcon />
@@ -118,15 +120,22 @@ function ChooseTagPopover({
             className={cn({
               hidden: tagId === null,
             })}
-            onClick={() => setTagId(null)}
+            onClick={async () => await setTagId(null)}
           >
             Clear
           </Button>
-          {/* TODO create new tag dialog */}
-          <Button variant={tags.length === 0 ? "default" : "outline"}>
-            <Plus />
-            Create Tag
-          </Button>
+          <CreateTagDialog
+            trigger={
+              <Button variant={tags.length === 0 ? "default" : "outline"}>
+                <Plus />
+                Create Tag
+              </Button>
+            }
+            onSubmit={async (tag) => {
+              const tagId = await createTag(tag);
+              await setTagId(tagId);
+            }}
+          ></CreateTagDialog>
         </div>
       </PopoverContent>
     </Popover>
