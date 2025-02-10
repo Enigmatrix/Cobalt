@@ -25,7 +25,12 @@ export function DurationText({
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <div className={cn("tracking-tighter", className)}>
+          <div
+            className={cn(
+              "tracking-tighter whitespace-nowrap truncate",
+              className,
+            )}
+          >
             {toHumanDuration(ticks ?? durationToTicks(duration!))}
           </div>
         </TooltipTrigger>

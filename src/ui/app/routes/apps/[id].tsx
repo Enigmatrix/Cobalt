@@ -90,10 +90,10 @@ function CardUsage({
   const data = useMemo(() => ({ [appId]: usages[appId] }), [usages, appId]);
 
   return (
-    <div className="flex flex-col aspect-video rounded-xl bg-muted/50">
+    <div className="flex flex-col rounded-xl bg-muted/50">
       <div className="flex items-center">
         <div className="flex flex-col p-4 pb-1">
-          <div className="text-base text-foreground/50">
+          <div className="whitespace-nowrap text-base text-foreground/50">
             {titleFormatter(start)}
           </div>
           <DurationText className="text-xl font-semibold" ticks={usage} />
@@ -101,7 +101,8 @@ function CardUsage({
 
         <div className="flex-1" />
 
-        <div className="flex m-2">
+        {/* hide button controls between md: and lg: */}
+        <div className="flex m-2 max-lg:hidden max-md:block">
           <Button variant="ghost" size="icon" className="" onClick={prevFn}>
             <ChevronLeft />
           </Button>
@@ -125,7 +126,7 @@ function CardUsage({
         rangeMaxTicks={dateTimeToTicks(end)}
         dateTimeFormatter={chartDateFormatter}
         gradientBars
-        className="aspect-auto h-full flex-1 mx-1"
+        className="aspect-video flex-1 mx-1 max-w-full"
         maxYIsPeriod
       />
     </div>
@@ -299,20 +300,20 @@ export default function App({ params }: Route.ComponentProps) {
             <div className="flex items-center gap-4">
               <AppIcon buffer={app.icon} className="w-12 h-12 shrink-0" />
               <div className="min-w-0 shrink flex flex-col">
-                <div className="flex gap-4">
+                <div className="min-w-0 flex gap-4">
                   <EditableText
                     text={app.name}
-                    className="text-2xl font-semibold grow-0"
+                    className="min-w-0 text-2xl font-semibold grow-0"
                     buttonClassName="ml-1"
                     onSubmit={async (v) => await updateApp({ ...app, name: v })}
                   />
-                  {tag && <MiniTagItem tag={tag} />}
+                  {tag && <MiniTagItem tag={tag} className="min-w-0" />}
                 </div>
                 <Text className="text-muted-foreground">{app.company}</Text>
               </div>
               <div className="flex-1" />
               <ColorPicker
-                className="w-fit"
+                className="min-w-0 w-fit"
                 color={color}
                 onChange={setColor}
               />
