@@ -106,6 +106,12 @@ pub mod infused {
         #[sqlx(flatten)]
         usages: UsageInfo,
     }
+
+    #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+    pub struct CreateTag {
+        pub name: String,
+        pub color: String,
+    }
 }
 
 const APP_DUR: &str = "SELECT a.id AS id,
@@ -336,5 +342,15 @@ impl Repository {
         .execute(self.db.executor())
         .await?;
         Ok(())
+    }
+
+    /// Create a new [Tag] from a [infused::CreateTag]
+    pub async fn create_tag(&mut self, tag: &infused::CreateTag) -> Result<Ref<Tag>> {
+        let res = query("INSERT INTO tags VALUES (NULL, ?, ?)")
+            .bind(&tag.name)
+            .bind(&tag.color)
+            .execute(self.db.executor())
+            .await?;
+        Ok(Ref::new(res.last_insert_rowid()))
     }
 }

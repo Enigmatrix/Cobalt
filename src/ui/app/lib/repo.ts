@@ -4,11 +4,17 @@ import type {
   WithGroupedDuration,
   App,
   Tag,
+  Ref,
 } from "@/lib/entities";
 import { invoke } from "@tauri-apps/api/core";
 import type { EntityMap, EntityStore } from "@/lib/state";
 import type { DateTime, Duration } from "luxon";
 import { dateTimeToTicks, durationToTicks } from "@/lib/time";
+
+export interface CreateTag {
+  name: string;
+  color: string;
+}
 
 interface QueryOptions {
   now?: Timestamp;
@@ -83,4 +89,8 @@ export async function updateApp(app: App): Promise<void> {
     tag_id: app.tag_id,
   };
   return await invoke("update_app", { app: updatedApp });
+}
+
+export async function createTag(tag: CreateTag): Promise<Ref<Tag>> {
+  return await invoke("create_tag", { tag });
 }

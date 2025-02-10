@@ -22,6 +22,7 @@ pub fn run() {
             repo::copy_seed_db,
             repo::update_usages_end,
             repo::update_app,
+            repo::create_tag,
             tracing::log,
         ])
         .run(tauri::generate_context!())
