@@ -45,6 +45,7 @@ erDiagram
         text            description
         text            company
         text            color
+        int_nullable    tag_id FK
         int             identity_is_win32     UK "UNIQUE(is_win32, path_or_aumid)"
         text            identity_path_or_aumid   UK "UNIQUE(is_win32, path_or_aumid)"
         blob_nullable   icon
@@ -54,11 +55,6 @@ erDiagram
         int             id PK
         text            name UK
         text            color
-    }
-
-    "_app_tags" {
-        int             app_id PK,FK
-        int             tag_id PK,FK
     }
 
     sessions {
@@ -118,8 +114,7 @@ erDiagram
 
     apps ||--o{ sessions : sessions
     sessions ||--o{ usages : usages
-    "_app_tags" ||--|{ apps : app
-    "_app_tags" ||--|{ tags : tag
+    tags ||--o{ apps : "tag's apps"
     apps ||--o{ alerts : "app alerts"
     tags ||--o{ alerts : "tag alerts"
     alerts ||--o{ reminders : reminders
