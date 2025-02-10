@@ -243,7 +243,7 @@ impl AlertManager {
     pub async fn target_apps(&mut self, target: &Target) -> Result<Vec<Ref<App>>> {
         Ok(match target {
             Target::Tag(tag) => {
-                query("SELECT app_id FROM _app_tags WHERE tag_id = ?")
+                query("SELECT id FROM apps WHERE tag_id = ?")
                     .bind(tag)
                     .map(|r: SqliteRow| r.get(0))
                     .fetch_all(self.db.executor())

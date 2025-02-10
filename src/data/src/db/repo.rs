@@ -79,7 +79,6 @@ pub mod infused {
         #[sqlx(flatten)]
         #[serde(flatten)]
         pub inner: super::App,
-        pub tags: RefVec<super::Tag>,
         #[sqlx(flatten)]
         usages: UsageInfo,
     }
@@ -103,14 +102,13 @@ const APP_DUR: &str = "SELECT a.id AS id,
             WHERE u.end > p.start AND u.start <= p.end
             GROUP BY a.id";
 
-const TAG_DUR: &str = "SELECT at.tag_id AS id,
+const TAG_DUR: &str = "SELECT a.tag_id AS id,
                 COALESCE(SUM(MIN(u.end, p.end) - MAX(u.start, p.start)), 0) AS duration
-            FROM _app_tags at, (SELECT ? AS start, ? AS end) p
-            INNER JOIN apps a ON a.id = at.app_id
+            FROM apps a, (SELECT ? AS start, ? AS end) p
             INNER JOIN sessions s ON a.id = s.app_id
             INNER JOIN usages u ON s.id = u.session_id
             WHERE u.end > p.start AND u.start <= p.end
-            GROUP BY at.tag_id";
+            GROUP BY a.tag_id";
 
 // TODO when we sqlx has named parameters, fixup our queries to use them.
 
@@ -153,7 +151,7 @@ impl Repository {
                 usage_daily(id, dur) AS ({APP_DUR}),
                 usage_week(id, dur) AS ({APP_DUR}),
                 usage_month(id, dur) AS ({APP_DUR})
-            SELECT a.*, GROUP_CONCAT(at.tag_id, ',') tags,
+            SELECT a.*,
                 COALESCE(d.dur, 0) AS usage_today,
                 COALESCE(w.dur, 0) AS usage_week,
                 COALESCE(m.dur, 0) AS usage_month
@@ -161,7 +159,6 @@ impl Repository {
                 LEFT JOIN usage_daily d ON a.id = d.id
                 LEFT JOIN usage_week  w ON a.id = w.id
                 LEFT JOIN usage_month m ON a.id = m.id
-                LEFT JOIN _app_tags at ON a.id = at.app_id
             WHERE a.initialized = 1
             GROUP BY a.id"
         ))
@@ -192,7 +189,7 @@ impl Repository {
                 usage_daily(id, dur) AS ({TAG_DUR}),
                 usage_week(id, dur) AS ({TAG_DUR}),
                 usage_month(id, dur) AS ({TAG_DUR})
-            SELECT t.*, GROUP_CONCAT(at.app_id, ',') apps,
+            SELECT t.*, GROUP_CONCAT(a.id, ',') apps,
                 COALESCE(d.dur, 0) AS usage_today,
                 COALESCE(w.dur, 0) AS usage_week,
                 COALESCE(m.dur, 0) AS usage_month
@@ -200,7 +197,7 @@ impl Repository {
                 LEFT JOIN usage_daily d ON t.id = d.id
                 LEFT JOIN usage_week  w ON t.id = w.id
                 LEFT JOIN usage_month m ON t.id = m.id
-                LEFT JOIN _app_tags at ON t.id = at.tag_id
+                LEFT JOIN apps a ON t.id = a.tag_id
             GROUP BY t.id"
         ))
         .bind(ts.day_start().to_ticks())
