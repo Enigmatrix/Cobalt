@@ -100,14 +100,12 @@ export default function App({ params }: Route.ComponentProps) {
 
   const allTags = useAppState((state) => state.tags);
   const { handleStaleTags } = useRefresh();
-  const tags = useMemo(
-    () =>
-      _(app.tags)
-        .map((tagId) => allTags[tagId])
-        .thru(handleStaleTags)
-        .value(),
-    [handleStaleTags, allTags, app.tags],
-  );
+  const tag = useMemo(() => {
+    if (app.tag_id === null) {
+      return null;
+    }
+    return handleStaleTags([allTags[app.tag_id]])[0] ?? null;
+  }, [allTags, handleStaleTags, app.tag_id]);
 
   const today = useToday();
   const [dayStart, dayEnd, dayPeriod, dayFormatter] = useMemo(
@@ -181,12 +179,15 @@ export default function App({ params }: Route.ComponentProps) {
             <div className="flex items-center gap-4">
               <AppIcon buffer={app.icon} className="w-12 h-12 shrink-0" />
               <div className="min-w-0 shrink flex flex-col">
-                <EditableText
-                  text={app.name}
-                  className="text-2xl font-semibold grow-0"
-                  buttonClassName="ml-1"
-                  onSubmit={async (v) => await updateApp({ ...app, name: v })}
-                />
+                <div className="flex gap-4">
+                  <EditableText
+                    text={app.name}
+                    className="text-2xl font-semibold grow-0"
+                    buttonClassName="ml-1"
+                    onSubmit={async (v) => await updateApp({ ...app, name: v })}
+                  />
+                  {tag && <MiniTagItem tag={tag} />}
+                </div>
                 <Text className="text-muted-foreground">{app.company}</Text>
               </div>
               <div className="flex-1" />
@@ -206,34 +207,6 @@ export default function App({ params }: Route.ComponentProps) {
                 await updateApp({ ...app, description: v })
               }
             />
-
-            {/* Tags */}
-            {tags.length > 0 && (
-              <HorizontalOverflowList
-                className="gap-2 max-w-full h-8"
-                items={tags}
-                renderItem={(tag) => (
-                  <MiniTagItem
-                    key={tag.id}
-                    tag={tag}
-                    className="h-8"
-                    remove={async () => await removeAppTag(app.id, tag.id)}
-                  />
-                )}
-                renderOverflowItem={(tag) => (
-                  <MiniTagItem key={tag.id} tag={tag} className="h-8" />
-                )}
-                renderOverflowSign={(items) => (
-                  <Badge
-                    variant="outline"
-                    style={{
-                      backgroundColor: "rgba(255, 255, 255, 0.2)",
-                    }}
-                    className="whitespace-nowrap ml-2 text-muted-foreground rounded-md h-8"
-                  >{`+${items.length}`}</Badge>
-                )}
-              />
-            )}
 
             {/* App Identity */}
             <div className="text-sm inline-flex border-border border rounded-lg overflow-hidden max-w-fit min-w-0 bg-muted/30 items-center">
