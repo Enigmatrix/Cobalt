@@ -2,6 +2,7 @@ import { cn } from "@/lib/utils";
 import { CircleHelp } from "lucide-react";
 import { useMemo } from "react";
 import { Buffer } from "buffer";
+import type { ClassValue } from "clsx";
 
 export function toDataUrl(buffer?: Buffer) {
   return buffer
@@ -14,7 +15,7 @@ export default function AppIcon({
   className,
 }: {
   buffer?: Buffer;
-  className?: string;
+  className?: ClassValue;
 }) {
   const icon = useMemo(() => {
     const dataUrl = toDataUrl(buffer);

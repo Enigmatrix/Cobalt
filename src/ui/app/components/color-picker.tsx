@@ -14,15 +14,15 @@ import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { useClipboard } from "@/hooks/use-clipboard";
+import type { ClassValue } from "clsx";
 
 interface ColorPickerProps {
   color?: string;
   onChange?: (value: string) => void;
-  className?: string;
+  className?: ClassValue;
 }
 
 type ColorMode = "hex" | "rgba" | "hsla";
-type CopyState = { [key in ColorMode]: boolean };
 
 export function ColorPicker({
   color = "#000000",

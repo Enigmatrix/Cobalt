@@ -32,7 +32,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { ArrowDownUp, SortAsc, SortDesc, X } from "lucide-react";
+import { ArrowDownUp, SortAsc, SortDesc } from "lucide-react";
 import _ from "lodash";
 import { Text } from "@/components/ui/text";
 import { dateTimeToTicks, durationToTicks } from "@/lib/time";
@@ -43,17 +43,16 @@ import { useToday } from "@/hooks/use-today";
 import { useRefresh } from "@/hooks/use-refresh";
 import { useSearch } from "@/hooks/use-search";
 import { DurationText } from "@/components/duration-text";
+import type { ClassValue } from "clsx";
 
 const period = Duration.fromObject({ hour: 1 });
 
 export function MiniTagItem({
   tag,
   className,
-  remove,
 }: {
   tag: Tag;
-  className?: string;
-  remove?: () => Promise<void>;
+  className?: ClassValue;
 }) {
   return (
     <Badge
@@ -66,16 +65,6 @@ export function MiniTagItem({
       className={cn("whitespace-nowrap", className)}
     >
       <Text className="max-w-32">{tag.name}</Text>
-      {remove && (
-        <Button
-          variant="ghost"
-          size="icon"
-          className="p-0 w-auto h-auto ml-2"
-          onClick={remove}
-        >
-          <X size={16} />
-        </Button>
-      )}
     </Badge>
   );
 }

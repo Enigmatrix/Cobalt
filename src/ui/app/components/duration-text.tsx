@@ -11,6 +11,7 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from "@/components/ui/tooltip";
+import type { ClassValue } from "clsx";
 
 export function DurationText({
   ticks,
@@ -19,7 +20,7 @@ export function DurationText({
 }: {
   ticks?: number;
   duration?: Duration;
-  className?: string;
+  className?: ClassValue;
 }) {
   return (
     <TooltipProvider>
