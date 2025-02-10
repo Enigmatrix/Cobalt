@@ -3,7 +3,13 @@ import { create } from "zustand";
 import type { App, Ref, Tag } from "@/lib/entities";
 import { DateTime } from "luxon";
 import { dateTimeToTicks } from "@/lib/time";
-import { getApps, getTags, updateApp } from "@/lib/repo";
+import {
+  createTag,
+  getApps,
+  getTags,
+  updateApp,
+  type CreateTag,
+} from "@/lib/repo";
 import { checkForUpdatesBackground } from "@/lib/updater";
 import { info } from "@/lib/log";
 import { produce } from "immer";
@@ -45,6 +51,7 @@ type AppState = {
   setTags: (tags: EntityStore<Tag>) => void;
   setLastRefresh: (lastRefresh: DateTime) => void;
   updateApp: (app: App) => Promise<void>;
+  createTag: (tag: CreateTag) => Promise<Ref<Tag>>;
 };
 
 export const useAppState = create<AppState>((set) => {
@@ -64,6 +71,25 @@ export const useAppState = create<AppState>((set) => {
           draft.apps[app.id] = { ...draft.apps[app.id], ...app };
         })(state),
       );
+    },
+    createTag: async (tag) => {
+      const tagId = await createTag(tag);
+      set((state) =>
+        produce((draft: AppState) => {
+          draft.tags[tagId] = {
+            id: tagId,
+            ...tag,
+            apps: [],
+            usages: {
+              usage_today: 0,
+              usage_week: 0,
+              usage_month: 0,
+            },
+          };
+        })(state),
+      );
+
+      return tagId;
     },
   };
 });
