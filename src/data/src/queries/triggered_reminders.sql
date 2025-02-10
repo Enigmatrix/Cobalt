@@ -1,11 +1,11 @@
 WITH
 
 target_apps(alert_id, alert_version, app_id) AS (
-        SELECT al.id, al.version, coalesce(al.app_id, at.app_id)
+        SELECT al.id, al.version, coalesce(al.app_id, a.id)
         FROM alerts al
-        LEFT JOIN _app_tags at
-            ON al.tag_id = at.tag_id
-            AND at.tag_id IS NOT NULL
+        LEFT JOIN apps a
+            ON al.tag_id = a.tag_id
+            AND a.tag_id IS NOT NULL
 ),
 
 range_start(alert_id, alert_version, range_start) AS (

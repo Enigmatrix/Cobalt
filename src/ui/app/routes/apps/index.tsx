@@ -39,7 +39,6 @@ import { dateTimeToTicks, durationToTicks } from "@/lib/time";
 import { getAppDurationsPerPeriod } from "@/lib/repo";
 import { DateTime, Duration } from "luxon";
 import { AppUsageBarChart } from "@/components/app-usage-chart";
-import { HorizontalOverflowList } from "@/components/overflow-list";
 import { useToday } from "@/hooks/use-today";
 import { useRefresh } from "@/hooks/use-refresh";
 import { useSearch } from "@/hooks/use-search";
@@ -101,14 +100,13 @@ function AppListItem({
 }) {
   const allTags = useAppState((state) => state.tags);
   const { handleStaleTags } = useRefresh();
-  const tags = useMemo(
-    () =>
-      _(app.tags)
-        .map((tagId) => allTags[tagId])
-        .thru(handleStaleTags)
-        .value(),
-    [handleStaleTags, allTags, app.tags],
-  );
+  const tag = useMemo(() => {
+    if (app.tag_id === null) {
+      return null;
+    }
+    return handleStaleTags([allTags[app.tag_id]])[0] ?? null;
+  }, [allTags, handleStaleTags, app.tag_id]);
+
   const singleUsage = useMemo(
     () => ({ [app.id]: usages[app.id] }),
     [usages, app.id],
@@ -128,21 +126,7 @@ function AppListItem({
       <div className="flex flex-col min-w-0">
         <div className="inline-flex items-center gap-2">
           <Text className="text-lg font-semibold max-w-72">{app.name}</Text>
-          <HorizontalOverflowList
-            className="gap-1 max-w-96 h-6"
-            items={tags}
-            renderItem={(tag) => <TagItem key={tag.id} tag={tag} />}
-            renderOverflowItem={(tag) => <TagItem key={tag.id} tag={tag} />}
-            renderOverflowSign={(items) => (
-              <Badge
-                variant="outline"
-                style={{
-                  backgroundColor: "rgba(255, 255, 255, 0.2)",
-                }}
-                className="whitespace-nowrap ml-1 text-card-foreground/60 rounded-md"
-              >{`+${items.length}`}</Badge>
-            )}
-          />
+          {tag && <TagItem tag={tag} />}
         </div>
         <span className="inline-flex gap-1 items-center text-xs text-card-foreground/50">
           <Text className="max-w-48">{app.company}</Text>

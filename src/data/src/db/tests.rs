@@ -193,6 +193,7 @@ async fn update_app() -> Result<()> {
         color: "red".to_string(),
         identity: identity.clone(), // ignored by query
         icon: Some(icon.clone()),
+        tag_id: None,
     };
     updater.update_app(&app).await?;
 
@@ -227,17 +228,19 @@ async fn insert_app_raw(
     a3: &str,
     a4: &str,
     a5: &str,
+    atag: Option<i64>,
     a6: u32,
     a7: &str,
     a8: Option<Vec<u8>>,
 ) -> Result<Ref<App>> {
-    let res = query("INSERT INTO apps VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+    let res = query("INSERT INTO apps VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
         .bind(a0)
         .bind(a1)
         .bind(a2)
         .bind(a3)
         .bind(a4)
         .bind(a5)
+        .bind(atag)
         .bind(a6)
         .bind(a7)
         .bind(a8)
@@ -303,42 +306,61 @@ async fn insert_tag_raw(db: &mut Database, a0: &str, a1: &str) -> Result<Ref<Tag
     Ok(Ref::new(res.last_insert_rowid()))
 }
 
-async fn insert_app_tag_raw(db: &mut Database, a0: i64, a1: i64) -> Result<()> {
-    query("INSERT INTO _app_tags VALUES (?, ?)")
-        .bind(a0)
-        .bind(a1)
-        .execute(db.executor())
-        .await?;
-    Ok(())
-}
-
 #[tokio::test]
 async fn target_apps() -> Result<()> {
     let mut db = test_db().await?;
     {
-        insert_app_raw(
-            &mut db, true, true, "name1", "desc1", "comp1", "red1", 1, "path1", None,
-        )
-        .await?;
-        insert_app_raw(
-            &mut db, true, true, "name2", "desc2", "comp2", "red2", 0, "aumid2", None,
-        )
-        .await?;
-        insert_app_raw(
-            &mut db, true, true, "name3", "desc3", "comp3", "red3", 1, "path3", None,
-        )
-        .await?;
-
         insert_tag_raw(&mut db, "tag_name1", "blue1").await?;
         insert_tag_raw(&mut db, "tag_name2", "blue2").await?;
         insert_tag_raw(&mut db, "tag_name3", "blue3").await?;
         insert_tag_raw(&mut db, "tag_name4", "blue4").await?;
 
-        insert_app_tag_raw(&mut db, 1, 1).await?;
-        insert_app_tag_raw(&mut db, 2, 1).await?;
-        insert_app_tag_raw(&mut db, 2, 2).await?;
-        insert_app_tag_raw(&mut db, 3, 2).await?;
-        insert_app_tag_raw(&mut db, 1, 3).await?;
+        insert_app_raw(
+            &mut db, true, true, "name1", "desc1", "comp1", "red1", None, 1, "path1", None,
+        )
+        .await?;
+        insert_app_raw(
+            &mut db,
+            true,
+            true,
+            "name2",
+            "desc2",
+            "comp2",
+            "red2",
+            Some(2),
+            0,
+            "aumid2",
+            None,
+        )
+        .await?;
+        insert_app_raw(
+            &mut db,
+            true,
+            true,
+            "name3",
+            "desc3",
+            "comp3",
+            "red3",
+            Some(3),
+            1,
+            "path3",
+            None,
+        )
+        .await?;
+        insert_app_raw(
+            &mut db,
+            true,
+            true,
+            "name4",
+            "desc4",
+            "comp4",
+            "red4",
+            Some(2),
+            1,
+            "path4",
+            None,
+        )
+        .await?;
     }
 
     let mut mgr = AlertManager::new(db)?;
@@ -352,6 +374,7 @@ async fn target_apps() -> Result<()> {
         identity: AppIdentity::Win32 {
             path: "path1".to_string(),
         },
+        tag_id: None,
         icon: None,
     };
     let app2 = App {
@@ -363,6 +386,7 @@ async fn target_apps() -> Result<()> {
         identity: AppIdentity::Uwp {
             aumid: "aumid2".to_string(),
         },
+        tag_id: Some(Ref::new(2)),
         icon: None,
     };
     let app3 = App {
@@ -374,6 +398,19 @@ async fn target_apps() -> Result<()> {
         identity: AppIdentity::Win32 {
             path: "path3".to_string(),
         },
+        tag_id: Some(Ref::new(3)),
+        icon: None,
+    };
+    let app4 = App {
+        id: Ref::new(4),
+        name: "name4".to_string(),
+        description: "desc4".to_string(),
+        company: "comp4".to_string(),
+        color: "red4".to_string(),
+        identity: AppIdentity::Win32 {
+            path: "path4".to_string(),
+        },
+        tag_id: Some(Ref::new(2)),
         icon: None,
     };
 
@@ -392,25 +429,19 @@ async fn target_apps() -> Result<()> {
         vec![app3.id.clone()],
     );
 
-    assert_eq!(
-        mgr.target_apps(&Target::Tag(Ref::new(1))).await?,
-        vec![app1.id.clone(), app2.id.clone()],
-    );
+    assert_eq!(mgr.target_apps(&Target::Tag(Ref::new(1))).await?, vec![],);
 
     assert_eq!(
         mgr.target_apps(&Target::Tag(Ref::new(2))).await?,
-        vec![app2.id.clone(), app3.id.clone()],
+        vec![app2.id.clone(), app4.id.clone()],
     );
 
     assert_eq!(
         mgr.target_apps(&Target::Tag(Ref::new(3))).await?,
-        vec![app1.id.clone()],
+        vec![app3.id.clone()],
     );
 
-    assert_eq!(
-        mgr.target_apps(&Target::Tag(Ref::new(4))).await?,
-        Vec::new()
-    );
+    assert_eq!(mgr.target_apps(&Target::Tag(Ref::new(4))).await?, vec![],);
 
     Ok(())
 }
@@ -422,7 +453,7 @@ async fn insert_alert_event() -> Result<()> {
     let id = 1;
     {
         insert_app_raw(
-            &mut db, true, true, "name1", "desc1", "comp1", "red1", 1, "path1", None,
+            &mut db, true, true, "name1", "desc1", "comp1", "red1", None, 1, "path1", None,
         )
         .await?;
         insert_alert_raw(&mut db, id, 1, Some(1), None, 100, 1, 0, "", 1).await?;
@@ -459,7 +490,7 @@ async fn insert_reminder_event() -> Result<()> {
     let reminder_id = 1;
     {
         insert_app_raw(
-            &mut db, true, true, "name1", "desc1", "comp1", "red1", 1, "path1", None,
+            &mut db, true, true, "name1", "desc1", "comp1", "red1", None, 1, "path1", None,
         )
         .await?;
         insert_alert_raw(&mut db, alert_id, 1, Some(1), None, 100, 1, 0, "", 1).await?;
@@ -535,6 +566,7 @@ pub mod arrange {
             &app.description,
             &app.company,
             &app.color,
+            app.tag_id.as_ref().map(|id| id.0).clone(),
             if let AppIdentity::Win32 { .. } = app.identity {
                 1
             } else {
@@ -559,6 +591,7 @@ pub mod arrange {
             &app.description,
             &app.company,
             &app.color,
+            app.tag_id.as_ref().map(|id| id.0).clone(),
             if let AppIdentity::Win32 { .. } = app.identity {
                 1
             } else {
@@ -610,11 +643,6 @@ pub mod arrange {
     pub async fn tag(db: &mut Database, mut tag: Tag) -> Result<Tag> {
         tag.id = insert_tag_raw(db, &tag.name, &tag.color).await?;
         Ok(tag)
-    }
-
-    pub async fn app_tags(db: &mut Database, app_id: Ref<App>, tag_id: Ref<Tag>) -> Result<()> {
-        insert_app_tag_raw(db, app_id.0, tag_id.0).await?;
-        Ok(())
     }
 
     pub async fn alert(db: &mut Database, alert: Alert) -> Result<Alert> {
@@ -731,6 +759,7 @@ mod triggered_alerts {
                 identity: AppIdentity::Win32 {
                     path: "path".to_string(),
                 },
+                tag_id: None,
                 icon: None,
             },
         )
@@ -778,6 +807,7 @@ mod triggered_alerts {
                 identity: AppIdentity::Win32 {
                     path: "path".to_string(),
                 },
+                tag_id: None,
                 icon: None,
             },
         )
@@ -835,6 +865,7 @@ mod triggered_alerts {
                 identity: AppIdentity::Win32 {
                     path: "path".to_string(),
                 },
+                tag_id: None,
                 icon: None,
             },
         )
@@ -910,6 +941,7 @@ mod triggered_alerts {
                 identity: AppIdentity::Win32 {
                     path: "path".to_string(),
                 },
+                tag_id: None,
                 icon: None,
             },
         )
@@ -1000,6 +1032,7 @@ mod triggered_alerts {
                 identity: AppIdentity::Win32 {
                     path: "path".to_string(),
                 },
+                tag_id: None,
                 icon: None,
             },
         )
@@ -1090,6 +1123,7 @@ mod triggered_alerts {
                 identity: AppIdentity::Win32 {
                     path: "path".to_string(),
                 },
+                tag_id: None,
                 icon: None,
             },
         )
@@ -1175,6 +1209,7 @@ mod triggered_alerts {
                 identity: AppIdentity::Win32 {
                     path: "path".to_string(),
                 },
+                tag_id: None,
                 icon: None,
             },
         )
@@ -1260,6 +1295,7 @@ mod triggered_alerts {
                 identity: AppIdentity::Win32 {
                     path: "path".to_string(),
                 },
+                tag_id: None,
                 icon: None,
             },
         )
@@ -1335,6 +1371,7 @@ mod triggered_alerts {
                 identity: AppIdentity::Win32 {
                     path: "path".to_string(),
                 },
+                tag_id: None,
                 icon: None,
             },
         )
@@ -1410,6 +1447,7 @@ mod triggered_alerts {
                 identity: AppIdentity::Win32 {
                     path: "path".to_string(),
                 },
+                tag_id: None,
                 icon: None,
             },
         )
@@ -1511,6 +1549,7 @@ mod triggered_alerts {
                 identity: AppIdentity::Win32 {
                     path: "path".to_string(),
                 },
+                tag_id: None,
                 icon: None,
             },
         )
@@ -1594,6 +1633,34 @@ mod triggered_alerts {
     async fn using_tags() -> Result<()> {
         let mut db = test_db().await?;
 
+        let tag1 = arrange::tag(
+            &mut db,
+            Tag {
+                id: Ref::default(),
+                name: "tag_name1".to_string(),
+                color: "blue1".to_string(),
+            },
+        )
+        .await?;
+        let tag2 = arrange::tag(
+            &mut db,
+            Tag {
+                id: Ref::default(),
+                name: "tag_name2".to_string(),
+                color: "blue2".to_string(),
+            },
+        )
+        .await?;
+        let empty_tag = arrange::tag(
+            &mut db,
+            Tag {
+                id: Ref::default(),
+                name: "emptytag".to_string(),
+                color: "e1".to_string(),
+            },
+        )
+        .await?;
+
         let app1 = arrange::app(
             &mut db,
             App {
@@ -1605,6 +1672,7 @@ mod triggered_alerts {
                 identity: AppIdentity::Win32 {
                     path: "path".to_string(),
                 },
+                tag_id: None,
                 icon: None,
             },
         )
@@ -1621,45 +1689,50 @@ mod triggered_alerts {
                 identity: AppIdentity::Uwp {
                     aumid: "aumid2".to_string(),
                 },
+                tag_id: Some(Ref::new(1)),
                 icon: None,
             },
         )
         .await?;
 
-        let empty_tag = arrange::tag(
+        let app3 = arrange::app(
             &mut db,
-            Tag {
+            App {
                 id: Ref::default(),
-                name: "emptytag".to_string(),
-                color: "e1".to_string(),
+                name: "name3".to_string(),
+                description: "desc3".to_string(),
+                company: "comp3".to_string(),
+                color: "red3".to_string(),
+                identity: AppIdentity::Uwp {
+                    aumid: "aumid3".to_string(),
+                },
+                tag_id: Some(Ref::new(2)),
+                icon: None,
             },
         )
         .await?;
-        let tag1 = arrange::tag(
+
+        let app4 = arrange::app(
             &mut db,
-            Tag {
+            App {
                 id: Ref::default(),
-                name: "tag_name1".to_string(),
-                color: "blue1".to_string(),
+                name: "name4".to_string(),
+                description: "desc4".to_string(),
+                company: "comp4".to_string(),
+                color: "red4".to_string(),
+                identity: AppIdentity::Uwp {
+                    aumid: "aumid4".to_string(),
+                },
+                tag_id: Some(Ref::new(1)),
+                icon: None,
             },
         )
         .await?;
-        arrange::app_tags(&mut db, app1.id.clone(), tag1.id.clone()).await?;
-        let tag2 = arrange::tag(
-            &mut db,
-            Tag {
-                id: Ref::default(),
-                name: "tag_name2".to_string(),
-                color: "blue2".to_string(),
-            },
-        )
-        .await?;
-        arrange::app_tags(&mut db, app1.id.clone(), tag2.id.clone()).await?;
-        arrange::app_tags(&mut db, app2.id.clone(), tag2.id.clone()).await?;
 
         // emptytag = []
-        // tag1 = [app1]
-        // tag2 = [app1, app2]
+        // tag1 = [app2, app4]
+        // tag2 = [app3]
+        // all apps are 'used' from 0-100
 
         let session = arrange::session(
             &mut db,
@@ -1705,6 +1778,50 @@ mod triggered_alerts {
         )
         .await?;
 
+        let session = arrange::session(
+            &mut db,
+            Session {
+                id: Ref::default(),
+                app_id: app3.id.clone(),
+                title: "title3".to_string(),
+            },
+        )
+        .await?
+        .id;
+
+        arrange::usage(
+            &mut db,
+            Usage {
+                id: Ref::default(),
+                session_id: session,
+                start: 0,
+                end: 100,
+            },
+        )
+        .await?;
+
+        let session = arrange::session(
+            &mut db,
+            Session {
+                id: Ref::default(),
+                app_id: app4.id.clone(),
+                title: "title4".to_string(),
+            },
+        )
+        .await?
+        .id;
+
+        arrange::usage(
+            &mut db,
+            Usage {
+                id: Ref::default(),
+                session_id: session,
+                start: 0,
+                end: 100,
+            },
+        )
+        .await?;
+
         let _empty = arrange::alert(
             &mut db,
             Alert {
@@ -1727,7 +1844,7 @@ mod triggered_alerts {
                     id: arrange::to_id(2),
                     version: 1,
                 }),
-                target: Target::Tag(tag1.id.clone()),
+                target: Target::Tag(tag2.id.clone()),
                 usage_limit: 120,
                 time_frame: TimeFrame::Daily,
                 trigger_action: TriggerAction::Kill,
@@ -1742,7 +1859,7 @@ mod triggered_alerts {
                     id: arrange::to_id(3),
                     version: 1,
                 }),
-                target: Target::Tag(tag2.id.clone()),
+                target: Target::Tag(tag1.id.clone()),
                 usage_limit: 200,
                 time_frame: TimeFrame::Daily,
                 trigger_action: TriggerAction::Kill,
@@ -1757,7 +1874,7 @@ mod triggered_alerts {
                     id: arrange::to_id(4),
                     version: 1,
                 }),
-                target: Target::Tag(tag1.id.clone()),
+                target: Target::Tag(tag2.id.clone()),
                 usage_limit: 100,
                 time_frame: TimeFrame::Daily,
                 trigger_action: TriggerAction::Kill,
@@ -1779,12 +1896,12 @@ mod triggered_alerts {
                 TriggeredAlert {
                     alert: alert2,
                     timestamp: None,
-                    name: "tag_name2".to_string()
+                    name: "tag_name1".to_string()
                 },
                 TriggeredAlert {
                     alert: alert3,
                     timestamp: None,
-                    name: "tag_name1".to_string()
+                    name: "tag_name2".to_string()
                 }
             ]
         );
@@ -1810,6 +1927,7 @@ mod triggered_reminders {
                 identity: AppIdentity::Win32 {
                     path: "path".to_string(),
                 },
+                tag_id: None,
                 icon: None,
             },
         )
