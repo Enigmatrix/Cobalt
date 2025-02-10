@@ -114,7 +114,12 @@ function generateRanges(today: DateTime): QuickRange[] {
     {
       label: "Last Month",
       from: today.minus({ month: 1 }).startOf("month").toJSDate(),
-      to: today.startOf("month").toJSDate(),
+      to: today
+        .minus({ month: 1 })
+        .startOf("month")
+        .plus({ month: 1 })
+        .startOf("month")
+        .toJSDate(),
     },
     {
       label: "This Year",
@@ -124,7 +129,12 @@ function generateRanges(today: DateTime): QuickRange[] {
     {
       label: "Last Year",
       from: today.minus({ year: 1 }).startOf("year").toJSDate(),
-      to: today.startOf("year").toJSDate(),
+      to: today
+        .minus({ year: 1 })
+        .startOf("year")
+        .plus({ year: 1 })
+        .startOf("year")
+        .toJSDate(),
     },
   ];
 }
