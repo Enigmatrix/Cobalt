@@ -22,6 +22,7 @@ async fn get_apps() -> Result<()> {
             identity: AppIdentity::Win32 {
                 path: "path1".to_string(),
             },
+            tag_id: None,
             icon: None,
         },
     )
@@ -38,6 +39,7 @@ async fn get_apps() -> Result<()> {
             identity: AppIdentity::Win32 {
                 path: "path2".to_string(),
             },
+            tag_id: None,
             icon: None,
         },
     )
@@ -54,6 +56,7 @@ async fn get_apps() -> Result<()> {
             identity: AppIdentity::Win32 {
                 path: "path3".to_string(),
             },
+            tag_id: None,
             icon: None,
         },
     )
@@ -70,6 +73,7 @@ async fn get_apps() -> Result<()> {
             identity: AppIdentity::Win32 {
                 path: "path4".to_string(),
             },
+            tag_id: None,
             icon: None,
         },
     )
@@ -86,6 +90,7 @@ async fn get_apps() -> Result<()> {
             identity: AppIdentity::Win32 {
                 path: "path5".to_string(),
             },
+            tag_id: None,
             icon: None,
         },
     )
@@ -128,51 +133,58 @@ async fn get_apps() -> Result<()> {
     )
     .await?;
 
-    // app 1 and 3 share some tags
-    // app 2 has no tags
-    // app 2 has a tag but not shared with any other app
-    arrange::app_tags(&mut db, Ref::new(1), Ref::new(1)).await?;
-    arrange::app_tags(&mut db, Ref::new(1), Ref::new(2)).await?;
-    arrange::app_tags(&mut db, Ref::new(1), Ref::new(3)).await?;
-
-    arrange::app_tags(&mut db, Ref::new(3), Ref::new(1)).await?;
-    arrange::app_tags(&mut db, Ref::new(3), Ref::new(3)).await?;
-
-    arrange::app_tags(&mut db, Ref::new(4), Ref::new(4)).await?;
-
-    arrange::app_tags(&mut db, Ref::new(5), Ref::new(4)).await?;
-
     let mut repo = Repository::new(db)?;
     // TODO test: durations for these
-    let apps = repo
+    let _ = repo
         .get_apps(Times {
             day_start: 0,
             week_start: 0,
             month_start: 0,
         })
         .await?;
-    let from_db: HashMap<_, _> = apps
-        .values()
-        .map(|app| (app.inner.id.clone(), app.tags.clone()))
-        .collect();
-    assert_eq!(
-        from_db,
-        vec![
-            (1, vec![1, 2, 3]),
-            (2, vec![]),
-            (3, vec![1, 3]),
-            (4, vec![4]),
-        ]
-        .into_iter()
-        .map(|(k, v)| (Ref::new(k), RefVec(v.into_iter().map(Ref::new).collect())))
-        .collect()
-    );
     Ok(())
 }
 
 #[tokio::test]
 async fn get_tags() -> Result<()> {
     let mut db = test_db().await?;
+
+    arrange::tag(
+        &mut db,
+        Tag {
+            id: Ref::new(1),
+            name: "tag1".to_string(),
+            color: "red".to_string(),
+        },
+    )
+    .await?;
+    arrange::tag(
+        &mut db,
+        Tag {
+            id: Ref::new(2),
+            name: "tag2".to_string(),
+            color: "red".to_string(),
+        },
+    )
+    .await?;
+    arrange::tag(
+        &mut db,
+        Tag {
+            id: Ref::new(3),
+            name: "tag3".to_string(),
+            color: "red".to_string(),
+        },
+    )
+    .await?;
+    arrange::tag(
+        &mut db,
+        Tag {
+            id: Ref::new(4),
+            name: "tag4".to_string(),
+            color: "red".to_string(),
+        },
+    )
+    .await?;
 
     arrange::app(
         &mut db,
@@ -185,6 +197,7 @@ async fn get_tags() -> Result<()> {
             identity: AppIdentity::Win32 {
                 path: "path1".to_string(),
             },
+            tag_id: None,
             icon: None,
         },
     )
@@ -201,6 +214,7 @@ async fn get_tags() -> Result<()> {
             identity: AppIdentity::Win32 {
                 path: "path2".to_string(),
             },
+            tag_id: Some(Ref::new(1)),
             icon: None,
         },
     )
@@ -217,6 +231,7 @@ async fn get_tags() -> Result<()> {
             identity: AppIdentity::Win32 {
                 path: "path3".to_string(),
             },
+            tag_id: Some(Ref::new(2)),
             icon: None,
         },
     )
@@ -233,6 +248,7 @@ async fn get_tags() -> Result<()> {
             identity: AppIdentity::Win32 {
                 path: "path4".to_string(),
             },
+            tag_id: Some(Ref::new(1)),
             icon: None,
         },
     )
@@ -249,6 +265,7 @@ async fn get_tags() -> Result<()> {
             identity: AppIdentity::Win32 {
                 path: "path5".to_string(),
             },
+            tag_id: Some(Ref::new(3)),
             icon: None,
         },
     )
@@ -265,60 +282,11 @@ async fn get_tags() -> Result<()> {
             identity: AppIdentity::Win32 {
                 path: "path6".to_string(),
             },
+            tag_id: Some(Ref::new(3)),
             icon: None,
         },
     )
     .await?;
-
-    arrange::tag(
-        &mut db,
-        Tag {
-            id: Ref::new(1),
-            name: "tag1".to_string(),
-            color: "red".to_string(),
-        },
-    )
-    .await?;
-    arrange::tag(
-        &mut db,
-        Tag {
-            id: Ref::new(2),
-            name: "tag2".to_string(),
-            color: "red".to_string(),
-        },
-    )
-    .await?;
-    arrange::tag(
-        &mut db,
-        Tag {
-            id: Ref::new(3),
-            name: "tag3".to_string(),
-            color: "red".to_string(),
-        },
-    )
-    .await?;
-    arrange::tag(
-        &mut db,
-        Tag {
-            id: Ref::new(4),
-            name: "tag4".to_string(),
-            color: "red".to_string(),
-        },
-    )
-    .await?;
-
-    // tag 1 and 3 share some apps
-    // tag 2 has no apps
-    // tag 2 has a app but not shared with any other tag
-    arrange::app_tags(&mut db, Ref::new(1), Ref::new(1)).await?;
-    arrange::app_tags(&mut db, Ref::new(2), Ref::new(1)).await?;
-    arrange::app_tags(&mut db, Ref::new(3), Ref::new(1)).await?;
-    arrange::app_tags(&mut db, Ref::new(6), Ref::new(1)).await?;
-
-    arrange::app_tags(&mut db, Ref::new(1), Ref::new(3)).await?;
-    arrange::app_tags(&mut db, Ref::new(3), Ref::new(3)).await?;
-
-    arrange::app_tags(&mut db, Ref::new(4), Ref::new(4)).await?;
 
     let mut repo = Repository::new(db)?;
     // TODO test: durations for these
@@ -335,15 +303,10 @@ async fn get_tags() -> Result<()> {
         .collect();
     assert_eq!(
         from_db,
-        vec![
-            (1, vec![1, 2, 3, 6]),
-            (2, vec![]),
-            (3, vec![1, 3]),
-            (4, vec![4]),
-        ]
-        .into_iter()
-        .map(|(k, v)| (Ref::new(k), RefVec(v.into_iter().map(Ref::new).collect())))
-        .collect()
+        vec![(1, vec![2, 4]), (2, vec![3]), (3, vec![5]), (4, vec![]),]
+            .into_iter()
+            .map(|(k, v)| (Ref::new(k), RefVec(v.into_iter().map(Ref::new).collect())))
+            .collect()
     );
     Ok(())
 }
@@ -416,6 +379,7 @@ async fn get_app_durations() -> Result<()> {
             identity: AppIdentity::Win32 {
                 path: "path1".to_string(),
             },
+            tag_id: None,
             icon: None,
         },
     )
@@ -433,6 +397,7 @@ async fn get_app_durations() -> Result<()> {
             identity: AppIdentity::Win32 {
                 path: "path2".to_string(),
             },
+            tag_id: None,
             icon: None,
         },
     )
@@ -515,6 +480,7 @@ async fn get_app_durations_per_period_singular_ts_test() -> Result<()> {
             identity: AppIdentity::Win32 {
                 path: "path1".to_string(),
             },
+            tag_id: None,
             icon: None,
         },
     )
@@ -532,6 +498,7 @@ async fn get_app_durations_per_period_singular_ts_test() -> Result<()> {
             identity: AppIdentity::Win32 {
                 path: "path2".to_string(),
             },
+            tag_id: None,
             icon: None,
         },
     )
@@ -688,6 +655,7 @@ async fn get_app_durations_per_period_multiple_ts_test() -> Result<()> {
             identity: AppIdentity::Win32 {
                 path: "path1".to_string(),
             },
+            tag_id: None,
             icon: None,
         },
     )
@@ -705,6 +673,7 @@ async fn get_app_durations_per_period_multiple_ts_test() -> Result<()> {
             identity: AppIdentity::Win32 {
                 path: "path2".to_string(),
             },
+            tag_id: None,
             icon: None,
         },
     )
