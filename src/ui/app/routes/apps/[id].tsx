@@ -26,10 +26,7 @@ import { Duration, type DateTime } from "luxon";
 import { useRefresh } from "@/hooks/use-refresh";
 import { dateTimeToTicks, durationToTicks } from "@/lib/time";
 import { useToday } from "@/hooks/use-today";
-import { HorizontalOverflowList } from "@/components/overflow-list";
 import { MiniTagItem } from ".";
-import _ from "lodash";
-import { Badge } from "@/components/ui/badge";
 import { Text } from "@/components/ui/text";
 import { Button } from "@/components/ui/button";
 import { Check, Copy } from "lucide-react";
@@ -95,7 +92,6 @@ function CardUsage({
 export default function App({ params }: Route.ComponentProps) {
   const id = +params.id;
   const app = useAppState((state) => state.apps[id as Ref<App>])!;
-  const removeAppTag = useAppState((state) => state.removeAppTag);
   const updateApp = useAppState((state) => state.updateApp);
 
   const allTags = useAppState((state) => state.tags);

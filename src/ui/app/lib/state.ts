@@ -3,13 +3,7 @@ import { create } from "zustand";
 import type { App, Ref, Tag } from "@/lib/entities";
 import { DateTime } from "luxon";
 import { dateTimeToTicks } from "@/lib/time";
-import {
-  addAppTag,
-  getApps,
-  getTags,
-  removeAppTag,
-  updateApp,
-} from "@/lib/repo";
+import { getApps, getTags, updateApp } from "@/lib/repo";
 import { checkForUpdatesBackground } from "@/lib/updater";
 import { info } from "@/lib/log";
 import { produce } from "immer";
@@ -51,8 +45,6 @@ type AppState = {
   setTags: (tags: EntityStore<Tag>) => void;
   setLastRefresh: (lastRefresh: DateTime) => void;
   updateApp: (app: App) => Promise<void>;
-  addAppTag: (appId: Ref<App>, tagId: Ref<Tag>) => Promise<void>;
-  removeAppTag: (appId: Ref<App>, tagId: Ref<Tag>) => Promise<void>;
 };
 
 export const useAppState = create<AppState>((set) => {
@@ -70,31 +62,6 @@ export const useAppState = create<AppState>((set) => {
       set((state) =>
         produce((draft: AppState) => {
           draft.apps[app.id] = { ...draft.apps[app.id], ...app };
-        })(state),
-      );
-    },
-
-    addAppTag: async (appId, tagId) => {
-      await addAppTag(appId, tagId);
-
-      set((state) =>
-        produce((draft: AppState) => {
-          if (draft.apps[appId]!.tags.includes(tagId)) {
-            return;
-          }
-          draft.apps[appId]!.tags.push(tagId);
-        })(state),
-      );
-    },
-
-    removeAppTag: async (appId, tagId) => {
-      await removeAppTag(appId, tagId);
-
-      set((state) =>
-        produce((draft: AppState) => {
-          draft.apps[appId]!.tags = draft.apps[appId]!.tags.filter(
-            (id: Ref<Tag>) => id !== tagId,
-          );
         })(state),
       );
     },
