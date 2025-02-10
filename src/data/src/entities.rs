@@ -22,6 +22,7 @@ pub struct App {
     #[sqlx(flatten)]
     pub identity: AppIdentity,
     pub icon: Option<Vec<u8>>,
+    pub tag_id: Option<Ref<Tag>>,
 }
 
 /// Unique identity of an [App], outside of the Database (on the FileSystem/Registry)
