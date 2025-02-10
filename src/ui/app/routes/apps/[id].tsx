@@ -251,11 +251,22 @@ function CardUsage({
   return (
     <div className="flex flex-col rounded-xl bg-muted/50">
       <div className="flex items-center">
-        <div className="flex flex-col p-4 pb-1">
+        <div className="flex flex-col p-4 pb-1 min-w-0">
           <div className="whitespace-nowrap text-base text-foreground/50">
             {titleFormatter(start)}
           </div>
-          <DurationText className="text-xl font-semibold" ticks={usage} />
+          <div className="flex gap-2 items-baseline font-semibold">
+            <DurationText className="text-xl" ticks={usage} />
+            {usage !== 0 && (
+              <>
+                <span className="text-xl text-muted-foreground">/</span>
+                <DurationText
+                  className="text-muted-foreground"
+                  ticks={totalUsage}
+                />
+              </>
+            )}
+          </div>
         </div>
 
         <div className="flex-1" />
