@@ -197,7 +197,7 @@ impl Repository {
                 LEFT JOIN usage_daily d ON t.id = d.id
                 LEFT JOIN usage_week  w ON t.id = w.id
                 LEFT JOIN usage_month m ON t.id = m.id
-                LEFT JOIN apps a ON t.id = a.tag_id
+                LEFT JOIN apps a ON t.id = a.tag_id AND a.initialized = 1
             GROUP BY t.id"
         ))
         .bind(ts.day_start().to_ticks())
