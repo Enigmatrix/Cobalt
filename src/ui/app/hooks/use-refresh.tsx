@@ -1,15 +1,13 @@
+import type { App, Tag, Ref } from "@/lib/entities";
 import { useAppState, refresh } from "@/lib/state";
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 
 export function useRefresh() {
   const lastRefresh = useAppState((state) => state.lastRefresh);
   // TODO: queue a debounced refresh?
-  const handleStale = useCallback(
-    function <T>(data: (T | undefined)[]) {
-      return data.filter((x) => x !== undefined);
-    },
-    [lastRefresh],
-  );
+  const handleStale = useCallback(function <T>(data: (T | undefined)[]) {
+    return data.filter((x) => x !== undefined);
+  }, []);
 
   return {
     refreshToken: lastRefresh,
@@ -18,4 +16,42 @@ export function useRefresh() {
     handleStaleTags: handleStale,
     handleStaleAlerts: handleStale,
   };
+}
+
+export function useApps() {
+  const allApps = useAppState((state) => state.apps);
+  const { handleStaleApps } = useRefresh();
+  const apps = useMemo(() => {
+    return handleStaleApps(Object.values(allApps));
+  }, [allApps, handleStaleApps]);
+  return apps;
+}
+
+export function useApp(appId: Ref<App> | null): App | null {
+  const allApps = useAppState((state) => state.apps);
+  const { handleStaleApps } = useRefresh();
+  const app = useMemo(() => {
+    if (appId === null) return null;
+    return handleStaleApps([allApps[appId]])[0];
+  }, [allApps, handleStaleApps, appId]);
+  return app;
+}
+
+export function useTags() {
+  const allTags = useAppState((state) => state.tags);
+  const { handleStaleTags } = useRefresh();
+  const tags = useMemo(() => {
+    return handleStaleTags(Object.values(allTags));
+  }, [allTags, handleStaleTags]);
+  return tags;
+}
+
+export function useTag(tagId: Ref<Tag> | null): Tag | null {
+  const allTags = useAppState((state) => state.tags);
+  const { handleStaleTags } = useRefresh();
+  const tag = useMemo(() => {
+    if (tagId === null) return null;
+    return handleStaleTags([allTags[tagId]])[0];
+  }, [allTags, handleStaleTags, tagId]);
+  return tag;
 }

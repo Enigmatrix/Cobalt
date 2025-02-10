@@ -24,7 +24,7 @@ import { AppUsageBarChart } from "@/components/app-usage-chart";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getAppDurationsPerPeriod } from "@/lib/repo";
 import { Duration, type DateTime } from "luxon";
-import { useRefresh } from "@/hooks/use-refresh";
+import { useApp, useRefresh, useTag, useTags } from "@/hooks/use-refresh";
 import { dateTimeToTicks, durationToTicks } from "@/lib/time";
 import { useToday } from "@/hooks/use-today";
 import { Text } from "@/components/ui/text";
@@ -62,15 +62,10 @@ function ChooseTagPopover({
   tagId: Ref<Tag> | null;
   setTagId: (tagId: Ref<Tag> | null) => Promise<void>;
 }) {
-  const [open, setOpen] = useState(false);
-  const allTags = useAppState((state) => state.tags);
-  const { handleStaleTags } = useRefresh();
-  const tags = useMemo(
-    () => handleStaleTags(_(allTags).values().flatten().value()),
-    [allTags],
-  );
   const createTag = useAppState((state) => state.createTag);
+  const tags = useTags();
   const [query, setQuery, filteredTags] = useSearch(tags, ["name"]);
+  const [open, setOpen] = useState(false);
 
   const setTagId = useCallback(
     async (tagId: Ref<Tag> | null) => {
@@ -159,14 +154,7 @@ function ChooseTag({
   setTagId: (tagId: Ref<Tag> | null) => Promise<void>;
   className?: ClassValue;
 }) {
-  const allTags = useAppState((state) => state.tags);
-  const { handleStaleTags } = useRefresh();
-  const tag = useMemo(() => {
-    if (tagId === null) {
-      return null;
-    }
-    return handleStaleTags([allTags[tagId]])[0] ?? null;
-  }, [allTags, handleStaleTags, tagId]);
+  const tag = useTag(tagId);
 
   return tag ? (
     <Badge
@@ -304,7 +292,7 @@ function CardUsage({
 
 export default function App({ params }: Route.ComponentProps) {
   const id = +params.id;
-  const app = useAppState((state) => state.apps[id as Ref<App>])!;
+  const app = useApp(id as Ref<App>)!;
   const updateApp = useAppState((state) => state.updateApp);
 
   const today = useToday();

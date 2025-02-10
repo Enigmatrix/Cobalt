@@ -40,7 +40,7 @@ import { getAppDurationsPerPeriod } from "@/lib/repo";
 import { DateTime, Duration } from "luxon";
 import { AppUsageBarChart } from "@/components/app-usage-chart";
 import { useToday } from "@/hooks/use-today";
-import { useRefresh } from "@/hooks/use-refresh";
+import { useApps, useRefresh, useTag } from "@/hooks/use-refresh";
 import { useSearch } from "@/hooks/use-search";
 import { DurationText } from "@/components/duration-text";
 import type { ClassValue } from "clsx";
@@ -105,14 +105,7 @@ function AppListItem({
   end: DateTime;
   period: Duration;
 }) {
-  const allTags = useAppState((state) => state.tags);
-  const { handleStaleTags } = useRefresh();
-  const tag = useMemo(() => {
-    if (app.tag_id === null) {
-      return null;
-    }
-    return handleStaleTags([allTags[app.tag_id]])[0] ?? null;
-  }, [allTags, handleStaleTags, app.tag_id]);
+  const tag = useTag(app.tag_id);
 
   const singleUsage = useMemo(
     () => ({ [app.id]: usages[app.id] }),
@@ -191,8 +184,8 @@ type SortProperty =
 
 export default function Apps() {
   const today = useToday();
-  const { refreshToken, handleStaleApps } = useRefresh();
-  const apps = useAppState((state) => state.apps);
+  const { refreshToken } = useRefresh();
+  const apps = useApps();
 
   const [sortDirection, setSortDirection] = useState<SortDirection>(
     SortDirection.Descending,
@@ -200,18 +193,14 @@ export default function Apps() {
   const [sortProperty, setSortProperty] =
     useState<SortProperty>("usages.usage_today");
 
-  const appValues = useMemo(() => Object.values(apps), [apps]);
-  const [search, setSearch, appsFiltered] = useSearch(appValues, [
+  const [search, setSearch, appsFiltered] = useSearch(apps, [
     "name",
     "company",
     "description",
   ]);
   const appsSorted = useMemo(() => {
-    return _(appsFiltered)
-      .orderBy([sortProperty], [sortDirection])
-      .thru(handleStaleApps)
-      .value();
-  }, [appsFiltered, sortDirection, sortProperty, handleStaleApps]);
+    return _(appsFiltered).orderBy([sortProperty], [sortDirection]).value();
+  }, [appsFiltered, sortDirection, sortProperty]);
 
   const [start, end] = useMemo(() => [today, today.endOf("day")], [today]);
 
