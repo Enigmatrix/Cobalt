@@ -15,6 +15,7 @@ import {
   isUwp,
   type App,
   type Ref,
+  type Tag,
   type WithGroupedDuration,
 } from "@/lib/entities";
 import AppIcon from "@/components/app-icon";
@@ -26,14 +27,155 @@ import { Duration, type DateTime } from "luxon";
 import { useRefresh } from "@/hooks/use-refresh";
 import { dateTimeToTicks, durationToTicks } from "@/lib/time";
 import { useToday } from "@/hooks/use-today";
-import { MiniTagItem } from ".";
 import { Text } from "@/components/ui/text";
 import { Button } from "@/components/ui/button";
-import { Check, ChevronLeft, ChevronRight, Copy } from "lucide-react";
+import {
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsUpDown,
+  Copy,
+  Plus,
+  TagIcon,
+} from "lucide-react";
 import { useClipboard } from "@/hooks/use-clipboard";
 import { EditableText } from "@/components/editable-text";
 import { ColorPicker } from "@/components/color-picker";
 import _ from "lodash";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+import type { ClassValue } from "clsx";
+import { NavLink } from "react-router";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { SearchBar } from "@/components/search-bar";
+import { useSearch } from "@/hooks/use-search";
+
+function ChooseTagPopover({
+  tagId,
+  setTagId: setTagIdInner,
+}: {
+  tagId: Ref<Tag> | null;
+  setTagId: (tagId: Ref<Tag> | null) => Promise<void>;
+}) {
+  const [open, setOpen] = useState(false);
+  const allTags = useAppState((state) => state.tags);
+  const { handleStaleTags } = useRefresh();
+  const tags = useMemo(
+    () => handleStaleTags(_(allTags).values().flatten().value()),
+    [allTags],
+  );
+  const [query, setQuery, filteredTags] = useSearch(tags, ["name"]);
+
+  const setTagId = useCallback(
+    async (tagId: Ref<Tag> | null) => {
+      await setTagIdInner(tagId);
+      setOpen(false);
+    },
+    [setTagIdInner, setOpen],
+  );
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button size="icon" variant="ghost" className="p-1 ml-2 w-auto h-auto">
+          <ChevronsUpDown className="" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[20rem]">
+        {tags.length !== 0 && (
+          <SearchBar value={query} onChange={(e) => setQuery(e.target.value)} />
+        )}
+        <div className="flex flex-col my-4 gap-1 overflow-y-auto max-h-[20rem]">
+          {tags.length === 0 ? (
+            <div className="m-auto flex flex-col text-muted-foreground py-8 gap-2 items-center">
+              <TagIcon className="w-10 h-10 m-4" />
+              <p className="text-lg">No tags exist. Create some!</p>
+            </div>
+          ) : (
+            filteredTags.map((tag) => {
+              return (
+                <div
+                  key={tag.id}
+                  className="flex cursor-pointer hover:bg-muted p-2 rounded-md gap-2"
+                  onClick={() => setTagId(tag.id)}
+                  style={{ color: tag.color }}
+                >
+                  <TagIcon />
+                  <Text className="text-foreground">{tag.name}</Text>
+                </div>
+              );
+            })
+          )}
+        </div>
+        <div className="flex gap-2">
+          <div className="flex-1"></div>
+          <Button
+            variant="outline"
+            className={cn({
+              hidden: tagId === null,
+            })}
+            onClick={() => setTagId(null)}
+          >
+            Clear
+          </Button>
+          {/* TODO create new tag dialog */}
+          <Button variant={tags.length === 0 ? "default" : "outline"}>
+            <Plus />
+            Create Tag
+          </Button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function ChooseTag({
+  tagId,
+  setTagId,
+  className,
+}: {
+  tagId: Ref<Tag> | null;
+  setTagId: (tagId: Ref<Tag> | null) => Promise<void>;
+  className?: ClassValue;
+}) {
+  const allTags = useAppState((state) => state.tags);
+  const { handleStaleTags } = useRefresh();
+  const tag = useMemo(() => {
+    if (tagId === null) {
+      return null;
+    }
+    return handleStaleTags([allTags[tagId]])[0] ?? null;
+  }, [allTags, handleStaleTags, tagId]);
+
+  return tag ? (
+    <Badge
+      variant="outline"
+      style={{
+        borderColor: tag.color,
+        color: tag.color,
+        backgroundColor: "rgba(255, 255, 255, 0.2)",
+      }}
+      className={cn("whitespace-nowrap", className)}
+    >
+      <NavLink to={`/tags/${tagId}`} className="min-w-0">
+        <Text className="max-w-32">{tag.name}</Text>
+      </NavLink>
+      <ChooseTagPopover tagId={tagId} setTagId={setTagId} />
+    </Badge>
+  ) : (
+    <Badge
+      variant="outline"
+      className={cn("whitespace-nowrap text-muted-foreground", className)}
+    >
+      <Text className="max-w-32">Untagged</Text>
+      <ChooseTagPopover tagId={tagId} setTagId={setTagId} />
+    </Badge>
+  );
+}
 
 function CardUsage({
   titleFormatter,
@@ -138,16 +280,6 @@ export default function App({ params }: Route.ComponentProps) {
   const app = useAppState((state) => state.apps[id as Ref<App>])!;
   const updateApp = useAppState((state) => state.updateApp);
 
-  const allTags = useAppState((state) => state.tags);
-  const { handleStaleTags } = useRefresh();
-  const tag = useMemo(() => {
-    if (app.tag_id === null) {
-      return null;
-    }
-    return handleStaleTags([allTags[app.tag_id]])[0] ?? null;
-  }, [allTags, handleStaleTags, app.tag_id]);
-
-  // TODO change title
   const today = useToday();
   const [
     dayStart,
@@ -307,7 +439,13 @@ export default function App({ params }: Route.ComponentProps) {
                     buttonClassName="ml-1"
                     onSubmit={async (v) => await updateApp({ ...app, name: v })}
                   />
-                  {tag && <MiniTagItem tag={tag} className="min-w-0" />}
+                  <ChooseTag
+                    tagId={app.tag_id}
+                    setTagId={async (tagId) =>
+                      await updateApp({ ...app, tag_id: tagId })
+                    }
+                    className="min-w-0"
+                  />
                 </div>
                 <Text className="text-muted-foreground">{app.company}</Text>
               </div>
