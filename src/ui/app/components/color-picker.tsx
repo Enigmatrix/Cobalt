@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
+import { useClipboard } from "@/hooks/use-clipboard";
 
 interface ColorPickerProps {
   color?: string;
@@ -30,11 +31,9 @@ export function ColorPicker({
 }: ColorPickerProps) {
   const [currentColor, setCurrentColor] = React.useState(color);
   const [colorMode, setColorMode] = React.useState<ColorMode>("hex");
-  const [copied, setCopied] = React.useState<CopyState>({
-    hex: false,
-    rgba: false,
-    hsla: false,
-  });
+  const { copy: copyHex, hasCopied: hexCopied } = useClipboard();
+  const { copy: copyRgba, hasCopied: rgbaCopied } = useClipboard();
+  const { copy: copyHsla, hasCopied: hslaCopied } = useClipboard();
   const colorPlaneRef = React.useRef<HTMLDivElement>(null);
   const isDragging = React.useRef(false);
 
@@ -94,20 +93,6 @@ export function ColorPicker({
       window.removeEventListener("touchend", handleGlobalMouseUp);
     };
   }, []);
-
-  const copyToClipboard = (text: string, format: ColorMode) => {
-    navigator.clipboard.writeText(text);
-    setCopied((prev) => ({
-      ...prev,
-      [format]: true,
-    }));
-    setTimeout(() => {
-      setCopied((prev) => ({
-        ...prev,
-        [format]: false,
-      }));
-    }, 1500);
-  };
 
   const handleHexChange = (hex: string) => {
     if (/^#[0-9A-Fa-f]{6}$/.test(hex)) {
@@ -241,9 +226,9 @@ export function ColorPicker({
                   variant="ghost"
                   size="icon"
                   className="shrink-0"
-                  onClick={() => copyToClipboard(currentColor, "hex")}
+                  onClick={() => copyHex(currentColor)}
                 >
-                  {copied.hex ? (
+                  {hexCopied ? (
                     <Check className="h-4 w-4" />
                   ) : (
                     <Copy className="h-4 w-4" />
@@ -260,9 +245,9 @@ export function ColorPicker({
                     variant="ghost"
                     size="icon"
                     className="shrink-0"
-                    onClick={() => copyToClipboard(rgbaString, "rgba")}
+                    onClick={() => copyRgba(rgbaString)}
                   >
-                    {copied.rgba ? (
+                    {rgbaCopied ? (
                       <Check className="h-4 w-4" />
                     ) : (
                       <Copy className="h-4 w-4" />
@@ -310,9 +295,9 @@ export function ColorPicker({
                     variant="ghost"
                     size="icon"
                     className="shrink-0"
-                    onClick={() => copyToClipboard(hslaString, "hsla")}
+                    onClick={() => copyHsla(hslaString)}
                   >
-                    {copied.hsla ? (
+                    {hslaCopied ? (
                       <Check className="h-4 w-4" />
                     ) : (
                       <Copy className="h-4 w-4" />
