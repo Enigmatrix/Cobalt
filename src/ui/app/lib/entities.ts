@@ -33,7 +33,7 @@ export interface App {
   color: Color;
   identity: AppIdentity;
   icon: Buffer;
-  tags: Ref<Tag>[];
+  tag_id: Ref<Tag> | null;
   usages: UsageInfo;
 }
 
