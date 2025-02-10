@@ -62,7 +62,7 @@ export function MiniTagItem({
         color: tag.color,
         backgroundColor: "rgba(255, 255, 255, 0.2)",
       }}
-      className={cn("whitespace-nowrap", className)}
+      className={cn("whitespace-nowrap min-w-0", className)}
     >
       <Text className="max-w-32">{tag.name}</Text>
     </Badge>
