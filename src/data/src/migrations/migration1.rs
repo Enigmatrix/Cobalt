@@ -17,6 +17,16 @@ impl Migration for Migration1 {
     async fn up(&self, db: &mut Database) -> Result<()> {
         let mut tx = db.transaction().await?;
 
+        tx.execute(
+            "CREATE TABLE tags (
+                id                              INTEGER PRIMARY KEY NOT NULL,
+                name                            TEXT NOT NULL,
+                color                           TEXT NOT NULL
+            )",
+        )
+        .await
+        .context("create table tags")?;
+
         // all information fields of app are nullable, except identity
         tx.execute(
             "CREATE TABLE apps (
@@ -27,6 +37,7 @@ impl Migration for Migration1 {
                 description                     TEXT,
                 company                         TEXT,
                 color                           TEXT,
+                tag_id                          INTEGER REFERENCES tags(id) ON DELETE SET NULL,
                 identity_is_win32               INTEGER NOT NULL,
                 identity_path_or_aumid          TEXT NOT NULL,
                 icon                            BLOB
@@ -68,26 +79,6 @@ impl Migration for Migration1 {
         )
         .await
         .context("create table interaction_periods")?;
-
-        tx.execute(
-            "CREATE TABLE tags (
-                id                              INTEGER PRIMARY KEY NOT NULL,
-                name                            TEXT NOT NULL,
-                color                           TEXT NOT NULL
-            )",
-        )
-        .await
-        .context("create table tags")?;
-
-        tx.execute(
-            "CREATE TABLE _app_tags (
-                app_id                          INTEGER NOT NULL REFERENCES apps(id),
-                tag_id                          INTEGER NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
-                PRIMARY KEY (app_id, tag_id)
-            )",
-        )
-        .await
-        .context("create table _app_tags")?;
 
         tx.execute(
             "CREATE TABLE alerts (
