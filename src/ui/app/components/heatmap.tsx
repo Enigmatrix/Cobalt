@@ -47,7 +47,8 @@ const MONTHS = [
   "Dec",
 ];
 const CELL_SIZE = 14;
-const PADDING = 30;
+const PADDING_X = 30;
+const PADDING_Y = 15;
 
 const Heatmap: React.FC<HeatmapProps> = ({
   startDate,
@@ -92,8 +93,8 @@ const Heatmap: React.FC<HeatmapProps> = ({
   }, [startDate, data]);
 
   const maxWeek = Math.max(...heatmapData.map((d) => d.week));
-  const width = (maxWeek + 1) * CELL_SIZE + PADDING;
-  const height = 7 * CELL_SIZE + PADDING + 10; // added 10px at the bottom
+  const width = (maxWeek + 1) * CELL_SIZE + PADDING_X;
+  const height = 7 * CELL_SIZE + PADDING_Y + 4; // added 10px at the bottom
 
   const renderCells = () => {
     return heatmapData.map((entry, index) => {
@@ -109,8 +110,8 @@ const Heatmap: React.FC<HeatmapProps> = ({
       return (
         <rect
           key={index}
-          x={entry.week * CELL_SIZE + PADDING}
-          y={entry.day * CELL_SIZE + PADDING}
+          x={entry.week * CELL_SIZE + PADDING_X}
+          y={entry.day * CELL_SIZE + PADDING_Y}
           width={CELL_SIZE - 2}
           height={CELL_SIZE - 2}
           fill={fill}
@@ -139,8 +140,8 @@ const Heatmap: React.FC<HeatmapProps> = ({
     const yAxis = rotateArray(DAYS, 1).map((day, index) => (
       <text
         key={`day-${index}`}
-        x={PADDING - 10}
-        y={index * CELL_SIZE + PADDING + CELL_SIZE / 2}
+        x={PADDING_X - 10}
+        y={index * CELL_SIZE + PADDING_Y + CELL_SIZE / 2}
         textAnchor="end"
         dominantBaseline="middle"
         className={cn("fill-muted-foreground/75", axisClassName)}
@@ -156,8 +157,8 @@ const Heatmap: React.FC<HeatmapProps> = ({
       return (
         <text
           key={`month-${index}`}
-          x={week * CELL_SIZE + PADDING + CELL_SIZE / 2}
-          y={PADDING - 5}
+          x={week * CELL_SIZE + PADDING_X + CELL_SIZE / 2}
+          y={PADDING_Y - 5}
           textAnchor="middle"
           fontSize={10}
           className={cn("fill-muted-foreground/75", axisClassName)}
