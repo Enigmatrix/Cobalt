@@ -24,7 +24,12 @@ import { useCallback, useMemo, useState } from "react";
 import { getAppDurationsPerPeriod } from "@/lib/repo";
 import { Duration, type DateTime } from "luxon";
 import { useApp, useTag, useTags } from "@/hooks/use-refresh";
-import { dateTimeToTicks, durationToTicks } from "@/lib/time";
+import {
+  dateTimeToTicks,
+  durationToTicks,
+  ticksToDateTime,
+  ticksToDuration,
+} from "@/lib/time";
 import { Text } from "@/components/ui/text";
 import { Button } from "@/components/ui/button";
 import { Check, ChevronsUpDown, Copy, Plus, TagIcon } from "lucide-react";
@@ -48,8 +53,10 @@ import {
   DayUsageCard,
   MonthUsageCard,
   WeekUsageCard,
+  YearUsageCard,
   type TimePeriodUsageCardProps,
 } from "@/components/usage-card";
+import Heatmap from "@/components/heatmap";
 
 function ChooseTagPopover({
   tagId,
@@ -239,35 +246,18 @@ function AppUsageBarChartCard({
   });
 }
 
+const dayChartPeriod = Duration.fromObject({ hour: 1 });
+const weekChartPeriod = Duration.fromObject({ day: 1 });
+const monthChartPeriod = Duration.fromObject({ day: 1 });
+const dayXAxisFormatter = (dateTime: DateTime) => dateTime.toFormat("HHmm");
+const weekXAxisFormatter = (dateTime: DateTime) => dateTime.toFormat("EEE");
+const monthXAxisFormatter = (dateTime: DateTime) => dateTime.toFormat("dd");
+
 export default function App({ params }: Route.ComponentProps) {
   const id = +params.id;
   const app = useApp(id as Ref<App>)!;
   const updateApp = useAppState((state) => state.updateApp);
-
-  const [dayPeriod, dayFormatter] = useMemo(
-    () => [
-      Duration.fromObject({ hour: 1 }),
-      (dateTime: DateTime) => dateTime.toFormat("HHmm"),
-    ],
-    [],
-  );
-
-  const [weekPeriod, weekFormatter] = useMemo(
-    () => [
-      Duration.fromObject({ day: 1 }),
-      (dateTime: DateTime) => dateTime.toFormat("EEE"),
-    ],
-    [],
-  );
-  const [monthPeriod, monthFormatter] = useMemo(
-    () => [
-      Duration.fromObject({ day: 1 }),
-      (dateTime: DateTime) => dateTime.toFormat("dd"),
-    ],
-    [],
-  );
   const [color, setColorInner] = useState(app.color);
-
   const debouncedUpdateColor = useThrottledCallback(async (color: string) => {
     await updateApp({ ...app, color });
   }, 500);
@@ -277,10 +267,44 @@ export default function App({ params }: Route.ComponentProps) {
       setColorInner(color);
       await debouncedUpdateColor(color);
     },
-    [updateApp, setColorInner],
+    [setColorInner, debouncedUpdateColor],
   );
 
   const { copy, hasCopied } = useClipboard();
+
+  const [yearStart, setYearStart] = useState<DateTime | null>(null);
+  const [yearData, setYearData] = useState(new Map());
+  const [yearTotalUsage, setYearTotalUsage] = useState(0);
+  const [yearUsage, setYearUsage] = useState(0);
+
+  const onYearChanged = useCallback(
+    (start: DateTime, end: DateTime) => {
+      getAppDurationsPerPeriod({
+        start,
+        end,
+        period: Duration.fromObject({ day: 1 }),
+      }).then((usages) => {
+        setYearUsage(_(usages[app.id]).sumBy("duration"));
+        setYearTotalUsage(_(usages).values().flatten().sumBy("duration"));
+        setYearData(
+          new Map(
+            _(usages[app.id])
+              .map(
+                (appDur) =>
+                  [+ticksToDateTime(appDur.group), appDur.duration] as const,
+              )
+              .value(),
+          ),
+        );
+        setYearStart(start);
+      });
+    },
+    [app.id],
+  );
+
+  const scaling = useCallback((value: number) => {
+    return _.clamp(ticksToDuration(value).rescale().hours / 8, 0.2, 1);
+  }, []);
 
   return (
     <>
@@ -376,24 +400,43 @@ export default function App({ params }: Route.ComponentProps) {
         <div className="grid auto-rows-min gap-4 md:grid-cols-3">
           <AppUsageBarChartCard
             card={DayUsageCard}
-            period={dayPeriod}
-            xAxisLabelFormatter={dayFormatter}
+            period={dayChartPeriod}
+            xAxisLabelFormatter={dayXAxisFormatter}
             appId={app.id}
           />
           <AppUsageBarChartCard
             card={WeekUsageCard}
-            period={weekPeriod}
-            xAxisLabelFormatter={weekFormatter}
+            period={weekChartPeriod}
+            xAxisLabelFormatter={weekXAxisFormatter}
             appId={app.id}
           />
           <AppUsageBarChartCard
             card={MonthUsageCard}
-            period={monthPeriod}
-            xAxisLabelFormatter={monthFormatter}
+            period={monthChartPeriod}
+            xAxisLabelFormatter={monthXAxisFormatter}
             appId={app.id}
           />
         </div>
-        <div className="min-h-[100vh] flex-1 rounded-xl bg-muted/50 md:min-h-min" />
+        <div className="rounded-xl bg-muted/50">
+          <YearUsageCard
+            usage={yearUsage}
+            totalUsage={yearTotalUsage}
+            onChanged={onYearChanged}
+          >
+            {!yearData || !yearStart ? null : (
+              <div className="px-4 pb-4">
+                <Heatmap
+                  data={yearData}
+                  scaling={scaling}
+                  startDate={yearStart}
+                  fullCellColorRgb={app.color}
+                  innerClassName="min-h-[200px]"
+                  firstDayOfMonthClassName="stroke-card-foreground/50"
+                />
+              </div>
+            )}
+          </YearUsageCard>
+        </div>
       </div>
     </>
   );
