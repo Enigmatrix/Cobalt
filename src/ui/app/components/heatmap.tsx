@@ -78,8 +78,8 @@ const Heatmap: React.FC<HeatmapProps> = ({
   }, [startDate, data]);
 
   const maxWeek = Math.max(...heatmapData.map((d) => d.week));
-  const width = (maxWeek + 1) * CELL_SIZE + PADDING * 2;
-  const height = 7 * CELL_SIZE + PADDING * 2;
+  const width = (maxWeek + 1) * CELL_SIZE + PADDING;
+  const height = 7 * CELL_SIZE + PADDING + 10; // added 10px at the bottom
 
   const renderCells = () => {
     return heatmapData.map((entry, index) => {
@@ -152,16 +152,22 @@ const Heatmap: React.FC<HeatmapProps> = ({
   };
 
   return (
-    <div className="relative">
-      <svg
-        width="100%"
-        height="100%"
-        viewBox={`0 0 ${width} ${height}`}
-        ref={ref}
+    <div className="relative overflow-x-auto">
+      <div
+        className="min-h-[200px] aspect-video"
+        style={{ aspectRatio: width / height }}
       >
-        {renderCells()}
-        {renderAxes()}
-      </svg>
+        <svg
+          width="100%"
+          height="100%"
+          viewBox={`0 0 ${width} ${height}`}
+          preserveAspectRatio="none"
+          ref={ref}
+        >
+          {renderCells()}
+          {renderAxes()}
+        </svg>
+      </div>
       {tooltipData && (
         <div
           className="absolute bg-card p-2 border border-border rounded shadow text-sm pointer-events-none"
