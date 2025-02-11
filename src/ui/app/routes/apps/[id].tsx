@@ -1,7 +1,7 @@
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import type { Route } from "../apps/+types/[id]";
 import { Separator } from "@/components/ui/separator";
-import { useThrottledCallback } from "use-debounce";
+import { useDebouncedCallback } from "use-debounce";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -263,7 +263,7 @@ export default function App({ params }: Route.ComponentProps) {
   const app = useApp(id as Ref<App>)!;
   const updateApp = useAppState((state) => state.updateApp);
   const [color, setColorInner] = useState(app.color);
-  const debouncedUpdateColor = useThrottledCallback(async (color: string) => {
+  const debouncedUpdateColor = useDebouncedCallback(async (color: string) => {
     await updateApp({ ...app, color });
   }, 500);
 
