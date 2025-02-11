@@ -6,7 +6,7 @@ import {
   BreadcrumbPage,
   BreadcrumbList,
 } from "@/components/ui/breadcrumb";
-import { useAppState, type EntityMap } from "@/lib/state";
+import type { EntityMap } from "@/lib/state";
 import type { App, Tag, WithGroupedDuration } from "@/lib/entities";
 import {
   memo,
