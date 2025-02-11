@@ -25,7 +25,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { getAppDurationsPerPeriod } from "@/lib/repo";
 import { Duration, type DateTime } from "luxon";
 import { useApp, useRefresh, useTag, useTags } from "@/hooks/use-refresh";
-import { dateTimeToTicks, durationToTicks, ticksToDateTime } from "@/lib/time";
+import { dateTimeToTicks, durationToTicks } from "@/lib/time";
 import { useToday } from "@/hooks/use-today";
 import { Text } from "@/components/ui/text";
 import { Button } from "@/components/ui/button";
@@ -54,7 +54,6 @@ import {
 import { SearchBar } from "@/components/search-bar";
 import { useSearch } from "@/hooks/use-search";
 import { CreateTagDialog } from "@/components/create-tag-dialog";
-import Heatmap from "@/components/heatmap";
 
 function ChooseTagPopover({
   tagId,
@@ -420,31 +419,6 @@ export default function App({ params }: Route.ComponentProps) {
 
   const { copy, hasCopied } = useClipboard();
 
-  const [yearStart, yearEnd] = useMemo(
-    () => [today.startOf("year"), today.endOf("year")],
-    [],
-  );
-  const [yearData, setYearData] = useState(new Map());
-
-  useEffect(() => {
-    getAppDurationsPerPeriod({
-      start: yearStart,
-      end: yearEnd,
-      period: Duration.fromObject({ day: 1 }),
-    }).then((usages) => {
-      setYearData(
-        new Map(
-          _(usages[app.id])
-            .map(
-              (appDur) =>
-                [+ticksToDateTime(appDur.group), appDur.duration] as const,
-            )
-            .value(),
-        ),
-      );
-    });
-  }, [yearStart, yearEnd, app]);
-
   return (
     <>
       <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
@@ -568,13 +542,7 @@ export default function App({ params }: Route.ComponentProps) {
             prev={monthPrev}
           />
         </div>
-        <div className="min-h-[100vh] flex-1 rounded-xl bg-muted/50 md:min-h-min p-4">
-          <Heatmap
-            axisClassName="fill-muted-foreground"
-            data={yearData}
-            startDate={yearStart}
-          />
-        </div>
+        <div className="min-h-[100vh] flex-1 rounded-xl bg-muted/50 md:min-h-min" />
       </div>
     </>
   );
