@@ -107,10 +107,6 @@ function AppListItem({
 }) {
   const tag = useTag(app.tag_id);
 
-  const singleUsage = useMemo(
-    () => ({ [app.id]: usages[app.id] }),
-    [usages, app.id],
-  );
   return (
     <NavLink
       to={`/apps/${app.id}`}
@@ -147,7 +143,7 @@ function AppListItem({
             hideXAxis
             gradientBars
             maxYIsPeriod
-            data={singleUsage}
+            data={usages}
             singleAppId={app.id}
             rangeMinTicks={dateTimeToTicks(start)}
             rangeMaxTicks={dateTimeToTicks(end)}

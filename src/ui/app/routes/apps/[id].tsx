@@ -209,11 +209,10 @@ function AppUsageBarChartCard({
       getAppDurationsPerPeriod({ start, end, period }).then((usages) => {
         const usage = _(usages[appId]).sumBy("duration");
         const totalUsage = _(usages).values().flatten().sumBy("duration");
-        const data = { [appId]: usages[appId] };
         setData({
           usage,
           totalUsage,
-          data,
+          data: usages,
           start,
           end,
         });

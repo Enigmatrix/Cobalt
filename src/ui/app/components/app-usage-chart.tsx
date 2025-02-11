@@ -67,12 +67,16 @@ export function AppUsageBarChart({
 
   const involvedApps = useMemo(
     () =>
-      _(unflattenedData)
+      _(
+        singleAppId
+          ? { [singleAppId]: unflattenedData[singleAppId] }
+          : unflattenedData,
+      )
         .keys()
         .map((id) => apps[id as unknown as Ref<App>])
         .thru(handleStaleApps)
         .value(),
-    [handleStaleApps, apps, unflattenedData],
+    [handleStaleApps, apps, unflattenedData, singleAppId],
   );
   // data is grouped by app, we regroup by timestamp.
   const data: AppUsageBarChartData[] = useMemo(() => {
