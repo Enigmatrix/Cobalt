@@ -13,7 +13,10 @@ function rotateArray<T>(arr: T[], n: number) {
 export interface HeatmapProps {
   startDate: DateTime;
   data: Map<number, number>; // DateTime -> value
+  className?: ClassValue;
+  innerClassName?: ClassValue;
   axisClassName?: ClassValue;
+  firstDayOfMonthClassName?: ClassValue;
 }
 
 export interface HeatmapData {
@@ -44,7 +47,10 @@ const PADDING = 25;
 const Heatmap: React.FC<HeatmapProps> = ({
   startDate,
   data,
+  className,
+  innerClassName,
   axisClassName,
+  firstDayOfMonthClassName,
 }) => {
   const [tooltipData, setTooltipData] = useState<{
     x: number;
@@ -83,7 +89,8 @@ const Heatmap: React.FC<HeatmapProps> = ({
 
   const renderCells = () => {
     return heatmapData.map((entry, index) => {
-      const intensity = entry.value / 360000000000 + 0.1; // 10 hours
+      const intensity = entry.value / 360000000000 + 0.1; // TODO this is 10 hours but needs to be configurable
+      // TODO this color scaling needs to be configurable
       const fill =
         entry.value === 0 ? "#222222" : `rgba(0, 128, 0, ${intensity})`;
       const cellDate = entry.date;
@@ -97,8 +104,7 @@ const Heatmap: React.FC<HeatmapProps> = ({
           width={CELL_SIZE - 2}
           height={CELL_SIZE - 2}
           fill={fill}
-          stroke={isFirstDayOfMonth ? "#000" : "none"}
-          strokeWidth={isFirstDayOfMonth ? 2 : 0}
+          className={cn(isFirstDayOfMonth && firstDayOfMonthClassName)}
           rx={3}
           onMouseEnter={(e) => {
             const rect = e.currentTarget.getBoundingClientRect();
@@ -152,9 +158,9 @@ const Heatmap: React.FC<HeatmapProps> = ({
   };
 
   return (
-    <div className="relative overflow-x-auto">
+    <div className={cn("relative overflow-x-auto", className)}>
       <div
-        className="min-h-[200px] aspect-video"
+        className={cn(innerClassName)}
         style={{ aspectRatio: width / height }}
       >
         <svg
