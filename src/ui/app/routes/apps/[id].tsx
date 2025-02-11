@@ -222,21 +222,26 @@ function AppUsageBarChartCard({
     [setData, period, appId],
   );
 
-  const children = useMemo(() => {
-    return !data ? null : (
-      <AppUsageBarChart
-        data={data.data}
-        singleAppId={appId}
-        periodTicks={durationToTicks(period)}
-        rangeMinTicks={dateTimeToTicks(data.start)}
-        rangeMaxTicks={dateTimeToTicks(data.end)}
-        dateTimeFormatter={xAxisLabelFormatter}
-        gradientBars
-        className="aspect-video flex-1 mx-1 max-w-full"
-        maxYIsPeriod
-      />
-    );
-  }, [data, appId]);
+  const children = useMemo(
+    () => (
+      <div className="aspect-video flex-1 mx-1 max-w-full">
+        {!data ? null : (
+          <AppUsageBarChart
+            data={data.data}
+            singleAppId={appId}
+            periodTicks={durationToTicks(period)}
+            rangeMinTicks={dateTimeToTicks(data.start)}
+            rangeMaxTicks={dateTimeToTicks(data.end)}
+            dateTimeFormatter={xAxisLabelFormatter}
+            gradientBars
+            className="aspect-none"
+            maxYIsPeriod
+          />
+        )}
+      </div>
+    ),
+    [data, appId],
+  );
 
   return card({
     usage: data?.usage || 0,
@@ -417,26 +422,24 @@ export default function App({ params }: Route.ComponentProps) {
             appId={app.id}
           />
         </div>
-        <div className="rounded-xl bg-muted/50">
-          <YearUsageCard
-            usage={yearUsage}
-            totalUsage={yearTotalUsage}
-            onChanged={onYearChanged}
-          >
+        <YearUsageCard
+          usage={yearUsage}
+          totalUsage={yearTotalUsage}
+          onChanged={onYearChanged}
+        >
+          <div className="p-4">
             {!yearData || !yearStart ? null : (
-              <div className="px-4 pb-4">
-                <Heatmap
-                  data={yearData}
-                  scaling={scaling}
-                  startDate={yearStart}
-                  fullCellColorRgb={app.color}
-                  innerClassName="min-h-[200px]"
-                  firstDayOfMonthClassName="stroke-card-foreground/50"
-                />
-              </div>
+              <Heatmap
+                data={yearData}
+                scaling={scaling}
+                startDate={yearStart}
+                fullCellColorRgb={app.color}
+                innerClassName="min-h-[200px]"
+                firstDayOfMonthClassName="stroke-card-foreground/50"
+              />
             )}
-          </YearUsageCard>
-        </div>
+          </div>
+        </YearUsageCard>
       </div>
     </>
   );
