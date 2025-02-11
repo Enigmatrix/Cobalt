@@ -6,6 +6,7 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useNavigation,
 } from "react-router";
 
 import type { Route } from "./+types/root";
@@ -13,9 +14,10 @@ import stylesheet from "./app.css?url";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeProvider } from "@/components/theme-provider";
-import { Suspense, useMemo } from "react";
+import { Suspense, useEffect, useMemo } from "react";
 import { initState } from "@/lib/state";
 import { Toaster } from "@/components/ui/sonner";
+import { info } from "@/lib/log";
 
 export const links: Route.LinksFunction = () => [
   { rel: "stylesheet", href: stylesheet },
@@ -41,6 +43,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   const initStatePromise = useMemo(initState, []);
+  const { location } = useNavigation();
+  useEffect(() => {
+    if (location) {
+      info("navigate:", location);
+    }
+  }, [location?.key]);
   return (
     <ThemeProvider defaultTheme="dark">
       <Suspense fallback={<div>TODO Loading State</div>}>
