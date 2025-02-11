@@ -428,7 +428,10 @@ export default function App({ params }: Route.ComponentProps) {
           onChanged={onYearChanged}
         >
           <div className="p-4">
-            {!yearData || !yearStart ? null : (
+            {!yearData || !yearStart ? (
+              // avoid CLS
+              <div className="min-h-[200px]" />
+            ) : (
               <Heatmap
                 data={yearData}
                 scaling={scaling}
