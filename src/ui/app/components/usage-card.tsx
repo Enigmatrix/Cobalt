@@ -1,8 +1,8 @@
 import type { DateTime } from "luxon";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Button } from "./ui/button";
+import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { DurationText } from "./duration-text";
+import { DurationText } from "@/components/duration-text";
 import { useToday } from "@/hooks/use-today";
 
 export function UsageCard({

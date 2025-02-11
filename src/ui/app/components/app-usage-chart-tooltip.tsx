@@ -7,7 +7,7 @@ import AppIcon from "@/components/app-icon";
 import { useAppState } from "@/lib/state";
 import { DateTime } from "luxon";
 import { DurationText } from "@/components/duration-text";
-import { DateTimeText } from "./time-text";
+import { DateTimeText } from "@/components/time-text";
 
 export const AppUsageChartTooltipContent = React.forwardRef<
   HTMLDivElement,
