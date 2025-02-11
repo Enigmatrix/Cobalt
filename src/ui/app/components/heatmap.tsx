@@ -10,9 +10,12 @@ import type { ClassValue } from "clsx";
 import { cn } from "@/lib/utils";
 import { DateTimeText } from "./time-text";
 
+function rotateArray<T>(arr: T[], n: number) {
+  return arr.slice(n).concat(arr.slice(0, n));
+}
+
 export interface HeatmapProps {
   startDate: DateTime;
-  startOfWeek: number;
   data: Map<number, number>; // DateTime -> value
   axisClassName?: ClassValue;
 }
@@ -40,11 +43,10 @@ const MONTHS = [
   "Dec",
 ];
 const CELL_SIZE = 14;
-const PADDING = 20;
+const PADDING = 25;
 
 const Heatmap: React.FC<HeatmapProps> = ({
   startDate,
-  startOfWeek,
   data,
   axisClassName,
 }) => {
@@ -55,6 +57,8 @@ const Heatmap: React.FC<HeatmapProps> = ({
     value: number;
   } | null>(null);
 
+  const startWeek = useMemo(() => startDate.startOf("week"), [startDate]);
+
   const heatmapData = useMemo(() => {
     const result: HeatmapData[] = [];
     const endDate = startDate.plus({ years: 1 });
@@ -62,10 +66,8 @@ const Heatmap: React.FC<HeatmapProps> = ({
 
     for (const day of interval.splitBy({ days: 1 })) {
       const currentDate = day.start!;
-      // TODO adjust yaxis based on startOfWeek.
-      // TODO check if the rest of the display shown is even correct?
-      const adjustedDay = (currentDate.weekday - startOfWeek + 7) % 7;
-      const week = currentDate.weekNumber - startDate.weekNumber + 1;
+      const adjustedDay = (currentDate.weekday - 1 + 7) % 7;
+      const week = Math.floor(day.start!.diff(startWeek, "days").days / 7);
 
       result.push({
         date: currentDate,
@@ -76,7 +78,7 @@ const Heatmap: React.FC<HeatmapProps> = ({
     }
 
     return result;
-  }, [startDate, startOfWeek, data]);
+  }, [startDate, data]);
 
   const maxWeek = Math.max(...heatmapData.map((d) => d.week));
   const width = (maxWeek + 1) * CELL_SIZE + PADDING * 2;
@@ -117,10 +119,10 @@ const Heatmap: React.FC<HeatmapProps> = ({
   };
 
   const renderAxes = () => {
-    const yAxis = DAYS.map((day, index) => (
+    const yAxis = rotateArray(DAYS, 1).map((day, index) => (
       <text
         key={`day-${index}`}
-        x={PADDING}
+        x={PADDING- 5}
         y={index * CELL_SIZE + PADDING + CELL_SIZE / 2}
         textAnchor="end"
         dominantBaseline="middle"
@@ -133,11 +135,11 @@ const Heatmap: React.FC<HeatmapProps> = ({
 
     const xAxis = MONTHS.map((month, index) => {
       const firstDayOfMonth = startDate.set({ month: index + 1, day: 1 });
-      const week = firstDayOfMonth.weekNumber - startDate.weekNumber + 1;
+      const week = Math.floor(firstDayOfMonth.diff(startWeek, "days").days / 7);
       return (
         <text
           key={`month-${index}`}
-          x={week * CELL_SIZE + PADDING + CELL_SIZE/2}
+          x={week * CELL_SIZE + PADDING + CELL_SIZE / 2}
           y={PADDING - 5}
           textAnchor="middle"
           fontSize={10}
@@ -166,7 +168,7 @@ const Heatmap: React.FC<HeatmapProps> = ({
             top: `${tooltipData.y - 40}px`,
           }}
         >
-          <DateTimeText datetime={tooltipData.date} className="font-semibold"/>
+          <DateTimeText datetime={tooltipData.date} className="font-semibold" />
           <p>Value: {tooltipData.value}</p>
         </div>
       )}
