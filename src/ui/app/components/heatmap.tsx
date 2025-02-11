@@ -1,5 +1,5 @@
 import type React from "react";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   DateTime,
   Interval,
@@ -9,6 +9,8 @@ import {
 import type { ClassValue } from "clsx";
 import { cn } from "@/lib/utils";
 import { DateTimeText } from "./time-text";
+import { toHumanDuration } from "@/lib/time";
+import { DurationText } from "./duration-text";
 
 function rotateArray<T>(arr: T[], n: number) {
   return arr.slice(n).concat(arr.slice(0, n));
@@ -58,6 +60,7 @@ const Heatmap: React.FC<HeatmapProps> = ({
   } | null>(null);
 
   const startWeek = useMemo(() => startDate.startOf("week"), [startDate]);
+  const ref = useRef<SVGSVGElement | null>(null);
 
   const heatmapData = useMemo(() => {
     const result: HeatmapData[] = [];
@@ -105,9 +108,10 @@ const Heatmap: React.FC<HeatmapProps> = ({
           rx={3}
           onMouseEnter={(e) => {
             const rect = e.currentTarget.getBoundingClientRect();
+            const parent = ref.current!.getBoundingClientRect();
             setTooltipData({
-              x: rect.left + window.scrollX,
-              y: rect.top + window.scrollY,
+              x: rect.left - parent.left,
+              y: rect.top - parent.top,
               date: entry.date,
               value: entry.value,
             });
@@ -122,7 +126,7 @@ const Heatmap: React.FC<HeatmapProps> = ({
     const yAxis = rotateArray(DAYS, 1).map((day, index) => (
       <text
         key={`day-${index}`}
-        x={PADDING- 5}
+        x={PADDING - 5}
         y={index * CELL_SIZE + PADDING + CELL_SIZE / 2}
         textAnchor="end"
         dominantBaseline="middle"
@@ -153,23 +157,30 @@ const Heatmap: React.FC<HeatmapProps> = ({
     return [...yAxis, ...xAxis];
   };
 
-  // TODO fix tooltip
   return (
     <div className="relative">
-      <svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`}>
+      <svg
+        width="100%"
+        height="100%"
+        viewBox={`0 0 ${width} ${height}`}
+        ref={ref}
+      >
         {renderCells()}
         {renderAxes()}
       </svg>
       {tooltipData && (
         <div
-          className="absolute bg-card p-2 border border-border rounded shadow text-sm"
+          className="absolute bg-card p-2 border border-border rounded shadow text-sm pointer-events-none"
           style={{
-            left: `${tooltipData.x}px`,
-            top: `${tooltipData.y - 40}px`,
+            left: `${tooltipData.x + 10}px`,
+            top: `${tooltipData.y + 10}px`,
           }}
         >
-          <DateTimeText datetime={tooltipData.date} className="font-semibold" />
-          <p>Value: {tooltipData.value}</p>
+          <DateTimeText
+            datetime={tooltipData.date}
+            className="font-semibold whitespace-nowrap"
+          />
+          <DurationText ticks={tooltipData.value} />
         </div>
       )}
     </div>
