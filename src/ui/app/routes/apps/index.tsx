@@ -10,7 +10,6 @@ import type { EntityMap } from "@/lib/state";
 import type { App, Tag, WithGroupedDuration } from "@/lib/entities";
 import {
   memo,
-  useEffect,
   useMemo,
   useState,
   type CSSProperties,
@@ -36,14 +35,14 @@ import { ArrowDownUp, SortAsc, SortDesc } from "lucide-react";
 import _ from "lodash";
 import { Text } from "@/components/ui/text";
 import { dateTimeToTicks, durationToTicks } from "@/lib/time";
-import { getAppDurationsPerPeriod } from "@/lib/repo";
 import { DateTime, Duration } from "luxon";
 import { AppUsageBarChart } from "@/components/app-usage-chart";
 import { useToday } from "@/hooks/use-today";
-import { useApps, useRefresh, useTag } from "@/hooks/use-refresh";
+import { useApps, useTag } from "@/hooks/use-refresh";
 import { useSearch } from "@/hooks/use-search";
 import { DurationText } from "@/components/duration-text";
 import type { ClassValue } from "clsx";
+import { useAppDurationsPerPeriod } from "@/hooks/use-repo";
 
 const period = Duration.fromObject({ hour: 1 });
 
@@ -180,7 +179,6 @@ type SortProperty =
 
 export default function Apps() {
   const today = useToday();
-  const { refreshToken } = useRefresh();
   const apps = useApps();
 
   const [sortDirection, setSortDirection] = useState<SortDirection>(
@@ -199,18 +197,7 @@ export default function Apps() {
   }, [appsFiltered, sortDirection, sortProperty]);
 
   const [start, end] = useMemo(() => [today, today.endOf("day")], [today]);
-
-  const [usages, setUsages] = useState<
-    EntityMap<App, WithGroupedDuration<App>[]>
-  >({});
-
-  useEffect(() => {
-    getAppDurationsPerPeriod({
-      start,
-      end,
-      period,
-    }).then((usages) => setUsages(usages));
-  }, [start, end, period, refreshToken]);
+  const { usages } = useAppDurationsPerPeriod({ start, end, period });
 
   const ListItem = memo(
     ({ index, style }: { index: number; style: CSSProperties }) => (

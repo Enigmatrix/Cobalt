@@ -24,7 +24,7 @@ export function UsageCard({
   nextFn: (start: DateTime) => DateTime;
   prevFn: (start: DateTime) => DateTime;
   titleFn: (dt: DateTime) => string;
-  onChanged: (start: DateTime, end: DateTime) => void;
+  onChanged: (arg: { start: DateTime; end: DateTime }) => void;
   children: React.ReactNode;
   isLoading: boolean;
 }) {
@@ -33,17 +33,17 @@ export function UsageCard({
   const next = useCallback(() => {
     const newStart = nextFn(start);
     setStart(newStart);
-    onChanged(newStart, endFn(newStart));
+    onChanged({ start: newStart, end: endFn(newStart) });
   }, [nextFn, start, setStart]);
 
   const prev = useCallback(() => {
     const newStart = prevFn(start);
     setStart(newStart);
-    onChanged(newStart, endFn(newStart));
+    onChanged({ start: newStart, end: endFn(newStart) });
   }, [prevFn, start, setStart]);
 
   useEffect(() => {
-    onChanged(start, endFn(start));
+    onChanged({ start, end: endFn(start) });
   }, []);
 
   return (
@@ -98,7 +98,7 @@ export function UsageCard({
 export interface TimePeriodUsageCardProps {
   usage: number;
   totalUsage: number;
-  onChanged: (start: DateTime, end: DateTime) => void;
+  onChanged: (arg: { start: DateTime; end: DateTime }) => void;
   children: React.ReactNode;
   isLoading: boolean;
 }

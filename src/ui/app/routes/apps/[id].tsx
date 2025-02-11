@@ -10,19 +10,12 @@ import {
   BreadcrumbLink,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { useAppState, type EntityMap } from "@/lib/state";
-import {
-  isUwp,
-  type App,
-  type Ref,
-  type Tag,
-  type WithGroupedDuration,
-} from "@/lib/entities";
+import { useAppState } from "@/lib/state";
+import { isUwp, type App, type Ref, type Tag } from "@/lib/entities";
 import AppIcon from "@/components/app-icon";
 import { AppUsageBarChart } from "@/components/app-usage-chart";
-import { useCallback, useMemo, useState, useTransition } from "react";
-import { getAppDurationsPerPeriod } from "@/lib/repo";
-import { Duration, type DateTime } from "luxon";
+import { useCallback, useMemo, useState } from "react";
+import { DateTime, Duration } from "luxon";
 import { useApp, useTag, useTags } from "@/hooks/use-refresh";
 import {
   dateTimeToTicks,
@@ -57,6 +50,7 @@ import {
   type TimePeriodUsageCardProps,
 } from "@/components/usage-card";
 import Heatmap from "@/components/heatmap";
+import { useAppDurationsPerPeriod } from "@/hooks/use-repo";
 
 function ChooseTagPopover({
   tagId,
@@ -196,43 +190,27 @@ function AppUsageBarChartCard({
   xAxisLabelFormatter: (dt: DateTime) => string;
   appId: Ref<App>;
 }) {
-  const [data, setData] = useState<{
-    usage: number;
-    totalUsage: number;
-    data: EntityMap<App, WithGroupedDuration<App>[]>;
-    start: DateTime;
-    end: DateTime;
-  } | null>(null);
-  const [isLoading, startTransition] = useTransition();
+  const [range, setRange] = useState<
+    { start: DateTime; end: DateTime } | undefined
+  >(undefined);
 
-  const setStartEnd = useCallback(
-    function (start: DateTime, end: DateTime) {
-      startTransition(async () => {
-        const usages = await getAppDurationsPerPeriod({ start, end, period });
-        const usage = _(usages[appId]).sumBy("duration");
-        const totalUsage = _(usages).values().flatten().sumBy("duration");
-        setData({
-          usage,
-          totalUsage,
-          data: usages,
-          start,
-          end,
-        });
-      });
-    },
-    [setData, period, appId],
-  );
+  const { isLoading, appUsage, totalUsage, usages } = useAppDurationsPerPeriod({
+    start: range?.start,
+    end: range?.end,
+    period: period,
+    appId,
+  });
 
   const children = useMemo(
     () => (
       <div className="aspect-video flex-1 mx-1 max-w-full">
-        {!data ? null : (
+        {!range ? null : (
           <AppUsageBarChart
-            data={data.data}
+            data={usages}
             singleAppId={appId}
             periodTicks={durationToTicks(period)}
-            rangeMinTicks={dateTimeToTicks(data.start)}
-            rangeMaxTicks={dateTimeToTicks(data.end)}
+            rangeMinTicks={dateTimeToTicks(range!.start)}
+            rangeMaxTicks={dateTimeToTicks(range!.end)}
             dateTimeFormatter={xAxisLabelFormatter}
             gradientBars
             className="aspect-none"
@@ -241,14 +219,14 @@ function AppUsageBarChartCard({
         )}
       </div>
     ),
-    [data, appId],
+    [usages, range, appId],
   );
 
   return card({
-    usage: data?.usage || 0,
-    totalUsage: data?.totalUsage || 0,
+    usage: appUsage,
+    totalUsage: totalUsage,
     children,
-    onChanged: setStartEnd,
+    onChanged: setRange,
     isLoading,
   });
 }
@@ -256,6 +234,7 @@ function AppUsageBarChartCard({
 const dayChartPeriod = Duration.fromObject({ hour: 1 });
 const weekChartPeriod = Duration.fromObject({ day: 1 });
 const monthChartPeriod = Duration.fromObject({ day: 1 });
+const yearChartPeriod = Duration.fromObject({ day: 1 });
 const dayXAxisFormatter = (dateTime: DateTime) => dateTime.toFormat("HHmm");
 const weekXAxisFormatter = (dateTime: DateTime) => dateTime.toFormat("EEE");
 const monthXAxisFormatter = (dateTime: DateTime) => dateTime.toFormat("dd");
@@ -279,44 +258,31 @@ export default function App({ params }: Route.ComponentProps) {
 
   const { copy, hasCopied } = useClipboard();
 
-  const [isYearDataLoading, startYearDataTransition] = useTransition();
-  const [yearStart, setYearStart] = useState<DateTime | null>(null);
-  const [yearData, setYearData] = useState(new Map());
-  const [yearTotalUsage, setYearTotalUsage] = useState(0);
-  const [yearUsage, setYearUsage] = useState(0);
+  const [range, setRange] = useState<
+    { start: DateTime; end: DateTime } | undefined
+  >(undefined);
 
-  const onYearChanged = useCallback(
-    (start: DateTime, end: DateTime) => {
-      startYearDataTransition(async () => {
-        const usages = await getAppDurationsPerPeriod({
-          start,
-          end,
-          period: Duration.fromObject({ day: 1 }),
-        });
-        setYearUsage(_(usages[app.id]).sumBy("duration"));
-        setYearTotalUsage(_(usages).values().flatten().sumBy("duration"));
-        setYearData(
-          new Map(
-            _(usages[app.id])
-              .map(
-                (appDur) =>
-                  [+ticksToDateTime(appDur.group), appDur.duration] as const,
-              )
-              .value(),
-          ),
-        );
-        setYearStart(start);
-      });
-    },
-    [
-      app.id,
-      startYearDataTransition,
-      setYearData,
-      setYearStart,
-      setYearTotalUsage,
-      setYearUsage,
-    ],
-  );
+  const {
+    isLoading: isYearDataLoading,
+    appUsage: yearUsage,
+    totalUsage: yearTotalUsage,
+    usages: yearUsages,
+  } = useAppDurationsPerPeriod({
+    start: range?.start,
+    end: range?.end,
+    period: yearChartPeriod,
+    appId: app.id,
+  });
+  const yearData = useMemo(() => {
+    return new Map(
+      _(yearUsages[app.id] || [])
+        .map(
+          (appDur) =>
+            [+ticksToDateTime(appDur.group), appDur.duration] as const,
+        )
+        .value(),
+    );
+  }, [yearUsages]);
 
   const scaling = useCallback((value: number) => {
     return _.clamp(ticksToDuration(value).rescale().hours / 8, 0.2, 1);
@@ -436,18 +402,18 @@ export default function App({ params }: Route.ComponentProps) {
         <YearUsageCard
           usage={yearUsage}
           totalUsage={yearTotalUsage}
-          onChanged={onYearChanged}
+          onChanged={setRange}
           isLoading={isYearDataLoading}
         >
           <div className="p-4">
-            {!yearData || !yearStart ? (
+            {!range?.start ? (
               // avoid CLS
               <div className="min-h-[200px]" />
             ) : (
               <Heatmap
                 data={yearData}
                 scaling={scaling}
-                startDate={yearStart}
+                startDate={range?.start}
                 fullCellColorRgb={app.color}
                 innerClassName="min-h-[200px]"
                 firstDayOfMonthClassName="stroke-card-foreground/50"
