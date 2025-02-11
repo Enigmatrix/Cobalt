@@ -90,7 +90,7 @@ const Heatmap: React.FC<HeatmapProps> = ({
     }
 
     return result;
-  }, [startDate, data]);
+  }, [startDate, startWeek, data]);
 
   const maxWeek = Math.max(...heatmapData.map((d) => d.week));
   const width = (maxWeek + 1) * CELL_SIZE + PADDING_X;

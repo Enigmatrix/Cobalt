@@ -5,7 +5,9 @@ export function useToday() {
   const lastRefresh = useAppState((state) => state.lastRefresh);
   const today = useMemo(() => {
     return lastRefresh.startOf("day");
-  }, [+lastRefresh.startOf("day").toJSDate()]); // memoize today
+    // lastRefresh is a DateTime object, so we can't compare it directly
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [+lastRefresh.startOf("day")]); // memoize today
   return today;
 }
 

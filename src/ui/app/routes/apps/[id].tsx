@@ -219,7 +219,7 @@ function AppUsageBarChartCard({
         )}
       </div>
     ),
-    [usages, range, appId],
+    [usages, period, xAxisLabelFormatter, range, appId],
   );
 
   return card({
@@ -282,7 +282,7 @@ export default function App({ params }: Route.ComponentProps) {
         )
         .value(),
     );
-  }, [yearUsages]);
+  }, [yearUsages, app.id]);
 
   const scaling = useCallback((value: number) => {
     return _.clamp(ticksToDuration(value).rescale().hours / 8, 0.2, 1);

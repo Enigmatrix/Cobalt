@@ -31,20 +31,17 @@ export function UsageCard({
   const [start, setStart] = useState(originalStart);
 
   const next = useCallback(() => {
-    const newStart = nextFn(start);
-    setStart(newStart);
-    onChanged({ start: newStart, end: endFn(newStart) });
+    setStart(nextFn(start));
   }, [nextFn, start, setStart]);
 
   const prev = useCallback(() => {
-    const newStart = prevFn(start);
-    setStart(newStart);
-    onChanged({ start: newStart, end: endFn(newStart) });
+    setStart(prevFn(start));
   }, [prevFn, start, setStart]);
 
+  // runs on mounted, and when these props change
   useEffect(() => {
     onChanged({ start, end: endFn(start) });
-  }, []);
+  }, [start, onChanged, endFn]);
 
   return (
     <div className="flex flex-col rounded-xl bg-muted/50">

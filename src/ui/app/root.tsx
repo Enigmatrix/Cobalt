@@ -48,6 +48,8 @@ export default function App() {
     if (location) {
       info("navigate:", location);
     }
+    // location itself is wrong ..????
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location?.key]);
   return (
     <ThemeProvider defaultTheme="dark">

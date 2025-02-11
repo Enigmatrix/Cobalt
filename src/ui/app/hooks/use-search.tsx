@@ -16,6 +16,8 @@ export function useSearch<T>(items: T[], paths: Path<T>[]) {
     } else {
       return items;
     }
+    // paths is an array of objects, so we need to stringify it to compare.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items, JSON.stringify(paths), query]);
 
   return [query, setQuery, filtered] as const;
