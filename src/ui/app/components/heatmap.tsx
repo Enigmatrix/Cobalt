@@ -20,6 +20,8 @@ export interface HeatmapProps {
   innerClassName?: ClassValue;
   axisClassName?: ClassValue;
   firstDayOfMonthClassName?: ClassValue;
+  // returns between 0 and 1
+  scaling: (value: number) => number;
 }
 
 export interface HeatmapData {
@@ -56,6 +58,7 @@ const Heatmap: React.FC<HeatmapProps> = ({
   firstDayOfMonthClassName,
   emptyCellColorRgb = "hsl(var(--muted))",
   fullCellColorRgb = "#00FF00",
+  scaling,
 }) => {
   const [tooltipData, setTooltipData] = useState<{
     x: number;
@@ -94,8 +97,7 @@ const Heatmap: React.FC<HeatmapProps> = ({
 
   const renderCells = () => {
     return heatmapData.map((entry, index) => {
-      const intensity = entry.value / 360000000000 + 0.1; // TODO this is 10 hours but needs to be configurable
-      // TODO this color scaling needs to be configurable
+      const intensity = scaling(entry.value);
       const { r, g, b } = hexToRgb(fullCellColorRgb)!;
       const fill =
         entry.value === 0
