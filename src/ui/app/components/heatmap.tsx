@@ -1,15 +1,9 @@
 import type React from "react";
 import { useMemo, useRef, useState } from "react";
-import {
-  DateTime,
-  Interval,
-  type WeekdayNumbers,
-  type WeekNumbers,
-} from "luxon";
+import { DateTime, Interval } from "luxon";
 import type { ClassValue } from "clsx";
 import { cn } from "@/lib/utils";
 import { DateTimeText } from "./time-text";
-import { toHumanDuration } from "@/lib/time";
 import { DurationText } from "./duration-text";
 
 function rotateArray<T>(arr: T[], n: number) {
