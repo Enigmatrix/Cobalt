@@ -19,25 +19,15 @@ import {
   type WithGroupedDuration,
 } from "@/lib/entities";
 import AppIcon from "@/components/app-icon";
-import { DurationText } from "@/components/duration-text";
 import { AppUsageBarChart } from "@/components/app-usage-chart";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { getAppDurationsPerPeriod } from "@/lib/repo";
 import { Duration, type DateTime } from "luxon";
-import { useApp, useRefresh, useTag, useTags } from "@/hooks/use-refresh";
+import { useApp, useTag, useTags } from "@/hooks/use-refresh";
 import { dateTimeToTicks, durationToTicks } from "@/lib/time";
-import { useToday } from "@/hooks/use-today";
 import { Text } from "@/components/ui/text";
 import { Button } from "@/components/ui/button";
-import {
-  Check,
-  ChevronLeft,
-  ChevronRight,
-  ChevronsUpDown,
-  Copy,
-  Plus,
-  TagIcon,
-} from "lucide-react";
+import { Check, ChevronsUpDown, Copy, Plus, TagIcon } from "lucide-react";
 import { useClipboard } from "@/hooks/use-clipboard";
 import { EditableText } from "@/components/editable-text";
 import { ColorPicker } from "@/components/color-picker";
@@ -54,6 +44,12 @@ import {
 import { SearchBar } from "@/components/search-bar";
 import { useSearch } from "@/hooks/use-search";
 import { CreateTagDialog } from "@/components/create-tag-dialog";
+import {
+  DayUsageCard,
+  MonthUsageCard,
+  WeekUsageCard,
+  type TimePeriodUsageCardProps,
+} from "@/components/usage-card";
 
 function ChooseTagPopover({
   tagId,
@@ -182,112 +178,65 @@ function ChooseTag({
   );
 }
 
-function CardUsage({
-  titleFormatter,
-  start: originalStart,
-  end: originalEnd,
-  next,
-  prev,
+function AppUsageBarChartCard({
+  card,
   period,
+  xAxisLabelFormatter,
   appId,
-  chartDateFormatter,
 }: {
-  titleFormatter: (dt: DateTime) => string;
-  start: DateTime;
-  end: DateTime;
-  next: (start: DateTime, end: DateTime) => { start: DateTime; end: DateTime };
-  prev: (start: DateTime, end: DateTime) => { start: DateTime; end: DateTime };
+  card: (props: TimePeriodUsageCardProps) => React.ReactNode;
   period: Duration;
+  xAxisLabelFormatter: (dt: DateTime) => string;
   appId: Ref<App>;
-  chartDateFormatter?: (dateTime: DateTime) => string;
 }) {
-  const { refreshToken } = useRefresh();
-  const [usages, setUsages] = useState<
-    EntityMap<App, WithGroupedDuration<App>[]>
-  >({});
-  const [totalUsage, setTotalUsage] = useState<number>(0);
-  const [usage, setUsage] = useState<number>(0);
-  const [start, setStart] = useState(originalStart);
-  const [end, setEnd] = useState(originalEnd);
+  const [data, setData] = useState<{
+    usage: number;
+    totalUsage: number;
+    data: EntityMap<App, WithGroupedDuration<App>[]>;
+    start: DateTime;
+    end: DateTime;
+  } | null>(null);
 
-  useEffect(() => {
-    getAppDurationsPerPeriod({
-      start,
-      end,
-      period,
-    }).then((usages) => {
-      setUsages(usages);
-      setUsage(_(usages[appId]).sumBy("duration"));
-      setTotalUsage(_(usages).values().flatten().sumBy("duration"));
-    });
-  }, [start, end, period, setUsage, setTotalUsage, setUsages, refreshToken]);
+  const setStartEnd = useCallback(
+    function (start: DateTime, end: DateTime) {
+      getAppDurationsPerPeriod({ start, end, period }).then((usages) => {
+        const usage = _(usages[appId]).sumBy("duration");
+        const totalUsage = _(usages).values().flatten().sumBy("duration");
+        const data = { [appId]: usages[appId] };
+        setData({
+          usage,
+          totalUsage,
+          data,
+          start,
+          end,
+        });
+      });
+    },
+    [setData, period, appId],
+  );
 
-  const nextFn = useCallback(() => {
-    const { start: nextStart, end: nextEnd } = next(start, end);
-    setStart(nextStart);
-    setEnd(nextEnd);
-  }, [next, start, end, setStart, setEnd]);
-
-  const prevFn = useCallback(() => {
-    const { start: prevStart, end: prevEnd } = prev(start, end);
-    setStart(prevStart);
-    setEnd(prevEnd);
-  }, [prev, start, end, setStart, setEnd]);
-
-  const data = useMemo(() => ({ [appId]: usages[appId] }), [usages, appId]);
-
-  return (
-    <div className="flex flex-col rounded-xl bg-muted/50">
-      <div className="flex items-center">
-        <div className="flex flex-col p-4 pb-1 min-w-0">
-          <div className="whitespace-nowrap text-base text-foreground/50">
-            {titleFormatter(start)}
-          </div>
-          <div className="flex gap-2 items-baseline font-semibold">
-            <DurationText className="text-xl" ticks={usage} />
-            {usage !== 0 && (
-              <>
-                <span className="text-xl text-muted-foreground">/</span>
-                <DurationText
-                  className="text-muted-foreground"
-                  ticks={totalUsage}
-                />
-              </>
-            )}
-          </div>
-        </div>
-
-        <div className="flex-1" />
-
-        {/* hide button controls between md: and lg: */}
-        <div className="flex m-2 max-lg:hidden max-md:block">
-          <Button variant="ghost" size="icon" onClick={prevFn}>
-            <ChevronLeft />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={nextFn}
-            disabled={+end === +originalEnd}
-          >
-            <ChevronRight />
-          </Button>
-        </div>
-      </div>
-
+  const children = useMemo(() => {
+    return !data ? null : (
       <AppUsageBarChart
-        data={data}
+        data={data.data}
         singleAppId={appId}
         periodTicks={durationToTicks(period)}
-        rangeMinTicks={dateTimeToTicks(start)}
-        rangeMaxTicks={dateTimeToTicks(end)}
-        dateTimeFormatter={chartDateFormatter}
+        rangeMinTicks={dateTimeToTicks(data.start)}
+        rangeMaxTicks={dateTimeToTicks(data.end)}
+        dateTimeFormatter={xAxisLabelFormatter}
         gradientBars
         className="aspect-video flex-1 mx-1 max-w-full"
         maxYIsPeriod
       />
-    </div>
-  );
+    );
+  }, [data, appId]);
+
+  return card({
+    usage: data?.usage || 0,
+    totalUsage: data?.totalUsage || 0,
+    children,
+    onChanged: setStartEnd,
+  });
 }
 
 export default function App({ params }: Route.ComponentProps) {
@@ -295,113 +244,27 @@ export default function App({ params }: Route.ComponentProps) {
   const app = useApp(id as Ref<App>)!;
   const updateApp = useAppState((state) => state.updateApp);
 
-  const today = useToday();
-  const [
-    dayStart,
-    dayEnd,
-    dayPeriod,
-    dayFormatter,
-    dayNext,
-    dayPrev,
-    dayTitleFormatter,
-  ] = useMemo(
+  const [dayPeriod, dayFormatter] = useMemo(
     () => [
-      today.startOf("day"),
-      today.endOf("day"),
       Duration.fromObject({ hour: 1 }),
       (dateTime: DateTime) => dateTime.toFormat("HHmm"),
-      (start: DateTime, end: DateTime) => ({
-        start: start.plus({ day: 1 }),
-        end: end.plus({ day: 1 }),
-      }),
-      (start: DateTime, end: DateTime) => ({
-        start: start.minus({ day: 1 }),
-        end: end.minus({ day: 1 }),
-      }),
-      (dt: DateTime) => {
-        if (+today.startOf("day") === +dt) return "Today";
-        if (+today.startOf("day").minus({ day: 1 }) === +dt) return "Yesterday";
-        const format = dt.year === today.year ? "dd LLL" : "dd LLL yyyy";
-        return dt.toFormat(format);
-      },
     ],
-    [today],
+    [],
   );
 
-  const [
-    weekStart,
-    weekEnd,
-    weekPeriod,
-    weekFormatter,
-    weekNext,
-    weekPrev,
-    weekTitleFormatter,
-  ] = useMemo(
+  const [weekPeriod, weekFormatter] = useMemo(
     () => [
-      today.startOf("week"),
-      today.endOf("week"),
       Duration.fromObject({ day: 1 }),
       (dateTime: DateTime) => dateTime.toFormat("EEE"),
-      (start: DateTime, end: DateTime) => ({
-        start: start.plus({ week: 1 }),
-        end: end.plus({ week: 1 }),
-      }),
-      (start: DateTime, end: DateTime) => ({
-        start: start.minus({ week: 1 }),
-        end: end.minus({ week: 1 }),
-      }),
-      (dt: DateTime) => {
-        if (+today.startOf("week") === +dt) return "This Week";
-        if (+today.startOf("week").minus({ week: 1 }) === +dt)
-          return "Last Week";
-        const format =
-          dt.year === today.year && dt.endOf("week").year === today.year
-            ? "dd LLL"
-            : "dd LLL yyyy";
-        return dt.toFormat(format) + " - " + dt.endOf("week").toFormat(format);
-      },
     ],
-    [today],
+    [],
   );
-  const [
-    monthStart,
-    monthEnd,
-    monthPeriod,
-    monthFormatter,
-    monthNext,
-    monthPrev,
-    monthTitleFormatter,
-  ] = useMemo(
+  const [monthPeriod, monthFormatter] = useMemo(
     () => [
-      today.startOf("month"),
-      today.plus({ month: 1 }).startOf("month"),
       Duration.fromObject({ day: 1 }),
       (dateTime: DateTime) => dateTime.toFormat("dd"),
-      (start: DateTime) => ({
-        start: start.plus({ month: 1 }).startOf("month"),
-        end: start
-          .plus({ month: 1 })
-          .startOf("month")
-          .plus({ month: 1 })
-          .startOf("month"),
-      }),
-      (start: DateTime) => ({
-        start: start.minus({ month: 1 }).startOf("month"),
-        end: start
-          .minus({ month: 1 })
-          .startOf("month")
-          .plus({ month: 1 })
-          .startOf("month"),
-      }),
-      (dt: DateTime) => {
-        if (+today.startOf("month") === +dt) return "This Month";
-        if (+today.startOf("month").minus({ month: 1 }) === +dt)
-          return "Last Month";
-        const format = dt.year === today.year ? "LLL" : "LLL yyyy";
-        return dt.toFormat(format);
-      },
     ],
-    [today],
+    [],
   );
   const [color, setColorInner] = useState(app.color);
 
@@ -511,35 +374,23 @@ export default function App({ params }: Route.ComponentProps) {
         </div>
 
         <div className="grid auto-rows-min gap-4 md:grid-cols-3">
-          <CardUsage
-            start={dayStart}
-            end={dayEnd}
+          <AppUsageBarChartCard
+            card={DayUsageCard}
             period={dayPeriod}
+            xAxisLabelFormatter={dayFormatter}
             appId={app.id}
-            chartDateFormatter={dayFormatter}
-            titleFormatter={dayTitleFormatter}
-            next={dayNext}
-            prev={dayPrev}
           />
-          <CardUsage
-            start={weekStart}
-            end={weekEnd}
+          <AppUsageBarChartCard
+            card={WeekUsageCard}
             period={weekPeriod}
+            xAxisLabelFormatter={weekFormatter}
             appId={app.id}
-            chartDateFormatter={weekFormatter}
-            titleFormatter={weekTitleFormatter}
-            next={weekNext}
-            prev={weekPrev}
           />
-          <CardUsage
-            start={monthStart}
-            end={monthEnd}
+          <AppUsageBarChartCard
+            card={MonthUsageCard}
             period={monthPeriod}
+            xAxisLabelFormatter={monthFormatter}
             appId={app.id}
-            chartDateFormatter={monthFormatter}
-            titleFormatter={monthTitleFormatter}
-            next={monthNext}
-            prev={monthPrev}
           />
         </div>
         <div className="min-h-[100vh] flex-1 rounded-xl bg-muted/50 md:min-h-min" />
