@@ -20,7 +20,7 @@ import {
 } from "@/lib/entities";
 import AppIcon from "@/components/app-icon";
 import { AppUsageBarChart } from "@/components/app-usage-chart";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, useTransition } from "react";
 import { getAppDurationsPerPeriod } from "@/lib/repo";
 import { Duration, type DateTime } from "luxon";
 import { useApp, useTag, useTags } from "@/hooks/use-refresh";
@@ -203,10 +203,12 @@ function AppUsageBarChartCard({
     start: DateTime;
     end: DateTime;
   } | null>(null);
+  const [isLoading, startTransition] = useTransition();
 
   const setStartEnd = useCallback(
     function (start: DateTime, end: DateTime) {
-      getAppDurationsPerPeriod({ start, end, period }).then((usages) => {
+      startTransition(async () => {
+        const usages = await getAppDurationsPerPeriod({ start, end, period });
         const usage = _(usages[appId]).sumBy("duration");
         const totalUsage = _(usages).values().flatten().sumBy("duration");
         setData({
@@ -247,6 +249,7 @@ function AppUsageBarChartCard({
     totalUsage: data?.totalUsage || 0,
     children,
     onChanged: setStartEnd,
+    isLoading,
   });
 }
 
@@ -276,6 +279,7 @@ export default function App({ params }: Route.ComponentProps) {
 
   const { copy, hasCopied } = useClipboard();
 
+  const [isYearDataLoading, startYearDataTransition] = useTransition();
   const [yearStart, setYearStart] = useState<DateTime | null>(null);
   const [yearData, setYearData] = useState(new Map());
   const [yearTotalUsage, setYearTotalUsage] = useState(0);
@@ -283,11 +287,12 @@ export default function App({ params }: Route.ComponentProps) {
 
   const onYearChanged = useCallback(
     (start: DateTime, end: DateTime) => {
-      getAppDurationsPerPeriod({
-        start,
-        end,
-        period: Duration.fromObject({ day: 1 }),
-      }).then((usages) => {
+      startYearDataTransition(async () => {
+        const usages = await getAppDurationsPerPeriod({
+          start,
+          end,
+          period: Duration.fromObject({ day: 1 }),
+        });
         setYearUsage(_(usages[app.id]).sumBy("duration"));
         setYearTotalUsage(_(usages).values().flatten().sumBy("duration"));
         setYearData(
@@ -303,7 +308,14 @@ export default function App({ params }: Route.ComponentProps) {
         setYearStart(start);
       });
     },
-    [app.id],
+    [
+      app.id,
+      startYearDataTransition,
+      setYearData,
+      setYearStart,
+      setYearTotalUsage,
+      setYearUsage,
+    ],
   );
 
   const scaling = useCallback((value: number) => {
@@ -425,6 +437,7 @@ export default function App({ params }: Route.ComponentProps) {
           usage={yearUsage}
           totalUsage={yearTotalUsage}
           onChanged={onYearChanged}
+          isLoading={isYearDataLoading}
         >
           <div className="p-4">
             {!yearData || !yearStart ? (

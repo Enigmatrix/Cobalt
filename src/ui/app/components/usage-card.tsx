@@ -15,6 +15,7 @@ export function UsageCard({
   titleFn,
   onChanged,
   children,
+  isLoading,
 }: {
   start: DateTime;
   usage: number;
@@ -25,6 +26,7 @@ export function UsageCard({
   titleFn: (dt: DateTime) => string;
   onChanged: (start: DateTime, end: DateTime) => void;
   children: React.ReactNode;
+  isLoading: boolean;
 }) {
   const [start, setStart] = useState(originalStart);
 
@@ -69,14 +71,19 @@ export function UsageCard({
 
         {/* hide button controls between md: and lg: */}
         <div className="flex m-2 max-lg:hidden max-md:block">
-          <Button variant="ghost" size="icon" onClick={prev}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={prev}
+            disabled={isLoading}
+          >
             <ChevronLeft />
           </Button>
           <Button
             variant="ghost"
             size="icon"
             onClick={next}
-            disabled={+start === +originalStart}
+            disabled={isLoading || +start === +originalStart}
           >
             <ChevronRight />
           </Button>
@@ -93,6 +100,7 @@ export interface TimePeriodUsageCardProps {
   totalUsage: number;
   onChanged: (start: DateTime, end: DateTime) => void;
   children: React.ReactNode;
+  isLoading: boolean;
 }
 
 export function DayUsageCard({
@@ -100,6 +108,7 @@ export function DayUsageCard({
   totalUsage,
   onChanged,
   children,
+  isLoading,
 }: TimePeriodUsageCardProps) {
   const today = useToday();
 
@@ -131,6 +140,7 @@ export function DayUsageCard({
       totalUsage={totalUsage}
       children={children}
       onChanged={onChanged}
+      isLoading={isLoading}
       {...props}
     />
   );
@@ -141,6 +151,7 @@ export function WeekUsageCard({
   totalUsage,
   onChanged,
   children,
+  isLoading,
 }: TimePeriodUsageCardProps) {
   const today = useToday();
 
@@ -176,6 +187,7 @@ export function WeekUsageCard({
       totalUsage={totalUsage}
       children={children}
       onChanged={onChanged}
+      isLoading={isLoading}
       {...props}
     />
   );
@@ -186,6 +198,7 @@ export function MonthUsageCard({
   totalUsage,
   onChanged,
   children,
+  isLoading,
 }: TimePeriodUsageCardProps) {
   const today = useToday();
 
@@ -218,6 +231,7 @@ export function MonthUsageCard({
       totalUsage={totalUsage}
       children={children}
       onChanged={onChanged}
+      isLoading={isLoading}
       {...props}
     />
   );
@@ -228,6 +242,7 @@ export function YearUsageCard({
   totalUsage,
   onChanged,
   children,
+  isLoading,
 }: TimePeriodUsageCardProps) {
   const today = useToday();
 
@@ -259,6 +274,7 @@ export function YearUsageCard({
       totalUsage={totalUsage}
       children={children}
       onChanged={onChanged}
+      isLoading={isLoading}
       {...props}
     />
   );
