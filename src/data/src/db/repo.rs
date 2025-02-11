@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::ops::Deref;
 use std::str::FromStr;
 
+use infused::UpdatedApp;
 use serde::Serialize;
 
 use super::*;
@@ -65,13 +66,26 @@ impl<T: Table> sqlx::Type<Sqlite> for RefVec<T> {
 
 // Entities with extra information embedded.
 pub mod infused {
+    use serde::Deserialize;
+
     use super::*;
+    use crate::table::Color;
 
     #[derive(Debug, Clone, PartialEq, Eq, Serialize, FromRow)]
     pub struct UsageInfo {
         pub usage_today: crate::table::Duration,
         pub usage_week: crate::table::Duration,
         pub usage_month: crate::table::Duration,
+    }
+
+    #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+    pub struct UpdatedApp {
+        pub id: Ref<super::App>,
+        pub name: String,
+        pub description: String,
+        pub company: String,
+        pub color: Color,
+        pub tag_id: Option<Ref<super::Tag>>,
     }
 
     #[derive(Debug, Clone, PartialEq, Eq, Serialize, FromRow)]
@@ -91,6 +105,12 @@ pub mod infused {
         pub apps: RefVec<super::App>,
         #[sqlx(flatten)]
         usages: UsageInfo,
+    }
+
+    #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+    pub struct CreateTag {
+        pub name: String,
+        pub color: String,
     }
 }
 
@@ -299,5 +319,38 @@ impl Repository {
                 acc
             },
         ))
+    }
+
+    /// Update the [App] with additional information
+    pub async fn update_app(&mut self, app: &UpdatedApp) -> Result<()> {
+        query(
+            "UPDATE apps SET
+                    name = ?,
+                    description = ?,
+                    company = ?,
+                    color = ?,
+                    tag_id = ?,
+                    initialized = 1
+                WHERE id = ?",
+        )
+        .bind(&app.name)
+        .bind(&app.description)
+        .bind(&app.company)
+        .bind(&app.color)
+        .bind(&app.tag_id)
+        .bind(&app.id)
+        .execute(self.db.executor())
+        .await?;
+        Ok(())
+    }
+
+    /// Create a new [Tag] from a [infused::CreateTag]
+    pub async fn create_tag(&mut self, tag: &infused::CreateTag) -> Result<Ref<Tag>> {
+        let res = query("INSERT INTO tags VALUES (NULL, ?, ?)")
+            .bind(&tag.name)
+            .bind(&tag.color)
+            .execute(self.db.executor())
+            .await?;
+        Ok(Ref::new(res.last_insert_rowid()))
     }
 }

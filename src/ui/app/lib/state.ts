@@ -3,14 +3,20 @@ import { create } from "zustand";
 import type { App, Ref, Tag } from "@/lib/entities";
 import { DateTime } from "luxon";
 import { dateTimeToTicks } from "@/lib/time";
-import { getApps, getTags } from "@/lib/repo";
+import {
+  createTag,
+  getApps,
+  getTags,
+  updateApp,
+  type CreateTag,
+} from "@/lib/repo";
 import { checkForUpdatesBackground } from "@/lib/updater";
 import { info } from "@/lib/log";
+import { produce } from "immer";
 
 export async function initState() {
   // init rust-side state
   await invoke("init_state");
-  info("rust-side state initialized");
   await refresh();
   if (import.meta.env.PROD) {
     checkForUpdatesBackground();
@@ -18,16 +24,13 @@ export async function initState() {
 }
 
 export async function refresh() {
-  const state = useAppState.getState();
   const now = DateTime.now();
   const options = { now: dateTimeToTicks(now) };
   const [apps, tags] = await Promise.all([
     getApps({ options }),
     getTags({ options }),
   ]);
-  state.setApps(apps as Record<Ref<App>, App>);
-  state.setTags(tags as Record<Ref<Tag>, Tag>);
-  state.setLastRefresh(now);
+  useAppState.setState({ apps, tags, lastRefresh: now });
   info("refresh completed");
 }
 
@@ -40,9 +43,8 @@ type AppState = {
   lastRefresh: DateTime;
   apps: EntityStore<App>;
   tags: EntityStore<Tag>;
-  setApps: (apps: EntityStore<App>) => void;
-  setTags: (tags: EntityStore<Tag>) => void;
-  setLastRefresh: (lastRefresh: DateTime) => void;
+  updateApp: (app: App) => Promise<void>;
+  createTag: (tag: CreateTag) => Promise<Ref<Tag>>;
 };
 
 export const useAppState = create<AppState>((set) => {
@@ -50,8 +52,33 @@ export const useAppState = create<AppState>((set) => {
     lastRefresh: DateTime.now(),
     apps: [],
     tags: [],
-    setApps: (apps) => set({ apps }),
-    setTags: (tags) => set({ tags }),
-    setLastRefresh: (lastRefresh) => set({ lastRefresh }),
+    updateApp: async (app) => {
+      await updateApp(app);
+
+      set((state) =>
+        produce((draft: AppState) => {
+          draft.apps[app.id] = { ...draft.apps[app.id], ...app };
+        })(state),
+      );
+    },
+    createTag: async (tag) => {
+      const tagId = await createTag(tag);
+      set((state) =>
+        produce((draft: AppState) => {
+          draft.tags[tagId] = {
+            id: tagId,
+            ...tag,
+            apps: [],
+            usages: {
+              usage_today: 0,
+              usage_week: 0,
+              usage_month: 0,
+            },
+          };
+        })(state),
+      );
+
+      return tagId;
+    },
   };
 });

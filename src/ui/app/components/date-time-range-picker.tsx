@@ -15,9 +15,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toHumanDateTime } from "@/lib/time";
 import { useToday } from "@/hooks/use-today";
+import type { ClassValue } from "clsx";
 
 type DateTimeRangePickerProps = {
-  className?: string;
+  className?: ClassValue;
   date?: DateRange;
   setDate: React.Dispatch<React.SetStateAction<DateRange | undefined>>;
   showIcon?: boolean;

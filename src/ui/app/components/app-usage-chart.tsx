@@ -21,6 +21,8 @@ import { AppUsageChartTooltipContent } from "@/components/app-usage-chart-toolti
 import { DateTime } from "luxon";
 import { useAppState, type EntityMap } from "@/lib/state";
 import { useRefresh } from "@/hooks/use-refresh";
+import type { ClassValue } from "clsx";
+import { cn } from "@/lib/utils";
 
 export interface AppUsageBarChartProps {
   data: EntityMap<App, WithGroupedDuration<App>[]>;
@@ -34,7 +36,7 @@ export interface AppUsageBarChartProps {
   gridHorizontal?: boolean;
   gradientBars?: boolean;
   animationsEnabled?: boolean;
-  className?: string;
+  className?: ClassValue;
   dateTimeFormatter?: (dt: DateTime) => string;
   onHover?: (data?: WithGroupedDuration<App>) => void;
 }
@@ -65,12 +67,16 @@ export function AppUsageBarChart({
 
   const involvedApps = useMemo(
     () =>
-      _(unflattenedData)
+      _(
+        singleAppId
+          ? { [singleAppId]: unflattenedData[singleAppId] }
+          : unflattenedData,
+      )
         .keys()
         .map((id) => apps[id as unknown as Ref<App>])
         .thru(handleStaleApps)
         .value(),
-    [handleStaleApps, unflattenedData],
+    [handleStaleApps, apps, unflattenedData, singleAppId],
   );
   // data is grouped by app, we regroup by timestamp.
   const data: AppUsageBarChartData[] = useMemo(() => {
@@ -148,7 +154,7 @@ export function AppUsageBarChart({
   };
 
   return (
-    <ChartContainer config={config} className={className}>
+    <ChartContainer config={config} className={cn(className)}>
       <BarChart accessibilityLayer data={data}>
         <defs>
           {gradientBars &&
@@ -167,9 +173,7 @@ export function AppUsageBarChart({
         <XAxis
           dataKey="key"
           hide={hideXAxis}
-          tickLine={false}
-          // tickMargin={10}
-          axisLine={false}
+          tickMargin={10}
           tickFormatter={(value) =>
             dateTimeFormatter(DateTime.fromMillis(value))
           }

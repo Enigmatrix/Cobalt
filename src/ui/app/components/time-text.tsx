@@ -11,6 +11,7 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from "@/components/ui/tooltip";
+import type { ClassValue } from "clsx";
 
 export function DateTimeText({
   ticks,
@@ -19,7 +20,7 @@ export function DateTimeText({
 }: {
   ticks?: number;
   datetime?: DateTime;
-  className?: string;
+  className?: ClassValue;
 }) {
   return (
     <TooltipProvider>

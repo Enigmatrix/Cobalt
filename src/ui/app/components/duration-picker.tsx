@@ -13,12 +13,13 @@ import { Input } from "@/components/ui/input";
 import parse from "parse-duration";
 import { Separator } from "@/components/ui/separator";
 import { durationToTicks, toHumanDurationFull } from "@/lib/time";
+import type { ClassValue } from "clsx";
 
 // disable parsing of these units
 ["y", "mo", "ms", "us", "ns"].forEach((u) => (parse.unit[u] = 0));
 
 type DurationPickerProps = {
-  className?: string;
+  className?: ClassValue;
   duration?: Duration;
   setDuration: React.Dispatch<React.SetStateAction<Duration | undefined>>;
   showIcon?: boolean;
@@ -132,7 +133,7 @@ export function DurationPicker({
       </PopoverTrigger>
       <PopoverContent className="w-auto p-4 flex flex-col gap-4" align="start">
         <div>
-          <Label className="">Quick input</Label>
+          <Label>Quick input</Label>
           <Input
             value={quickInput}
             onChange={(e) => setQuickInput(e.target.value)}

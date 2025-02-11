@@ -11,6 +11,7 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from "@/components/ui/tooltip";
+import type { ClassValue } from "clsx";
 
 export function DurationText({
   ticks,
@@ -19,13 +20,18 @@ export function DurationText({
 }: {
   ticks?: number;
   duration?: Duration;
-  className?: string;
+  className?: ClassValue;
 }) {
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <div className={cn("tracking-tighter", className)}>
+          <div
+            className={cn(
+              "tracking-tighter whitespace-nowrap truncate",
+              className,
+            )}
+          >
             {toHumanDuration(ticks ?? durationToTicks(duration!))}
           </div>
         </TooltipTrigger>

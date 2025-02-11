@@ -21,6 +21,8 @@ pub fn run() {
             repo::get_app_durations_per_period,
             repo::copy_seed_db,
             repo::update_usages_end,
+            repo::update_app,
+            repo::create_tag,
             tracing::log,
         ])
         .run(tauri::generate_context!())

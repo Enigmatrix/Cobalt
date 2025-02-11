@@ -6,11 +6,10 @@ import {
   BreadcrumbPage,
   BreadcrumbList,
 } from "@/components/ui/breadcrumb";
-import { useAppState, type EntityMap } from "@/lib/state";
+import type { EntityMap } from "@/lib/state";
 import type { App, Tag, WithGroupedDuration } from "@/lib/entities";
 import {
   memo,
-  useEffect,
   useMemo,
   useState,
   type CSSProperties,
@@ -36,17 +35,24 @@ import { ArrowDownUp, SortAsc, SortDesc } from "lucide-react";
 import _ from "lodash";
 import { Text } from "@/components/ui/text";
 import { dateTimeToTicks, durationToTicks } from "@/lib/time";
-import { getAppDurationsPerPeriod } from "@/lib/repo";
 import { DateTime, Duration } from "luxon";
 import { AppUsageBarChart } from "@/components/app-usage-chart";
 import { useToday } from "@/hooks/use-today";
-import { useRefresh } from "@/hooks/use-refresh";
+import { useApps, useTag } from "@/hooks/use-refresh";
 import { useSearch } from "@/hooks/use-search";
 import { DurationText } from "@/components/duration-text";
+import type { ClassValue } from "clsx";
+import { useAppDurationsPerPeriod } from "@/hooks/use-repo";
 
 const period = Duration.fromObject({ hour: 1 });
 
-function TagItem({ tag }: { tag: Tag }) {
+export function MiniTagItem({
+  tag,
+  className,
+}: {
+  tag: Tag;
+  className?: ClassValue;
+}) {
   return (
     <Badge
       variant="outline"
@@ -55,7 +61,7 @@ function TagItem({ tag }: { tag: Tag }) {
         color: tag.color,
         backgroundColor: "rgba(255, 255, 255, 0.2)",
       }}
-      className="whitespace-nowrap"
+      className={cn("whitespace-nowrap min-w-0", className)}
     >
       <Text className="max-w-32">{tag.name}</Text>
     </Badge>
@@ -98,19 +104,8 @@ function AppListItem({
   end: DateTime;
   period: Duration;
 }) {
-  const allTags = useAppState((state) => state.tags);
-  const { handleStaleTags } = useRefresh();
-  const tag = useMemo(() => {
-    if (app.tag_id === null) {
-      return null;
-    }
-    return handleStaleTags([allTags[app.tag_id]])[0] ?? null;
-  }, [allTags, handleStaleTags, app.tag_id]);
+  const tag = useTag(app.tag_id);
 
-  const singleUsage = useMemo(
-    () => ({ [app.id]: usages[app.id] }),
-    [usages, app.id],
-  );
   return (
     <NavLink
       to={`/apps/${app.id}`}
@@ -126,7 +121,7 @@ function AppListItem({
       <div className="flex flex-col min-w-0">
         <div className="inline-flex items-center gap-2">
           <Text className="text-lg font-semibold max-w-72">{app.name}</Text>
-          {tag && <TagItem tag={tag} />}
+          {tag && <MiniTagItem tag={tag} />}
         </div>
         <span className="inline-flex gap-1 items-center text-xs text-card-foreground/50">
           <Text className="max-w-48">{app.company}</Text>
@@ -147,7 +142,7 @@ function AppListItem({
             hideXAxis
             gradientBars
             maxYIsPeriod
-            data={singleUsage}
+            data={usages}
             singleAppId={app.id}
             rangeMinTicks={dateTimeToTicks(start)}
             rangeMaxTicks={dateTimeToTicks(end)}
@@ -184,8 +179,7 @@ type SortProperty =
 
 export default function Apps() {
   const today = useToday();
-  const { refreshToken, handleStaleApps } = useRefresh();
-  const apps = useAppState((state) => state.apps);
+  const apps = useApps();
 
   const [sortDirection, setSortDirection] = useState<SortDirection>(
     SortDirection.Descending,
@@ -193,32 +187,17 @@ export default function Apps() {
   const [sortProperty, setSortProperty] =
     useState<SortProperty>("usages.usage_today");
 
-  const appValues = useMemo(() => Object.values(apps), [apps]);
-  const [search, setSearch, appsFiltered] = useSearch(appValues, [
+  const [search, setSearch, appsFiltered] = useSearch(apps, [
     "name",
     "company",
     "description",
   ]);
   const appsSorted = useMemo(() => {
-    return _(appsFiltered)
-      .orderBy([sortProperty], [sortDirection])
-      .thru(handleStaleApps)
-      .value();
-  }, [appsFiltered, sortDirection, sortProperty, handleStaleApps]);
+    return _(appsFiltered).orderBy([sortProperty], [sortDirection]).value();
+  }, [appsFiltered, sortDirection, sortProperty]);
 
   const [start, end] = useMemo(() => [today, today.endOf("day")], [today]);
-
-  const [usages, setUsages] = useState<
-    EntityMap<App, WithGroupedDuration<App>[]>
-  >({});
-
-  useEffect(() => {
-    getAppDurationsPerPeriod({
-      start,
-      end,
-      period,
-    }).then((usages) => setUsages(usages));
-  }, [today, period, refreshToken]);
+  const { usages } = useAppDurationsPerPeriod({ start, end, period });
 
   const ListItem = memo(
     ({ index, style }: { index: number; style: CSSProperties }) => (

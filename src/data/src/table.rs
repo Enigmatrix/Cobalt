@@ -2,7 +2,7 @@ use std::fmt::Debug;
 use std::hash::{Hash, Hasher};
 use std::ops::Deref;
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use sqlx::prelude::{FromRow, Type};
 use sqlx::sqlite::SqliteRow;
 
@@ -20,7 +20,7 @@ pub trait Table {
 }
 
 /// Reference to a [Table] in the database via its unique identifier.
-#[derive(Default, Debug, Clone, Type, Serialize)]
+#[derive(Default, Debug, Clone, Type, Serialize, Deserialize)]
 #[sqlx(transparent)]
 pub struct Ref<T: Table>(pub T::Id);
 

@@ -15,6 +15,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Suspense, useMemo } from "react";
 import { initState } from "@/lib/state";
+import { Toaster } from "@/components/ui/sonner";
 
 export const links: Route.LinksFunction = () => [
   { rel: "stylesheet", href: stylesheet },
@@ -52,6 +53,7 @@ export default function App() {
           </SidebarProvider>
         </Await>
       </Suspense>
+      <Toaster />
     </ThemeProvider>
   );
 }
