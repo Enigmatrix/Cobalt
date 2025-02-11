@@ -5,6 +5,7 @@ import type { ClassValue } from "clsx";
 import { cn } from "@/lib/utils";
 import { DateTimeText } from "./time-text";
 import { DurationText } from "./duration-text";
+import { hexToRgb } from "@/lib/color-utils";
 
 function rotateArray<T>(arr: T[], n: number) {
   return arr.slice(n).concat(arr.slice(0, n));
@@ -13,6 +14,8 @@ function rotateArray<T>(arr: T[], n: number) {
 export interface HeatmapProps {
   startDate: DateTime;
   data: Map<number, number>; // DateTime -> value
+  emptyCellColorRgb?: string;
+  fullCellColorRgb?: string;
   className?: ClassValue;
   innerClassName?: ClassValue;
   axisClassName?: ClassValue;
@@ -42,7 +45,7 @@ const MONTHS = [
   "Dec",
 ];
 const CELL_SIZE = 14;
-const PADDING = 25;
+const PADDING = 30;
 
 const Heatmap: React.FC<HeatmapProps> = ({
   startDate,
@@ -51,6 +54,8 @@ const Heatmap: React.FC<HeatmapProps> = ({
   innerClassName,
   axisClassName,
   firstDayOfMonthClassName,
+  emptyCellColorRgb = "hsl(var(--muted))",
+  fullCellColorRgb = "#00FF00",
 }) => {
   const [tooltipData, setTooltipData] = useState<{
     x: number;
@@ -91,8 +96,11 @@ const Heatmap: React.FC<HeatmapProps> = ({
     return heatmapData.map((entry, index) => {
       const intensity = entry.value / 360000000000 + 0.1; // TODO this is 10 hours but needs to be configurable
       // TODO this color scaling needs to be configurable
+      const { r, g, b } = hexToRgb(fullCellColorRgb)!;
       const fill =
-        entry.value === 0 ? "#222222" : `rgba(0, 128, 0, ${intensity})`;
+        entry.value === 0
+          ? emptyCellColorRgb
+          : `rgba(${r} ${g} ${b}/ ${intensity})`;
       const cellDate = entry.date;
       const isFirstDayOfMonth = cellDate.day === 1;
 
@@ -104,7 +112,10 @@ const Heatmap: React.FC<HeatmapProps> = ({
           width={CELL_SIZE - 2}
           height={CELL_SIZE - 2}
           fill={fill}
-          className={cn(isFirstDayOfMonth && firstDayOfMonthClassName)}
+          className={cn(
+            isFirstDayOfMonth &&
+              cn("stroke-primary stroke-1", firstDayOfMonthClassName),
+          )}
           rx={3}
           onMouseEnter={(e) => {
             const rect = e.currentTarget.getBoundingClientRect();
@@ -126,11 +137,11 @@ const Heatmap: React.FC<HeatmapProps> = ({
     const yAxis = rotateArray(DAYS, 1).map((day, index) => (
       <text
         key={`day-${index}`}
-        x={PADDING - 5}
+        x={PADDING - 10}
         y={index * CELL_SIZE + PADDING + CELL_SIZE / 2}
         textAnchor="end"
         dominantBaseline="middle"
-        className={cn(axisClassName)}
+        className={cn("fill-muted-foreground/75", axisClassName)}
         fontSize={10}
       >
         {day}
@@ -147,7 +158,7 @@ const Heatmap: React.FC<HeatmapProps> = ({
           y={PADDING - 5}
           textAnchor="middle"
           fontSize={10}
-          className={cn(axisClassName)}
+          className={cn("fill-muted-foreground/75", axisClassName)}
         >
           {month}
         </text>
