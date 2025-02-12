@@ -119,7 +119,10 @@ impl ToTicks for Timestamp {
     }
 }
 
-fn to_local(sys: &SYSTEMTIME) -> SYSTEMTIME {
+fn to_local(sys: &SYSTEMTIME, local_tz: bool) -> SYSTEMTIME {
+    if !local_tz {
+        return *sys;
+    }
     let mut local_sys = SYSTEMTIME::default();
     unsafe {
         SystemTimeToTzSpecificLocalTime(None, sys as *const _, &mut local_sys)
@@ -128,7 +131,10 @@ fn to_local(sys: &SYSTEMTIME) -> SYSTEMTIME {
     local_sys
 }
 
-fn from_local(local_sys: &SYSTEMTIME) -> SYSTEMTIME {
+fn from_local(local_sys: &SYSTEMTIME, local_tz: bool) -> SYSTEMTIME {
+    if !local_tz {
+        return *local_sys;
+    }
     let mut sys = SYSTEMTIME::default();
 
     unsafe {
@@ -141,26 +147,26 @@ fn from_local(local_sys: &SYSTEMTIME) -> SYSTEMTIME {
 impl TimeSystem for Timestamp {
     type Ticks = Self;
 
-    fn day_start(&self) -> Self {
+    fn day_start(&self, local_tz: bool) -> Self {
         let sys = self.as_system_time();
-        let mut local_sys = to_local(&sys);
+        let mut local_sys = to_local(&sys, local_tz);
         local_sys.wHour = 0;
         local_sys.wMinute = 0;
         local_sys.wSecond = 0;
         local_sys.wMilliseconds = 0;
-        let sys = from_local(&local_sys);
+        let sys = from_local(&local_sys, local_tz);
 
         Self::from_system_time(sys)
     }
 
-    fn week_start(&self) -> Self {
+    fn week_start(&self, local_tz: bool) -> Self {
         let sys = self.as_system_time();
-        let mut local_sys = to_local(&sys);
+        let mut local_sys = to_local(&sys, local_tz);
         local_sys.wHour = 0;
         local_sys.wMinute = 0;
         local_sys.wSecond = 0;
         local_sys.wMilliseconds = 0;
-        let sys = from_local(&local_sys);
+        let sys = from_local(&local_sys, local_tz);
         let mut time = Self::from_system_time(sys);
         // make monday the start of the week. 0 == sunday
         if local_sys.wDayOfWeek == 0 {
@@ -172,14 +178,14 @@ impl TimeSystem for Timestamp {
         time
     }
 
-    fn month_start(&self) -> Self {
+    fn month_start(&self, local_tz: bool) -> Self {
         let sys = self.as_system_time();
-        let mut local_sys = to_local(&sys);
+        let mut local_sys = to_local(&sys, local_tz);
         local_sys.wHour = 0;
         local_sys.wMinute = 0;
         local_sys.wSecond = 0;
         local_sys.wMilliseconds = 0;
-        let sys = from_local(&local_sys);
+        let sys = from_local(&local_sys, local_tz);
         let mut time = Self::from_system_time(sys);
         time.ticks -= (local_sys.wDay - 1) as u64 * TICKS_PER_DAY;
         time
@@ -274,23 +280,23 @@ mod tests {
     fn day_start() {
         assert_eq!(
             "2000-02-18 00:00:00.000Z",
-            FEB_18_2000_18_05_20.day_start().to_string()
+            FEB_18_2000_18_05_20.day_start(false).to_string()
         );
         assert_eq!(
             "2000-03-04 00:00:00.000Z",
-            MAR_04_2000_09_04_02.day_start().to_string()
+            MAR_04_2000_09_04_02.day_start(false).to_string()
         );
     }
 
     #[test]
     fn week_start() {
         assert_eq!(
-            "2000-02-13 00:00:00.000Z",
-            FEB_18_2000_18_05_20.week_start().to_string()
+            "2000-02-14 00:00:00.000Z",
+            FEB_18_2000_18_05_20.week_start(false).to_string()
         );
         assert_eq!(
-            "2000-02-27 00:00:00.000Z",
-            MAR_04_2000_09_04_02.week_start().to_string()
+            "2000-02-28 00:00:00.000Z",
+            MAR_04_2000_09_04_02.week_start(false).to_string()
         );
     }
 
@@ -298,11 +304,11 @@ mod tests {
     fn month_start() {
         assert_eq!(
             "2000-02-01 00:00:00.000Z",
-            FEB_18_2000_18_05_20.month_start().to_string()
+            FEB_18_2000_18_05_20.month_start(false).to_string()
         );
         assert_eq!(
             "2000-03-01 00:00:00.000Z",
-            MAR_04_2000_09_04_02.month_start().to_string()
+            MAR_04_2000_09_04_02.month_start(false).to_string()
         );
     }
 }

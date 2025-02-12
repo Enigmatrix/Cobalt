@@ -262,9 +262,9 @@ impl AlertManager {
         &mut self,
         times: &impl TimeSystem,
     ) -> Result<Vec<TriggeredAlert>> {
-        let day_start = times.day_start().to_ticks();
-        let week_start = times.week_start().to_ticks();
-        let month_start = times.month_start().to_ticks();
+        let day_start = times.day_start(true).to_ticks();
+        let week_start = times.week_start(true).to_ticks();
+        let month_start = times.month_start(true).to_ticks();
         let result = query_as(include_str!("../queries/triggered_alerts.sql"))
             .bind(day_start)
             .bind(week_start)
@@ -279,9 +279,9 @@ impl AlertManager {
         &mut self,
         times: &impl TimeSystem,
     ) -> Result<Vec<TriggeredReminder>> {
-        let day_start = times.day_start().to_ticks();
-        let week_start = times.week_start().to_ticks();
-        let month_start = times.month_start().to_ticks();
+        let day_start = times.day_start(true).to_ticks();
+        let week_start = times.week_start(true).to_ticks();
+        let month_start = times.month_start(true).to_ticks();
         let result = query_as(include_str!("../queries/triggered_reminders.sql"))
             .bind(day_start)
             .bind(week_start)

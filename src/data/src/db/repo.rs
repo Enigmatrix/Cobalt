@@ -182,11 +182,11 @@ impl Repository {
             WHERE a.initialized = 1
             GROUP BY a.id"
         ))
-        .bind(ts.day_start().to_ticks())
+        .bind(ts.day_start(true).to_ticks())
         .bind(i64::MAX)
-        .bind(ts.week_start().to_ticks())
+        .bind(ts.week_start(true).to_ticks())
         .bind(i64::MAX)
-        .bind(ts.month_start().to_ticks())
+        .bind(ts.month_start(true).to_ticks())
         .bind(i64::MAX)
         .fetch_all(self.db.executor())
         .await?;
@@ -220,11 +220,11 @@ impl Repository {
                 LEFT JOIN apps a ON t.id = a.tag_id AND a.initialized = 1
             GROUP BY t.id"
         ))
-        .bind(ts.day_start().to_ticks())
+        .bind(ts.day_start(true).to_ticks())
         .bind(i64::MAX)
-        .bind(ts.week_start().to_ticks())
+        .bind(ts.week_start(true).to_ticks())
         .bind(i64::MAX)
-        .bind(ts.month_start().to_ticks())
+        .bind(ts.month_start(true).to_ticks())
         .bind(i64::MAX)
         .fetch_all(self.db.executor())
         .await?;
