@@ -7,6 +7,7 @@ use platform::objects::{
 };
 use util::error::Result;
 use util::future::sync::Mutex;
+use util::time::ToTicks;
 use util::tracing::{info, ResultTraceExt};
 
 use crate::cache::Cache;
@@ -44,7 +45,7 @@ impl Sentry {
                 .insert_reminder_event(&ReminderEvent {
                     id: Default::default(),
                     reminder: triggered_reminder.reminder.id.0.into(),
-                    timestamp: now.into(),
+                    timestamp: now.to_ticks(),
                 })
                 .await?;
         }
@@ -106,8 +107,8 @@ impl Sentry {
             }
             TriggerAction::Dim(dur) => {
                 let windows = self.windows_for_target(&alert.target).await?;
-                let start = timestamp.unwrap_or(now.into());
-                let end: Timestamp = now.into();
+                let start = timestamp.unwrap_or(now.to_ticks());
+                let end: Timestamp = now.to_ticks();
                 let progress = (end - start) as f64 / (*dur as f64);
                 for window in windows {
                     let dim_level = 1.0f64 - progress.min(1.0f64);
@@ -127,7 +128,7 @@ impl Sentry {
                 .insert_alert_event(&AlertEvent {
                     id: Default::default(),
                     alert: alert.id.0.clone().into(),
-                    timestamp: now.into(),
+                    timestamp: now.to_ticks(),
                 })
                 .await?;
         }
