@@ -52,7 +52,7 @@ export function UsageCard({
           </div>
           <div className="flex gap-2 items-baseline font-semibold">
             <DurationText className="text-xl" ticks={usage} />
-            {usage !== 0 && (
+            {usage !== 0 && totalUsage !== 0 && (
               <>
                 <span className="text-xl text-muted-foreground">/</span>
                 <DurationText
