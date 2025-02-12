@@ -23,7 +23,7 @@ import { DurationText } from "@/components/time/duration-text";
 import { useApps, useTags } from "@/hooks/use-refresh";
 import type { EntityMap } from "@/lib/state";
 import { NavLink } from "react-router";
-import { ArrowDownUp, SortAsc, SortDesc, TagIcon } from "lucide-react";
+import { ArrowDownUp, Plus, SortAsc, SortDesc, TagIcon } from "lucide-react";
 import { useAppDurationsPerPeriod } from "@/hooks/use-repo";
 import { useSearch } from "@/hooks/use-search";
 import { useToday } from "@/hooks/use-today";
@@ -45,6 +45,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { dateTimeToTicks, durationToTicks } from "@/lib/time";
 import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
+import { CreateTagDialog } from "@/components/tag/create-tag-dialog";
+import { createTag } from "@/lib/repo";
 
 const period = Duration.fromObject({ hour: 1 });
 
@@ -281,6 +283,18 @@ export default function Tags() {
             </DropdownMenuRadioGroup>
           </DropdownMenuContent>
         </DropdownMenu>
+
+        <CreateTagDialog
+          trigger={
+            <Button variant="outline">
+              <Plus />
+              Create Tag
+            </Button>
+          }
+          onSubmit={async (tag) => {
+            await createTag(tag);
+          }}
+        ></CreateTagDialog>
       </header>
 
       <div className="flex flex-1 flex-col max-w-full overflow-hidden">
