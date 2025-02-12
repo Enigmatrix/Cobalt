@@ -1,6 +1,6 @@
 import type { App, Ref, WithGroupedDuration } from "@/lib/entities";
 import _ from "lodash";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -15,7 +15,7 @@ import {
   ChartTooltip,
 } from "@/components/ui/chart";
 import { ticksToDateTime, toHumanDateTime } from "@/lib/time";
-import type { ContentType } from "recharts/types/component/Label";
+import type { ContentType, Props } from "recharts/types/component/Label";
 import { toDataUrl } from "@/components/app/app-icon";
 import { AppUsageChartTooltipContent } from "@/components/viz/app-usage-chart-tooltip";
 import { DateTime } from "luxon";
@@ -125,7 +125,7 @@ export function AppUsageBarChart({
 
   const config = {} satisfies ChartConfig; // TODO: generate config
 
-  const renderCustomizedLabel: ContentType = (props) => {
+  const renderCustomizedLabel: ContentType = useCallback((props: Props) => {
     const {
       x: xValue,
       y: yValue,
@@ -151,7 +151,7 @@ export function AppUsageBarChart({
         pointerEvents="none"
       />
     );
-  };
+  }, []);
 
   return (
     <ChartContainer config={config} className={cn(className)}>
