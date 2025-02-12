@@ -20,7 +20,7 @@ import { FixedSizeList as List } from "react-window";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { cn } from "@/lib/utils";
 import { NavLink } from "react-router";
-import AppIcon from "@/components/app-icon";
+import AppIcon from "@/components/app/app-icon";
 import { SearchBar } from "@/components/search-bar";
 import {
   DropdownMenu,
@@ -36,11 +36,11 @@ import _ from "lodash";
 import { Text } from "@/components/ui/text";
 import { dateTimeToTicks, durationToTicks } from "@/lib/time";
 import { DateTime, Duration } from "luxon";
-import { AppUsageBarChart } from "@/components/app-usage-chart";
+import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
 import { useToday } from "@/hooks/use-today";
 import { useApps, useTag } from "@/hooks/use-refresh";
 import { useSearch } from "@/hooks/use-search";
-import { DurationText } from "@/components/duration-text";
+import { DurationText } from "@/components/time/duration-text";
 import type { ClassValue } from "clsx";
 import { useAppDurationsPerPeriod } from "@/hooks/use-repo";
 

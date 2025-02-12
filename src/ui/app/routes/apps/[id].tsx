@@ -12,8 +12,8 @@ import {
 } from "@/components/ui/breadcrumb";
 import { useAppState } from "@/lib/state";
 import { isUwp, type App, type Ref, type Tag } from "@/lib/entities";
-import AppIcon from "@/components/app-icon";
-import { AppUsageBarChart } from "@/components/app-usage-chart";
+import AppIcon from "@/components/app/app-icon";
+import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
 import { useCallback, useMemo, useState } from "react";
 import { DateTime, Duration } from "luxon";
 import { useApp, useTag, useTags } from "@/hooks/use-refresh";
@@ -41,7 +41,7 @@ import {
 } from "@/components/ui/popover";
 import { SearchBar } from "@/components/search-bar";
 import { useSearch } from "@/hooks/use-search";
-import { CreateTagDialog } from "@/components/create-tag-dialog";
+import { CreateTagDialog } from "@/components/tag/create-tag-dialog";
 import {
   DayUsageCard,
   MonthUsageCard,
@@ -49,7 +49,7 @@ import {
   YearUsageCard,
   type TimePeriodUsageCardProps,
 } from "@/components/usage-card";
-import Heatmap from "@/components/heatmap";
+import Heatmap from "@/components/viz/heatmap";
 import { useAppDurationsPerPeriod } from "@/hooks/use-repo";
 
 function ChooseTagPopover({

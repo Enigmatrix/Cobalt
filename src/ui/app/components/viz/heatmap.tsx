@@ -3,8 +3,8 @@ import { useMemo, useRef, useState } from "react";
 import { DateTime, Interval } from "luxon";
 import type { ClassValue } from "clsx";
 import { cn } from "@/lib/utils";
-import { DateTimeText } from "@/components/time-text";
-import { DurationText } from "@/components/duration-text";
+import { DateTimeText } from "@/components/time/time-text";
+import { DurationText } from "@/components/time/duration-text";
 import { hexToRgb } from "@/lib/color-utils";
 
 function rotateArray<T>(arr: T[], n: number) {

@@ -3,11 +3,11 @@ import * as RechartsPrimitive from "recharts";
 import { cn } from "@/lib/utils";
 import _ from "lodash";
 import type { App, Ref } from "@/lib/entities";
-import AppIcon from "@/components/app-icon";
+import AppIcon from "@/components/app/app-icon";
 import { useAppState } from "@/lib/state";
 import { DateTime } from "luxon";
-import { DurationText } from "@/components/duration-text";
-import { DateTimeText } from "@/components/time-text";
+import { DurationText } from "@/components/time/duration-text";
+import { DateTimeText } from "@/components/time/time-text";
 
 export const AppUsageChartTooltipContent = React.forwardRef<
   HTMLDivElement,
