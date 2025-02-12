@@ -8,6 +8,7 @@ use scoped_futures::ScopedFutureExt;
 use util::error::{Context, Result};
 use util::future::runtime::Handle;
 use util::future::sync::Mutex;
+use util::time::ToTicks;
 use util::tracing::{info, trace, ResultTraceExt};
 
 use crate::cache::{AppDetails, Cache, SessionDetails};
@@ -54,8 +55,8 @@ impl Engine {
         ret.current_usage = Usage {
             id: Default::default(),
             session_id: ret.get_session_details(foreground).await?,
-            start: start.into(),
-            end: start.into(),
+            start: start.to_ticks(),
+            end: start.to_ticks(),
         };
 
         Ok(ret)
@@ -67,7 +68,7 @@ impl Engine {
             Event::ForegroundChanged(ForegroundChangedEvent { at, session }) => {
                 info!("fg switch: {:?}", session);
 
-                self.current_usage.end = at.into();
+                self.current_usage.end = at.to_ticks();
                 self.inserter
                     .insert_or_update_usage(&mut self.current_usage)
                     .await?;
@@ -80,8 +81,8 @@ impl Engine {
                     self.current_usage = Usage {
                         id: Default::default(),
                         session_id: session.clone(),
-                        start: at.into(),
-                        end: at.into(),
+                        start: at.to_ticks(),
+                        end: at.to_ticks(),
                     };
                 }
 
@@ -90,7 +91,7 @@ impl Engine {
             Event::Tick(now) => {
                 trace!("tick at {:?}", now);
 
-                self.current_usage.end = now.into();
+                self.current_usage.end = now.to_ticks();
                 self.inserter
                     .insert_or_update_usage(&mut self.current_usage)
                     .await?;
@@ -105,8 +106,8 @@ impl Engine {
                 self.inserter
                     .insert_interaction_period(&InteractionPeriod {
                         id: Default::default(),
-                        start: self.active_period_start.into(),
-                        end: at.into(),
+                        start: self.active_period_start.to_ticks(),
+                        end: at.to_ticks(),
                         mouse_clicks: recorded_mouse_clicks,
                         key_strokes: recorded_key_presses,
                     })

@@ -4,6 +4,7 @@ use data::db::repo::{infused, WithDuration, WithGroupedDuration};
 use data::entities::{App, Duration, Ref, Tag, Timestamp};
 use tauri::State;
 use util::error::Context;
+use util::time::ToTicks;
 use util::tracing;
 
 use crate::error::AppResult;
@@ -99,7 +100,7 @@ pub async fn update_usages_end(state: State<'_, AppState>) -> AppResult<()> {
         .assume_init_mut()
         .get_repo()
         .await?
-        .update_usages_set_last(now.into())
+        .update_usages_set_last(now.to_ticks())
         .await?;
     Ok(())
 }
