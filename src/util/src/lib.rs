@@ -1,3 +1,5 @@
+//! Common utils shared by all crates
+
 /// Channel base
 pub mod channels;
 /// Configuration module

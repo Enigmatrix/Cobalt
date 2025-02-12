@@ -1,3 +1,5 @@
+//! Tauri build script
+
 mod error;
 mod repo;
 mod state;
