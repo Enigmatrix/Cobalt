@@ -23,7 +23,7 @@ import {
   ticksToDuration,
 } from "@/lib/time";
 import { Text } from "@/components/ui/text";
-import { TagIcon } from "lucide-react";
+import { TagIcon, TrashIcon } from "lucide-react";
 import { EditableText } from "@/components/editable-text";
 import { ColorPicker } from "@/components/color-picker";
 import _ from "lodash";
@@ -39,6 +39,19 @@ import {
   useAppDurationsPerPeriod,
   useTagDurationsPerPeriod,
 } from "@/hooks/use-repo";
+import { Button, buttonVariants } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useNavigate } from "react-router";
 
 function TagUsageBarChartCard({
   card,
@@ -116,6 +129,7 @@ export default function Tag({ params }: Route.ComponentProps) {
   const id = +params.id;
   const tag = useTag(id as Ref<Tag>)!;
   const updateTag = useAppState((state) => state.updateTag);
+  const removeTag = useAppState((state) => state.removeTag);
   const [color, setColorInner] = useState(tag.color);
   const debouncedUpdateColor = useDebouncedCallback(async (color: string) => {
     await updateTag({ ...tag, color });
@@ -128,6 +142,12 @@ export default function Tag({ params }: Route.ComponentProps) {
     },
     [setColorInner, debouncedUpdateColor],
   );
+
+  const navigate = useNavigate();
+  const remove = useCallback(async () => {
+    await navigate("/tags");
+    await removeTag(tag.id);
+  }, [removeTag, navigate, tag.id]);
 
   const [range, setRange] = useState<
     { start: DateTime; end: DateTime } | undefined
@@ -208,6 +228,31 @@ export default function Tag({ params }: Route.ComponentProps) {
                 color={color}
                 onChange={setColor}
               />
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button size="icon" variant="outline">
+                    <TrashIcon />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Remove Tag?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action cannot be undone. All Apps using this Tag will
+                      be marked as Untagged.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={remove}
+                      className={buttonVariants({ variant: "destructive" })}
+                    >
+                      Remove
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </div>
         </div>
