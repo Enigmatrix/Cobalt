@@ -20,10 +20,13 @@ use crate::table::Table;
 /// Either we found the row or we just inserted it.
 #[derive(Debug, PartialEq, Eq)]
 pub enum FoundOrInserted<T: Table> {
+    /// Found the row
     Found(Ref<T>),
+    /// Inserted a new row
     Inserted(Ref<T>),
 }
 
+/// Repository module
 pub mod repo;
 
 impl<T: Table> From<FoundOrInserted<T>> for Ref<T> {
@@ -214,17 +217,22 @@ impl AppUpdater {
 /// [Alert] that was triggered from a [Target]
 #[derive(Debug, PartialEq, Eq, Clone, FromRow)]
 pub struct TriggeredAlert {
+    /// Actual [Alert]
     #[sqlx(flatten)]
     pub alert: Alert,
+    /// When the [Alert] was originally triggered
     pub timestamp: Option<Timestamp>,
+    /// Name of the offending target (App/Tag)
     pub name: String,
 }
 
 /// [Reminder] that was triggered from a [Target]
 #[derive(Debug, Clone, FromRow)]
 pub struct TriggeredReminder {
+    /// Actual [Reminder]
     #[sqlx(flatten)]
     pub reminder: Reminder,
+    /// Name of the offending target (App/Tag)
     pub name: String,
 }
 

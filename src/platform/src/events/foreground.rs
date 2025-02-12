@@ -9,14 +9,18 @@ pub struct ForegroundEventWatcher {
 
 /// Foreground window session change event.
 pub struct ForegroundChangedEvent {
+    /// Timestamp of foreground window session change
     pub at: Timestamp,
+    /// New [WindowSession] details
     pub session: WindowSession,
 }
 
 /// A session of a [Window]. Each session has a unique title.
 #[derive(Debug, Clone, Hash, Eq, PartialEq)]
 pub struct WindowSession {
+    /// Foreground [Window]
     pub window: Window,
+    /// Foreground [Window] title
     pub title: String,
 }
 

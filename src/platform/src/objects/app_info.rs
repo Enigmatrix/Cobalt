@@ -12,9 +12,13 @@ use crate::objects::FileVersionInfo;
 
 /// Information about an App
 pub struct AppInfo {
+    /// Name
     pub name: String,
+    /// Description
     pub description: String,
+    /// Company
     pub company: String,
+    /// Logo as bytes
     pub logo: Vec<u8>,
 }
 

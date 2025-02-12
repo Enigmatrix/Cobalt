@@ -74,7 +74,9 @@ pub type Duration = i64;
 /// Unique identifier with Version
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, FromRow, Serialize)]
 pub struct VersionedId {
+    /// Unique identifier
     pub id: i64,
+    /// Version, so previous versions of the same entity can exist
     pub version: i64,
 }
 

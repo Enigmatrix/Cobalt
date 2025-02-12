@@ -29,12 +29,18 @@ pub struct InteractionWatcher {
 
 /// Event for change in interaction state.
 pub enum InteractionChangedEvent {
+    /// Just became idle
     BecameIdle {
+        /// Timestamp of idleness
         at: Timestamp,
+        /// Mouse clicks in the preceding active period
         recorded_mouse_clicks: i64,
+        /// Recorded key presses in the preceding active period
         recorded_key_presses: i64,
     },
+    /// Just became active
     BecameActive {
+        /// Timestamp of active start
         at: Timestamp,
     },
 }
