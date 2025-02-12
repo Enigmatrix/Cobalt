@@ -19,9 +19,16 @@ import { DateTime, Duration } from "luxon";
 import { useApp, useTag, useTags } from "@/hooks/use-refresh";
 import {
   dateTimeToTicks,
+  dayChartPeriod,
+  dayXAxisFormatter,
   durationToTicks,
+  monthChartPeriod,
+  monthXAxisFormatter,
   ticksToDateTime,
   ticksToDuration,
+  weekChartPeriod,
+  weekXAxisFormatter,
+  yearChartPeriod,
 } from "@/lib/time";
 import { Text } from "@/components/ui/text";
 import { Button } from "@/components/ui/button";
@@ -231,14 +238,6 @@ function AppUsageBarChartCard({
     isLoading,
   });
 }
-
-const dayChartPeriod = Duration.fromObject({ hour: 1 });
-const weekChartPeriod = Duration.fromObject({ day: 1 });
-const monthChartPeriod = Duration.fromObject({ day: 1 });
-const yearChartPeriod = Duration.fromObject({ day: 1 });
-const dayXAxisFormatter = (dateTime: DateTime) => dateTime.toFormat("HHmm");
-const weekXAxisFormatter = (dateTime: DateTime) => dateTime.toFormat("EEE");
-const monthXAxisFormatter = (dateTime: DateTime) => dateTime.toFormat("dd");
 
 export default function App({ params }: Route.ComponentProps) {
   const id = +params.id;

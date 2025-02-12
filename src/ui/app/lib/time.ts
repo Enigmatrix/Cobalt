@@ -58,3 +58,14 @@ export function toHumanDateTime(dt: DateTime): string {
 export function toHumanDateTimeFull(dt: DateTime): string {
   return dt.toFormat("LLL dd, y hh:mm:ss a");
 }
+
+export const dayChartPeriod = Duration.fromObject({ hour: 1 });
+export const weekChartPeriod = Duration.fromObject({ day: 1 });
+export const monthChartPeriod = Duration.fromObject({ day: 1 });
+export const yearChartPeriod = Duration.fromObject({ day: 1 });
+export const dayXAxisFormatter = (dateTime: DateTime) =>
+  dateTime.toFormat("HHmm");
+export const weekXAxisFormatter = (dateTime: DateTime) =>
+  dateTime.toFormat("EEE");
+export const monthXAxisFormatter = (dateTime: DateTime) =>
+  dateTime.toFormat("dd");
