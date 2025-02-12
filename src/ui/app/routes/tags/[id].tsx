@@ -15,7 +15,7 @@ import { type Ref, type Tag } from "@/lib/entities";
 import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
 import { useCallback, useMemo, useState } from "react";
 import { DateTime, Duration } from "luxon";
-import { useApps, useTag } from "@/hooks/use-refresh";
+import { useTag } from "@/hooks/use-refresh";
 import {
   dateTimeToTicks,
   durationToTicks,
