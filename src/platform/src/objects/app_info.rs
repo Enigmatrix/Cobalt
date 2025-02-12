@@ -18,7 +18,9 @@ pub struct AppInfo {
     pub logo: Vec<u8>,
 }
 
+/// Image size for Win32 apps
 pub const WIN32_IMAGE_SIZE: u32 = 64;
+/// Image size for UWP apps
 pub const UWP_IMAGE_SIZE: f32 = 256.0;
 
 impl AppInfo {

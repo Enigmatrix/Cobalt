@@ -7,17 +7,22 @@ use windows::Win32::UI::WindowsAndMessaging::{
     CallNextHookEx, SetWindowsHookExW, UnhookWindowsHookEx, HHOOK, WINDOWS_HOOK_ID,
 };
 
+/// Instance of a Windows hook attached to a [WindowsHookType].
 pub struct WindowsHook<T: WindowsHookType> {
     hook: HHOOK,
     _t: PhantomData<T>,
 }
 
+/// Trait for the type of Windows Hook.
 pub trait WindowsHookType {
+    /// Callback for the [WindowsHook].
     fn callback(code: i32, wparam: WPARAM, lparam: LPARAM);
+    /// Id for the [WindowsHook], the type of Windows Hook being used.
     fn id() -> WINDOWS_HOOK_ID;
 }
 
 impl<T: WindowsHookType> WindowsHook<T> {
+    /// Global hook for the given hook type.
     pub fn global() -> Result<WindowsHook<T>> {
         let hook = unsafe {
             SetWindowsHookExW(T::id(), Some(Self::trampoline), HMODULE::default(), 0)

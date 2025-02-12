@@ -2,10 +2,12 @@ use util::error::{Context, Result};
 
 use crate::objects::{Timestamp, Window};
 
+/// Watches for foreground window changes, including session (title) changes
 pub struct ForegroundEventWatcher {
     session: WindowSession,
 }
 
+/// Foreground window session change event.
 pub struct ForegroundChangedEvent {
     pub at: Timestamp,
     pub session: WindowSession,

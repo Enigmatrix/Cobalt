@@ -110,6 +110,7 @@ impl InteractionWatcher {
     }
 }
 
+/// Windows Hook for Low Level Mouse
 pub struct MouseLL;
 
 impl WindowsHookType for MouseLL {
@@ -135,6 +136,7 @@ impl WindowsHookType for MouseLL {
     }
 }
 
+/// Windows Hook for Low Level Keyboard
 pub struct KeyboardLL;
 
 impl WindowsHookType for KeyboardLL {
