@@ -61,6 +61,20 @@ export const useAppState = create<AppState>((set) => {
 
       set((state) =>
         produce((draft: AppState) => {
+          const oldTagId = draft.apps[app.id]?.tag_id;
+          const newTagId = app.tag_id;
+          if (oldTagId) {
+            const apps = draft.tags[oldTagId]?.apps;
+            if (apps) {
+              apps.splice(apps.indexOf(app.id), 1);
+            }
+          }
+          if (newTagId) {
+            const apps = draft.tags[newTagId]?.apps;
+            if (apps) {
+              apps.push(app.id);
+            }
+          }
           draft.apps[app.id] = { ...draft.apps[app.id], ...app };
         })(state),
       );
