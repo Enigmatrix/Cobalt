@@ -7,9 +7,9 @@ pub trait ToTicks {
 pub trait TimeSystem {
     type Ticks: ToTicks;
     /// Get the start of the day
-    fn day_start(&self) -> Self::Ticks;
+    fn day_start(&self, local_tz: bool) -> Self::Ticks;
     /// Get the start of the week. The week starts on Sunday.
-    fn week_start(&self) -> Self::Ticks;
+    fn week_start(&self, local_tz: bool) -> Self::Ticks;
     /// Get the start of the month
-    fn month_start(&self) -> Self::Ticks;
+    fn month_start(&self, local_tz: bool) -> Self::Ticks;
 }
