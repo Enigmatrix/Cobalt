@@ -7,6 +7,7 @@ import {
   createTag,
   getApps,
   getTags,
+  removeTag,
   updateApp,
   updateTag,
   type CreateTag,
@@ -47,6 +48,7 @@ type AppState = {
   updateApp: (app: App) => Promise<void>;
   updateTag: (app: Tag) => Promise<void>;
   createTag: (tag: CreateTag) => Promise<Ref<Tag>>;
+  removeTag: (tagId: Ref<Tag>) => Promise<void>;
 };
 
 export const useAppState = create<AppState>((set) => {
@@ -90,6 +92,14 @@ export const useAppState = create<AppState>((set) => {
       );
 
       return tagId;
+    },
+    removeTag: async (tagId) => {
+      await removeTag(tagId);
+      set((state) =>
+        produce((draft: AppState) => {
+          delete draft.tags[tagId];
+        })(state),
+      );
     },
   };
 });

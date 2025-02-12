@@ -158,3 +158,13 @@ pub async fn create_tag(
     };
     Ok(repo.create_tag(&tag).await?)
 }
+
+#[tauri::command]
+#[tracing::instrument(err, skip(state))]
+pub async fn remove_tag(state: State<'_, AppState>, tag_id: Ref<Tag>) -> AppResult<()> {
+    let mut repo = {
+        let mut state = state.write().await;
+        state.assume_init_mut().get_repo().await?
+    };
+    Ok(repo.remove_tag(tag_id).await?)
+}

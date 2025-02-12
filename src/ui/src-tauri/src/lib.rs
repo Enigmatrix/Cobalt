@@ -28,6 +28,7 @@ pub fn run() {
             repo::update_app,
             repo::update_tag,
             repo::create_tag,
+            repo::remove_tag,
             tracing::log,
         ])
         .run(tauri::generate_context!())

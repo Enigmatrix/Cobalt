@@ -123,3 +123,7 @@ export async function updateTag(tag: Tag): Promise<void> {
 export async function createTag(tag: CreateTag): Promise<Ref<Tag>> {
   return await invoke("create_tag", { tag });
 }
+
+export async function removeTag(tagId: Ref<Tag>): Promise<void> {
+  return await invoke("remove_tag", { tagId });
+}

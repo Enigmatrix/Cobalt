@@ -468,4 +468,13 @@ impl Repository {
             .await?;
         Ok(Ref::new(res.last_insert_rowid()))
     }
+
+    /// Removes a [Tag]
+    pub async fn remove_tag(&mut self, tag_id: Ref<Tag>) -> Result<()> {
+        query("DELETE FROM tags WHERE id = ?")
+            .bind(tag_id)
+            .execute(self.db.executor())
+            .await?;
+        Ok(())
+    }
 }
