@@ -79,6 +79,26 @@ export async function getAppDurationsPerPeriod({
   });
 }
 
+export async function getTagDurationsPerPeriod({
+  options,
+  start,
+  end,
+  period,
+}: {
+  options?: QueryOptions;
+  start: DateTime;
+  end: DateTime;
+  period: Duration;
+}): Promise<EntityMap<Tag, WithGroupedDuration<Tag>[]>> {
+  const queryOptions = getQueryOptions(options);
+  return await invoke("get_tag_durations_per_period", {
+    queryOptions,
+    start: dateTimeToTicks(start),
+    end: dateTimeToTicks(end),
+    period: durationToTicks(period),
+  });
+}
+
 export async function updateApp(app: App): Promise<void> {
   const updatedApp = {
     id: app.id,

@@ -77,6 +77,25 @@ pub async fn get_app_durations_per_period(
 
 #[tauri::command]
 #[tracing::instrument(err, skip(state))]
+pub async fn get_tag_durations_per_period(
+    state: State<'_, AppState>,
+    _query_options: QueryOptions,
+    start: Timestamp,
+    end: Timestamp,
+    period: Duration,
+) -> AppResult<HashMap<Ref<Tag>, Vec<WithGroupedDuration<Tag>>>> {
+    let mut repo = {
+        let state = state.read().await;
+        state.assume_init().get_repo().await?
+    };
+    let res = repo
+        .get_tag_durations_per_period(start, end, period)
+        .await?;
+    Ok(res)
+}
+
+#[tauri::command]
+#[tracing::instrument(err, skip(state))]
 pub async fn copy_seed_db(state: State<'_, AppState>) -> AppResult<()> {
     // drop previous state - also drops the db connection
     {
