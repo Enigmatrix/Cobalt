@@ -87,17 +87,12 @@ impl Timestamp {
         let ft_ticks: u64 = unsafe { mem::transmute(ft) };
         ft_ticks + FILE_TIME_OFFSET
     }
-}
 
-impl From<u64> for Timestamp {
-    fn from(t: u64) -> Self {
-        Self { ticks: t }
-    }
-}
-
-impl From<i64> for Timestamp {
-    fn from(t: i64) -> Self {
-        Self { ticks: t as u64 }
+    /// Convert [Timestamp] from ticks
+    pub fn from_ticks(ticks: i64) -> Self {
+        Self {
+            ticks: ticks as u64,
+        }
     }
 }
 
