@@ -21,7 +21,7 @@ import {
 } from "react";
 import { DurationText } from "@/components/time/duration-text";
 import { useApps, useTags } from "@/hooks/use-refresh";
-import type { EntityMap } from "@/lib/state";
+import { useAppState, type EntityMap } from "@/lib/state";
 import { NavLink } from "react-router";
 import { ArrowDownUp, Plus, SortAsc, SortDesc, TagIcon } from "lucide-react";
 import { useAppDurationsPerPeriod } from "@/hooks/use-repo";
@@ -46,7 +46,6 @@ import { Button } from "@/components/ui/button";
 import { dateTimeToTicks, durationToTicks } from "@/lib/time";
 import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
 import { CreateTagDialog } from "@/components/tag/create-tag-dialog";
-import { createTag } from "@/lib/repo";
 
 const period = Duration.fromObject({ hour: 1 });
 
@@ -113,6 +112,7 @@ function TagListItem({
       .fromPairs()
       .value();
   }, [usages, apps]);
+
   return (
     <NavLink
       to={`/tags/${tag.id}`}
@@ -188,6 +188,7 @@ type SortProperty =
 export default function Tags() {
   const today = useToday();
   const tags = useTags();
+  const createTag = useAppState((state) => state.createTag);
 
   const [sortDirection, setSortDirection] = useState<SortDirection>(
     SortDirection.Descending,
