@@ -18,12 +18,15 @@ export function useRefresh() {
   };
 }
 
-export function useApps() {
+export function useApps(appIds?: Ref<App>[]) {
   const allApps = useAppState((state) => state.apps);
   const { handleStaleApps } = useRefresh();
   const apps = useMemo(() => {
-    return handleStaleApps(Object.values(allApps));
-  }, [allApps, handleStaleApps]);
+    const filteredApps = appIds
+      ? appIds.map((id) => allApps[id])
+      : Object.values(allApps);
+    return handleStaleApps(filteredApps);
+  }, [allApps, handleStaleApps, appIds]);
   return apps;
 }
 
@@ -37,12 +40,15 @@ export function useApp(appId: Ref<App> | null): App | null {
   return app;
 }
 
-export function useTags() {
+export function useTags(tagIds?: Ref<Tag>[]) {
   const allTags = useAppState((state) => state.tags);
   const { handleStaleTags } = useRefresh();
   const tags = useMemo(() => {
-    return handleStaleTags(Object.values(allTags));
-  }, [allTags, handleStaleTags]);
+    const filteredTags = tagIds
+      ? tagIds.map((id) => allTags[id])
+      : Object.values(allTags);
+    return handleStaleTags(filteredTags);
+  }, [allTags, handleStaleTags, tagIds]);
   return tags;
 }
 

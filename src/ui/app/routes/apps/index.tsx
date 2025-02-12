@@ -43,6 +43,7 @@ import { useSearch } from "@/hooks/use-search";
 import { DurationText } from "@/components/time/duration-text";
 import type { ClassValue } from "clsx";
 import { useAppDurationsPerPeriod } from "@/hooks/use-repo";
+import { SortDirection } from "@/hooks/use-sort";
 
 const period = Duration.fromObject({ hour: 1 });
 
@@ -163,11 +164,6 @@ function AppListItem({
       ) : null}
     </NavLink>
   );
-}
-
-enum SortDirection {
-  Ascending = "asc",
-  Descending = "desc",
 }
 
 type SortProperty =
