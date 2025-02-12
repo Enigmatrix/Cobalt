@@ -194,12 +194,13 @@ function AppUsageBarChartCard({
     { start: DateTime; end: DateTime } | undefined
   >(undefined);
 
-  const { isLoading, appUsage, totalUsage, usages } = useAppDurationsPerPeriod({
-    start: range?.start,
-    end: range?.end,
-    period: period,
-    appId,
-  });
+  const { isLoading, appUsage, totalUsage, usages, start, end } =
+    useAppDurationsPerPeriod({
+      start: range?.start,
+      end: range?.end,
+      period: period,
+      appId,
+    });
 
   const children = useMemo(
     () => (
@@ -209,8 +210,8 @@ function AppUsageBarChartCard({
             data={usages}
             singleAppId={appId}
             periodTicks={durationToTicks(period)}
-            rangeMinTicks={dateTimeToTicks(range!.start)}
-            rangeMaxTicks={dateTimeToTicks(range!.end)}
+            rangeMinTicks={dateTimeToTicks(start ?? range!.start)}
+            rangeMaxTicks={dateTimeToTicks(end ?? range!.end)}
             dateTimeFormatter={xAxisLabelFormatter}
             gradientBars
             className="aspect-none"
@@ -219,7 +220,7 @@ function AppUsageBarChartCard({
         )}
       </div>
     ),
-    [usages, period, xAxisLabelFormatter, range, appId],
+    [usages, period, xAxisLabelFormatter, range, start, end, appId],
   );
 
   return card({
@@ -267,6 +268,7 @@ export default function App({ params }: Route.ComponentProps) {
     appUsage: yearUsage,
     totalUsage: yearTotalUsage,
     usages: yearUsages,
+    start: yearRangeStart,
   } = useAppDurationsPerPeriod({
     start: range?.start,
     end: range?.end,
@@ -413,7 +415,7 @@ export default function App({ params }: Route.ComponentProps) {
               <Heatmap
                 data={yearData}
                 scaling={scaling}
-                startDate={range?.start}
+                startDate={yearRangeStart ?? range.start}
                 fullCellColorRgb={app.color}
                 innerClassName="min-h-[200px]"
                 firstDayOfMonthClassName="stroke-card-foreground/50"

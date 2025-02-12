@@ -197,15 +197,19 @@ export default function Apps() {
   }, [appsFiltered, sortDirection, sortProperty]);
 
   const [start, end] = useMemo(() => [today, today.endOf("day")], [today]);
-  const { usages } = useAppDurationsPerPeriod({ start, end, period });
+  const {
+    usages,
+    start: loadStart,
+    end: loadEnd,
+  } = useAppDurationsPerPeriod({ start, end, period });
 
   const ListItem = memo(
     ({ index, style }: { index: number; style: CSSProperties }) => (
       <VirtualListItem style={style}>
         <AppListItem
           app={appsSorted[index]}
-          start={start}
-          end={end}
+          start={loadStart ?? start}
+          end={loadEnd ?? end}
           period={period}
           usages={usages}
         />
