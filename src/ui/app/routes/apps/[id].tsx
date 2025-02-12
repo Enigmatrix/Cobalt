@@ -12,8 +12,8 @@ import {
 } from "@/components/ui/breadcrumb";
 import { useAppState } from "@/lib/state";
 import { isUwp, type App, type Ref, type Tag } from "@/lib/entities";
-import AppIcon from "@/components/app-icon";
-import { AppUsageBarChart } from "@/components/app-usage-chart";
+import AppIcon from "@/components/app/app-icon";
+import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
 import { useCallback, useMemo, useState } from "react";
 import { DateTime, Duration } from "luxon";
 import { useApp, useTag, useTags } from "@/hooks/use-refresh";
@@ -41,7 +41,7 @@ import {
 } from "@/components/ui/popover";
 import { SearchBar } from "@/components/search-bar";
 import { useSearch } from "@/hooks/use-search";
-import { CreateTagDialog } from "@/components/create-tag-dialog";
+import { CreateTagDialog } from "@/components/tag/create-tag-dialog";
 import {
   DayUsageCard,
   MonthUsageCard,
@@ -49,7 +49,7 @@ import {
   YearUsageCard,
   type TimePeriodUsageCardProps,
 } from "@/components/usage-card";
-import Heatmap from "@/components/heatmap";
+import Heatmap from "@/components/viz/heatmap";
 import { useAppDurationsPerPeriod } from "@/hooks/use-repo";
 
 function ChooseTagPopover({
@@ -194,12 +194,13 @@ function AppUsageBarChartCard({
     { start: DateTime; end: DateTime } | undefined
   >(undefined);
 
-  const { isLoading, appUsage, totalUsage, usages } = useAppDurationsPerPeriod({
-    start: range?.start,
-    end: range?.end,
-    period: period,
-    appId,
-  });
+  const { isLoading, appUsage, totalUsage, usages, start, end } =
+    useAppDurationsPerPeriod({
+      start: range?.start,
+      end: range?.end,
+      period: period,
+      appId,
+    });
 
   const children = useMemo(
     () => (
@@ -209,8 +210,8 @@ function AppUsageBarChartCard({
             data={usages}
             singleAppId={appId}
             periodTicks={durationToTicks(period)}
-            rangeMinTicks={dateTimeToTicks(range!.start)}
-            rangeMaxTicks={dateTimeToTicks(range!.end)}
+            rangeMinTicks={dateTimeToTicks(start ?? range!.start)}
+            rangeMaxTicks={dateTimeToTicks(end ?? range!.end)}
             dateTimeFormatter={xAxisLabelFormatter}
             gradientBars
             className="aspect-none"
@@ -219,7 +220,7 @@ function AppUsageBarChartCard({
         )}
       </div>
     ),
-    [usages, range, appId],
+    [usages, period, xAxisLabelFormatter, range, start, end, appId],
   );
 
   return card({
@@ -267,6 +268,7 @@ export default function App({ params }: Route.ComponentProps) {
     appUsage: yearUsage,
     totalUsage: yearTotalUsage,
     usages: yearUsages,
+    start: yearRangeStart,
   } = useAppDurationsPerPeriod({
     start: range?.start,
     end: range?.end,
@@ -282,7 +284,7 @@ export default function App({ params }: Route.ComponentProps) {
         )
         .value(),
     );
-  }, [yearUsages]);
+  }, [yearUsages, app.id]);
 
   const scaling = useCallback((value: number) => {
     return _.clamp(ticksToDuration(value).rescale().hours / 8, 0.2, 1);
@@ -413,7 +415,7 @@ export default function App({ params }: Route.ComponentProps) {
               <Heatmap
                 data={yearData}
                 scaling={scaling}
-                startDate={range?.start}
+                startDate={yearRangeStart ?? range.start}
                 fullCellColorRgb={app.color}
                 innerClassName="min-h-[200px]"
                 firstDayOfMonthClassName="stroke-card-foreground/50"

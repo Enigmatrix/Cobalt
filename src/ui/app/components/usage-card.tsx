@@ -2,7 +2,7 @@ import type { DateTime } from "luxon";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { DurationText } from "@/components/duration-text";
+import { DurationText } from "@/components/time/duration-text";
 import { useToday } from "@/hooks/use-today";
 
 export function UsageCard({
@@ -31,20 +31,17 @@ export function UsageCard({
   const [start, setStart] = useState(originalStart);
 
   const next = useCallback(() => {
-    const newStart = nextFn(start);
-    setStart(newStart);
-    onChanged({ start: newStart, end: endFn(newStart) });
+    setStart(nextFn(start));
   }, [nextFn, start, setStart]);
 
   const prev = useCallback(() => {
-    const newStart = prevFn(start);
-    setStart(newStart);
-    onChanged({ start: newStart, end: endFn(newStart) });
+    setStart(prevFn(start));
   }, [prevFn, start, setStart]);
 
+  // runs on mounted, and when these props change
   useEffect(() => {
     onChanged({ start, end: endFn(start) });
-  }, []);
+  }, [start, onChanged, endFn]);
 
   return (
     <div className="flex flex-col rounded-xl bg-muted/50">

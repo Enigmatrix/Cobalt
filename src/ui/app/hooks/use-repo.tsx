@@ -22,7 +22,10 @@ export function useAppDurationsPerPeriod({
     appUsage: number;
     totalUsage: number;
     usages: EntityMap<App, WithGroupedDuration<App>[]>;
-  }>({ appUsage: 0, totalUsage: 0, usages: {} });
+    start?: DateTime;
+    end?: DateTime;
+    period?: Duration;
+  }>({ appUsage: 0, totalUsage: 0, usages: {}, start, end, period });
   const [isLoading, startTransition] = useTransition();
   useEffect(() => {
     startTransition(async () => {
@@ -39,6 +42,9 @@ export function useAppDurationsPerPeriod({
         appUsage,
         totalUsage,
         usages,
+        start,
+        end,
+        period,
       });
     });
   }, [start, end, period, appId, refreshToken, startTransition]);

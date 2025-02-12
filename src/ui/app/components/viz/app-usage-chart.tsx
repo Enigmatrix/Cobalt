@@ -16,8 +16,8 @@ import {
 } from "@/components/ui/chart";
 import { ticksToDateTime, toHumanDateTime } from "@/lib/time";
 import type { ContentType } from "recharts/types/component/Label";
-import { toDataUrl } from "@/components/app-icon";
-import { AppUsageChartTooltipContent } from "@/components/app-usage-chart-tooltip";
+import { toDataUrl } from "@/components/app/app-icon";
+import { AppUsageChartTooltipContent } from "@/components/viz/app-usage-chart-tooltip";
 import { DateTime } from "luxon";
 import { useAppState, type EntityMap } from "@/lib/state";
 import { useRefresh } from "@/hooks/use-refresh";
