@@ -5,7 +5,10 @@ use util::error::Result;
 use util::time::{TimeSystem, ToTicks};
 use windows::Win32::Foundation::{FILETIME, SYSTEMTIME};
 use windows::Win32::System::SystemInformation::{GetSystemTimePreciseAsFileTime, GetTickCount64};
-use windows::Win32::System::Time::{FileTimeToSystemTime, SystemTimeToFileTime};
+use windows::Win32::System::Time::{
+    FileTimeToSystemTime, SystemTimeToFileTime, SystemTimeToTzSpecificLocalTime,
+    TzSpecificLocalTimeToSystemTime,
+};
 
 // https://github.com/dotnet/runtime/blob/333b3d898dbc4372046f9ba74ad912fba62d55ff/src/libraries/System.Private.CoreLib/src/System/DateTime.cs
 const MICROSECONDS_PER_MILLISECOND: u64 = 1000;
@@ -116,37 +119,69 @@ impl ToTicks for Timestamp {
     }
 }
 
+fn to_local(sys: &SYSTEMTIME) -> SYSTEMTIME {
+    let mut local_sys = SYSTEMTIME::default();
+    unsafe {
+        SystemTimeToTzSpecificLocalTime(None, sys as *const _, &mut local_sys)
+            .expect("convert to local time");
+    }
+    local_sys
+}
+
+fn from_local(local_sys: &SYSTEMTIME) -> SYSTEMTIME {
+    let mut sys = SYSTEMTIME::default();
+
+    unsafe {
+        TzSpecificLocalTimeToSystemTime(None, local_sys as *const _, &mut sys)
+            .expect("convert from local time");
+    }
+    sys
+}
+
 impl TimeSystem for Timestamp {
     type Ticks = Self;
 
     fn day_start(&self) -> Self {
-        let mut sys = self.as_system_time();
-        sys.wHour = 0;
-        sys.wMinute = 0;
-        sys.wSecond = 0;
-        sys.wMilliseconds = 0;
+        let sys = self.as_system_time();
+        let mut local_sys = to_local(&sys);
+        local_sys.wHour = 0;
+        local_sys.wMinute = 0;
+        local_sys.wSecond = 0;
+        local_sys.wMilliseconds = 0;
+        let sys = from_local(&local_sys);
+
         Self::from_system_time(sys)
     }
 
     fn week_start(&self) -> Self {
-        let mut sys = self.as_system_time();
-        sys.wHour = 0;
-        sys.wMinute = 0;
-        sys.wSecond = 0;
-        sys.wMilliseconds = 0;
+        let sys = self.as_system_time();
+        let mut local_sys = to_local(&sys);
+        local_sys.wHour = 0;
+        local_sys.wMinute = 0;
+        local_sys.wSecond = 0;
+        local_sys.wMilliseconds = 0;
+        let sys = from_local(&local_sys);
         let mut time = Self::from_system_time(sys);
-        time.ticks -= sys.wDayOfWeek as u64 * TICKS_PER_DAY;
+        // make monday the start of the week. 0 == sunday
+        if local_sys.wDayOfWeek == 0 {
+            time.ticks -= 6 * TICKS_PER_DAY;
+        } else {
+            time.ticks -= (local_sys.wDayOfWeek - 1) as u64 * TICKS_PER_DAY;
+        }
+
         time
     }
 
     fn month_start(&self) -> Self {
-        let mut sys = self.as_system_time();
-        sys.wHour = 0;
-        sys.wMinute = 0;
-        sys.wSecond = 0;
-        sys.wMilliseconds = 0;
+        let sys = self.as_system_time();
+        let mut local_sys = to_local(&sys);
+        local_sys.wHour = 0;
+        local_sys.wMinute = 0;
+        local_sys.wSecond = 0;
+        local_sys.wMilliseconds = 0;
+        let sys = from_local(&local_sys);
         let mut time = Self::from_system_time(sys);
-        time.ticks -= (sys.wDay - 1) as u64 * TICKS_PER_DAY;
+        time.ticks -= (local_sys.wDay - 1) as u64 * TICKS_PER_DAY;
         time
     }
 }
