@@ -20,10 +20,12 @@ use crate::adapt_size;
 use crate::buf::WideBuffer;
 use crate::error::IntoResult;
 
+/// Identified of the [Process]. May be recycled.
 pub type ProcessId = u32;
 
 const APPLICATION_FRAME_HOST: &str = r"C:\Windows\System32\ApplicationFrameHost.exe";
 
+/// Representation of a [Process] on the system, namely its handle
 pub struct Process {
     handle: HANDLE,
 }

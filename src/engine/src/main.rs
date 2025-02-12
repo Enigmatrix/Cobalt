@@ -3,6 +3,8 @@
     windows_subsystem = "windows"
 )] // disable console window in non-debug
 
+//! Engine running in the background
+
 use std::sync::Arc;
 use std::thread;
 

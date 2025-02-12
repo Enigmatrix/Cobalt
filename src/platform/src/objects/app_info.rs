@@ -1,3 +1,5 @@
+use std::mem::swap;
+
 use util::error::Result;
 use windows::core::AgileReference;
 use windows::ApplicationModel::AppInfo as UWPAppInfo;
@@ -10,13 +12,19 @@ use crate::objects::FileVersionInfo;
 
 /// Information about an App
 pub struct AppInfo {
+    /// Name
     pub name: String,
+    /// Description
     pub description: String,
+    /// Company
     pub company: String,
+    /// Logo as bytes
     pub logo: Vec<u8>,
 }
 
+/// Image size for Win32 apps
 pub const WIN32_IMAGE_SIZE: u32 = 64;
+/// Image size for UWP apps
 pub const UWP_IMAGE_SIZE: f32 = 256.0;
 
 impl AppInfo {
@@ -39,10 +47,18 @@ impl AppInfo {
         let mut logo = vec![0u8; size];
         reader.ReadBytes(&mut logo)?;
 
+        // yes, this is swapper, this is surprisingly more accurate.
+        let mut name = fv.query_value("FileDescription")?;
+        let mut description = fv.query_value("ProductName")?;
+        // exceptions
+        if description.ends_with(".exe") {
+            swap(&mut name, &mut description);
+        }
+
         Ok(AppInfo {
             // not sure why FileDescription is the actual name of the app...
-            name: fv.query_value("FileDescription")?,
-            description: fv.query_value("ProductName")?,
+            name,
+            description,
             company: fv.query_value("CompanyName")?,
             logo,
         })

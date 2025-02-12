@@ -8,9 +8,13 @@ use windows::UI::Notifications::{ToastNotification, ToastNotificationManager};
 /// [Progress](https://learn.microsoft.com/en-us/windows/apps/design/shell/tiles-and-notifications/adaptive-interactive-toasts?tabs=xml#progress-bar)
 /// for Toast notifications.
 pub struct Progress {
+    /// Title
     pub title: String,
+    /// Progress value
     pub value: f64,
+    /// Progress value text
     pub value_string_override: String,
+    /// Status
     pub status: String,
 }
 

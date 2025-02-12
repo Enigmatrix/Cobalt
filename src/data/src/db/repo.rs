@@ -12,19 +12,27 @@ pub struct Repository {
     pub(crate) db: Database,
 }
 
+/// Duration grouped into target
 #[derive(Clone, Debug, Default, PartialEq, Eq, FromRow, Serialize)]
 pub struct WithDuration<T: Table> {
+    /// Target Identifier
     pub id: Ref<T>,
+    /// Duration value
     pub duration: crate::table::Duration,
 }
 
+/// Duration grouped into target, period chunks
 #[derive(Clone, Debug, Default, PartialEq, Eq, FromRow, Serialize)]
 pub struct WithGroupedDuration<T: Table> {
+    /// Target Identifier
     pub id: Ref<T>,
+    /// Time Period group
     pub group: crate::table::Timestamp,
+    /// Duration value
     pub duration: crate::table::Duration,
 }
 
+/// List of [Ref<T>]
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize)]
 pub struct RefVec<T: Table>(pub Vec<Ref<T>>);
 
@@ -64,52 +72,74 @@ impl<T: Table> sqlx::Type<Sqlite> for RefVec<T> {
     }
 }
 
-// Entities with extra information embedded.
+/// Entities with extra information embedded.
 pub mod infused {
     use serde::Deserialize;
 
     use super::*;
     use crate::table::Color;
 
+    /// Usages of the target
     #[derive(Debug, Clone, PartialEq, Eq, Serialize, FromRow)]
     pub struct UsageInfo {
+        /// Usage today
         pub usage_today: crate::table::Duration,
+        /// Usage this week
         pub usage_week: crate::table::Duration,
+        /// Usage this month
         pub usage_month: crate::table::Duration,
     }
 
+    /// Options to update a [super::App]
     #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
     pub struct UpdatedApp {
+        /// Identifier
         pub id: Ref<super::App>,
+        /// Name
         pub name: String,
+        /// Description
         pub description: String,
+        /// Company
         pub company: String,
+        /// Color
         pub color: Color,
+        /// Linked [super::Tag]
         pub tag_id: Option<Ref<super::Tag>>,
     }
 
+    /// [super::App] with additional information
     #[derive(Debug, Clone, PartialEq, Eq, Serialize, FromRow)]
     pub struct App {
         #[sqlx(flatten)]
         #[serde(flatten)]
+        /// [super::App] itself
         pub inner: super::App,
+        /// List of linked [super::App]s
         #[sqlx(flatten)]
+        /// Usage Info
         usages: UsageInfo,
     }
 
+    /// [super::Tag] with additional information
     #[derive(Debug, Clone, PartialEq, Eq, Serialize, FromRow)]
     pub struct Tag {
         #[sqlx(flatten)]
         #[serde(flatten)]
+        /// [super::Tag] itself
         pub inner: super::Tag,
+        /// List of linked [super::App]s
         pub apps: RefVec<super::App>,
         #[sqlx(flatten)]
+        /// Usage Info
         usages: UsageInfo,
     }
 
+    /// Options to create a new [super::Tag]
     #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
     pub struct CreateTag {
+        /// Name
         pub name: String,
+        /// Color
         pub color: String,
     }
 }
@@ -182,11 +212,11 @@ impl Repository {
             WHERE a.initialized = 1
             GROUP BY a.id"
         ))
-        .bind(ts.day_start().to_ticks())
+        .bind(ts.day_start(true).to_ticks())
         .bind(i64::MAX)
-        .bind(ts.week_start().to_ticks())
+        .bind(ts.week_start(true).to_ticks())
         .bind(i64::MAX)
-        .bind(ts.month_start().to_ticks())
+        .bind(ts.month_start(true).to_ticks())
         .bind(i64::MAX)
         .fetch_all(self.db.executor())
         .await?;
@@ -220,11 +250,11 @@ impl Repository {
                 LEFT JOIN apps a ON t.id = a.tag_id AND a.initialized = 1
             GROUP BY t.id"
         ))
-        .bind(ts.day_start().to_ticks())
+        .bind(ts.day_start(true).to_ticks())
         .bind(i64::MAX)
-        .bind(ts.week_start().to_ticks())
+        .bind(ts.week_start(true).to_ticks())
         .bind(i64::MAX)
-        .bind(ts.month_start().to_ticks())
+        .bind(ts.month_start(true).to_ticks())
         .bind(i64::MAX)
         .fetch_all(self.db.executor())
         .await?;

@@ -540,15 +540,15 @@ impl ToTicks for Tick {
 impl TimeSystem for Times {
     type Ticks = Tick;
 
-    fn day_start(&self) -> Self::Ticks {
+    fn day_start(&self, _: bool) -> Self::Ticks {
         Tick(self.day_start)
     }
 
-    fn week_start(&self) -> Self::Ticks {
+    fn week_start(&self, _: bool) -> Self::Ticks {
         Tick(self.week_start)
     }
 
-    fn month_start(&self) -> Self::Ticks {
+    fn month_start(&self, _: bool) -> Self::Ticks {
         Tick(self.month_start)
     }
 }

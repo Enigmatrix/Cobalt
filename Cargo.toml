@@ -6,3 +6,6 @@ exclude = ["src/ui"]
 [workspace.package]
 version = "0.5.0"
 edition = "2021"
+
+[workspace.lints.rust]
+missing_docs = "deny"
