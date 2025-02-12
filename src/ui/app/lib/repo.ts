@@ -91,6 +91,15 @@ export async function updateApp(app: App): Promise<void> {
   return await invoke("update_app", { app: updatedApp });
 }
 
+export async function updateTag(tag: Tag): Promise<void> {
+  const updatedTag = {
+    id: tag.id,
+    name: tag.name,
+    color: tag.color,
+  };
+  return await invoke("update_tag", { tag: updatedTag });
+}
+
 export async function createTag(tag: CreateTag): Promise<Ref<Tag>> {
   return await invoke("create_tag", { tag });
 }

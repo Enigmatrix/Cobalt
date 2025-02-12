@@ -8,6 +8,7 @@ import {
   getApps,
   getTags,
   updateApp,
+  updateTag,
   type CreateTag,
 } from "@/lib/repo";
 import { checkForUpdatesBackground } from "@/lib/updater";
@@ -44,6 +45,7 @@ type AppState = {
   apps: EntityStore<App>;
   tags: EntityStore<Tag>;
   updateApp: (app: App) => Promise<void>;
+  updateTag: (app: Tag) => Promise<void>;
   createTag: (tag: CreateTag) => Promise<Ref<Tag>>;
 };
 
@@ -58,6 +60,15 @@ export const useAppState = create<AppState>((set) => {
       set((state) =>
         produce((draft: AppState) => {
           draft.apps[app.id] = { ...draft.apps[app.id], ...app };
+        })(state),
+      );
+    },
+    updateTag: async (tag) => {
+      await updateTag(tag);
+
+      set((state) =>
+        produce((draft: AppState) => {
+          draft.tags[tag.id] = { ...draft.tags[tag.id], ...tag };
         })(state),
       );
     },

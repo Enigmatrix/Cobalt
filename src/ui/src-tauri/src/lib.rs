@@ -25,6 +25,7 @@ pub fn run() {
             repo::copy_seed_db,
             repo::update_usages_end,
             repo::update_app,
+            repo::update_tag,
             repo::create_tag,
             tracing::log,
         ])

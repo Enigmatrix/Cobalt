@@ -118,6 +118,17 @@ pub async fn update_app(state: State<'_, AppState>, app: infused::UpdatedApp) ->
 
 #[tauri::command]
 #[tracing::instrument(err, skip(state))]
+pub async fn update_tag(state: State<'_, AppState>, tag: infused::UpdatedTag) -> AppResult<()> {
+    let mut repo = {
+        let mut state = state.write().await;
+        state.assume_init_mut().get_repo().await?
+    };
+    repo.update_tag(&tag).await?;
+    Ok(())
+}
+
+#[tauri::command]
+#[tracing::instrument(err, skip(state))]
 pub async fn create_tag(
     state: State<'_, AppState>,
     tag: infused::CreateTag,

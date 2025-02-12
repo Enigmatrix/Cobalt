@@ -2,7 +2,6 @@ use std::collections::HashMap;
 use std::ops::Deref;
 use std::str::FromStr;
 
-use infused::UpdatedApp;
 use serde::Serialize;
 
 use super::*;
@@ -137,6 +136,17 @@ pub mod infused {
     /// Options to create a new [super::Tag]
     #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
     pub struct CreateTag {
+        /// Name
+        pub name: String,
+        /// Color
+        pub color: String,
+    }
+
+    /// Options to update a [super::Tag]
+    #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+    pub struct UpdatedTag {
+        /// Identifier
+        pub id: Ref<super::Tag>,
         /// Name
         pub name: String,
         /// Color
@@ -352,7 +362,7 @@ impl Repository {
     }
 
     /// Update the [App] with additional information
-    pub async fn update_app(&mut self, app: &UpdatedApp) -> Result<()> {
+    pub async fn update_app(&mut self, app: &infused::UpdatedApp) -> Result<()> {
         query(
             "UPDATE apps SET
                     name = ?,
@@ -369,6 +379,22 @@ impl Repository {
         .bind(&app.color)
         .bind(&app.tag_id)
         .bind(&app.id)
+        .execute(self.db.executor())
+        .await?;
+        Ok(())
+    }
+
+    /// Update the [Tag] with additional information
+    pub async fn update_tag(&mut self, tag: &infused::UpdatedTag) -> Result<()> {
+        query(
+            "UPDATE tags SET
+                    name = ?,
+                    color = ?
+                WHERE id = ?",
+        )
+        .bind(&tag.name)
+        .bind(&tag.color)
+        .bind(&tag.id)
         .execute(self.db.executor())
         .await?;
         Ok(())
