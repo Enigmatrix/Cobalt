@@ -31,7 +31,7 @@ impl QueryOptions {
     /// Get the current time 'now' from the options
     pub fn get_now(&self) -> platform::objects::Timestamp {
         if let Some(now) = self.now {
-            now.into()
+            platform::objects::Timestamp::from_ticks(now)
         } else {
             platform::objects::Timestamp::now()
         }
