@@ -48,8 +48,8 @@ const multiSelectVariants = cva(
 /**
  * Props for MultiSelect component
  */
-interface MultiSelectProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+interface MultiSelectProps<T>
+  extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "defaultValue">,
     VariantProps<typeof multiSelectVariants> {
   /**
    * An array of option objects to be displayed in the multi-select component.
@@ -59,7 +59,7 @@ interface MultiSelectProps
     /** The text to display for the option. */
     label: string;
     /** The unique value associated with the option. */
-    value: string;
+    id: T;
     /** Optional icon component to display alongside the option. */
     icon?: React.ComponentType<{ className?: string }>;
   }[];
@@ -68,10 +68,10 @@ interface MultiSelectProps
    * Callback function triggered when the selected values change.
    * Receives an array of the new selected values.
    */
-  onValueChange: (value: string[]) => void;
+  onValueChange: (value: T[]) => void;
 
   /** The default selected values when the component mounts. */
-  defaultValue?: string[];
+  defaultValue?: T[];
 
   /**
    * Placeholder text to be displayed when no values are selected.
@@ -105,7 +105,7 @@ interface MultiSelectProps
   className?: string;
 }
 
-export function MultiSelect({
+export function MultiSelect<T>({
   options,
   onValueChange,
   variant,
@@ -116,9 +116,8 @@ export function MultiSelect({
   asChild = false,
   className,
   ...props
-}: MultiSelectProps) {
-  const [selectedValues, setSelectedValues] =
-    React.useState<string[]>(defaultValue);
+}: MultiSelectProps<T>) {
+  const [selectedValues, setSelectedValues] = React.useState<T[]>(defaultValue);
   const [isPopoverOpen, setIsPopoverOpen] = React.useState(false);
 
   const handleInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -132,7 +131,7 @@ export function MultiSelect({
     }
   };
 
-  const toggleOption = (option: string) => {
+  const toggleOption = (option: T) => {
     const newSelectedValues = selectedValues.includes(option)
       ? selectedValues.filter((value) => value !== option)
       : [...selectedValues, option];
@@ -159,7 +158,7 @@ export function MultiSelect({
     if (selectedValues.length === options.length) {
       handleClear();
     } else {
-      const allValues = options.map((option) => option.value);
+      const allValues = options.map((option) => option.id);
       setSelectedValues(allValues);
       onValueChange(allValues);
     }
@@ -184,11 +183,11 @@ export function MultiSelect({
             <div className="flex justify-between items-center w-full">
               <div className="flex flex-wrap items-center">
                 {selectedValues.slice(0, maxCount).map((value) => {
-                  const option = options.find((o) => o.value === value);
+                  const option = options.find((o) => o.id === value);
                   const IconComponent = option?.icon;
                   return (
                     <Badge
-                      key={value}
+                      key={JSON.stringify(value)}
                       className={cn(multiSelectVariants({ variant }))}
                     >
                       {IconComponent && (
@@ -279,11 +278,11 @@ export function MultiSelect({
                 <span>(Select All)</span>
               </CommandItem>
               {options.map((option) => {
-                const isSelected = selectedValues.includes(option.value);
+                const isSelected = selectedValues.includes(option.id);
                 return (
                   <CommandItem
-                    key={option.value}
-                    onSelect={() => toggleOption(option.value)}
+                    key={JSON.stringify(option.id)}
+                    onSelect={() => toggleOption(option.id)}
                     className="cursor-pointer"
                   >
                     <div
