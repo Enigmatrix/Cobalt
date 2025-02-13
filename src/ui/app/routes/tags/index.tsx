@@ -21,9 +21,9 @@ import {
 } from "react";
 import { DurationText } from "@/components/time/duration-text";
 import { useApps, useTags } from "@/hooks/use-refresh";
-import type { EntityMap } from "@/lib/state";
+import { useAppState, type EntityMap } from "@/lib/state";
 import { NavLink } from "react-router";
-import { ArrowDownUp, SortAsc, SortDesc, TagIcon } from "lucide-react";
+import { ArrowDownUp, Plus, SortAsc, SortDesc, TagIcon } from "lucide-react";
 import { useAppDurationsPerPeriod } from "@/hooks/use-repo";
 import { useSearch } from "@/hooks/use-search";
 import { useToday } from "@/hooks/use-today";
@@ -45,6 +45,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { dateTimeToTicks, durationToTicks } from "@/lib/time";
 import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
+import { CreateTagDialog } from "@/components/tag/create-tag-dialog";
 
 const period = Duration.fromObject({ hour: 1 });
 
@@ -58,18 +59,21 @@ export function MiniAppItem({
   return (
     <div
       className={cn(
-        "whitespace-nowrap min-w-0 flex gap-2 py-1 px-2 rounded-md border border-border bg-muted/50",
+        "whitespace-nowrap min-w-0 flex gap-2 py-1 px-2 rounded-md border border-border h-6 items-center bg-secondary",
         className,
       )}
+      style={{
+        backgroundColor: "rgba(255, 255, 255, 0.1)",
+      }}
     >
       <AppIcon buffer={app?.icon} className="w-4 h-4" />
-      <Text className="max-w-52 text-sm">{app?.name ?? ""}</Text>
+      <Text className="max-w-52 text-xs">{app?.name ?? ""}</Text>
     </div>
   );
 }
 
 // Virtual list item for react-window. Actual height in style
-// is ignored, instead we use h-28 and h-32 (if last, to show bottom gap).
+// is ignored, instead we use h-24 and h-28 (if last, to show bottom gap).
 // There is a h-4 gap at the top of each item.
 function VirtualListItem({
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -83,7 +87,7 @@ function VirtualListItem({
     // Due to how virtualization works, the last:h-28 triggers for the last item
     // in the *window*, it just happens that due to overscanning that last item
     // is hidden unless it's the actual last item in the list.
-    <div className="flex flex-col px-4 h-28 last:h-32" style={style}>
+    <div className="flex flex-col px-4 h-24 last:h-28" style={style}>
       {/* gap */}
       <div className="h-4" />
       {children}
@@ -111,11 +115,12 @@ function TagListItem({
       .fromPairs()
       .value();
   }, [usages, apps]);
+
   return (
     <NavLink
       to={`/tags/${tag.id}`}
       className={cn(
-        "h-24 shadow-sm rounded-md flex items-center gap-2 p-4 @container",
+        "h-20 shadow-sm rounded-md flex items-center gap-2 p-4 @container",
         "ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
         "disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none cursor-pointer",
         "bg-card text-card-foreground hover:bg-muted/75 border-border border",
@@ -130,7 +135,7 @@ function TagListItem({
         <Text className="text-lg font-semibold max-w-72">{tag.name}</Text>
         {apps.length !== 0 && (
           <HorizontalOverflowList
-            className="gap-1 h-8"
+            className="gap-1 h-6 -mb-2"
             items={apps}
             renderItem={(app) => <MiniAppItem key={app.id} app={app} />}
             renderOverflowItem={(app) => <MiniAppItem key={app.id} app={app} />}
@@ -140,7 +145,7 @@ function TagListItem({
                 style={{
                   backgroundColor: "rgba(255, 255, 255, 0.2)",
                 }}
-                className="whitespace-nowrap ml-1 text-card-foreground/60 rounded-md h-8"
+                className="whitespace-nowrap ml-1 text-card-foreground/60 rounded-md h-6"
               >{`+${items.length}`}</Badge>
             )}
           />
@@ -186,6 +191,7 @@ type SortProperty =
 export default function Tags() {
   const today = useToday();
   const tags = useTags();
+  const createTag = useAppState((state) => state.createTag);
 
   const [sortDirection, setSortDirection] = useState<SortDirection>(
     SortDirection.Descending,
@@ -281,6 +287,18 @@ export default function Tags() {
             </DropdownMenuRadioGroup>
           </DropdownMenuContent>
         </DropdownMenu>
+
+        <CreateTagDialog
+          trigger={
+            <Button variant="outline">
+              <Plus />
+              Create Tag
+            </Button>
+          }
+          onSubmit={async (tag) => {
+            await createTag(tag);
+          }}
+        ></CreateTagDialog>
       </header>
 
       <div className="flex flex-1 flex-col max-w-full overflow-hidden">
@@ -290,7 +308,7 @@ export default function Tags() {
               itemData={tagsSorted} // this is to trigger a rerender on sort/filter
               height={height}
               width={width}
-              itemSize={112} // 28rem, manually calculated
+              itemSize={96} // 24rem, manually calculated
               itemCount={tagsSorted.length}
             >
               {ListItem}

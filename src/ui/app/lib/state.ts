@@ -7,7 +7,9 @@ import {
   createTag,
   getApps,
   getTags,
+  removeTag,
   updateApp,
+  updateTag,
   type CreateTag,
 } from "@/lib/repo";
 import { checkForUpdatesBackground } from "@/lib/updater";
@@ -44,10 +46,13 @@ type AppState = {
   apps: EntityStore<App>;
   tags: EntityStore<Tag>;
   updateApp: (app: App) => Promise<void>;
+  updateTag: (app: Tag) => Promise<void>;
+  updateTagApps: (tag: Tag, apps: Ref<App>[]) => Promise<void>;
   createTag: (tag: CreateTag) => Promise<Ref<Tag>>;
+  removeTag: (tagId: Ref<Tag>) => Promise<void>;
 };
 
-export const useAppState = create<AppState>((set) => {
+export const useAppState = create<AppState>((set, get) => {
   return {
     lastRefresh: DateTime.now(),
     apps: [],
@@ -57,7 +62,62 @@ export const useAppState = create<AppState>((set) => {
 
       set((state) =>
         produce((draft: AppState) => {
+          const oldTagId = draft.apps[app.id]?.tag_id;
+          const newTagId = app.tag_id;
+          if (oldTagId) {
+            const apps = draft.tags[oldTagId]?.apps;
+            if (apps) {
+              apps.splice(apps.indexOf(app.id), 1);
+            }
+          }
+          if (newTagId) {
+            const apps = draft.tags[newTagId]?.apps;
+            if (apps) {
+              apps.push(app.id);
+            }
+          }
           draft.apps[app.id] = { ...draft.apps[app.id], ...app };
+        })(state),
+      );
+    },
+    updateTag: async (tag) => {
+      await updateTag(tag);
+
+      set((state) =>
+        produce((draft: AppState) => {
+          draft.tags[tag.id] = { ...draft.tags[tag.id], ...tag };
+        })(state),
+      );
+    },
+    updateTagApps: async (tag, apps) => {
+      const allApps = get().apps;
+      const removedApps = tag.apps.filter((id) => !apps.includes(id));
+      const addedApps = apps.filter((id) => !tag.apps.includes(id));
+      // TODO batch update
+      await Promise.all(
+        removedApps.map(
+          async (appId) =>
+            await updateApp({ ...allApps[appId]!, tag_id: null }),
+        ),
+      );
+      await Promise.all(
+        addedApps.map(
+          async (appId) =>
+            await updateApp({ ...allApps[appId]!, tag_id: tag.id }),
+        ),
+      );
+
+      set((state) =>
+        produce((draft: AppState) => {
+          removedApps.forEach((appId) => {
+            draft.apps[appId]!.tag_id = null;
+          });
+
+          addedApps.forEach((appId) => {
+            draft.apps[appId]!.tag_id = tag.id;
+          });
+
+          draft.tags[tag.id]!.apps = apps;
         })(state),
       );
     },
@@ -79,6 +139,14 @@ export const useAppState = create<AppState>((set) => {
       );
 
       return tagId;
+    },
+    removeTag: async (tagId) => {
+      await removeTag(tagId);
+      set((state) =>
+        produce((draft: AppState) => {
+          delete draft.tags[tagId];
+        })(state),
+      );
     },
   };
 });

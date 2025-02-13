@@ -77,6 +77,25 @@ pub async fn get_app_durations_per_period(
 
 #[tauri::command]
 #[tracing::instrument(err, skip(state))]
+pub async fn get_tag_durations_per_period(
+    state: State<'_, AppState>,
+    _query_options: QueryOptions,
+    start: Timestamp,
+    end: Timestamp,
+    period: Duration,
+) -> AppResult<HashMap<Ref<Tag>, Vec<WithGroupedDuration<Tag>>>> {
+    let mut repo = {
+        let state = state.read().await;
+        state.assume_init().get_repo().await?
+    };
+    let res = repo
+        .get_tag_durations_per_period(start, end, period)
+        .await?;
+    Ok(res)
+}
+
+#[tauri::command]
+#[tracing::instrument(err, skip(state))]
 pub async fn copy_seed_db(state: State<'_, AppState>) -> AppResult<()> {
     // drop previous state - also drops the db connection
     {
@@ -118,6 +137,17 @@ pub async fn update_app(state: State<'_, AppState>, app: infused::UpdatedApp) ->
 
 #[tauri::command]
 #[tracing::instrument(err, skip(state))]
+pub async fn update_tag(state: State<'_, AppState>, tag: infused::UpdatedTag) -> AppResult<()> {
+    let mut repo = {
+        let mut state = state.write().await;
+        state.assume_init_mut().get_repo().await?
+    };
+    repo.update_tag(&tag).await?;
+    Ok(())
+}
+
+#[tauri::command]
+#[tracing::instrument(err, skip(state))]
 pub async fn create_tag(
     state: State<'_, AppState>,
     tag: infused::CreateTag,
@@ -127,4 +157,14 @@ pub async fn create_tag(
         state.assume_init_mut().get_repo().await?
     };
     Ok(repo.create_tag(&tag).await?)
+}
+
+#[tauri::command]
+#[tracing::instrument(err, skip(state))]
+pub async fn remove_tag(state: State<'_, AppState>, tag_id: Ref<Tag>) -> AppResult<()> {
+    let mut repo = {
+        let mut state = state.write().await;
+        state.assume_init_mut().get_repo().await?
+    };
+    Ok(repo.remove_tag(tag_id).await?)
 }

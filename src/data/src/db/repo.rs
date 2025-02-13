@@ -2,7 +2,6 @@ use std::collections::HashMap;
 use std::ops::Deref;
 use std::str::FromStr;
 
-use infused::UpdatedApp;
 use serde::Serialize;
 
 use super::*;
@@ -137,6 +136,17 @@ pub mod infused {
     /// Options to create a new [super::Tag]
     #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
     pub struct CreateTag {
+        /// Name
+        pub name: String,
+        /// Color
+        pub color: String,
+    }
+
+    /// Options to update a [super::Tag]
+    #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+    pub struct UpdatedTag {
+        /// Identifier
+        pub id: Ref<super::Tag>,
         /// Name
         pub name: String,
         /// Color
@@ -351,8 +361,67 @@ impl Repository {
         ))
     }
 
+    // TODO write tests
+
+    /// Gets all [Tags]s and its total usage duration in a start-end range,
+    /// grouped per period. Assumes start <= end, and that start and end are
+    /// aligned in multiples of period.
+    pub async fn get_tag_durations_per_period(
+        &mut self,
+        start: Timestamp,
+        end: Timestamp,
+        period: crate::table::Duration,
+    ) -> Result<HashMap<Ref<Tag>, Vec<WithGroupedDuration<Tag>>>> {
+        // This expression is surprisingly slow compared to its previous
+        // iteration (tho more correct ofc). Fix it later.
+        let app_durs = query_as(
+            "WITH RECURSIVE
+            params(period, start, end) AS (SELECT ?, ?, ?),
+            period_intervals AS (
+                SELECT a.tag_id AS id,
+                    p.start + (p.period * CAST((u.start - p.start) / p.period AS INT)) AS period_start,
+                    p.start + (p.period * (CAST((u.start - p.start) / p.period AS INT) + 1)) AS period_end,
+                    u.start AS usage_start,
+                    MIN(u.end, p.end) AS usage_end
+                FROM apps a, params p
+                INNER JOIN sessions s ON a.id = s.app_id
+                INNER JOIN usages u ON s.id = u.session_id
+                WHERE u.end > p.start AND u.start <= p.end
+
+                UNION ALL
+
+                SELECT id,
+                    period_start + p.period AS period_start,
+                    period_end + p.period AS period_end,
+                    usage_start,
+                    usage_end
+                FROM period_intervals, params p
+                WHERE period_start + p.period < MIN(usage_end, p.end)
+            )
+
+            SELECT id,
+                period_start AS `group`,
+                SUM(MIN(period_end, usage_end) - MAX(period_start, usage_start)) AS duration
+            FROM period_intervals
+            GROUP BY id, period_start;",
+        )
+        .bind(period)
+        .bind(start)
+        .bind(end)
+        .fetch_all(self.db.executor())
+        .await?;
+
+        Ok(app_durs.into_iter().fold(
+            HashMap::new(),
+            |mut acc, tag_dur: WithGroupedDuration<Tag>| {
+                acc.entry(tag_dur.id.clone()).or_default().push(tag_dur);
+                acc
+            },
+        ))
+    }
+
     /// Update the [App] with additional information
-    pub async fn update_app(&mut self, app: &UpdatedApp) -> Result<()> {
+    pub async fn update_app(&mut self, app: &infused::UpdatedApp) -> Result<()> {
         query(
             "UPDATE apps SET
                     name = ?,
@@ -374,6 +443,22 @@ impl Repository {
         Ok(())
     }
 
+    /// Update the [Tag] with additional information
+    pub async fn update_tag(&mut self, tag: &infused::UpdatedTag) -> Result<()> {
+        query(
+            "UPDATE tags SET
+                    name = ?,
+                    color = ?
+                WHERE id = ?",
+        )
+        .bind(&tag.name)
+        .bind(&tag.color)
+        .bind(&tag.id)
+        .execute(self.db.executor())
+        .await?;
+        Ok(())
+    }
+
     /// Create a new [Tag] from a [infused::CreateTag]
     pub async fn create_tag(&mut self, tag: &infused::CreateTag) -> Result<Ref<Tag>> {
         let res = query("INSERT INTO tags VALUES (NULL, ?, ?)")
@@ -382,5 +467,14 @@ impl Repository {
             .execute(self.db.executor())
             .await?;
         Ok(Ref::new(res.last_insert_rowid()))
+    }
+
+    /// Removes a [Tag]
+    pub async fn remove_tag(&mut self, tag_id: Ref<Tag>) -> Result<()> {
+        query("DELETE FROM tags WHERE id = ?")
+            .bind(tag_id)
+            .execute(self.db.executor())
+            .await?;
+        Ok(())
     }
 }
