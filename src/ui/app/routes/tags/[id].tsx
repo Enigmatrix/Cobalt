@@ -11,11 +11,11 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { useAppState } from "@/lib/state";
-import { type Ref, type Tag } from "@/lib/entities";
+import { type App, type Ref, type Tag } from "@/lib/entities";
 import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
 import { useCallback, useMemo, useState } from "react";
 import { DateTime, Duration } from "luxon";
-import { useTag } from "@/hooks/use-refresh";
+import { useApps, useTag } from "@/hooks/use-refresh";
 import {
   dateTimeToTicks,
   durationToTicks,
@@ -23,7 +23,7 @@ import {
   ticksToDuration,
 } from "@/lib/time";
 import { Text } from "@/components/ui/text";
-import { TagIcon, TrashIcon } from "lucide-react";
+import { TagIcon, TrashIcon, XIcon } from "lucide-react";
 import { EditableText } from "@/components/editable-text";
 import { ColorPicker } from "@/components/color-picker";
 import _ from "lodash";
@@ -52,6 +52,10 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useNavigate } from "react-router";
+import { Badge } from "@/components/ui/badge";
+import AppIcon from "@/components/app/app-icon";
+import { useSearch } from "@/hooks/use-search";
+import { MultiSelect } from "@/components/multi-select";
 
 function TagUsageBarChartCard({
   card,
@@ -125,9 +129,54 @@ const dayXAxisFormatter = (dateTime: DateTime) => dateTime.toFormat("HHmm");
 const weekXAxisFormatter = (dateTime: DateTime) => dateTime.toFormat("EEE");
 const monthXAxisFormatter = (dateTime: DateTime) => dateTime.toFormat("dd");
 
+function AppBadge({ app, remove }: { app: App; remove: () => void }) {
+  return (
+    <Badge
+      className="whitespace-nowrap min-w-0 m-1 font-normal border-border border rounded-md h-8"
+      style={{
+        backgroundColor: "rgba(255, 255, 255, 0.1)",
+      }}
+    >
+      <AppIcon buffer={app.icon} className="h-5 w-5 mr-2" />
+      <Text className="text-base">{app.name}</Text>
+      <XIcon
+        className="ml-2 h-4 w-4 cursor-pointer"
+        onClick={(event) => {
+          event.stopPropagation();
+          remove();
+        }}
+      />
+    </Badge>
+  );
+}
+
 export default function Tag({ params }: Route.ComponentProps) {
   const id = +params.id;
   const tag = useTag(id as Ref<Tag>)!;
+  const apps = useApps();
+  const [search, setSearch, appsFiltered] = useSearch(apps, [
+    "name",
+    "company",
+    "description",
+  ]);
+  const appListIds = useMemo(
+    () => appsFiltered.map((app) => app.id),
+    [appsFiltered],
+  );
+  const allAppOptions = useMemo(
+    () =>
+      apps.map((app) => ({
+        id: app.id,
+        label: app.name,
+        icon: ({ className }: { className?: string }) => (
+          <AppIcon buffer={app.icon} className={className} />
+        ),
+        render: ({ remove }: { remove: () => void }) => (
+          <AppBadge app={app} remove={remove} />
+        ),
+      })),
+    [apps],
+  );
   const updateTag = useAppState((state) => state.updateTag);
   const removeTag = useAppState((state) => state.removeTag);
   const [color, setColorInner] = useState(tag.color);
@@ -179,6 +228,14 @@ export default function Tag({ params }: Route.ComponentProps) {
     return _.clamp(ticksToDuration(value).rescale().hours / 8, 0.2, 1);
   }, []);
 
+  const setTagApps = useCallback(
+    (v: Ref<App>[]) => {
+      // TODO
+      tag.apps = v;
+    },
+    [tag],
+  );
+
   return (
     <>
       <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
@@ -204,8 +261,8 @@ export default function Tag({ params }: Route.ComponentProps) {
       </header>
       <div className="flex flex-1 flex-col gap-4 p-4">
         {/* App Info */}
-        <div className="rounded-xl bg-muted/50 p-6">
-          <div className="flex flex-col gap-4">
+        <div className="rounded-xl bg-muted/50 px-6 pt-6 pb-4">
+          <div className="flex flex-col gap-6">
             {/* Header with name and icon */}
             <div className="flex items-center gap-4">
               <TagIcon
@@ -254,6 +311,18 @@ export default function Tag({ params }: Route.ComponentProps) {
                 </AlertDialogContent>
               </AlertDialog>
             </div>
+
+            <MultiSelect
+              className="min-h-14"
+              options={allAppOptions}
+              onValueChange={setTagApps}
+              defaultValue={tag.apps}
+              placeholder="Select Apps"
+              maxCount={1000}
+              search={search}
+              onSearchChanged={setSearch}
+              filteredValues={appListIds}
+            />
           </div>
         </div>
 
