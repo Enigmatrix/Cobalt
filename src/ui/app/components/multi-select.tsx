@@ -63,6 +63,9 @@ interface MultiSelectProps<T>
     render?: React.ComponentType<{ id: T; remove: () => void }>;
   }[];
 
+  /** Values after filtering. Set to undefined to use default filtering */
+  filteredValues?: T[];
+
   /**
    * Callback function triggered when the selected values change.
    * Receives an array of the new selected values.
@@ -73,9 +76,9 @@ interface MultiSelectProps<T>
   defaultValue?: T[];
 
   /** Search query value */
-  search: string;
+  search?: string;
   /** Set the search query value */
-  onSearchChanged: (search: string) => void;
+  onSearchChanged?: (search: string) => void;
 
   /**
    * Placeholder text to be displayed when no values are selected.
@@ -131,6 +134,7 @@ interface MultiSelectProps<T>
 
 export function MultiSelect<T>({
   options,
+  filteredValues,
   onValueChange,
   variant,
   defaultValue = [],
@@ -296,12 +300,12 @@ export function MultiSelect<T>({
         align="start"
         onEscapeKeyDown={() => setIsPopoverOpen(false)}
       >
-        <Command shouldFilter={false}>
+        <Command shouldFilter={!filteredValues}>
           <CommandInput
             placeholder="Search..."
             onKeyDown={handleInputKeyDown}
             value={search}
-            onValueChange={(e) => onSearchChanged(e)}
+            onValueChange={onSearchChanged}
           />
           <CommandList>
             <CommandEmpty>No results found.</CommandEmpty>
@@ -325,7 +329,10 @@ export function MultiSelect<T>({
                   <span>(Select All)</span>
                 </CommandItem>
               )}
-              {options.map((option) => {
+              {(filteredValues
+                ? filteredValues.map((v) => options.find((o) => o.id === v)!)
+                : options
+              ).map((option) => {
                 const isSelected = selectedValues.includes(option.id);
                 return (
                   <CommandItem
