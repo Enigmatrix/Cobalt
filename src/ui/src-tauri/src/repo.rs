@@ -103,7 +103,7 @@ pub async fn copy_seed_db(state: State<'_, AppState>) -> AppResult<()> {
         *state = Initable::Uninit;
     }
 
-    std::fs::copy("../../../dbg/seed.db", "main.db").context("copy seed.db")?;
+    std::fs::copy("../../../dev/seed.db", "main.db").context("copy seed.db")?;
 
     // reinit state (repo)
     init_state(state).await?;
