@@ -103,6 +103,11 @@ interface MultiSelectProps<T>
    * Optional, can be used to add custom styles.
    */
   className?: string;
+
+  /**
+   * Show clear button and X icon.
+   */
+  showClear?: boolean;
 }
 
 export function MultiSelect<T>({
@@ -115,6 +120,7 @@ export function MultiSelect<T>({
   modalPopover = false,
   asChild = false,
   className,
+  showClear = false,
   ...props
 }: MultiSelectProps<T>) {
   const [selectedValues, setSelectedValues] = React.useState<T[]>(defaultValue);
@@ -223,13 +229,15 @@ export function MultiSelect<T>({
                 )}
               </div>
               <div className="flex items-center justify-between">
-                <XIcon
-                  className="h-4 mx-2 cursor-pointer text-muted-foreground"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    handleClear();
-                  }}
-                />
+                {showClear && (
+                  <XIcon
+                    className="h-4 mx-2 cursor-pointer text-muted-foreground"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handleClear();
+                    }}
+                  />
+                )}
                 <Separator
                   orientation="vertical"
                   className="flex min-h-6 h-full"
@@ -308,12 +316,14 @@ export function MultiSelect<T>({
               <div className="flex items-center justify-between">
                 {selectedValues.length > 0 && (
                   <>
-                    <CommandItem
-                      onSelect={handleClear}
-                      className="flex-1 justify-center cursor-pointer"
-                    >
-                      Clear
-                    </CommandItem>
+                    {showClear && (
+                      <CommandItem
+                        onSelect={handleClear}
+                        className="flex-1 justify-center cursor-pointer"
+                      >
+                        Clear
+                      </CommandItem>
+                    )}
                     <Separator
                       orientation="vertical"
                       className="flex min-h-6 h-full"
