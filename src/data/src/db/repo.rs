@@ -459,6 +459,30 @@ impl Repository {
         Ok(())
     }
 
+    /// Update old and new [App]s with [Tag] atomically
+    pub async fn update_tag_apps(
+        &mut self,
+        tag_id: Ref<Tag>,
+        removed_apps: Vec<Ref<App>>,
+        added_apps: Vec<Ref<App>>,
+    ) -> Result<()> {
+        let mut tx = self.db.transaction().await?;
+        let updates = removed_apps.into_iter().map(|app| (app, None)).chain(
+            added_apps
+                .into_iter()
+                .map(|app| (app, Some(tag_id.clone()))),
+        );
+        for (app, tag) in updates {
+            query("UPDATE apps SET tag_id = ? WHERE id = ?")
+                .bind(tag)
+                .bind(app)
+                .execute(&mut *tx)
+                .await?;
+        }
+        tx.commit().await?;
+        Ok(())
+    }
+
     /// Create a new [Tag] from a [infused::CreateTag]
     pub async fn create_tag(&mut self, tag: &infused::CreateTag) -> Result<Ref<Tag>> {
         let res = query("INSERT INTO tags VALUES (NULL, ?, ?)")

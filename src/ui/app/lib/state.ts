@@ -10,6 +10,7 @@ import {
   removeTag,
   updateApp,
   updateTag,
+  updateTagApps,
   type CreateTag,
 } from "@/lib/repo";
 import { checkForUpdatesBackground } from "@/lib/updater";
@@ -52,7 +53,7 @@ type AppState = {
   removeTag: (tagId: Ref<Tag>) => Promise<void>;
 };
 
-export const useAppState = create<AppState>((set, get) => {
+export const useAppState = create<AppState>((set) => {
   return {
     lastRefresh: DateTime.now(),
     apps: [],
@@ -90,22 +91,9 @@ export const useAppState = create<AppState>((set, get) => {
       );
     },
     updateTagApps: async (tag, apps) => {
-      const allApps = get().apps;
       const removedApps = tag.apps.filter((id) => !apps.includes(id));
       const addedApps = apps.filter((id) => !tag.apps.includes(id));
-      // TODO batch update
-      await Promise.all(
-        removedApps.map(
-          async (appId) =>
-            await updateApp({ ...allApps[appId]!, tag_id: null }),
-        ),
-      );
-      await Promise.all(
-        addedApps.map(
-          async (appId) =>
-            await updateApp({ ...allApps[appId]!, tag_id: tag.id }),
-        ),
-      );
+      await updateTagApps(tag.id, removedApps, addedApps);
 
       set((state) =>
         produce((draft: AppState) => {
