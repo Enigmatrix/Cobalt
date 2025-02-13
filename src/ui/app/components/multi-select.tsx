@@ -26,7 +26,7 @@ import { Text } from "@/components/ui/text";
  * Variants for the multi-select component to handle different styles.
  * Uses class-variance-authority (cva) to define different styles based on "variant" prop.
  */
-const multiSelectVariants = cva("min-w-0 m-1 h-8 font-normal", {
+const multiSelectVariants = cva("min-w-0 m-1 font-normal", {
   variants: {
     variant: {
       default: "border-foreground/10 text-foreground bg-card hover:bg-card/80",
@@ -320,6 +320,7 @@ export function MultiSelect<T>({
                 return (
                   <CommandItem
                     key={JSON.stringify(option.id)}
+                    value={JSON.stringify(option.id)}
                     onSelect={() => toggleOption(option.id)}
                     className="cursor-pointer"
                   >
