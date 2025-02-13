@@ -1,6 +1,6 @@
 import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { CheckIcon, XCircle, ChevronDown, XIcon } from "lucide-react";
+import { CheckIcon, ChevronDown, XIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
@@ -212,7 +212,7 @@ export function MultiSelect<T>({
                         <IconComponent className="h-4 w-4 mr-2" />
                       )}
                       {option?.label}
-                      <XCircle
+                      <XIcon
                         className="ml-2 h-4 w-4 cursor-pointer"
                         onClick={(event) => {
                           event.stopPropagation();
@@ -230,7 +230,7 @@ export function MultiSelect<T>({
                     )}
                   >
                     {`+ ${selectedValues.length - maxCount} more`}
-                    <XCircle
+                    <XIcon
                       className="ml-2 h-4 w-4 cursor-pointer"
                       onClick={(event) => {
                         event.stopPropagation();
