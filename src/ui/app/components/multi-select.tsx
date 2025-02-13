@@ -202,6 +202,14 @@ export function MultiSelect<T>({
     }
   };
 
+  const filteredOptions = React.useMemo(
+    () =>
+      filteredValues
+        ? filteredValues.map((v) => options.find((o) => o.id === v)!)
+        : options,
+    [filteredValues, options],
+  );
+
   return (
     <Popover
       open={isPopoverOpen}
@@ -329,10 +337,11 @@ export function MultiSelect<T>({
                   <span>(Select All)</span>
                 </CommandItem>
               )}
-              {(filteredValues
-                ? filteredValues.map((v) => options.find((o) => o.id === v)!)
-                : options
-              ).map((option) => {
+              {/* Hidden option eats up select - fixes bug where scroll of searched item is random and annoying */}
+              {filteredOptions.length !== 0 && (
+                <CommandItem value="-" className="hidden" />
+              )}
+              {filteredOptions.map((option) => {
                 const isSelected = selectedValues.includes(option.id);
                 return (
                   <CommandItem
