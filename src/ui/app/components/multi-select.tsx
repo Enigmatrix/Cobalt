@@ -20,6 +20,7 @@ import {
   CommandList,
   CommandSeparator,
 } from "@/components/ui/command";
+import { Text } from "@/components/ui/text";
 
 /**
  * Variants for the multi-select component to handle different styles.
@@ -209,19 +210,22 @@ export function MultiSelect<T>({
         >
           {selectedValues.length > 0 ? (
             <div className="flex justify-between items-center w-full">
-              <div className="flex flex-wrap items-center">
+              <div className="flex flex-wrap items-center min-w-0">
                 {selectedValues.slice(0, maxCount).map((value) => {
                   const option = options.find((o) => o.id === value);
                   const IconComponent = option?.icon;
                   return (
                     <Badge
                       key={JSON.stringify(value)}
-                      className={cn(multiSelectVariants({ variant }))}
+                      className={cn(
+                        "min-w-0",
+                        multiSelectVariants({ variant }),
+                      )}
                     >
                       {IconComponent && (
                         <IconComponent className="h-4 w-4 mr-2" />
                       )}
-                      {option?.label}
+                      <Text>{option?.label ?? ""}</Text>
                       <XIcon
                         className="ml-2 h-4 w-4 cursor-pointer"
                         onClick={(event) => {
@@ -330,7 +334,7 @@ export function MultiSelect<T>({
                     {option.icon && (
                       <option.icon className="mr-2 h-4 w-4 text-muted-foreground" />
                     )}
-                    <span>{option.label}</span>
+                    <Text>{option.label}</Text>
                   </CommandItem>
                 );
               })}
