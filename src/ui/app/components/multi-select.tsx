@@ -70,6 +70,11 @@ interface MultiSelectProps<T>
   /** The default selected values when the component mounts. */
   defaultValue?: T[];
 
+  /** Search query value */
+  search: string;
+  /** Set the search query value */
+  onSearchChanged: (search: string) => void;
+
   /**
    * Placeholder text to be displayed when no values are selected.
    * Optional, defaults to "Select options".
@@ -128,6 +133,8 @@ export function MultiSelect<T>({
   variant,
   defaultValue = [],
   placeholder = "Select options",
+  search,
+  onSearchChanged,
   maxCount = 3,
   modalPopover = false,
   asChild = false,
@@ -279,10 +286,12 @@ export function MultiSelect<T>({
         align="start"
         onEscapeKeyDown={() => setIsPopoverOpen(false)}
       >
-        <Command>
+        <Command shouldFilter={false}>
           <CommandInput
             placeholder="Search..."
             onKeyDown={handleInputKeyDown}
+            value={search}
+            onValueChange={(e) => onSearchChanged(e)}
           />
           <CommandList>
             <CommandEmpty>No results found.</CommandEmpty>
