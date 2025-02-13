@@ -132,7 +132,7 @@ const monthXAxisFormatter = (dateTime: DateTime) => dateTime.toFormat("dd");
 function AppBadge({ app, remove }: { app: App; remove: () => void }) {
   return (
     <Badge
-      className="whitespace-nowrap min-w-0 m-1 font-normal border-border border rounded-md h-8"
+      className="whitespace-nowrap min-w-0 m-1 font-normal border-border border rounded-md h-8 text-foreground"
       style={{
         backgroundColor: "rgba(255, 255, 255, 0.1)",
       }}
