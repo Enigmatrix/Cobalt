@@ -118,6 +118,11 @@ interface MultiSelectProps<T>
    * Show toggle select all.
    */
   showToggleSelectAll?: boolean;
+
+  /**
+   * Hook backspace key to remove last selected value.
+   */
+  hookBackspace?: boolean;
 }
 
 export function MultiSelect<T>({
@@ -133,6 +138,7 @@ export function MultiSelect<T>({
   showClear = false,
   showClose = false,
   showToggleSelectAll = false,
+  hookBackspace = false,
   ...props
 }: MultiSelectProps<T>) {
   const [selectedValues, setSelectedValues] = React.useState<T[]>(defaultValue);
@@ -141,7 +147,11 @@ export function MultiSelect<T>({
   const handleInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Enter") {
       setIsPopoverOpen(true);
-    } else if (event.key === "Backspace" && !event.currentTarget.value) {
+    } else if (
+      hookBackspace &&
+      event.key === "Backspace" &&
+      !event.currentTarget.value
+    ) {
       const newSelectedValues = [...selectedValues];
       newSelectedValues.pop();
       setSelectedValues(newSelectedValues);
