@@ -108,6 +108,11 @@ interface MultiSelectProps<T>
    * Show clear button and X icon.
    */
   showClear?: boolean;
+
+  /**
+   * Show close button.
+   */
+  showClose?: boolean;
 }
 
 export function MultiSelect<T>({
@@ -121,6 +126,7 @@ export function MultiSelect<T>({
   asChild = false,
   className,
   showClear = false,
+  showClose = false,
   ...props
 }: MultiSelectProps<T>) {
   const [selectedValues, setSelectedValues] = React.useState<T[]>(defaultValue);
@@ -312,32 +318,34 @@ export function MultiSelect<T>({
               })}
             </CommandGroup>
             <CommandSeparator />
-            <CommandGroup>
-              <div className="flex items-center justify-between">
-                {selectedValues.length > 0 && (
-                  <>
-                    {showClear && (
+            {(showClear || showClose) && (
+              <CommandGroup>
+                <div className="flex items-center justify-between">
+                  {selectedValues.length > 0 && showClear && (
+                    <>
                       <CommandItem
                         onSelect={handleClear}
                         className="flex-1 justify-center cursor-pointer"
                       >
                         Clear
                       </CommandItem>
-                    )}
-                    <Separator
-                      orientation="vertical"
-                      className="flex min-h-6 h-full"
-                    />
-                  </>
-                )}
-                <CommandItem
-                  onSelect={() => setIsPopoverOpen(false)}
-                  className="flex-1 justify-center cursor-pointer max-w-full"
-                >
-                  Close
-                </CommandItem>
-              </div>
-            </CommandGroup>
+                      <Separator
+                        orientation="vertical"
+                        className="flex min-h-6 h-full"
+                      />
+                    </>
+                  )}
+                  {showClose && (
+                    <CommandItem
+                      onSelect={() => setIsPopoverOpen(false)}
+                      className="flex-1 justify-center cursor-pointer max-w-full"
+                    >
+                      Close
+                    </CommandItem>
+                  )}
+                </div>
+              </CommandGroup>
+            )}
           </CommandList>
         </Command>
       </PopoverContent>
