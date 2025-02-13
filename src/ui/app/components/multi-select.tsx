@@ -26,25 +26,21 @@ import { Text } from "@/components/ui/text";
  * Variants for the multi-select component to handle different styles.
  * Uses class-variance-authority (cva) to define different styles based on "variant" prop.
  */
-const multiSelectVariants = cva(
-  "m-1 transition ease-in-out delay-150 hover:-translate-y-1 hover:scale-110 duration-300",
-  {
-    variants: {
-      variant: {
-        default:
-          "border-foreground/10 text-foreground bg-card hover:bg-card/80",
-        secondary:
-          "border-foreground/10 bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        destructive:
-          "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
-        inverted: "inverted",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
+const multiSelectVariants = cva("min-w-0 m-1 h-8 font-normal", {
+  variants: {
+    variant: {
+      default: "border-foreground/10 text-foreground bg-card hover:bg-card/80",
+      secondary:
+        "border-foreground/10 bg-secondary text-secondary-foreground hover:bg-secondary/80",
+      destructive:
+        "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
+      inverted: "inverted",
     },
   },
-);
+  defaultVariants: {
+    variant: "default",
+  },
+});
 
 /**
  * Props for MultiSelect component
@@ -217,10 +213,7 @@ export function MultiSelect<T>({
                   return (
                     <Badge
                       key={JSON.stringify(value)}
-                      className={cn(
-                        "min-w-0",
-                        multiSelectVariants({ variant }),
-                      )}
+                      className={cn(multiSelectVariants({ variant }))}
                     >
                       {IconComponent && (
                         <IconComponent className="h-4 w-4 mr-2" />
