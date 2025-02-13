@@ -113,6 +113,11 @@ interface MultiSelectProps<T>
    * Show close button.
    */
   showClose?: boolean;
+
+  /**
+   * Show toggle select all.
+   */
+  showToggleSelectAll?: boolean;
 }
 
 export function MultiSelect<T>({
@@ -127,6 +132,7 @@ export function MultiSelect<T>({
   className,
   showClear = false,
   showClose = false,
+  showToggleSelectAll = false,
   ...props
 }: MultiSelectProps<T>) {
   const [selectedValues, setSelectedValues] = React.useState<T[]>(defaultValue);
@@ -274,23 +280,25 @@ export function MultiSelect<T>({
           <CommandList>
             <CommandEmpty>No results found.</CommandEmpty>
             <CommandGroup>
-              <CommandItem
-                key="all"
-                onSelect={toggleAll}
-                className="cursor-pointer"
-              >
-                <div
-                  className={cn(
-                    "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
-                    selectedValues.length === options.length
-                      ? "bg-primary text-primary-foreground"
-                      : "opacity-50 [&_svg]:invisible",
-                  )}
+              {showToggleSelectAll && (
+                <CommandItem
+                  key="all"
+                  onSelect={toggleAll}
+                  className="cursor-pointer"
                 >
-                  <CheckIcon className="h-4 w-4" />
-                </div>
-                <span>(Select All)</span>
-              </CommandItem>
+                  <div
+                    className={cn(
+                      "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
+                      selectedValues.length === options.length
+                        ? "bg-primary text-primary-foreground"
+                        : "opacity-50 [&_svg]:invisible",
+                    )}
+                  >
+                    <CheckIcon className="h-4 w-4" />
+                  </div>
+                  <span>(Select All)</span>
+                </CommandItem>
+              )}
               {options.map((option) => {
                 const isSelected = selectedValues.includes(option.id);
                 return (
