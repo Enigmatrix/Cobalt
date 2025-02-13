@@ -234,7 +234,7 @@ export default function Tag({ params }: Route.ComponentProps) {
     async (apps: Ref<App>[]) => {
       await updateTagApps(tag, apps);
     },
-    [tag],
+    [tag, updateTagApps],
   );
 
   return (
