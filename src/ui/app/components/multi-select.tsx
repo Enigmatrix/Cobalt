@@ -59,6 +59,8 @@ interface MultiSelectProps<T>
     id: T;
     /** Optional icon component to display alongside the option. */
     icon?: React.ComponentType<{ className?: string }>;
+    /** Optional render function to customize how the option is displayed. */
+    render?: React.ComponentType<{ id: T; remove: () => void }>;
   }[];
 
   /**
@@ -217,6 +219,14 @@ export function MultiSelect<T>({
                 {selectedValues.slice(0, maxCount).map((value) => {
                   const option = options.find((o) => o.id === value);
                   const IconComponent = option?.icon;
+                  if (option?.render)
+                    return (
+                      <option.render
+                        id={option.id}
+                        remove={() => toggleOption(value)}
+                        key={JSON.stringify(value)}
+                      />
+                    );
                   return (
                     <Badge
                       key={JSON.stringify(value)}
@@ -282,7 +292,7 @@ export function MultiSelect<T>({
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-auto p-0"
+        className="p-0 w-[--radix-popover-trigger-width]"
         align="start"
         onEscapeKeyDown={() => setIsPopoverOpen(false)}
       >
