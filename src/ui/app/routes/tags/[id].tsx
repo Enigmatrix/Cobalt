@@ -211,6 +211,7 @@ export default function Tag({ params }: Route.ComponentProps) {
     start: range?.start,
     end: range?.end,
     period: day,
+    tagId: tag.id,
   });
   const yearData = useMemo(() => {
     return new Map(
