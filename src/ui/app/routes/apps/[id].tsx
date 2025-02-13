@@ -19,9 +19,14 @@ import { DateTime, Duration } from "luxon";
 import { useApp, useTag, useTags } from "@/hooks/use-refresh";
 import {
   dateTimeToTicks,
+  day,
   durationToTicks,
+  hour,
+  hour24Formatter,
+  monthDayFormatter,
   ticksToDateTime,
   ticksToDuration,
+  weekDayFormatter,
 } from "@/lib/time";
 import { Text } from "@/components/ui/text";
 import { Button } from "@/components/ui/button";
@@ -232,14 +237,6 @@ function AppUsageBarChartCard({
   });
 }
 
-const dayChartPeriod = Duration.fromObject({ hour: 1 });
-const weekChartPeriod = Duration.fromObject({ day: 1 });
-const monthChartPeriod = Duration.fromObject({ day: 1 });
-const yearChartPeriod = Duration.fromObject({ day: 1 });
-const dayXAxisFormatter = (dateTime: DateTime) => dateTime.toFormat("HHmm");
-const weekXAxisFormatter = (dateTime: DateTime) => dateTime.toFormat("EEE");
-const monthXAxisFormatter = (dateTime: DateTime) => dateTime.toFormat("dd");
-
 export default function App({ params }: Route.ComponentProps) {
   const id = +params.id;
   const app = useApp(id as Ref<App>)!;
@@ -272,7 +269,7 @@ export default function App({ params }: Route.ComponentProps) {
   } = useAppDurationsPerPeriod({
     start: range?.start,
     end: range?.end,
-    period: yearChartPeriod,
+    period: day,
     appId: app.id,
   });
   const yearData = useMemo(() => {
@@ -384,20 +381,20 @@ export default function App({ params }: Route.ComponentProps) {
         <div className="grid auto-rows-min gap-4 md:grid-cols-3">
           <AppUsageBarChartCard
             card={DayUsageCard}
-            period={dayChartPeriod}
-            xAxisLabelFormatter={dayXAxisFormatter}
+            period={hour}
+            xAxisLabelFormatter={hour24Formatter}
             appId={app.id}
           />
           <AppUsageBarChartCard
             card={WeekUsageCard}
-            period={weekChartPeriod}
-            xAxisLabelFormatter={weekXAxisFormatter}
+            period={day}
+            xAxisLabelFormatter={weekDayFormatter}
             appId={app.id}
           />
           <AppUsageBarChartCard
             card={MonthUsageCard}
-            period={monthChartPeriod}
-            xAxisLabelFormatter={monthXAxisFormatter}
+            period={day}
+            xAxisLabelFormatter={monthDayFormatter}
             appId={app.id}
           />
         </div>

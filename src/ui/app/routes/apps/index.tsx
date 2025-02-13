@@ -34,7 +34,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowDownUp, SortAsc, SortDesc } from "lucide-react";
 import _ from "lodash";
 import { Text } from "@/components/ui/text";
-import { dateTimeToTicks, durationToTicks } from "@/lib/time";
+import { dateTimeToTicks, durationToTicks, hour } from "@/lib/time";
 import { DateTime, Duration } from "luxon";
 import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
 import { useToday } from "@/hooks/use-today";
@@ -44,8 +44,6 @@ import { DurationText } from "@/components/time/duration-text";
 import type { ClassValue } from "clsx";
 import { useAppDurationsPerPeriod } from "@/hooks/use-repo";
 import { SortDirection } from "@/hooks/use-sort";
-
-const period = Duration.fromObject({ hour: 1 });
 
 export function MiniTagItem({
   tag,
@@ -193,6 +191,7 @@ export default function Apps() {
   }, [appsFiltered, sortDirection, sortProperty]);
 
   const [start, end] = useMemo(() => [today, today.endOf("day")], [today]);
+  const period = hour;
   const {
     usages,
     start: loadStart,

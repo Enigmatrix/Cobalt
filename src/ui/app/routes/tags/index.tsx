@@ -43,11 +43,9 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { dateTimeToTicks, durationToTicks } from "@/lib/time";
+import { dateTimeToTicks, durationToTicks, hour } from "@/lib/time";
 import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
 import { CreateTagDialog } from "@/components/tag/create-tag-dialog";
-
-const period = Duration.fromObject({ hour: 1 });
 
 export function MiniAppItem({
   app,
@@ -204,6 +202,7 @@ export default function Tags() {
   }, [tagsFiltered, sortDirection, sortProperty]);
 
   const [start, end] = useMemo(() => [today, today.endOf("day")], [today]);
+  const period = hour;
   const {
     usages,
     start: loadStart,
