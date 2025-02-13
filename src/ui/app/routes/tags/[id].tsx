@@ -179,6 +179,8 @@ export default function Tag({ params }: Route.ComponentProps) {
   );
   const updateTag = useAppState((state) => state.updateTag);
   const removeTag = useAppState((state) => state.removeTag);
+  const updateTagApps = useAppState((state) => state.updateTagApps);
+
   const [color, setColorInner] = useState(tag.color);
   const debouncedUpdateColor = useDebouncedCallback(async (color: string) => {
     await updateTag({ ...tag, color });
@@ -229,9 +231,8 @@ export default function Tag({ params }: Route.ComponentProps) {
   }, []);
 
   const setTagApps = useCallback(
-    (v: Ref<App>[]) => {
-      // TODO
-      tag.apps = v;
+    async (apps: Ref<App>[]) => {
+      await updateTagApps(tag, apps);
     },
     [tag],
   );

@@ -47,11 +47,12 @@ type AppState = {
   tags: EntityStore<Tag>;
   updateApp: (app: App) => Promise<void>;
   updateTag: (app: Tag) => Promise<void>;
+  updateTagApps: (tag: Tag, apps: Ref<App>[]) => Promise<void>;
   createTag: (tag: CreateTag) => Promise<Ref<Tag>>;
   removeTag: (tagId: Ref<Tag>) => Promise<void>;
 };
 
-export const useAppState = create<AppState>((set) => {
+export const useAppState = create<AppState>((set, get) => {
   return {
     lastRefresh: DateTime.now(),
     apps: [],
@@ -85,6 +86,38 @@ export const useAppState = create<AppState>((set) => {
       set((state) =>
         produce((draft: AppState) => {
           draft.tags[tag.id] = { ...draft.tags[tag.id], ...tag };
+        })(state),
+      );
+    },
+    updateTagApps: async (tag, apps) => {
+      const allApps = get().apps;
+      const removedApps = tag.apps.filter((id) => !apps.includes(id));
+      const addedApps = apps.filter((id) => !tag.apps.includes(id));
+      // TODO batch update
+      await Promise.all(
+        removedApps.map(
+          async (appId) =>
+            await updateApp({ ...allApps[appId]!, tag_id: null }),
+        ),
+      );
+      await Promise.all(
+        addedApps.map(
+          async (appId) =>
+            await updateApp({ ...allApps[appId]!, tag_id: tag.id }),
+        ),
+      );
+
+      set((state) =>
+        produce((draft: AppState) => {
+          removedApps.forEach((appId) => {
+            draft.apps[appId]!.tag_id = null;
+          });
+
+          addedApps.forEach((appId) => {
+            draft.apps[appId]!.tag_id = tag.id;
+          });
+
+          draft.tags[tag.id]!.apps = apps;
         })(state),
       );
     },
