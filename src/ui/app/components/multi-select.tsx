@@ -216,7 +216,7 @@ export function MultiSelect<T>({
       onOpenChange={setIsPopoverOpen}
       modal={modalPopover}
     >
-      <PopoverTrigger asChild>
+      <PopoverTrigger asChild={asChild}>
         <Button
           {...props}
           onClick={handleTogglePopover}
