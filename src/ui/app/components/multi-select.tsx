@@ -337,7 +337,11 @@ export function MultiSelect<T>({
                   <span>(Select All)</span>
                 </CommandItem>
               )}
-              {/* Hidden option eats up select - fixes bug where scroll of searched item is random and annoying */}
+              {/* Hidden option eats up select - fixes bug where scroll of searched item is random and annoying.
+                  source of bug ref: https://github.com/pacocoursey/cmdk/issues/317 
+                  this solution (not even the main solution lmao) ref: https://github.com/pacocoursey/cmdk/issues/171
+                  another fix ref: https://github.com/pacocoursey/cmdk/issues/233
+               */}
               {filteredOptions.length !== 0 && (
                 <CommandItem value="-" className="hidden" />
               )}
