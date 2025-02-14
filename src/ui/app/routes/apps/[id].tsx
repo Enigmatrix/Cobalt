@@ -47,68 +47,10 @@ import {
 import { SearchBar } from "@/components/search-bar";
 import { useSearch } from "@/hooks/use-search";
 import { CreateTagDialog } from "@/components/tag/create-tag-dialog";
-import {
-  DayUsageCard,
-  MonthUsageCard,
-  WeekUsageCard,
-  YearUsageCard,
-  type TimePeriodUsageCardProps,
-} from "@/components/usage-card";
+import { TimePeriodUsageCard } from "@/components/usage-card";
 import Heatmap from "@/components/viz/heatmap";
 import { useAppDurationsPerPeriod } from "@/hooks/use-repo";
-
-function AppUsageBarChartCard({
-  card,
-  period,
-  xAxisLabelFormatter,
-  appId,
-}: {
-  card: (props: TimePeriodUsageCardProps) => React.ReactNode;
-  period: Duration;
-  xAxisLabelFormatter: (dt: DateTime) => string;
-  appId: Ref<App>;
-}) {
-  const [range, setRange] = useState<
-    { start: DateTime; end: DateTime } | undefined
-  >(undefined);
-
-  const { isLoading, appUsage, totalUsage, usages, start, end } =
-    useAppDurationsPerPeriod({
-      start: range?.start,
-      end: range?.end,
-      period: period,
-      appId,
-    });
-
-  const children = useMemo(
-    () => (
-      <div className="aspect-video flex-1 mx-1 max-w-full">
-        {!range ? null : (
-          <AppUsageBarChart
-            data={usages}
-            singleAppId={appId}
-            periodTicks={durationToTicks(period)}
-            rangeMinTicks={dateTimeToTicks(start ?? range!.start)}
-            rangeMaxTicks={dateTimeToTicks(end ?? range!.end)}
-            dateTimeFormatter={xAxisLabelFormatter}
-            gradientBars
-            className="aspect-none"
-            maxYIsPeriod
-          />
-        )}
-      </div>
-    ),
-    [usages, period, xAxisLabelFormatter, range, start, end, appId],
-  );
-
-  return card({
-    usage: appUsage,
-    totalUsage: totalUsage,
-    children,
-    onChanged: setRange,
-    isLoading,
-  });
-}
+import { useTimePeriod, type TimePeriod } from "@/hooks/use-today";
 
 export default function App({ params }: Route.ComponentProps) {
   const id = +params.id;
@@ -129,9 +71,8 @@ export default function App({ params }: Route.ComponentProps) {
 
   const { copy, hasCopied } = useClipboard();
 
-  const [range, setRange] = useState<
-    { start: DateTime; end: DateTime } | undefined
-  >(undefined);
+  const yearPeriod = useTimePeriod("year");
+  const [yearInterval, setYearInterval] = useState(yearPeriod);
 
   const {
     isLoading: isYearDataLoading,
@@ -140,8 +81,8 @@ export default function App({ params }: Route.ComponentProps) {
     usages: yearUsages,
     start: yearRangeStart,
   } = useAppDurationsPerPeriod({
-    start: range?.start,
-    end: range?.end,
+    start: yearInterval.start,
+    end: yearInterval.end,
     period: day,
     appId: app.id,
   });
@@ -253,46 +194,43 @@ export default function App({ params }: Route.ComponentProps) {
 
         <div className="grid auto-rows-min gap-4 md:grid-cols-3">
           <AppUsageBarChartCard
-            card={DayUsageCard}
+            timePeriod="day"
             period={hour}
             xAxisLabelFormatter={hour24Formatter}
             appId={app.id}
           />
           <AppUsageBarChartCard
-            card={WeekUsageCard}
+            timePeriod="week"
             period={day}
             xAxisLabelFormatter={weekDayFormatter}
             appId={app.id}
           />
           <AppUsageBarChartCard
-            card={MonthUsageCard}
+            timePeriod="month"
             period={day}
             xAxisLabelFormatter={monthDayFormatter}
             appId={app.id}
           />
         </div>
-        <YearUsageCard
+        <TimePeriodUsageCard
+          timePeriod="year"
           usage={yearUsage}
           totalUsage={yearTotalUsage}
-          onChanged={setRange}
+          interval={yearInterval}
+          onIntervalChanged={setYearInterval}
           isLoading={isYearDataLoading}
         >
           <div className="p-4">
-            {!range?.start ? (
-              // avoid CLS
-              <div className="min-h-[200px]" />
-            ) : (
-              <Heatmap
-                data={yearData}
-                scaling={scaling}
-                startDate={yearRangeStart ?? range.start}
-                fullCellColorRgb={app.color}
-                innerClassName="min-h-[200px]"
-                firstDayOfMonthClassName="stroke-card-foreground/50"
-              />
-            )}
+            <Heatmap
+              data={yearData}
+              scaling={scaling}
+              startDate={yearRangeStart ?? yearInterval.start}
+              fullCellColorRgb={app.color}
+              innerClassName="min-h-[200px]"
+              firstDayOfMonthClassName="stroke-card-foreground/50"
+            />
           </div>
-        </YearUsageCard>
+        </TimePeriodUsageCard>
       </div>
     </>
   );
@@ -422,5 +360,59 @@ function ChooseTagPopover({
         </div>
       </PopoverContent>
     </Popover>
+  );
+}
+
+function AppUsageBarChartCard({
+  timePeriod,
+  period,
+  xAxisLabelFormatter,
+  appId,
+}: {
+  timePeriod: TimePeriod;
+  period: Duration;
+  xAxisLabelFormatter: (dt: DateTime) => string;
+  appId: Ref<App>;
+}) {
+  const startingInterval = useTimePeriod(timePeriod);
+  const [interval, setInterval] = useState(startingInterval);
+
+  const { isLoading, appUsage, totalUsage, usages, start, end } =
+    useAppDurationsPerPeriod({
+      start: interval.start,
+      end: interval.end,
+      period: period,
+      appId,
+    });
+
+  const children = useMemo(
+    () => (
+      <div className="aspect-video flex-1 mx-1 max-w-full">
+        <AppUsageBarChart
+          data={usages}
+          singleAppId={appId}
+          periodTicks={durationToTicks(period)}
+          rangeMinTicks={dateTimeToTicks(start ?? interval.start)}
+          rangeMaxTicks={dateTimeToTicks(end ?? interval.end)}
+          dateTimeFormatter={xAxisLabelFormatter}
+          gradientBars
+          className="aspect-none"
+          maxYIsPeriod
+        />
+      </div>
+    ),
+    [usages, period, xAxisLabelFormatter, interval, start, end, appId],
+  );
+
+  return (
+    <TimePeriodUsageCard
+      timePeriod={timePeriod}
+      interval={interval}
+      onIntervalChanged={setInterval}
+      children={children}
+      isLoading={isLoading}
+      usage={appUsage}
+      totalUsage={totalUsage}
+    />
   );
 }
