@@ -28,7 +28,7 @@ import {
   weekDayFormatter,
 } from "@/lib/time";
 import { Text } from "@/components/ui/text";
-import { TagIcon, TrashIcon } from "lucide-react";
+import { PlusIcon, TagIcon, TrashIcon } from "lucide-react";
 import { EditableText } from "@/components/editable-text";
 import { ColorPicker } from "@/components/color-picker";
 import _ from "lodash";
@@ -227,11 +227,12 @@ export default function Tag({ params }: Route.ComponentProps) {
             </div>
 
             <MultiSelect
-              className="min-h-14 border-border/75"
+              className="min-h-14 border-none w-fit"
               options={allAppOptions}
               onValueChange={setTagApps}
               defaultValue={tag.apps}
-              placeholder="Select Apps"
+              placeholder="No Apps. Add some!"
+              rightIcon={(className) => <PlusIcon className={className} />}
               maxCount={1000}
               search={search}
               onSearchChanged={setSearch}

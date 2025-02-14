@@ -130,6 +130,11 @@ interface MultiSelectProps<T>
    * Hook backspace key to remove last selected value.
    */
   hookBackspace?: boolean;
+
+  /*
+   * Right icon to display in the multi-select component.
+   */
+  rightIcon?: (className?: string) => React.ReactNode;
 }
 
 export function MultiSelect<T>({
@@ -149,10 +154,13 @@ export function MultiSelect<T>({
   showClose = false,
   showToggleSelectAll = false,
   hookBackspace = false,
+  rightIcon: rightIconInner,
   ...props
 }: MultiSelectProps<T>) {
   const [selectedValues, setSelectedValues] = React.useState<T[]>(defaultValue);
   const [isPopoverOpen, setIsPopoverOpen] = React.useState(false);
+  const rightIcon =
+    rightIconInner ?? ((className) => <ChevronDown className={className} />);
 
   const handleInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Enter") {
@@ -290,7 +298,7 @@ export function MultiSelect<T>({
                   orientation="vertical"
                   className="flex min-h-6 h-full"
                 />
-                <ChevronDown className="h-4 mx-2 cursor-pointer text-muted-foreground" />
+                {rightIcon("h-4 mx-2 cursor-pointer text-muted-foreground")}
               </div>
             </div>
           ) : (
@@ -298,7 +306,7 @@ export function MultiSelect<T>({
               <span className="text-sm text-muted-foreground mx-3">
                 {placeholder}
               </span>
-              <ChevronDown className="h-4 cursor-pointer text-muted-foreground mx-2" />
+              {rightIcon("h-4 cursor-pointer text-muted-foreground mx-2")}
             </div>
           )}
         </Button>
