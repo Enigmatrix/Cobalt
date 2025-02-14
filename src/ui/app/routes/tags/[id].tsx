@@ -28,7 +28,7 @@ import {
   weekDayFormatter,
 } from "@/lib/time";
 import { Text } from "@/components/ui/text";
-import { TagIcon, TrashIcon, XIcon } from "lucide-react";
+import { TagIcon, TrashIcon } from "lucide-react";
 import { EditableText } from "@/components/editable-text";
 import { ColorPicker } from "@/components/color-picker";
 import _ from "lodash";
@@ -57,95 +57,10 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useNavigate } from "react-router";
-import { Badge } from "@/components/ui/badge";
 import AppIcon from "@/components/app/app-icon";
 import { useSearch } from "@/hooks/use-search";
 import { MultiSelect } from "@/components/multi-select";
-
-function TagUsageBarChartCard({
-  card,
-  period,
-  xAxisLabelFormatter,
-  tag,
-}: {
-  card: (props: TimePeriodUsageCardProps) => React.ReactNode;
-  period: Duration;
-  xAxisLabelFormatter: (dt: DateTime) => string;
-  tag: Tag;
-}) {
-  const [range, setRange] = useState<
-    { start: DateTime; end: DateTime } | undefined
-  >(undefined);
-
-  const {
-    isLoading,
-    totalUsage,
-    usages: appUsages,
-    start,
-    end,
-  } = useAppDurationsPerPeriod({
-    start: range?.start,
-    end: range?.end,
-    period: period,
-  });
-
-  const { usages, tagUsage } = useMemo(() => {
-    const usages = _(tag.apps)
-      .map((appId) => [appId, appUsages[appId]])
-      .fromPairs()
-      .value();
-    const tagUsage = _(usages).values().flatten().sumBy("duration") ?? 0;
-    return { usages, tagUsage };
-  }, [appUsages, tag]);
-
-  const children = useMemo(
-    () => (
-      <div className="aspect-video flex-1 mx-1 max-w-full">
-        {!range ? null : (
-          <AppUsageBarChart
-            data={usages}
-            periodTicks={durationToTicks(period)}
-            rangeMinTicks={dateTimeToTicks(start ?? range!.start)}
-            rangeMaxTicks={dateTimeToTicks(end ?? range!.end)}
-            dateTimeFormatter={xAxisLabelFormatter}
-            className="aspect-none"
-            maxYIsPeriod
-          />
-        )}
-      </div>
-    ),
-    [usages, period, xAxisLabelFormatter, range, start, end],
-  );
-
-  return card({
-    usage: tagUsage,
-    totalUsage: totalUsage,
-    children,
-    onChanged: setRange,
-    isLoading,
-  });
-}
-
-function AppBadge({ app, remove }: { app: App; remove: () => void }) {
-  return (
-    <Badge
-      className="whitespace-nowrap min-w-0 m-1 font-normal border-border border rounded-md h-8 text-foreground"
-      style={{
-        backgroundColor: "rgba(255, 255, 255, 0.1)",
-      }}
-    >
-      <AppIcon buffer={app.icon} className="h-5 w-5 mr-2" />
-      <Text className="text-base">{app.name}</Text>
-      <XIcon
-        className="ml-2 h-4 w-4 cursor-pointer"
-        onClick={(event) => {
-          event.stopPropagation();
-          remove();
-        }}
-      />
-    </Badge>
-  );
-}
+import { AppBadge } from "@/components/app/app-list-item";
 
 export default function Tag({ params }: Route.ComponentProps) {
   const id = +params.id;
@@ -370,4 +285,68 @@ export default function Tag({ params }: Route.ComponentProps) {
       </div>
     </>
   );
+}
+
+function TagUsageBarChartCard({
+  card,
+  period,
+  xAxisLabelFormatter,
+  tag,
+}: {
+  card: (props: TimePeriodUsageCardProps) => React.ReactNode;
+  period: Duration;
+  xAxisLabelFormatter: (dt: DateTime) => string;
+  tag: Tag;
+}) {
+  const [range, setRange] = useState<
+    { start: DateTime; end: DateTime } | undefined
+  >(undefined);
+
+  const {
+    isLoading,
+    totalUsage,
+    usages: appUsages,
+    start,
+    end,
+  } = useAppDurationsPerPeriod({
+    start: range?.start,
+    end: range?.end,
+    period: period,
+  });
+
+  const { usages, tagUsage } = useMemo(() => {
+    const usages = _(tag.apps)
+      .map((appId) => [appId, appUsages[appId]])
+      .fromPairs()
+      .value();
+    const tagUsage = _(usages).values().flatten().sumBy("duration") ?? 0;
+    return { usages, tagUsage };
+  }, [appUsages, tag]);
+
+  const children = useMemo(
+    () => (
+      <div className="aspect-video flex-1 mx-1 max-w-full">
+        {!range ? null : (
+          <AppUsageBarChart
+            data={usages}
+            periodTicks={durationToTicks(period)}
+            rangeMinTicks={dateTimeToTicks(start ?? range!.start)}
+            rangeMaxTicks={dateTimeToTicks(end ?? range!.end)}
+            dateTimeFormatter={xAxisLabelFormatter}
+            className="aspect-none"
+            maxYIsPeriod
+          />
+        )}
+      </div>
+    ),
+    [usages, period, xAxisLabelFormatter, range, start, end],
+  );
+
+  return card({
+    usage: tagUsage,
+    totalUsage: totalUsage,
+    children,
+    onChanged: setRange,
+    isLoading,
+  });
 }

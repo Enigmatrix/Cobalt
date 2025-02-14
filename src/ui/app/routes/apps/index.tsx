@@ -67,103 +67,6 @@ export function MiniTagItem({
   );
 }
 
-// Virtual list item for react-window. Actual height in style
-// is ignored, instead we use h-24 and h-28 (if last, to show bottom gap).
-// There is a h-4 gap at the top of each item.
-function VirtualListItem({
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  style: { height, ...style },
-  children,
-}: {
-  style: CSSProperties;
-  children?: ReactNode;
-}) {
-  return (
-    // Due to how virtualization works, the last:h-28 triggers for the last item
-    // in the *window*, it just happens that due to overscanning that last item
-    // is hidden unless it's the actual last item in the list.
-    <div className="flex flex-col px-4 h-24 last:h-28" style={style}>
-      {/* gap */}
-      <div className="h-4" />
-      {children}
-    </div>
-  );
-}
-
-function AppListItem({
-  app,
-  usages,
-  start,
-  end,
-  period,
-}: {
-  app: App;
-  usages: EntityMap<App, WithGroupedDuration<App>[]>;
-  start: DateTime;
-  end: DateTime;
-  period: Duration;
-}) {
-  const tag = useTag(app.tag_id);
-
-  return (
-    <NavLink
-      to={`/apps/${app.id}`}
-      className={cn(
-        "h-20 shadow-sm rounded-md flex items-center gap-2 p-4 @container",
-        "ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-        "disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none cursor-pointer",
-        "bg-card text-card-foreground hover:bg-muted/75 border-border border",
-      )}
-    >
-      <AppIcon buffer={app.icon} className="mx-2 h-10 w-10 flex-shrink-0" />
-
-      <div className="flex flex-col min-w-0">
-        <div className="inline-flex items-center gap-2">
-          <Text className="text-lg font-semibold max-w-72">{app.name}</Text>
-          {tag && <MiniTagItem tag={tag} />}
-        </div>
-        <span className="inline-flex gap-1 items-center text-xs text-card-foreground/50">
-          <Text className="max-w-48">{app.company}</Text>
-          {app.description && (
-            <>
-              <p>|</p>
-              <Text className="max-w-[40rem]">{app.description}</Text>
-            </>
-          )}
-        </span>
-      </div>
-
-      <div className="flex-1" />
-
-      {app.usages.usage_today > 0 ? (
-        <>
-          <AppUsageBarChart
-            hideXAxis
-            gradientBars
-            maxYIsPeriod
-            data={usages}
-            singleAppId={app.id}
-            rangeMinTicks={dateTimeToTicks(start)}
-            rangeMaxTicks={dateTimeToTicks(end)}
-            periodTicks={durationToTicks(period)}
-            className="min-w-48 aspect-auto h-20 max-lg:hidden"
-          />
-
-          <div className="flex py-2 rounded-md lg:min-w-20">
-            <div className="flex flex-col items-end ml-auto my-auto">
-              <div className="text-xs text-card-foreground/50">Today</div>
-              <DurationText
-                className="text-lg min-w-8 text-center whitespace-nowrap"
-                ticks={app.usages.usage_today}
-              />
-            </div>
-          </div>
-        </>
-      ) : null}
-    </NavLink>
-  );
-}
-
 type SortProperty =
   | "name"
   | "company"
@@ -297,5 +200,102 @@ export default function Apps() {
         </AutoSizer>
       </div>
     </>
+  );
+}
+
+// Virtual list item for react-window. Actual height in style
+// is ignored, instead we use h-24 and h-28 (if last, to show bottom gap).
+// There is a h-4 gap at the top of each item.
+function VirtualListItem({
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  style: { height, ...style },
+  children,
+}: {
+  style: CSSProperties;
+  children?: ReactNode;
+}) {
+  return (
+    // Due to how virtualization works, the last:h-28 triggers for the last item
+    // in the *window*, it just happens that due to overscanning that last item
+    // is hidden unless it's the actual last item in the list.
+    <div className="flex flex-col px-4 h-24 last:h-28" style={style}>
+      {/* gap */}
+      <div className="h-4" />
+      {children}
+    </div>
+  );
+}
+
+function AppListItem({
+  app,
+  usages,
+  start,
+  end,
+  period,
+}: {
+  app: App;
+  usages: EntityMap<App, WithGroupedDuration<App>[]>;
+  start: DateTime;
+  end: DateTime;
+  period: Duration;
+}) {
+  const tag = useTag(app.tag_id);
+
+  return (
+    <NavLink
+      to={`/apps/${app.id}`}
+      className={cn(
+        "h-20 shadow-sm rounded-md flex items-center gap-2 p-4 @container",
+        "ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+        "disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none cursor-pointer",
+        "bg-card text-card-foreground hover:bg-muted/75 border-border border",
+      )}
+    >
+      <AppIcon buffer={app.icon} className="mx-2 h-10 w-10 flex-shrink-0" />
+
+      <div className="flex flex-col min-w-0">
+        <div className="inline-flex items-center gap-2">
+          <Text className="text-lg font-semibold max-w-72">{app.name}</Text>
+          {tag && <MiniTagItem tag={tag} />}
+        </div>
+        <span className="inline-flex gap-1 items-center text-xs text-card-foreground/50">
+          <Text className="max-w-48">{app.company}</Text>
+          {app.description && (
+            <>
+              <p>|</p>
+              <Text className="max-w-[40rem]">{app.description}</Text>
+            </>
+          )}
+        </span>
+      </div>
+
+      <div className="flex-1" />
+
+      {app.usages.usage_today > 0 ? (
+        <>
+          <AppUsageBarChart
+            hideXAxis
+            gradientBars
+            maxYIsPeriod
+            data={usages}
+            singleAppId={app.id}
+            rangeMinTicks={dateTimeToTicks(start)}
+            rangeMaxTicks={dateTimeToTicks(end)}
+            periodTicks={durationToTicks(period)}
+            className="min-w-48 aspect-auto h-20 max-lg:hidden"
+          />
+
+          <div className="flex py-2 rounded-md lg:min-w-20">
+            <div className="flex flex-col items-end ml-auto my-auto">
+              <div className="text-xs text-card-foreground/50">Today</div>
+              <DurationText
+                className="text-lg min-w-8 text-center whitespace-nowrap"
+                ticks={app.usages.usage_today}
+              />
+            </div>
+          </div>
+        </>
+      ) : null}
+    </NavLink>
   );
 }

@@ -57,133 +57,6 @@ import {
 import Heatmap from "@/components/viz/heatmap";
 import { useAppDurationsPerPeriod } from "@/hooks/use-repo";
 
-function ChooseTagPopover({
-  tagId,
-  setTagId: setTagIdInner,
-}: {
-  tagId: Ref<Tag> | null;
-  setTagId: (tagId: Ref<Tag> | null) => Promise<void>;
-}) {
-  const createTag = useAppState((state) => state.createTag);
-  const tags = useTags();
-  const [query, setQuery, filteredTags] = useSearch(tags, ["name"]);
-  const [open, setOpen] = useState(false);
-
-  const setTagId = useCallback(
-    async (tagId: Ref<Tag> | null) => {
-      await setTagIdInner(tagId);
-      setOpen(false);
-    },
-    [setTagIdInner, setOpen],
-  );
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button size="icon" variant="ghost" className="p-1 ml-2 w-auto h-auto">
-          <ChevronsUpDown />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-[20rem] z-10">
-        {tags.length !== 0 && (
-          <SearchBar value={query} onChange={(e) => setQuery(e.target.value)} />
-        )}
-        <div className="flex flex-col my-4 gap-1 overflow-y-auto max-h-[20rem] px-2">
-          {tags.length === 0 ? (
-            <div className="m-auto flex flex-col text-muted-foreground py-8 gap-2 items-center">
-              <TagIcon className="w-10 h-10 m-4" />
-              <p className="text-lg">No tags exist. Create some!</p>
-            </div>
-          ) : (
-            filteredTags.map((tag) => {
-              return (
-                <div
-                  key={tag.id}
-                  className={cn(
-                    "flex cursor-pointer hover:bg-muted p-2 rounded-md gap-2",
-                    {
-                      "bg-muted/80": tag.id === tagId,
-                    },
-                  )}
-                  onClick={async () => await setTagId(tag.id)}
-                >
-                  <TagIcon style={{ color: tag.color }} />
-                  <Text className="text-foreground">{tag.name}</Text>
-
-                  {tag.id === tagId && (
-                    <Check className="ml-auto text-muted-foreground/50" />
-                  )}
-                </div>
-              );
-            })
-          )}
-        </div>
-        <div className="flex gap-2">
-          <div className="flex-1"></div>
-          <Button
-            variant="outline"
-            className={cn({
-              hidden: tagId === null,
-            })}
-            onClick={async () => await setTagId(null)}
-          >
-            Clear
-          </Button>
-          <CreateTagDialog
-            trigger={
-              <Button variant={tags.length === 0 ? "default" : "outline"}>
-                <Plus />
-                Create Tag
-              </Button>
-            }
-            onSubmit={async (tag) => {
-              const tagId = await createTag(tag);
-              await setTagId(tagId);
-            }}
-          ></CreateTagDialog>
-        </div>
-      </PopoverContent>
-    </Popover>
-  );
-}
-
-function ChooseTag({
-  tagId,
-  setTagId,
-  className,
-}: {
-  tagId: Ref<Tag> | null;
-  setTagId: (tagId: Ref<Tag> | null) => Promise<void>;
-  className?: ClassValue;
-}) {
-  const tag = useTag(tagId);
-
-  return tag ? (
-    <Badge
-      variant="outline"
-      style={{
-        borderColor: tag.color,
-        color: tag.color,
-        backgroundColor: "rgba(255, 255, 255, 0.2)",
-      }}
-      className={cn("whitespace-nowrap", className)}
-    >
-      <NavLink to={`/tags/${tagId}`} className="min-w-0">
-        <Text className="max-w-32">{tag.name}</Text>
-      </NavLink>
-      <ChooseTagPopover tagId={tagId} setTagId={setTagId} />
-    </Badge>
-  ) : (
-    <Badge
-      variant="outline"
-      className={cn("whitespace-nowrap text-muted-foreground", className)}
-    >
-      <Text className="max-w-32">Untagged</Text>
-      <ChooseTagPopover tagId={tagId} setTagId={setTagId} />
-    </Badge>
-  );
-}
-
 function AppUsageBarChartCard({
   card,
   period,
@@ -422,5 +295,132 @@ export default function App({ params }: Route.ComponentProps) {
         </YearUsageCard>
       </div>
     </>
+  );
+}
+
+function ChooseTag({
+  tagId,
+  setTagId,
+  className,
+}: {
+  tagId: Ref<Tag> | null;
+  setTagId: (tagId: Ref<Tag> | null) => Promise<void>;
+  className?: ClassValue;
+}) {
+  const tag = useTag(tagId);
+
+  return tag ? (
+    <Badge
+      variant="outline"
+      style={{
+        borderColor: tag.color,
+        color: tag.color,
+        backgroundColor: "rgba(255, 255, 255, 0.2)",
+      }}
+      className={cn("whitespace-nowrap", className)}
+    >
+      <NavLink to={`/tags/${tagId}`} className="min-w-0">
+        <Text className="max-w-32">{tag.name}</Text>
+      </NavLink>
+      <ChooseTagPopover tagId={tagId} setTagId={setTagId} />
+    </Badge>
+  ) : (
+    <Badge
+      variant="outline"
+      className={cn("whitespace-nowrap text-muted-foreground", className)}
+    >
+      <Text className="max-w-32">Untagged</Text>
+      <ChooseTagPopover tagId={tagId} setTagId={setTagId} />
+    </Badge>
+  );
+}
+
+function ChooseTagPopover({
+  tagId,
+  setTagId: setTagIdInner,
+}: {
+  tagId: Ref<Tag> | null;
+  setTagId: (tagId: Ref<Tag> | null) => Promise<void>;
+}) {
+  const createTag = useAppState((state) => state.createTag);
+  const tags = useTags();
+  const [query, setQuery, filteredTags] = useSearch(tags, ["name"]);
+  const [open, setOpen] = useState(false);
+
+  const setTagId = useCallback(
+    async (tagId: Ref<Tag> | null) => {
+      await setTagIdInner(tagId);
+      setOpen(false);
+    },
+    [setTagIdInner, setOpen],
+  );
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button size="icon" variant="ghost" className="p-1 ml-2 w-auto h-auto">
+          <ChevronsUpDown />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[20rem] z-10">
+        {tags.length !== 0 && (
+          <SearchBar value={query} onChange={(e) => setQuery(e.target.value)} />
+        )}
+        <div className="flex flex-col my-4 gap-1 overflow-y-auto max-h-[20rem] px-2">
+          {tags.length === 0 ? (
+            <div className="m-auto flex flex-col text-muted-foreground py-8 gap-2 items-center">
+              <TagIcon className="w-10 h-10 m-4" />
+              <p className="text-lg">No tags exist. Create some!</p>
+            </div>
+          ) : (
+            filteredTags.map((tag) => {
+              return (
+                <div
+                  key={tag.id}
+                  className={cn(
+                    "flex cursor-pointer hover:bg-muted p-2 rounded-md gap-2",
+                    {
+                      "bg-muted/80": tag.id === tagId,
+                    },
+                  )}
+                  onClick={async () => await setTagId(tag.id)}
+                >
+                  <TagIcon style={{ color: tag.color }} />
+                  <Text className="text-foreground">{tag.name}</Text>
+
+                  {tag.id === tagId && (
+                    <Check className="ml-auto text-muted-foreground/50" />
+                  )}
+                </div>
+              );
+            })
+          )}
+        </div>
+        <div className="flex gap-2">
+          <div className="flex-1"></div>
+          <Button
+            variant="outline"
+            className={cn({
+              hidden: tagId === null,
+            })}
+            onClick={async () => await setTagId(null)}
+          >
+            Clear
+          </Button>
+          <CreateTagDialog
+            trigger={
+              <Button variant={tags.length === 0 ? "default" : "outline"}>
+                <Plus />
+                Create Tag
+              </Button>
+            }
+            onSubmit={async (tag) => {
+              const tagId = await createTag(tag);
+              await setTagId(tagId);
+            }}
+          ></CreateTagDialog>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
