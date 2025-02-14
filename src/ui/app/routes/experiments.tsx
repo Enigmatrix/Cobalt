@@ -6,9 +6,11 @@ import {
   BreadcrumbPage,
   BreadcrumbList,
 } from "@/components/ui/breadcrumb";
-import { Button } from "@/components/ui/button";
+import { Button, type ButtonProps } from "@/components/ui/button";
 import { invoke } from "@tauri-apps/api/core";
 import { refresh } from "@/lib/state";
+import { useTransition } from "react";
+import { LoaderIcon } from "lucide-react";
 
 async function copySeedDb() {
   await invoke("copy_seed_db");
@@ -20,6 +22,22 @@ async function updateUsagesEnd() {
 
 async function refreshState() {
   await refresh();
+}
+
+function AsyncButton({
+  onClick,
+  children,
+  ...props
+}: Omit<ButtonProps, "onClick"> & { onClick: () => Promise<void> }) {
+  const [isLoading, startTransition] = useTransition();
+
+  return (
+    <Button
+      {...props}
+      children={isLoading ? <LoaderIcon className="animate-spin" /> : children}
+      onClick={() => startTransition(async () => await onClick())}
+    />
+  );
 }
 
 export default function Experiments() {
@@ -43,15 +61,15 @@ export default function Experiments() {
           <div className="aspect-video rounded-xl bg-muted/50" />
         </div>
         <div className="min-h-[100vh] flex-1 rounded-xl bg-muted/50 md:min-h-min flex flex-col gap-4 p-4">
-          <Button onClick={copySeedDb} variant="outline">
+          <AsyncButton onClick={copySeedDb} variant="outline">
             Copy seed.db
-          </Button>
-          <Button onClick={updateUsagesEnd} variant="outline">
+          </AsyncButton>
+          <AsyncButton onClick={updateUsagesEnd} variant="outline">
             Set last usage to now
-          </Button>
-          <Button onClick={refreshState} variant="outline">
+          </AsyncButton>
+          <AsyncButton onClick={refreshState} variant="outline">
             Refresh
-          </Button>
+          </AsyncButton>
         </div>
       </div>
     </>
