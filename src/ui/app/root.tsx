@@ -17,7 +17,8 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Suspense, useEffect, useMemo } from "react";
 import { initState } from "@/lib/state";
 import { Toaster } from "@/components/ui/sonner";
-import { info } from "@/lib/log";
+import { info, error as errorLog } from "@/lib/log";
+import { openUrl as open } from "@tauri-apps/plugin-opener";
 
 export const links: Route.LinksFunction = () => [
   { rel: "stylesheet", href: stylesheet },
@@ -64,7 +65,12 @@ export default function App() {
   );
 }
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  import.meta.env.DEV && console.error(error);
+  errorLog("caught at ErrorBoundary", {
+    error,
+    str: error?.toString(),
+    message: (error as unknown as Record<string, unknown>)?.message,
+    stack: (error as unknown as Record<string, unknown>)?.stack,
+  });
 
   const isDev = import.meta.env.DEV;
   let message = "An unexpected error occurred.";
@@ -92,7 +98,7 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
                 </pre>
               )}
               Raw Error:
-              <pre className="overflow-x-auto text-sm p-2 border border-border rounded-md">
+              <pre className="overflow-x-auto text-sm p-2 bg-destructive/5 rounded-md">
                 <code>{JSON.stringify(error, null, 2)}</code>
               </pre>
             </>
@@ -101,11 +107,8 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
               <p>{message}</p>
               <button
                 className="px-4 py-2 bg-destructive text-destructive-foreground rounded-md hover:bg-destructive/90"
-                onClick={() =>
-                  window.open(
-                    "https://github.com/Enigmatrix/Cobalt/issues",
-                    "_blank",
-                  )
+                onClick={async () =>
+                  await open("https://github.com/Enigmatrix/Cobalt/issues")
                 }
               >
                 Report Issue
