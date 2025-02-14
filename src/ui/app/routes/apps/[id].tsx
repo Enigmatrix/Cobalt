@@ -182,7 +182,7 @@ export default function App({ params }: Route.ComponentProps) {
       </header>
       <div className="flex flex-1 flex-col gap-4 p-4">
         {/* App Info */}
-        <div className="rounded-xl bg-muted/50 p-6">
+        <div className="rounded-xl bg-card border border-border p-6">
           <div className="flex flex-col gap-4">
             {/* Header with name and icon */}
             <div className="flex items-center gap-4">

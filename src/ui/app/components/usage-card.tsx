@@ -44,19 +44,19 @@ export function UsageCard({
   }, [start, onChanged, endFn]);
 
   return (
-    <div className="flex flex-col rounded-xl bg-muted/50">
+    <div className="flex flex-col rounded-xl bg-card border border-border">
       <div className="flex items-center">
         <div className="flex flex-col p-4 pb-1 min-w-0">
-          <div className="whitespace-nowrap text-base text-foreground/50">
+          <div className="whitespace-nowrap text-base text-card-foreground/50">
             {titleFn(start)}
           </div>
           <div className="flex gap-2 items-baseline font-semibold">
             <DurationText className="text-xl" ticks={usage} />
             {usage !== 0 && (
               <>
-                <span className="text-xl text-muted-foreground">/</span>
+                <span className="text-xl text-card-foreground">/</span>
                 <DurationText
-                  className="text-muted-foreground"
+                  className="text-card-foreground"
                   ticks={totalUsage}
                 />
               </>

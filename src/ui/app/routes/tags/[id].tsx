@@ -175,7 +175,7 @@ export default function Tag({ params }: Route.ComponentProps) {
       </header>
       <div className="flex flex-1 flex-col gap-4 p-4">
         {/* App Info */}
-        <div className="rounded-xl bg-muted/50 px-6 pt-6 pb-4">
+        <div className="rounded-xl bg-card border border-border px-6 pt-6 pb-4">
           <div className="flex flex-col gap-6">
             {/* Header with name and icon */}
             <div className="flex items-center gap-4">
@@ -227,7 +227,7 @@ export default function Tag({ params }: Route.ComponentProps) {
             </div>
 
             <MultiSelect
-              className="min-h-14"
+              className="min-h-14 border-border/75"
               options={allAppOptions}
               onValueChange={setTagApps}
               defaultValue={tag.apps}
