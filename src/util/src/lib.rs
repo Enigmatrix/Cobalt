@@ -13,6 +13,8 @@ pub mod time;
 /// Logging, tracing helpers
 pub mod tracing;
 
+use std::sync::Once;
+
 use crate::config::Config;
 use crate::error::Result;
 
@@ -24,9 +26,19 @@ pub enum Target {
     Engine,
 }
 
-/// Setup all utils
+static INIT: Once = Once::new();
+
+/// Setup all utils. This function will only run once, all other invocations
+/// will be ignored (vacous success).
 pub fn setup(config: &Config, target: Target) -> Result<()> {
-    error::setup()?;
-    tracing::setup(config, target)?;
-    Ok(())
+    let mut result = Ok(());
+    INIT.call_once(|| {
+        fn inner_setup(config: &Config, target: Target) -> Result<()> {
+            error::setup()?;
+            tracing::setup(config, target)?;
+            Ok(())
+        }
+        result = inner_setup(config, target);
+    });
+    result
 }
