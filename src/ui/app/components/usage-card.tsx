@@ -171,7 +171,7 @@ export function TimePeriodUsageCard({
       },
       canGoNext(interval: Interval) {
         const nextStart = interval.start.plus({ [timePeriod]: 1 });
-        return today.plus({ day: 1 }) > nextStart; //  TODO should this be <= ?
+        return today.plus({ day: 1 }) > nextStart;
       },
       canGoPrev() {
         return true;
