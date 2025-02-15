@@ -90,6 +90,7 @@ function AppUsageBarChartCard({
           dateTimeFormatter={xAxisLabelFormatter}
           className="aspect-none"
           maxYIsPeriod
+          animationsEnabled={false}
           barRadius={2}
         />
       </div>
