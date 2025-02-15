@@ -39,6 +39,7 @@ export interface AppUsageBarChartProps {
   className?: ClassValue;
   dateTimeFormatter?: (dt: DateTime) => string;
   onHover?: (data?: WithGroupedDuration<App>) => void;
+  barRadius?: number | [number, number, number, number];
 }
 
 type AppUsageBarChartData = {
@@ -61,6 +62,7 @@ export function AppUsageBarChart({
   animationsEnabled = true,
   className,
   onHover,
+  barRadius,
 }: AppUsageBarChartProps) {
   const apps = useAppState((state) => state.apps);
   const { handleStaleApps } = useRefresh();
@@ -215,7 +217,7 @@ export function AppUsageBarChart({
               setHoveredAppId(null);
               onHover?.(undefined);
             }}
-            radius={4}
+            radius={barRadius ?? 4}
           >
             {singleAppId === undefined && (
               <LabelList dataKey={() => app} content={renderCustomizedLabel} />
