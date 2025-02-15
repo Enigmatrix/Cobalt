@@ -27,7 +27,7 @@ export function UsageCard({
   canGoPrev: (interval: Interval) => boolean;
   title: (interval: Interval) => string;
 
-  usage: number;
+  usage?: number;
   totalUsage: number;
   children: React.ReactNode;
   isLoading: boolean;
@@ -52,12 +52,12 @@ export function UsageCard({
             {title(interval)}
           </div>
           <div className="flex gap-2 items-baseline font-semibold">
-            <DurationText className="text-xl" ticks={usage} />
-            {usage !== 0 && (
+            <DurationText className="text-xl" ticks={usage ?? totalUsage} />
+            {usage !== undefined && usage !== 0 && (
               <>
-                <span className="text-xl text-card-foreground">/</span>
+                <span className="text-xl text-muted-foreground">/</span>
                 <DurationText
-                  className="text-card-foreground"
+                  className="text-muted-foreground"
                   ticks={totalUsage}
                 />
               </>
@@ -98,7 +98,7 @@ export interface TimePeriodUsageCardProps {
   interval: Interval;
   onIntervalChanged: (interval: Interval) => void;
 
-  usage: number;
+  usage?: number;
   totalUsage: number;
   children: React.ReactNode;
   isLoading: boolean;
