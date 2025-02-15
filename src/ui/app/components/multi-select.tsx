@@ -130,6 +130,11 @@ interface MultiSelectProps<T>
    * Hook backspace key to remove last selected value.
    */
   hookBackspace?: boolean;
+
+  /*
+   * Right icon to display in the multi-select component.
+   */
+  rightIcon?: (className?: string) => React.ReactNode;
 }
 
 export function MultiSelect<T>({
@@ -149,10 +154,13 @@ export function MultiSelect<T>({
   showClose = false,
   showToggleSelectAll = false,
   hookBackspace = false,
+  rightIcon: rightIconInner,
   ...props
 }: MultiSelectProps<T>) {
   const [selectedValues, setSelectedValues] = React.useState<T[]>(defaultValue);
   const [isPopoverOpen, setIsPopoverOpen] = React.useState(false);
+  const rightIcon =
+    rightIconInner ?? ((className) => <ChevronDown className={className} />);
 
   const handleInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Enter") {
@@ -290,7 +298,7 @@ export function MultiSelect<T>({
                   orientation="vertical"
                   className="flex min-h-6 h-full"
                 />
-                <ChevronDown className="h-4 mx-2 cursor-pointer text-muted-foreground" />
+                {rightIcon("h-4 mx-2 cursor-pointer text-muted-foreground")}
               </div>
             </div>
           ) : (
@@ -298,7 +306,7 @@ export function MultiSelect<T>({
               <span className="text-sm text-muted-foreground mx-3">
                 {placeholder}
               </span>
-              <ChevronDown className="h-4 cursor-pointer text-muted-foreground mx-2" />
+              {rightIcon("h-4 cursor-pointer text-muted-foreground mx-2")}
             </div>
           )}
         </Button>
@@ -337,7 +345,11 @@ export function MultiSelect<T>({
                   <span>(Select All)</span>
                 </CommandItem>
               )}
-              {/* Hidden option eats up select - fixes bug where scroll of searched item is random and annoying */}
+              {/* Hidden option eats up select - fixes bug where scroll of searched item is random and annoying.
+                  source of bug ref: https://github.com/pacocoursey/cmdk/issues/317 
+                  this solution (not even the main solution lmao) ref: https://github.com/pacocoursey/cmdk/issues/171
+                  another fix ref: https://github.com/pacocoursey/cmdk/issues/233
+               */}
               {filteredOptions.length !== 0 && (
                 <CommandItem value="-" className="hidden" />
               )}

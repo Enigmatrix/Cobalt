@@ -120,6 +120,14 @@ export async function updateTag(tag: Tag): Promise<void> {
   return await invoke("update_tag", { tag: updatedTag });
 }
 
+export async function updateTagApps(
+  tagId: Ref<Tag>,
+  removedApps: Ref<App>[],
+  addedApps: Ref<App>[],
+): Promise<void> {
+  return await invoke("update_tag_apps", { tagId, removedApps, addedApps });
+}
+
 export async function createTag(tag: CreateTag): Promise<Ref<Tag>> {
   return await invoke("create_tag", { tag });
 }

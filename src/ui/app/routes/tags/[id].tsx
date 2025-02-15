@@ -18,22 +18,21 @@ import { DateTime, Duration } from "luxon";
 import { useApps, useTag } from "@/hooks/use-refresh";
 import {
   dateTimeToTicks,
+  day,
   durationToTicks,
+  hour,
+  hour24Formatter,
+  monthDayFormatter,
   ticksToDateTime,
   ticksToDuration,
+  weekDayFormatter,
 } from "@/lib/time";
 import { Text } from "@/components/ui/text";
-import { TagIcon, TrashIcon, XIcon } from "lucide-react";
+import { PlusIcon, TagIcon, TrashIcon } from "lucide-react";
 import { EditableText } from "@/components/editable-text";
 import { ColorPicker } from "@/components/color-picker";
 import _ from "lodash";
-import {
-  DayUsageCard,
-  MonthUsageCard,
-  WeekUsageCard,
-  YearUsageCard,
-  type TimePeriodUsageCardProps,
-} from "@/components/usage-card";
+import { TimePeriodUsageCard } from "@/components/usage-card";
 import Heatmap from "@/components/viz/heatmap";
 import {
   useAppDurationsPerPeriod,
@@ -52,103 +51,11 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useNavigate } from "react-router";
-import { Badge } from "@/components/ui/badge";
 import AppIcon from "@/components/app/app-icon";
 import { useSearch } from "@/hooks/use-search";
 import { MultiSelect } from "@/components/multi-select";
-
-function TagUsageBarChartCard({
-  card,
-  period,
-  xAxisLabelFormatter,
-  tag,
-}: {
-  card: (props: TimePeriodUsageCardProps) => React.ReactNode;
-  period: Duration;
-  xAxisLabelFormatter: (dt: DateTime) => string;
-  tag: Tag;
-}) {
-  const [range, setRange] = useState<
-    { start: DateTime; end: DateTime } | undefined
-  >(undefined);
-
-  const {
-    isLoading,
-    totalUsage,
-    usages: appUsages,
-    start,
-    end,
-  } = useAppDurationsPerPeriod({
-    start: range?.start,
-    end: range?.end,
-    period: period,
-  });
-
-  const { usages, tagUsage } = useMemo(() => {
-    const usages = _(tag.apps)
-      .map((appId) => [appId, appUsages[appId]])
-      .fromPairs()
-      .value();
-    const tagUsage = _(usages).values().flatten().sumBy("duration") ?? 0;
-    return { usages, tagUsage };
-  }, [appUsages, tag]);
-
-  const children = useMemo(
-    () => (
-      <div className="aspect-video flex-1 mx-1 max-w-full">
-        {!range ? null : (
-          <AppUsageBarChart
-            data={usages}
-            periodTicks={durationToTicks(period)}
-            rangeMinTicks={dateTimeToTicks(start ?? range!.start)}
-            rangeMaxTicks={dateTimeToTicks(end ?? range!.end)}
-            dateTimeFormatter={xAxisLabelFormatter}
-            className="aspect-none"
-            maxYIsPeriod
-          />
-        )}
-      </div>
-    ),
-    [usages, period, xAxisLabelFormatter, range, start, end],
-  );
-
-  return card({
-    usage: tagUsage,
-    totalUsage: totalUsage,
-    children,
-    onChanged: setRange,
-    isLoading,
-  });
-}
-
-const dayChartPeriod = Duration.fromObject({ hour: 1 });
-const weekChartPeriod = Duration.fromObject({ day: 1 });
-const monthChartPeriod = Duration.fromObject({ day: 1 });
-const yearChartPeriod = Duration.fromObject({ day: 1 });
-const dayXAxisFormatter = (dateTime: DateTime) => dateTime.toFormat("HHmm");
-const weekXAxisFormatter = (dateTime: DateTime) => dateTime.toFormat("EEE");
-const monthXAxisFormatter = (dateTime: DateTime) => dateTime.toFormat("dd");
-
-function AppBadge({ app, remove }: { app: App; remove: () => void }) {
-  return (
-    <Badge
-      className="whitespace-nowrap min-w-0 m-1 font-normal border-border border rounded-md h-8"
-      style={{
-        backgroundColor: "rgba(255, 255, 255, 0.1)",
-      }}
-    >
-      <AppIcon buffer={app.icon} className="h-5 w-5 mr-2" />
-      <Text className="text-base">{app.name}</Text>
-      <XIcon
-        className="ml-2 h-4 w-4 cursor-pointer"
-        onClick={(event) => {
-          event.stopPropagation();
-          remove();
-        }}
-      />
-    </Badge>
-  );
-}
+import { AppBadge } from "@/components/app/app-list-item";
+import { useTimePeriod, type TimePeriod } from "@/hooks/use-today";
 
 export default function Tag({ params }: Route.ComponentProps) {
   const id = +params.id;
@@ -200,9 +107,8 @@ export default function Tag({ params }: Route.ComponentProps) {
     await removeTag(tag.id);
   }, [removeTag, navigate, tag.id]);
 
-  const [range, setRange] = useState<
-    { start: DateTime; end: DateTime } | undefined
-  >(undefined);
+  const yearPeriod = useTimePeriod("year");
+  const [yearInterval, setYearInterval] = useState(yearPeriod);
 
   const {
     isLoading: isYearDataLoading,
@@ -211,9 +117,10 @@ export default function Tag({ params }: Route.ComponentProps) {
     usages: yearUsages,
     start: yearRangeStart,
   } = useTagDurationsPerPeriod({
-    start: range?.start,
-    end: range?.end,
-    period: yearChartPeriod,
+    start: yearInterval.start,
+    end: yearInterval.end,
+    period: day,
+    tagId: tag.id,
   });
   const yearData = useMemo(() => {
     return new Map(
@@ -234,7 +141,7 @@ export default function Tag({ params }: Route.ComponentProps) {
     async (apps: Ref<App>[]) => {
       await updateTagApps(tag, apps);
     },
-    [tag],
+    [tag, updateTagApps],
   );
 
   return (
@@ -262,7 +169,7 @@ export default function Tag({ params }: Route.ComponentProps) {
       </header>
       <div className="flex flex-1 flex-col gap-4 p-4">
         {/* App Info */}
-        <div className="rounded-xl bg-muted/50 px-6 pt-6 pb-4">
+        <div className="rounded-xl bg-card border border-border px-6 pt-6 pb-4">
           <div className="flex flex-col gap-6">
             {/* Header with name and icon */}
             <div className="flex items-center gap-4">
@@ -314,11 +221,12 @@ export default function Tag({ params }: Route.ComponentProps) {
             </div>
 
             <MultiSelect
-              className="min-h-14"
+              className="min-h-14 border-none w-fit"
               options={allAppOptions}
               onValueChange={setTagApps}
               defaultValue={tag.apps}
-              placeholder="Select Apps"
+              placeholder="No Apps. Add some!"
+              rightIcon={(className) => <PlusIcon className={className} />}
               maxCount={1000}
               search={search}
               onSearchChanged={setSearch}
@@ -329,47 +237,108 @@ export default function Tag({ params }: Route.ComponentProps) {
 
         <div className="grid auto-rows-min gap-4 md:grid-cols-3">
           <TagUsageBarChartCard
-            card={DayUsageCard}
-            period={dayChartPeriod}
-            xAxisLabelFormatter={dayXAxisFormatter}
+            timePeriod="day"
+            period={hour}
+            xAxisLabelFormatter={hour24Formatter}
             tag={tag}
           />
           <TagUsageBarChartCard
-            card={WeekUsageCard}
-            period={weekChartPeriod}
-            xAxisLabelFormatter={weekXAxisFormatter}
+            timePeriod="week"
+            period={day}
+            xAxisLabelFormatter={weekDayFormatter}
             tag={tag}
           />
           <TagUsageBarChartCard
-            card={MonthUsageCard}
-            period={monthChartPeriod}
-            xAxisLabelFormatter={monthXAxisFormatter}
+            timePeriod="month"
+            period={day}
+            xAxisLabelFormatter={monthDayFormatter}
             tag={tag}
           />
         </div>
-        <YearUsageCard
+        <TimePeriodUsageCard
+          timePeriod="year"
           usage={yearUsage}
           totalUsage={yearTotalUsage}
-          onChanged={setRange}
+          interval={yearInterval}
+          onIntervalChanged={setYearInterval}
           isLoading={isYearDataLoading}
         >
           <div className="p-4">
-            {!range?.start ? (
-              // avoid CLS
-              <div className="min-h-[200px]" />
-            ) : (
-              <Heatmap
-                data={yearData}
-                scaling={scaling}
-                startDate={yearRangeStart ?? range.start}
-                fullCellColorRgb={tag.color}
-                innerClassName="min-h-[200px]"
-                firstDayOfMonthClassName="stroke-card-foreground/50"
-              />
-            )}
+            <Heatmap
+              data={yearData}
+              scaling={scaling}
+              startDate={yearRangeStart ?? yearInterval.start}
+              fullCellColorRgb={tag.color}
+              innerClassName="min-h-[200px]"
+              firstDayOfMonthClassName="stroke-card-foreground/50"
+            />
           </div>
-        </YearUsageCard>
+        </TimePeriodUsageCard>
       </div>
     </>
+  );
+}
+
+function TagUsageBarChartCard({
+  timePeriod,
+  period,
+  xAxisLabelFormatter,
+  tag,
+}: {
+  timePeriod: TimePeriod;
+  period: Duration;
+  xAxisLabelFormatter: (dt: DateTime) => string;
+  tag: Tag;
+}) {
+  const startingInterval = useTimePeriod(timePeriod);
+  const [interval, setInterval] = useState(startingInterval);
+
+  const {
+    isLoading,
+    totalUsage,
+    usages: appUsages,
+    start,
+    end,
+  } = useAppDurationsPerPeriod({
+    start: interval.start,
+    end: interval.end,
+    period: period,
+  });
+  const { usages, tagUsage } = useMemo(() => {
+    const usages = _(tag.apps)
+      .map((appId) => [appId, appUsages[appId]])
+      .fromPairs()
+      .value();
+    const tagUsage = _(usages).values().flatten().sumBy("duration") ?? 0;
+    return { usages, tagUsage };
+  }, [appUsages, tag]);
+
+  const children = useMemo(
+    () => (
+      <div className="aspect-video flex-1 mx-1 max-w-full">
+        <AppUsageBarChart
+          data={usages}
+          periodTicks={durationToTicks(period)}
+          rangeMinTicks={dateTimeToTicks(start ?? interval.start)}
+          rangeMaxTicks={dateTimeToTicks(end ?? interval.end)}
+          dateTimeFormatter={xAxisLabelFormatter}
+          className="aspect-none"
+          maxYIsPeriod
+        />
+      </div>
+    ),
+    [usages, period, xAxisLabelFormatter, interval, start, end],
+  );
+
+  return (
+    <TimePeriodUsageCard
+      timePeriod={timePeriod}
+      interval={interval}
+      onIntervalChanged={setInterval}
+      children={children}
+      isLoading={isLoading}
+      usage={tagUsage}
+      totalUsage={totalUsage}
+    />
   );
 }

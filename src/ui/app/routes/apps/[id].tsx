@@ -19,9 +19,14 @@ import { DateTime, Duration } from "luxon";
 import { useApp, useTag, useTags } from "@/hooks/use-refresh";
 import {
   dateTimeToTicks,
+  day,
   durationToTicks,
+  hour,
+  hour24Formatter,
+  monthDayFormatter,
   ticksToDateTime,
   ticksToDuration,
+  weekDayFormatter,
 } from "@/lib/time";
 import { Text } from "@/components/ui/text";
 import { Button } from "@/components/ui/button";
@@ -42,15 +47,231 @@ import {
 import { SearchBar } from "@/components/search-bar";
 import { useSearch } from "@/hooks/use-search";
 import { CreateTagDialog } from "@/components/tag/create-tag-dialog";
-import {
-  DayUsageCard,
-  MonthUsageCard,
-  WeekUsageCard,
-  YearUsageCard,
-  type TimePeriodUsageCardProps,
-} from "@/components/usage-card";
+import { TimePeriodUsageCard } from "@/components/usage-card";
 import Heatmap from "@/components/viz/heatmap";
 import { useAppDurationsPerPeriod } from "@/hooks/use-repo";
+import { useTimePeriod, type TimePeriod } from "@/hooks/use-today";
+
+export default function App({ params }: Route.ComponentProps) {
+  const id = +params.id;
+  const app = useApp(id as Ref<App>)!;
+  const updateApp = useAppState((state) => state.updateApp);
+  const [color, setColorInner] = useState(app.color);
+  const debouncedUpdateColor = useDebouncedCallback(async (color: string) => {
+    await updateApp({ ...app, color });
+  }, 500);
+
+  const setColor = useCallback(
+    async (color: string) => {
+      setColorInner(color);
+      await debouncedUpdateColor(color);
+    },
+    [setColorInner, debouncedUpdateColor],
+  );
+
+  const { copy, hasCopied } = useClipboard();
+
+  const yearPeriod = useTimePeriod("year");
+  const [yearInterval, setYearInterval] = useState(yearPeriod);
+
+  const {
+    isLoading: isYearDataLoading,
+    appUsage: yearUsage,
+    totalUsage: yearTotalUsage,
+    usages: yearUsages,
+    start: yearRangeStart,
+  } = useAppDurationsPerPeriod({
+    start: yearInterval.start,
+    end: yearInterval.end,
+    period: day,
+    appId: app.id,
+  });
+  const yearData = useMemo(() => {
+    return new Map(
+      _(yearUsages[app.id] || [])
+        .map(
+          (appDur) =>
+            [+ticksToDateTime(appDur.group), appDur.duration] as const,
+        )
+        .value(),
+    );
+  }, [yearUsages, app.id]);
+
+  const scaling = useCallback((value: number) => {
+    return _.clamp(ticksToDuration(value).rescale().hours / 8, 0.2, 1);
+  }, []);
+
+  return (
+    <>
+      <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+        <SidebarTrigger className="-ml-1" />
+        <Separator orientation="vertical" className="mr-2 h-4" />
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem className="hidden md:block">
+              <BreadcrumbLink href="/apps">Apps</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator className="hidden md:block" />
+            <BreadcrumbItem>
+              <BreadcrumbPage className="inline-flex items-center">
+                <AppIcon buffer={app.icon} className="w-5 h-5 mr-2" />
+                <Text>{app.name}</Text>
+              </BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+      </header>
+      <div className="flex flex-1 flex-col gap-4 p-4">
+        {/* App Info */}
+        <div className="rounded-xl bg-card border border-border p-6">
+          <div className="flex flex-col gap-4">
+            {/* Header with name and icon */}
+            <div className="flex items-center gap-4">
+              <AppIcon buffer={app.icon} className="w-12 h-12 shrink-0" />
+              <div className="min-w-0 shrink flex flex-col">
+                <div className="min-w-0 flex gap-4">
+                  <EditableText
+                    text={app.name}
+                    className="min-w-0 text-2xl font-semibold grow-0"
+                    buttonClassName="ml-1"
+                    onSubmit={async (v) => await updateApp({ ...app, name: v })}
+                  />
+                  <ChooseTag
+                    tagId={app.tag_id}
+                    setTagId={async (tagId) =>
+                      await updateApp({ ...app, tag_id: tagId })
+                    }
+                    className="min-w-0"
+                  />
+                </div>
+                <Text className="text-muted-foreground">{app.company}</Text>
+              </div>
+              <div className="flex-1" />
+              <ColorPicker
+                className="min-w-0 w-fit"
+                color={color}
+                onChange={setColor}
+              />
+            </div>
+
+            {/* Description */}
+            <EditableText
+              className="text-muted-foreground self-start"
+              buttonClassName="text-muted-foreground/50"
+              text={app.description}
+              onSubmit={async (v) =>
+                await updateApp({ ...app, description: v })
+              }
+            />
+
+            {/* App Identity */}
+            <div className="text-sm inline-flex border-border border rounded-lg overflow-hidden max-w-fit min-w-0 bg-muted/30 items-center">
+              <div className="bg-muted px-3 py-1.5 border-r border-border font-medium">
+                {isUwp(app.identity) ? "UWP" : "Win32"}
+              </div>
+
+              <Text className="font-mono pl-3 pr-1 py-1.5 text-muted-foreground">
+                {isUwp(app.identity)
+                  ? app.identity.Uwp.aumid
+                  : app.identity.Win32.path}
+              </Text>
+              <Button
+                variant="ghost"
+                className="h-auto p-2 rounded-none rounded-r-lg text-muted-foreground"
+                onClick={() =>
+                  copy(
+                    isUwp(app.identity)
+                      ? app.identity.Uwp.aumid
+                      : app.identity.Win32.path,
+                  )
+                }
+              >
+                {hasCopied ? <Check /> : <Copy />}
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid auto-rows-min gap-4 md:grid-cols-3">
+          <AppUsageBarChartCard
+            timePeriod="day"
+            period={hour}
+            xAxisLabelFormatter={hour24Formatter}
+            appId={app.id}
+          />
+          <AppUsageBarChartCard
+            timePeriod="week"
+            period={day}
+            xAxisLabelFormatter={weekDayFormatter}
+            appId={app.id}
+          />
+          <AppUsageBarChartCard
+            timePeriod="month"
+            period={day}
+            xAxisLabelFormatter={monthDayFormatter}
+            appId={app.id}
+          />
+        </div>
+        <TimePeriodUsageCard
+          timePeriod="year"
+          usage={yearUsage}
+          totalUsage={yearTotalUsage}
+          interval={yearInterval}
+          onIntervalChanged={setYearInterval}
+          isLoading={isYearDataLoading}
+        >
+          <div className="p-4">
+            <Heatmap
+              data={yearData}
+              scaling={scaling}
+              startDate={yearRangeStart ?? yearInterval.start}
+              fullCellColorRgb={app.color}
+              innerClassName="min-h-[200px]"
+              firstDayOfMonthClassName="stroke-card-foreground/50"
+            />
+          </div>
+        </TimePeriodUsageCard>
+      </div>
+    </>
+  );
+}
+
+function ChooseTag({
+  tagId,
+  setTagId,
+  className,
+}: {
+  tagId: Ref<Tag> | null;
+  setTagId: (tagId: Ref<Tag> | null) => Promise<void>;
+  className?: ClassValue;
+}) {
+  const tag = useTag(tagId);
+
+  return tag ? (
+    <Badge
+      variant="outline"
+      style={{
+        borderColor: tag.color,
+        color: tag.color,
+        backgroundColor: "rgba(255, 255, 255, 0.2)",
+      }}
+      className={cn("whitespace-nowrap", className)}
+    >
+      <NavLink to={`/tags/${tagId}`} className="min-w-0">
+        <Text className="max-w-32">{tag.name}</Text>
+      </NavLink>
+      <ChooseTagPopover tagId={tagId} setTagId={setTagId} />
+    </Badge>
+  ) : (
+    <Badge
+      variant="outline"
+      className={cn("whitespace-nowrap text-muted-foreground", className)}
+    >
+      <Text className="max-w-32">Untagged</Text>
+      <ChooseTagPopover tagId={tagId} setTagId={setTagId} />
+    </Badge>
+  );
+}
 
 function ChooseTagPopover({
   tagId,
@@ -142,62 +363,24 @@ function ChooseTagPopover({
   );
 }
 
-function ChooseTag({
-  tagId,
-  setTagId,
-  className,
-}: {
-  tagId: Ref<Tag> | null;
-  setTagId: (tagId: Ref<Tag> | null) => Promise<void>;
-  className?: ClassValue;
-}) {
-  const tag = useTag(tagId);
-
-  return tag ? (
-    <Badge
-      variant="outline"
-      style={{
-        borderColor: tag.color,
-        color: tag.color,
-        backgroundColor: "rgba(255, 255, 255, 0.2)",
-      }}
-      className={cn("whitespace-nowrap", className)}
-    >
-      <NavLink to={`/tags/${tagId}`} className="min-w-0">
-        <Text className="max-w-32">{tag.name}</Text>
-      </NavLink>
-      <ChooseTagPopover tagId={tagId} setTagId={setTagId} />
-    </Badge>
-  ) : (
-    <Badge
-      variant="outline"
-      className={cn("whitespace-nowrap text-muted-foreground", className)}
-    >
-      <Text className="max-w-32">Untagged</Text>
-      <ChooseTagPopover tagId={tagId} setTagId={setTagId} />
-    </Badge>
-  );
-}
-
 function AppUsageBarChartCard({
-  card,
+  timePeriod,
   period,
   xAxisLabelFormatter,
   appId,
 }: {
-  card: (props: TimePeriodUsageCardProps) => React.ReactNode;
+  timePeriod: TimePeriod;
   period: Duration;
   xAxisLabelFormatter: (dt: DateTime) => string;
   appId: Ref<App>;
 }) {
-  const [range, setRange] = useState<
-    { start: DateTime; end: DateTime } | undefined
-  >(undefined);
+  const startingInterval = useTimePeriod(timePeriod);
+  const [interval, setInterval] = useState(startingInterval);
 
   const { isLoading, appUsage, totalUsage, usages, start, end } =
     useAppDurationsPerPeriod({
-      start: range?.start,
-      end: range?.end,
+      start: interval.start,
+      end: interval.end,
       period: period,
       appId,
     });
@@ -205,225 +388,31 @@ function AppUsageBarChartCard({
   const children = useMemo(
     () => (
       <div className="aspect-video flex-1 mx-1 max-w-full">
-        {!range ? null : (
-          <AppUsageBarChart
-            data={usages}
-            singleAppId={appId}
-            periodTicks={durationToTicks(period)}
-            rangeMinTicks={dateTimeToTicks(start ?? range!.start)}
-            rangeMaxTicks={dateTimeToTicks(end ?? range!.end)}
-            dateTimeFormatter={xAxisLabelFormatter}
-            gradientBars
-            className="aspect-none"
-            maxYIsPeriod
-          />
-        )}
+        <AppUsageBarChart
+          data={usages}
+          singleAppId={appId}
+          periodTicks={durationToTicks(period)}
+          rangeMinTicks={dateTimeToTicks(start ?? interval.start)}
+          rangeMaxTicks={dateTimeToTicks(end ?? interval.end)}
+          dateTimeFormatter={xAxisLabelFormatter}
+          gradientBars
+          className="aspect-none"
+          maxYIsPeriod
+        />
       </div>
     ),
-    [usages, period, xAxisLabelFormatter, range, start, end, appId],
+    [usages, period, xAxisLabelFormatter, interval, start, end, appId],
   );
-
-  return card({
-    usage: appUsage,
-    totalUsage: totalUsage,
-    children,
-    onChanged: setRange,
-    isLoading,
-  });
-}
-
-const dayChartPeriod = Duration.fromObject({ hour: 1 });
-const weekChartPeriod = Duration.fromObject({ day: 1 });
-const monthChartPeriod = Duration.fromObject({ day: 1 });
-const yearChartPeriod = Duration.fromObject({ day: 1 });
-const dayXAxisFormatter = (dateTime: DateTime) => dateTime.toFormat("HHmm");
-const weekXAxisFormatter = (dateTime: DateTime) => dateTime.toFormat("EEE");
-const monthXAxisFormatter = (dateTime: DateTime) => dateTime.toFormat("dd");
-
-export default function App({ params }: Route.ComponentProps) {
-  const id = +params.id;
-  const app = useApp(id as Ref<App>)!;
-  const updateApp = useAppState((state) => state.updateApp);
-  const [color, setColorInner] = useState(app.color);
-  const debouncedUpdateColor = useDebouncedCallback(async (color: string) => {
-    await updateApp({ ...app, color });
-  }, 500);
-
-  const setColor = useCallback(
-    async (color: string) => {
-      setColorInner(color);
-      await debouncedUpdateColor(color);
-    },
-    [setColorInner, debouncedUpdateColor],
-  );
-
-  const { copy, hasCopied } = useClipboard();
-
-  const [range, setRange] = useState<
-    { start: DateTime; end: DateTime } | undefined
-  >(undefined);
-
-  const {
-    isLoading: isYearDataLoading,
-    appUsage: yearUsage,
-    totalUsage: yearTotalUsage,
-    usages: yearUsages,
-    start: yearRangeStart,
-  } = useAppDurationsPerPeriod({
-    start: range?.start,
-    end: range?.end,
-    period: yearChartPeriod,
-    appId: app.id,
-  });
-  const yearData = useMemo(() => {
-    return new Map(
-      _(yearUsages[app.id] || [])
-        .map(
-          (appDur) =>
-            [+ticksToDateTime(appDur.group), appDur.duration] as const,
-        )
-        .value(),
-    );
-  }, [yearUsages, app.id]);
-
-  const scaling = useCallback((value: number) => {
-    return _.clamp(ticksToDuration(value).rescale().hours / 8, 0.2, 1);
-  }, []);
 
   return (
-    <>
-      <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-        <SidebarTrigger className="-ml-1" />
-        <Separator orientation="vertical" className="mr-2 h-4" />
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem className="hidden md:block">
-              <BreadcrumbLink href="/apps">Apps</BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator className="hidden md:block" />
-            <BreadcrumbItem>
-              <BreadcrumbPage className="inline-flex items-center">
-                <AppIcon buffer={app.icon} className="w-5 h-5 mr-2" />
-                <Text>{app.name}</Text>
-              </BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-      </header>
-      <div className="flex flex-1 flex-col gap-4 p-4">
-        {/* App Info */}
-        <div className="rounded-xl bg-muted/50 p-6">
-          <div className="flex flex-col gap-4">
-            {/* Header with name and icon */}
-            <div className="flex items-center gap-4">
-              <AppIcon buffer={app.icon} className="w-12 h-12 shrink-0" />
-              <div className="min-w-0 shrink flex flex-col">
-                <div className="min-w-0 flex gap-4">
-                  <EditableText
-                    text={app.name}
-                    className="min-w-0 text-2xl font-semibold grow-0"
-                    buttonClassName="ml-1"
-                    onSubmit={async (v) => await updateApp({ ...app, name: v })}
-                  />
-                  <ChooseTag
-                    tagId={app.tag_id}
-                    setTagId={async (tagId) =>
-                      await updateApp({ ...app, tag_id: tagId })
-                    }
-                    className="min-w-0"
-                  />
-                </div>
-                <Text className="text-muted-foreground">{app.company}</Text>
-              </div>
-              <div className="flex-1" />
-              <ColorPicker
-                className="min-w-0 w-fit"
-                color={color}
-                onChange={setColor}
-              />
-            </div>
-
-            {/* Description */}
-            <EditableText
-              className="text-muted-foreground self-start"
-              buttonClassName="text-muted-foreground/50"
-              text={app.description}
-              onSubmit={async (v) =>
-                await updateApp({ ...app, description: v })
-              }
-            />
-
-            {/* App Identity */}
-            <div className="text-sm inline-flex border-border border rounded-lg overflow-hidden max-w-fit min-w-0 bg-muted/30 items-center">
-              <div className="bg-muted px-3 py-1.5 border-r border-border font-medium">
-                {isUwp(app.identity) ? "UWP" : "Win32"}
-              </div>
-
-              <Text className="font-mono pl-3 pr-1 py-1.5 text-muted-foreground">
-                {isUwp(app.identity)
-                  ? app.identity.Uwp.aumid
-                  : app.identity.Win32.path}
-              </Text>
-              <Button
-                variant="ghost"
-                className="h-auto p-2 rounded-none rounded-r-lg text-muted-foreground"
-                onClick={() =>
-                  copy(
-                    isUwp(app.identity)
-                      ? app.identity.Uwp.aumid
-                      : app.identity.Win32.path,
-                  )
-                }
-              >
-                {hasCopied ? <Check /> : <Copy />}
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid auto-rows-min gap-4 md:grid-cols-3">
-          <AppUsageBarChartCard
-            card={DayUsageCard}
-            period={dayChartPeriod}
-            xAxisLabelFormatter={dayXAxisFormatter}
-            appId={app.id}
-          />
-          <AppUsageBarChartCard
-            card={WeekUsageCard}
-            period={weekChartPeriod}
-            xAxisLabelFormatter={weekXAxisFormatter}
-            appId={app.id}
-          />
-          <AppUsageBarChartCard
-            card={MonthUsageCard}
-            period={monthChartPeriod}
-            xAxisLabelFormatter={monthXAxisFormatter}
-            appId={app.id}
-          />
-        </div>
-        <YearUsageCard
-          usage={yearUsage}
-          totalUsage={yearTotalUsage}
-          onChanged={setRange}
-          isLoading={isYearDataLoading}
-        >
-          <div className="p-4">
-            {!range?.start ? (
-              // avoid CLS
-              <div className="min-h-[200px]" />
-            ) : (
-              <Heatmap
-                data={yearData}
-                scaling={scaling}
-                startDate={yearRangeStart ?? range.start}
-                fullCellColorRgb={app.color}
-                innerClassName="min-h-[200px]"
-                firstDayOfMonthClassName="stroke-card-foreground/50"
-              />
-            )}
-          </div>
-        </YearUsageCard>
-      </div>
-    </>
+    <TimePeriodUsageCard
+      timePeriod={timePeriod}
+      interval={interval}
+      onIntervalChanged={setInterval}
+      children={children}
+      isLoading={isLoading}
+      usage={appUsage}
+      totalUsage={totalUsage}
+    />
   );
 }

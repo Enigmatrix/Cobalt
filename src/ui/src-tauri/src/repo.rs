@@ -103,7 +103,7 @@ pub async fn copy_seed_db(state: State<'_, AppState>) -> AppResult<()> {
         *state = Initable::Uninit;
     }
 
-    std::fs::copy("../../../dbg/seed.db", "main.db").context("copy seed.db")?;
+    std::fs::copy("../../../dev/seed.db", "main.db").context("copy seed.db")?;
 
     // reinit state (repo)
     init_state(state).await?;
@@ -143,6 +143,23 @@ pub async fn update_tag(state: State<'_, AppState>, tag: infused::UpdatedTag) ->
         state.assume_init_mut().get_repo().await?
     };
     repo.update_tag(&tag).await?;
+    Ok(())
+}
+
+#[tauri::command]
+#[tracing::instrument(err, skip(state))]
+pub async fn update_tag_apps(
+    state: State<'_, AppState>,
+    tag_id: Ref<Tag>,
+    removed_apps: Vec<Ref<App>>,
+    added_apps: Vec<Ref<App>>,
+) -> AppResult<()> {
+    let mut repo = {
+        let mut state = state.write().await;
+        state.assume_init_mut().get_repo().await?
+    };
+    repo.update_tag_apps(tag_id, removed_apps, added_apps)
+        .await?;
     Ok(())
 }
 

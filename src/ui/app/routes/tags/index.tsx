@@ -43,11 +43,9 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { dateTimeToTicks, durationToTicks } from "@/lib/time";
+import { dateTimeToTicks, durationToTicks, hour } from "@/lib/time";
 import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
 import { CreateTagDialog } from "@/components/tag/create-tag-dialog";
-
-const period = Duration.fromObject({ hour: 1 });
 
 export function MiniAppItem({
   app,
@@ -69,116 +67,6 @@ export function MiniAppItem({
       <AppIcon buffer={app?.icon} className="w-4 h-4" />
       <Text className="max-w-52 text-xs">{app?.name ?? ""}</Text>
     </div>
-  );
-}
-
-// Virtual list item for react-window. Actual height in style
-// is ignored, instead we use h-24 and h-28 (if last, to show bottom gap).
-// There is a h-4 gap at the top of each item.
-function VirtualListItem({
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  style: { height, ...style },
-  children,
-}: {
-  style: CSSProperties;
-  children?: ReactNode;
-}) {
-  return (
-    // Due to how virtualization works, the last:h-28 triggers for the last item
-    // in the *window*, it just happens that due to overscanning that last item
-    // is hidden unless it's the actual last item in the list.
-    <div className="flex flex-col px-4 h-24 last:h-28" style={style}>
-      {/* gap */}
-      <div className="h-4" />
-      {children}
-    </div>
-  );
-}
-
-function TagListItem({
-  tag,
-  usages,
-  start,
-  end,
-  period,
-}: {
-  tag: Tag;
-  usages: EntityMap<App, WithGroupedDuration<App>[]>;
-  start: DateTime;
-  end: DateTime;
-  period: Duration;
-}) {
-  const apps = useApps(tag.apps);
-  const usagesFiltered = useMemo(() => {
-    return _(apps)
-      .map((app) => [app.id, usages[app.id]])
-      .fromPairs()
-      .value();
-  }, [usages, apps]);
-
-  return (
-    <NavLink
-      to={`/tags/${tag.id}`}
-      className={cn(
-        "h-20 shadow-sm rounded-md flex items-center gap-2 p-4 @container",
-        "ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-        "disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none cursor-pointer",
-        "bg-card text-card-foreground hover:bg-muted/75 border-border border",
-      )}
-    >
-      <TagIcon
-        className="mx-2 h-10 w-10 flex-shrink-0"
-        style={{ color: tag.color }}
-      />
-
-      <div className="flex flex-col min-w-0 gap-1">
-        <Text className="text-lg font-semibold max-w-72">{tag.name}</Text>
-        {apps.length !== 0 && (
-          <HorizontalOverflowList
-            className="gap-1 h-6 -mb-2"
-            items={apps}
-            renderItem={(app) => <MiniAppItem key={app.id} app={app} />}
-            renderOverflowItem={(app) => <MiniAppItem key={app.id} app={app} />}
-            renderOverflowSign={(items) => (
-              <Badge
-                variant="outline"
-                style={{
-                  backgroundColor: "rgba(255, 255, 255, 0.2)",
-                }}
-                className="whitespace-nowrap ml-1 text-card-foreground/60 rounded-md h-6"
-              >{`+${items.length}`}</Badge>
-            )}
-          />
-        )}
-      </div>
-
-      <div className="flex-1" />
-
-      {tag.usages.usage_today > 0 ? (
-        <>
-          <AppUsageBarChart
-            hideXAxis
-            gradientBars
-            maxYIsPeriod
-            data={usagesFiltered}
-            rangeMinTicks={dateTimeToTicks(start)}
-            rangeMaxTicks={dateTimeToTicks(end)}
-            periodTicks={durationToTicks(period)}
-            className="min-w-48 aspect-auto h-20 max-lg:hidden"
-          />
-
-          <div className="flex py-2 rounded-md lg:min-w-20">
-            <div className="flex flex-col items-end ml-auto my-auto">
-              <div className="text-xs text-card-foreground/50">Today</div>
-              <DurationText
-                className="text-lg min-w-8 text-center whitespace-nowrap"
-                ticks={tag.usages.usage_today}
-              />
-            </div>
-          </div>
-        </>
-      ) : null}
-    </NavLink>
   );
 }
 
@@ -204,6 +92,7 @@ export default function Tags() {
   }, [tagsFiltered, sortDirection, sortProperty]);
 
   const [start, end] = useMemo(() => [today, today.endOf("day")], [today]);
+  const period = hour;
   const {
     usages,
     start: loadStart,
@@ -317,5 +206,115 @@ export default function Tags() {
         </AutoSizer>
       </div>
     </>
+  );
+}
+
+// Virtual list item for react-window. Actual height in style
+// is ignored, instead we use h-24 and h-28 (if last, to show bottom gap).
+// There is a h-4 gap at the top of each item.
+function VirtualListItem({
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  style: { height, ...style },
+  children,
+}: {
+  style: CSSProperties;
+  children?: ReactNode;
+}) {
+  return (
+    // Due to how virtualization works, the last:h-28 triggers for the last item
+    // in the *window*, it just happens that due to overscanning that last item
+    // is hidden unless it's the actual last item in the list.
+    <div className="flex flex-col px-4 h-24 last:h-28" style={style}>
+      {/* gap */}
+      <div className="h-4" />
+      {children}
+    </div>
+  );
+}
+
+function TagListItem({
+  tag,
+  usages,
+  start,
+  end,
+  period,
+}: {
+  tag: Tag;
+  usages: EntityMap<App, WithGroupedDuration<App>[]>;
+  start: DateTime;
+  end: DateTime;
+  period: Duration;
+}) {
+  const apps = useApps(tag.apps);
+  const usagesFiltered = useMemo(() => {
+    return _(apps)
+      .map((app) => [app.id, usages[app.id]])
+      .fromPairs()
+      .value();
+  }, [usages, apps]);
+
+  return (
+    <NavLink
+      to={`/tags/${tag.id}`}
+      className={cn(
+        "h-20 shadow-sm rounded-md flex items-center gap-2 p-4 @container",
+        "ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+        "disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none cursor-pointer",
+        "bg-card text-card-foreground hover:bg-muted/75 border-border border",
+      )}
+    >
+      <TagIcon
+        className="mx-2 h-10 w-10 flex-shrink-0"
+        style={{ color: tag.color }}
+      />
+
+      <div className="flex flex-col min-w-0 gap-1">
+        <Text className="text-lg font-semibold max-w-72">{tag.name}</Text>
+        {apps.length !== 0 && (
+          <HorizontalOverflowList
+            className="gap-1 h-6 -mb-2"
+            items={apps}
+            renderItem={(app) => <MiniAppItem key={app.id} app={app} />}
+            renderOverflowItem={(app) => <MiniAppItem key={app.id} app={app} />}
+            renderOverflowSign={(items) => (
+              <Badge
+                variant="outline"
+                style={{
+                  backgroundColor: "rgba(255, 255, 255, 0.2)",
+                }}
+                className="whitespace-nowrap ml-1 text-card-foreground/60 rounded-md h-6"
+              >{`+${items.length}`}</Badge>
+            )}
+          />
+        )}
+      </div>
+
+      <div className="flex-1" />
+
+      {tag.usages.usage_today > 0 ? (
+        <>
+          <AppUsageBarChart
+            hideXAxis
+            gradientBars
+            maxYIsPeriod
+            data={usagesFiltered}
+            rangeMinTicks={dateTimeToTicks(start)}
+            rangeMaxTicks={dateTimeToTicks(end)}
+            periodTicks={durationToTicks(period)}
+            className="min-w-48 aspect-auto h-20 max-lg:hidden"
+          />
+
+          <div className="flex py-2 rounded-md lg:min-w-20">
+            <div className="flex flex-col items-end ml-auto my-auto">
+              <div className="text-xs text-card-foreground/50">Today</div>
+              <DurationText
+                className="text-lg min-w-8 text-center whitespace-nowrap"
+                ticks={tag.usages.usage_today}
+              />
+            </div>
+          </div>
+        </>
+      ) : null}
+    </NavLink>
   );
 }

@@ -1,62 +1,63 @@
 import type { DateTime } from "luxon";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { DurationText } from "@/components/time/duration-text";
-import { useToday } from "@/hooks/use-today";
+import { useToday, type Interval, type TimePeriod } from "@/hooks/use-today";
 
 export function UsageCard({
-  start: originalStart,
+  interval,
+  onIntervalChanged,
+  next,
+  prev,
+  canGoNext,
+  canGoPrev,
+
+  title,
   usage,
   totalUsage,
-  endFn,
-  nextFn,
-  prevFn,
-  titleFn,
-  onChanged,
   children,
   isLoading,
 }: {
-  start: DateTime;
+  interval: Interval;
+  onIntervalChanged: (interval: Interval) => void;
+  next: (interval: Interval) => Interval;
+  prev: (interval: Interval) => Interval;
+  canGoNext: (interval: Interval) => boolean;
+  canGoPrev: (interval: Interval) => boolean;
+  title: (interval: Interval) => string;
+
   usage: number;
   totalUsage: number;
-  endFn: (start: DateTime) => DateTime;
-  nextFn: (start: DateTime) => DateTime;
-  prevFn: (start: DateTime) => DateTime;
-  titleFn: (dt: DateTime) => string;
-  onChanged: (arg: { start: DateTime; end: DateTime }) => void;
   children: React.ReactNode;
   isLoading: boolean;
 }) {
-  const [start, setStart] = useState(originalStart);
+  const nextCallback = useCallback(() => {
+    if (canGoNext(interval)) {
+      onIntervalChanged(next(interval));
+    }
+  }, [interval, canGoNext, next, onIntervalChanged]);
 
-  const next = useCallback(() => {
-    setStart(nextFn(start));
-  }, [nextFn, start, setStart]);
-
-  const prev = useCallback(() => {
-    setStart(prevFn(start));
-  }, [prevFn, start, setStart]);
-
-  // runs on mounted, and when these props change
-  useEffect(() => {
-    onChanged({ start, end: endFn(start) });
-  }, [start, onChanged, endFn]);
+  const prevCallback = useCallback(() => {
+    if (canGoPrev(interval)) {
+      onIntervalChanged(prev(interval));
+    }
+  }, [interval, canGoPrev, prev, onIntervalChanged]);
 
   return (
-    <div className="flex flex-col rounded-xl bg-muted/50">
+    <div className="flex flex-col rounded-xl bg-card border border-border">
       <div className="flex items-center">
         <div className="flex flex-col p-4 pb-1 min-w-0">
-          <div className="whitespace-nowrap text-base text-foreground/50">
-            {titleFn(start)}
+          <div className="whitespace-nowrap text-base text-card-foreground/50">
+            {title(interval)}
           </div>
           <div className="flex gap-2 items-baseline font-semibold">
             <DurationText className="text-xl" ticks={usage} />
             {usage !== 0 && (
               <>
-                <span className="text-xl text-muted-foreground">/</span>
+                <span className="text-xl text-card-foreground">/</span>
                 <DurationText
-                  className="text-muted-foreground"
+                  className="text-card-foreground"
                   ticks={totalUsage}
                 />
               </>
@@ -71,16 +72,16 @@ export function UsageCard({
           <Button
             variant="ghost"
             size="icon"
-            onClick={prev}
-            disabled={isLoading}
+            onClick={prevCallback}
+            disabled={!canGoPrev(interval) || isLoading}
           >
             <ChevronLeft />
           </Button>
           <Button
             variant="ghost"
             size="icon"
-            onClick={next}
-            disabled={isLoading || +start === +originalStart}
+            onClick={nextCallback}
+            disabled={!canGoNext(interval) || isLoading}
           >
             <ChevronRight />
           </Button>
@@ -93,186 +94,94 @@ export function UsageCard({
 }
 
 export interface TimePeriodUsageCardProps {
+  timePeriod: TimePeriod;
+  interval: Interval;
+  onIntervalChanged: (interval: Interval) => void;
+
   usage: number;
   totalUsage: number;
-  onChanged: (arg: { start: DateTime; end: DateTime }) => void;
   children: React.ReactNode;
   isLoading: boolean;
 }
 
-export function DayUsageCard({
-  usage,
-  totalUsage,
-  onChanged,
-  children,
-  isLoading,
+const dayTitle = (today: DateTime, interval: Interval) => {
+  const dt = interval.start;
+  if (+today.startOf("day") === +dt) return "Today";
+  if (+today.startOf("day").minus({ day: 1 }) === +dt) return "Yesterday";
+  const format = dt.year === today.year ? "dd LLL" : "dd LLL yyyy";
+  return dt.toFormat(format);
+};
+
+const weekTitle = (today: DateTime, interval: Interval) => {
+  const dt = interval.start;
+  if (+today.startOf("week") === +dt) return "This Week";
+  if (+today.startOf("week").minus({ week: 1 }) === +dt) return "Last Week";
+  const format =
+    dt.year === today.year && dt.endOf("week").year === today.year
+      ? "dd LLL"
+      : "dd LLL yyyy";
+  return dt.toFormat(format) + " - " + dt.endOf("week").toFormat(format);
+};
+
+const monthTitle = (today: DateTime, interval: Interval) => {
+  const dt = interval.start;
+  if (+today.startOf("month") === +dt) return "This Month";
+  if (+today.startOf("month").minus({ month: 1 }) === +dt) return "Last Month";
+  const format = dt.year === today.year ? "LLL" : "LLL yyyy";
+  return dt.toFormat(format);
+};
+
+const yearTitle = (today: DateTime, interval: Interval) => {
+  const dt = interval.start;
+  if (+today.startOf("year") === +dt) return "This Year";
+  if (+today.startOf("year").minus({ year: 1 }) === +dt) return "Last Year";
+  return dt.toFormat("yyyy");
+};
+
+const titles = {
+  day: dayTitle,
+  week: weekTitle,
+  month: monthTitle,
+  year: yearTitle,
+};
+
+export function TimePeriodUsageCard({
+  timePeriod,
+  ...props
 }: TimePeriodUsageCardProps) {
   const today = useToday();
 
-  const props = useMemo(
+  const iterProps = useMemo(
     () => ({
-      start: today.startOf("day"),
-      endFn(start: DateTime) {
-        return start.plus({ day: 1 });
+      next(interval: Interval) {
+        return {
+          start: interval.start.plus({ [timePeriod]: 1 }),
+          end: interval.start
+            .plus({ [timePeriod]: 1 })
+            .plus({ [timePeriod]: 1 }),
+        };
       },
-      nextFn(start: DateTime) {
-        return start.plus({ day: 1 });
+      prev(interval: Interval) {
+        return {
+          start: interval.start.minus({ [timePeriod]: 1 }),
+          end: interval.start
+            .minus({ [timePeriod]: 1 })
+            .plus({ [timePeriod]: 1 }),
+        };
       },
-      prevFn(start: DateTime) {
-        return start.minus({ day: 1 });
+      canGoNext(interval: Interval) {
+        const nextStart = interval.start.plus({ [timePeriod]: 1 });
+        return today.plus({ day: 1 }) > nextStart;
       },
-      titleFn(dt: DateTime) {
-        if (+today.startOf("day") === +dt) return "Today";
-        if (+today.startOf("day").minus({ day: 1 }) === +dt) return "Yesterday";
-        const format = dt.year === today.year ? "dd LLL" : "dd LLL yyyy";
-        return dt.toFormat(format);
+      canGoPrev() {
+        return true;
+      },
+      title(interval: Interval) {
+        return titles[timePeriod](today, interval);
       },
     }),
-    [today],
+    [timePeriod, today],
   );
 
-  return (
-    <UsageCard
-      usage={usage}
-      totalUsage={totalUsage}
-      children={children}
-      onChanged={onChanged}
-      isLoading={isLoading}
-      {...props}
-    />
-  );
-}
-
-export function WeekUsageCard({
-  usage,
-  totalUsage,
-  onChanged,
-  children,
-  isLoading,
-}: TimePeriodUsageCardProps) {
-  const today = useToday();
-
-  const props = useMemo(
-    () => ({
-      start: today.startOf("week"),
-      endFn(start: DateTime) {
-        return start.plus({ week: 1 });
-      },
-      nextFn(start: DateTime) {
-        return start.plus({ week: 1 });
-      },
-      prevFn(start: DateTime) {
-        return start.minus({ week: 1 });
-      },
-      titleFn(dt: DateTime) {
-        if (+today.startOf("week") === +dt) return "This Week";
-        if (+today.startOf("week").minus({ week: 1 }) === +dt)
-          return "Last Week";
-        const format =
-          dt.year === today.year && dt.endOf("week").year === today.year
-            ? "dd LLL"
-            : "dd LLL yyyy";
-        return dt.toFormat(format) + " - " + dt.endOf("week").toFormat(format);
-      },
-    }),
-    [today],
-  );
-
-  return (
-    <UsageCard
-      usage={usage}
-      totalUsage={totalUsage}
-      children={children}
-      onChanged={onChanged}
-      isLoading={isLoading}
-      {...props}
-    />
-  );
-}
-
-export function MonthUsageCard({
-  usage,
-  totalUsage,
-  onChanged,
-  children,
-  isLoading,
-}: TimePeriodUsageCardProps) {
-  const today = useToday();
-
-  const props = useMemo(
-    () => ({
-      start: today.startOf("month"),
-      endFn(start: DateTime) {
-        return start.plus({ month: 1 });
-      },
-      nextFn(start: DateTime) {
-        return start.plus({ month: 1 });
-      },
-      prevFn(start: DateTime) {
-        return start.minus({ month: 1 });
-      },
-      titleFn(dt: DateTime) {
-        if (+today.startOf("month") === +dt) return "This Month";
-        if (+today.startOf("month").minus({ month: 1 }) === +dt)
-          return "Last Month";
-        const format = dt.year === today.year ? "LLL" : "LLL yyyy";
-        return dt.toFormat(format);
-      },
-    }),
-    [today],
-  );
-
-  return (
-    <UsageCard
-      usage={usage}
-      totalUsage={totalUsage}
-      children={children}
-      onChanged={onChanged}
-      isLoading={isLoading}
-      {...props}
-    />
-  );
-}
-
-export function YearUsageCard({
-  usage,
-  totalUsage,
-  onChanged,
-  children,
-  isLoading,
-}: TimePeriodUsageCardProps) {
-  const today = useToday();
-
-  const props = useMemo(
-    () => ({
-      start: today.startOf("year"),
-      endFn(start: DateTime) {
-        return start.plus({ year: 1 });
-      },
-      nextFn(start: DateTime) {
-        return start.plus({ year: 1 });
-      },
-      prevFn(start: DateTime) {
-        return start.minus({ year: 1 });
-      },
-      titleFn(dt: DateTime) {
-        if (+today.startOf("year") === +dt) return "This Year";
-        if (+today.startOf("year").minus({ year: 1 }) === +dt)
-          return "Last Year";
-        return dt.toFormat("yyyy");
-      },
-    }),
-    [today],
-  );
-
-  return (
-    <UsageCard
-      usage={usage}
-      totalUsage={totalUsage}
-      children={children}
-      onChanged={onChanged}
-      isLoading={isLoading}
-      {...props}
-    />
-  );
+  return <UsageCard {...props} {...iterProps} />;
 }
