@@ -9,9 +9,19 @@ const compat = new FlatCompat();
 /** @type {import('eslint').Linter.Config[]} */
 export default [
   { files: ["app/**/*.{js,mjs,cjs,ts,jsx,tsx}"] },
-  { languageOptions: { globals: globals.browser } },
+  {
+    languageOptions: {
+      globals: globals.browser,
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+  },
   pluginJs.configs.recommended,
   ...tseslint.configs.recommended,
+  ...tseslint.configs.recommendedTypeChecked,
+  ...tseslint.configs.stylisticTypeChecked,
   pluginReact.configs.flat["jsx-runtime"],
   ...compat.extends("plugin:react-hooks/recommended"),
 ];
