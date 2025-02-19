@@ -1,26 +1,12 @@
-import type { App, Ref, WithGroupedDuration } from "@/lib/entities";
-import _ from "lodash";
-import { useMemo, useState } from "react";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  LabelList,
-  XAxis,
-  YAxis,
-} from "recharts";
-import {
-  type ChartConfig,
-  ChartContainer,
-  ChartTooltip,
-} from "@/components/ui/chart";
-import { ticksToDateTime, toHumanDateTime } from "@/lib/time";
-import type { ContentType } from "recharts/types/component/Label";
-import { toDataUrl } from "@/components/app/app-icon";
-import { AppUsageChartTooltipContent } from "@/components/viz/app-usage-chart-tooltip";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import * as echarts from "echarts";
 import { DateTime } from "luxon";
+import _ from "lodash";
 import { useAppState, type EntityMap } from "@/lib/state";
 import { useRefresh } from "@/hooks/use-refresh";
+import { ticksToDateTime, toHumanDateTime } from "@/lib/time";
+import { toDataUrl } from "@/components/app/app-icon";
+import type { App, Ref, WithGroupedDuration } from "@/lib/entities";
 import type { ClassValue } from "clsx";
 import { cn } from "@/lib/utils";
 
@@ -66,6 +52,9 @@ export function AppUsageBarChart({
 }: AppUsageBarChartProps) {
   const apps = useAppState((state) => state.apps);
   const { handleStaleApps } = useRefresh();
+  const [hoveredAppId, setHoveredAppId] = useState<Ref<App> | null>(null);
+  const chartRef = useRef<HTMLDivElement>(null);
+  const chartInstanceRef = useRef<echarts.ECharts | null>(null);
 
   const involvedApps = useMemo(
     () =>
@@ -80,7 +69,7 @@ export function AppUsageBarChart({
         .value(),
     [handleStaleApps, apps, unflattenedData, singleAppId],
   );
-  // data is grouped by app, we regroup by timestamp.
+
   const data: AppUsageBarChartData[] = useMemo(() => {
     let ret = _(unflattenedData)
       .values()
@@ -98,7 +87,6 @@ export function AppUsageBarChart({
       .value();
 
     if (rangeMinTicks !== undefined && rangeMaxTicks !== undefined) {
-      // fill up gaps in the time range.
       ret = _.merge(
         ret,
         _(_.range(rangeMinTicks, rangeMaxTicks, periodTicks))
@@ -123,108 +111,143 @@ export function AppUsageBarChart({
     periodTicks,
   ]);
 
-  const [hoveredAppId, setHoveredAppId] = useState<Ref<App> | null>(null);
+  React.useEffect(() => {
+    if (!chartRef.current) return;
 
-  const config = {} satisfies ChartConfig; // TODO: generate config
+    const chart = echarts.init(chartRef.current, undefined, {});
+    chartInstanceRef.current = chart;
 
-  const renderCustomizedLabel: ContentType = (props) => {
-    const {
-      x: xValue,
-      y: yValue,
-      width: widthValue,
-      height: heightValue,
-      value,
-    } = props;
-    const app = value as unknown as App;
-    const x = Number(xValue);
-    const y = Number(yValue);
-    const width = Number(widthValue);
-    const height = Number(heightValue);
+    const option: echarts.EChartsOption = {
+      animation: animationsEnabled,
+      tooltip: {
+        trigger: "axis",
+        axisPointer: {
+          type: "shadow",
+        },
+      },
+      grid: {
+        left: "5%",
+        right: "5%",
+        top: 0,
+        bottom: hideXAxis ? "0" : "25px",
+        containLabel: false,
+      },
+      xAxis: {
+        type: "category",
+        data: data.map((d) => d.key),
+        axisLabel: {
+          formatter: (value: string) =>
+            dateTimeFormatter(DateTime.fromMillis(+value)),
+        },
+        show: !hideXAxis,
+        axisLine: {
+          show: !hideXAxis,
+        },
+        axisTick: {
+          alignWithLabel: true,
+          show: !hideXAxis,
+        },
+        splitLine: {
+          show: gridVertical,
+        },
+      },
+      yAxis: {
+        type: "value",
+        max: maxYIsPeriod ? periodTicks : undefined,
+        show: false,
+      },
+      series: involvedApps.map((app) => ({
+        id: app.id,
+        name: app.name,
+        type: "bar",
+        stack: "total",
+        data: data.map((d) => d[app.id] || 0),
+        itemStyle: {
+          color: gradientBars
+            ? {
+                type: "linear",
+                x: 0,
+                y: 0,
+                x2: 0,
+                y2: 1,
+                colorStops: [
+                  {
+                    offset: 0,
+                    color: app.color,
+                  },
+                  {
+                    offset: 1,
+                    color: echarts.color.modifyAlpha(app.color, 0.7),
+                  },
+                ],
+              }
+            : app.color,
+          borderRadius: barRadius ?? 2,
+        },
 
-    const radius = Math.min(Math.max(Math.min(width, height) / 2 - 4, 0), 16);
+        label: {
+          show: !singleAppId,
+          position: "inside",
+          formatter: () => {
+            return `{icon|}`;
+          },
+          rich: {
+            icon: {
+              backgroundColor: {
+                image: toDataUrl(app.icon)!,
+              },
+              // width: 20,
+              // height: 20,
+            },
+          },
+        },
+      })),
+    } satisfies echarts.EChartsOption;
 
-    return (
-      <image
-        x={x + width / 2 - radius}
-        y={y + height / 2 - radius}
-        width={radius * 2}
-        height={radius * 2}
-        href={toDataUrl(app.icon)}
-        pointerEvents="none"
-      />
-    );
-  };
+    chart.setOption(option);
 
-  return (
-    <ChartContainer config={config} className={cn(className)}>
-      <BarChart accessibilityLayer data={data}>
-        <defs>
-          {gradientBars &&
-            involvedApps.map((app) => (
-              <linearGradient
-                key={app.id}
-                id={`gradient-${app.id}`}
-                gradientTransform="rotate(90)"
-              >
-                <stop offset="50%" stopColor={app.color} />
-                <stop offset="95%" stopColor={app.color} stopOpacity={0.7} />
-              </linearGradient>
-            ))}
-        </defs>
-        <CartesianGrid vertical={gridVertical} horizontal={gridHorizontal} />
-        <XAxis
-          dataKey="key"
-          hide={hideXAxis}
-          tickMargin={10}
-          tickFormatter={(value) =>
-            dateTimeFormatter(DateTime.fromMillis(value))
-          }
-        />
-        <YAxis
-          type="number"
-          hide
-          domain={["dataMin", maxYIsPeriod ? periodTicks : "dataMax"]}
-        />
-        <ChartTooltip
-          allowEscapeViewBox={{ x: true, y: true }}
-          wrapperStyle={{ zIndex: 1000 }}
-          content={
-            <AppUsageChartTooltipContent
-              maximumApps={10}
-              hoveredAppId={hoveredAppId}
-              singleAppId={singleAppId}
-              hideLabel
-            />
-          }
-        />
-        {involvedApps.map((app) => (
-          <Bar
-            key={app.id}
-            dataKey={app.id}
-            stackId="a"
-            fill={gradientBars ? `url(#gradient-${app.id})` : app.color}
-            name={app.name}
-            isAnimationActive={animationsEnabled}
-            onMouseEnter={(e) => {
-              setHoveredAppId(app.id);
-              onHover?.({
-                id: app.id,
-                duration: e[app.id],
-                group: e.key,
-              });
-            }}
-            onMouseLeave={() => {
-              setHoveredAppId(null);
-              onHover?.(undefined);
-            }}
-            radius={barRadius ?? 4}
-          >
-            {singleAppId === undefined && (
-              <LabelList dataKey={() => app} content={renderCustomizedLabel} />
-            )}
-          </Bar>
-        ))}
-      </BarChart>
-    </ChartContainer>
-  );
+    chart.on("mouseover", (params) => {
+      setHoveredAppId(params.id as Ref<App>);
+      if (onHover) {
+        onHover({
+          id: params.id as Ref<App>,
+          duration: params.value as number,
+          group: params.axisValue as number,
+        });
+      }
+    });
+
+    chart.on("mouseout", () => {
+      setHoveredAppId(null);
+      if (onHover) {
+        onHover(undefined);
+      }
+    });
+
+    const resizeObserver = new ResizeObserver(() => {
+      chart.resize();
+    });
+
+    resizeObserver.observe(chartRef.current);
+
+    return () => {
+      chart.dispose();
+      resizeObserver.disconnect();
+    };
+  }, [
+    data,
+    involvedApps,
+    dateTimeFormatter,
+    hideXAxis,
+    maxYIsPeriod,
+    periodTicks,
+    singleAppId,
+    gradientBars,
+    barRadius,
+    onHover,
+    animationsEnabled,
+    gridVertical,
+  ]);
+
+  return <div ref={chartRef} className={cn("w-full h-full", className)} />;
 }
