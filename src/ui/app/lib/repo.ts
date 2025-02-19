@@ -3,6 +3,7 @@ import type {
   WithDuration,
   WithGroupedDuration,
   App,
+  Session,
   Tag,
   Ref,
 } from "@/lib/entities";
@@ -134,4 +135,27 @@ export async function createTag(tag: CreateTag): Promise<Ref<Tag>> {
 
 export async function removeTag(tagId: Ref<Tag>): Promise<void> {
   return await invoke("remove_tag", { tagId });
+}
+
+export type AppSessionUsages = {
+  [appId: Ref<App>]: {
+    [sessionId: Ref<Session>]: Session;
+  };
+};
+
+export async function appSessionUsages({
+  options,
+  start,
+  end,
+}: {
+  options?: QueryOptions;
+  start: DateTime;
+  end: DateTime;
+}): Promise<AppSessionUsages> {
+  const queryOptions = getQueryOptions(options);
+  return await invoke("app_session_usages", {
+    queryOptions,
+    start: dateTimeToTicks(start),
+    end: dateTimeToTicks(end),
+  });
 }

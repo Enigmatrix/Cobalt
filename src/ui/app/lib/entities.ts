@@ -49,6 +49,20 @@ export interface App {
   usages: UsageInfo;
 }
 
+export interface Session {
+  id: Ref<Session>;
+  title: string;
+  start: Timestamp;
+  end: Timestamp;
+  usages: Usage[];
+}
+
+export interface Usage {
+  id: Ref<Usage>;
+  start: Timestamp;
+  end: Timestamp;
+}
+
 export interface Tag {
   id: Ref<Tag>;
   name: string;
