@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
-import { ChevronRight, ChevronDown } from "lucide-react";
+import { ChevronRight, ChevronDown, LaptopIcon } from "lucide-react";
 import { DateTime } from "luxon";
-import type { App, Ref, Usage } from "@/lib/entities";
+import type { App, InteractionPeriod, Ref, Usage } from "@/lib/entities";
 import { ticksToDateTime } from "@/lib/time";
 import type { AppSessionUsages } from "@/lib/repo";
 import { Text } from "@/components/ui/text";
@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 
 interface GanttProps {
   usages: AppSessionUsages;
+  interactionPeriods?: InteractionPeriod[];
   rangeStart: DateTime;
   rangeEnd: DateTime;
 }
@@ -130,6 +131,34 @@ function UsageBars({
   );
 }
 
+function InteractionPeriodBars({
+  interactionPeriods,
+  rangeStart,
+  rangeEnd,
+  timeUnit,
+}: {
+  interactionPeriods: InteractionPeriod[];
+  rangeStart: DateTime;
+  rangeEnd: DateTime;
+  timeUnit: TimeUnit;
+}) {
+  return (
+    <>
+      {interactionPeriods.map((interactionPeriod, index) => (
+        <Bar
+          key={index}
+          className="bg-primary/50"
+          start={ticksToDateTime(interactionPeriod.start)}
+          end={ticksToDateTime(interactionPeriod.end)}
+          rangeStart={rangeStart}
+          rangeEnd={rangeEnd}
+          timeUnit={timeUnit}
+        />
+      ))}
+    </>
+  );
+}
+
 function AppBars({
   app,
   expanded,
@@ -155,6 +184,7 @@ function AppBars({
   const sessions = useMemo(() => Object.values(usages[app.id]), [app, usages]);
   return (
     <div className="border-b">
+      {/* App header */}
       <div className="h-[52px] bg-muted/80 relative">
         <div className="absolute inset-x-0 top-4">
           <UsageBars
@@ -165,7 +195,8 @@ function AppBars({
           />
         </div>
       </div>
-      {/* Category header spacer */}
+
+      {/* Sessions */}
       {expanded &&
         sessions.map((session) => (
           <div key={session.id} className="relative h-[68px] border-t">
@@ -193,7 +224,12 @@ function AppBars({
   );
 }
 
-export function Gantt({ usages, rangeStart, rangeEnd }: GanttProps) {
+export function Gantt({
+  usages,
+  interactionPeriods,
+  rangeStart,
+  rangeEnd,
+}: GanttProps) {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   const timeUnit = useMemo(
@@ -226,10 +262,18 @@ export function Gantt({ usages, rangeStart, rangeEnd }: GanttProps) {
       {/* Fixed left column */}
       <div className="w-[300px] flex-shrink-0">
         <div className="h-14 border-r bg-muted p-4">
-          <h2 className="font-semibold">Sessions</h2>
+          <h2 className="font-semibold text-muted-foreground">Sessions</h2>
         </div>
 
-        {/* Category headers and tasks */}
+        {/* Interaction Periods' header */}
+        {interactionPeriods && (
+          <div className="flex items-center p-4 bg-muted border-r h-[52px] border-b">
+            <LaptopIcon className="w-6 h-6 ml-6" />
+            <Text className="font-semibold ml-4">Interactions</Text>
+          </div>
+        )}
+
+        {/* App headers and sessions */}
         {apps.map((app) => (
           <div key={app.id} className="border-b">
             <div
@@ -281,6 +325,22 @@ export function Gantt({ usages, rangeStart, rangeEnd }: GanttProps) {
                 ),
             )}
           </div>
+
+          {interactionPeriods && (
+            <div className="border-b">
+              {/* Interaction Periods */}
+              <div className="h-[52px] bg-muted/80 relative">
+                <div className="absolute inset-x-0 top-4">
+                  <InteractionPeriodBars
+                    interactionPeriods={interactionPeriods}
+                    rangeStart={rangeStart}
+                    rangeEnd={rangeEnd}
+                    timeUnit={timeUnit}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Task bars */}
           {apps.map((app) => (
