@@ -37,7 +37,7 @@ function getTimeArray(
   const times: DateTime[] = [];
   let current = start;
 
-  while (current <= end) {
+  while (current < end) {
     times.push(current);
     current = current.plus({ [unit + "s"]: step });
   }
@@ -133,15 +133,16 @@ export function Gantt({ sessions, projectStart, projectEnd }: GanttProps) {
 
       {/* Scrollable timeline container */}
       <div className="flex-grow overflow-x-auto">
-        <div className="min-w-[800px]">
+        <div className="flex flex-col w-fit">
           {/* Timeline header */}
-          <div className="h-14 flex p-4 border-b">
+          <div className="h-14 w-fit flex py-4 border-b">
             {timeArray.map(
               (time, i) =>
                 i % (timeUnit.unit === "minute" ? 4 : 1) === 0 && (
                   <div
                     key={time.toISO()}
-                    className="text-sm text-muted-foreground flex-shrink-0"
+                    // NOTE: this border might take up space, making the usage timelines inaccurate.
+                    className="text-sm text-muted-foreground flex-shrink-0 border-l pl-1 border-muted-foreground"
                     style={{ width: "100px" }}
                   >
                     {formatTime(time, timeUnit.unit)}
@@ -152,13 +153,13 @@ export function Gantt({ sessions, projectStart, projectEnd }: GanttProps) {
 
           {/* Task bars */}
           {apps.map((app) => (
-            <div key={app.id} className="border-b">
-              <div className="h-[52px] bg-muted" />{" "}
+            <div key={app.id} className="border-b ">
+              <div className="h-[52px] bg-muted" />
               {/* Category header spacer */}
               {expanded[app.id] &&
                 Object.values(sessions[app.id]).map((task) => (
                   <div key={task.id} className="relative h-[68px] border-t">
-                    <div className="absolute inset-x-4 top-1/2 -translate-y-1/2">
+                    <div className="absolute inset-x-0 top-1/2 -translate-y-1/2">
                       {/* Base task bar */}
                       <div
                         className="absolute h-6 bg-blue-200"
