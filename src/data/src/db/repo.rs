@@ -580,4 +580,29 @@ impl Repository {
 
         Ok(usages)
     }
+
+    /// Gets all [InteractionPeriod]s in a time range
+    pub async fn get_interaction_periods(
+        &mut self,
+        start: Timestamp,
+        end: Timestamp,
+    ) -> Result<Vec<InteractionPeriod>> {
+        let interactions: Vec<InteractionPeriod> = query_as(
+            "SELECT
+                i.id,
+                MAX(i.start, p.start) AS start,
+                MIN(i.end, p.end) AS end,
+                i.mouse_clicks,
+                i.key_strokes
+            FROM interaction_periods i, (SELECT ? AS start, ? AS end) p
+            WHERE i.end > p.start AND i.start <= p.end
+            ORDER BY i.start ASC",
+        )
+        .bind(start)
+        .bind(end)
+        .fetch_all(self.db.executor())
+        .await?;
+
+        Ok(interactions)
+    }
 }

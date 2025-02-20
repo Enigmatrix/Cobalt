@@ -73,3 +73,11 @@ export interface Tag {
   apps: Ref<App>[];
   usages: UsageInfo;
 }
+
+export interface InteractionPeriod {
+  id: Ref<Usage>;
+  start: Timestamp;
+  end: Timestamp;
+  mouse_clicks: number;
+  key_strokes: number;
+}

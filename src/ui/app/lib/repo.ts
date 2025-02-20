@@ -6,6 +6,7 @@ import type {
   Session,
   Tag,
   Ref,
+  InteractionPeriod,
 } from "@/lib/entities";
 import { invoke } from "@tauri-apps/api/core";
 import type { EntityMap, EntityStore } from "@/lib/state";
@@ -154,6 +155,23 @@ export async function appSessionUsages({
 }): Promise<AppSessionUsages> {
   const queryOptions = getQueryOptions(options);
   return await invoke("app_session_usages", {
+    queryOptions,
+    start: dateTimeToTicks(start),
+    end: dateTimeToTicks(end),
+  });
+}
+
+export async function getInteractionPeriods({
+  options,
+  start,
+  end,
+}: {
+  options?: QueryOptions;
+  start: DateTime;
+  end: DateTime;
+}): Promise<InteractionPeriod[]> {
+  const queryOptions = getQueryOptions(options);
+  return await invoke("get_interaction_periods", {
     queryOptions,
     start: dateTimeToTicks(start),
     end: dateTimeToTicks(end),

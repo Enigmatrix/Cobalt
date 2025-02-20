@@ -32,6 +32,7 @@ pub fn run() {
             repo::create_tag,
             repo::remove_tag,
             repo::app_session_usages,
+            repo::get_interaction_periods,
             tracing::log,
         ])
         .run(tauri::generate_context!())
