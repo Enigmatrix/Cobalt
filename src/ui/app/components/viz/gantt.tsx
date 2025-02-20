@@ -1,20 +1,14 @@
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { ChevronRight, ChevronDown } from "lucide-react";
-import { DateTime, Duration } from "luxon";
-import type { Usage } from "@/lib/entities";
+import { DateTime } from "luxon";
+import type { App, Ref } from "@/lib/entities";
 import { ticksToDateTime } from "@/lib/time";
-
-interface Task {
-  id: string;
-  name: string;
-  start: DateTime;
-  end: DateTime;
-  usages: Usage[];
-  category: string;
-}
+import type { AppSessionUsages } from "@/lib/repo";
 
 interface GanttProps {
-  tasks: Task[];
+  sessions: AppSessionUsages;
+  projectStart: DateTime;
+  projectEnd: DateTime;
 }
 
 function getTimeUnits(
@@ -59,14 +53,8 @@ function formatTime(date: DateTime, unit: "minute" | "hour" | "day"): string {
   }
 }
 
-export function Gantt({ tasks }: GanttProps) {
+export function Gantt({ sessions, projectStart, projectEnd }: GanttProps) {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
-
-  // Add padding to timeline
-  const projectStart = DateTime.min(...tasks.map((t) => t.start)).minus({
-    days: 1,
-  });
-  const projectEnd = DateTime.max(...tasks.map((t) => t.end)).plus({ days: 1 });
 
   const timeUnit = useMemo(
     () => getTimeUnits(projectStart, projectEnd),
@@ -77,12 +65,12 @@ export function Gantt({ tasks }: GanttProps) {
     [projectStart, projectEnd, timeUnit],
   );
 
-  const categories = Array.from(new Set(tasks.map((t) => t.category)));
+  const apps = Object.keys(sessions).map((id) => +id as Ref<App>);
 
-  const toggleCategory = (category: string) => {
+  const toggleApp = (appId: Ref<App>) => {
     setExpanded((prev) => ({
       ...prev,
-      [category]: !prev[category],
+      [appId]: !prev[appId],
     }));
   };
 
@@ -113,35 +101,30 @@ export function Gantt({ tasks }: GanttProps) {
           </div>
 
           {/* Category headers and tasks */}
-          {categories.map((category) => (
-            <div key={category} className="border-b">
+          {apps.map((appId) => (
+            <div key={appId} className="border-b">
               <div
                 className="flex items-center p-4 bg-muted cursor-pointer hover:bg-muted/80 border-r h-[52px]"
-                onClick={() => toggleCategory(category)}
+                onClick={() => toggleApp(appId)}
               >
-                {expanded[category] ? (
+                {expanded[appId] ? (
                   <ChevronDown size={20} />
                 ) : (
                   <ChevronRight size={20} />
                 )}
-                <span className="font-semibold ml-2">{category}</span>
+                <span className="font-semibold ml-2">{appId}</span>
               </div>
 
-              {expanded[category] &&
-                tasks
-                  .filter((task) => task.category === category)
-                  .map((task) => (
-                    <div
-                      key={task.id}
-                      className="p-4 border-t border-r h-[68px]"
-                    >
-                      <div className="text-sm">{task.name}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {formatTime(task.start, timeUnit.unit)} -{" "}
-                        {formatTime(task.end, timeUnit.unit)}
-                      </div>
+              {expanded[appId] &&
+                Object.values(sessions[appId]).map((task) => (
+                  <div key={task.id} className="p-4 border-t border-r h-[68px]">
+                    <div className="text-sm">{task.title}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {formatTime(ticksToDateTime(task.start), timeUnit.unit)} -{" "}
+                      {formatTime(ticksToDateTime(task.end), timeUnit.unit)}
                     </div>
-                  ))}
+                  </div>
+                ))}
             </div>
           ))}
         </div>
@@ -166,36 +149,37 @@ export function Gantt({ tasks }: GanttProps) {
             </div>
 
             {/* Task bars */}
-            {categories.map((category) => (
-              <div key={category} className="border-b">
+            {apps.map((appId) => (
+              <div key={appId} className="border-b">
                 <div className="h-[52px] bg-muted" />{" "}
                 {/* Category header spacer */}
-                {expanded[category] &&
-                  tasks
-                    .filter((task) => task.category === category)
-                    .map((task) => (
-                      <div key={task.id} className="relative h-[68px] border-t">
-                        <div className="absolute inset-x-4 top-1/2 -translate-y-1/2">
-                          {/* Base task bar */}
-                          <div
-                            className="absolute h-6 rounded-full bg-blue-200"
-                            style={getPosition(task.start, task.end)}
-                          >
-                            {/* Usage periods */}
-                            {task.usages.map((usage, index) => (
-                              <div
-                                key={index}
-                                className="absolute h-full bg-blue-500 rounded-full"
-                                style={getPosition(
-                                  ticksToDateTime(usage.start),
-                                  ticksToDateTime(usage.end),
-                                )}
-                              />
-                            ))}
-                          </div>
+                {expanded[appId] &&
+                  Object.values(sessions[appId]).map((task) => (
+                    <div key={task.id} className="relative h-[68px] border-t">
+                      <div className="absolute inset-x-4 top-1/2 -translate-y-1/2">
+                        {/* Base task bar */}
+                        <div
+                          className="absolute h-6 rounded-full bg-blue-200"
+                          style={getPosition(
+                            ticksToDateTime(task.start),
+                            ticksToDateTime(task.end),
+                          )}
+                        >
+                          {/* Usage periods */}
+                          {task.usages.map((usage, index) => (
+                            <div
+                              key={index}
+                              className="absolute h-full bg-blue-500 rounded-full"
+                              style={getPosition(
+                                ticksToDateTime(usage.start),
+                                ticksToDateTime(usage.end),
+                              )}
+                            />
+                          ))}
                         </div>
                       </div>
-                    ))}
+                    </div>
+                  ))}
               </div>
             ))}
           </div>
