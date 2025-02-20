@@ -4,6 +4,9 @@ import { DateTime } from "luxon";
 import type { App, Ref } from "@/lib/entities";
 import { ticksToDateTime } from "@/lib/time";
 import type { AppSessionUsages } from "@/lib/repo";
+import { Text } from "@/components/ui/text";
+import { useApps } from "@/hooks/use-refresh";
+import AppIcon from "../app/app-icon";
 
 interface GanttProps {
   sessions: AppSessionUsages;
@@ -65,7 +68,8 @@ export function Gantt({ sessions, projectStart, projectEnd }: GanttProps) {
     [projectStart, projectEnd, timeUnit],
   );
 
-  const apps = Object.keys(sessions).map((id) => +id as Ref<App>);
+  const involvedApps = Object.keys(sessions).map((id) => +id as Ref<App>);
+  const apps = useApps(involvedApps);
 
   const toggleApp = (appId: Ref<App>) => {
     setExpanded((prev) => ({
@@ -101,24 +105,25 @@ export function Gantt({ sessions, projectStart, projectEnd }: GanttProps) {
           </div>
 
           {/* Category headers and tasks */}
-          {apps.map((appId) => (
-            <div key={appId} className="border-b">
+          {apps.map((app) => (
+            <div key={app.id} className="border-b">
               <div
                 className="flex items-center p-4 bg-muted cursor-pointer hover:bg-muted/80 border-r h-[52px]"
-                onClick={() => toggleApp(appId)}
+                onClick={() => toggleApp(app.id)}
               >
-                {expanded[appId] ? (
+                {expanded[app.id] ? (
                   <ChevronDown size={20} />
                 ) : (
                   <ChevronRight size={20} />
                 )}
-                <span className="font-semibold ml-2">{appId}</span>
+                <AppIcon buffer={app.icon} className="ml-2 w-6 h-6 shrink-0" />
+                <Text className="font-semibold ml-4">{app.name}</Text>
               </div>
 
-              {expanded[appId] &&
-                Object.values(sessions[appId]).map((task) => (
+              {expanded[app.id] &&
+                Object.values(sessions[app.id]).map((task) => (
                   <div key={task.id} className="p-4 border-t border-r h-[68px]">
-                    <div className="text-sm">{task.title}</div>
+                    <Text className="text-sm">{task.title}</Text>
                     <div className="text-xs text-muted-foreground">
                       {formatTime(ticksToDateTime(task.start), timeUnit.unit)} -{" "}
                       {formatTime(ticksToDateTime(task.end), timeUnit.unit)}
@@ -149,17 +154,17 @@ export function Gantt({ sessions, projectStart, projectEnd }: GanttProps) {
             </div>
 
             {/* Task bars */}
-            {apps.map((appId) => (
-              <div key={appId} className="border-b">
+            {apps.map((app) => (
+              <div key={app.id} className="border-b">
                 <div className="h-[52px] bg-muted" />{" "}
                 {/* Category header spacer */}
-                {expanded[appId] &&
-                  Object.values(sessions[appId]).map((task) => (
+                {expanded[app.id] &&
+                  Object.values(sessions[app.id]).map((task) => (
                     <div key={task.id} className="relative h-[68px] border-t">
                       <div className="absolute inset-x-4 top-1/2 -translate-y-1/2">
                         {/* Base task bar */}
                         <div
-                          className="absolute h-6 rounded-full bg-blue-200"
+                          className="absolute h-6 rounded-[2px] bg-blue-200"
                           style={getPosition(
                             ticksToDateTime(task.start),
                             ticksToDateTime(task.end),
@@ -169,7 +174,7 @@ export function Gantt({ sessions, projectStart, projectEnd }: GanttProps) {
                           {task.usages.map((usage, index) => (
                             <div
                               key={index}
-                              className="absolute h-full bg-blue-500 rounded-full"
+                              className="absolute h-full bg-blue-500"
                               style={getPosition(
                                 ticksToDateTime(usage.start),
                                 ticksToDateTime(usage.end),
