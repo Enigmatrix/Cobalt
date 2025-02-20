@@ -188,7 +188,7 @@ pub async fn remove_tag(state: State<'_, AppState>, tag_id: Ref<Tag>) -> AppResu
 
 #[tauri::command]
 #[tracing::instrument(err, skip(state))]
-pub async fn app_session_usages(
+pub async fn get_app_session_usages(
     state: State<'_, AppState>,
     start: Timestamp,
     end: Timestamp,
@@ -197,7 +197,7 @@ pub async fn app_session_usages(
         let mut state = state.write().await;
         state.assume_init_mut().get_repo().await?
     };
-    Ok(repo.app_session_usages(start, end).await?)
+    Ok(repo.get_app_session_usages(start, end).await?)
 }
 
 #[tauri::command]

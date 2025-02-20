@@ -522,7 +522,7 @@ impl Repository {
     }
 
     /// Gets all [Session]s and [Usage]s in a time range
-    pub async fn app_session_usages(
+    pub async fn get_app_session_usages(
         &mut self,
         start: Timestamp,
         end: Timestamp,

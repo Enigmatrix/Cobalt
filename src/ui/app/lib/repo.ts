@@ -144,7 +144,7 @@ export type AppSessionUsages = {
   };
 };
 
-export async function appSessionUsages({
+export async function getAppSessionUsages({
   options,
   start,
   end,
@@ -154,7 +154,7 @@ export async function appSessionUsages({
   end: DateTime;
 }): Promise<AppSessionUsages> {
   const queryOptions = getQueryOptions(options);
-  return await invoke("app_session_usages", {
+  return await invoke("get_app_session_usages", {
     queryOptions,
     start: dateTimeToTicks(start),
     end: dateTimeToTicks(end),
