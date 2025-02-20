@@ -1,12 +1,14 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { ChevronRight, ChevronDown } from "lucide-react";
 import { DateTime } from "luxon";
-import type { App, Ref } from "@/lib/entities";
+import type { App, Ref, Usage } from "@/lib/entities";
 import { ticksToDateTime } from "@/lib/time";
 import type { AppSessionUsages } from "@/lib/repo";
 import { Text } from "@/components/ui/text";
 import { useApps } from "@/hooks/use-refresh";
 import AppIcon from "../app/app-icon";
+import type { ClassValue } from "clsx";
+import { cn } from "@/lib/utils";
 
 interface GanttProps {
   sessions: AppSessionUsages;
@@ -14,10 +16,12 @@ interface GanttProps {
   projectEnd: DateTime;
 }
 
-function getTimeUnits(
-  start: DateTime,
-  end: DateTime,
-): { unit: "minute" | "hour" | "day"; step: number } {
+type TimeUnit = {
+  unit: "minute" | "hour" | "day";
+  step: number;
+};
+
+function getTimeUnits(start: DateTime, end: DateTime): TimeUnit {
   const diff = end.diff(start, ["days", "hours", "minutes"]).toObject();
 
   if (diff.days && diff.days > 2) {
@@ -56,6 +60,76 @@ function formatTime(date: DateTime, unit: "minute" | "hour" | "day"): string {
   }
 }
 
+function getPosition(
+  start: DateTime,
+  end: DateTime,
+  rangeStart: DateTime,
+  rangeEnd: DateTime,
+  timeUnit: TimeUnit,
+) {
+  const totalDuration = rangeEnd
+    .diff(rangeStart, timeUnit.unit)
+    .get(timeUnit.unit);
+  const startOffset = start.diff(rangeStart, timeUnit.unit).get(timeUnit.unit);
+  const duration = end.diff(start, timeUnit.unit).get(timeUnit.unit);
+
+  const left = (startOffset / totalDuration) * 100;
+  const width = (duration / totalDuration) * 100;
+
+  return { left: `${left}%`, width: `${width}%` };
+}
+
+function Bar({
+  className,
+  rangeStart,
+  rangeEnd,
+  start,
+  end,
+  timeUnit,
+}: {
+  className?: ClassValue;
+  rangeStart: DateTime;
+  rangeEnd: DateTime;
+  start: DateTime;
+  end: DateTime;
+  timeUnit: TimeUnit;
+}) {
+  return (
+    <div
+      className={cn("absolute h-6", className)}
+      style={getPosition(start, end, rangeStart, rangeEnd, timeUnit)}
+    />
+  );
+}
+
+function UsageBars({
+  usages,
+  rangeStart,
+  rangeEnd,
+  timeUnit,
+}: {
+  usages: Usage[];
+  rangeStart: DateTime;
+  rangeEnd: DateTime;
+  timeUnit: TimeUnit;
+}) {
+  return (
+    <>
+      {usages.map((usage, index) => (
+        <Bar
+          key={index}
+          className="bg-blue-500"
+          start={ticksToDateTime(usage.start)}
+          end={ticksToDateTime(usage.end)}
+          rangeStart={rangeStart}
+          rangeEnd={rangeEnd}
+          timeUnit={timeUnit}
+        />
+      ))}
+    </>
+  );
+}
+
 export function Gantt({ sessions, projectStart, projectEnd }: GanttProps) {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
@@ -68,37 +142,28 @@ export function Gantt({ sessions, projectStart, projectEnd }: GanttProps) {
     [projectStart, projectEnd, timeUnit],
   );
 
-  const involvedApps = Object.keys(sessions).map((id) => +id as Ref<App>);
+  const involvedApps = useMemo(
+    () => Object.keys(sessions).map((id) => +id as Ref<App>),
+    [sessions],
+  );
   const apps = useApps(involvedApps);
 
-  const toggleApp = (appId: Ref<App>) => {
-    setExpanded((prev) => ({
-      ...prev,
-      [appId]: !prev[appId],
-    }));
-  };
-
-  const getPosition = (start: DateTime, end: DateTime) => {
-    const totalDuration = projectEnd
-      .diff(projectStart, timeUnit.unit)
-      .get(timeUnit.unit);
-    const startOffset = start
-      .diff(projectStart, timeUnit.unit)
-      .get(timeUnit.unit);
-    const duration = end.diff(start, timeUnit.unit).get(timeUnit.unit);
-
-    const left = (startOffset / totalDuration) * 100;
-    const width = (duration / totalDuration) * 100;
-
-    return { left: `${left}%`, width: `${width}%` };
-  };
+  const toggleApp = useCallback(
+    (appId: Ref<App>) => {
+      setExpanded((prev) => ({
+        ...prev,
+        [appId]: !prev[appId],
+      }));
+    },
+    [setExpanded],
+  );
 
   return (
     <div className="bg-card rounded-lg shadow-lg overflow-hidden flex">
       {/* Fixed left column */}
-      <div className="w-[200px] flex-shrink-0">
+      <div className="w-[300px] flex-shrink-0">
         <div className="h-14 border-r bg-muted p-4">
-          <h2 className="font-semibold">Tasks</h2>
+          <h2 className="font-semibold">Sessions</h2>
         </div>
 
         {/* Category headers and tasks */}
@@ -118,12 +183,15 @@ export function Gantt({ sessions, projectStart, projectEnd }: GanttProps) {
             </div>
 
             {expanded[app.id] &&
-              Object.values(sessions[app.id]).map((task) => (
-                <div key={task.id} className="p-4 border-t border-r h-[68px]">
-                  <Text className="text-sm">{task.title}</Text>
+              Object.values(sessions[app.id]).map((session) => (
+                <div
+                  key={session.id}
+                  className="p-4 border-t border-r h-[68px]"
+                >
+                  <Text className="text-sm">{session.title}</Text>
                   <div className="text-xs text-muted-foreground">
-                    {formatTime(ticksToDateTime(task.start), timeUnit.unit)} -{" "}
-                    {formatTime(ticksToDateTime(task.end), timeUnit.unit)}
+                    {formatTime(ticksToDateTime(session.start), timeUnit.unit)}{" "}
+                    - {formatTime(ticksToDateTime(session.end), timeUnit.unit)}
                   </div>
                 </div>
               ))}
@@ -157,28 +225,25 @@ export function Gantt({ sessions, projectStart, projectEnd }: GanttProps) {
               <div className="h-[52px] bg-muted" />
               {/* Category header spacer */}
               {expanded[app.id] &&
-                Object.values(sessions[app.id]).map((task) => (
-                  <div key={task.id} className="relative h-[68px] border-t">
-                    <div className="absolute inset-x-0 top-1/2 -translate-y-1/2">
+                Object.values(sessions[app.id]).map((session) => (
+                  <div key={session.id} className="relative h-[68px] border-t">
+                    <div className="absolute inset-x-0 top-6">
                       {/* Base task bar */}
-                      <div
-                        className="absolute h-6 bg-blue-200"
-                        style={getPosition(
-                          ticksToDateTime(task.start),
-                          ticksToDateTime(task.end),
-                        )}
-                      ></div>
+                      <Bar
+                        className="bg-blue-200"
+                        start={ticksToDateTime(session.start)}
+                        end={ticksToDateTime(session.end)}
+                        rangeStart={projectStart}
+                        rangeEnd={projectEnd}
+                        timeUnit={timeUnit}
+                      />
                       {/* Usage periods */}
-                      {task.usages.map((usage, index) => (
-                        <div
-                          key={index}
-                          className="absolute bg-blue-500 h-6"
-                          style={getPosition(
-                            ticksToDateTime(usage.start),
-                            ticksToDateTime(usage.end),
-                          )}
-                        />
-                      ))}
+                      <UsageBars
+                        usages={session.usages}
+                        rangeStart={projectStart}
+                        rangeEnd={projectEnd}
+                        timeUnit={timeUnit}
+                      />
                     </div>
                   </div>
                 ))}
