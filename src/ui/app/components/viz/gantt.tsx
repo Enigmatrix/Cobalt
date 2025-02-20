@@ -94,100 +94,95 @@ export function Gantt({ sessions, projectStart, projectEnd }: GanttProps) {
   };
 
   return (
-    <div className="bg-card rounded-lg shadow-lg overflow-hidden">
-      <h1 className="text-2xl font-bold p-6 border-b">Project Gantt Chart</h1>
+    <div className="bg-card rounded-lg shadow-lg overflow-hidden flex">
+      {/* Fixed left column */}
+      <div className="w-[200px] flex-shrink-0">
+        <div className="h-14 border-r bg-muted p-4">
+          <h2 className="font-semibold">Tasks</h2>
+        </div>
 
-      <div className="flex">
-        {/* Fixed left column */}
-        <div className="w-[200px] flex-shrink-0">
-          <div className="h-14 border-r bg-muted p-4">
-            <h2 className="font-semibold">Tasks</h2>
+        {/* Category headers and tasks */}
+        {apps.map((app) => (
+          <div key={app.id} className="border-b">
+            <div
+              className="flex items-center p-4 bg-muted cursor-pointer hover:bg-muted/80 border-r h-[52px]"
+              onClick={() => toggleApp(app.id)}
+            >
+              {expanded[app.id] ? (
+                <ChevronDown size={20} />
+              ) : (
+                <ChevronRight size={20} />
+              )}
+              <AppIcon buffer={app.icon} className="ml-2 w-6 h-6 shrink-0" />
+              <Text className="font-semibold ml-4">{app.name}</Text>
+            </div>
+
+            {expanded[app.id] &&
+              Object.values(sessions[app.id]).map((task) => (
+                <div key={task.id} className="p-4 border-t border-r h-[68px]">
+                  <Text className="text-sm">{task.title}</Text>
+                  <div className="text-xs text-muted-foreground">
+                    {formatTime(ticksToDateTime(task.start), timeUnit.unit)} -{" "}
+                    {formatTime(ticksToDateTime(task.end), timeUnit.unit)}
+                  </div>
+                </div>
+              ))}
+          </div>
+        ))}
+      </div>
+
+      {/* Scrollable timeline container */}
+      <div className="flex-grow overflow-x-auto">
+        <div className="min-w-[800px]">
+          {/* Timeline header */}
+          <div className="h-14 flex p-4 border-b">
+            {timeArray.map(
+              (time, i) =>
+                i % (timeUnit.unit === "minute" ? 4 : 1) === 0 && (
+                  <div
+                    key={time.toISO()}
+                    className="text-sm text-muted-foreground flex-shrink-0"
+                    style={{ width: "100px" }}
+                  >
+                    {formatTime(time, timeUnit.unit)}
+                  </div>
+                ),
+            )}
           </div>
 
-          {/* Category headers and tasks */}
+          {/* Task bars */}
           {apps.map((app) => (
             <div key={app.id} className="border-b">
-              <div
-                className="flex items-center p-4 bg-muted cursor-pointer hover:bg-muted/80 border-r h-[52px]"
-                onClick={() => toggleApp(app.id)}
-              >
-                {expanded[app.id] ? (
-                  <ChevronDown size={20} />
-                ) : (
-                  <ChevronRight size={20} />
-                )}
-                <AppIcon buffer={app.icon} className="ml-2 w-6 h-6 shrink-0" />
-                <Text className="font-semibold ml-4">{app.name}</Text>
-              </div>
-
+              <div className="h-[52px] bg-muted" />{" "}
+              {/* Category header spacer */}
               {expanded[app.id] &&
                 Object.values(sessions[app.id]).map((task) => (
-                  <div key={task.id} className="p-4 border-t border-r h-[68px]">
-                    <Text className="text-sm">{task.title}</Text>
-                    <div className="text-xs text-muted-foreground">
-                      {formatTime(ticksToDateTime(task.start), timeUnit.unit)} -{" "}
-                      {formatTime(ticksToDateTime(task.end), timeUnit.unit)}
+                  <div key={task.id} className="relative h-[68px] border-t">
+                    <div className="absolute inset-x-4 top-1/2 -translate-y-1/2">
+                      {/* Base task bar */}
+                      <div
+                        className="absolute h-6 bg-blue-200"
+                        style={getPosition(
+                          ticksToDateTime(task.start),
+                          ticksToDateTime(task.end),
+                        )}
+                      ></div>
+                      {/* Usage periods */}
+                      {task.usages.map((usage, index) => (
+                        <div
+                          key={index}
+                          className="absolute bg-blue-500 h-6"
+                          style={getPosition(
+                            ticksToDateTime(usage.start),
+                            ticksToDateTime(usage.end),
+                          )}
+                        />
+                      ))}
                     </div>
                   </div>
                 ))}
             </div>
           ))}
-        </div>
-
-        {/* Scrollable timeline container */}
-        <div className="flex-grow overflow-x-auto">
-          <div className="min-w-[800px]">
-            {/* Timeline header */}
-            <div className="h-14 flex p-4 border-b">
-              {timeArray.map(
-                (time, i) =>
-                  i % (timeUnit.unit === "minute" ? 4 : 1) === 0 && (
-                    <div
-                      key={time.toISO()}
-                      className="text-sm text-muted-foreground flex-shrink-0"
-                      style={{ width: "100px" }}
-                    >
-                      {formatTime(time, timeUnit.unit)}
-                    </div>
-                  ),
-              )}
-            </div>
-
-            {/* Task bars */}
-            {apps.map((app) => (
-              <div key={app.id} className="border-b">
-                <div className="h-[52px] bg-muted" />{" "}
-                {/* Category header spacer */}
-                {expanded[app.id] &&
-                  Object.values(sessions[app.id]).map((task) => (
-                    <div key={task.id} className="relative h-[68px] border-t">
-                      <div className="absolute inset-x-4 top-1/2 -translate-y-1/2">
-                        {/* Base task bar */}
-                        <div
-                          className="absolute h-6 rounded-[2px] bg-blue-200"
-                          style={getPosition(
-                            ticksToDateTime(task.start),
-                            ticksToDateTime(task.end),
-                          )}
-                        >
-                          {/* Usage periods */}
-                          {task.usages.map((usage, index) => (
-                            <div
-                              key={index}
-                              className="absolute h-full bg-blue-500"
-                              style={getPosition(
-                                ticksToDateTime(usage.start),
-                                ticksToDateTime(usage.end),
-                              )}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-              </div>
-            ))}
-          </div>
         </div>
       </div>
     </div>
