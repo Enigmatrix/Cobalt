@@ -185,7 +185,7 @@ function AppBars({
   return (
     <div className="border-b">
       {/* App header */}
-      <div className="h-[52px] bg-muted/80 relative">
+      <div className="h-[52px] bg-muted/60 relative">
         <div className="absolute inset-x-0 top-4">
           <UsageBars
             usages={allUsages}
@@ -258,18 +258,22 @@ export function Gantt({
   );
 
   return (
-    <div className="bg-transparent overflow-hidden flex">
+    <div className="bg-transparent overflow-hidden flex text-muted-foreground">
       {/* Fixed left column */}
       <div className="w-[300px] flex-shrink-0">
-        <div className="h-14 border-r bg-muted p-4">
-          <h2 className="font-semibold text-muted-foreground">Sessions</h2>
+        <div className="h-14 border-r border-b border-r-transparent p-4">
+          <h2 className="font-semibold text-xl text-card-foreground">
+            Sessions
+          </h2>
         </div>
 
         {/* Interaction Periods' header */}
         {interactionPeriods && (
-          <div className="flex items-center p-4 bg-muted border-r h-[52px] border-b">
-            <LaptopIcon className="w-6 h-6 ml-6" />
-            <Text className="font-semibold ml-4">Interactions</Text>
+          <div className="border-b">
+            <div className="flex items-center p-4 border-r h-[52px]">
+              <LaptopIcon className="w-6 h-6 ml-6" />
+              <Text className="font-semibold ml-4">Interactions</Text>
+            </div>
           </div>
         )}
 
@@ -277,7 +281,7 @@ export function Gantt({
         {apps.map((app) => (
           <div key={app.id} className="border-b">
             <div
-              className="flex items-center p-4 bg-muted cursor-pointer hover:bg-muted/80 border-r h-[52px]"
+              className="flex items-center p-4 bg-muted/80 cursor-pointer hover:bg-muted/60 border-r h-[52px]"
               onClick={() => toggleApp(app.id)}
             >
               {expanded[app.id] ? (
@@ -329,7 +333,7 @@ export function Gantt({
           {interactionPeriods && (
             <div className="border-b">
               {/* Interaction Periods */}
-              <div className="h-[52px] bg-muted/80 relative">
+              <div className="h-[52px] relative">
                 <div className="absolute inset-x-0 top-4">
                   <InteractionPeriodBars
                     interactionPeriods={interactionPeriods}
