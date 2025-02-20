@@ -119,7 +119,7 @@ function UsageBars({
       {usages.map((usage, index) => (
         <Bar
           key={index}
-          className="bg-primary"
+          className="bg-primary hover:bg-card-foreground"
           start={ticksToDateTime(usage.start)}
           end={ticksToDateTime(usage.end)}
           rangeStart={rangeStart}
@@ -147,7 +147,7 @@ function InteractionPeriodBars({
       {interactionPeriods.map((interactionPeriod, index) => (
         <Bar
           key={index}
-          className="bg-primary/50"
+          className="bg-primary/50 hover:bg-card-foreground"
           start={ticksToDateTime(interactionPeriod.start)}
           end={ticksToDateTime(interactionPeriod.end)}
           rangeStart={rangeStart}
