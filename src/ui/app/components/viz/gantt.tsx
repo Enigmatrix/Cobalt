@@ -11,9 +11,9 @@ import type { ClassValue } from "clsx";
 import { cn } from "@/lib/utils";
 
 interface GanttProps {
-  sessions: AppSessionUsages;
-  projectStart: DateTime;
-  projectEnd: DateTime;
+  usages: AppSessionUsages;
+  rangeStart: DateTime;
+  rangeEnd: DateTime;
 }
 
 type TimeUnit = {
@@ -118,7 +118,7 @@ function UsageBars({
       {usages.map((usage, index) => (
         <Bar
           key={index}
-          className="bg-blue-500"
+          className="bg-primary"
           start={ticksToDateTime(usage.start)}
           end={ticksToDateTime(usage.end)}
           rangeStart={rangeStart}
@@ -130,21 +130,84 @@ function UsageBars({
   );
 }
 
-export function Gantt({ sessions, projectStart, projectEnd }: GanttProps) {
+function AppBars({
+  app,
+  expanded,
+  usages,
+  rangeStart,
+  rangeEnd,
+  timeUnit,
+}: {
+  app: App;
+  expanded: boolean;
+  usages: AppSessionUsages;
+  rangeStart: DateTime;
+  rangeEnd: DateTime;
+  timeUnit: TimeUnit;
+}) {
+  const allUsages = useMemo(
+    () =>
+      Object.values(usages[app.id])
+        .map((session) => session.usages)
+        .flat(),
+    [app, usages],
+  );
+  const sessions = useMemo(() => Object.values(usages[app.id]), [app, usages]);
+  return (
+    <div className="border-b">
+      <div className="h-[52px] bg-muted/80 relative">
+        <div className="absolute inset-x-0 top-4">
+          <UsageBars
+            usages={allUsages}
+            rangeStart={rangeStart}
+            rangeEnd={rangeEnd}
+            timeUnit={timeUnit}
+          />
+        </div>
+      </div>
+      {/* Category header spacer */}
+      {expanded &&
+        sessions.map((session) => (
+          <div key={session.id} className="relative h-[68px] border-t">
+            <div className="absolute inset-x-0 top-6">
+              {/* Base task bar */}
+              <Bar
+                className="bg-primary/20"
+                start={ticksToDateTime(session.start)}
+                end={ticksToDateTime(session.end)}
+                rangeStart={rangeStart}
+                rangeEnd={rangeEnd}
+                timeUnit={timeUnit}
+              />
+              {/* Usage periods */}
+              <UsageBars
+                usages={session.usages}
+                rangeStart={rangeStart}
+                rangeEnd={rangeEnd}
+                timeUnit={timeUnit}
+              />
+            </div>
+          </div>
+        ))}
+    </div>
+  );
+}
+
+export function Gantt({ usages, rangeStart, rangeEnd }: GanttProps) {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   const timeUnit = useMemo(
-    () => getTimeUnits(projectStart, projectEnd),
-    [projectStart, projectEnd],
+    () => getTimeUnits(rangeStart, rangeEnd),
+    [rangeStart, rangeEnd],
   );
   const timeArray = useMemo(
-    () => getTimeArray(projectStart, projectEnd, timeUnit.unit, timeUnit.step),
-    [projectStart, projectEnd, timeUnit],
+    () => getTimeArray(rangeStart, rangeEnd, timeUnit.unit, timeUnit.step),
+    [rangeStart, rangeEnd, timeUnit],
   );
 
   const involvedApps = useMemo(
-    () => Object.keys(sessions).map((id) => +id as Ref<App>),
-    [sessions],
+    () => Object.keys(usages).map((id) => +id as Ref<App>),
+    [usages],
   );
   const apps = useApps(involvedApps);
 
@@ -159,7 +222,7 @@ export function Gantt({ sessions, projectStart, projectEnd }: GanttProps) {
   );
 
   return (
-    <div className="bg-card rounded-lg shadow-lg overflow-hidden flex">
+    <div className="bg-transparent overflow-hidden flex">
       {/* Fixed left column */}
       <div className="w-[300px] flex-shrink-0">
         <div className="h-14 border-r bg-muted p-4">
@@ -183,7 +246,7 @@ export function Gantt({ sessions, projectStart, projectEnd }: GanttProps) {
             </div>
 
             {expanded[app.id] &&
-              Object.values(sessions[app.id]).map((session) => (
+              Object.values(usages[app.id]).map((session) => (
                 <div
                   key={session.id}
                   className="p-4 border-t border-r h-[68px]"
@@ -221,33 +284,15 @@ export function Gantt({ sessions, projectStart, projectEnd }: GanttProps) {
 
           {/* Task bars */}
           {apps.map((app) => (
-            <div key={app.id} className="border-b ">
-              <div className="h-[52px] bg-muted" />
-              {/* Category header spacer */}
-              {expanded[app.id] &&
-                Object.values(sessions[app.id]).map((session) => (
-                  <div key={session.id} className="relative h-[68px] border-t">
-                    <div className="absolute inset-x-0 top-6">
-                      {/* Base task bar */}
-                      <Bar
-                        className="bg-blue-200"
-                        start={ticksToDateTime(session.start)}
-                        end={ticksToDateTime(session.end)}
-                        rangeStart={projectStart}
-                        rangeEnd={projectEnd}
-                        timeUnit={timeUnit}
-                      />
-                      {/* Usage periods */}
-                      <UsageBars
-                        usages={session.usages}
-                        rangeStart={projectStart}
-                        rangeEnd={projectEnd}
-                        timeUnit={timeUnit}
-                      />
-                    </div>
-                  </div>
-                ))}
-            </div>
+            <AppBars
+              key={app.id}
+              app={app}
+              expanded={expanded[app.id]}
+              usages={usages}
+              rangeStart={rangeStart}
+              rangeEnd={rangeEnd}
+              timeUnit={timeUnit}
+            />
           ))}
         </div>
       </div>
