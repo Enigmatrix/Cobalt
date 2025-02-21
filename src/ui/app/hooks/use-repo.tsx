@@ -96,12 +96,12 @@ export function useTagDurationsPerPeriod({
   start,
   end,
   period,
-  tagId,
+  tag,
 }: {
   start?: DateTime;
   end?: DateTime;
   period?: Duration;
-  tagId?: Ref<Tag>;
+  tag?: Tag;
 }) {
   const { refreshToken } = useRefresh();
   const [ret, setRet] = useState<{
@@ -122,7 +122,7 @@ export function useTagDurationsPerPeriod({
         end,
         period,
       });
-      const tagUsage = tagId ? _(usages[tagId]).sumBy("duration") : 0;
+      const tagUsage = tag?.id ? _(usages[tag.id]).sumBy("duration") : 0;
       const totalUsage = _(usages).values().flatten().sumBy("duration");
       setRet({
         tagUsage,
@@ -133,6 +133,6 @@ export function useTagDurationsPerPeriod({
         period,
       });
     });
-  }, [start, end, period, tagId, refreshToken, startTransition]);
+  }, [start, end, period, refreshToken, startTransition, tag?.id, tag?.apps]);
   return { ...ret, isLoading };
 }
