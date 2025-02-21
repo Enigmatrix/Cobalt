@@ -1,13 +1,16 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
+import type { ClassValue } from "clsx";
 
 interface HScrollViewProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
+  innerClassName?: ClassValue;
 }
 
 export function HScrollView({
   children,
   className,
+  innerClassName,
   ...props
 }: HScrollViewProps) {
   const scrollRef = React.useRef<HTMLDivElement>(null);
@@ -41,7 +44,7 @@ export function HScrollView({
     >
       <div
         ref={scrollRef}
-        className="overflow-x-auto scrollbar-hide"
+        className={cn("overflow-x-auto", innerClassName)}
         onScroll={checkScroll}
         {...props}
       >
