@@ -316,7 +316,26 @@ export function Gantt({
       </div>
 
       {/* Scrollable timeline container */}
-      <HScrollView className="flex-grow overflow-auto">
+      <HScrollView
+        className="flex-grow overflow-auto"
+        innerClassName="group relative"
+        onMouseMove={(e) => {
+          const container = e.currentTarget;
+          if (container) {
+            const rect = container.getBoundingClientRect();
+            const x = e.clientX - rect.left + container.scrollLeft;
+            container.style.setProperty("--mouse-x", `${x}px`);
+          }
+        }}
+      >
+        {/* Vertical line that follows mouse */}
+        <div
+          className="absolute top-0 bottom-0 w-px border-l border-dashed border-muted-foreground z-[999] pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"
+          style={{
+            left: "var(--mouse-x)",
+            transform: "translateX(-50%)",
+          }}
+        />
         <div className="flex flex-col w-fit">
           {/* Timeline header */}
           <div className="h-14 w-fit flex py-4 border-b">
@@ -325,7 +344,6 @@ export function Gantt({
                 i % (timeUnit.unit === "minute" ? 4 : 1) === 0 && (
                   <div
                     key={time.toISO()}
-                    // NOTE: this border might take up space, making the usage timelines inaccurate.
                     className="text-sm text-muted-foreground flex-shrink-0 border-l pl-1 border-muted-foreground"
                     style={{ width: "100px" }}
                   >
