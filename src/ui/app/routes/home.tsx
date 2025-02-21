@@ -8,7 +8,11 @@ import {
 } from "@/components/ui/breadcrumb";
 import { TimePeriodUsageCard } from "@/components/usage-card";
 import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
-import { useAppDurationsPerPeriod } from "@/hooks/use-repo";
+import {
+  useAppDurationsPerPeriod,
+  useAppSessionUsages,
+  useInteractionPeriods,
+} from "@/hooks/use-repo";
 import { type TimePeriod, useTimePeriod } from "@/hooks/use-today";
 import {
   durationToTicks,
@@ -19,10 +23,22 @@ import {
   weekDayFormatter,
   monthDayFormatter,
 } from "@/lib/time";
-import type { Duration, DateTime } from "luxon";
+import { type Duration, DateTime } from "luxon";
 import { useState, useMemo } from "react";
+import { Gantt } from "@/components/viz/gantt";
 
 export default function Home() {
+  const range = useTimePeriod("day");
+
+  const { ret: usages } = useAppSessionUsages({
+    start: range.start,
+    end: range.end,
+  });
+  const { ret: interactions } = useInteractionPeriods({
+    start: range.start,
+    end: range.end,
+  });
+
   return (
     <>
       <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
@@ -54,7 +70,14 @@ export default function Home() {
             xAxisLabelFormatter={monthDayFormatter}
           />
         </div>
-        <div className="min-h-[100vh] flex-1 rounded-xl bg-muted/50 md:min-h-min" />
+        <div className="rounded-xl bg-muted/50 overflow-hidden flex flex-col border border-border">
+          <Gantt
+            usages={usages}
+            interactionPeriods={interactions}
+            rangeStart={range.start}
+            rangeEnd={range.end}
+          />
+        </div>
       </div>
     </>
   );
