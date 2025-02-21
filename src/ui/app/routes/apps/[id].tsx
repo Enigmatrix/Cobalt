@@ -49,8 +49,12 @@ import { useSearch } from "@/hooks/use-search";
 import { CreateTagDialog } from "@/components/tag/create-tag-dialog";
 import { TimePeriodUsageCard } from "@/components/usage-card";
 import Heatmap from "@/components/viz/heatmap";
-import { useAppDurationsPerPeriod } from "@/hooks/use-repo";
+import {
+  useAppDurationsPerPeriod,
+  useAppSessionUsages,
+} from "@/hooks/use-repo";
 import { useTimePeriod, type TimePeriod } from "@/hooks/use-today";
+import { Gantt } from "@/components/viz/gantt";
 
 export default function App({ params }: Route.ComponentProps) {
   const id = +params.id;
@@ -100,6 +104,17 @@ export default function App({ params }: Route.ComponentProps) {
   const scaling = useCallback((value: number) => {
     return _.clamp(ticksToDuration(value).rescale().hours / 8, 0.2, 1);
   }, []);
+
+  const dayRange = useTimePeriod("day");
+  const { ret: appSessionUsages } = useAppSessionUsages({
+    start: dayRange.start,
+    end: dayRange.end,
+  });
+  const onlyAppSessionUsages = useMemo(() => {
+    return appSessionUsages[app.id]
+      ? { [app.id]: appSessionUsages[app.id] }
+      : {};
+  }, [appSessionUsages, app.id]);
 
   return (
     <>
@@ -231,6 +246,15 @@ export default function App({ params }: Route.ComponentProps) {
             />
           </div>
         </TimePeriodUsageCard>
+
+        <div className="rounded-xl bg-muted/50 overflow-hidden flex flex-col border border-border">
+          <Gantt
+            usages={onlyAppSessionUsages}
+            defaultExpanded={{ [app.id]: true }}
+            rangeStart={dayRange.start}
+            rangeEnd={dayRange.end}
+          />
+        </div>
       </div>
     </>
   );
