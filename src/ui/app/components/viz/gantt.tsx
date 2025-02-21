@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 interface GanttProps {
   usages: AppSessionUsages;
   interactionPeriods?: InteractionPeriod[];
+  defaultExpanded?: Record<Ref<App>, boolean>;
   rangeStart: DateTime;
   rangeEnd: DateTime;
 }
@@ -227,10 +228,13 @@ function AppBars({
 export function Gantt({
   usages,
   interactionPeriods,
+  defaultExpanded,
   rangeStart,
   rangeEnd,
 }: GanttProps) {
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [expanded, setExpanded] = useState<Record<Ref<App>, boolean>>(
+    defaultExpanded ?? {},
+  );
 
   const timeUnit = useMemo(
     () => getTimeUnits(rangeStart, rangeEnd),
