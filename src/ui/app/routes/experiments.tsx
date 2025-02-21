@@ -11,6 +11,8 @@ import { invoke } from "@tauri-apps/api/core";
 import { refresh } from "@/lib/state";
 import { useTransition } from "react";
 import { LoaderIcon } from "lucide-react";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Setting } from "./settings";
 
 async function copySeedDb() {
   await invoke("copy_seed_db");
@@ -55,22 +57,53 @@ export default function Experiments() {
         </Breadcrumb>
       </header>
       <div className="flex flex-1 flex-col gap-4 p-4">
-        <div className="grid auto-rows-min gap-4 md:grid-cols-3">
-          <div className="aspect-video rounded-xl bg-muted/50" />
-          <div className="aspect-video rounded-xl bg-muted/50" />
-          <div className="aspect-video rounded-xl bg-muted/50" />
-        </div>
-        <div className="min-h-[100vh] flex-1 rounded-xl bg-muted/50 md:min-h-min flex flex-col gap-4 p-4">
-          <AsyncButton onClick={copySeedDb} variant="outline">
-            Copy seed.db
-          </AsyncButton>
-          <AsyncButton onClick={updateUsagesEnd} variant="outline">
-            Set last usage to now
-          </AsyncButton>
-          <AsyncButton onClick={refreshState} variant="outline">
-            Refresh
-          </AsyncButton>
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Database</CardTitle>
+          </CardHeader>
+          <CardContent className="gap-2 flex flex-col">
+            <Setting
+              title={
+                <>
+                  Copy <p className="font-mono inline">seed.db</p>
+                </>
+              }
+              description="Replace the current database with the seed database"
+              action={
+                <AsyncButton onClick={copySeedDb} variant="outline">
+                  Run
+                </AsyncButton>
+              }
+            />
+
+            <Setting
+              title="Update Last Usage to Now"
+              description="Update last usage in database to Now"
+              action={
+                <AsyncButton onClick={updateUsagesEnd} variant="outline">
+                  Run
+                </AsyncButton>
+              }
+            />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Refresh</CardTitle>
+          </CardHeader>
+          <CardContent className="gap-2 flex flex-col">
+            <Setting
+              title="Refresh Now"
+              description="Refresh all app data"
+              action={
+                <AsyncButton onClick={refreshState} variant="outline">
+                  Run
+                </AsyncButton>
+              }
+            />
+          </CardContent>
+        </Card>
       </div>
     </>
   );

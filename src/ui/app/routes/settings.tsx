@@ -9,6 +9,32 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { useTheme } from "@/components/theme-provider";
+import type { ReactNode } from "react";
+
+export function Setting({
+  title,
+  description,
+  action,
+}: {
+  title: ReactNode;
+  description: ReactNode;
+  action: ReactNode;
+}) {
+  return (
+    <div className="flex items-center">
+      <div>
+        <h3 className="text-lg font-semibold text-card-foreground/80">
+          {title}
+        </h3>
+        <p className="text-sm text-card-foreground/50">{description}</p>
+      </div>
+
+      <div className="flex-1"></div>
+
+      {action}
+    </div>
+  );
+}
 
 export default function Settings() {
   const { theme, setTheme } = useTheme();
@@ -31,20 +57,11 @@ export default function Settings() {
             <CardTitle>Appearance</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center">
-              <div>
-                <h3 className="text-lg font-semibold text-card-foreground/80">
-                  Theme
-                </h3>
-                <p className="text-sm text-card-foreground/50">
-                  Choose a theme for the app
-                </p>
-              </div>
-
-              <div className="flex-1"></div>
-
-              <ThemeSwitch value={theme} onValueChange={setTheme} />
-            </div>
+            <Setting
+              title="Theme"
+              description="Choose a theme for the app"
+              action={<ThemeSwitch value={theme} onValueChange={setTheme} />}
+            />
           </CardContent>
         </Card>
       </div>
