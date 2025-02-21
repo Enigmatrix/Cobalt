@@ -9,6 +9,7 @@ import { useApps } from "@/hooks/use-refresh";
 import AppIcon from "../app/app-icon";
 import type { ClassValue } from "clsx";
 import { cn } from "@/lib/utils";
+import { HScrollView } from "@/components/hscroll-view";
 
 interface GanttProps {
   usages: AppSessionUsages;
@@ -315,7 +316,7 @@ export function Gantt({
       </div>
 
       {/* Scrollable timeline container */}
-      <div className="flex-grow overflow-x-auto">
+      <HScrollView className="flex-grow overflow-auto">
         <div className="flex flex-col w-fit">
           {/* Timeline header */}
           <div className="h-14 w-fit flex py-4 border-b">
@@ -363,7 +364,7 @@ export function Gantt({
             />
           ))}
         </div>
-      </div>
+      </HScrollView>
     </div>
   );
 }
