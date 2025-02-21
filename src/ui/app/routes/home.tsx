@@ -30,14 +30,15 @@ import { Gantt } from "@/components/viz/gantt";
 export default function Home() {
   const range = useTimePeriod("day");
 
-  const { ret: usages } = useAppSessionUsages({
+  const { ret: usages, isLoading: usagesLoading } = useAppSessionUsages({
     start: range.start,
     end: range.end,
   });
-  const { ret: interactions } = useInteractionPeriods({
-    start: range.start,
-    end: range.end,
-  });
+  const { ret: interactions, isLoading: interactionPeriodsLoading } =
+    useInteractionPeriods({
+      start: range.start,
+      end: range.end,
+    });
 
   return (
     <>
@@ -73,7 +74,9 @@ export default function Home() {
         <div className="rounded-xl bg-muted/50 overflow-hidden flex flex-col border border-border">
           <Gantt
             usages={usages}
+            usagesLoading={usagesLoading}
             interactionPeriods={interactions}
+            interactionPeriodsLoading={interactionPeriodsLoading}
             rangeStart={range.start}
             rangeEnd={range.end}
           />

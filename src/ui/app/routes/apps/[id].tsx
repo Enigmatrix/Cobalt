@@ -106,10 +106,11 @@ export default function App({ params }: Route.ComponentProps) {
   }, []);
 
   const dayRange = useTimePeriod("day");
-  const { ret: appSessionUsages } = useAppSessionUsages({
-    start: dayRange.start,
-    end: dayRange.end,
-  });
+  const { ret: appSessionUsages, isLoading: appSessionUsagesLoading } =
+    useAppSessionUsages({
+      start: dayRange.start,
+      end: dayRange.end,
+    });
   const onlyAppSessionUsages = useMemo(() => {
     return appSessionUsages[app.id]
       ? { [app.id]: appSessionUsages[app.id] }
@@ -250,6 +251,7 @@ export default function App({ params }: Route.ComponentProps) {
         <div className="rounded-xl bg-muted/50 overflow-hidden flex flex-col border border-border">
           <Gantt
             usages={onlyAppSessionUsages}
+            usagesLoading={appSessionUsagesLoading}
             defaultExpanded={{ [app.id]: true }}
             rangeStart={dayRange.start}
             rangeEnd={dayRange.end}

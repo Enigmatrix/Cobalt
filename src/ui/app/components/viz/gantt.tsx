@@ -1,5 +1,10 @@
 import { useState, useMemo, useCallback } from "react";
-import { ChevronRight, ChevronDown, LaptopIcon } from "lucide-react";
+import {
+  ChevronRight,
+  ChevronDown,
+  LaptopIcon,
+  Loader2Icon,
+} from "lucide-react";
 import { DateTime } from "luxon";
 import type { App, InteractionPeriod, Ref, Usage } from "@/lib/entities";
 import { ticksToDateTime } from "@/lib/time";
@@ -13,7 +18,9 @@ import { HScrollView } from "@/components/hscroll-view";
 
 interface GanttProps {
   usages: AppSessionUsages;
+  usagesLoading?: boolean;
   interactionPeriods?: InteractionPeriod[];
+  interactionPeriodsLoading?: boolean;
   defaultExpanded?: Record<Ref<App>, boolean>;
   rangeStart: DateTime;
   rangeEnd: DateTime;
@@ -228,7 +235,9 @@ function AppBars({
 
 export function Gantt({
   usages,
+  usagesLoading,
   interactionPeriods,
+  interactionPeriodsLoading,
   defaultExpanded,
   rangeStart,
   rangeEnd,
@@ -262,127 +271,176 @@ export function Gantt({
     [setExpanded],
   );
 
+  const hideTimeline =
+    (apps.length === 0 || usagesLoading) && interactionPeriods === undefined;
+
   return (
-    <div className="bg-transparent overflow-hidden flex text-muted-foreground">
-      {/* Fixed left column */}
-      <div className="w-[300px] flex-shrink-0">
-        <div className="h-14 border-r border-b border-r-transparent flex">
-          <h2 className="font-semibold text-xl text-card-foreground my-auto mx-4">
-            Sessions
-          </h2>
-        </div>
-
-        {/* Interaction Periods' header */}
-        {interactionPeriods && (
-          <div className="border-b">
-            <div className="flex items-center p-4 border-r h-[52px]">
-              <LaptopIcon className="w-6 h-6 ml-6" />
-              <Text className="font-semibold ml-4">Interactions</Text>
-            </div>
-          </div>
-        )}
-
-        {/* App headers and sessions */}
-        {apps.map((app) => (
-          <div key={app.id} className="border-b">
-            <div
-              className="flex items-center p-4 bg-muted/80 cursor-pointer hover:bg-muted/60 border-r h-[52px]"
-              onClick={() => toggleApp(app.id)}
-            >
-              {expanded[app.id] ? (
-                <ChevronDown size={20} />
-              ) : (
-                <ChevronRight size={20} />
-              )}
-              <AppIcon buffer={app.icon} className="ml-2 w-6 h-6 shrink-0" />
-              <Text className="font-semibold ml-4">{app.name}</Text>
-            </div>
-
-            {expanded[app.id] &&
-              Object.values(usages[app.id]).map((session) => (
-                <div
-                  key={session.id}
-                  className="p-4 border-t border-r h-[68px]"
-                >
-                  <Text className="text-sm">{session.title}</Text>
-                  <div className="text-xs text-muted-foreground">
-                    {formatTime(ticksToDateTime(session.start), timeUnit.unit)}{" "}
-                    - {formatTime(ticksToDateTime(session.end), timeUnit.unit)}
-                  </div>
-                </div>
-              ))}
-          </div>
-        ))}
-      </div>
-
-      {/* Scrollable timeline container */}
-      <HScrollView
-        className="flex-grow overflow-auto"
-        innerClassName="group relative"
-        onMouseMove={(e) => {
-          const container = e.currentTarget;
-          if (container) {
-            const rect = container.getBoundingClientRect();
-            const x = e.clientX - rect.left + container.scrollLeft;
-            container.style.setProperty("--mouse-x", `${x}px`);
-          }
-        }}
-      >
-        {/* Vertical line that follows mouse */}
-        <div
-          className="absolute top-0 bottom-0 w-px border-l border-dashed border-muted-foreground z-[999] pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"
-          style={{
-            left: "var(--mouse-x)",
-            transform: "translateX(-50%)",
-          }}
-        />
-        <div className="flex flex-col w-fit">
-          {/* Timeline header */}
-          <div className="h-14 w-fit flex py-4 border-b">
-            {timeArray.map(
-              (time, i) =>
-                i % (timeUnit.unit === "minute" ? 4 : 1) === 0 && (
-                  <div
-                    key={time.toISO()}
-                    className="text-sm text-muted-foreground flex-shrink-0 border-l pl-1 border-muted-foreground"
-                    style={{ width: "100px" }}
-                  >
-                    {formatTime(time, timeUnit.unit)}
-                  </div>
-                ),
-            )}
+    <div className="flex flex-col">
+      <div className="bg-transparent overflow-hidden flex text-muted-foreground">
+        {/* Fixed left column */}
+        <div className="w-[300px] flex-shrink-0">
+          <div
+            className={cn("h-14 border-r border-r-transparent flex", {
+              "border-b": !hideTimeline,
+            })}
+          >
+            <h2 className="font-semibold text-xl text-card-foreground my-auto mx-4">
+              Sessions
+            </h2>
           </div>
 
+          {/* Interaction Periods' header */}
           {interactionPeriods && (
             <div className="border-b">
-              {/* Interaction Periods */}
-              <div className="h-[52px] relative">
-                <div className="absolute inset-x-0 top-4">
-                  <InteractionPeriodBars
-                    interactionPeriods={interactionPeriods}
-                    rangeStart={rangeStart}
-                    rangeEnd={rangeEnd}
-                    timeUnit={timeUnit}
-                  />
-                </div>
+              <div className="flex items-center p-4 border-r h-[52px]">
+                <LaptopIcon className="w-6 h-6 ml-6" />
+                <Text className="font-semibold ml-4">Interactions</Text>
+                {/* BUG: this loading is as long as the usage loading ..????? */}
+                {interactionPeriodsLoading && (
+                  <Loader2Icon className="animate-spin ml-4" />
+                )}
               </div>
             </div>
           )}
 
-          {/* Task bars */}
-          {apps.map((app) => (
-            <AppBars
-              key={app.id}
-              app={app}
-              expanded={expanded[app.id]}
-              usages={usages}
-              rangeStart={rangeStart}
-              rangeEnd={rangeEnd}
-              timeUnit={timeUnit}
-            />
-          ))}
+          {/* App headers and sessions */}
+          {!usagesLoading &&
+            apps.map((app) => (
+              <div key={app.id} className="border-b">
+                <div
+                  className="flex items-center p-4 bg-muted/80 cursor-pointer hover:bg-muted/60 border-r h-[52px]"
+                  onClick={() => toggleApp(app.id)}
+                >
+                  {expanded[app.id] ? (
+                    <ChevronDown size={20} />
+                  ) : (
+                    <ChevronRight size={20} />
+                  )}
+                  <AppIcon
+                    buffer={app.icon}
+                    className="ml-2 w-6 h-6 shrink-0"
+                  />
+                  <Text className="font-semibold ml-4">{app.name}</Text>
+                </div>
+
+                {expanded[app.id] &&
+                  Object.values(usages[app.id]).map((session) => (
+                    <div
+                      key={session.id}
+                      className="p-4 border-t border-r h-[68px]"
+                    >
+                      <Text className="text-sm">{session.title}</Text>
+                      <div className="text-xs text-muted-foreground">
+                        {formatTime(
+                          ticksToDateTime(session.start),
+                          timeUnit.unit,
+                        )}{" "}
+                        -{" "}
+                        {formatTime(
+                          ticksToDateTime(session.end),
+                          timeUnit.unit,
+                        )}
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            ))}
         </div>
-      </HScrollView>
+
+        {/* Scrollable timeline container */}
+        <HScrollView
+          className="flex-grow overflow-auto"
+          innerClassName="group relative"
+          onMouseMove={(e) => {
+            const container = e.currentTarget;
+            if (container) {
+              const rect = container.getBoundingClientRect();
+              const x = e.clientX - rect.left + container.scrollLeft;
+              container.style.setProperty("--mouse-x", `${x}px`);
+            }
+          }}
+        >
+          {/* Vertical line that follows mouse */}
+          <div
+            className="absolute top-0 bottom-0 w-px border-l border-dashed border-muted-foreground z-[999] pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"
+            style={{
+              left: "var(--mouse-x)",
+              transform: "translateX(-50%)",
+            }}
+          />
+          <div className="flex flex-col w-fit">
+            {/* Timeline header */}
+            {!hideTimeline && (
+              <div className="h-14 w-fit flex py-4 border-b">
+                {timeArray.map(
+                  (time, i) =>
+                    i % (timeUnit.unit === "minute" ? 4 : 1) === 0 && (
+                      <div
+                        key={time.toISO()}
+                        className="text-sm text-muted-foreground flex-shrink-0 border-l pl-1 border-muted-foreground"
+                        style={{ width: "100px" }}
+                      >
+                        {formatTime(time, timeUnit.unit)}
+                      </div>
+                    ),
+                )}
+              </div>
+            )}
+
+            {interactionPeriods && (
+              <div className="border-b">
+                {/* Interaction Periods */}
+                <div className="h-[52px] relative">
+                  <div className="absolute inset-x-0 top-4">
+                    <InteractionPeriodBars
+                      interactionPeriods={interactionPeriods}
+                      rangeStart={rangeStart}
+                      rangeEnd={rangeEnd}
+                      timeUnit={timeUnit}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Task bars */}
+            {!usagesLoading &&
+              apps.map((app) => (
+                <AppBars
+                  key={app.id}
+                  app={app}
+                  expanded={expanded[app.id]}
+                  usages={usages}
+                  rangeStart={rangeStart}
+                  rangeEnd={rangeEnd}
+                  timeUnit={timeUnit}
+                />
+              ))}
+          </div>
+        </HScrollView>
+      </div>
+
+      {/* Session Empty State Indicator */}
+      {!usagesLoading && apps.length === 0 && (
+        <div className="flex flex-col items-center justify-center p-8 text-muted-foreground">
+          <LaptopIcon className="w-12 h-12 mb-4" />
+          <Text className="text-lg font-semibold mb-2">No Activity</Text>
+          <Text className="text-sm">
+            No application usage data available for this time period
+          </Text>
+        </div>
+      )}
+
+      {/* Session Loading Indicator */}
+      {usagesLoading && (
+        <div className="flex flex-col items-center justify-center p-8 text-muted-foreground">
+          <LaptopIcon className="w-12 h-12 mb-4 animate-pulse" />
+          <Text className="text-lg font-semibold mb-2">Loading...</Text>
+          <Text className="text-sm animate-pulse">
+            Fetching application usage data
+          </Text>
+        </div>
+      )}
     </div>
   );
 }

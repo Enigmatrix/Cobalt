@@ -148,10 +148,11 @@ export default function Tag({ params }: Route.ComponentProps) {
 
   const dayRange = useTimePeriod("day");
 
-  const { ret: appSessionUsages } = useAppSessionUsages({
-    start: dayRange.start,
-    end: dayRange.end,
-  });
+  const { ret: appSessionUsages, isLoading: appSessionUsagesLoading } =
+    useAppSessionUsages({
+      start: dayRange.start,
+      end: dayRange.end,
+    });
   const tagAppSessionUsages = useMemo(() => {
     return _(tag.apps)
       .filter((appId) => appSessionUsages[appId] !== undefined)
@@ -294,6 +295,7 @@ export default function Tag({ params }: Route.ComponentProps) {
         <div className="rounded-xl bg-muted/50 overflow-hidden flex flex-col border border-border">
           <Gantt
             usages={tagAppSessionUsages}
+            usagesLoading={appSessionUsagesLoading}
             rangeStart={dayRange.start}
             rangeEnd={dayRange.end}
           />
