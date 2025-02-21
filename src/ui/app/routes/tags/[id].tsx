@@ -36,6 +36,7 @@ import { TimePeriodUsageCard } from "@/components/usage-card";
 import Heatmap from "@/components/viz/heatmap";
 import {
   useAppDurationsPerPeriod,
+  useAppSessionUsages,
   useTagDurationsPerPeriod,
 } from "@/hooks/use-repo";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -56,6 +57,7 @@ import { useSearch } from "@/hooks/use-search";
 import { MultiSelect } from "@/components/multi-select";
 import { AppBadge } from "@/components/app/app-list-item";
 import { useTimePeriod, type TimePeriod } from "@/hooks/use-today";
+import { Gantt } from "@/components/viz/gantt";
 
 export default function Tag({ params }: Route.ComponentProps) {
   const id = +params.id;
@@ -143,6 +145,20 @@ export default function Tag({ params }: Route.ComponentProps) {
     },
     [tag, updateTagApps],
   );
+
+  const dayRange = useTimePeriod("day");
+
+  const { ret: appSessionUsages } = useAppSessionUsages({
+    start: dayRange.start,
+    end: dayRange.end,
+  });
+  const tagAppSessionUsages = useMemo(() => {
+    return _(tag.apps)
+      .filter((appId) => appSessionUsages[appId] !== undefined)
+      .map((appId) => [appId, appSessionUsages[appId]] as const)
+      .fromPairs()
+      .value();
+  }, [appSessionUsages, tag]);
 
   return (
     <>
@@ -274,6 +290,14 @@ export default function Tag({ params }: Route.ComponentProps) {
             />
           </div>
         </TimePeriodUsageCard>
+
+        <div className="rounded-xl bg-muted/50 overflow-hidden flex flex-col border border-border">
+          <Gantt
+            usages={tagAppSessionUsages}
+            rangeStart={dayRange.start}
+            rangeEnd={dayRange.end}
+          />
+        </div>
       </div>
     </>
   );
