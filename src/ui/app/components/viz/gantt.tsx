@@ -266,8 +266,8 @@ export function Gantt({
     <div className="bg-transparent overflow-hidden flex text-muted-foreground">
       {/* Fixed left column */}
       <div className="w-[300px] flex-shrink-0">
-        <div className="h-14 border-r border-b border-r-transparent p-4">
-          <h2 className="font-semibold text-xl text-card-foreground">
+        <div className="h-14 border-r border-b border-r-transparent flex">
+          <h2 className="font-semibold text-xl text-card-foreground my-auto mx-4">
             Sessions
           </h2>
         </div>
