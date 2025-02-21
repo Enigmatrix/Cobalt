@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { DateTimeText } from "@/components/time/time-text";
 import { DurationText } from "@/components/time/duration-text";
 import { hexToRgb } from "@/lib/color-utils";
+import { HScrollView } from "../hscroll-view";
 
 function rotateArray<T>(arr: T[], n: number) {
   return arr.slice(n).concat(arr.slice(0, n));
@@ -172,7 +173,7 @@ const Heatmap: React.FC<HeatmapProps> = ({
   };
 
   return (
-    <div className={cn("relative overflow-x-auto", className)}>
+    <HScrollView className={cn("relative overflow-x-auto", className)}>
       <div
         className={cn(innerClassName)}
         style={{ aspectRatio: width / height }}
@@ -203,7 +204,7 @@ const Heatmap: React.FC<HeatmapProps> = ({
           <DurationText ticks={tooltipData.value} />
         </div>
       )}
-    </div>
+    </HScrollView>
   );
 };
 
