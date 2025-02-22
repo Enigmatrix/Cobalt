@@ -102,7 +102,7 @@ impl From<VersionedId> for ReminderVersionedId {
     fn from(value: VersionedId) -> Self {
         ReminderVersionedId {
             id: value.id,
-            version: value.id,
+            version: value.version,
         }
     }
 }
@@ -111,7 +111,7 @@ impl From<VersionedId> for AlertVersionedId {
     fn from(value: VersionedId) -> Self {
         AlertVersionedId {
             id: value.id,
-            version: value.id,
+            version: value.version,
         }
     }
 }
@@ -120,7 +120,7 @@ impl From<ReminderVersionedId> for VersionedId {
     fn from(value: ReminderVersionedId) -> Self {
         VersionedId {
             id: value.id,
-            version: value.id,
+            version: value.version,
         }
     }
 }
@@ -129,7 +129,7 @@ impl From<AlertVersionedId> for VersionedId {
     fn from(value: AlertVersionedId) -> Self {
         VersionedId {
             id: value.id,
-            version: value.id,
+            version: value.version,
         }
     }
 }
