@@ -1,4 +1,4 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use sqlx::prelude::FromRow;
 use sqlx::sqlite::SqliteRow;
 use sqlx::{Result, Row, Type};
@@ -118,7 +118,7 @@ pub struct InteractionPeriod {
 }
 
 /// Target of an [Alert]
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Target {
     /// [App] Target
     App(Ref<App>),
@@ -143,7 +143,7 @@ impl Default for Target {
 }
 
 /// How long the monitoring duration should be for an [Alert]
-#[derive(Default, Debug, Clone, PartialEq, Eq, Type, Serialize)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, Type, Serialize, Deserialize)]
 #[repr(i64)]
 pub enum TimeFrame {
     #[default]
@@ -156,7 +156,7 @@ pub enum TimeFrame {
 }
 
 /// Action to take once the [Alert]'s Usage Limit has been reached.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum TriggerAction {
     /// Kill the offending App / App in Tags
     Kill,
@@ -189,7 +189,7 @@ impl Default for TriggerAction {
 /// Monitoring record describing an usage limit for how long you use an [App]
 /// or a collection of [App]s under a [Tag], the actions to take when that
 /// limit is reached, and the reminders
-#[derive(Default, Debug, Clone, PartialEq, Eq, FromRow, Serialize)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, FromRow, Serialize, Deserialize)]
 pub struct Alert {
     #[sqlx(flatten)]
     /// Identifier
@@ -207,7 +207,7 @@ pub struct Alert {
 }
 
 /// Notifications to send upon a certain threshold of an [Alert]'s usage_limit
-#[derive(Default, Debug, Clone, FromRow, Serialize)] // can't impl PartialEq, Eq for f64
+#[derive(Default, Debug, Clone, FromRow, Serialize, Deserialize)] // can't impl PartialEq, Eq for f64
 pub struct Reminder {
     #[sqlx(flatten)]
     /// Identifier

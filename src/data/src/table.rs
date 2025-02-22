@@ -72,7 +72,7 @@ pub type Timestamp = i64;
 pub type Duration = i64;
 
 /// Unique identifier with Version
-#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, FromRow, Serialize)]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, FromRow, Serialize, Deserialize)]
 pub struct VersionedId {
     /// Unique identifier
     pub id: i64,
@@ -81,7 +81,7 @@ pub struct VersionedId {
 }
 
 // TODO when sqlx flatten gets a prefix remove this and use VersionId
-#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, FromRow, Serialize)]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, FromRow, Serialize, Deserialize)]
 pub struct ReminderVersionedId {
     #[sqlx(rename = "reminder_id")]
     pub id: i64,
@@ -90,7 +90,7 @@ pub struct ReminderVersionedId {
 }
 
 // TODO when sqlx flatten gets a prefix remove this and use VersionId
-#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, FromRow, Serialize)]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, FromRow, Serialize, Deserialize)]
 pub struct AlertVersionedId {
     #[sqlx(rename = "alert_id")]
     pub id: i64,
