@@ -135,6 +135,32 @@ pub mod infused {
         usages: ValuePerPeriod<Duration>,
     }
 
+    /// [super::Alert] with additional information
+    #[derive(Debug, Clone, Serialize, FromRow)]
+    pub struct Alert {
+        #[sqlx(flatten)]
+        #[serde(flatten)]
+        /// [super::Alert] itself
+        pub inner: super::Alert,
+        /// List of linked [Reminder]s
+        pub reminders: Vec<Reminder>,
+        /// List of hit [super::AlertEvent]s
+        #[sqlx(flatten)]
+        pub events: ValuePerPeriod<i64>,
+    }
+
+    /// [super::Reminder] with additional information
+    #[derive(Debug, Clone, Serialize, FromRow)]
+    pub struct Reminder {
+        #[sqlx(flatten)]
+        #[serde(flatten)]
+        /// [super::Reminder] itself
+        pub inner: super::Reminder,
+        /// List of hit [super::ReminderEvent]s
+        #[sqlx(flatten)]
+        pub events: ValuePerPeriod<i64>,
+    }
+
     /// Options to create a new [super::Tag]
     #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
     pub struct CreateTag {
@@ -189,6 +215,16 @@ const TAG_DUR: &str = "SELECT a.tag_id AS id,
             INNER JOIN usages u ON s.id = u.session_id
             WHERE u.end > p.start AND u.start <= p.end
             GROUP BY a.tag_id";
+
+const ALERT_EVENT_COUNT: &str =
+    "SELECT e.alert_id, e.alert_version, COUNT(e.id) FROM alert_events e
+            WHERE timestamp BETWEEN ? AND ?
+            GROUP BY e.alert_id, e.alert_version";
+
+const REMINDER_EVENT_COUNT: &str =
+    "SELECT e.reminder_id, e.reminder_version, COUNT(e.id) FROM reminder_events e
+            WHERE timestamp BETWEEN ? AND ?
+            GROUP BY e.reminder_id, e.reminder_version";
 
 // TODO when we sqlx has named parameters, fixup our queries to use them.
 
@@ -295,6 +331,94 @@ impl Repository {
             .collect();
 
         Ok(tags)
+    }
+
+    /// Gets all [Alert]s from the database
+    pub async fn get_alerts(
+        &mut self,
+        ts: impl TimeSystem,
+    ) -> Result<HashMap<Ref<Alert>, infused::Alert>> {
+        #[derive(FromRow)]
+        pub struct AlertNoReminders {
+            #[sqlx(flatten)]
+            inner: super::Alert,
+            #[sqlx(flatten)]
+            events: infused::ValuePerPeriod<i64>,
+        }
+
+        let alerts: Vec<AlertNoReminders> = query_as(&format!(
+            "WITH
+                events_today(id, version, count) AS ({ALERT_EVENT_COUNT}),
+                events_week(id, version, count) AS ({ALERT_EVENT_COUNT}),
+                events_month(id, version, count) AS ({ALERT_EVENT_COUNT})
+            SELECT al.*,
+                COALESCE(t.count, 0) AS today,
+                COALESCE(w.count, 0) AS week,
+                COALESCE(m.count, 0) AS month
+            FROM alerts al
+                LEFT JOIN events_today t ON t.id = al.id AND t.version = al.version
+                LEFT JOIN events_week w ON w.id = al.id AND w.version = al.version
+                LEFT JOIN events_month m ON m.id = al.id AND m.version = al.version
+            GROUP BY al.id
+            HAVING al.version = MAX(al.version)"
+        ))
+        .bind(ts.day_start(true).to_ticks())
+        .bind(i64::MAX)
+        .bind(ts.week_start(true).to_ticks())
+        .bind(i64::MAX)
+        .bind(ts.month_start(true).to_ticks())
+        .bind(i64::MAX)
+        .fetch_all(self.db.executor())
+        .await?;
+
+        // TODO maybe instad of i64:max for all of these we should use till ::now() (from query_options)
+        let reminders: Vec<infused::Reminder> = query_as(&format!(
+            "WITH
+                events_today(id, version, count) AS ({REMINDER_EVENT_COUNT}),
+                events_week(id, version, count) AS ({REMINDER_EVENT_COUNT}),
+                events_month(id, version, count) AS ({REMINDER_EVENT_COUNT})
+            SELECT r.*,
+                COALESCE(t.count, 0) AS today,
+                COALESCE(w.count, 0) AS week,
+                COALESCE(m.count, 0) AS month
+            FROM reminders r
+                LEFT JOIN events_today t ON t.id = r.id AND t.version = r.version
+                LEFT JOIN events_week w ON w.id = r.id AND w.version = r.version
+                LEFT JOIN events_month m ON m.id = r.id AND m.version = r.version
+            GROUP BY r.id
+            HAVING r.version = MAX(r.version)"
+        ))
+        .bind(ts.day_start(true).to_ticks())
+        .bind(i64::MAX)
+        .bind(ts.week_start(true).to_ticks())
+        .bind(i64::MAX)
+        .bind(ts.month_start(true).to_ticks())
+        .bind(i64::MAX)
+        .fetch_all(self.db.executor())
+        .await?;
+
+        let mut alerts: HashMap<_, _> = alerts
+            .into_iter()
+            .map(|alert| {
+                (
+                    alert.inner.id.clone(),
+                    infused::Alert {
+                        inner: alert.inner,
+                        events: alert.events,
+                        reminders: Vec::new(),
+                    },
+                )
+            })
+            .collect();
+
+        reminders.into_iter().for_each(|reminder| {
+            let alert_id = Ref::new(reminder.inner.alert.clone().into());
+            if let Some(alert) = alerts.get_mut(&alert_id) {
+                alert.reminders.push(reminder);
+            }
+        });
+
+        Ok(alerts)
     }
 
     /// Gets all [App]s and its total usage duration in a start-end range.
