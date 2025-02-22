@@ -78,10 +78,11 @@ pub mod infused {
     use serde::Deserialize;
 
     use super::*;
-    use crate::table::Color;
+    use crate::entities::{TimeFrame, TriggerAction};
+    use crate::table::{Color, VersionedId};
 
     /// Value per common periods
-    #[derive(Debug, Clone, PartialEq, Eq, Serialize, FromRow)]
+    #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, FromRow)]
     pub struct ValuePerPeriod<T> {
         /// Value today
         pub today: T,
@@ -136,7 +137,7 @@ pub mod infused {
     }
 
     /// [super::Alert] with additional information
-    #[derive(Debug, Clone, Serialize, FromRow)]
+    #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
     pub struct Alert {
         #[sqlx(flatten)]
         #[serde(flatten)]
@@ -150,7 +151,7 @@ pub mod infused {
     }
 
     /// [super::Reminder] with additional information
-    #[derive(Debug, Clone, Serialize, FromRow)]
+    #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
     pub struct Reminder {
         #[sqlx(flatten)]
         #[serde(flatten)]
@@ -179,6 +180,60 @@ pub mod infused {
         pub name: String,
         /// Color
         pub color: String,
+    }
+
+    /// Options to create a new [super::Alert]
+    #[derive(Debug, Clone, Deserialize)]
+    pub struct CreateAlert {
+        /// Target of this [Alert]
+        pub target: Target,
+        /// Usage Limit
+        pub usage_limit: Duration,
+        /// Time Frame
+        pub time_frame: TimeFrame,
+        /// Action to take on trigger
+        pub trigger_action: TriggerAction,
+        /// Reminders
+        pub reminders: Vec<CreateReminder>,
+    }
+
+    /// Options to create a new [super::Reminder]
+    #[derive(Debug, Clone, Deserialize)]
+    pub struct CreateReminder {
+        /// Threshold
+        pub threshold: f64,
+        /// Message
+        pub message: String,
+    }
+
+    /// Options to update a [super::Alert]
+    #[derive(Debug, Clone, Deserialize)]
+    pub struct UpdatedAlert {
+        /// Identifier
+        #[serde(flatten)]
+        pub id: VersionedId,
+        /// Target of this [Alert]
+        pub target: Target,
+        /// Usage Limit
+        pub usage_limit: Duration,
+        /// Time Frame
+        pub time_frame: TimeFrame,
+        /// Action to take on trigger
+        pub trigger_action: TriggerAction,
+        /// Reminders
+        pub reminders: Vec<UpdatedReminder>,
+    }
+
+    /// Options to update a [super::Reminder]
+    #[derive(Debug, Clone, Deserialize)]
+    pub struct UpdatedReminder {
+        /// Identifier
+        #[serde(flatten)]
+        pub id: VersionedId,
+        /// Threshold
+        pub threshold: f64,
+        /// Message
+        pub message: String,
     }
 
     /// [super::Session] with additional information
@@ -644,6 +699,25 @@ impl Repository {
             .execute(self.db.executor())
             .await?;
         Ok(())
+    }
+
+    /// Creates a [Alert]
+    pub async fn create_alert(&mut self, alert: infused::CreateAlert) -> Result<infused::Alert> {
+        todo!()
+    }
+
+    /// Updates a [Alert]
+    pub async fn update_alert(
+        &mut self,
+        prev: infused::Alert,
+        next: infused::UpdatedAlert,
+    ) -> Result<infused::Alert> {
+        todo!()
+    }
+
+    /// Removes a [Alert]
+    pub async fn remove_alert(&mut self, alert_id: Ref<Alert>) -> Result<()> {
+        todo!()
     }
 
     /// Gets all [Session]s and [Usage]s in a time range
