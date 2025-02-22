@@ -1,4 +1,7 @@
 export type Ref<T> = number & { __type: T };
+export function newRef<T>(id: number): Ref<T> {
+  return id as Ref<T>;
+}
 
 export type Color = string;
 export type Timestamp = number;
@@ -49,10 +52,32 @@ export interface App {
   usages: UsageInfo;
 }
 
+export interface Session {
+  id: Ref<Session>;
+  title: string;
+  start: Timestamp;
+  end: Timestamp;
+  usages: Usage[];
+}
+
+export interface Usage {
+  id: Ref<Usage>;
+  start: Timestamp;
+  end: Timestamp;
+}
+
 export interface Tag {
   id: Ref<Tag>;
   name: string;
   color: string;
   apps: Ref<App>[];
   usages: UsageInfo;
+}
+
+export interface InteractionPeriod {
+  id: Ref<Usage>;
+  start: Timestamp;
+  end: Timestamp;
+  mouse_clicks: number;
+  key_strokes: number;
 }

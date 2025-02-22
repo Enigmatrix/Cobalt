@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use data::db::repo::{infused, WithDuration, WithGroupedDuration};
-use data::entities::{App, Duration, Ref, Tag, Timestamp};
+use data::entities::{App, Duration, InteractionPeriod, Ref, Tag, Timestamp};
 use tauri::State;
 use util::error::Context;
 use util::time::ToTicks;
@@ -184,4 +184,32 @@ pub async fn remove_tag(state: State<'_, AppState>, tag_id: Ref<Tag>) -> AppResu
         state.assume_init_mut().get_repo().await?
     };
     Ok(repo.remove_tag(tag_id).await?)
+}
+
+#[tauri::command]
+#[tracing::instrument(err, skip(state))]
+pub async fn get_app_session_usages(
+    state: State<'_, AppState>,
+    start: Timestamp,
+    end: Timestamp,
+) -> AppResult<infused::AppSessionUsages> {
+    let mut repo = {
+        let mut state = state.write().await;
+        state.assume_init_mut().get_repo().await?
+    };
+    Ok(repo.get_app_session_usages(start, end).await?)
+}
+
+#[tauri::command]
+#[tracing::instrument(err, skip(state))]
+pub async fn get_interaction_periods(
+    state: State<'_, AppState>,
+    start: Timestamp,
+    end: Timestamp,
+) -> AppResult<Vec<InteractionPeriod>> {
+    let mut repo = {
+        let mut state = state.write().await;
+        state.assume_init_mut().get_repo().await?
+    };
+    Ok(repo.get_interaction_periods(start, end).await?)
 }

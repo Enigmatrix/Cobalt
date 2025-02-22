@@ -27,6 +27,11 @@ export interface Interval {
 
 export function useTimePeriod(unit: TimePeriod): Interval {
   const today = useToday();
-  const luxonInterval = LuxonInterval.after(today.startOf(unit), { [unit]: 1 });
-  return { start: luxonInterval.start!, end: luxonInterval.end! };
+  const range = useMemo(() => {
+    const luxonInterval = LuxonInterval.after(today.startOf(unit), {
+      [unit]: 1,
+    });
+    return { start: luxonInterval.start!, end: luxonInterval.end! };
+  }, [today, unit]);
+  return range;
 }

@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::ops::Deref;
 use std::str::FromStr;
 
+use infused::AppSessionUsages;
 use serde::Serialize;
 
 use super::*;
@@ -152,6 +153,24 @@ pub mod infused {
         /// Color
         pub color: String,
     }
+
+    /// [super::Session] with additional information
+    #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+    pub struct Session {
+        /// Identifier
+        pub id: Ref<super::Session>,
+        /// Title of Session
+        pub title: String,
+        /// Minimum Usage of Usages
+        pub start: Timestamp,
+        /// Maximum Usage of Usages
+        pub end: Timestamp,
+        /// Usages
+        pub usages: Vec<super::Usage>,
+    }
+
+    /// [Session]s with [Usage]s, partitioned by [App]s
+    pub type AppSessionUsages = HashMap<Ref<super::App>, HashMap<Ref<super::Session>, Session>>;
 }
 
 const APP_DUR: &str = "SELECT a.id AS id,
@@ -500,5 +519,90 @@ impl Repository {
             .execute(self.db.executor())
             .await?;
         Ok(())
+    }
+
+    /// Gets all [Session]s and [Usage]s in a time range
+    pub async fn get_app_session_usages(
+        &mut self,
+        start: Timestamp,
+        end: Timestamp,
+    ) -> Result<AppSessionUsages> {
+        #[derive(FromRow)]
+        struct AppSessionUsage {
+            app_id: Ref<App>,
+            session_id: Ref<Session>,
+            usage_id: Ref<Usage>,
+            session_title: String,
+            start: Timestamp,
+            end: Timestamp,
+        }
+
+        let usages_raw: Vec<AppSessionUsage> = query_as(
+            "SELECT
+                s.app_id AS app_id,
+                u.session_id AS session_id,
+                u.id AS usage_id,
+                s.title AS session_title,
+                MAX(u.start, p.start) AS start,
+                MIN(u.end, p.end) AS end
+            FROM usages u, (SELECT ? AS start, ? AS end) p
+            INNER JOIN sessions s ON u.session_id = s.id 
+            WHERE u.end > p.start AND u.start <= p.end
+            ORDER BY u.start ASC",
+        )
+        .bind(start)
+        .bind(end)
+        .fetch_all(self.db.executor())
+        .await?;
+
+        let mut usages = HashMap::<Ref<App>, HashMap<Ref<Session>, infused::Session>>::new();
+        for usage in usages_raw {
+            let session_id = usage.session_id.clone();
+            let sessions = usages.entry(usage.app_id.clone()).or_default();
+            let session = sessions
+                .entry(session_id.clone())
+                .or_insert_with(|| infused::Session {
+                    id: session_id,
+                    title: usage.session_title,
+                    start: usage.start,
+                    end: usage.end,
+                    usages: Vec::new(),
+                });
+            session.start = session.start.min(usage.start);
+            session.end = session.end.max(usage.end);
+            session.usages.push(Usage {
+                id: usage.usage_id,
+                session_id: usage.session_id,
+                start: usage.start,
+                end: usage.end,
+            });
+        }
+
+        Ok(usages)
+    }
+
+    /// Gets all [InteractionPeriod]s in a time range
+    pub async fn get_interaction_periods(
+        &mut self,
+        start: Timestamp,
+        end: Timestamp,
+    ) -> Result<Vec<InteractionPeriod>> {
+        let interactions: Vec<InteractionPeriod> = query_as(
+            "SELECT
+                i.id,
+                MAX(i.start, p.start) AS start,
+                MIN(i.end, p.end) AS end,
+                i.mouse_clicks,
+                i.key_strokes
+            FROM interaction_periods i, (SELECT ? AS start, ? AS end) p
+            WHERE i.end > p.start AND i.start <= p.end
+            ORDER BY i.start ASC",
+        )
+        .bind(start)
+        .bind(end)
+        .fetch_all(self.db.executor())
+        .await?;
+
+        Ok(interactions)
     }
 }
