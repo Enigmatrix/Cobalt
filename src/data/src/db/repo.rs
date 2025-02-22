@@ -6,6 +6,7 @@ use infused::AppSessionUsages;
 use serde::Serialize;
 
 use super::*;
+use crate::entities::Duration;
 
 /// Collection of methods to do large, complicated queries against apps etc.
 pub struct Repository {
@@ -18,7 +19,7 @@ pub struct WithDuration<T: Table> {
     /// Target Identifier
     pub id: Ref<T>,
     /// Duration value
-    pub duration: crate::table::Duration,
+    pub duration: Duration,
 }
 
 /// Duration grouped into target, period chunks
@@ -29,7 +30,7 @@ pub struct WithGroupedDuration<T: Table> {
     /// Time Period group
     pub group: crate::table::Timestamp,
     /// Duration value
-    pub duration: crate::table::Duration,
+    pub duration: Duration,
 }
 
 /// List of [Ref<T>]
@@ -79,15 +80,15 @@ pub mod infused {
     use super::*;
     use crate::table::Color;
 
-    /// Usages of the target
+    /// Value per common periods
     #[derive(Debug, Clone, PartialEq, Eq, Serialize, FromRow)]
-    pub struct UsageInfo {
-        /// Usage today
-        pub usage_today: crate::table::Duration,
-        /// Usage this week
-        pub usage_week: crate::table::Duration,
-        /// Usage this month
-        pub usage_month: crate::table::Duration,
+    pub struct ValuePerPeriod<T> {
+        /// Value today
+        pub today: T,
+        /// Value this week
+        pub week: T,
+        /// Value this month
+        pub month: T,
     }
 
     /// Options to update a [super::App]
@@ -117,7 +118,7 @@ pub mod infused {
         /// List of linked [super::App]s
         #[sqlx(flatten)]
         /// Usage Info
-        usages: UsageInfo,
+        usages: ValuePerPeriod<Duration>,
     }
 
     /// [super::Tag] with additional information
@@ -131,7 +132,7 @@ pub mod infused {
         pub apps: RefVec<super::App>,
         #[sqlx(flatten)]
         /// Usage Info
-        usages: UsageInfo,
+        usages: ValuePerPeriod<Duration>,
     }
 
     /// Options to create a new [super::Tag]
@@ -227,15 +228,15 @@ impl Repository {
 
         let apps: Vec<infused::App> = query_as(&format!(
             "WITH
-                usage_daily(id, dur) AS ({APP_DUR}),
+                usage_today(id, dur) AS ({APP_DUR}),
                 usage_week(id, dur) AS ({APP_DUR}),
                 usage_month(id, dur) AS ({APP_DUR})
             SELECT a.*,
-                COALESCE(d.dur, 0) AS usage_today,
-                COALESCE(w.dur, 0) AS usage_week,
-                COALESCE(m.dur, 0) AS usage_month
+                COALESCE(d.dur, 0) AS today,
+                COALESCE(w.dur, 0) AS week,
+                COALESCE(m.dur, 0) AS month
             FROM apps a
-                LEFT JOIN usage_daily d ON a.id = d.id
+                LEFT JOIN usage_today d ON a.id = d.id
                 LEFT JOIN usage_week  w ON a.id = w.id
                 LEFT JOIN usage_month m ON a.id = m.id
             WHERE a.initialized = 1
@@ -265,15 +266,15 @@ impl Repository {
     ) -> Result<HashMap<Ref<Tag>, infused::Tag>> {
         let tags: Vec<infused::Tag> = query_as(&format!(
             "WITH
-                usage_daily(id, dur) AS ({TAG_DUR}),
+                usage_today(id, dur) AS ({TAG_DUR}),
                 usage_week(id, dur) AS ({TAG_DUR}),
                 usage_month(id, dur) AS ({TAG_DUR})
             SELECT t.*, GROUP_CONCAT(a.id, ',') apps,
-                COALESCE(d.dur, 0) AS usage_today,
-                COALESCE(w.dur, 0) AS usage_week,
-                COALESCE(m.dur, 0) AS usage_month
+                COALESCE(d.dur, 0) AS today,
+                COALESCE(w.dur, 0) AS week,
+                COALESCE(m.dur, 0) AS month
             FROM tags t
-                LEFT JOIN usage_daily d ON t.id = d.id
+                LEFT JOIN usage_today d ON t.id = d.id
                 LEFT JOIN usage_week  w ON t.id = w.id
                 LEFT JOIN usage_month m ON t.id = m.id
                 LEFT JOIN apps a ON t.id = a.tag_id AND a.initialized = 1
@@ -330,7 +331,7 @@ impl Repository {
         &mut self,
         start: Timestamp,
         end: Timestamp,
-        period: crate::table::Duration,
+        period: Duration,
     ) -> Result<HashMap<Ref<App>, Vec<WithGroupedDuration<App>>>> {
         // This expression is surprisingly slow compared to its previous
         // iteration (tho more correct ofc). Fix it later.
@@ -389,7 +390,7 @@ impl Repository {
         &mut self,
         start: Timestamp,
         end: Timestamp,
-        period: crate::table::Duration,
+        period: Duration,
     ) -> Result<HashMap<Ref<Tag>, Vec<WithGroupedDuration<Tag>>>> {
         // This expression is surprisingly slow compared to its previous
         // iteration (tho more correct ofc). Fix it later.

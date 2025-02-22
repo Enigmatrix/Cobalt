@@ -34,10 +34,10 @@ export function isWin32(
   return "Win32" in identity;
 }
 
-export interface UsageInfo {
-  usage_today: number;
-  usage_week: number;
-  usage_month: number;
+export interface ValuePerPeriod<T> {
+  today: T;
+  week: T;
+  month: T;
 }
 
 export interface App {
@@ -49,7 +49,7 @@ export interface App {
   identity: AppIdentity;
   icon: Buffer;
   tag_id: Ref<Tag> | null;
-  usages: UsageInfo;
+  usages: ValuePerPeriod<Duration>;
 }
 
 export interface Session {
@@ -71,7 +71,7 @@ export interface Tag {
   name: string;
   color: string;
   apps: Ref<App>[];
-  usages: UsageInfo;
+  usages: ValuePerPeriod<Duration>;
 }
 
 export interface InteractionPeriod {

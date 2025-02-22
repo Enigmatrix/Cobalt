@@ -118,9 +118,9 @@ export const useAppState = create<AppState>((set) => {
             ...tag,
             apps: [],
             usages: {
-              usage_today: 0,
-              usage_week: 0,
-              usage_month: 0,
+              today: 0,
+              week: 0,
+              month: 0,
             },
           };
         })(state),

@@ -70,9 +70,9 @@ export function MiniTagItem({
 type SortProperty =
   | "name"
   | "company"
-  | "usages.usage_today"
-  | "usages.usage_week"
-  | "usages.usage_month";
+  | "usages.today"
+  | "usages.week"
+  | "usages.month";
 
 export default function Apps() {
   const today = useToday();
@@ -82,7 +82,7 @@ export default function Apps() {
     SortDirection.Descending,
   );
   const [sortProperty, setSortProperty] =
-    useState<SortProperty>("usages.usage_today");
+    useState<SortProperty>("usages.today");
 
   const [search, setSearch, appsFiltered] = useSearch(apps, [
     "name",
@@ -170,13 +170,13 @@ export default function Apps() {
               <DropdownMenuRadioItem value="company">
                 Company
               </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="usages.usage_today">
+              <DropdownMenuRadioItem value="usages.today">
                 Usage Today
               </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="usages.usage_week">
+              <DropdownMenuRadioItem value="usages.week">
                 Usage Week
               </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="usages.usage_month">
+              <DropdownMenuRadioItem value="usages.month">
                 Usage Month
               </DropdownMenuRadioItem>
             </DropdownMenuRadioGroup>
@@ -271,7 +271,7 @@ function AppListItem({
 
       <div className="flex-1" />
 
-      {app.usages.usage_today > 0 ? (
+      {app.usages.today > 0 ? (
         <>
           <AppUsageBarChart
             hideXAxis
@@ -290,7 +290,7 @@ function AppListItem({
               <div className="text-xs text-card-foreground/50">Today</div>
               <DurationText
                 className="text-lg min-w-8 text-center whitespace-nowrap"
-                ticks={app.usages.usage_today}
+                ticks={app.usages.today}
               />
             </div>
           </div>
