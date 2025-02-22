@@ -5,7 +5,7 @@ use util::future as tokio;
 
 use super::tests::*;
 use super::*;
-use crate::db::repo::infused::ValuePerPeriod;
+use crate::db::repo::infused::{CreateAlert, CreateReminder, ValuePerPeriod};
 use crate::db::tests::arrange::*;
 use crate::entities::{TimeFrame, TriggerAction};
 use crate::table::VersionedId;
@@ -887,6 +887,139 @@ async fn get_app_durations_per_period_multiple_ts_test() -> Result<()> {
         ]),
         app_durations
     );
+
+    Ok(())
+}
+#[tokio::test]
+async fn create_alert() -> Result<()> {
+    let mut db = test_db().await?;
+
+    fn to_alert(c: CreateAlert, id: VersionedId) -> Alert {
+        Alert {
+            id: Ref::new(id),
+            target: c.target,
+            usage_limit: c.usage_limit,
+            time_frame: c.time_frame,
+            trigger_action: c.trigger_action,
+        }
+    }
+    fn to_reminders(
+        c: Vec<CreateReminder>,
+        start_id: i64,
+        alert_id: VersionedId,
+    ) -> Vec<infused::Reminder> {
+        c.into_iter()
+            .enumerate()
+            .map(|(i, r)| infused::Reminder {
+                inner: Reminder {
+                    id: Ref::new(VersionedId {
+                        id: start_id + i as i64,
+                        version: 1,
+                    }),
+                    alert: alert_id.clone().into(),
+                    threshold: r.threshold,
+                    message: r.message,
+                },
+                events: Default::default(),
+            })
+            .collect()
+    }
+    fn reminders_eq(a: infused::Reminder, b: infused::Reminder) {
+        assert_eq!(a.inner.id, b.inner.id);
+        assert_eq!(a.inner.threshold, b.inner.threshold);
+        assert_eq!(a.inner.message, b.inner.message);
+        assert_eq!(a.events, b.events);
+    }
+
+    let app1 = arrange::app(
+        &mut db,
+        App {
+            id: Ref::new(1),
+            name: "name".to_string(),
+            description: "desc".to_string(),
+            company: "comp".to_string(),
+            color: "red".to_string(),
+            identity: AppIdentity::Win32 {
+                path: "path1".to_string(),
+            },
+            tag_id: None,
+            icon: None,
+        },
+    )
+    .await?
+    .id;
+
+    let mut repo = Repository::new(db)?;
+
+    // Test creating alert with no reminders
+    let alert1 = CreateAlert {
+        usage_limit: 100,
+        target: Target::App(app1.clone()),
+        time_frame: TimeFrame::Daily,
+        trigger_action: TriggerAction::Kill,
+        reminders: Vec::new(),
+    };
+    let created1 = repo.create_alert(alert1.clone()).await?;
+    assert_eq!(
+        created1.inner,
+        to_alert(alert1, VersionedId { id: 1, version: 1 })
+    );
+    assert!(created1.reminders.is_empty());
+
+    // Test creating alert with one reminder
+    let alert2 = CreateAlert {
+        usage_limit: 200,
+        target: Target::App(app1.clone()),
+        time_frame: TimeFrame::Weekly,
+        trigger_action: TriggerAction::Dim(500),
+        reminders: vec![CreateReminder {
+            threshold: 0.5,
+            message: "Half way there".into(),
+        }],
+    };
+    let created2 = repo.create_alert(alert2.clone()).await?;
+    let created2id = VersionedId { id: 2, version: 1 };
+    assert_eq!(created2.inner, to_alert(alert2.clone(), created2id.clone()));
+    created2
+        .reminders
+        .iter()
+        .cloned()
+        .zip(to_reminders(alert2.reminders, 1, created2id))
+        .for_each(|(a, b)| reminders_eq(a, b));
+    assert_eq!(created2.reminders.len(), 1);
+
+    // Test creating alert with multiple reminders
+    let alert3 = CreateAlert {
+        usage_limit: 300,
+        target: Target::App(app1.clone()),
+        time_frame: TimeFrame::Monthly,
+        trigger_action: TriggerAction::Message("Time's up".into()),
+        reminders: vec![
+            CreateReminder {
+                threshold: 0.25,
+                message: "Quarter way".into(),
+            },
+            CreateReminder {
+                threshold: 0.5,
+                message: "Half way there".into(),
+            },
+            CreateReminder {
+                threshold: 0.75,
+                message: "Almost there".into(),
+            },
+        ],
+    };
+
+    let created3 = repo.create_alert(alert3.clone()).await?;
+    let created3id = VersionedId { id: 3, version: 1 };
+    assert_eq!(created3.inner, to_alert(alert3.clone(), created3id.clone()));
+    created3
+        .reminders
+        .iter()
+        .cloned()
+        .zip(to_reminders(alert3.reminders, 2, created3id))
+        .for_each(|(a, b)| reminders_eq(a, b));
+    assert_eq!(created3.reminders.len(), 3);
 
     Ok(())
 }

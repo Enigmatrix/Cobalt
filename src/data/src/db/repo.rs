@@ -2,11 +2,12 @@ use std::collections::HashMap;
 use std::ops::Deref;
 use std::str::FromStr;
 
-use infused::AppSessionUsages;
+use infused::{AppSessionUsages, ValuePerPeriod};
 use serde::Serialize;
 
 use super::*;
-use crate::entities::Duration;
+use crate::entities::{Duration, TriggerAction};
+use crate::table::{AlertVersionedId, VersionedId};
 
 /// Collection of methods to do large, complicated queries against apps etc.
 pub struct Repository {
@@ -82,7 +83,7 @@ pub mod infused {
     use crate::table::{Color, VersionedId};
 
     /// Value per common periods
-    #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, FromRow)]
+    #[derive(Debug, Default, Clone, PartialEq, Eq, Serialize, Deserialize, FromRow)]
     pub struct ValuePerPeriod<T> {
         /// Value today
         pub today: T,
@@ -682,6 +683,8 @@ impl Repository {
         Ok(())
     }
 
+    // TODO create and update tag should return a copy of the tag.
+
     /// Create a new [Tag] from a [infused::CreateTag]
     pub async fn create_tag(&mut self, tag: &infused::CreateTag) -> Result<Ref<Tag>> {
         let res = query("INSERT INTO tags VALUES (NULL, ?, ?)")
@@ -703,7 +706,81 @@ impl Repository {
 
     /// Creates a [Alert]
     pub async fn create_alert(&mut self, alert: infused::CreateAlert) -> Result<infused::Alert> {
-        todo!()
+        let mut tx = self.db.transaction().await?;
+
+        let (app_id, tag_id) = match &alert.target {
+            Target::App(app_id) => (Some(app_id), None),
+            Target::Tag(tag_id) => (None, Some(tag_id)),
+        };
+
+        let (dim_duration, message_content, tag) = match &alert.trigger_action {
+            TriggerAction::Kill => (None, None, 0),
+            TriggerAction::Dim(dur) => (Some(*dur), None, 1),
+            TriggerAction::Message(content) => (None, Some(content.to_string()), 2),
+        };
+
+        // Insert the alert
+        let alert_id: i64 = query(
+            "INSERT INTO alerts
+             SELECT COALESCE(MAX(id) + 1, 1), 1, ?, ?, ?, ?, ?, ?, ? FROM alerts LIMIT 1 RETURNING id",
+        )
+        .bind(app_id)
+        .bind(tag_id)
+        .bind(&alert.usage_limit)
+        .bind(&alert.time_frame)
+        .bind(&dim_duration)
+        .bind(&message_content)
+        .bind(tag)
+        .fetch_one(&mut *tx)
+        .await?
+        .get(0);
+
+        let mut reminders = Vec::new();
+
+        // Insert the reminders
+        for reminder in alert.reminders {
+            let id: i64 = query(
+                "INSERT INTO reminders (id, version, alert_id, alert_version, threshold, message)
+                 SELECT COALESCE(MAX(id) + 1, 1), 1, ?, 1, ?, ? FROM reminders LIMIT 1 RETURNING id"
+            )
+            .bind(&alert_id)
+            .bind(&reminder.threshold)
+            .bind(&reminder.message)
+            .fetch_one(&mut *tx)
+            .await?.get(0);
+            let reminder = infused::Reminder {
+                inner: Reminder {
+                    id: Ref::new(VersionedId { id, version: 1 }),
+                    alert: AlertVersionedId {
+                        id: alert_id,
+                        version: 1,
+                    },
+                    threshold: reminder.threshold,
+                    message: reminder.message,
+                },
+                events: ValuePerPeriod::default(),
+            };
+            reminders.push(reminder);
+        }
+
+        tx.commit().await?;
+
+        let alert = infused::Alert {
+            inner: Alert {
+                id: Ref::new(VersionedId {
+                    id: alert_id,
+                    version: 1,
+                }),
+                target: alert.target,
+                usage_limit: alert.usage_limit,
+                time_frame: alert.time_frame,
+                trigger_action: alert.trigger_action,
+            },
+            reminders,
+            events: ValuePerPeriod::default(),
+        };
+
+        Ok(alert)
     }
 
     /// Updates a [Alert]
@@ -712,11 +789,14 @@ impl Repository {
         prev: infused::Alert,
         next: infused::UpdatedAlert,
     ) -> Result<infused::Alert> {
+        // need to do that silly logic
         todo!()
     }
 
     /// Removes a [Alert]
     pub async fn remove_alert(&mut self, alert_id: Ref<Alert>) -> Result<()> {
+        // If this a soft delete, then how would deleting a tag work if this alert uses it?
+        // Instead, hard delete all versions, should warn the user that this will remove all reminders and *_events.
         todo!()
     }
 
