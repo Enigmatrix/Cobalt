@@ -70,11 +70,7 @@ export function MiniAppItem({
   );
 }
 
-type SortProperty =
-  | "name"
-  | "usages.usage_today"
-  | "usages.usage_week"
-  | "usages.usage_month";
+type SortProperty = "name" | "usages.today" | "usages.week" | "usages.month";
 
 export default function Tags() {
   const today = useToday();
@@ -85,7 +81,7 @@ export default function Tags() {
     SortDirection.Descending,
   );
   const [sortProperty, setSortProperty] =
-    useState<SortProperty>("usages.usage_today");
+    useState<SortProperty>("usages.today");
   const [search, setSearch, tagsFiltered] = useSearch(tags, ["name"]);
   const tagsSorted = useMemo(() => {
     return _(tagsFiltered).orderBy([sortProperty], [sortDirection]).value();
@@ -164,13 +160,13 @@ export default function Tags() {
               onValueChange={(v) => setSortProperty(v as SortProperty)}
             >
               <DropdownMenuRadioItem value="name">Name</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="usages.usage_today">
+              <DropdownMenuRadioItem value="usages.today">
                 Usage Today
               </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="usages.usage_week">
+              <DropdownMenuRadioItem value="usages.week">
                 Usage Week
               </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="usages.usage_month">
+              <DropdownMenuRadioItem value="usages.month">
                 Usage Month
               </DropdownMenuRadioItem>
             </DropdownMenuRadioGroup>
@@ -291,7 +287,7 @@ function TagListItem({
 
       <div className="flex-1" />
 
-      {tag.usages.usage_today > 0 ? (
+      {tag.usages.today > 0 ? (
         <>
           <AppUsageBarChart
             hideXAxis
@@ -309,7 +305,7 @@ function TagListItem({
               <div className="text-xs text-card-foreground/50">Today</div>
               <DurationText
                 className="text-lg min-w-8 text-center whitespace-nowrap"
-                ticks={tag.usages.usage_today}
+                ticks={tag.usages.today}
               />
             </div>
           </div>
