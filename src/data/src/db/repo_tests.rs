@@ -5,7 +5,10 @@ use util::future as tokio;
 
 use super::tests::*;
 use super::*;
+use crate::db::repo::infused::ValuePerPeriod;
 use crate::db::tests::arrange::*;
+use crate::entities::{TimeFrame, TriggerAction};
+use crate::table::VersionedId;
 
 #[tokio::test]
 async fn get_apps() -> Result<()> {
@@ -308,6 +311,170 @@ async fn get_tags() -> Result<()> {
             .map(|(k, v)| (Ref::new(k), RefVec(v.into_iter().map(Ref::new).collect())))
             .collect()
     );
+    Ok(())
+}
+
+#[tokio::test]
+async fn get_alerts() -> Result<()> {
+    let mut db = test_db().await?;
+
+    let app1 = arrange::app(
+        &mut db,
+        App {
+            id: Ref::new(1),
+            name: "name".to_string(),
+            description: "desc".to_string(),
+            company: "comp".to_string(),
+            color: "red".to_string(),
+            identity: AppIdentity::Win32 {
+                path: "path1".to_string(),
+            },
+            tag_id: None,
+            icon: None,
+        },
+    )
+    .await?
+    .id;
+
+    let alert11 = Alert {
+        id: Ref::new(VersionedId { id: 1, version: 1 }),
+        usage_limit: 100,
+        target: Target::App(app1.clone()),
+        time_frame: TimeFrame::Daily,
+        trigger_action: TriggerAction::Kill,
+    };
+    let alert12 = Alert {
+        id: Ref::new(VersionedId { id: 1, version: 2 }),
+        usage_limit: 1000,
+        target: Target::App(app1.clone()),
+        time_frame: TimeFrame::Daily,
+        trigger_action: TriggerAction::Kill,
+    };
+    let alert21 = Alert {
+        id: Ref::new(VersionedId { id: 2, version: 1 }),
+        usage_limit: 100,
+        target: Target::App(app1.clone()),
+        time_frame: TimeFrame::Weekly,
+        trigger_action: TriggerAction::Dim(1),
+    };
+    let alert31 = Alert {
+        id: Ref::new(VersionedId { id: 3, version: 1 }),
+        usage_limit: 100,
+        target: Target::App(app1.clone()),
+        time_frame: TimeFrame::Monthly,
+        trigger_action: TriggerAction::Message("urmam".into()),
+    };
+    let alert32 = Alert {
+        id: Ref::new(VersionedId { id: 3, version: 2 }),
+        usage_limit: 100,
+        target: Target::App(app1.clone()),
+        time_frame: TimeFrame::Weekly,
+        trigger_action: TriggerAction::Message("urmam".into()),
+    };
+    let alert33 = Alert {
+        id: Ref::new(VersionedId { id: 3, version: 3 }),
+        usage_limit: 10,
+        target: Target::App(app1.clone()),
+        time_frame: TimeFrame::Monthly,
+        trigger_action: TriggerAction::Message("urmam".into()),
+    };
+
+    let _alert11 = arrange::alert(&mut db, alert11.clone()).await?;
+    let alert12 = arrange::alert(&mut db, alert12.clone()).await?;
+    let alert21 = arrange::alert(&mut db, alert21.clone()).await?;
+    let _alert31 = arrange::alert(&mut db, alert31.clone()).await?;
+    let _alert32 = arrange::alert(&mut db, alert32.clone()).await?;
+    let alert33 = arrange::alert(&mut db, alert33.clone()).await?;
+    let mut repo = Repository::new(db)?;
+
+    // Test that newer versions are returned even with events on older versions
+    let alerts = repo
+        .get_alerts(Times {
+            day_start: 0,
+            week_start: 0,
+            month_start: 0,
+        })
+        .await?;
+
+    let from_db: HashMap<_, _> = alerts
+        .values()
+        .map(|alert| (alert.inner.id.clone(), alert.inner.clone()))
+        .collect();
+    assert_eq!(
+        from_db,
+        vec![alert12.clone(), alert21.clone(), alert33.clone()]
+            .into_iter()
+            .map(|alert| (alert.id.clone(), alert))
+            .collect()
+    );
+
+    let events = vec![
+        (alert11.id.clone(), 10),
+        (alert11.id.clone(), 15),
+        (alert12.id.clone(), 16),
+        (alert12.id.clone(), 20),
+        (alert31.id.clone(), 1),
+        (alert32.id.clone(), 2),
+        (alert33.id.clone(), 6),
+    ];
+    for (alert_id, timestamp) in events {
+        arrange::alert_event(
+            &mut repo.db,
+            AlertEvent {
+                id: Ref::new(0),
+                alert: alert_id.0.into(),
+                timestamp,
+            },
+        )
+        .await?;
+    }
+
+    let alerts = repo
+        .get_alerts(Times {
+            day_start: 20,
+            week_start: 10,
+            month_start: 5,
+        })
+        .await?;
+
+    let from_db: HashMap<_, _> = alerts
+        .values()
+        .map(|alert| (alert.inner.id.clone(), alert.events.clone()))
+        .collect();
+    assert_eq!(
+        from_db,
+        vec![
+            (
+                alert12.id.clone(),
+                ValuePerPeriod {
+                    today: 1,
+                    week: 2,
+                    month: 2,
+                }
+            ),
+            (
+                alert21.id.clone(),
+                ValuePerPeriod {
+                    today: 0,
+                    week: 0,
+                    month: 0,
+                }
+            ),
+            (
+                alert33.id.clone(),
+                ValuePerPeriod {
+                    today: 0,
+                    week: 0,
+                    month: 1,
+                }
+            )
+        ]
+        .into_iter()
+        .collect()
+    );
+
+    // TODO test reminders as well.
+
     Ok(())
 }
 
