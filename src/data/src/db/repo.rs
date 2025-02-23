@@ -1057,8 +1057,15 @@ impl Repository {
     /// Removes a [Alert]
     pub async fn remove_alert(&mut self, alert_id: Ref<Alert>) -> Result<()> {
         // If this a soft delete, then how would deleting a tag work if this alert uses it?
+        // e.g. for a non-max version Alert, if it uses a tag and someone tries to delete the tag they won't be able to.
         // Instead, hard delete all versions, should warn the user that this will remove all reminders and *_events.
-        todo!()
+
+        // not specifying the version here will delete all versions
+        query("DELETE FROM alerts WHERE id = ?")
+            .bind(alert_id.0.id)
+            .execute(self.db.executor())
+            .await?;
+        Ok(())
     }
 
     /// Gets all [Session]s and [Usage]s in a time range
