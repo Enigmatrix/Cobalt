@@ -3,8 +3,7 @@ use sqlx::prelude::FromRow;
 use sqlx::sqlite::SqliteRow;
 use sqlx::{Result, Row, Type};
 
-use crate::table::{AlertVersionedId, ReminderVersionedId};
-pub use crate::table::{Color, Duration, Id, Ref, Timestamp, VersionedId};
+pub use crate::table::{Color, Duration, Id, Ref, Timestamp};
 
 /// An app that has run on the computer.
 #[derive(Default, Debug, Clone, PartialEq, Eq, FromRow, Serialize)]
@@ -204,11 +203,10 @@ impl Default for TriggerAction {
 /// limit is reached, and the reminders
 #[derive(Default, Debug, Clone, PartialEq, Eq, FromRow, Serialize, Deserialize)]
 pub struct Alert {
-    #[sqlx(flatten)]
     /// Identifier
     pub id: Ref<Self>,
-    #[sqlx(flatten)]
     /// Target of this [Alert]
+    #[sqlx(flatten)]
     pub target: Target,
     /// Usage Limit
     pub usage_limit: Duration,
@@ -217,17 +215,17 @@ pub struct Alert {
     #[sqlx(flatten)]
     /// Action to take on trigger
     pub trigger_action: TriggerAction,
+    /// Whether this alert is not deleted
+    pub active: bool,
 }
 
 /// Notifications to send upon a certain threshold of an [Alert]'s usage_limit
 #[derive(Default, Debug, Clone, FromRow, Serialize, Deserialize)] // can't impl PartialEq, Eq for f64
 pub struct Reminder {
-    #[sqlx(flatten)]
     /// Identifier
     pub id: Ref<Self>,
-    #[sqlx(flatten)]
     /// Link to [Alert]
-    pub alert: AlertVersionedId,
+    pub alert_id: Ref<Alert>,
     /// Threshold as 0-1 ratio of the Usage Limit
     pub threshold: f64,
     /// Message to send when the threshold is reached
@@ -236,14 +234,25 @@ pub struct Reminder {
     pub active: bool,
 }
 
+impl PartialEq<Reminder> for Reminder {
+    fn eq(&self, other: &Reminder) -> bool {
+        self.id == other.id
+            && self.alert_id == other.alert_id
+            && (self.threshold - other.threshold).abs() <= f64::EPSILON
+            && self.message == other.message
+            && self.active == other.active
+    }
+}
+
+impl Eq for Reminder {}
+
 /// An instance of [Alert] triggering.
 #[derive(Default, Debug, Clone, PartialEq, Eq, FromRow, Serialize)]
 pub struct AlertEvent {
     /// Identifier
     pub id: Ref<Self>,
-    #[sqlx(flatten)]
     ///  Link to [Alert]
-    pub alert: AlertVersionedId,
+    pub alert_id: Ref<Alert>,
     /// Timestamp of the [Alert] trigger
     pub timestamp: Timestamp,
 }
@@ -253,9 +262,8 @@ pub struct AlertEvent {
 pub struct ReminderEvent {
     /// Identifier
     pub id: Ref<Self>,
-    #[sqlx(flatten)]
     ///  Link to [Reminder]
-    pub reminder: ReminderVersionedId,
+    pub reminder_id: Ref<Reminder>,
     /// Timestamp of the [Reminder] trigger
     pub timestamp: Timestamp,
 }
@@ -313,13 +321,13 @@ table!(
 table!(
     Alert,
     "alerts",
-    id: VersionedId
+    id: Id
 );
 
 table!(
     Reminder,
     "reminders",
-    id: VersionedId
+    id: Id
 );
 
 table!(

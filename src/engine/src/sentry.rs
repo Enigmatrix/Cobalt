@@ -44,7 +44,7 @@ impl Sentry {
             self.mgr
                 .insert_reminder_event(&ReminderEvent {
                     id: Default::default(),
-                    reminder: triggered_reminder.reminder.id.0.into(),
+                    reminder_id: triggered_reminder.reminder.id.clone(),
                     timestamp: now.to_ticks(),
                 })
                 .await?;
@@ -127,7 +127,7 @@ impl Sentry {
             self.mgr
                 .insert_alert_event(&AlertEvent {
                     id: Default::default(),
-                    alert: alert.id.0.clone().into(),
+                    alert_id: alert.id.clone(),
                     timestamp: now.to_ticks(),
                 })
                 .await?;
