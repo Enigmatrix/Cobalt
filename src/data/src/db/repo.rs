@@ -449,9 +449,8 @@ impl Repository {
                 LEFT JOIN events_today t ON t.id = r.id AND t.version = r.version
                 LEFT JOIN events_week w ON w.id = r.id AND w.version = r.version
                 LEFT JOIN events_month m ON m.id = r.id AND m.version = r.version
-            WHERE r.active <> 0
             GROUP BY r.id
-            HAVING r.version = MAX(r.version)"
+            HAVING r.version = MAX(r.version) AND r.active <> 0"
         ))
         .bind(ts.day_start(true).to_ticks())
         .bind(i64::MAX)
