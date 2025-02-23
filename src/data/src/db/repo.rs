@@ -323,8 +323,6 @@ const REMINDER_EVENT_COUNT: &str = "SELECT e.reminder_id, COUNT(e.id) FROM remin
             WHERE timestamp BETWEEN ? AND ?
             GROUP BY e.reminder_id";
 
-// TODO when we sqlx has named parameters, fixup our queries to use them.
-
 impl Repository {
     /// Initialize a [Repository] from a given [Database]
     pub fn new(db: Database) -> Result<Self> {
@@ -834,8 +832,6 @@ impl Repository {
         prev: infused::Alert,
         mut next: infused::UpdatedAlert,
     ) -> Result<infused::Alert> {
-        // TODO: check if some of these clones are necessary
-
         let mut tx = self.db.transaction().await?;
         let has_any_alert_events = Self::has_any_alert_events(&mut *tx, &prev.id).await?;
 
@@ -862,13 +858,13 @@ impl Repository {
 
         if should_upgrade_alert {
             next.id = Self::upgrade_alert_only(&mut tx, &next).await?;
-            let mut next_reminders = Vec::new();
+
             for mut reminder in next.reminders {
                 if !reminder.active {
                     continue;
                 }
                 Self::insert_reminder_only(&mut *tx, &next.id, &mut reminder).await?;
-                next_reminders.push(infused::Reminder {
+                next_alert.reminders.push(infused::Reminder {
                     id: reminder.id,
                     alert_id: next.id.clone(),
                     threshold: reminder.threshold,
@@ -876,10 +872,10 @@ impl Repository {
                     events: infused::ValuePerPeriod::default(), // since this is a new reminder.
                 });
             }
-            next_alert.reminders = next_reminders;
         } else {
             Self::update_alert_only(&mut *tx, &next).await?;
-            let mut next_reminders = Vec::new();
+            next_alert.events = prev.events;
+
             for mut reminder in next.reminders {
                 let has_any_reminder_events =
                     Self::has_any_reminder_events(&mut *tx, &reminder.id).await?;
@@ -908,10 +904,8 @@ impl Repository {
                     Self::insert_reminder_only(&mut *tx, &next.id, &mut reminder).await?;
                     next_reminder.id = reminder.id;
                 }
-                next_reminders.push(next_reminder);
+                next_alert.reminders.push(next_reminder);
             }
-            next_alert.reminders = next_reminders;
-            next_alert.events = prev.events;
         };
 
         tx.commit().await?;
