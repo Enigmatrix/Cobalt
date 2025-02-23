@@ -12,7 +12,7 @@ import { refresh } from "@/lib/state";
 import { useTransition } from "react";
 import { LoaderIcon } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Setting } from "./settings";
+import { Setting } from "@/routes/settings";
 
 async function copySeedDb() {
   await invoke("copy_seed_db");

@@ -11,7 +11,7 @@ import { ticksToDateTime } from "@/lib/time";
 import type { AppSessionUsages } from "@/lib/repo";
 import { Text } from "@/components/ui/text";
 import { useApps } from "@/hooks/use-refresh";
-import AppIcon from "../app/app-icon";
+import AppIcon from "@/components/app/app-icon";
 import type { ClassValue } from "clsx";
 import { cn } from "@/lib/utils";
 import { HScrollView } from "@/components/hscroll-view";
