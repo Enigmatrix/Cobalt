@@ -911,23 +911,21 @@ async fn create_alert() -> Result<()> {
         c.into_iter()
             .enumerate()
             .map(|(i, r)| infused::Reminder {
-                inner: Reminder {
-                    id: Ref::new(VersionedId {
-                        id: start_id + i as i64,
-                        version: 1,
-                    }),
-                    alert: alert_id.clone().into(),
-                    threshold: r.threshold,
-                    message: r.message,
-                },
+                id: Ref::new(VersionedId {
+                    id: start_id + i as i64,
+                    version: 1,
+                }),
+                alert: alert_id.clone().into(),
+                threshold: r.threshold,
+                message: r.message,
                 events: Default::default(),
             })
             .collect()
     }
     fn reminders_eq(a: infused::Reminder, b: infused::Reminder) {
-        assert_eq!(a.inner.id, b.inner.id);
-        assert_eq!(a.inner.threshold, b.inner.threshold);
-        assert_eq!(a.inner.message, b.inner.message);
+        assert_eq!(a.id, b.id);
+        assert_eq!(a.threshold, b.threshold);
+        assert_eq!(a.message, b.message);
         assert_eq!(a.events, b.events);
     }
 

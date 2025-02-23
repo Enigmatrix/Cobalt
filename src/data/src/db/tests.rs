@@ -284,14 +284,16 @@ async fn insert_reminder_raw(
     a1: i64,
     a2: f64,
     a3: &str,
+    a4: bool,
 ) -> Result<()> {
-    query("INSERT INTO reminders VALUES (?, ?, ?, ?, ?, ?)")
+    query("INSERT INTO reminders VALUES (?, ?, ?, ?, ?, ?, ?)")
         .bind(id)
         .bind(vers)
         .bind(a0)
         .bind(a1)
         .bind(a2)
         .bind(a3)
+        .bind(a4)
         .execute(db.executor())
         .await?;
     Ok(())
@@ -494,7 +496,7 @@ async fn insert_reminder_event() -> Result<()> {
         )
         .await?;
         insert_alert_raw(&mut db, alert_id, 1, Some(1), None, 100, 1, 0, "", 1).await?;
-        insert_reminder_raw(&mut db, reminder_id, 1, alert_id, 1, 0.75, "hello").await?;
+        insert_reminder_raw(&mut db, reminder_id, 1, alert_id, 1, 0.75, "hello", true).await?;
     }
 
     let mut reminder_event = ReminderEvent {
@@ -688,6 +690,7 @@ pub mod arrange {
             reminder.alert.version,
             reminder.threshold,
             &reminder.message,
+            reminder.active,
         )
         .await?;
         Ok(reminder)
@@ -2010,6 +2013,7 @@ mod triggered_reminders {
                 alert: alert.0.clone().into(),
                 threshold: 0.50,
                 message: "hello".to_string(),
+                active: true,
             },
         )
         .await?;
@@ -2024,6 +2028,7 @@ mod triggered_reminders {
                 alert: alert.0.clone().into(),
                 threshold: 0.51,
                 message: "hello".to_string(),
+                active: true,
             },
         )
         .await?;
@@ -2062,6 +2067,7 @@ mod triggered_reminders {
                 alert: alert.0.clone().into(),
                 threshold: 0.50,
                 message: "hello".to_string(),
+                active: true,
             },
         )
         .await?;
@@ -2075,6 +2081,7 @@ mod triggered_reminders {
                 alert: alert.0.clone().into(),
                 threshold: 0.50,
                 message: "hello".to_string(),
+                active: true,
             },
         )
         .await?;
@@ -2112,6 +2119,7 @@ mod triggered_reminders {
                 alert: alert.0.clone().into(),
                 threshold: 0.50,
                 message: "hello".to_string(),
+                active: true,
             },
         )
         .await?;
@@ -2159,6 +2167,7 @@ mod triggered_reminders {
                 alert: alert.0.clone().into(),
                 threshold: 0.50,
                 message: "hello".to_string(),
+                active: true,
             },
         )
         .await?;

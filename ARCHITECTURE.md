@@ -103,6 +103,7 @@ erDiagram
         int             alert_version FK
         real            threshold
         text            message
+        tinyint         active
     }
 
     reminder_events {
