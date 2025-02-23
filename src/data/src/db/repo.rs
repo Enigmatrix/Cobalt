@@ -7,7 +7,6 @@ use sqlx::SqliteExecutor;
 
 use super::*;
 use crate::entities::{Duration, TriggerAction};
-use crate::table::{AlertVersionedId, VersionedId};
 
 /// Collection of methods to do large, complicated queries against apps etc.
 pub struct Repository {
@@ -80,7 +79,7 @@ pub mod infused {
 
     use super::*;
     use crate::entities::{TimeFrame, TriggerAction};
-    use crate::table::{Color, VersionedId};
+    use crate::table::{Color, Duration};
 
     /// Value per common periods
     #[derive(Debug, Default, Clone, PartialEq, Eq, Serialize, Deserialize, FromRow)]
@@ -138,12 +137,20 @@ pub mod infused {
     }
 
     /// [super::Alert] with additional information
-    #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
+    #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, FromRow)]
     pub struct Alert {
+        /// Identifier
+        pub id: Ref<super::Alert>,
+        /// Target of this [Alert]
         #[sqlx(flatten)]
-        #[serde(flatten)]
-        /// [super::Alert] itself
-        pub inner: super::Alert,
+        pub target: Target,
+        /// Usage Limit
+        pub usage_limit: Duration,
+        /// Time Frame
+        pub time_frame: TimeFrame,
+        #[sqlx(flatten)]
+        /// Action to take on trigger
+        pub trigger_action: TriggerAction,
         /// List of linked [Reminder]s
         pub reminders: Vec<Reminder>,
         /// List of hit [super::AlertEvent]s
@@ -154,12 +161,10 @@ pub mod infused {
     /// [super::Reminder] with additional information
     #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
     pub struct Reminder {
-        #[sqlx(flatten)]
         /// Identifier
         pub id: Ref<super::Reminder>,
-        #[sqlx(flatten)]
         /// Link to [Alert]
-        pub alert: AlertVersionedId,
+        pub alert_id: Ref<super::Alert>,
         /// Threshold as 0-1 ratio of the Usage Limit
         pub threshold: f64,
         /// Message to send when the threshold is reached
@@ -168,6 +173,18 @@ pub mod infused {
         #[sqlx(flatten)]
         pub events: ValuePerPeriod<i64>,
     }
+
+    impl PartialEq<Reminder> for Reminder {
+        fn eq(&self, other: &Reminder) -> bool {
+            self.id == other.id
+                && self.alert_id == other.alert_id
+                && (self.threshold - other.threshold).abs() <= f64::EPSILON
+                && self.message == other.message
+                && self.events == other.events
+        }
+    }
+
+    impl Eq for Reminder {}
 
     /// Options to create a new [super::Tag]
     #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -190,7 +207,7 @@ pub mod infused {
     }
 
     /// Options to create a new [super::Alert]
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, PartialEq, Eq, Clone, Deserialize)]
     pub struct CreateAlert {
         /// Target of this [Alert]
         pub target: Target,
@@ -213,12 +230,20 @@ pub mod infused {
         pub message: String,
     }
 
+    impl PartialEq<CreateReminder> for CreateReminder {
+        fn eq(&self, other: &CreateReminder) -> bool {
+            (self.threshold - other.threshold).abs() <= f64::EPSILON
+                && self.message == other.message
+        }
+    }
+
+    impl Eq for CreateReminder {}
+
     /// Options to update a [super::Alert]
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, PartialEq, Eq, Clone, Deserialize)]
     pub struct UpdatedAlert {
         /// Identifier
-        #[serde(flatten)]
-        pub id: VersionedId,
+        pub id: Ref<super::Alert>,
         /// Target of this [Alert]
         pub target: Target,
         /// Usage Limit
@@ -235,8 +260,7 @@ pub mod infused {
     #[derive(Debug, Clone, Deserialize)]
     pub struct UpdatedReminder {
         /// Identifier
-        #[serde(flatten)]
-        pub id: VersionedId,
+        pub id: Ref<super::Reminder>,
         /// Threshold
         pub threshold: f64,
         /// Message
@@ -244,6 +268,17 @@ pub mod infused {
         /// Whether this reminder is not deleted
         pub active: bool,
     }
+
+    impl PartialEq<UpdatedReminder> for UpdatedReminder {
+        fn eq(&self, other: &UpdatedReminder) -> bool {
+            self.id == other.id
+                && (self.threshold - other.threshold).abs() <= f64::EPSILON
+                && self.message == other.message
+                && self.active == other.active
+        }
+    }
+
+    impl Eq for UpdatedReminder {}
 
     /// [super::Session] with additional information
     #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -280,15 +315,13 @@ const TAG_DUR: &str = "SELECT a.tag_id AS id,
             WHERE u.end > p.start AND u.start <= p.end
             GROUP BY a.tag_id";
 
-const ALERT_EVENT_COUNT: &str =
-    "SELECT e.alert_id, e.alert_version, COUNT(e.id) FROM alert_events e
+const ALERT_EVENT_COUNT: &str = "SELECT e.alert_id, COUNT(e.id) FROM alert_events e
             WHERE timestamp BETWEEN ? AND ?
-            GROUP BY e.alert_id, e.alert_version";
+            GROUP BY e.alert_id";
 
-const REMINDER_EVENT_COUNT: &str =
-    "SELECT e.reminder_id, e.reminder_version, COUNT(e.id) FROM reminder_events e
+const REMINDER_EVENT_COUNT: &str = "SELECT e.reminder_id, COUNT(e.id) FROM reminder_events e
             WHERE timestamp BETWEEN ? AND ?
-            GROUP BY e.reminder_id, e.reminder_version";
+            GROUP BY e.reminder_id";
 
 // TODO when we sqlx has named parameters, fixup our queries to use them.
 
@@ -412,19 +445,19 @@ impl Repository {
 
         let alerts: Vec<AlertNoReminders> = query_as(&format!(
             "WITH
-                events_today(id, version, count) AS ({ALERT_EVENT_COUNT}),
-                events_week(id, version, count) AS ({ALERT_EVENT_COUNT}),
-                events_month(id, version, count) AS ({ALERT_EVENT_COUNT})
+                events_today(id, count) AS ({ALERT_EVENT_COUNT}),
+                events_week(id, count) AS ({ALERT_EVENT_COUNT}),
+                events_month(id, count) AS ({ALERT_EVENT_COUNT})
             SELECT al.*,
                 COALESCE(t.count, 0) AS today,
                 COALESCE(w.count, 0) AS week,
                 COALESCE(m.count, 0) AS month
             FROM alerts al
-                LEFT JOIN events_today t ON t.id = al.id AND t.version = al.version
-                LEFT JOIN events_week w ON w.id = al.id AND w.version = al.version
-                LEFT JOIN events_month m ON m.id = al.id AND m.version = al.version
+                LEFT JOIN events_today t ON t.id = al.id
+                LEFT JOIN events_week w ON w.id = al.id
+                LEFT JOIN events_month m ON m.id = al.id
             GROUP BY al.id
-            HAVING al.version = MAX(al.version)"
+            HAVING al.active <> 0"
         ))
         .bind(ts.day_start(true).to_ticks())
         .bind(i64::MAX)
@@ -438,19 +471,19 @@ impl Repository {
         // TODO maybe instad of i64:max for all of these we should use till ::now() (from query_options)
         let reminders: Vec<infused::Reminder> = query_as(&format!(
             "WITH
-                events_today(id, version, count) AS ({REMINDER_EVENT_COUNT}),
-                events_week(id, version, count) AS ({REMINDER_EVENT_COUNT}),
-                events_month(id, version, count) AS ({REMINDER_EVENT_COUNT})
+                events_today(id, count) AS ({REMINDER_EVENT_COUNT}),
+                events_week(id, count) AS ({REMINDER_EVENT_COUNT}),
+                events_month(id, count) AS ({REMINDER_EVENT_COUNT})
             SELECT r.*,
                 COALESCE(t.count, 0) AS today,
                 COALESCE(w.count, 0) AS week,
                 COALESCE(m.count, 0) AS month
             FROM reminders r
-                LEFT JOIN events_today t ON t.id = r.id AND t.version = r.version
-                LEFT JOIN events_week w ON w.id = r.id AND w.version = r.version
-                LEFT JOIN events_month m ON m.id = r.id AND m.version = r.version
+                LEFT JOIN events_today t ON t.id = r.id
+                LEFT JOIN events_week w ON w.id = r.id
+                LEFT JOIN events_month m ON m.id = r.id
             GROUP BY r.id
-            HAVING r.version = MAX(r.version) AND r.active <> 0"
+            HAVING r.active <> 0"
         ))
         .bind(ts.day_start(true).to_ticks())
         .bind(i64::MAX)
@@ -467,7 +500,12 @@ impl Repository {
                 (
                     alert.inner.id.clone(),
                     infused::Alert {
-                        inner: alert.inner,
+                        id: alert.inner.id,
+                        target: alert.inner.target,
+                        usage_limit: alert.inner.usage_limit,
+                        time_frame: alert.inner.time_frame,
+                        trigger_action: alert.inner.trigger_action,
+
                         events: alert.events,
                         reminders: Vec::new(),
                     },
@@ -475,8 +513,9 @@ impl Repository {
             })
             .collect();
 
+        // ignores inactive reminders
         reminders.into_iter().for_each(|reminder| {
-            let alert_id = Ref::new(reminder.alert.clone().into());
+            let alert_id = reminder.alert_id.clone();
             if let Some(alert) = alerts.get_mut(&alert_id) {
                 alert.reminders.push(reminder);
             }
@@ -738,40 +777,35 @@ impl Repository {
             Self::destructure_trigger_action(&alert.trigger_action);
 
         // Insert the alert
-        let alert_id: i64 = query(
-            "INSERT INTO alerts
-             SELECT COALESCE(MAX(id) + 1, 1), 1, ?, ?, ?, ?, ?, ?, ? FROM alerts LIMIT 1 RETURNING id",
-        )
-        .bind(app_id)
-        .bind(tag_id)
-        .bind(alert.usage_limit)
-        .bind(&alert.time_frame)
-        .bind(dim_duration)
-        .bind(message_content)
-        .bind(tag)
-        .fetch_one(&mut *tx)
-        .await?
-        .get(0);
+        let alert_id: Ref<Alert> =
+            query("INSERT INTO alerts VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id")
+                .bind(app_id)
+                .bind(tag_id)
+                .bind(alert.usage_limit)
+                .bind(&alert.time_frame)
+                .bind(dim_duration)
+                .bind(message_content)
+                .bind(tag)
+                .bind(true)
+                .fetch_one(&mut *tx)
+                .await?
+                .get(0);
 
         let mut reminders = Vec::new();
 
         // Insert the reminders
         for reminder in alert.reminders {
-            let id: i64 = query(
-                "INSERT INTO reminders (id, version, alert_id, alert_version, threshold, message)
-                 SELECT COALESCE(MAX(id) + 1, 1), 1, ?, 1, ?, ? FROM reminders LIMIT 1 RETURNING id"
-            )
-            .bind(alert_id)
-            .bind(reminder.threshold)
-            .bind(&reminder.message)
-            .fetch_one(&mut *tx)
-            .await?.get(0);
+            let id = query("INSERT INTO reminders VALUES (NULL, ?, ?, ?, ?) RETURNING id")
+                .bind(&alert_id)
+                .bind(reminder.threshold)
+                .bind(&reminder.message)
+                .bind(true)
+                .fetch_one(&mut *tx)
+                .await?
+                .get(0);
             let reminder = infused::Reminder {
-                id: Ref::new(VersionedId { id, version: 1 }),
-                alert: AlertVersionedId {
-                    id: alert_id,
-                    version: 1,
-                },
+                id,
+                alert_id: alert_id.clone(),
                 threshold: reminder.threshold,
                 message: reminder.message,
                 events: infused::ValuePerPeriod::default(),
@@ -782,16 +816,11 @@ impl Repository {
         tx.commit().await?;
 
         let alert = infused::Alert {
-            inner: Alert {
-                id: Ref::new(VersionedId {
-                    id: alert_id,
-                    version: 1,
-                }),
-                target: alert.target,
-                usage_limit: alert.usage_limit,
-                time_frame: alert.time_frame,
-                trigger_action: alert.trigger_action,
-            },
+            id: alert_id,
+            target: alert.target,
+            usage_limit: alert.usage_limit,
+            time_frame: alert.time_frame,
+            trigger_action: alert.trigger_action,
             reminders,
             events: infused::ValuePerPeriod::default(),
         };
@@ -805,30 +834,34 @@ impl Repository {
         prev: infused::Alert,
         mut next: infused::UpdatedAlert,
     ) -> Result<infused::Alert> {
+        // TODO: check if some of these clones are necessary
+
         let mut tx = self.db.transaction().await?;
-        let has_any_alert_events = Self::has_any_alert_events(&mut *tx, &prev.inner.id).await?;
+        let has_any_alert_events = Self::has_any_alert_events(&mut *tx, &prev.id).await?;
 
         let should_upgrade_alert = has_any_alert_events
-            && (prev.inner.target != next.target
-                || prev.inner.usage_limit != next.usage_limit
-                || prev.inner.time_frame != next.time_frame);
+            && (prev.target != next.target
+                || prev.usage_limit != next.usage_limit
+                || prev.time_frame != next.time_frame);
 
         let prev_reminders: HashMap<_, _> = prev
             .reminders
             .into_iter()
-            .map(|r| (r.id.0.clone(), r))
+            .map(|r| (r.id.clone(), r))
             .collect();
 
-        let next_alert = Alert {
-            id: Ref::new(next.id.clone()),
+        let mut next_alert = infused::Alert {
+            id: next.id.clone(),
             target: next.target.clone(),
             usage_limit: next.usage_limit,
             time_frame: next.time_frame.clone(),
             trigger_action: next.trigger_action.clone(),
+            reminders: Vec::new(),
+            events: infused::ValuePerPeriod::default(),
         };
 
-        let alert = if should_upgrade_alert {
-            next.id = Self::upgrade_alert_only(&mut *tx, &next).await?;
+        if should_upgrade_alert {
+            next.id = Self::upgrade_alert_only(&mut tx, &next).await?;
             let mut next_reminders = Vec::new();
             for mut reminder in next.reminders {
                 if !reminder.active {
@@ -836,18 +869,14 @@ impl Repository {
                 }
                 Self::insert_reminder_only(&mut *tx, &next.id, &mut reminder).await?;
                 next_reminders.push(infused::Reminder {
-                    id: Ref::new(reminder.id),
-                    alert: next.id.clone().into(),
+                    id: reminder.id,
+                    alert_id: next.id.clone(),
                     threshold: reminder.threshold,
                     message: reminder.message,
                     events: infused::ValuePerPeriod::default(), // since this is a new reminder.
                 });
             }
-            infused::Alert {
-                inner: next_alert,
-                reminders: next_reminders,
-                events: infused::ValuePerPeriod::default(), // since this is a new alert
-            }
+            next_alert.reminders = next_reminders;
         } else {
             Self::update_alert_only(&mut *tx, &next).await?;
             let mut next_reminders = Vec::new();
@@ -855,6 +884,13 @@ impl Repository {
                 let has_any_reminder_events =
                     Self::has_any_reminder_events(&mut *tx, &reminder.id).await?;
                 let prev_reminder = prev_reminders.get(&reminder.id);
+                let mut next_reminder = infused::Reminder {
+                    id: Ref::new(0),
+                    alert_id: next.id.clone(),
+                    threshold: reminder.threshold,
+                    message: reminder.message.clone(),
+                    events: infused::ValuePerPeriod::default(),
+                };
                 if let Some(prev_reminder) = prev_reminder {
                     let should_upgrade_reminder =
                         has_any_reminder_events && (reminder.threshold != prev_reminder.threshold);
@@ -862,73 +898,48 @@ impl Repository {
                     if should_upgrade_reminder {
                         // Even if this reminder is no longer active, if it's threshold changes & has a
                         // event we should insert (upgrade) the reminder.
-                        Self::upgrade_reminder_only(&mut *tx, &next.id, &mut reminder).await?;
-                        next_reminders.push(infused::Reminder {
-                            id: Ref::new(reminder.id),
-                            alert: next.id.clone().into(),
-                            threshold: reminder.threshold,
-                            message: reminder.message,
-                            events: infused::ValuePerPeriod::default(), // since this is a new reminder.
-                        });
+                        Self::upgrade_reminder_only(&mut tx, &next.id, &mut reminder).await?;
+                        next_reminder.id = reminder.id;
                     } else {
                         Self::update_reminder_only(&mut *tx, &mut reminder).await?;
-                        next_reminders.push(infused::Reminder {
-                            id: Ref::new(reminder.id),
-                            alert: next.id.clone().into(),
-                            threshold: reminder.threshold,
-                            message: reminder.message,
-                            events: prev_reminder.events.clone(), // since this is just the old reminder
-                        });
+                        next_reminder.events = prev_reminder.events.clone();
                     }
                 } else {
                     Self::insert_reminder_only(&mut *tx, &next.id, &mut reminder).await?;
-                    next_reminders.push(infused::Reminder {
-                        id: Ref::new(reminder.id),
-                        alert: next.id.clone().into(),
-                        threshold: reminder.threshold,
-                        message: reminder.message,
-                        events: infused::ValuePerPeriod::default(), // since this is a new reminder.
-                    });
+                    next_reminder.id = reminder.id;
                 }
+                next_reminders.push(next_reminder);
             }
-            infused::Alert {
-                inner: next_alert,
-                reminders: next_reminders,
-                events: prev.events,
-            }
+            next_alert.reminders = next_reminders;
+            next_alert.events = prev.events;
         };
 
         tx.commit().await?;
 
-        Ok(alert)
+        Ok(next_alert)
     }
 
     async fn has_any_alert_events<'a, E: SqliteExecutor<'a>>(
         executor: E,
         alert_id: &Ref<Alert>,
     ) -> Result<bool> {
-        let count: i64 =
-            query("SELECT COUNT(*) FROM alert_events WHERE alert_id = ? AND alert_version = ?")
-                .bind(alert_id.0.id)
-                .bind(alert_id.0.version)
-                .fetch_one(executor)
-                .await?
-                .get(0);
+        let count: i64 = query("SELECT COUNT(*) FROM alert_events WHERE alert_id = ?")
+            .bind(alert_id)
+            .fetch_one(executor)
+            .await?
+            .get(0);
         Ok(count > 0)
     }
 
     async fn has_any_reminder_events<'a, E: SqliteExecutor<'a>>(
         executor: E,
-        reminder_id: &VersionedId,
+        reminder_id: &Ref<Reminder>,
     ) -> Result<bool> {
-        let count: i64 = query(
-            "SELECT COUNT(*) FROM reminder_events WHERE reminder_id = ? AND reminder_version = ?",
-        )
-        .bind(reminder_id.id)
-        .bind(reminder_id.version)
-        .fetch_one(executor)
-        .await?
-        .get(0);
+        let count: i64 = query("SELECT COUNT(*) FROM reminder_events WHERE reminder_id = ?")
+            .bind(reminder_id)
+            .fetch_one(executor)
+            .await?
+            .get(0);
         Ok(count > 0)
     }
 
@@ -948,7 +959,7 @@ impl Repository {
                 dim_duration = ?,
                 message_content = ?,
                 trigger_action_tag = ?
-            WHERE id = ? AND version = ?",
+            WHERE id = ?",
         )
         .bind(app_id)
         .bind(tag_id)
@@ -957,27 +968,25 @@ impl Repository {
         .bind(dim_duration)
         .bind(message_content)
         .bind(tag)
-        .bind(alert.id.id)
-        .bind(alert.id.version)
+        .bind(&alert.id)
         .execute(executor)
         .await?;
         Ok(())
     }
 
-    async fn upgrade_alert_only<'a, E: SqliteExecutor<'a>>(
-        executor: E,
+    async fn upgrade_alert_only(
+        executor: &mut sqlx::SqliteConnection,
         alert: &infused::UpdatedAlert,
-    ) -> Result<VersionedId> {
-        let new_id = VersionedId {
-            id: alert.id.id,
-            version: alert.id.version + 1,
-        };
+    ) -> Result<Ref<Alert>> {
+        query("UPDATE alerts SET active = 0 WHERE id = ?")
+            .bind(&alert.id)
+            .execute(&mut *executor)
+            .await?;
+
         let (app_id, tag_id) = Self::destructure_target(&alert.target);
         let (dim_duration, message_content, tag) =
             Self::destructure_trigger_action(&alert.trigger_action);
-        query("INSERT INTO alerts VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
-            .bind(new_id.id)
-            .bind(new_id.version)
+        let new_id = query("INSERT INTO alerts VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id")
             .bind(app_id)
             .bind(tag_id)
             .bind(alert.usage_limit)
@@ -985,28 +994,27 @@ impl Repository {
             .bind(dim_duration)
             .bind(message_content)
             .bind(tag)
-            .execute(executor)
-            .await?;
+            .bind(true)
+            .fetch_one(&mut *executor)
+            .await?
+            .get(0);
 
         Ok(new_id)
     }
 
     async fn insert_reminder_only<'a, E: SqliteExecutor<'a>>(
         executor: E,
-        alert_id: &VersionedId,
+        alert_id: &Ref<Alert>,
         reminder: &mut infused::UpdatedReminder,
     ) -> Result<()> {
-        let id: i64 = query(
-                "INSERT INTO reminders (id, version, alert_id, alert_version, threshold, message)
-                 SELECT COALESCE(MAX(id) + 1, 1), 1, ?, ?, ?, ? FROM reminders LIMIT 1 RETURNING id"
-            )
-            .bind(alert_id.id)
-            .bind(alert_id.version)
+        reminder.id = query("INSERT INTO reminders VALUES(NULL, ?, ?, ?, ?) RETURNING id")
+            .bind(alert_id)
             .bind(reminder.threshold)
             .bind(&reminder.message)
+            .bind(true)
             .fetch_one(executor)
-            .await?.get(0);
-        reminder.id = VersionedId { id, version: 1 };
+            .await?
+            .get(0);
         Ok(())
     }
 
@@ -1014,42 +1022,36 @@ impl Repository {
         executor: E,
         reminder: &mut infused::UpdatedReminder,
     ) -> Result<()> {
-        let id: i64 = query(
-                "UPDATER reminders SET threshold = ?, message = ?, active = ? WHERE id = ? AND version = ?"
-            )
-            .bind(reminder.threshold)
-            .bind(&reminder.message)
-            .bind(reminder.active)
-            .bind(reminder.id.id)
-            .bind(reminder.id.version)
-            .fetch_one(executor)
-            .await?.get(0);
-        reminder.id = VersionedId { id, version: 1 };
+        reminder.id =
+            query("UPDATE reminders SET threshold = ?, message = ?, active = ? WHERE id = ?")
+                .bind(reminder.threshold)
+                .bind(&reminder.message)
+                .bind(reminder.active)
+                .bind(&reminder.id)
+                .fetch_one(executor)
+                .await?
+                .get(0);
         Ok(())
     }
 
-    async fn upgrade_reminder_only<'a, E: SqliteExecutor<'a>>(
-        executor: E,
-        alert_id: &VersionedId,
+    async fn upgrade_reminder_only(
+        executor: &mut sqlx::SqliteConnection,
+        alert_id: &Ref<Alert>,
         reminder: &mut infused::UpdatedReminder,
     ) -> Result<()> {
-        reminder.id = VersionedId {
-            id: reminder.id.id,
-            version: reminder.id.version,
-        };
-        query(
-                "INSERT INTO reminders (id, version, alert_id, alert_version, threshold, message, active) VALUES
-                ?, ?, ?, ?, ?, ?, ? FROM reminders"
-            )
-            .bind(reminder.id.id)
-            .bind(reminder.id.version)
-            .bind(alert_id.id)
-            .bind(alert_id.version)
+        query("UPDATE reminders SET active = 0 WHERE id = ?")
+            .bind(&reminder.id)
+            .execute(&mut *executor)
+            .await?;
+
+        reminder.id = query("INSERT INTO reminders VALUES(NULL, ?, ?, ?, ?) RETURNING id")
+            .bind(alert_id)
             .bind(reminder.threshold)
             .bind(&reminder.message)
-            .bind(reminder.active)
-            .execute(executor)
-            .await?;
+            .bind(true)
+            .fetch_one(&mut *executor)
+            .await?
+            .get(0);
         Ok(())
     }
 
@@ -1061,7 +1063,7 @@ impl Repository {
 
         // not specifying the version here will delete all versions
         query("DELETE FROM alerts WHERE id = ?")
-            .bind(alert_id.0.id)
+            .bind(alert_id)
             .execute(self.db.executor())
             .await?;
         Ok(())

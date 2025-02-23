@@ -8,7 +8,28 @@ use super::*;
 use crate::db::repo::infused::{CreateAlert, CreateReminder, ValuePerPeriod};
 use crate::db::tests::arrange::*;
 use crate::entities::{TimeFrame, TriggerAction};
-use crate::table::VersionedId;
+
+fn create_to_alert(c: CreateAlert, id: i64) -> Alert {
+    Alert {
+        id: Ref::new(id),
+        target: c.target,
+        usage_limit: c.usage_limit,
+        time_frame: c.time_frame,
+        trigger_action: c.trigger_action,
+        active: true,
+    }
+}
+
+fn infused_to_alert(c: infused::Alert) -> Alert {
+    Alert {
+        id: c.id,
+        target: c.target,
+        usage_limit: c.usage_limit,
+        time_frame: c.time_frame,
+        trigger_action: c.trigger_action,
+        active: true,
+    }
+}
 
 #[tokio::test]
 async fn get_apps() -> Result<()> {
@@ -337,46 +358,52 @@ async fn get_alerts() -> Result<()> {
     .id;
 
     let alert11 = Alert {
-        id: Ref::new(VersionedId { id: 1, version: 1 }),
+        id: Ref::new(1),
         usage_limit: 100,
         target: Target::App(app1.clone()),
         time_frame: TimeFrame::Daily,
         trigger_action: TriggerAction::Kill,
+        active: false,
     };
     let alert12 = Alert {
-        id: Ref::new(VersionedId { id: 1, version: 2 }),
+        id: Ref::new(2),
         usage_limit: 1000,
         target: Target::App(app1.clone()),
         time_frame: TimeFrame::Daily,
         trigger_action: TriggerAction::Kill,
+        active: true,
     };
     let alert21 = Alert {
-        id: Ref::new(VersionedId { id: 2, version: 1 }),
+        id: Ref::new(3),
         usage_limit: 100,
         target: Target::App(app1.clone()),
         time_frame: TimeFrame::Weekly,
         trigger_action: TriggerAction::Dim(1),
+        active: true,
     };
     let alert31 = Alert {
-        id: Ref::new(VersionedId { id: 3, version: 1 }),
+        id: Ref::new(4),
         usage_limit: 100,
         target: Target::App(app1.clone()),
         time_frame: TimeFrame::Monthly,
         trigger_action: TriggerAction::Message("urmam".into()),
+        active: false,
     };
     let alert32 = Alert {
-        id: Ref::new(VersionedId { id: 3, version: 2 }),
+        id: Ref::new(5),
         usage_limit: 100,
         target: Target::App(app1.clone()),
         time_frame: TimeFrame::Weekly,
         trigger_action: TriggerAction::Message("urmam".into()),
+        active: false,
     };
     let alert33 = Alert {
-        id: Ref::new(VersionedId { id: 3, version: 3 }),
+        id: Ref::new(6),
         usage_limit: 10,
         target: Target::App(app1.clone()),
         time_frame: TimeFrame::Monthly,
         trigger_action: TriggerAction::Message("urmam".into()),
+        active: true,
     };
 
     let _alert11 = arrange::alert(&mut db, alert11.clone()).await?;
@@ -398,7 +425,7 @@ async fn get_alerts() -> Result<()> {
 
     let from_db: HashMap<_, _> = alerts
         .values()
-        .map(|alert| (alert.inner.id.clone(), alert.inner.clone()))
+        .map(|alert| (alert.id.clone(), infused_to_alert(alert.clone())))
         .collect();
     assert_eq!(
         from_db,
@@ -422,7 +449,7 @@ async fn get_alerts() -> Result<()> {
             &mut repo.db,
             AlertEvent {
                 id: Ref::new(0),
-                alert: alert_id.0.into(),
+                alert_id: alert_id.clone(),
                 timestamp,
             },
         )
@@ -439,7 +466,7 @@ async fn get_alerts() -> Result<()> {
 
     let from_db: HashMap<_, _> = alerts
         .values()
-        .map(|alert| (alert.inner.id.clone(), alert.events.clone()))
+        .map(|alert| (alert.id.clone(), alert.events.clone()))
         .collect();
     assert_eq!(
         from_db,
@@ -894,28 +921,16 @@ async fn get_app_durations_per_period_multiple_ts_test() -> Result<()> {
 async fn create_alert() -> Result<()> {
     let mut db = test_db().await?;
 
-    fn to_alert(c: CreateAlert, id: VersionedId) -> Alert {
-        Alert {
-            id: Ref::new(id),
-            target: c.target,
-            usage_limit: c.usage_limit,
-            time_frame: c.time_frame,
-            trigger_action: c.trigger_action,
-        }
-    }
     fn to_reminders(
         c: Vec<CreateReminder>,
         start_id: i64,
-        alert_id: VersionedId,
+        alert_id: Ref<Alert>,
     ) -> Vec<infused::Reminder> {
         c.into_iter()
             .enumerate()
             .map(|(i, r)| infused::Reminder {
-                id: Ref::new(VersionedId {
-                    id: start_id + i as i64,
-                    version: 1,
-                }),
-                alert: alert_id.clone().into(),
+                id: Ref::new(start_id + i as i64),
+                alert_id: alert_id.clone(),
                 threshold: r.threshold,
                 message: r.message,
                 events: Default::default(),
@@ -959,8 +974,8 @@ async fn create_alert() -> Result<()> {
     };
     let created1 = repo.create_alert(alert1.clone()).await?;
     assert_eq!(
-        created1.inner,
-        to_alert(alert1, VersionedId { id: 1, version: 1 })
+        infused_to_alert(created1.clone()),
+        create_to_alert(alert1, 1)
     );
     assert!(created1.reminders.is_empty());
 
@@ -976,8 +991,11 @@ async fn create_alert() -> Result<()> {
         }],
     };
     let created2 = repo.create_alert(alert2.clone()).await?;
-    let created2id = VersionedId { id: 2, version: 1 };
-    assert_eq!(created2.inner, to_alert(alert2.clone(), created2id.clone()));
+    let created2id = Ref::new(2);
+    assert_eq!(
+        infused_to_alert(created2.clone()),
+        create_to_alert(alert2.clone(), created2id.0)
+    );
     created2
         .reminders
         .iter()
@@ -1009,8 +1027,11 @@ async fn create_alert() -> Result<()> {
     };
 
     let created3 = repo.create_alert(alert3.clone()).await?;
-    let created3id = VersionedId { id: 3, version: 1 };
-    assert_eq!(created3.inner, to_alert(alert3.clone(), created3id.clone()));
+    let created3id = Ref::new(3);
+    assert_eq!(
+        infused_to_alert(created3.clone()),
+        create_to_alert(alert3.clone(), created3id.0)
+    );
     created3
         .reminders
         .iter()
