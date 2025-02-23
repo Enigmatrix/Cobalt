@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use data::db::repo::{infused, WithDuration, WithGroupedDuration};
-use data::entities::{App, Duration, InteractionPeriod, Ref, Tag, Timestamp};
+use data::entities::{Alert, App, Duration, InteractionPeriod, Ref, Tag, Timestamp};
 use tauri::State;
 use util::error::Context;
 use util::time::ToTicks;
@@ -37,6 +37,21 @@ pub async fn get_tags(
         state.assume_init().get_repo().await?
     };
     let res = repo.get_tags(now).await?;
+    Ok(res)
+}
+
+#[tauri::command]
+#[tracing::instrument(err, skip(state))]
+pub async fn get_alerts(
+    state: State<'_, AppState>,
+    query_options: QueryOptions,
+) -> AppResult<HashMap<Ref<Alert>, infused::Alert>> {
+    let now = query_options.get_now();
+    let mut repo = {
+        let state = state.read().await;
+        state.assume_init().get_repo().await?
+    };
+    let res = repo.get_alerts(now).await?;
     Ok(res)
 }
 
@@ -184,6 +199,43 @@ pub async fn remove_tag(state: State<'_, AppState>, tag_id: Ref<Tag>) -> AppResu
         state.assume_init_mut().get_repo().await?
     };
     Ok(repo.remove_tag(tag_id).await?)
+}
+
+#[tauri::command]
+#[tracing::instrument(err, skip(state))]
+pub async fn create_alert(
+    state: State<'_, AppState>,
+    alert: infused::CreateAlert,
+) -> AppResult<infused::Alert> {
+    let mut repo = {
+        let mut state = state.write().await;
+        state.assume_init_mut().get_repo().await?
+    };
+    Ok(repo.create_alert(alert).await?)
+}
+
+#[tauri::command]
+#[tracing::instrument(err, skip(state))]
+pub async fn update_alert(
+    state: State<'_, AppState>,
+    prev: infused::Alert,
+    next: infused::UpdatedAlert,
+) -> AppResult<infused::Alert> {
+    let mut repo = {
+        let mut state = state.write().await;
+        state.assume_init_mut().get_repo().await?
+    };
+    Ok(repo.update_alert(prev, next).await?)
+}
+
+#[tauri::command]
+#[tracing::instrument(err, skip(state))]
+pub async fn remove_alert(state: State<'_, AppState>, alert_id: Ref<Alert>) -> AppResult<()> {
+    let mut repo = {
+        let mut state = state.write().await;
+        state.assume_init_mut().get_repo().await?
+    };
+    Ok(repo.remove_alert(alert_id).await?)
 }
 
 #[tauri::command]
