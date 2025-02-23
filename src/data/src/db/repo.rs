@@ -751,8 +751,8 @@ impl Repository {
 
     fn destructure_target(target: &Target) -> (Option<&Ref<App>>, Option<&Ref<Tag>>) {
         match target {
-            Target::App(app_id) => (Some(app_id), None),
-            Target::Tag(tag_id) => (None, Some(tag_id)),
+            Target::App { id } => (Some(id), None),
+            Target::Tag { id } => (None, Some(id)),
         }
     }
 
@@ -761,8 +761,8 @@ impl Repository {
     ) -> (Option<i64>, Option<&str>, i64) {
         match &trigger_action {
             TriggerAction::Kill => (None, None, 0),
-            TriggerAction::Dim(dur) => (Some(*dur), None, 1),
-            TriggerAction::Message(content) => (None, Some(content.as_str()), 2),
+            TriggerAction::Dim { duration } => (Some(*duration), None, 1),
+            TriggerAction::Message { content } => (None, Some(content.as_str()), 2),
         }
     }
 

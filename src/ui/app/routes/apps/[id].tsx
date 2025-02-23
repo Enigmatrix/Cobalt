@@ -11,7 +11,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { useAppState } from "@/lib/state";
-import { isUwp, type App, type Ref, type Tag } from "@/lib/entities";
+import { type App, type Ref, type Tag } from "@/lib/entities";
 import AppIcon from "@/components/app/app-icon";
 import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
 import { useCallback, useMemo, useState } from "react";
@@ -183,22 +183,22 @@ export default function App({ params }: Route.ComponentProps) {
             {/* App Identity */}
             <div className="text-sm inline-flex border-border border rounded-lg overflow-hidden max-w-fit min-w-0 bg-muted/30 items-center">
               <div className="bg-muted px-3 py-1.5 border-r border-border font-medium">
-                {isUwp(app.identity) ? "UWP" : "Win32"}
+                {app.identity.tag === "Uwp" ? "UWP" : "Win32"}
               </div>
 
               <Text className="font-mono pl-3 pr-1 py-1.5 text-muted-foreground">
-                {isUwp(app.identity)
-                  ? app.identity.Uwp.aumid
-                  : app.identity.Win32.path}
+                {app.identity.tag === "Uwp"
+                  ? app.identity.aumid
+                  : app.identity.path}
               </Text>
               <Button
                 variant="ghost"
                 className="h-auto p-2 rounded-none rounded-r-lg text-muted-foreground"
                 onClick={() =>
                   copy(
-                    isUwp(app.identity)
-                      ? app.identity.Uwp.aumid
-                      : app.identity.Win32.path,
+                    app.identity.tag === "Uwp"
+                      ? app.identity.aumid
+                      : app.identity.path,
                   )
                 }
               >

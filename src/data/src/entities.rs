@@ -34,6 +34,7 @@ pub struct App {
 
 /// Unique identity of an [App], outside of the Database (on the FileSystem/Registry)
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[serde(tag = "tag")]
 pub enum AppIdentity {
     /// Win32 App
     Win32 {
@@ -118,26 +119,37 @@ pub struct InteractionPeriod {
 
 /// Target of an [Alert]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "tag")]
 pub enum Target {
     /// [App] Target
-    App(Ref<App>),
+    App {
+        /// App Identifier
+        id: Ref<App>,
+    },
     /// [Tag] Target
-    Tag(Ref<Tag>),
+    Tag {
+        /// Tag Identifier
+        id: Ref<Tag>,
+    },
 }
 
 impl FromRow<'_, SqliteRow> for Target {
     fn from_row(row: &SqliteRow) -> Result<Self> {
         Ok(if let Some(app_id) = row.get("app_id") {
-            Target::App(app_id)
+            Target::App { id: app_id }
         } else {
-            Target::Tag(row.get("tag_id"))
+            Target::Tag {
+                id: row.get("tag_id"),
+            }
         })
     }
 }
 
 impl Default for Target {
     fn default() -> Self {
-        Self::App(Default::default())
+        Self::App {
+            id: Default::default(),
+        }
     }
 }
 
@@ -156,13 +168,20 @@ pub enum TimeFrame {
 
 /// Action to take once the [Alert]'s Usage Limit has been reached.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "tag")]
 pub enum TriggerAction {
     /// Kill the offending App / App in Tags
     Kill,
     /// Dim the windows of the offending App / App in Tags
-    Dim(Duration),
+    Dim {
+        /// Duration to dim over
+        duration: Duration,
+    },
     /// Send a message to the user as a Toast notification
-    Message(String),
+    Message {
+        /// Contents of the Message
+        content: String,
+    },
 }
 
 impl FromRow<'_, SqliteRow> for TriggerAction {
@@ -170,8 +189,12 @@ impl FromRow<'_, SqliteRow> for TriggerAction {
         let tag = row.get("trigger_action_tag");
         match tag {
             0 => Ok(Self::Kill),
-            1 => Ok(Self::Dim(row.get("trigger_action_dim_duration"))),
-            2 => Ok(Self::Message(row.get("trigger_action_message_content"))),
+            1 => Ok(Self::Dim {
+                duration: row.get("trigger_action_dim_duration"),
+            }),
+            2 => Ok(Self::Message {
+                content: row.get("trigger_action_message_content"),
+            }),
             tag => Err(sqlx::Error::Decode(
                 format!("Unknown trigger action tag = {tag}").into(),
             )),
