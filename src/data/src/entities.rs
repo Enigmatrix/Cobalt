@@ -232,6 +232,8 @@ pub struct Reminder {
     pub threshold: f64,
     /// Message to send when the threshold is reached
     pub message: String,
+    /// Whether this reminder is not deleted
+    pub active: bool,
 }
 
 /// An instance of [Alert] triggering.

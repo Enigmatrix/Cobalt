@@ -155,9 +155,15 @@ pub mod infused {
     #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
     pub struct Reminder {
         #[sqlx(flatten)]
-        #[serde(flatten)]
-        /// [super::Reminder] itself
-        pub inner: super::Reminder,
+        /// Identifier
+        pub id: Ref<super::Reminder>,
+        #[sqlx(flatten)]
+        /// Link to [Alert]
+        pub alert: AlertVersionedId,
+        /// Threshold as 0-1 ratio of the Usage Limit
+        pub threshold: f64,
+        /// Message to send when the threshold is reached
+        pub message: String,
         /// List of hit [super::ReminderEvent]s
         #[sqlx(flatten)]
         pub events: ValuePerPeriod<i64>,
@@ -441,6 +447,7 @@ impl Repository {
                 LEFT JOIN events_today t ON t.id = r.id AND t.version = r.version
                 LEFT JOIN events_week w ON w.id = r.id AND w.version = r.version
                 LEFT JOIN events_month m ON m.id = r.id AND m.version = r.version
+            WHERE r.active <> 0
             GROUP BY r.id
             HAVING r.version = MAX(r.version)"
         ))
@@ -468,7 +475,7 @@ impl Repository {
             .collect();
 
         reminders.into_iter().for_each(|reminder| {
-            let alert_id = Ref::new(reminder.inner.alert.clone().into());
+            let alert_id = Ref::new(reminder.alert.clone().into());
             if let Some(alert) = alerts.get_mut(&alert_id) {
                 alert.reminders.push(reminder);
             }
@@ -749,15 +756,13 @@ impl Repository {
             .fetch_one(&mut *tx)
             .await?.get(0);
             let reminder = infused::Reminder {
-                inner: Reminder {
-                    id: Ref::new(VersionedId { id, version: 1 }),
-                    alert: AlertVersionedId {
-                        id: alert_id,
-                        version: 1,
-                    },
-                    threshold: reminder.threshold,
-                    message: reminder.message,
+                id: Ref::new(VersionedId { id, version: 1 }),
+                alert: AlertVersionedId {
+                    id: alert_id,
+                    version: 1,
                 },
+                threshold: reminder.threshold,
+                message: reminder.message,
                 events: ValuePerPeriod::default(),
             };
             reminders.push(reminder);

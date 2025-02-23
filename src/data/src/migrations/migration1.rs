@@ -115,6 +115,7 @@ impl Migration for Migration1 {
                 alert_version                   INTEGER NOT NULL,
                 threshold                       REAL NOT NULL,
                 message                         TEXT NOT NULL,
+                active                          TINYINT NOT NULL DEFAULT TRUE,
                 PRIMARY KEY (id, version),
                 FOREIGN KEY (alert_id, alert_version) REFERENCES alerts(id, version)
                     ON DELETE CASCADE
