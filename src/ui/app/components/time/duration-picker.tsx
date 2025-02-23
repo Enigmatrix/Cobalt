@@ -21,7 +21,7 @@ import type { ClassValue } from "clsx";
 type DurationPickerProps = {
   className?: ClassValue;
   duration?: Duration;
-  setDuration: React.Dispatch<React.SetStateAction<Duration | undefined>>;
+  setDuration: (dur: Duration | undefined) => void;
   showIcon?: boolean;
 } & ButtonProps;
 
