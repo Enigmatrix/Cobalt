@@ -38,6 +38,7 @@ export function ChooseTarget({
   const allTags = useTags();
   const allApps = useApps();
 
+  // TODO: should reset search value after close
   const [, setAppSearch, filteredApps] = useSearch(allApps, [
     "name",
     "company",
@@ -80,6 +81,7 @@ export function ChooseTarget({
           <CommandList>
             <CommandItem value="-" className="hidden" />
             <ToggleableCommandGroup heading="Tags">
+              {/* TODO No tags empty state */}
               {filteredTags.map((tag) => (
                 <CommandItem
                   key={tag.id}
