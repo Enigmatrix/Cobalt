@@ -1,17 +1,23 @@
 import { invoke } from "@tauri-apps/api/core";
 import { create } from "zustand";
-import type { App, Ref, Tag } from "@/lib/entities";
+import type { Alert, App, Ref, Tag } from "@/lib/entities";
 import { DateTime } from "luxon";
 import { dateTimeToTicks } from "@/lib/time";
 import {
+  createAlert,
   createTag,
+  getAlerts,
   getApps,
   getTags,
+  removeAlert,
   removeTag,
+  updateAlert,
   updateApp,
   updateTag,
   updateTagApps,
+  type CreateAlert,
   type CreateTag,
+  type UpdatedAlert,
 } from "@/lib/repo";
 import { checkForUpdatesBackground } from "@/lib/updater";
 import { info } from "@/lib/log";
@@ -29,11 +35,12 @@ export async function initState() {
 export async function refresh() {
   const now = DateTime.now();
   const options = { now: dateTimeToTicks(now) };
-  const [apps, tags] = await Promise.all([
+  const [apps, tags, alerts] = await Promise.all([
     getApps({ options }),
     getTags({ options }),
+    getAlerts({ options }),
   ]);
-  useAppState.setState({ apps, tags, lastRefresh: now });
+  useAppState.setState({ apps, tags, alerts, lastRefresh: now });
   info("refresh completed");
 }
 
@@ -46,11 +53,15 @@ type AppState = {
   lastRefresh: DateTime;
   apps: EntityStore<App>;
   tags: EntityStore<Tag>;
+  alerts: EntityStore<Alert>;
   updateApp: (app: App) => Promise<void>;
   updateTag: (app: Tag) => Promise<void>;
   updateTagApps: (tag: Tag, apps: Ref<App>[]) => Promise<void>;
   createTag: (tag: CreateTag) => Promise<Ref<Tag>>;
   removeTag: (tagId: Ref<Tag>) => Promise<void>;
+  createAlert: (tag: CreateAlert) => Promise<Ref<Alert>>;
+  updateAlert: (prev: Alert, next: UpdatedAlert) => Promise<void>;
+  removeAlert: (tagId: Ref<Alert>) => Promise<void>;
 };
 
 export const useAppState = create<AppState>((set) => {
@@ -58,6 +69,7 @@ export const useAppState = create<AppState>((set) => {
     lastRefresh: DateTime.now(),
     apps: [],
     tags: [],
+    alerts: [],
     updateApp: async (app) => {
       await updateApp(app);
 
@@ -133,6 +145,32 @@ export const useAppState = create<AppState>((set) => {
       set((state) =>
         produce((draft: AppState) => {
           delete draft.tags[tagId];
+        })(state),
+      );
+    },
+    createAlert: async (alert) => {
+      const newAlert = await createAlert(alert);
+      set((state) =>
+        produce((draft: AppState) => {
+          draft.alerts[newAlert.id] = newAlert;
+        })(state),
+      );
+      return newAlert.id;
+    },
+    updateAlert: async (prev, next) => {
+      const newAlert = await updateAlert(prev, next);
+      set((state) =>
+        produce((draft: AppState) => {
+          delete draft.alerts[prev.id];
+          draft.alerts[newAlert.id] = newAlert;
+        })(state),
+      );
+    },
+    removeAlert: async (alertId) => {
+      await removeAlert(alertId);
+      set((state) =>
+        produce((draft: AppState) => {
+          delete draft.alerts[alertId];
         })(state),
       );
     },

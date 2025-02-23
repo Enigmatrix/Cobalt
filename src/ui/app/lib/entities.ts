@@ -2,7 +2,6 @@ export type Ref<T> = number & { __type: T };
 export function newRef<T>(id: number): Ref<T> {
   return id as Ref<T>;
 }
-
 export type Color = string;
 export type Timestamp = number;
 export type Duration = number;
@@ -72,6 +71,35 @@ export interface Tag {
   color: string;
   apps: Ref<App>[];
   usages: ValuePerPeriod<Duration>;
+}
+
+export type Target = { App: Ref<App> } | { Tag: Ref<Tag> };
+
+export type TimeFrame = "Daily" | "Weekly" | "Monthly";
+
+export type TriggerAction =
+  | { Kill: null }
+  | { Dim: number }
+  | { Message: string };
+
+export interface Alert {
+  id: Ref<Alert>;
+  target: Target;
+  usage_limit: Duration;
+  time_frame: TimeFrame;
+  trigger_action: TriggerAction;
+
+  reminders: Reminder[];
+  events: ValuePerPeriod<number>;
+}
+
+export interface Reminder {
+  id: Ref<Reminder>;
+  alert_id: Ref<Alert>;
+  threshold: number;
+  message: string;
+
+  events: ValuePerPeriod<number>;
 }
 
 export interface InteractionPeriod {

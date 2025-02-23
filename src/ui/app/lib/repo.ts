@@ -2,12 +2,18 @@ import type {
   Timestamp,
   WithDuration,
   WithGroupedDuration,
+  Duration as DataDuration,
   App,
   Session,
   Tag,
   Ref,
   InteractionPeriod,
   SystemEvent,
+  Alert,
+  Target,
+  TimeFrame,
+  TriggerAction,
+  Reminder,
 } from "@/lib/entities";
 import { invoke } from "@tauri-apps/api/core";
 import type { EntityMap, EntityStore } from "@/lib/state";
@@ -17,6 +23,40 @@ import { dateTimeToTicks, durationToTicks } from "@/lib/time";
 export interface CreateTag {
   name: string;
   color: string;
+}
+
+export type AppSessionUsages = {
+  [appId: Ref<App>]: {
+    [sessionId: Ref<Session>]: Session;
+  };
+};
+
+export interface CreateAlert {
+  target: Target;
+  usage_limit: DataDuration;
+  time_frame: TimeFrame;
+  trigger_action: TriggerAction;
+  reminders: CreateReminder[];
+}
+
+export interface CreateReminder {
+  threshold: number;
+  message: string;
+}
+
+export interface UpdatedAlert {
+  id: Ref<Alert>;
+  target: Target;
+  usage_limit: DataDuration;
+  time_frame: TimeFrame;
+  trigger_action: TriggerAction;
+  reminders: UpdatedReminder[];
+}
+
+export interface UpdatedReminder {
+  id: Ref<Reminder>;
+  threshold: number;
+  message: string;
 }
 
 interface QueryOptions {
@@ -43,6 +83,15 @@ export async function getTags({
 }): Promise<EntityStore<Tag>> {
   const queryOptions = getQueryOptions(options);
   return await invoke("get_tags", { queryOptions });
+}
+
+export async function getAlerts({
+  options,
+}: {
+  options?: QueryOptions;
+}): Promise<EntityStore<Alert>> {
+  const queryOptions = getQueryOptions(options);
+  return await invoke("get_alerts", { queryOptions });
 }
 
 export async function getAppDurations({
@@ -139,11 +188,20 @@ export async function removeTag(tagId: Ref<Tag>): Promise<void> {
   return await invoke("remove_tag", { tagId });
 }
 
-export type AppSessionUsages = {
-  [appId: Ref<App>]: {
-    [sessionId: Ref<Session>]: Session;
-  };
-};
+export async function createAlert(alert: CreateAlert): Promise<Alert> {
+  return await invoke("create_alert", { alert });
+}
+
+export async function updateAlert(
+  prev: Alert,
+  next: UpdatedAlert,
+): Promise<Alert> {
+  return await invoke("update_alert", { prev, next });
+}
+
+export async function removeAlert(alertId: Ref<Alert>): Promise<void> {
+  return await invoke("remove_alert", { alertId });
+}
 
 export async function getAppSessionUsages({
   options,
