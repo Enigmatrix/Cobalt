@@ -18,20 +18,8 @@ export interface WithGroupedDuration<T> {
 }
 
 export type AppIdentity =
-  | { Uwp: { aumid: string } }
-  | { Win32: { path: string } };
-
-export function isUwp(
-  identity: AppIdentity,
-): identity is { Uwp: { aumid: string } } {
-  return "Uwp" in identity;
-}
-
-export function isWin32(
-  identity: AppIdentity,
-): identity is { Win32: { path: string } } {
-  return "Win32" in identity;
-}
+  | { tag: "Uwp"; aumid: string }
+  | { tag: "Win32"; path: string };
 
 export interface ValuePerPeriod<T> {
   today: T;
@@ -73,14 +61,16 @@ export interface Tag {
   usages: ValuePerPeriod<Duration>;
 }
 
-export type Target = { App: Ref<App> } | { Tag: Ref<Tag> };
+export type Target =
+  | { tag: "App"; id: Ref<App> }
+  | { tag: "Tag"; id: Ref<Tag> };
 
 export type TimeFrame = "Daily" | "Weekly" | "Monthly";
 
 export type TriggerAction =
-  | { Kill: null }
-  | { Dim: number }
-  | { Message: string };
+  | { tag: "Kill" }
+  | { tag: "Dim"; duration: number }
+  | { tag: "Message"; content: string };
 
 export interface Alert {
   id: Ref<Alert>;

@@ -412,33 +412,39 @@ async fn target_apps() -> Result<()> {
     };
 
     assert_eq!(
-        mgr.target_apps(&Target::App(Ref::new(1))).await?,
+        mgr.target_apps(&Target::App { id: (Ref::new(1)) }).await?,
         vec![app1.id.clone()],
     );
 
     assert_eq!(
-        mgr.target_apps(&Target::App(Ref::new(2))).await?,
+        mgr.target_apps(&Target::App { id: (Ref::new(2)) }).await?,
         vec![app2.id.clone()],
     );
 
     assert_eq!(
-        mgr.target_apps(&Target::App(Ref::new(3))).await?,
+        mgr.target_apps(&Target::App { id: (Ref::new(3)) }).await?,
         vec![app3.id.clone()],
     );
 
-    assert_eq!(mgr.target_apps(&Target::Tag(Ref::new(1))).await?, vec![],);
+    assert_eq!(
+        mgr.target_apps(&Target::Tag { id: Ref::new(1) }).await?,
+        vec![],
+    );
 
     assert_eq!(
-        mgr.target_apps(&Target::Tag(Ref::new(2))).await?,
+        mgr.target_apps(&Target::Tag { id: Ref::new(2) }).await?,
         vec![app2.id.clone(), app4.id.clone()],
     );
 
     assert_eq!(
-        mgr.target_apps(&Target::Tag(Ref::new(3))).await?,
+        mgr.target_apps(&Target::Tag { id: Ref::new(3) }).await?,
         vec![app3.id.clone()],
     );
 
-    assert_eq!(mgr.target_apps(&Target::Tag(Ref::new(4))).await?, vec![],);
+    assert_eq!(
+        mgr.target_apps(&Target::Tag { id: Ref::new(4) }).await?,
+        vec![],
+    );
 
     Ok(())
 }
@@ -648,13 +654,13 @@ pub mod arrange {
 
         let (dim_duration, message_content, tag) = match &alert.trigger_action {
             TriggerAction::Kill => (None, None, 0),
-            TriggerAction::Dim(dur) => (Some(*dur), None, 1),
-            TriggerAction::Message(content) => (None, Some(content.to_string()), 2),
+            TriggerAction::Dim { duration } => (Some(*duration), None, 1),
+            TriggerAction::Message { content } => (None, Some(content.to_string()), 2),
         };
 
         let (app_id, tag_id) = match alert.target.clone() {
-            Target::App(app) => (Some(app.0), None),
-            Target::Tag(tag) => (None, Some(tag.0)),
+            Target::App { id } => (Some(id.0), None),
+            Target::Tag { id } => (None, Some(id.0)),
         };
 
         insert_alert_raw(
@@ -755,7 +761,9 @@ mod triggered_alerts {
             &mut db,
             Alert {
                 id: Ref::new(1),
-                target: Target::App(app.id.clone()),
+                target: Target::App {
+                    id: (app.id.clone()),
+                },
                 usage_limit: 100,
                 time_frame: TimeFrame::Daily,
                 trigger_action: TriggerAction::Kill,
@@ -811,7 +819,9 @@ mod triggered_alerts {
             &mut db,
             Alert {
                 id: Ref::new(1),
-                target: Target::App(app.id.clone()),
+                target: Target::App {
+                    id: (app.id.clone()),
+                },
                 usage_limit: 100,
                 time_frame: TimeFrame::Daily,
                 trigger_action: TriggerAction::Kill,
@@ -878,7 +888,9 @@ mod triggered_alerts {
             &mut db,
             Alert {
                 id: Ref::new(1),
-                target: Target::App(app.id.clone()),
+                target: Target::App {
+                    id: (app.id.clone()),
+                },
                 usage_limit: 100,
                 time_frame: TimeFrame::Daily,
                 trigger_action: TriggerAction::Kill,
@@ -952,7 +964,9 @@ mod triggered_alerts {
             &mut db,
             Alert {
                 id: Ref::new(1),
-                target: Target::App(app.id.clone()),
+                target: Target::App {
+                    id: (app.id.clone()),
+                },
                 usage_limit: 50,
                 time_frame: TimeFrame::Daily,
                 trigger_action: TriggerAction::Kill,
@@ -965,7 +979,9 @@ mod triggered_alerts {
             &mut db,
             Alert {
                 id: Ref::new(2),
-                target: Target::App(app.id.clone()),
+                target: Target::App {
+                    id: (app.id.clone()),
+                },
                 usage_limit: 51,
                 time_frame: TimeFrame::Daily,
                 trigger_action: TriggerAction::Kill,
@@ -1039,7 +1055,9 @@ mod triggered_alerts {
             &mut db,
             Alert {
                 id: Ref::new(1),
-                target: Target::App(app.id.clone()),
+                target: Target::App {
+                    id: (app.id.clone()),
+                },
                 usage_limit: 10,
                 time_frame: TimeFrame::Daily,
                 trigger_action: TriggerAction::Kill,
@@ -1053,7 +1071,9 @@ mod triggered_alerts {
             Alert {
                 // alert1 upgraded
                 id: Ref::new(2),
-                target: Target::App(app.id.clone()),
+                target: Target::App {
+                    id: (app.id.clone()),
+                },
                 usage_limit: 100,
                 time_frame: TimeFrame::Daily,
                 trigger_action: TriggerAction::Kill,
@@ -1127,7 +1147,9 @@ mod triggered_alerts {
             &mut db,
             Alert {
                 id: Ref::new(1),
-                target: Target::App(app.id.clone()),
+                target: Target::App {
+                    id: (app.id.clone()),
+                },
                 usage_limit: 50,
                 time_frame: TimeFrame::Daily,
                 trigger_action: TriggerAction::Kill,
@@ -1211,7 +1233,9 @@ mod triggered_alerts {
             &mut db,
             Alert {
                 id: Ref::new(1),
-                target: Target::App(app.id.clone()),
+                target: Target::App {
+                    id: (app.id.clone()),
+                },
                 usage_limit: 50,
                 time_frame: TimeFrame::Daily,
                 trigger_action: TriggerAction::Kill,
@@ -1295,7 +1319,9 @@ mod triggered_alerts {
             &mut db,
             Alert {
                 id: Ref::new(1),
-                target: Target::App(app.id.clone()),
+                target: Target::App {
+                    id: (app.id.clone()),
+                },
                 usage_limit: 50,
                 time_frame: TimeFrame::Weekly,
                 trigger_action: TriggerAction::Kill,
@@ -1369,7 +1395,9 @@ mod triggered_alerts {
             &mut db,
             Alert {
                 id: Ref::new(1),
-                target: Target::App(app.id.clone()),
+                target: Target::App {
+                    id: (app.id.clone()),
+                },
                 usage_limit: 50,
                 time_frame: TimeFrame::Monthly,
                 trigger_action: TriggerAction::Kill,
@@ -1469,7 +1497,9 @@ mod triggered_alerts {
             &mut db,
             Alert {
                 id: Ref::new(1),
-                target: Target::App(app.id.clone()),
+                target: Target::App {
+                    id: (app.id.clone()),
+                },
                 usage_limit: 50,
                 time_frame: TimeFrame::Daily,
                 trigger_action: TriggerAction::Kill,
@@ -1569,7 +1599,9 @@ mod triggered_alerts {
             &mut db,
             Alert {
                 id: Ref::new(1),
-                target: Target::App(app.id.clone()),
+                target: Target::App {
+                    id: (app.id.clone()),
+                },
                 usage_limit: 50,
                 time_frame: TimeFrame::Daily,
                 trigger_action: TriggerAction::Kill,
@@ -1787,7 +1819,9 @@ mod triggered_alerts {
             &mut db,
             Alert {
                 id: Ref::new(1),
-                target: Target::Tag(empty_tag.id.clone()),
+                target: Target::Tag {
+                    id: empty_tag.id.clone(),
+                },
                 usage_limit: 100,
                 time_frame: TimeFrame::Daily,
                 trigger_action: TriggerAction::Kill,
@@ -1800,7 +1834,9 @@ mod triggered_alerts {
             &mut db,
             Alert {
                 id: Ref::new(2),
-                target: Target::Tag(tag2.id.clone()),
+                target: Target::Tag {
+                    id: tag2.id.clone(),
+                },
                 usage_limit: 120,
                 time_frame: TimeFrame::Daily,
                 trigger_action: TriggerAction::Kill,
@@ -1813,7 +1849,9 @@ mod triggered_alerts {
             &mut db,
             Alert {
                 id: Ref::new(3),
-                target: Target::Tag(tag1.id.clone()),
+                target: Target::Tag {
+                    id: tag1.id.clone(),
+                },
                 usage_limit: 200,
                 time_frame: TimeFrame::Daily,
                 trigger_action: TriggerAction::Kill,
@@ -1826,7 +1864,9 @@ mod triggered_alerts {
             &mut db,
             Alert {
                 id: Ref::new(4),
-                target: Target::Tag(tag2.id.clone()),
+                target: Target::Tag {
+                    id: tag2.id.clone(),
+                },
                 usage_limit: 100,
                 time_frame: TimeFrame::Daily,
                 trigger_action: TriggerAction::Kill,
@@ -1910,7 +1950,9 @@ mod triggered_reminders {
             db,
             Alert {
                 id: Ref::new(1),
-                target: Target::App(app.id.clone()),
+                target: Target::App {
+                    id: (app.id.clone()),
+                },
                 usage_limit: 200,
                 time_frame: TimeFrame::Daily,
                 trigger_action: TriggerAction::Kill,

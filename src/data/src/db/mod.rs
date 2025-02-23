@@ -260,15 +260,15 @@ impl AlertManager {
     /// Gets all [App]s under the [Target]
     pub async fn target_apps(&mut self, target: &Target) -> Result<Vec<Ref<App>>> {
         Ok(match target {
-            Target::Tag(tag) => {
+            Target::Tag { id } => {
                 query("SELECT id FROM apps WHERE tag_id = ?")
-                    .bind(tag)
+                    .bind(id)
                     .map(|r: SqliteRow| r.get(0))
                     .fetch_all(self.db.executor())
                     .await?
             }
             // this will only return one result, but we get a row iterator nonetheless
-            Target::App(app) => vec![app.clone()],
+            Target::App { id } => vec![id.clone()],
         })
     }
 

@@ -360,7 +360,7 @@ async fn get_alerts() -> Result<()> {
     let alert11 = Alert {
         id: Ref::new(1),
         usage_limit: 100,
-        target: Target::App(app1.clone()),
+        target: Target::App { id: app1.clone() },
         time_frame: TimeFrame::Daily,
         trigger_action: TriggerAction::Kill,
         active: false,
@@ -368,7 +368,7 @@ async fn get_alerts() -> Result<()> {
     let alert12 = Alert {
         id: Ref::new(2),
         usage_limit: 1000,
-        target: Target::App(app1.clone()),
+        target: Target::App { id: app1.clone() },
         time_frame: TimeFrame::Daily,
         trigger_action: TriggerAction::Kill,
         active: true,
@@ -376,33 +376,39 @@ async fn get_alerts() -> Result<()> {
     let alert21 = Alert {
         id: Ref::new(3),
         usage_limit: 100,
-        target: Target::App(app1.clone()),
+        target: Target::App { id: app1.clone() },
         time_frame: TimeFrame::Weekly,
-        trigger_action: TriggerAction::Dim(1),
+        trigger_action: TriggerAction::Dim { duration: 1 },
         active: true,
     };
     let alert31 = Alert {
         id: Ref::new(4),
         usage_limit: 100,
-        target: Target::App(app1.clone()),
+        target: Target::App { id: app1.clone() },
         time_frame: TimeFrame::Monthly,
-        trigger_action: TriggerAction::Message("urmam".into()),
+        trigger_action: TriggerAction::Message {
+            content: "urmam".into(),
+        },
         active: false,
     };
     let alert32 = Alert {
         id: Ref::new(5),
         usage_limit: 100,
-        target: Target::App(app1.clone()),
+        target: Target::App { id: app1.clone() },
         time_frame: TimeFrame::Weekly,
-        trigger_action: TriggerAction::Message("urmam".into()),
+        trigger_action: TriggerAction::Message {
+            content: "urmam".into(),
+        },
         active: false,
     };
     let alert33 = Alert {
         id: Ref::new(6),
         usage_limit: 10,
-        target: Target::App(app1.clone()),
+        target: Target::App { id: app1.clone() },
         time_frame: TimeFrame::Monthly,
-        trigger_action: TriggerAction::Message("urmam".into()),
+        trigger_action: TriggerAction::Message {
+            content: "urmam".into(),
+        },
         active: true,
     };
 
@@ -967,7 +973,7 @@ async fn create_alert() -> Result<()> {
     // Test creating alert with no reminders
     let alert1 = CreateAlert {
         usage_limit: 100,
-        target: Target::App(app1.clone()),
+        target: Target::App { id: app1.clone() },
         time_frame: TimeFrame::Daily,
         trigger_action: TriggerAction::Kill,
         reminders: Vec::new(),
@@ -982,9 +988,9 @@ async fn create_alert() -> Result<()> {
     // Test creating alert with one reminder
     let alert2 = CreateAlert {
         usage_limit: 200,
-        target: Target::App(app1.clone()),
+        target: Target::App { id: app1.clone() },
         time_frame: TimeFrame::Weekly,
-        trigger_action: TriggerAction::Dim(500),
+        trigger_action: TriggerAction::Dim { duration: 500 },
         reminders: vec![CreateReminder {
             threshold: 0.5,
             message: "Half way there".into(),
@@ -1007,9 +1013,11 @@ async fn create_alert() -> Result<()> {
     // Test creating alert with multiple reminders
     let alert3 = CreateAlert {
         usage_limit: 300,
-        target: Target::App(app1.clone()),
+        target: Target::App { id: app1.clone() },
         time_frame: TimeFrame::Monthly,
-        trigger_action: TriggerAction::Message("Time's up".into()),
+        trigger_action: TriggerAction::Message {
+            content: "Time's up".into(),
+        },
         reminders: vec![
             CreateReminder {
                 threshold: 0.25,

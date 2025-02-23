@@ -105,21 +105,21 @@ impl Sentry {
                     cache.remove_process(pid);
                 }
             }
-            TriggerAction::Dim(dur) => {
+            TriggerAction::Dim { duration } => {
                 let windows = self.windows_for_target(&alert.target).await?;
                 let start = timestamp.unwrap_or(now.to_ticks());
                 let end: Timestamp = now.to_ticks();
-                let progress = (end - start) as f64 / (*dur as f64);
+                let progress = (end - start) as f64 / (*duration as f64);
                 for window in windows {
                     let dim_level = 1.0f64 - progress.min(1.0f64);
                     info!(?alert, "dimming window {:?} to {}", window, dim_level);
                     self.handle_dim_action(&window, dim_level).warn();
                 }
             }
-            TriggerAction::Message(msg) => {
+            TriggerAction::Message { content } => {
                 if timestamp.is_none() {
-                    info!(?alert, "send message {:?}: {:?}", name, msg);
-                    self.handle_message_action(name, msg).warn();
+                    info!(?alert, "send message {:?}: {:?}", name, content);
+                    self.handle_message_action(name, content).warn();
                 }
             }
         }
