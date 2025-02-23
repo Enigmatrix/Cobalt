@@ -20,9 +20,9 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { ChooseTarget } from "./choose-target";
+import { ChooseTarget } from "@/components/alert/choose-target";
 import type { Target } from "@/lib/entities";
-import { DurationPicker } from "../time/duration-picker";
+import { DurationPicker } from "@/components/time/duration-picker";
 import { durationToTicks, ticksToDuration } from "@/lib/time";
 import {
   Select,
