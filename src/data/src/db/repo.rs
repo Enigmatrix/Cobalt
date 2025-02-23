@@ -2,8 +2,8 @@ use std::collections::HashMap;
 use std::ops::Deref;
 use std::str::FromStr;
 
-use infused::{AppSessionUsages, ValuePerPeriod};
 use serde::Serialize;
+use sqlx::SqliteExecutor;
 
 use super::*;
 use crate::entities::{Duration, TriggerAction};
@@ -241,6 +241,8 @@ pub mod infused {
         pub threshold: f64,
         /// Message
         pub message: String,
+        /// Whether this reminder is not deleted
+        pub active: bool,
     }
 
     /// [super::Session] with additional information
@@ -711,20 +713,30 @@ impl Repository {
         Ok(())
     }
 
+    fn destructure_target(target: &Target) -> (Option<&Ref<App>>, Option<&Ref<Tag>>) {
+        match target {
+            Target::App(app_id) => (Some(app_id), None),
+            Target::Tag(tag_id) => (None, Some(tag_id)),
+        }
+    }
+
+    fn destructure_trigger_action(
+        trigger_action: &TriggerAction,
+    ) -> (Option<i64>, Option<&str>, i64) {
+        match &trigger_action {
+            TriggerAction::Kill => (None, None, 0),
+            TriggerAction::Dim(dur) => (Some(*dur), None, 1),
+            TriggerAction::Message(content) => (None, Some(content.as_str()), 2),
+        }
+    }
+
     /// Creates a [Alert]
     pub async fn create_alert(&mut self, alert: infused::CreateAlert) -> Result<infused::Alert> {
         let mut tx = self.db.transaction().await?;
 
-        let (app_id, tag_id) = match &alert.target {
-            Target::App(app_id) => (Some(app_id), None),
-            Target::Tag(tag_id) => (None, Some(tag_id)),
-        };
-
-        let (dim_duration, message_content, tag) = match &alert.trigger_action {
-            TriggerAction::Kill => (None, None, 0),
-            TriggerAction::Dim(dur) => (Some(*dur), None, 1),
-            TriggerAction::Message(content) => (None, Some(content.to_string()), 2),
-        };
+        let (app_id, tag_id) = Self::destructure_target(&alert.target);
+        let (dim_duration, message_content, tag) =
+            Self::destructure_trigger_action(&alert.trigger_action);
 
         // Insert the alert
         let alert_id: i64 = query(
@@ -733,10 +745,10 @@ impl Repository {
         )
         .bind(app_id)
         .bind(tag_id)
-        .bind(&alert.usage_limit)
+        .bind(alert.usage_limit)
         .bind(&alert.time_frame)
-        .bind(&dim_duration)
-        .bind(&message_content)
+        .bind(dim_duration)
+        .bind(message_content)
         .bind(tag)
         .fetch_one(&mut *tx)
         .await?
@@ -750,8 +762,8 @@ impl Repository {
                 "INSERT INTO reminders (id, version, alert_id, alert_version, threshold, message)
                  SELECT COALESCE(MAX(id) + 1, 1), 1, ?, 1, ?, ? FROM reminders LIMIT 1 RETURNING id"
             )
-            .bind(&alert_id)
-            .bind(&reminder.threshold)
+            .bind(alert_id)
+            .bind(reminder.threshold)
             .bind(&reminder.message)
             .fetch_one(&mut *tx)
             .await?.get(0);
@@ -763,7 +775,7 @@ impl Repository {
                 },
                 threshold: reminder.threshold,
                 message: reminder.message,
-                events: ValuePerPeriod::default(),
+                events: infused::ValuePerPeriod::default(),
             };
             reminders.push(reminder);
         }
@@ -782,20 +794,264 @@ impl Repository {
                 trigger_action: alert.trigger_action,
             },
             reminders,
-            events: ValuePerPeriod::default(),
+            events: infused::ValuePerPeriod::default(),
         };
 
         Ok(alert)
     }
 
-    /// Updates a [Alert]
+    /// Updates a [Alert]. Assumes the id of prev and next are the same for alert and reminders.
     pub async fn update_alert(
         &mut self,
         prev: infused::Alert,
-        next: infused::UpdatedAlert,
+        mut next: infused::UpdatedAlert,
     ) -> Result<infused::Alert> {
-        // need to do that silly logic
-        todo!()
+        let mut tx = self.db.transaction().await?;
+        let has_any_alert_events = Self::has_any_alert_events(&mut *tx, &prev.inner.id).await?;
+
+        let should_upgrade_alert = has_any_alert_events
+            && (prev.inner.target != next.target
+                || prev.inner.usage_limit != next.usage_limit
+                || prev.inner.time_frame != next.time_frame);
+
+        let prev_reminders: HashMap<_, _> = prev
+            .reminders
+            .into_iter()
+            .map(|r| (r.id.0.clone(), r))
+            .collect();
+
+        let next_alert = Alert {
+            id: Ref::new(next.id.clone()),
+            target: next.target.clone(),
+            usage_limit: next.usage_limit,
+            time_frame: next.time_frame.clone(),
+            trigger_action: next.trigger_action.clone(),
+        };
+
+        let alert = if should_upgrade_alert {
+            next.id = Self::upgrade_alert_only(&mut *tx, &next).await?;
+            let mut next_reminders = Vec::new();
+            for mut reminder in next.reminders {
+                if !reminder.active {
+                    continue;
+                }
+                Self::insert_reminder_only(&mut *tx, &next.id, &mut reminder).await?;
+                next_reminders.push(infused::Reminder {
+                    id: Ref::new(reminder.id),
+                    alert: next.id.clone().into(),
+                    threshold: reminder.threshold,
+                    message: reminder.message,
+                    events: infused::ValuePerPeriod::default(), // since this is a new reminder.
+                });
+            }
+            infused::Alert {
+                inner: next_alert,
+                reminders: next_reminders,
+                events: infused::ValuePerPeriod::default(), // since this is a new alert
+            }
+        } else {
+            Self::update_alert_only(&mut *tx, &next).await?;
+            let mut next_reminders = Vec::new();
+            for mut reminder in next.reminders {
+                let has_any_reminder_events =
+                    Self::has_any_reminder_events(&mut *tx, &reminder.id).await?;
+                let prev_reminder = prev_reminders.get(&reminder.id);
+                if let Some(prev_reminder) = prev_reminder {
+                    let should_upgrade_reminder =
+                        has_any_reminder_events && (reminder.threshold != prev_reminder.threshold);
+
+                    if should_upgrade_reminder {
+                        // Even if this reminder is no longer active, if it's threshold changes & has a
+                        // event we should insert (upgrade) the reminder.
+                        Self::upgrade_reminder_only(&mut *tx, &next.id, &mut reminder).await?;
+                        next_reminders.push(infused::Reminder {
+                            id: Ref::new(reminder.id),
+                            alert: next.id.clone().into(),
+                            threshold: reminder.threshold,
+                            message: reminder.message,
+                            events: infused::ValuePerPeriod::default(), // since this is a new reminder.
+                        });
+                    } else {
+                        Self::update_reminder_only(&mut *tx, &mut reminder).await?;
+                        next_reminders.push(infused::Reminder {
+                            id: Ref::new(reminder.id),
+                            alert: next.id.clone().into(),
+                            threshold: reminder.threshold,
+                            message: reminder.message,
+                            events: prev_reminder.events.clone(), // since this is just the old reminder
+                        });
+                    }
+                } else {
+                    Self::insert_reminder_only(&mut *tx, &next.id, &mut reminder).await?;
+                    next_reminders.push(infused::Reminder {
+                        id: Ref::new(reminder.id),
+                        alert: next.id.clone().into(),
+                        threshold: reminder.threshold,
+                        message: reminder.message,
+                        events: infused::ValuePerPeriod::default(), // since this is a new reminder.
+                    });
+                }
+            }
+            infused::Alert {
+                inner: next_alert,
+                reminders: next_reminders,
+                events: prev.events,
+            }
+        };
+
+        tx.commit().await?;
+
+        Ok(alert)
+    }
+
+    async fn has_any_alert_events<'a, E: SqliteExecutor<'a>>(
+        executor: E,
+        alert_id: &Ref<Alert>,
+    ) -> Result<bool> {
+        let count: i64 =
+            query("SELECT COUNT(*) FROM alert_events WHERE alert_id = ? AND alert_version = ?")
+                .bind(alert_id.0.id)
+                .bind(alert_id.0.version)
+                .fetch_one(executor)
+                .await?
+                .get(0);
+        Ok(count > 0)
+    }
+
+    async fn has_any_reminder_events<'a, E: SqliteExecutor<'a>>(
+        executor: E,
+        reminder_id: &VersionedId,
+    ) -> Result<bool> {
+        let count: i64 = query(
+            "SELECT COUNT(*) FROM reminder_events WHERE reminder_id = ? AND reminder_version = ?",
+        )
+        .bind(reminder_id.id)
+        .bind(reminder_id.version)
+        .fetch_one(executor)
+        .await?
+        .get(0);
+        Ok(count > 0)
+    }
+
+    async fn update_alert_only<'a, E: SqliteExecutor<'a>>(
+        executor: E,
+        alert: &infused::UpdatedAlert,
+    ) -> Result<()> {
+        let (app_id, tag_id) = Self::destructure_target(&alert.target);
+        let (dim_duration, message_content, tag) =
+            Self::destructure_trigger_action(&alert.trigger_action);
+        query(
+            "UPDATE alerts SET
+                app_id = ?,
+                tag_id = ?,
+                usage_limit = ?,
+                time_frame = ?,
+                dim_duration = ?,
+                message_content = ?,
+                trigger_action_tag = ?
+            WHERE id = ? AND version = ?",
+        )
+        .bind(app_id)
+        .bind(tag_id)
+        .bind(alert.usage_limit)
+        .bind(&alert.time_frame)
+        .bind(dim_duration)
+        .bind(message_content)
+        .bind(tag)
+        .bind(alert.id.id)
+        .bind(alert.id.version)
+        .execute(executor)
+        .await?;
+        Ok(())
+    }
+
+    async fn upgrade_alert_only<'a, E: SqliteExecutor<'a>>(
+        executor: E,
+        alert: &infused::UpdatedAlert,
+    ) -> Result<VersionedId> {
+        let new_id = VersionedId {
+            id: alert.id.id,
+            version: alert.id.version + 1,
+        };
+        let (app_id, tag_id) = Self::destructure_target(&alert.target);
+        let (dim_duration, message_content, tag) =
+            Self::destructure_trigger_action(&alert.trigger_action);
+        query("INSERT INTO alerts VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
+            .bind(new_id.id)
+            .bind(new_id.version)
+            .bind(app_id)
+            .bind(tag_id)
+            .bind(alert.usage_limit)
+            .bind(&alert.time_frame)
+            .bind(dim_duration)
+            .bind(message_content)
+            .bind(tag)
+            .execute(executor)
+            .await?;
+
+        Ok(new_id)
+    }
+
+    async fn insert_reminder_only<'a, E: SqliteExecutor<'a>>(
+        executor: E,
+        alert_id: &VersionedId,
+        reminder: &mut infused::UpdatedReminder,
+    ) -> Result<()> {
+        let id: i64 = query(
+                "INSERT INTO reminders (id, version, alert_id, alert_version, threshold, message)
+                 SELECT COALESCE(MAX(id) + 1, 1), 1, ?, ?, ?, ? FROM reminders LIMIT 1 RETURNING id"
+            )
+            .bind(alert_id.id)
+            .bind(alert_id.version)
+            .bind(reminder.threshold)
+            .bind(&reminder.message)
+            .fetch_one(executor)
+            .await?.get(0);
+        reminder.id = VersionedId { id, version: 1 };
+        Ok(())
+    }
+
+    async fn update_reminder_only<'a, E: SqliteExecutor<'a>>(
+        executor: E,
+        reminder: &mut infused::UpdatedReminder,
+    ) -> Result<()> {
+        let id: i64 = query(
+                "UPDATER reminders SET threshold = ?, message = ?, active = ? WHERE id = ? AND version = ?"
+            )
+            .bind(reminder.threshold)
+            .bind(&reminder.message)
+            .bind(reminder.active)
+            .bind(reminder.id.id)
+            .bind(reminder.id.version)
+            .fetch_one(executor)
+            .await?.get(0);
+        reminder.id = VersionedId { id, version: 1 };
+        Ok(())
+    }
+
+    async fn upgrade_reminder_only<'a, E: SqliteExecutor<'a>>(
+        executor: E,
+        alert_id: &VersionedId,
+        reminder: &mut infused::UpdatedReminder,
+    ) -> Result<()> {
+        reminder.id = VersionedId {
+            id: reminder.id.id,
+            version: reminder.id.version,
+        };
+        query(
+                "INSERT INTO reminders (id, version, alert_id, alert_version, threshold, message, active) VALUES
+                ?, ?, ?, ?, ?, ?, ? FROM reminders"
+            )
+            .bind(reminder.id.id)
+            .bind(reminder.id.version)
+            .bind(alert_id.id)
+            .bind(alert_id.version)
+            .bind(reminder.threshold)
+            .bind(&reminder.message)
+            .bind(reminder.active)
+            .execute(executor)
+            .await?;
+        Ok(())
     }
 
     /// Removes a [Alert]
@@ -810,7 +1066,7 @@ impl Repository {
         &mut self,
         start: Timestamp,
         end: Timestamp,
-    ) -> Result<AppSessionUsages> {
+    ) -> Result<infused::AppSessionUsages> {
         #[derive(FromRow)]
         struct AppSessionUsage {
             app_id: Ref<App>,
