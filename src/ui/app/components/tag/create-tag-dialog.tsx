@@ -1,6 +1,6 @@
 import * as React from "react";
 import { z } from "zod";
-import { useZodForm } from "@/hooks/use-fom";
+import { useZodForm } from "@/hooks/use-form";
 
 import {
   Dialog,
