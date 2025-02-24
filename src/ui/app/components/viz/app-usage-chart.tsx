@@ -41,8 +41,6 @@ export function AppUsageBarChart({
   rangeMaxTicks,
   maxYIsPeriod = false,
   hideXAxis = false,
-  gridVertical = false,
-  gridHorizontal = false,
   gradientBars = false,
   dateTimeFormatter = toHumanDateTime,
   animationsEnabled = true,
@@ -126,16 +124,18 @@ export function AppUsageBarChart({
         },
       },
       grid: {
-        left: "5%",
-        right: "5%",
+        left: "4px",
+        right: "4px",
         top: 0,
-        bottom: hideXAxis ? "0" : "25px",
+        bottom: hideXAxis ? "0" : "35px",
+        // otherwise Y axis takes too much space, even when it's 'hidden'
         containLabel: false,
       },
       xAxis: {
         type: "category",
         data: data.map((d) => d.key),
         axisLabel: {
+          padding: [6, 0, 0, 0],
           formatter: (value: string) =>
             dateTimeFormatter(DateTime.fromMillis(+value)),
         },
@@ -146,9 +146,6 @@ export function AppUsageBarChart({
         axisTick: {
           alignWithLabel: true,
           show: !hideXAxis,
-        },
-        splitLine: {
-          show: gridVertical,
         },
       },
       yAxis: {
@@ -186,11 +183,9 @@ export function AppUsageBarChart({
         },
 
         labelLayout(params) {
-          const diam = _.clamp(
-            0,
-            Math.min(params.rect.width, params.rect.height) * 0.7,
-            32,
-          );
+          let diam = Math.min(params.rect.width, params.rect.height) * 0.7;
+          diam = Math.min(diam, 32);
+          diam = diam < 5 ? 0 : diam;
           return { width: diam, height: diam };
         },
         label: {
@@ -251,7 +246,6 @@ export function AppUsageBarChart({
     barRadius,
     onHover,
     animationsEnabled,
-    gridVertical,
   ]);
 
   return <div ref={chartRef} className={cn("w-full h-full", className)} />;
