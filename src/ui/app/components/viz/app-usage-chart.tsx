@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import * as echarts from "echarts";
 import { DateTime } from "luxon";
 import _ from "lodash";
@@ -185,20 +185,25 @@ export function AppUsageBarChart({
           borderRadius: barRadius ?? 2,
         },
 
+        labelLayout(params) {
+          const diam = _.clamp(
+            0,
+            Math.min(params.rect.width, params.rect.height) * 0.7,
+            32,
+          );
+          return { width: diam, height: diam };
+        },
         label: {
           show: !singleAppId,
           position: "inside",
+          backgroundColor: {
+            image: toDataUrl(app.icon)!,
+          },
           formatter: () => {
-            return `{icon|}`;
+            return `{empty|}`;
           },
           rich: {
-            icon: {
-              backgroundColor: {
-                image: toDataUrl(app.icon)!,
-              },
-              // width: 20,
-              // height: 20,
-            },
+            empty: {},
           },
         },
       })),
