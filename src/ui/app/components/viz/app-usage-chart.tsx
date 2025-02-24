@@ -117,6 +117,8 @@ export function AppUsageBarChart({
 
     const option: echarts.EChartsOption = {
       animation: animationsEnabled,
+      // animationDuration: 300,
+
       tooltip: {
         trigger: "axis",
         axisPointer: {
@@ -228,7 +230,9 @@ export function AppUsageBarChart({
       chart.resize();
     });
 
-    resizeObserver.observe(chartRef.current);
+    chart.on("finished", () => {
+      resizeObserver.observe(chartRef.current!);
+    });
 
     return () => {
       chart.dispose();
