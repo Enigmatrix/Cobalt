@@ -89,7 +89,7 @@ export default function Alerts() {
               itemData={alertsSorted} // this is to trigger a rerender on sort/filter
               height={height}
               width={width}
-              itemSize={96} // 24rem, manually calculated
+              itemSize={112} // 28rem, manually calculated
               itemCount={alertsSorted.length}
             >
               {ListItem}
@@ -102,7 +102,7 @@ export default function Alerts() {
 }
 
 // Virtual list item for react-window. Actual height in style
-// is ignored, instead we use h-24 and h-28 (if last, to show bottom gap).
+// is ignored, instead we use h-28 and h-32 (if last, to show bottom gap).
 // There is a h-4 gap at the top of each item.
 function VirtualListItem({
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -116,7 +116,7 @@ function VirtualListItem({
     // Due to how virtualization works, the last:h-28 triggers for the last item
     // in the *window*, it just happens that due to overscanning that last item
     // is hidden unless it's the actual last item in the list.
-    <div className="flex flex-col px-4 h-24 last:h-28" style={style}>
+    <div className="flex flex-col px-4 h-28 last:h-32" style={style}>
       {/* gap */}
       <div className="h-4" />
       {children}
@@ -149,13 +149,13 @@ function AlertListItem({ alert }: { alert: Alert }) {
     <NavLink
       to={`/alerts/${alert.id}`}
       className={cn(
-        "h-20 shadow-sm rounded-md flex flex-col",
+        "h-24 shadow-sm rounded-md flex flex-col",
         "ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
         "disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none cursor-pointer",
         "bg-card text-card-foreground hover:bg-muted/75 border-border border",
       )}
     >
-      <div className="h-16 flex items-center gap-2 p-4 @container">
+      <div className="h-20 flex items-center gap-2 p-4 @container">
         {alert.target.tag === "App" && app ? (
           <>
             <AppIcon
@@ -247,7 +247,7 @@ function AlertListItem({ alert }: { alert: Alert }) {
           </div>
         </div>
       </div>
-      <div className="mt-0.5 mx-2">
+      <div className="-mt-1 mx-2">
         <TimeProgressBar
           usage_limit={alert.usage_limit}
           current_usage={currentUsage ?? 0}
@@ -276,13 +276,10 @@ function TimeProgressBar({
 
   return (
     <div
-      className={cn(
-        "relative w-full bg-secondary h-1.5 rounded-full",
-        className,
-      )}
+      className={cn("relative w-full bg-secondary h-2 rounded-full", className)}
     >
       <div
-        className="h-full bg-primary rounded-full transition-all"
+        className="h-full bg-primary/90 rounded-full transition-all"
         style={{ width: `${Math.min(100, percentage)}%` }}
       />
       {reminders.map((reminder, index) => {
