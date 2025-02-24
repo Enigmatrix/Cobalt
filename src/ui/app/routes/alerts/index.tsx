@@ -37,12 +37,15 @@ import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
 import { CreateAlertDialog } from "@/components/alert/create-alert-dialog";
 import { MiniAppItem } from "@/routes/tags";
 import { MiniTagItem } from "@/routes/apps";
+import { useAlertsSearch } from "@/hooks/use-search";
+import { SearchBar } from "@/components/search-bar";
 
 export default function Alerts() {
   const today = useToday();
   const alerts = useAlerts();
-  const alertsSorted = alerts;
   const createAlert = useAppState((state) => state.createAlert);
+  const [search, setSearch, alertsFiltered] = useAlertsSearch(alerts);
+  const alertsSorted = alertsFiltered; // TODO: sort
 
   const [start, end] = useMemo(() => [today, today.endOf("day")], [today]);
   const period = hour;
@@ -78,7 +81,14 @@ export default function Alerts() {
           </BreadcrumbList>
         </Breadcrumb>
 
-        <div className="flex-1" />
+        <div className="xl:flex-1 flex-none" />
+
+        <SearchBar
+          className="max-w-80 m-auto xl:m-0"
+          placeholder="Search..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
 
         <CreateAlertDialog
           trigger={
