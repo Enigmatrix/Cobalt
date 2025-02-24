@@ -31,6 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 
 const reminderSchema = z.object({
   threshold: z.number().min(0).max(1),
@@ -76,17 +77,24 @@ export function CreateAlertDialog({
 
   const form = useZodForm({
     schema: formSchema,
-    // assign default values if necessary
+    defaultValues: {
+      reminders: [],
+    },
   });
 
   const handleSubmit = async (values: FormValues) => {
     await onSubmit(values);
     setOpen(false);
-    form.reset();
+    onOpenChange(false);
+  };
+
+  const onOpenChange = (open: boolean) => {
+    setOpen(open);
+    if (!open) form.reset();
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
         {trigger || <Button variant="outline">Create Alert</Button>}
       </DialogTrigger>
@@ -109,6 +117,7 @@ export function CreateAlertDialog({
               render={({ field: { value, onChange, ...field } }) => (
                 <FormItem>
                   <FormLabel>Target</FormLabel>
+                  {/* <FormDescription>Target of the Alert - App or  Tag</FormDescription> */}
                   <FormControl>
                     {/* BUG: Can't scroll inside here??? */}
                     <ChooseTarget
@@ -173,6 +182,96 @@ export function CreateAlertDialog({
                   </FormControl>
                   <FormMessage />
                 </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="trigger_action"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Trigger Action</FormLabel>
+                  <FormControl>
+                    <Select
+                      {...field}
+                      value={field.value?.tag}
+                      onValueChange={(v) => field.onChange({ tag: v })}
+                    >
+                      <SelectTrigger className="hover:bg-muted">
+                        <SelectValue placeholder="Trigger Action" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Kill">Kill</SelectItem>
+                        <SelectItem value="Dim">Dim</SelectItem>
+                        <SelectItem value="Message">Message</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="trigger_action"
+              render={({ field: { value, onChange, ...field } }) => (
+                <>
+                  {value?.tag === "Dim" && (
+                    <FormItem>
+                      <FormLabel>Dim Duration</FormLabel>
+                      <FormControl>
+                        <DurationPicker
+                          showIcon={false}
+                          className="w-full text-foreground"
+                          {...field}
+                          duration={
+                            value?.duration === undefined
+                              ? undefined
+                              : ticksToDuration(value.duration)
+                          }
+                          setDuration={(dur) =>
+                            onChange({
+                              tag: "Dim",
+                              duration:
+                                dur === undefined
+                                  ? undefined
+                                  : durationToTicks(dur),
+                            })
+                          }
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                </>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="trigger_action"
+              render={({ field }) => (
+                <>
+                  {field.value?.tag === "Message" && (
+                    <FormItem>
+                      <FormLabel>Message Content</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          value={field.value.content ?? ""}
+                          onChange={(e) =>
+                            field.onChange({
+                              tag: "Message",
+                              content: e.target.value,
+                            })
+                          }
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                </>
               )}
             />
 
