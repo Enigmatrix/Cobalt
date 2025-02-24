@@ -6,7 +6,7 @@ import {
   BreadcrumbPage,
   BreadcrumbList,
 } from "@/components/ui/breadcrumb";
-import type { Alert } from "@/lib/entities";
+import type { Alert, Reminder } from "@/lib/entities";
 import { Text } from "@/components/ui/text";
 import { cn } from "@/lib/utils";
 import AppIcon from "@/components/app/app-icon";
@@ -26,6 +26,12 @@ import { MiniAppItem } from "@/routes/tags";
 import { MiniTagItem } from "@/routes/apps";
 import { useAlertsSearch } from "@/hooks/use-search";
 import { SearchBar } from "@/components/search-bar";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import type { ClassValue } from "clsx";
 
 export default function Alerts() {
   const alerts = useAlerts();
@@ -143,97 +149,162 @@ function AlertListItem({ alert }: { alert: Alert }) {
     <NavLink
       to={`/alerts/${alert.id}`}
       className={cn(
-        "h-20 shadow-sm rounded-md flex items-center gap-2 p-4 @container",
+        "h-20 shadow-sm rounded-md flex flex-col",
         "ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
         "disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none cursor-pointer",
         "bg-card text-card-foreground hover:bg-muted/75 border-border border",
       )}
     >
-      {alert.target.tag === "App" && app ? (
-        <>
-          <AppIcon buffer={app.icon} className="mx-2 h-10 w-10 flex-shrink-0" />
+      <div className="h-16 flex items-center gap-2 p-4 @container">
+        {alert.target.tag === "App" && app ? (
+          <>
+            <AppIcon
+              buffer={app.icon}
+              className="mx-2 h-10 w-10 flex-shrink-0"
+            />
 
-          <div className="flex flex-col min-w-0">
-            <div className="inline-flex items-center gap-2">
-              <Text className="text-lg font-semibold max-w-72">{app.name}</Text>
-              {appTag && <MiniTagItem tag={appTag} />}
+            <div className="flex flex-col min-w-0">
+              <div className="inline-flex items-center gap-2">
+                <Text className="text-lg font-semibold max-w-72">
+                  {app.name}
+                </Text>
+                {appTag && <MiniTagItem tag={appTag} />}
+              </div>
+              <span className="inline-flex gap-1 items-center text-xs text-card-foreground/50">
+                <Text className="max-w-48">{app.company}</Text>
+                {app.description && (
+                  <>
+                    <p>|</p>
+                    <Text className="max-w-[40rem]">{app.description}</Text>
+                  </>
+                )}
+              </span>
             </div>
-            <span className="inline-flex gap-1 items-center text-xs text-card-foreground/50">
-              <Text className="max-w-48">{app.company}</Text>
-              {app.description && (
-                <>
-                  <p>|</p>
-                  <Text className="max-w-[40rem]">{app.description}</Text>
-                </>
+          </>
+        ) : alert.target.tag === "Tag" && tag ? (
+          <>
+            <TagIcon
+              className="mx-2 h-10 w-10 flex-shrink-0"
+              style={{ color: tag.color }}
+            />
+            <div className="flex flex-col min-w-0 gap-1">
+              <Text className="text-lg font-semibold max-w-72">{tag.name}</Text>
+              {tagApps.length !== 0 && (
+                <HorizontalOverflowList
+                  className="gap-1 h-6"
+                  items={tagApps}
+                  renderItem={(app) => <MiniAppItem key={app.id} app={app} />}
+                  renderOverflowItem={(app) => (
+                    <MiniAppItem key={app.id} app={app} />
+                  )}
+                  renderOverflowSign={(items) => (
+                    <Badge
+                      variant="outline"
+                      style={{
+                        backgroundColor: "rgba(255, 255, 255, 0.2)",
+                      }}
+                      className="whitespace-nowrap ml-1 text-card-foreground/60 rounded-md h-6"
+                    >{`+${items.length}`}</Badge>
+                  )}
+                />
               )}
-            </span>
-          </div>
-        </>
-      ) : alert.target.tag === "Tag" && tag ? (
-        <>
-          <TagIcon
-            className="mx-2 h-10 w-10 flex-shrink-0"
-            style={{ color: tag.color }}
-          />
-          <div className="flex flex-col min-w-0 gap-1">
-            <Text className="text-lg font-semibold max-w-72">{tag.name}</Text>
-            {tagApps.length !== 0 && (
-              <HorizontalOverflowList
-                className="gap-1 h-6 -mb-2"
-                items={tagApps}
-                renderItem={(app) => <MiniAppItem key={app.id} app={app} />}
-                renderOverflowItem={(app) => (
-                  <MiniAppItem key={app.id} app={app} />
-                )}
-                renderOverflowSign={(items) => (
-                  <Badge
-                    variant="outline"
-                    style={{
-                      backgroundColor: "rgba(255, 255, 255, 0.2)",
-                    }}
-                    className="whitespace-nowrap ml-1 text-card-foreground/60 rounded-md h-6"
-                  >{`+${items.length}`}</Badge>
-                )}
-              />
+            </div>
+          </>
+        ) : null}
+        <div className="flex-1" />
+
+        <div className="flex flex-col items-end ml-auto py-2 ">
+          <div className="text-sm flex gap-1 items-center">
+            <span>{alert.trigger_action.tag}</span>
+            {alert.trigger_action.tag === "Dim" && (
+              <div className="flex items-center">
+                <span>(</span>
+                <DurationText ticks={alert.trigger_action.duration} />
+                <span>)</span>
+              </div>
+            )}
+            {alert.trigger_action.tag === "Message" && (
+              <div className="flex items-center">
+                <span>(</span>
+                <Text className="max-w-24">{alert.trigger_action.content}</Text>
+                <span>)</span>
+              </div>
             )}
           </div>
-        </>
-      ) : null}
-      <div className="flex-1" />
 
-      <div className="flex flex-col items-end ml-auto py-2 ">
-        <div className="text-sm flex gap-1 items-center">
-          <span>{alert.trigger_action.tag}</span>
-          {alert.trigger_action.tag === "Dim" && (
-            <div className="flex items-center">
-              <span>(</span>
-              <DurationText ticks={alert.trigger_action.duration} />
-              <span>)</span>
-            </div>
-          )}
-          {alert.trigger_action.tag === "Message" && (
-            <div className="flex items-center">
-              <span>(</span>
-              <Text className="max-w-24">{alert.trigger_action.content}</Text>
-              <span>)</span>
-            </div>
-          )}
-        </div>
-
-        <div className="flex items-baseline text-card-foreground/50">
-          <DurationText
-            className="text-lg text-center text-card-foreground whitespace-nowrap"
-            ticks={currentUsage ?? 0}
-          />
-          <span className="ml-2 mr-1">/</span>
-          <DurationText
-            className="text-center whitespace-nowrap"
-            ticks={alert.usage_limit}
-          />
-          <span className="mr-1">,</span>
-          <span>{alert.time_frame}</span>
+          <div className="flex items-baseline text-card-foreground/50">
+            <DurationText
+              className="text-lg text-center text-card-foreground whitespace-nowrap"
+              ticks={currentUsage ?? 0}
+            />
+            <span className="ml-2 mr-1">/</span>
+            <DurationText
+              className="text-center whitespace-nowrap"
+              ticks={alert.usage_limit}
+            />
+            <span className="mr-1">,</span>
+            <span>{alert.time_frame}</span>
+          </div>
         </div>
       </div>
+      <div className="mt-0.5 mx-2">
+        <TimeProgressBar
+          usage_limit={alert.usage_limit}
+          current_usage={currentUsage ?? 0}
+          reminders={alert.reminders}
+          circleRadius={5}
+        />
+      </div>
     </NavLink>
+  );
+}
+
+function TimeProgressBar({
+  className,
+  usage_limit,
+  current_usage,
+  reminders,
+  circleRadius,
+}: {
+  className?: ClassValue;
+  usage_limit: number;
+  current_usage: number;
+  reminders: Reminder[];
+  circleRadius: number;
+}) {
+  const percentage = (current_usage / usage_limit) * 100;
+
+  return (
+    <div
+      className={cn(
+        "relative w-full bg-secondary h-1.5 rounded-full",
+        className,
+      )}
+    >
+      <div
+        className="h-full bg-primary rounded-full transition-all"
+        style={{ width: `${Math.min(100, percentage)}%` }}
+      />
+      {reminders.map((reminder, index) => {
+        return (
+          <Tooltip key={index}>
+            <TooltipTrigger asChild>
+              <div
+                className="absolute top-1/2 -translate-y-1/2 bg-primary border border-border rounded-full cursor-pointer"
+                style={{
+                  left: `${reminder.threshold * 100}%`,
+                  width: circleRadius * 2,
+                  height: circleRadius * 2,
+                  transform: `translate(-${circleRadius}px, -50%)`,
+                }}
+              />
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{`${reminder.threshold} - ${reminder.message}`}</p>
+            </TooltipContent>
+          </Tooltip>
+        );
+      })}
+    </div>
   );
 }
