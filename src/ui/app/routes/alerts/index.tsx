@@ -6,34 +6,21 @@ import {
   BreadcrumbPage,
   BreadcrumbList,
 } from "@/components/ui/breadcrumb";
-import type { Alert, App, WithGroupedDuration } from "@/lib/entities";
+import type { Alert } from "@/lib/entities";
 import { Text } from "@/components/ui/text";
 import { cn } from "@/lib/utils";
-import type { ClassValue } from "clsx";
-import { DateTime, Duration } from "luxon";
 import AppIcon from "@/components/app/app-icon";
-import {
-  memo,
-  useMemo,
-  useState,
-  type CSSProperties,
-  type ReactNode,
-} from "react";
+import { memo, useMemo, type CSSProperties, type ReactNode } from "react";
 import { DurationText } from "@/components/time/duration-text";
 import { useApps, useAlerts, useApp, useTag } from "@/hooks/use-refresh";
-import { useAppState, type EntityMap } from "@/lib/state";
+import { useAppState } from "@/lib/state";
 import { NavLink } from "react-router";
 import { Plus, TagIcon } from "lucide-react";
-import { useAppDurationsPerPeriod } from "@/hooks/use-repo";
-import { useToday } from "@/hooks/use-today";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { FixedSizeList as List } from "react-window";
 import { HorizontalOverflowList } from "@/components/overflow-list";
 import { Badge } from "@/components/ui/badge";
-import _ from "lodash";
 import { Button } from "@/components/ui/button";
-import { dateTimeToTicks, durationToTicks, hour } from "@/lib/time";
-import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
 import { CreateAlertDialog } from "@/components/alert/create-alert-dialog";
 import { MiniAppItem } from "@/routes/tags";
 import { MiniTagItem } from "@/routes/apps";
@@ -41,29 +28,15 @@ import { useAlertsSearch } from "@/hooks/use-search";
 import { SearchBar } from "@/components/search-bar";
 
 export default function Alerts() {
-  const today = useToday();
   const alerts = useAlerts();
   const createAlert = useAppState((state) => state.createAlert);
   const [search, setSearch, alertsFiltered] = useAlertsSearch(alerts);
   const alertsSorted = alertsFiltered; // TODO: sort
 
-  const [start, end] = useMemo(() => [today, today.endOf("day")], [today]);
-  const period = hour;
-  const {
-    usages,
-    start: loadStart,
-    end: loadEnd,
-  } = useAppDurationsPerPeriod({ start, end, period });
   const ListItem = memo(
     ({ index, style }: { index: number; style: CSSProperties }) => (
       <VirtualListItem style={style}>
-        <AlertListItem
-          alert={alertsSorted[index]}
-          start={loadStart ?? start}
-          end={loadEnd ?? end}
-          period={period}
-          usages={usages}
-        />
+        <AlertListItem alert={alertsSorted[index]} />
       </VirtualListItem>
     ),
   );
@@ -145,32 +118,26 @@ function VirtualListItem({
   );
 }
 
-function AlertListItem({
-  alert,
-  usages,
-  start,
-  end,
-  period,
-}: {
-  alert: Alert;
-  usages: EntityMap<App, WithGroupedDuration<App>[]>;
-  start: DateTime;
-  end: DateTime;
-  period: Duration;
-}) {
+function AlertListItem({ alert }: { alert: Alert }) {
   const app = useApp(alert.target.tag === "App" ? alert.target.id : null);
   const tag = useTag(alert.target.tag === "Tag" ? alert.target.id : null);
+
+  const currentUsage = useMemo(() => {
+    const usages = alert.target.tag === "App" ? app?.usages : tag?.usages;
+    switch (alert.time_frame) {
+      case "Daily":
+        return usages?.today;
+      case "Weekly":
+        return usages?.week;
+      case "Monthly":
+        return usages?.month;
+    }
+  }, [app, tag, alert]);
 
   // App's tag
   const appTag = useTag(app?.tag_id ?? null);
   // Tag's list of Apps
   const tagApps = useApps(tag?.apps ?? []);
-  const usagesFiltered = useMemo(() => {
-    return _(tagApps)
-      .map((app) => [app.id, usages[app.id]])
-      .fromPairs()
-      .value();
-  }, [usages, tagApps]);
 
   return (
     <NavLink
@@ -234,32 +201,39 @@ function AlertListItem({
       ) : null}
       <div className="flex-1" />
 
-      {/* 
-
-      {alert.usages.today > 0 ? (
-        <>
-          <AppUsageBarChart
-            hideXAxis
-            gradientBars
-            maxYIsPeriod
-            data={usagesFiltered}
-            rangeMinTicks={dateTimeToTicks(start)}
-            rangeMaxTicks={dateTimeToTicks(end)}
-            periodTicks={durationToTicks(period)}
-            className="min-w-48 aspect-auto h-20 max-lg:hidden"
-          />
-
-          <div className="flex py-2 rounded-md lg:min-w-20">
-            <div className="flex flex-col items-end ml-auto my-auto">
-              <div className="text-xs text-card-foreground/50">Today</div>
-              <DurationText
-                className="text-lg min-w-8 text-center whitespace-nowrap"
-                ticks={alert.usages.today}
-              />
+      <div className="flex flex-col items-end ml-auto py-2 ">
+        <div className="text-sm flex gap-1 items-center">
+          <span>{alert.trigger_action.tag}</span>
+          {alert.trigger_action.tag === "Dim" && (
+            <div className="flex items-center">
+              <span>(</span>
+              <DurationText ticks={alert.trigger_action.duration} />
+              <span>)</span>
             </div>
-          </div>
-        </>
-      ) : null} */}
+          )}
+          {alert.trigger_action.tag === "Message" && (
+            <div className="flex items-center">
+              <span>(</span>
+              <Text className="max-w-24">{alert.trigger_action.content}</Text>
+              <span>)</span>
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-baseline text-card-foreground/50">
+          <DurationText
+            className="text-lg text-center text-card-foreground whitespace-nowrap"
+            ticks={currentUsage ?? 0}
+          />
+          <span className="ml-2 mr-1">/</span>
+          <DurationText
+            className="text-center whitespace-nowrap"
+            ticks={alert.usage_limit}
+          />
+          <span className="mr-1">,</span>
+          <span>{alert.time_frame}</span>
+        </div>
+      </div>
     </NavLink>
   );
 }
