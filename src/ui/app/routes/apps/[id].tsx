@@ -45,7 +45,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { SearchBar } from "@/components/search-bar";
-import { useSearch } from "@/hooks/use-search";
+import { useTagsSearch } from "@/hooks/use-search";
 import { CreateTagDialog } from "@/components/tag/create-tag-dialog";
 import { TimePeriodUsageCard } from "@/components/usage-card";
 import Heatmap from "@/components/viz/heatmap";
@@ -309,7 +309,7 @@ function ChooseTagPopover({
 }) {
   const createTag = useAppState((state) => state.createTag);
   const tags = useTags();
-  const [query, setQuery, filteredTags] = useSearch(tags, ["name"]);
+  const [query, setQuery, filteredTags] = useTagsSearch(tags);
   const [open, setOpen] = useState(false);
 
   const setTagId = useCallback(
