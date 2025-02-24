@@ -68,7 +68,7 @@ export function ChooseTarget({
   );
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={setOpen} modal>
       <PopoverTrigger asChild>
         <ChooseTargetTrigger {...props} />
       </PopoverTrigger>
