@@ -21,7 +21,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { ChooseTarget } from "@/components/alert/choose-target";
-import type { Target } from "@/lib/entities";
+import type { App, Ref, Tag } from "@/lib/entities";
 import { DurationPicker } from "@/components/time/duration-picker";
 import { durationToTicks, ticksToDuration } from "@/lib/time";
 import {
@@ -33,6 +33,10 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 
+function refSchema<T>() {
+  return z.number().int() as unknown as z.ZodType<Ref<T>>;
+}
+
 const reminderSchema = z.object({
   threshold: z.number().min(0).max(1),
   message: z.string().min(1, "Name is required"),
@@ -40,8 +44,8 @@ const reminderSchema = z.object({
 
 const formSchema = z.object({
   target: z.discriminatedUnion("tag", [
-    z.object({ tag: z.literal("App"), id: z.number().int() }),
-    z.object({ tag: z.literal("Tag"), id: z.number().int() }),
+    z.object({ tag: z.literal("App"), id: refSchema<App>() }),
+    z.object({ tag: z.literal("Tag"), id: refSchema<Tag>() }),
   ]),
   usage_limit: z.number().int(),
   time_frame: z.enum(["Daily", "Weekly", "Monthly"]),
@@ -61,12 +65,6 @@ type FormValues = z.infer<typeof formSchema>;
 interface CreateAlertDialogProps {
   onSubmit: (values: FormValues) => Promise<void>;
   trigger?: React.ReactNode;
-}
-
-function targetValue(value: FormValues["target"]): Target {
-  // this is correct, had to write this since
-  // I was getting `number is not assignable to Ref<T>`
-  return value as unknown as Target;
 }
 
 export function CreateAlertDialog({
@@ -120,7 +118,7 @@ export function CreateAlertDialog({
                   <FormControl>
                     <ChooseTarget
                       {...field}
-                      value={targetValue(value)}
+                      value={value}
                       onValueChanged={onChange}
                       className="w-full justify-start"
                     />
