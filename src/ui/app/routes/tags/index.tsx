@@ -25,7 +25,7 @@ import { useAppState, type EntityMap } from "@/lib/state";
 import { NavLink } from "react-router";
 import { ArrowDownUp, Plus, SortAsc, SortDesc, TagIcon } from "lucide-react";
 import { useAppDurationsPerPeriod } from "@/hooks/use-repo";
-import { useSearch } from "@/hooks/use-search";
+import { useTagsSearch } from "@/hooks/use-search";
 import { useToday } from "@/hooks/use-today";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { FixedSizeList as List } from "react-window";
@@ -82,7 +82,7 @@ export default function Tags() {
   );
   const [sortProperty, setSortProperty] =
     useState<SortProperty>("usages.today");
-  const [search, setSearch, tagsFiltered] = useSearch(tags, ["name"]);
+  const [search, setSearch, tagsFiltered] = useTagsSearch(tags);
   const tagsSorted = useMemo(() => {
     return _(tagsFiltered).orderBy([sortProperty], [sortDirection]).value();
   }, [tagsFiltered, sortDirection, sortProperty]);

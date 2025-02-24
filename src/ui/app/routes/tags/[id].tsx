@@ -53,7 +53,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useNavigate } from "react-router";
 import AppIcon from "@/components/app/app-icon";
-import { useSearch } from "@/hooks/use-search";
+import { useAppsSearch } from "@/hooks/use-search";
 import { MultiSelect } from "@/components/multi-select";
 import { AppBadge } from "@/components/app/app-list-item";
 import { useTimePeriod, type TimePeriod } from "@/hooks/use-today";
@@ -63,11 +63,7 @@ export default function Tag({ params }: Route.ComponentProps) {
   const id = +params.id;
   const tag = useTag(id as Ref<Tag>)!;
   const apps = useApps();
-  const [search, setSearch, appsFiltered] = useSearch(apps, [
-    "name",
-    "company",
-    "description",
-  ]);
+  const [search, setSearch, appsFiltered] = useAppsSearch(apps);
   const appListIds = useMemo(
     () => appsFiltered.map((app) => app.id),
     [appsFiltered],

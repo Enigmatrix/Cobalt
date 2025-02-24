@@ -20,7 +20,7 @@ import { useApp, useApps, useTag, useTags } from "@/hooks/use-refresh";
 import { Text } from "@/components/ui/text";
 import { ChevronDown, ChevronRight, Plus, TagIcon } from "lucide-react";
 import AppIcon from "@/components/app/app-icon";
-import { useSearch } from "@/hooks/use-search";
+import { useTargetsSearch } from "@/hooks/use-search";
 import { CreateTagDialog } from "@/components/tag/create-tag-dialog";
 import { Button, type ButtonProps } from "@/components/ui/button";
 import type { Target } from "@/lib/entities";
@@ -39,17 +39,10 @@ export function ChooseTarget({
   const allApps = useApps();
 
   // TODO: should reset search value after close
-  const [, setAppSearch, filteredApps] = useSearch(allApps, [
-    "name",
-    "company",
-    "description",
-  ]);
-  const [, setTagSearch, filteredTags] = useSearch(allTags, ["name"]);
-
-  function setQuery(val: string) {
-    setAppSearch(val);
-    setTagSearch(val);
-  }
+  const [, setQuery, filteredApps, filteredTags] = useTargetsSearch(
+    allApps,
+    allTags,
+  );
 
   const onValueChanged = useCallback(
     (val: Target) => {

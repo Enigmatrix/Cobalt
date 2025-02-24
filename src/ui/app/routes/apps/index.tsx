@@ -39,7 +39,7 @@ import { DateTime, Duration } from "luxon";
 import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
 import { useToday } from "@/hooks/use-today";
 import { useApps, useTag } from "@/hooks/use-refresh";
-import { useSearch } from "@/hooks/use-search";
+import { useAppsSearch } from "@/hooks/use-search";
 import { DurationText } from "@/components/time/duration-text";
 import type { ClassValue } from "clsx";
 import { useAppDurationsPerPeriod } from "@/hooks/use-repo";
@@ -84,11 +84,7 @@ export default function Apps() {
   const [sortProperty, setSortProperty] =
     useState<SortProperty>("usages.today");
 
-  const [search, setSearch, appsFiltered] = useSearch(apps, [
-    "name",
-    "company",
-    "description",
-  ]);
+  const [search, setSearch, appsFiltered] = useAppsSearch(apps);
   const appsSorted = useMemo(() => {
     return _(appsFiltered).orderBy([sortProperty], [sortDirection]).value();
   }, [appsFiltered, sortDirection, sortProperty]);
