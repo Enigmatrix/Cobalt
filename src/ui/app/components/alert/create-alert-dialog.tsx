@@ -117,9 +117,7 @@ export function CreateAlertDialog({
               render={({ field: { value, onChange, ...field } }) => (
                 <FormItem>
                   <FormLabel>Target</FormLabel>
-                  {/* <FormDescription>Target of the Alert - App or  Tag</FormDescription> */}
                   <FormControl>
-                    {/* BUG: Can't scroll inside here??? */}
                     <ChooseTarget
                       {...field}
                       value={targetValue(value)}
@@ -272,6 +270,75 @@ export function CreateAlertDialog({
                     </FormItem>
                   )}
                 </>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="reminders"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Reminders</FormLabel>
+                  <FormControl>
+                    <div className="space-y-2">
+                      {field.value.map((reminder, index) => (
+                        <div key={index} className="flex gap-2 items-end">
+                          <div className="flex-1 space-y-2">
+                            <Input
+                              type="number"
+                              min={0}
+                              max={1}
+                              step={0.1}
+                              placeholder="Threshold (0-1)"
+                              value={reminder.threshold}
+                              onChange={(e) => {
+                                const newValue = [...field.value];
+                                newValue[index].threshold = parseFloat(
+                                  e.target.value,
+                                );
+                                field.onChange(newValue);
+                              }}
+                            />
+                            <Input
+                              placeholder="Reminder message"
+                              value={reminder.message}
+                              onChange={(e) => {
+                                const newValue = [...field.value];
+                                newValue[index].message = e.target.value;
+                                field.onChange(newValue);
+                              }}
+                            />
+                          </div>
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="icon"
+                            onClick={() => {
+                              const newValue = [...field.value];
+                              newValue.splice(index, 1);
+                              field.onChange(newValue);
+                            }}
+                          >
+                            <span className="sr-only">Delete reminder</span>×
+                          </Button>
+                        </div>
+                      ))}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          field.onChange([
+                            ...field.value,
+                            { threshold: 0.5, message: "" },
+                          ]);
+                        }}
+                      >
+                        Add Reminder
+                      </Button>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
               )}
             />
 
