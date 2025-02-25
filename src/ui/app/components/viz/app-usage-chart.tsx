@@ -136,7 +136,7 @@ export function AppUsageBarChart({
           const seriesValues = Object.fromEntries(
             castedParams.map((v) => [v.seriesId, v.value]),
           );
-          setHoverTickAt(ticksToDateTime(+castedParams[0].name));
+          setHoverTickAt(DateTime.fromMillis(+castedParams[0].name));
           setHoverSeries(seriesValues);
           return "";
         },

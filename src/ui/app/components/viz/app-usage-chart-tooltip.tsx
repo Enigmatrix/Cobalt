@@ -18,7 +18,7 @@ function HoverCard({
 }: {
   app: App;
   usageTicks: number;
-  totalUsageTicks: number;
+  totalUsageTicks?: number;
   at: DateTime;
 }) {
   return (
@@ -32,10 +32,12 @@ function HoverCard({
       <div className="flex-1"></div>
       <div className="flex flex-col items-end text-muted-foreground shrink-0 min-w-max">
         <DurationText className="font-semibold text-sm" ticks={usageTicks} />
-        <span className="inline-flex items-center gap-1 text-xs">
-          <p>/</p>
-          <DurationText ticks={totalUsageTicks} />
-        </span>
+        {totalUsageTicks && (
+          <span className="inline-flex items-center gap-1 text-xs">
+            <p>/</p>
+            <DurationText ticks={totalUsageTicks} />
+          </span>
+        )}
       </div>
     </div>
   );
@@ -68,7 +70,10 @@ export const AppUsageChartTooltipContent = React.forwardRef<
       () => Object.keys(payload).map((id) => +id as Ref<App>),
       [payload],
     );
-    const totalUsageTicks = useMemo(() => _(payload).values().sum(), [payload]);
+    const totalUsageTicks = useMemo(
+      () => (singleAppId ? undefined : _(payload).values().sum()),
+      [singleAppId, payload],
+    );
     const involvedApps = useApps(involvedAppIds);
     const involvedAppSorted = useMemo(
       () =>
