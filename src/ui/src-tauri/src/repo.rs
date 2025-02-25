@@ -115,8 +115,22 @@ pub async fn copy_seed_db(state: State<'_, AppState>) -> AppResult<()> {
     // drop previous state - also drops the db connection
     {
         let mut state = state.write().await;
+        state.assume_init().shutdown().await?;
         *state = Initable::Uninit;
     }
+    
+    fn check_and_remove(file: &str) -> util::error::Result<()> {
+        if std::fs::exists(file)? {
+            std::fs::remove_file(file).context(format!("remove {}", file))?;
+        }
+        Ok(())
+    }
+
+    // remove previous files (especially the non-main.db files)
+    check_and_remove("main.db")?;
+    check_and_remove("main.db-journal")?;
+    check_and_remove("main.db-shm")?;
+    check_and_remove("main.db-wal")?;
 
     std::fs::copy("../../../dev/seed.db", "main.db").context("copy seed.db")?;
 

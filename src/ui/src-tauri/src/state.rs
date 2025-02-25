@@ -58,6 +58,12 @@ impl AppStateInner {
         let db = self.db_pool.get_db().await?;
         Ok(Repository::new(db)?)
     }
+
+    /// Shutdown the app state
+    pub async fn shutdown(&self) -> Result<()> {
+        self.db_pool.shutdown().await?;
+        Ok(())
+    }
 }
 
 #[derive(Default)]

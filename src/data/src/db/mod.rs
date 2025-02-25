@@ -66,6 +66,12 @@ impl DatabasePool {
         let conn = self.pool.acquire().await?;
         Database::new(conn)
     }
+
+    /// Shutdown this DB Pool
+    pub async fn shutdown(&self) -> Result<()> {
+        self.pool.close().await;
+        Ok(())
+    }
 }
 
 /// Database connection stored in the file system.
