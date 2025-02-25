@@ -8,6 +8,7 @@ import { DateTime } from "luxon";
 import { DurationText } from "@/components/time/duration-text";
 import { DateTimeText } from "@/components/time/time-text";
 import { useApps } from "@/hooks/use-refresh";
+import { Text } from "@/components/ui/text";
 
 function HoverCard({
   app,
@@ -24,7 +25,7 @@ function HoverCard({
     <div className="flex items-center gap-2 border-border py-2">
       <AppIcon buffer={app.icon} className="w-6 h-6 shrink-0 ml-2 mr-1" />
       <div className="flex flex-col">
-        <span className="truncate max-w-52 text-base">{app.name}</span>
+        <Text className="text-base max-w-52">{app.name}</Text>
         <DateTimeText className="text-xs text-muted-foreground" datetime={at} />
       </div>
 
@@ -89,7 +90,7 @@ export const AppUsageChartTooltipContent = React.forwardRef<
 
     return (
       <div
-        className={cn("grid min-w-20 items-start gap-1.5 text-xs", className)}
+        className={cn("grid max-w-80 items-start gap-1.5 text-xs", className)}
         ref={ref}
       >
         {highlightedApp && (
@@ -125,12 +126,12 @@ export const AppUsageChartTooltipContent = React.forwardRef<
                       )}
                       <div className="flex flex-1 justify-between items-center">
                         <div className="grid gap-1.5">
-                          <span className="text-muted-foreground truncate max-w-52">
+                          <Text className="text-muted-foreground">
                             {app.name}
-                          </span>
+                          </Text>
                         </div>
                         <DurationText
-                          className="font-mono font-medium tabular-nums text-foreground ml-2"
+                          className="font-mono font-medium tabular-nums text-foreground ml-2 shrink-0"
                           ticks={usageTicks}
                         />
                       </div>

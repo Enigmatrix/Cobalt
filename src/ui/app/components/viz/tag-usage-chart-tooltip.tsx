@@ -8,6 +8,7 @@ import { DurationText } from "@/components/time/duration-text";
 import { DateTimeText } from "@/components/time/time-text";
 import { useTags } from "@/hooks/use-refresh";
 import { TagIcon } from "lucide-react";
+import { Text } from "@/components/ui/text";
 
 function HoverCard({
   tag,
@@ -27,7 +28,7 @@ function HoverCard({
         style={{ color: tag.color }}
       />
       <div className="flex flex-col">
-        <span className="truncate max-w-52 text-base">{tag.name}</span>
+        <Text className="text-base max-w-52">{tag.name}</Text>
         <DateTimeText className="text-xs text-muted-foreground" datetime={at} />
       </div>
 
@@ -92,7 +93,7 @@ export const TagUsageChartTooltipContent = React.forwardRef<
 
     return (
       <div
-        className={cn("grid min-w-20 items-start gap-1.5 text-xs", className)}
+        className={cn("grid max-w-80 items-start gap-1.5 text-xs", className)}
         ref={ref}
       >
         {highlightedTag && (
@@ -128,12 +129,12 @@ export const TagUsageChartTooltipContent = React.forwardRef<
                       )}
                       <div className="flex flex-1 justify-between items-center">
                         <div className="grid gap-1.5">
-                          <span className="text-muted-foreground truncate max-w-52">
+                          <Text className="text-muted-foreground">
                             {tag.name}
-                          </span>
+                          </Text>
                         </div>
                         <DurationText
-                          className="font-mono font-medium tabular-nums text-foreground ml-2"
+                          className="font-mono font-medium tabular-nums text-foreground ml-2 shrink-0"
                           ticks={usageTicks}
                         />
                       </div>
