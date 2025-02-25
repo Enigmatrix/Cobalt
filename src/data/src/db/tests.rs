@@ -524,6 +524,7 @@ async fn insert_reminder_event() -> Result<()> {
 }
 
 pub struct Times {
+    pub now: i64,
     pub day_start: i64,
     pub week_start: i64,
     pub month_start: i64,
@@ -539,6 +540,10 @@ impl ToTicks for Tick {
 
 impl TimeSystem for Times {
     type Ticks = Tick;
+
+    fn now(&self) -> Self::Ticks {
+        Tick(self.now)
+    }
 
     fn day_start(&self, _: bool) -> Self::Ticks {
         Tick(self.day_start)
@@ -727,6 +732,7 @@ mod triggered_alerts {
         let mut mgr = AlertManager::new(db)?;
         let alerts = mgr
             .triggered_alerts(&Times {
+                now: 0,
                 day_start: 0,
                 week_start: 0,
                 month_start: 0,
@@ -775,6 +781,7 @@ mod triggered_alerts {
         let mut mgr = AlertManager::new(db)?;
         let alerts = mgr
             .triggered_alerts(&Times {
+                now: 0,
                 day_start: 0,
                 week_start: 0,
                 month_start: 0,
@@ -833,6 +840,7 @@ mod triggered_alerts {
         let mut mgr = AlertManager::new(db)?;
         let alerts = mgr
             .triggered_alerts(&Times {
+                now: 0,
                 day_start: 0,
                 week_start: 0,
                 month_start: 0,
@@ -902,6 +910,7 @@ mod triggered_alerts {
         let mut mgr = AlertManager::new(db)?;
         let alerts = mgr
             .triggered_alerts(&Times {
+                now: 0,
                 day_start: 0,
                 week_start: 0,
                 month_start: 0,
@@ -993,6 +1002,7 @@ mod triggered_alerts {
         let mut mgr = AlertManager::new(db)?;
         let alerts = mgr
             .triggered_alerts(&Times {
+                now: 100,
                 day_start: 50,
                 week_start: 50,
                 month_start: 50,
@@ -1085,6 +1095,7 @@ mod triggered_alerts {
         let mut mgr = AlertManager::new(db)?;
         let alerts = mgr
             .triggered_alerts(&Times {
+                now: 100,
                 day_start: 0,
                 week_start: 0,
                 month_start: 0,
@@ -1171,6 +1182,7 @@ mod triggered_alerts {
         let mut mgr = AlertManager::new(db)?;
         let alerts = mgr
             .triggered_alerts(&Times {
+                now: 100,
                 day_start: 50,
                 week_start: 0,
                 month_start: 0,
@@ -1257,6 +1269,7 @@ mod triggered_alerts {
         let mut mgr = AlertManager::new(db)?;
         let alerts = mgr
             .triggered_alerts(&Times {
+                now: 100,
                 day_start: 50,
                 week_start: 0,
                 month_start: 0,
@@ -1333,6 +1346,7 @@ mod triggered_alerts {
         let mut mgr = AlertManager::new(db)?;
         let alerts = mgr
             .triggered_alerts(&Times {
+                now: 5000,
                 day_start: 1000,
                 week_start: 50,
                 month_start: 1000,
@@ -1409,6 +1423,7 @@ mod triggered_alerts {
         let mut mgr = AlertManager::new(db)?;
         let alerts = mgr
             .triggered_alerts(&Times {
+                now: 5000,
                 day_start: 1000,
                 week_start: 1000,
                 month_start: 50,
@@ -1511,6 +1526,7 @@ mod triggered_alerts {
         let mut mgr = AlertManager::new(db)?;
         let alerts = mgr
             .triggered_alerts(&Times {
+                now: 5000,
                 day_start: 50,
                 week_start: 0,
                 month_start: 0,
@@ -1613,6 +1629,7 @@ mod triggered_alerts {
         let mut mgr = AlertManager::new(db)?;
         let alerts = mgr
             .triggered_alerts(&Times {
+                now: 5000,
                 day_start: 50,
                 week_start: 0,
                 month_start: 0,
@@ -1878,6 +1895,7 @@ mod triggered_alerts {
         let mut mgr = AlertManager::new(db)?;
         let alerts = mgr
             .triggered_alerts(&Times {
+                now: 5000,
                 day_start: 0,
                 week_start: 0,
                 month_start: 0,
@@ -1972,6 +1990,7 @@ mod triggered_reminders {
         let mut mgr = AlertManager::new(db)?;
         let reminders = mgr
             .triggered_reminders(&Times {
+                now: 5000,
                 day_start: 50,
                 week_start: 0,
                 month_start: 0,
@@ -2019,6 +2038,7 @@ mod triggered_reminders {
         let mut mgr = AlertManager::new(db)?;
         let reminders = mgr
             .triggered_reminders(&Times {
+                now: 5000,
                 day_start: 50,
                 week_start: 0,
                 month_start: 0,
@@ -2066,6 +2086,7 @@ mod triggered_reminders {
         let mut mgr = AlertManager::new(db)?;
         let reminders = mgr
             .triggered_reminders(&Times {
+                now: 5000,
                 day_start: 50,
                 week_start: 0,
                 month_start: 0,
@@ -2111,6 +2132,7 @@ mod triggered_reminders {
         let mut mgr = AlertManager::new(db)?;
         let reminders = mgr
             .triggered_reminders(&Times {
+                now: 5000,
                 day_start: 50,
                 week_start: 0,
                 month_start: 0,
@@ -2156,6 +2178,7 @@ mod triggered_reminders {
         let mut mgr = AlertManager::new(db)?;
         let reminders = mgr
             .triggered_reminders(&Times {
+                now: 5000,
                 day_start: 50,
                 week_start: 0,
                 month_start: 0,
