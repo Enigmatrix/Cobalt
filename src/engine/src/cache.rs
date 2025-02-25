@@ -9,6 +9,7 @@ use util::error::Result;
 use util::future as tokio;
 
 /// Cache for storing information about windows, processes, apps and sessions.
+#[derive(Debug)]
 pub struct Cache {
     // TODO this might be a bad idea, the HWND might be reused by Windows,
     // so another window could be running with the same HWND after the first one closed...
@@ -19,17 +20,19 @@ pub struct Cache {
 
     // An app can have many processes open representing it.
     // A process can have many windows.
-    windows: HashMap<ProcessId, Vec<Window>>,
-    processes: HashMap<Ref<App>, Vec<ProcessId>>,
+    windows: HashMap<ProcessId, HashSet<Window>>,
+    processes: HashMap<Ref<App>, HashSet<ProcessId>>,
 }
 
 /// Details about a [Session].
+#[derive(Debug)]
 pub struct SessionDetails {
     pub session: Ref<Session>,
     pub pid: ProcessId,
 }
 
 /// Details about a [App].
+#[derive(Debug)]
 pub struct AppDetails {
     pub app: Ref<App>,
 }
@@ -95,7 +98,7 @@ impl Cache {
         self.windows
             .entry(created.pid)
             .or_default()
-            .push(ws.window.clone());
+            .insert(ws.window.clone());
 
         Ok(self.sessions.entry(ws).or_insert(created))
     }
@@ -115,7 +118,7 @@ impl Cache {
         self.processes
             .entry(created.app.clone())
             .or_default()
-            .push(process);
+            .insert(process);
 
         Ok(self.apps.entry(process).or_insert(created))
     }
