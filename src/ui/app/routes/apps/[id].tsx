@@ -137,126 +137,131 @@ export default function App({ params }: Route.ComponentProps) {
           </BreadcrumbList>
         </Breadcrumb>
       </header>
-      <div className="flex flex-1 flex-col gap-4 p-4">
-        {/* App Info */}
-        <div className="rounded-xl bg-card border border-border p-6">
-          <div className="flex flex-col gap-4">
-            {/* Header with name and icon */}
-            <div className="flex items-center gap-4">
-              <AppIcon buffer={app.icon} className="w-12 h-12 shrink-0" />
-              <div className="min-w-0 shrink flex flex-col">
-                <div className="min-w-0 flex gap-4">
-                  <EditableText
-                    text={app.name}
-                    className="min-w-0 text-2xl font-semibold grow-0"
-                    buttonClassName="ml-1"
-                    onSubmit={async (v) => await updateApp({ ...app, name: v })}
-                  />
-                  <ChooseTag
-                    tagId={app.tag_id}
-                    setTagId={async (tagId) =>
-                      await updateApp({ ...app, tag_id: tagId })
-                    }
-                    className="min-w-0"
-                  />
+
+      <div className="h-0 flex-auto overflow-auto [scrollbar-gutter:stable]">
+        <div className="flex flex-col gap-4 p-4">
+          {/* App Info */}
+          <div className="rounded-xl bg-card border border-border p-6">
+            <div className="flex flex-col gap-4">
+              {/* Header with name and icon */}
+              <div className="flex items-center gap-4">
+                <AppIcon buffer={app.icon} className="w-12 h-12 shrink-0" />
+                <div className="min-w-0 shrink flex flex-col">
+                  <div className="min-w-0 flex gap-4">
+                    <EditableText
+                      text={app.name}
+                      className="min-w-0 text-2xl font-semibold grow-0"
+                      buttonClassName="ml-1"
+                      onSubmit={async (v) =>
+                        await updateApp({ ...app, name: v })
+                      }
+                    />
+                    <ChooseTag
+                      tagId={app.tag_id}
+                      setTagId={async (tagId) =>
+                        await updateApp({ ...app, tag_id: tagId })
+                      }
+                      className="min-w-0"
+                    />
+                  </div>
+                  <Text className="text-muted-foreground">{app.company}</Text>
                 </div>
-                <Text className="text-muted-foreground">{app.company}</Text>
-              </div>
-              <div className="flex-1" />
-              <ColorPicker
-                className="min-w-0 w-fit"
-                color={color}
-                onChange={setColor}
-              />
-            </div>
-
-            {/* Description */}
-            <EditableText
-              className="text-muted-foreground self-start"
-              buttonClassName="text-muted-foreground/50"
-              text={app.description}
-              onSubmit={async (v) =>
-                await updateApp({ ...app, description: v })
-              }
-            />
-
-            {/* App Identity */}
-            <div className="text-sm inline-flex border-border border rounded-lg overflow-hidden max-w-fit min-w-0 bg-muted/30 items-center">
-              <div className="bg-muted px-3 py-1.5 border-r border-border font-medium">
-                {app.identity.tag === "Uwp" ? "UWP" : "Win32"}
+                <div className="flex-1" />
+                <ColorPicker
+                  className="min-w-0 w-fit"
+                  color={color}
+                  onChange={setColor}
+                />
               </div>
 
-              <Text className="font-mono pl-3 pr-1 py-1.5 text-muted-foreground">
-                {app.identity.tag === "Uwp"
-                  ? app.identity.aumid
-                  : app.identity.path}
-              </Text>
-              <Button
-                variant="ghost"
-                className="h-auto p-2 rounded-none rounded-r-lg text-muted-foreground"
-                onClick={() =>
-                  copy(
-                    app.identity.tag === "Uwp"
-                      ? app.identity.aumid
-                      : app.identity.path,
-                  )
+              {/* Description */}
+              <EditableText
+                className="text-muted-foreground self-start"
+                buttonClassName="text-muted-foreground/50"
+                text={app.description}
+                onSubmit={async (v) =>
+                  await updateApp({ ...app, description: v })
                 }
-              >
-                {hasCopied ? <Check /> : <Copy />}
-              </Button>
+              />
+
+              {/* App Identity */}
+              <div className="text-sm inline-flex border-border border rounded-lg overflow-hidden max-w-fit min-w-0 bg-muted/30 items-center">
+                <div className="bg-muted px-3 py-1.5 border-r border-border font-medium">
+                  {app.identity.tag === "Uwp" ? "UWP" : "Win32"}
+                </div>
+
+                <Text className="font-mono pl-3 pr-1 py-1.5 text-muted-foreground">
+                  {app.identity.tag === "Uwp"
+                    ? app.identity.aumid
+                    : app.identity.path}
+                </Text>
+                <Button
+                  variant="ghost"
+                  className="h-auto p-2 rounded-none rounded-r-lg text-muted-foreground"
+                  onClick={() =>
+                    copy(
+                      app.identity.tag === "Uwp"
+                        ? app.identity.aumid
+                        : app.identity.path,
+                    )
+                  }
+                >
+                  {hasCopied ? <Check /> : <Copy />}
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="grid grid-cols-1 auto-rows-min gap-4 md:grid-cols-3">
-          <AppUsageBarChartCard
-            timePeriod="day"
-            period={hour}
-            xAxisLabelFormatter={hour24Formatter}
-            appId={app.id}
-          />
-          <AppUsageBarChartCard
-            timePeriod="week"
-            period={day}
-            xAxisLabelFormatter={weekDayFormatter}
-            appId={app.id}
-          />
-          <AppUsageBarChartCard
-            timePeriod="month"
-            period={day}
-            xAxisLabelFormatter={monthDayFormatter}
-            appId={app.id}
-          />
-        </div>
-        <TimePeriodUsageCard
-          timePeriod="year"
-          usage={yearUsage}
-          totalUsage={yearTotalUsage}
-          interval={yearInterval}
-          onIntervalChanged={setYearInterval}
-          isLoading={isYearDataLoading}
-        >
-          <div className="p-4">
-            <Heatmap
-              data={yearData}
-              scaling={scaling}
-              startDate={yearRangeStart ?? yearInterval.start}
-              fullCellColorRgb={app.color}
-              innerClassName="min-h-[200px]"
-              firstDayOfMonthClassName="stroke-card-foreground/50"
+          <div className="grid grid-cols-1 auto-rows-min gap-4 md:grid-cols-3">
+            <AppUsageBarChartCard
+              timePeriod="day"
+              period={hour}
+              xAxisLabelFormatter={hour24Formatter}
+              appId={app.id}
+            />
+            <AppUsageBarChartCard
+              timePeriod="week"
+              period={day}
+              xAxisLabelFormatter={weekDayFormatter}
+              appId={app.id}
+            />
+            <AppUsageBarChartCard
+              timePeriod="month"
+              period={day}
+              xAxisLabelFormatter={monthDayFormatter}
               appId={app.id}
             />
           </div>
-        </TimePeriodUsageCard>
+          <TimePeriodUsageCard
+            timePeriod="year"
+            usage={yearUsage}
+            totalUsage={yearTotalUsage}
+            interval={yearInterval}
+            onIntervalChanged={setYearInterval}
+            isLoading={isYearDataLoading}
+          >
+            <div className="p-4">
+              <Heatmap
+                data={yearData}
+                scaling={scaling}
+                startDate={yearRangeStart ?? yearInterval.start}
+                fullCellColorRgb={app.color}
+                innerClassName="min-h-[200px]"
+                firstDayOfMonthClassName="stroke-card-foreground/50"
+                appId={app.id}
+              />
+            </div>
+          </TimePeriodUsageCard>
 
-        <div className="rounded-xl bg-muted/50 overflow-hidden flex flex-col border border-border">
-          <Gantt
-            usages={onlyAppSessionUsages}
-            usagesLoading={appSessionUsagesLoading}
-            defaultExpanded={{ [app.id]: true }}
-            rangeStart={dayRange.start}
-            rangeEnd={dayRange.end}
-          />
+          <div className="rounded-xl bg-muted/50 overflow-hidden flex flex-col border border-border">
+            <Gantt
+              usages={onlyAppSessionUsages}
+              usagesLoading={appSessionUsagesLoading}
+              defaultExpanded={{ [app.id]: true }}
+              rangeStart={dayRange.start}
+              rangeEnd={dayRange.end}
+            />
+          </div>
         </div>
       </div>
     </>

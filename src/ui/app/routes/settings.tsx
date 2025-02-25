@@ -51,19 +51,21 @@ export default function Settings() {
           </BreadcrumbList>
         </Breadcrumb>
       </header>
-      <div className="flex flex-1 flex-col gap-4 p-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>Appearance</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Setting
-              title="Theme"
-              description="Choose a theme for the app"
-              action={<ThemeSwitch value={theme} onValueChange={setTheme} />}
-            />
-          </CardContent>
-        </Card>
+      <div className="h-0 flex-auto overflow-auto [scrollbar-gutter:stable]">
+        <div className="flex flex-col gap-4 p-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Appearance</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Setting
+                title="Theme"
+                description="Choose a theme for the app"
+                action={<ThemeSwitch value={theme} onValueChange={setTheme} />}
+              />
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </>
   );
