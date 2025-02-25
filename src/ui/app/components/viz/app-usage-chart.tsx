@@ -145,14 +145,14 @@ export function AppUsageBarChart({
         left: "4px",
         right: "4px",
         top: 0,
-        bottom: hideXAxis ? "0" : "35px",
-        // otherwise Y axis takes too much space, even when it's 'hidden'
-        containLabel: false,
+        bottom: hideXAxis ? "0" : "15px",
+        containLabel: true,
       },
       xAxis: {
         type: "category",
         data: data.map((d) => d.key),
         axisLabel: {
+          show: !hideXAxis,
           padding: [6, 0, 0, 0],
           formatter: (value: string) =>
             dateTimeFormatter(DateTime.fromMillis(+value)),
@@ -168,8 +168,12 @@ export function AppUsageBarChart({
       },
       yAxis: {
         type: "value",
+        min: 0,
         max: maxYIsPeriod ? periodTicks : undefined,
         show: false,
+        axisLabel: {
+          formatter: () => "",
+        },
       },
       series: involvedApps.map((app) => ({
         id: app.id,
