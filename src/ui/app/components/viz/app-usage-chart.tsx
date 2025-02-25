@@ -246,7 +246,7 @@ export function AppUsageBarChart({
     });
 
     const resizeObserver = new ResizeObserver(() => {
-      chart.resize();
+      requestAnimationFrame(() => chart.resize());
     });
 
     chart.on("finished", () => {
