@@ -180,7 +180,7 @@ export async function updateTagApps(
   return await invoke("update_tag_apps", { tagId, removedApps, addedApps });
 }
 
-export async function createTag(tag: CreateTag): Promise<Ref<Tag>> {
+export async function createTag(tag: CreateTag): Promise<Tag> {
   return await invoke("create_tag", { tag });
 }
 

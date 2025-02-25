@@ -118,9 +118,12 @@ pub async fn copy_seed_db(state: State<'_, AppState>) -> AppResult<()> {
         state.assume_init().shutdown().await?;
         *state = Initable::Uninit;
     }
-    
+
     fn check_and_remove(file: &str) -> util::error::Result<()> {
-        if std::fs::exists(file)? {
+        if std::fs::metadata(file)
+            .map(|f| f.is_file())
+            .unwrap_or(false)
+        {
             std::fs::remove_file(file).context(format!("remove {}", file))?;
         }
         Ok(())
@@ -197,7 +200,7 @@ pub async fn update_tag_apps(
 pub async fn create_tag(
     state: State<'_, AppState>,
     tag: infused::CreateTag,
-) -> AppResult<Ref<Tag>> {
+) -> AppResult<infused::Tag> {
     let mut repo = {
         let mut state = state.write().await;
         state.assume_init_mut().get_repo().await?

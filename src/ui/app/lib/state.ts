@@ -122,23 +122,13 @@ export const useAppState = create<AppState>((set) => {
       );
     },
     createTag: async (tag) => {
-      const tagId = await createTag(tag);
+      const newTag = await createTag(tag);
       set((state) =>
         produce((draft: AppState) => {
-          draft.tags[tagId] = {
-            id: tagId,
-            ...tag,
-            apps: [],
-            usages: {
-              today: 0,
-              week: 0,
-              month: 0,
-            },
-          };
+          draft.tags[newTag.id] = newTag;
         })(state),
       );
-
-      return tagId;
+      return newTag.id;
     },
     removeTag: async (tagId) => {
       await removeTag(tagId);
