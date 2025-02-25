@@ -53,33 +53,35 @@ export default function Home() {
           </BreadcrumbList>
         </Breadcrumb>
       </header>
-      <div className="flex flex-1 flex-col gap-4 p-4">
-        <div className="grid grid-cols-1 auto-rows-min gap-4 md:grid-cols-3">
-          <AppUsageBarChartCard
-            timePeriod="day"
-            period={hour}
-            xAxisLabelFormatter={hour24Formatter}
-          />
-          <AppUsageBarChartCard
-            timePeriod="week"
-            period={day}
-            xAxisLabelFormatter={weekDayFormatter}
-          />
-          <AppUsageBarChartCard
-            timePeriod="month"
-            period={day}
-            xAxisLabelFormatter={monthDayFormatter}
-          />
-        </div>
-        <div className="rounded-xl bg-muted/50 overflow-hidden flex flex-col border border-border">
-          <Gantt
-            usages={usages}
-            usagesLoading={usagesLoading}
-            interactionPeriods={interactions}
-            interactionPeriodsLoading={interactionPeriodsLoading}
-            rangeStart={range.start}
-            rangeEnd={range.end}
-          />
+      <div className="h-0 flex-auto overflow-auto [scrollbar-gutter:stable_both-edges]">
+        <div className="flex flex-col gap-4 p-4 overflow-y-auto">
+          <div className="grid grid-cols-1 auto-rows-min gap-4 md:grid-cols-3">
+            <AppUsageBarChartCard
+              timePeriod="day"
+              period={hour}
+              xAxisLabelFormatter={hour24Formatter}
+            />
+            <AppUsageBarChartCard
+              timePeriod="week"
+              period={day}
+              xAxisLabelFormatter={weekDayFormatter}
+            />
+            <AppUsageBarChartCard
+              timePeriod="month"
+              period={day}
+              xAxisLabelFormatter={monthDayFormatter}
+            />
+          </div>
+          <div className="rounded-xl bg-muted/50 overflow-hidden flex flex-col border border-border">
+            <Gantt
+              usages={usages}
+              usagesLoading={usagesLoading}
+              interactionPeriods={interactions}
+              interactionPeriodsLoading={interactionPeriodsLoading}
+              rangeStart={range.start}
+              rangeEnd={range.end}
+            />
+          </div>
         </div>
       </div>
     </>
