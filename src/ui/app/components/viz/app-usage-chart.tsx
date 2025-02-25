@@ -51,6 +51,7 @@ export function AppUsageBarChart({
   const apps = useAppState((state) => state.apps);
   const { handleStaleApps } = useRefresh();
   const [hoveredAppId, setHoveredAppId] = useState<Ref<App> | null>(null);
+  const [hoverSeries, setHoverSeries] = useState<EntityMap<App, number>>({});
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstanceRef = useRef<echarts.ECharts | null>(null);
 
@@ -123,6 +124,15 @@ export function AppUsageBarChart({
         trigger: "axis",
         axisPointer: {
           type: "shadow",
+        },
+        formatter(params) {
+          const castedParams =
+            params as echarts.DefaultLabelFormatterCallbackParams[];
+          const seriesValues = Object.fromEntries(
+            castedParams.map((v) => [v.seriesId, v.value]),
+          );
+          setHoverSeries(seriesValues);
+          return "";
         },
       },
       grid: {
