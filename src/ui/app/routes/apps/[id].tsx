@@ -208,7 +208,7 @@ export default function App({ params }: Route.ComponentProps) {
           </div>
         </div>
 
-        <div className="grid auto-rows-min gap-4 md:grid-cols-3">
+        <div className="grid grid-cols-1 auto-rows-min gap-4 md:grid-cols-3">
           <AppUsageBarChartCard
             timePeriod="day"
             period={hour}
