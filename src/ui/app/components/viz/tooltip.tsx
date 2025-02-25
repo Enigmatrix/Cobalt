@@ -49,6 +49,7 @@ export function Tooltip({
       }
 
       tooltip.style.transform = `translate(${x}px, ${y}px)`;
+      tooltip.style.visibility = "inherit";
     };
 
     const handleMouseMove = (e: MouseEvent) => {
@@ -67,11 +68,9 @@ export function Tooltip({
       setShouldRender(false);
     };
 
-    if (show) {
-      target.addEventListener("mouseenter", handleMouseEnter);
-      target.addEventListener("mouseleave", handleMouseLeave);
-      target.addEventListener("mousemove", handleMouseMove);
-    }
+    target.addEventListener("mouseenter", handleMouseEnter);
+    target.addEventListener("mouseleave", handleMouseLeave);
+    target.addEventListener("mousemove", handleMouseMove);
 
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
@@ -79,14 +78,17 @@ export function Tooltip({
       target.removeEventListener("mouseleave", handleMouseLeave);
       target.removeEventListener("mousemove", handleMouseMove);
     };
-  }, [show, targetRef, delta]);
+  }, [targetRef, delta]);
 
   if (!show || !shouldRender) return null;
 
   return createPortal(
     <div
       ref={tooltipRef}
-      className={cn(className)}
+      className={cn(
+        "rounded-lg border border-border bg-background px-2.5 py-1.5 shadow-xl",
+        className,
+      )}
       style={{
         position: "fixed",
         left: 0,
@@ -94,6 +96,7 @@ export function Tooltip({
         pointerEvents: "none",
         zIndex: 9999,
         transform: "translate(0, 0)",
+        visibility: "hidden",
       }}
     >
       {children}

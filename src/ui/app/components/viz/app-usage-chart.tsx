@@ -9,6 +9,8 @@ import { toDataUrl } from "@/components/app/app-icon";
 import type { App, Ref, WithGroupedDuration } from "@/lib/entities";
 import type { ClassValue } from "clsx";
 import { cn } from "@/lib/utils";
+import { Tooltip } from "@/components/viz/tooltip";
+import { AppUsageChartTooltipContent } from "@/components/viz/app-usage-chart-tooltip";
 
 export interface AppUsageBarChartProps {
   data: EntityMap<App, WithGroupedDuration<App>[]>;
@@ -52,6 +54,7 @@ export function AppUsageBarChart({
   const { handleStaleApps } = useRefresh();
   const [hoveredAppId, setHoveredAppId] = useState<Ref<App> | null>(null);
   const [hoverSeries, setHoverSeries] = useState<EntityMap<App, number>>({});
+  const [hoverTickAt, setHoverTickAt] = useState<number>(0);
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstanceRef = useRef<echarts.ECharts | null>(null);
 
@@ -131,6 +134,7 @@ export function AppUsageBarChart({
           const seriesValues = Object.fromEntries(
             castedParams.map((v) => [v.seriesId, v.value]),
           );
+          setHoverTickAt(+castedParams[0].name);
           setHoverSeries(seriesValues);
           return "";
         },
@@ -217,10 +221,11 @@ export function AppUsageBarChart({
     } satisfies echarts.EChartsOption;
 
     chart.on("mouseover", (params) => {
-      setHoveredAppId(params.id as Ref<App>);
+      const appId = +(params.seriesId ?? 0) as Ref<App>;
+      setHoveredAppId(appId);
       if (onHover) {
         onHover({
-          id: params.id as Ref<App>,
+          id: appId,
           duration: params.value as number,
           group: params.axisValue as number,
         });
@@ -262,5 +267,17 @@ export function AppUsageBarChart({
     animationsEnabled,
   ]);
 
-  return <div ref={chartRef} className={cn("w-full h-full", className)} />;
+  return (
+    <div ref={chartRef} className={cn("w-full h-full", className)}>
+      <Tooltip targetRef={chartRef} show={hoveredAppId !== null}>
+        <AppUsageChartTooltipContent
+          hoveredAppId={hoveredAppId}
+          singleAppId={singleAppId}
+          payload={hoverSeries}
+          at={hoverTickAt}
+          maximumApps={10}
+        />
+      </Tooltip>
+    </div>
+  );
 }
