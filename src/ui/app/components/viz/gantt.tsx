@@ -10,6 +10,8 @@ import {
   ChevronDown,
   LaptopIcon,
   Loader2Icon,
+  KeyboardIcon,
+  MouseIcon,
 } from "lucide-react";
 import { DateTime } from "luxon";
 import type {
@@ -176,11 +178,13 @@ function InteractionPeriodBars({
   rangeStart,
   rangeEnd,
   timeUnit,
+  setHoverInteractionPeriod,
 }: {
   interactionPeriods: InteractionPeriod[];
   rangeStart: DateTime;
   rangeEnd: DateTime;
   timeUnit: TimeUnit;
+  setHoverInteractionPeriod: (ip: InteractionPeriod | null) => void;
 }) {
   return (
     <>
@@ -193,6 +197,8 @@ function InteractionPeriodBars({
           rangeStart={rangeStart}
           rangeEnd={rangeEnd}
           timeUnit={timeUnit}
+          onMouseOver={() => setHoverInteractionPeriod(interactionPeriod)}
+          onMouseLeave={() => setHoverInteractionPeriod(null)}
         />
       ))}
     </>
@@ -291,6 +297,8 @@ export function Gantt({
     defaultExpanded ?? {},
   );
   const [hoverUsage, setHoverUsage] = useState<HoverData | null>(null);
+  const [hoverInteractionPeriod, setHoverInteractionPeriod] =
+    useState<InteractionPeriod | null>(null);
 
   const timeUnit = useMemo(
     () => getTimeUnits(rangeStart, rangeEnd),
@@ -360,6 +368,34 @@ export function Gantt({
           )}
         </div>
       </Tooltip>
+
+      <Tooltip show={hoverInteractionPeriod !== null} targetRef={ref}>
+        <div className="max-w-[800px]">
+          {hoverInteractionPeriod && (
+            <div className={cn("flex flex-col")}>
+              <div className="flex items-center gap-1 text-sm">
+                <Text className="text-base">Interaction</Text>
+                <KeyboardIcon size={16} className="ml-4" />
+                <div>{hoverInteractionPeriod.key_strokes}</div>
+                <MouseIcon size={16} className="ml-2" />
+                <div>{hoverInteractionPeriod.mouse_clicks}</div>
+              </div>
+              <div className="flex items-center text-muted-foreground gap-1 text-xs">
+                <DateTimeText ticks={hoverInteractionPeriod.start} /> -
+                <DateTimeText ticks={hoverInteractionPeriod.end} />
+                (
+                <DurationText
+                  ticks={
+                    hoverInteractionPeriod.end - hoverInteractionPeriod.start
+                  }
+                />
+                )
+              </div>
+            </div>
+          )}
+        </div>
+      </Tooltip>
+
       <div className="bg-transparent overflow-hidden flex text-muted-foreground">
         {/* Fixed left column */}
         <div className="w-[300px] flex-shrink-0">
@@ -477,6 +513,7 @@ export function Gantt({
                 <div className="h-[52px] relative">
                   <div className="absolute inset-x-0 top-4">
                     <InteractionPeriodBars
+                      setHoverInteractionPeriod={setHoverInteractionPeriod}
                       interactionPeriods={interactionPeriods}
                       rangeStart={rangeStart}
                       rangeEnd={rangeEnd}
