@@ -54,7 +54,9 @@ export function AppUsageBarChart({
   const { handleStaleApps } = useRefresh();
   const [hoveredAppId, setHoveredAppId] = useState<Ref<App> | null>(null);
   const [hoverSeries, setHoverSeries] = useState<EntityMap<App, number>>({});
-  const [hoverTickAt, setHoverTickAt] = useState<number>(0);
+  const [hoverTickAt, setHoverTickAt] = useState<DateTime>(
+    DateTime.fromSeconds(0),
+  );
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstanceRef = useRef<echarts.ECharts | null>(null);
 
@@ -134,7 +136,7 @@ export function AppUsageBarChart({
           const seriesValues = Object.fromEntries(
             castedParams.map((v) => [v.seriesId, v.value]),
           );
-          setHoverTickAt(+castedParams[0].name);
+          setHoverTickAt(ticksToDateTime(+castedParams[0].name));
           setHoverSeries(seriesValues);
           return "";
         },
@@ -274,7 +276,7 @@ export function AppUsageBarChart({
           hoveredAppId={hoveredAppId}
           singleAppId={singleAppId}
           payload={hoverSeries}
-          at={hoverTickAt}
+          dt={hoverTickAt}
           maximumApps={10}
         />
       </Tooltip>

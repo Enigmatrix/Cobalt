@@ -244,6 +244,7 @@ export default function App({ params }: Route.ComponentProps) {
               fullCellColorRgb={app.color}
               innerClassName="min-h-[200px]"
               firstDayOfMonthClassName="stroke-card-foreground/50"
+              appId={app.id}
             />
           </div>
         </TimePeriodUsageCard>

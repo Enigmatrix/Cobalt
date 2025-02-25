@@ -288,6 +288,7 @@ export default function Tag({ params }: Route.ComponentProps) {
               fullCellColorRgb={tag.color}
               innerClassName="min-h-[200px]"
               firstDayOfMonthClassName="stroke-card-foreground/50"
+              tagId={tag.id}
             />
           </div>
         </TimePeriodUsageCard>
