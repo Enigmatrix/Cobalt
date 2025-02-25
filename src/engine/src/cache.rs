@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::future::Future;
 
 use data::entities::{App, Ref, Session};
@@ -128,6 +128,30 @@ impl Cache {
     // pub async fn get_or_insert_app_for_process(&mut self, process: Process, create: impl Future<Output = Result<AppDetails>>) -> Result<&AppDetails> {
     //     unimplemented!()
     // }
+
+    /// Retains all process for windows in the list, and removes the rest
+    /// of the process and windows not in the list.
+    pub fn retain_cache(&mut self) -> Result<()> {
+        self.windows.retain(|pid, windows| {
+            // check if window is alive by checking if the pid() calls
+            // still succeeds and returns the same pid as previously
+            // returned to the engine
+            windows.retain(|window| window.pid().ok() == Some(*pid));
+            !windows.is_empty()
+        });
+        let alive_windows = self.windows.values().flatten().collect::<HashSet<_>>();
+
+        // retain only sessions and apps for which their windows and apps that are alive
+        self.sessions
+            .retain(|ws, _| alive_windows.contains(&ws.window));
+        self.apps.retain(|pid, _| self.windows.contains_key(pid));
+        // retain only app refs for procesess that are alive
+        self.processes.retain(|_, pids| {
+            pids.retain(|pid| self.windows.contains_key(pid));
+            !pids.is_empty()
+        });
+        Ok(())
+    }
 }
 
 #[tokio::test]

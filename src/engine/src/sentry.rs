@@ -27,6 +27,12 @@ impl Sentry {
 
     /// Run the [Sentry] to check for triggered alerts and reminders and take action on them.
     pub async fn run(&mut self, now: PlatformTimestamp) -> Result<()> {
+        // Retain alive entries in cache before we start processing
+        // - avoids dimming dead windows / killing dead processes
+        {
+            let mut cache = self.cache.lock().await;
+            cache.retain_cache()?;
+        }
         let alerts_hits = self.mgr.triggered_alerts(&now).await?;
         for triggered_alert in alerts_hits {
             self.handle_alert(&triggered_alert, now).await?;
