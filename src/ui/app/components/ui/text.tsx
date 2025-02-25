@@ -10,7 +10,7 @@ export function Text({
 }) {
   return (
     <div className={cn("truncate", className)} title={children}>
-      {children}
+      {children || <span className="opacity-50 font-mono">Empty</span>}
     </div>
   );
 }
