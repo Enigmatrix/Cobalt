@@ -252,7 +252,7 @@ export default function Tag({ params }: Route.ComponentProps) {
           </div>
         </div>
 
-        <div className="grid auto-rows-min gap-4 md:grid-cols-3">
+        <div className="grid grid-cols-1 auto-rows-min gap-4 md:grid-cols-3">
           <TagUsageBarChartCard
             timePeriod="day"
             period={hour}
@@ -288,6 +288,7 @@ export default function Tag({ params }: Route.ComponentProps) {
               fullCellColorRgb={tag.color}
               innerClassName="min-h-[200px]"
               firstDayOfMonthClassName="stroke-card-foreground/50"
+              tagId={tag.id}
             />
           </div>
         </TimePeriodUsageCard>

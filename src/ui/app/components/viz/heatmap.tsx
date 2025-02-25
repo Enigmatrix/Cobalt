@@ -3,10 +3,12 @@ import { useMemo, useRef, useState } from "react";
 import { DateTime, Interval } from "luxon";
 import type { ClassValue } from "clsx";
 import { cn } from "@/lib/utils";
-import { DateTimeText } from "@/components/time/time-text";
-import { DurationText } from "@/components/time/duration-text";
 import { hexToRgb } from "@/lib/color-utils";
-import { HScrollView } from "../hscroll-view";
+import { HScrollView } from "@/components/hscroll-view";
+import { Tooltip } from "@/components/viz/tooltip";
+import { AppUsageChartTooltipContent } from "@/components/viz/app-usage-chart-tooltip";
+import { TagUsageChartTooltipContent } from "@/components/viz/tag-usage-chart-tooltip";
+import type { App, Ref, Tag } from "@/lib/entities";
 
 function rotateArray<T>(arr: T[], n: number) {
   return arr.slice(n).concat(arr.slice(0, n));
@@ -23,6 +25,8 @@ export interface HeatmapProps {
   firstDayOfMonthClassName?: ClassValue;
   // returns between 0 and 1
   scaling: (value: number) => number;
+  appId?: Ref<App>;
+  tagId?: Ref<Tag>;
 }
 
 export interface HeatmapData {
@@ -61,6 +65,8 @@ const Heatmap: React.FC<HeatmapProps> = ({
   emptyCellColorRgb = "hsl(var(--muted))",
   fullCellColorRgb = "#00FF00",
   scaling,
+  appId,
+  tagId,
 }) => {
   const [tooltipData, setTooltipData] = useState<{
     x: number;
@@ -71,6 +77,7 @@ const Heatmap: React.FC<HeatmapProps> = ({
 
   const startWeek = useMemo(() => startDate.startOf("week"), [startDate]);
   const ref = useRef<SVGSVGElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
 
   const heatmapData = useMemo(() => {
     const result: HeatmapData[] = [];
@@ -175,6 +182,7 @@ const Heatmap: React.FC<HeatmapProps> = ({
   return (
     <HScrollView className={cn("relative overflow-x-auto", className)}>
       <div
+        ref={containerRef}
         className={cn(innerClassName)}
         style={{ aspectRatio: width / height }}
       >
@@ -189,21 +197,24 @@ const Heatmap: React.FC<HeatmapProps> = ({
           {renderAxes()}
         </svg>
       </div>
-      {tooltipData && (
-        <div
-          className="absolute bg-card p-2 border border-border rounded shadow text-sm pointer-events-none"
-          style={{
-            left: `${tooltipData.x + 10}px`,
-            top: `${tooltipData.y + 10}px`,
-          }}
-        >
-          <DateTimeText
-            datetime={tooltipData.date}
-            className="font-semibold whitespace-nowrap"
+      <Tooltip targetRef={containerRef} show={tooltipData !== undefined}>
+        {appId && (
+          <AppUsageChartTooltipContent
+            hoveredAppId={null}
+            singleAppId={appId}
+            payload={{ [appId]: tooltipData?.value ?? 0 }}
+            dt={tooltipData?.date ?? DateTime.fromSeconds(0)}
           />
-          <DurationText ticks={tooltipData.value} />
-        </div>
-      )}
+        )}
+        {tagId && (
+          <TagUsageChartTooltipContent
+            hoveredTagId={null}
+            singleTagId={tagId}
+            payload={{ [tagId]: tooltipData?.value ?? 0 }}
+            dt={tooltipData?.date ?? DateTime.fromSeconds(0)}
+          />
+        )}
+      </Tooltip>
     </HScrollView>
   );
 };

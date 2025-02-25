@@ -1,31 +1,34 @@
 import React, { useMemo } from "react";
 import { cn } from "@/lib/utils";
 import _ from "lodash";
-import type { App, Ref } from "@/lib/entities";
-import AppIcon from "@/components/app/app-icon";
+import type { Ref, Tag } from "@/lib/entities";
 import { type EntityMap } from "@/lib/state";
 import { DateTime } from "luxon";
 import { DurationText } from "@/components/time/duration-text";
 import { DateTimeText } from "@/components/time/time-text";
-import { useApps } from "@/hooks/use-refresh";
+import { useTags } from "@/hooks/use-refresh";
+import { TagIcon } from "lucide-react";
 import { Text } from "@/components/ui/text";
 
 function HoverCard({
-  app,
+  tag,
   usageTicks,
   totalUsageTicks,
   at,
 }: {
-  app: App;
+  tag: Tag;
   usageTicks: number;
   totalUsageTicks?: number;
   at: DateTime;
 }) {
   return (
     <div className="flex items-center gap-2 border-border py-2">
-      <AppIcon buffer={app.icon} className="w-6 h-6 shrink-0 ml-2 mr-1" />
+      <TagIcon
+        className="w-6 h-6 shrink-0 ml-2 mr-1"
+        style={{ color: tag.color }}
+      />
       <div className="flex flex-col">
-        <Text className="text-base max-w-52">{app.name}</Text>
+        <Text className="text-base max-w-52">{tag.name}</Text>
         <DateTimeText className="text-xs text-muted-foreground" datetime={at} />
       </div>
 
@@ -43,15 +46,15 @@ function HoverCard({
   );
 }
 
-export const AppUsageChartTooltipContent = React.forwardRef<
+export const TagUsageChartTooltipContent = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<"div"> & {
-    payload: EntityMap<App, number>;
+    payload: EntityMap<Tag, number>;
     dt: DateTime;
     hideIndicator?: boolean;
-    maximumApps?: number;
-    hoveredAppId: Ref<App> | null;
-    singleAppId?: Ref<App>;
+    maximumTags?: number;
+    hoveredTagId: Ref<Tag> | null;
+    singleTagId?: Ref<Tag>;
   }
 >(
   (
@@ -60,37 +63,37 @@ export const AppUsageChartTooltipContent = React.forwardRef<
       dt,
       className,
       hideIndicator = false,
-      hoveredAppId,
-      maximumApps,
-      singleAppId,
+      hoveredTagId,
+      maximumTags,
+      singleTagId,
     },
     ref,
   ) => {
-    const involvedAppIds = useMemo(
-      () => Object.keys(payload).map((id) => +id as Ref<App>),
+    const involvedTagIds = useMemo(
+      () => Object.keys(payload).map((id) => +id as Ref<Tag>),
       [payload],
     );
     const totalUsageTicks = useMemo(
-      () => (singleAppId ? undefined : _(payload).values().sum()),
-      [singleAppId, payload],
+      () => (singleTagId ? undefined : _(payload).values().sum()),
+      [singleTagId, payload],
     );
-    const involvedApps = useApps(involvedAppIds);
-    const involvedAppSorted = useMemo(
+    const involvedTags = useTags(involvedTagIds);
+    const involvedTagSorted = useMemo(
       () =>
-        _(involvedApps)
-          .map((app) => ({ app, usageTicks: payload[app.id]! }))
+        _(involvedTags)
+          .map((tag) => ({ tag, usageTicks: payload[tag.id]! }))
           .filter((v) => v.usageTicks > 0)
           .orderBy(["usageTicks"], ["desc"])
           .value(),
-      [involvedApps, payload],
+      [involvedTags, payload],
     );
 
-    const highlightedAppId = singleAppId || hoveredAppId;
-    const highlightedApp = involvedApps.find(
-      (app) => app.id === highlightedAppId,
+    const highlightedTagId = singleTagId || hoveredTagId;
+    const highlightedTag = involvedTags.find(
+      (tag) => tag.id === highlightedTagId,
     );
-    const highlightedAppUsageTicks = highlightedAppId
-      ? (payload[highlightedAppId] ?? 0)
+    const highlightedTagUsageTicks = highlightedTagId
+      ? (payload[highlightedTagId] ?? 0)
       : 0;
 
     return (
@@ -98,41 +101,41 @@ export const AppUsageChartTooltipContent = React.forwardRef<
         className={cn("grid max-w-80 items-start gap-1.5 text-xs", className)}
         ref={ref}
       >
-        {highlightedApp && (
+        {highlightedTag && (
           <HoverCard
-            app={highlightedApp}
-            usageTicks={highlightedAppUsageTicks}
+            tag={highlightedTag}
+            usageTicks={highlightedTagUsageTicks}
             totalUsageTicks={totalUsageTicks}
             at={dt}
           />
         )}
-        {!singleAppId && (
+        {!singleTagId && (
           <div
             className={cn("grid gap-1.5", {
-              "pt-1 border-t border-border": highlightedApp,
+              "pt-1 border-t border-border": highlightedTag,
             })}
           >
-            {involvedAppSorted
-              .slice(0, maximumApps)
-              .map(({ app, usageTicks }) => {
+            {involvedTagSorted
+              .slice(0, maximumTags)
+              .map(({ tag, usageTicks }) => {
                 return (
                   <div
-                    key={app.id}
+                    key={tag.id}
                     className={cn(
                       "flex w-full flex-wrap items-stretch gap-2 [&>svg]:h-2.5 [&>svg]:w-2.5 [&>svg]:text-muted-foreground",
                     )}
                   >
                     <>
                       {!hideIndicator && (
-                        <AppIcon
-                          buffer={app.icon}
+                        <TagIcon
+                          style={{ color: tag.color }}
                           className="w-4 h-4 shrink-0"
                         />
                       )}
                       <div className="flex flex-1 justify-between items-center">
                         <div className="grid gap-1.5">
                           <Text className="text-muted-foreground">
-                            {app.name}
+                            {tag.name}
                           </Text>
                         </div>
                         <DurationText
@@ -144,10 +147,10 @@ export const AppUsageChartTooltipContent = React.forwardRef<
                   </div>
                 );
               })}
-            {maximumApps !== undefined &&
-              involvedAppSorted.length > maximumApps && (
+            {maximumTags !== undefined &&
+              involvedTagSorted.length > maximumTags && (
                 <span className="text-muted-foreground">
-                  + {involvedAppSorted.length - maximumApps} more
+                  + {involvedTagSorted.length - maximumTags} more
                 </span>
               )}
           </div>
@@ -156,4 +159,4 @@ export const AppUsageChartTooltipContent = React.forwardRef<
     );
   },
 );
-AppUsageChartTooltipContent.displayName = "AppUsageChartTooltipContent";
+TagUsageChartTooltipContent.displayName = "TagUsageChartTooltipContent";

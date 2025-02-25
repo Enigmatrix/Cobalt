@@ -301,7 +301,7 @@ function TagListItem({
             rangeMinTicks={dateTimeToTicks(start)}
             rangeMaxTicks={dateTimeToTicks(end)}
             periodTicks={durationToTicks(period)}
-            className="min-w-48 aspect-auto h-20 max-lg:hidden"
+            className="w-48 aspect-auto h-20 max-lg:hidden"
           />
 
           <div className="flex py-2 rounded-md lg:min-w-20">
