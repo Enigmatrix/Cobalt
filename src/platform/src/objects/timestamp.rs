@@ -130,6 +130,10 @@ fn from_local(local_sys: &SYSTEMTIME, local_tz: bool) -> SYSTEMTIME {
 impl TimeSystem for Timestamp {
     type Ticks = Self;
 
+    fn now(&self) -> Self {
+        *self
+    }
+
     fn day_start(&self, local_tz: bool) -> Self {
         let sys = self.as_system_time();
         let mut local_sys = to_local(&sys, local_tz);

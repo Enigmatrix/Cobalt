@@ -161,6 +161,7 @@ async fn get_apps() -> Result<()> {
     // TODO test: durations for these
     let _ = repo
         .get_apps(Times {
+            now: 5000,
             day_start: 0,
             week_start: 0,
             month_start: 0,
@@ -316,6 +317,7 @@ async fn get_tags() -> Result<()> {
     // TODO test: durations for these
     let tags = repo
         .get_tags(Times {
+            now: 5000,
             day_start: 0,
             week_start: 0,
             month_start: 0,
@@ -423,6 +425,7 @@ async fn get_alerts() -> Result<()> {
     // Test that newer versions are returned even with events on older versions
     let alerts = repo
         .get_alerts(Times {
+            now: 5000,
             day_start: 0,
             week_start: 0,
             month_start: 0,
@@ -464,6 +467,7 @@ async fn get_alerts() -> Result<()> {
 
     let alerts = repo
         .get_alerts(Times {
+            now: 5000,
             day_start: 20,
             week_start: 10,
             month_start: 5,
