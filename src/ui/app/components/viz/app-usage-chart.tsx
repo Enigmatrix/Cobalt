@@ -216,8 +216,6 @@ export function AppUsageBarChart({
       })),
     } satisfies echarts.EChartsOption;
 
-    chart.setOption(option);
-
     chart.on("mouseover", (params) => {
       setHoveredAppId(params.id as Ref<App>);
       if (onHover) {
@@ -243,6 +241,8 @@ export function AppUsageBarChart({
     chart.on("finished", () => {
       resizeObserver.observe(chartRef.current!);
     });
+
+    chart.setOption(option);
 
     return () => {
       chart.dispose();
