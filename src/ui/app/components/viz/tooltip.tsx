@@ -42,10 +42,10 @@ export function Tooltip({
       let y = positionRef.current.y + deltaY;
 
       if (x + rect.width > window.innerWidth) {
-        x = x - rect.width - deltaX * 2;
+        x = Math.max(0, x - rect.width - deltaX * 2);
       }
       if (y + rect.height > window.innerHeight) {
-        y = y - rect.height - deltaY * 2;
+        y = Math.max(0, y - rect.height - deltaY * 2);
       }
 
       tooltip.style.transform = `translate(${x}px, ${y}px)`;
