@@ -119,7 +119,7 @@ pub mod infused {
         /// List of linked [super::App]s
         #[sqlx(flatten)]
         /// Usage Info
-        usages: ValuePerPeriod<Duration>,
+        pub usages: ValuePerPeriod<Duration>,
     }
 
     /// [super::Tag] with additional information
@@ -133,7 +133,7 @@ pub mod infused {
         pub apps: RefVec<super::App>,
         #[sqlx(flatten)]
         /// Usage Info
-        usages: ValuePerPeriod<Duration>,
+        pub usages: ValuePerPeriod<Duration>,
     }
 
     /// [super::Alert] with additional information
@@ -728,16 +728,23 @@ impl Repository {
         Ok(())
     }
 
-    // TODO create and update tag should return a copy of the tag.
-
     /// Create a new [Tag] from a [infused::CreateTag]
-    pub async fn create_tag(&mut self, tag: &infused::CreateTag) -> Result<Ref<Tag>> {
+    pub async fn create_tag(&mut self, tag: &infused::CreateTag) -> Result<infused::Tag> {
         let res = query("INSERT INTO tags VALUES (NULL, ?, ?)")
             .bind(&tag.name)
             .bind(&tag.color)
             .execute(self.db.executor())
             .await?;
-        Ok(Ref::new(res.last_insert_rowid()))
+        let id = Ref::new(res.last_insert_rowid());
+        Ok(infused::Tag {
+            inner: Tag {
+                id,
+                name: tag.name.clone(),
+                color: tag.color.clone(),
+            },
+            apps: RefVec(Vec::new()),
+            usages: infused::ValuePerPeriod::default(),
+        })
     }
 
     /// Removes a [Tag]
