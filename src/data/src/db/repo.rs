@@ -374,11 +374,11 @@ impl Repository {
             GROUP BY a.id"
         ))
         .bind(ts.day_start(true).to_ticks())
-        .bind(i64::MAX)
+        .bind(ts.now().to_ticks())
         .bind(ts.week_start(true).to_ticks())
-        .bind(i64::MAX)
+        .bind(ts.now().to_ticks())
         .bind(ts.month_start(true).to_ticks())
-        .bind(i64::MAX)
+        .bind(ts.now().to_ticks())
         .fetch_all(self.db.executor())
         .await?;
 
@@ -412,11 +412,11 @@ impl Repository {
             GROUP BY t.id"
         ))
         .bind(ts.day_start(true).to_ticks())
-        .bind(i64::MAX)
+        .bind(ts.now().to_ticks())
         .bind(ts.week_start(true).to_ticks())
-        .bind(i64::MAX)
+        .bind(ts.now().to_ticks())
         .bind(ts.month_start(true).to_ticks())
-        .bind(i64::MAX)
+        .bind(ts.now().to_ticks())
         .fetch_all(self.db.executor())
         .await?;
 
@@ -458,15 +458,14 @@ impl Repository {
             HAVING al.active <> 0"
         ))
         .bind(ts.day_start(true).to_ticks())
-        .bind(i64::MAX)
+        .bind(ts.now().to_ticks())
         .bind(ts.week_start(true).to_ticks())
-        .bind(i64::MAX)
+        .bind(ts.now().to_ticks())
         .bind(ts.month_start(true).to_ticks())
-        .bind(i64::MAX)
+        .bind(ts.now().to_ticks())
         .fetch_all(self.db.executor())
         .await?;
 
-        // TODO maybe instad of i64:max for all of these we should use till ::now() (from query_options)
         let reminders: Vec<infused::Reminder> = query_as(&format!(
             "WITH
                 events_today(id, count) AS ({REMINDER_EVENT_COUNT}),
@@ -484,11 +483,11 @@ impl Repository {
             HAVING r.active <> 0"
         ))
         .bind(ts.day_start(true).to_ticks())
-        .bind(i64::MAX)
+        .bind(ts.now().to_ticks())
         .bind(ts.week_start(true).to_ticks())
-        .bind(i64::MAX)
+        .bind(ts.now().to_ticks())
         .bind(ts.month_start(true).to_ticks())
-        .bind(i64::MAX)
+        .bind(ts.now().to_ticks())
         .fetch_all(self.db.executor())
         .await?;
 
