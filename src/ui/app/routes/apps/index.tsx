@@ -37,13 +37,13 @@ import { Text } from "@/components/ui/text";
 import { dateTimeToTicks, durationToTicks, hour } from "@/lib/time";
 import { DateTime, Duration } from "luxon";
 import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
-import { useToday } from "@/hooks/use-today";
 import { useApps, useTag } from "@/hooks/use-refresh";
 import { useAppsSearch } from "@/hooks/use-search";
 import { DurationText } from "@/components/time/duration-text";
 import type { ClassValue } from "clsx";
 import { useAppDurationsPerPeriod } from "@/hooks/use-repo";
 import { SortDirection } from "@/hooks/use-sort";
+import { useTimePeriod } from "@/hooks/use-today";
 
 export function MiniTagItem({
   tag,
@@ -75,7 +75,6 @@ type SortProperty =
   | "usages.month";
 
 export default function Apps() {
-  const today = useToday();
   const apps = useApps();
 
   const [sortDirection, setSortDirection] = useState<SortDirection>(
@@ -89,21 +88,21 @@ export default function Apps() {
     return _(appsFiltered).orderBy([sortProperty], [sortDirection]).value();
   }, [appsFiltered, sortDirection, sortProperty]);
 
-  const [start, end] = useMemo(() => [today, today.endOf("day")], [today]);
+  const range = useTimePeriod("day");
   const period = hour;
   const {
     usages,
     start: loadStart,
     end: loadEnd,
-  } = useAppDurationsPerPeriod({ start, end, period });
+  } = useAppDurationsPerPeriod({ ...range, period });
 
   const ListItem = memo(
     ({ index, style }: { index: number; style: CSSProperties }) => (
       <VirtualListItem style={style}>
         <AppListItem
           app={appsSorted[index]}
-          start={loadStart ?? start}
-          end={loadEnd ?? end}
+          start={loadStart ?? range.start}
+          end={loadEnd ?? range.end}
           period={period}
           usages={usages}
         />
