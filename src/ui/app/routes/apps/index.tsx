@@ -44,6 +44,7 @@ import type { ClassValue } from "clsx";
 import { useAppDurationsPerPeriod } from "@/hooks/use-repo";
 import { SortDirection } from "@/hooks/use-sort";
 import { useTimePeriod } from "@/hooks/use-today";
+import { NoApps, NoAppsFound } from "@/components/empty-states";
 
 export function MiniTagItem({
   tag,
@@ -193,6 +194,10 @@ export default function Apps() {
             </List>
           )}
         </AutoSizer>
+        {apps.length === 0 && <NoApps className="m-auto" />}
+        {apps.length !== 0 && appsSorted.length === 0 && (
+          <NoAppsFound className="m-auto" />
+        )}
       </div>
     </>
   );
