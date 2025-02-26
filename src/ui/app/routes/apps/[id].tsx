@@ -16,7 +16,7 @@ import AppIcon from "@/components/app/app-icon";
 import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
 import { useCallback, useMemo, useState } from "react";
 import { DateTime, Duration } from "luxon";
-import { useApp, useTag, useTags } from "@/hooks/use-refresh";
+import { useApp, useTag } from "@/hooks/use-refresh";
 import {
   dateTimeToTicks,
   day,
@@ -30,7 +30,7 @@ import {
 } from "@/lib/time";
 import { Text } from "@/components/ui/text";
 import { Button } from "@/components/ui/button";
-import { Check, ChevronsUpDown, Copy, Plus, TagIcon } from "lucide-react";
+import { Check, ChevronsUpDown, Copy } from "lucide-react";
 import { useClipboard } from "@/hooks/use-clipboard";
 import { EditableText } from "@/components/editable-text";
 import { ColorPicker } from "@/components/color-picker";
@@ -39,14 +39,6 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { ClassValue } from "clsx";
 import { NavLink } from "react-router";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { SearchBar } from "@/components/search-bar";
-import { useTagsSearch } from "@/hooks/use-search";
-import { CreateTagDialog } from "@/components/tag/create-tag-dialog";
 import { TimePeriodUsageCard } from "@/components/usage-card";
 import Heatmap from "@/components/viz/heatmap";
 import {
@@ -55,6 +47,7 @@ import {
 } from "@/hooks/use-repo";
 import { useTimePeriod, type TimePeriod } from "@/hooks/use-today";
 import { Gantt } from "@/components/viz/gantt";
+import { ChooseTag } from "@/components/tag/choose-tag";
 
 export default function App({ params }: Route.ComponentProps) {
   const id = +params.id;
@@ -156,7 +149,7 @@ export default function App({ params }: Route.ComponentProps) {
                         await updateApp({ ...app, name: v })
                       }
                     />
-                    <ChooseTag
+                    <TagSelect
                       tagId={app.tag_id}
                       setTagId={async (tagId) =>
                         await updateApp({ ...app, tag_id: tagId })
@@ -268,7 +261,7 @@ export default function App({ params }: Route.ComponentProps) {
   );
 }
 
-function ChooseTag({
+function TagSelect({
   tagId,
   setTagId,
   className,
@@ -292,7 +285,19 @@ function ChooseTag({
       <NavLink to={`/tags/${tagId}`} className="min-w-0">
         <Text className="max-w-32">{tag.name}</Text>
       </NavLink>
-      <ChooseTagPopover tagId={tagId} setTagId={setTagId} />
+      <ChooseTag
+        value={tagId}
+        onValueChanged={setTagId}
+        render={() => (
+          <Button
+            size="icon"
+            variant="ghost"
+            className="p-1 ml-2 w-auto h-auto"
+          >
+            <ChevronsUpDown />
+          </Button>
+        )}
+      />
     </Badge>
   ) : (
     <Badge
@@ -300,98 +305,20 @@ function ChooseTag({
       className={cn("whitespace-nowrap text-muted-foreground", className)}
     >
       <Text className="max-w-32">Untagged</Text>
-      <ChooseTagPopover tagId={tagId} setTagId={setTagId} />
-    </Badge>
-  );
-}
-
-function ChooseTagPopover({
-  tagId,
-  setTagId: setTagIdInner,
-}: {
-  tagId: Ref<Tag> | null;
-  setTagId: (tagId: Ref<Tag> | null) => Promise<void>;
-}) {
-  const createTag = useAppState((state) => state.createTag);
-  const tags = useTags();
-  const [query, setQuery, filteredTags] = useTagsSearch(tags);
-  const [open, setOpen] = useState(false);
-
-  const setTagId = useCallback(
-    async (tagId: Ref<Tag> | null) => {
-      await setTagIdInner(tagId);
-      setOpen(false);
-    },
-    [setTagIdInner, setOpen],
-  );
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button size="icon" variant="ghost" className="p-1 ml-2 w-auto h-auto">
-          <ChevronsUpDown />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-[20rem] z-10">
-        {tags.length !== 0 && (
-          <SearchBar value={query} onChange={(e) => setQuery(e.target.value)} />
-        )}
-        <div className="flex flex-col my-4 gap-1 overflow-y-auto max-h-[20rem] px-2">
-          {tags.length === 0 ? (
-            <div className="m-auto flex flex-col text-muted-foreground py-8 gap-2 items-center">
-              <TagIcon className="w-10 h-10 m-4" />
-              <p className="text-lg">No tags exist. Create some!</p>
-            </div>
-          ) : (
-            filteredTags.map((tag) => {
-              return (
-                <div
-                  key={tag.id}
-                  className={cn(
-                    "flex cursor-pointer hover:bg-muted p-2 rounded-md gap-2",
-                    {
-                      "bg-muted/80": tag.id === tagId,
-                    },
-                  )}
-                  onClick={async () => await setTagId(tag.id)}
-                >
-                  <TagIcon style={{ color: tag.color }} />
-                  <Text className="text-foreground">{tag.name}</Text>
-
-                  {tag.id === tagId && (
-                    <Check className="ml-auto text-muted-foreground/50" />
-                  )}
-                </div>
-              );
-            })
-          )}
-        </div>
-        <div className="flex gap-2">
-          <div className="flex-1"></div>
+      <ChooseTag
+        value={tagId}
+        onValueChanged={setTagId}
+        render={() => (
           <Button
-            variant="outline"
-            className={cn({
-              hidden: tagId === null,
-            })}
-            onClick={async () => await setTagId(null)}
+            size="icon"
+            variant="ghost"
+            className="p-1 ml-2 w-auto h-auto"
           >
-            Clear
+            <ChevronsUpDown />
           </Button>
-          <CreateTagDialog
-            trigger={
-              <Button variant={tags.length === 0 ? "default" : "outline"}>
-                <Plus />
-                Create Tag
-              </Button>
-            }
-            onSubmit={async (tag) => {
-              const tagId = await createTag(tag);
-              await setTagId(tagId);
-            }}
-          ></CreateTagDialog>
-        </div>
-      </PopoverContent>
-    </Popover>
+        )}
+      />
+    </Badge>
   );
 }
 
