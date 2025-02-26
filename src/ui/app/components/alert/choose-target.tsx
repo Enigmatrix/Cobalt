@@ -79,6 +79,10 @@ export function ChooseTarget({
                 <CommandItem
                   key={tag.id}
                   value={`tag-${tag.id}`}
+                  className={cn({
+                    "bg-muted/60":
+                      props.value?.tag === "Tag" && props.value?.id === tag.id,
+                  })}
                   onSelect={() => onValueChanged({ tag: "Tag", id: tag.id })}
                 >
                   <TagIcon
@@ -108,6 +112,10 @@ export function ChooseTarget({
                 <CommandItem
                   key={app.id}
                   value={`app-${app.id}`}
+                  className={cn({
+                    "bg-muted/60":
+                      props.value?.tag === "App" && props.value?.id === app.id,
+                  })}
                   onSelect={() => onValueChanged({ tag: "App", id: app.id })}
                 >
                   <AppIcon buffer={app.icon} className="w-4 h-4 shrink-0" />
