@@ -115,7 +115,14 @@ export const useAppState = create<AppState>((set) => {
           });
 
           addedApps.forEach((appId) => {
+            const oldTagId = draft.apps[appId]!.tag_id;
             draft.apps[appId]!.tag_id = tag.id;
+            if (oldTagId) {
+              const tag = draft.tags[oldTagId]!;
+
+              // remove app from previous tag's app list
+              tag.apps.splice(tag.apps.indexOf(appId), 1);
+            }
           });
 
           draft.tags[tag.id]!.apps = apps;
