@@ -36,13 +36,6 @@ type AppUsageBarChartData = {
   key: number; // group (timestamp)
 };
 
-type TagUsageBarChartData = {
-  [tag: Ref<Tag>]: number; // tag => duration
-  key: number; // group (timestamp)
-};
-
-const untaggedColor = "#EEEEEE";
-
 export function UsageBarChart({
   apps: unflattenedData,
   periodTicks,
@@ -92,13 +85,6 @@ export function UsageBarChart({
     );
   }, [involvedApps, tags]);
 
-  const sortedInvolvedTags = involvedTags;
-  const sortedInvolvedApps = useMemo(() => {
-    return _.sortBy(involvedApps, (app) =>
-      sortedInvolvedTags.findIndex((tag) => tag?.id === app?.tag_id),
-    );
-  }, [sortedInvolvedTags, involvedApps]);
-
   const data: AppUsageBarChartData[] = useMemo(() => {
     let ret = _(unflattenedData)
       .values()
@@ -139,33 +125,6 @@ export function UsageBarChart({
     rangeMaxTicks,
     periodTicks,
   ]);
-
-  const tagData: TagUsageBarChartData[] = useMemo(() => {
-    return _(data)
-      .map((d) => {
-        const obj = _(involvedTags)
-          .map((tag) => [
-            tag.id,
-            _(tag.apps)
-              .map((appId) => d[appId] || 0)
-              .sum(),
-          ])
-          .fromPairs()
-          .value();
-        return { ...obj, key: d.key };
-      })
-      .value();
-  }, [involvedTags, data]);
-
-  const untaggedUsage = useMemo(() => {
-    return data.map((d) => ({
-      key: d.key,
-      value: _(involvedApps)
-        .filter((app) => app.tag_id === null)
-        .map((app) => d[app.id] || 0)
-        .sum(),
-    }));
-  }, [data, involvedApps]);
 
   React.useEffect(() => {
     if (!chartRef.current) return;
@@ -228,13 +187,13 @@ export function UsageBarChart({
         },
       },
       series: [
-        ...sortedInvolvedApps.map(
+        ...involvedApps.map(
           (app) =>
             ({
               id: `app-${app.id}`,
               name: app.name,
               type: "bar",
-              stack: "app",
+              stack: app.tag_id ? tags[app.tag_id]!.name : "Untagged",
               data: data.map((d) => d[app.id] || 0),
               itemStyle: {
                 color: gradientBars
@@ -281,95 +240,27 @@ export function UsageBarChart({
               },
             }) satisfies echarts.SeriesOption,
         ),
-
-        {
-          id: `tag-untagged`,
-          name: "Untagged",
-          type: "bar",
-          stack: "tag",
-          data: untaggedUsage.map((d) => d.value),
-          itemStyle: {
-            color: gradientBars
-              ? {
-                  type: "linear",
-                  x: 0,
-                  y: 0,
-                  x2: 0,
-                  y2: 1,
-                  colorStops: [
-                    {
-                      offset: 0,
-                      color: untaggedColor,
-                    },
-                    {
-                      offset: 1,
-                      color: echarts.color.modifyAlpha(untaggedColor, 0.7),
-                    },
-                  ],
-                }
-              : untaggedColor,
-            borderRadius: barRadius ?? 2,
-          },
-          labelLayout(params) {
-            return { width: params.rect.height };
-          },
-          label: {
-            show: true,
-            position: "inside",
-            rotate: 90,
-            formatter: () => {
-              return "Untagged";
-            },
-            overflow: "truncate",
-            align: "center",
-            verticalAlign: "middle",
-          },
-        } satisfies echarts.SeriesOption,
-
-        ...sortedInvolvedTags.map(
+        ...[...involvedTags, { id: "untagged", name: "Untagged" }].map(
           (tag) =>
             ({
               id: `tag-${tag.id}`,
               name: tag.name,
               type: "bar",
-              stack: "tag",
-              data: tagData.map((d) => d[tag.id] || 0),
-              barGap: 0, // TODO put this on every tag
-              itemStyle: {
-                color: gradientBars
-                  ? {
-                      type: "linear",
-                      x: 0,
-                      y: 0,
-                      x2: 0,
-                      y2: 1,
-                      colorStops: [
-                        {
-                          offset: 0,
-                          color: tag.color,
-                        },
-                        {
-                          offset: 1,
-                          color: echarts.color.modifyAlpha(tag.color, 0.7),
-                        },
-                      ],
-                    }
-                  : tag.color,
-                borderRadius: barRadius ?? 2,
-              },
+              stack: tag.name,
+              data: data.map(() => 0),
               labelLayout(params) {
-                return { width: params.rect.height };
+                return { fontSize: params.rect.width };
               },
               label: {
                 show: true,
-                position: "inside",
+                position: "top",
+                verticalAlign: "middle",
+                align: "left",
                 rotate: 90,
+                color: "white",
                 formatter: () => {
                   return tag.name;
                 },
-                overflow: "truncate",
-                align: "center",
-                verticalAlign: "middle",
               },
             }) satisfies echarts.SeriesOption,
         ),
@@ -411,10 +302,9 @@ export function UsageBarChart({
     };
   }, [
     data,
-    tagData,
-    sortedInvolvedApps,
-    sortedInvolvedTags,
-    untaggedUsage,
+    involvedApps,
+    involvedTags,
+    tags,
     dateTimeFormatter,
     hideXAxis,
     maxYIsPeriod,
