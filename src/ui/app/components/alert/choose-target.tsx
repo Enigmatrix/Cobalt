@@ -78,7 +78,7 @@ export function ChooseTarget({
               {filteredTags.map((tag) => (
                 <CommandItem
                   key={tag.id}
-                  value={tag.id.toString()}
+                  value={`tag-${tag.id}`}
                   onSelect={() => onValueChanged({ tag: "Tag", id: tag.id })}
                 >
                   <TagIcon
@@ -107,7 +107,7 @@ export function ChooseTarget({
               {filteredApps.map((app) => (
                 <CommandItem
                   key={app.id}
-                  value={app.id.toString()}
+                  value={`app-${app.id}`}
                   onSelect={() => onValueChanged({ tag: "App", id: app.id })}
                 >
                   <AppIcon buffer={app.icon} className="w-4 h-4 shrink-0" />
