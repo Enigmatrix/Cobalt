@@ -46,6 +46,7 @@ import { Button } from "@/components/ui/button";
 import { dateTimeToTicks, durationToTicks, hour } from "@/lib/time";
 import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
 import { CreateTagDialog } from "@/components/tag/create-tag-dialog";
+import { NoTags, NoTagsFound } from "@/components/empty-states";
 
 export function MiniAppItem({
   app,
@@ -199,6 +200,10 @@ export default function Tags() {
             </List>
           )}
         </AutoSizer>
+        {tags.length === 0 && <NoTags className="m-auto" />}
+        {tags.length !== 0 && tagsSorted.length === 0 && (
+          <NoTagsFound className="m-auto" />
+        )}
       </div>
     </>
   );

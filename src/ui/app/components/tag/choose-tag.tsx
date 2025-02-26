@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import type { Ref, Tag } from "@/lib/entities";
 import { useAppState } from "@/lib/state";
 import { cn } from "@/lib/utils";
+import { NoTags, NoTagsFound } from "@/components/empty-states";
 
 export function ChooseTag({
   value,
@@ -63,7 +64,6 @@ export function ChooseTag({
           />
           <CommandList>
             <CommandItem value="-" className="hidden" />
-            {/* TODO No tags empty state */}
             {filteredTags.map((tag) => (
               <CommandItem
                 key={tag.id}
@@ -78,6 +78,13 @@ export function ChooseTag({
                 <Text>{tag.name}</Text>
               </CommandItem>
             ))}
+
+            {allTags.length === 0 && (
+              <NoTags variant="small" className="m-auto" />
+            )}
+            {allTags.length !== 0 && filteredTags.length === 0 && (
+              <NoTagsFound variant="small" className="m-auto" />
+            )}
             <div className="p-1 flex items-center justify-end gap-1">
               <Button
                 variant="outline"

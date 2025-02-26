@@ -32,6 +32,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { ClassValue } from "clsx";
+import { NoAlerts, NoAlertsFound } from "@/components/empty-states";
 
 export default function Alerts() {
   const alerts = useAlerts();
@@ -96,6 +97,10 @@ export default function Alerts() {
             </List>
           )}
         </AutoSizer>
+        {alerts.length === 0 && <NoAlerts className="m-auto" />}
+        {alerts.length !== 0 && alertsSorted.length === 0 && (
+          <NoAlertsFound className="m-auto" />
+        )}
       </div>
     </>
   );

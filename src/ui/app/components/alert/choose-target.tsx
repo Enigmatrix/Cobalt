@@ -26,6 +26,12 @@ import { Button, type ButtonProps } from "@/components/ui/button";
 import type { Target } from "@/lib/entities";
 import { useAppState } from "@/lib/state";
 import { cn } from "@/lib/utils";
+import {
+  NoApps,
+  NoAppsFound,
+  NoTags,
+  NoTagsFound,
+} from "@/components/empty-states";
 
 export function ChooseTarget({
   onValueChanged: onValueChangedInner,
@@ -74,7 +80,6 @@ export function ChooseTarget({
           <CommandList>
             <CommandItem value="-" className="hidden" />
             <ToggleableCommandGroup heading="Tags">
-              {/* TODO No tags empty state */}
               {filteredTags.map((tag) => (
                 <CommandItem
                   key={tag.id}
@@ -92,6 +97,12 @@ export function ChooseTarget({
                   <Text>{tag.name}</Text>
                 </CommandItem>
               ))}
+              {allTags.length === 0 && (
+                <NoTags variant="small" className="m-auto" />
+              )}
+              {allTags.length !== 0 && filteredTags.length === 0 && (
+                <NoTagsFound variant="small" className="m-auto" />
+              )}
               <CreateTagDialog
                 trigger={
                   <Button
@@ -122,6 +133,12 @@ export function ChooseTarget({
                   <Text>{app.name}</Text>
                 </CommandItem>
               ))}
+              {allApps.length === 0 && (
+                <NoApps variant="small" className="m-auto" />
+              )}
+              {allApps.length !== 0 && filteredApps.length === 0 && (
+                <NoAppsFound variant="small" className="m-auto" />
+              )}
             </ToggleableCommandGroup>
           </CommandList>
         </Command>
