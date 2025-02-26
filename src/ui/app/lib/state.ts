@@ -22,6 +22,7 @@ import {
 import { checkForUpdatesBackground } from "@/lib/updater";
 import { info } from "@/lib/log";
 import { produce } from "immer";
+import _ from "lodash";
 
 export async function initState() {
   // init rust-side state
@@ -134,7 +135,15 @@ export const useAppState = create<AppState>((set) => {
       await removeTag(tagId);
       set((state) =>
         produce((draft: AppState) => {
+          // remove tag
           delete draft.tags[tagId];
+
+          // remove alerts using this tag
+          draft.alerts = _.omitBy(
+            draft.alerts,
+            (alert) =>
+              alert!.target.tag === "Tag" && alert!.target.id === tagId,
+          );
         })(state),
       );
     },
