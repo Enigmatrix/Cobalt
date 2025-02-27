@@ -22,13 +22,9 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { ColorPicker } from "@/components/color-picker";
+import { tagSchema } from "@/lib/schema";
 
-const formSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Invalid color format"),
-});
-
-type FormValues = z.infer<typeof formSchema>;
+type FormValues = z.infer<typeof tagSchema>;
 
 interface CreateTagDialogProps {
   onSubmit: (values: FormValues) => Promise<void>;
@@ -39,7 +35,7 @@ export function CreateTagDialog({ onSubmit, trigger }: CreateTagDialogProps) {
   const [open, setOpen] = React.useState(false);
 
   const form = useZodForm({
-    schema: formSchema,
+    schema: tagSchema,
     defaultValues: {
       name: "",
       color: "#000000",
