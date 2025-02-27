@@ -72,22 +72,21 @@ export function EmptyState({
   > = {
     tags: {
       icon: Tag,
-      title: "No tags available",
-      description:
-        "Create your first tag to organize your content effectively.",
+      title: "No tags created",
+      description: "Create your first tag to organizer your apps.",
       showCreateButton: true,
       createButtonText: "Create Tag",
     },
     apps: {
       icon: AppWindow,
       title: "No apps available",
-      description: "Your apps will appear here once added.",
+      description: "Your apps will appear here once tracked.",
       showCreateButton: false,
     },
     alerts: {
       icon: BellRing,
-      title: "No alerts set",
-      description: "Create an alert to get notified about important events.",
+      title: "No alerts created",
+      description: "Create an alert to control your usage.",
       showCreateButton: true,
       createButtonText: "Create Alert",
     },
