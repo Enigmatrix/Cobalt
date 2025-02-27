@@ -21,7 +21,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { ChooseTarget } from "@/components/alert/choose-target";
-import type { App, Ref, Tag } from "@/lib/entities";
 import { DurationPicker } from "@/components/time/duration-picker";
 import { durationToTicks, ticksToDuration } from "@/lib/time";
 import {
@@ -32,35 +31,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { alertSchema } from "@/lib/schema";
 
-function refSchema<T>() {
-  return z.number().int() as unknown as z.ZodType<Ref<T>>;
-}
-
-const reminderSchema = z.object({
-  threshold: z.number().min(0).max(1),
-  message: z.string().min(1, "Name is required"),
-});
-
-const formSchema = z.object({
-  target: z.discriminatedUnion("tag", [
-    z.object({ tag: z.literal("App"), id: refSchema<App>() }),
-    z.object({ tag: z.literal("Tag"), id: refSchema<Tag>() }),
-  ]),
-  usage_limit: z.number().int(),
-  time_frame: z.enum(["Daily", "Weekly", "Monthly"]),
-  trigger_action: z.discriminatedUnion("tag", [
-    z.object({ tag: z.literal("Kill") }),
-    z.object({ tag: z.literal("Dim"), duration: z.number().int() }),
-    z.object({
-      tag: z.literal("Message"),
-      content: z.string().min(1, "Message is required"),
-    }),
-  ]),
-  reminders: reminderSchema.array(),
-});
-
-type FormValues = z.infer<typeof formSchema>;
+type FormValues = z.infer<typeof alertSchema>;
 
 interface CreateAlertDialogProps {
   onSubmit: (values: FormValues) => Promise<void>;
@@ -74,7 +47,7 @@ export function CreateAlertDialog({
   const [open, setOpen] = React.useState(false);
 
   const form = useZodForm({
-    schema: formSchema,
+    schema: alertSchema,
     defaultValues: {
       reminders: [],
     },
