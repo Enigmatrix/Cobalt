@@ -23,6 +23,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { ColorPicker } from "@/components/color-picker";
 import { tagSchema } from "@/lib/schema";
+import { ChooseMultiApps } from "../app/choose-multi-apps";
 
 type FormValues = z.infer<typeof tagSchema>;
 
@@ -39,6 +40,7 @@ export function CreateTagDialog({ onSubmit, trigger }: CreateTagDialogProps) {
     defaultValues: {
       name: "",
       color: "#000000",
+      apps: [],
     },
   });
 
@@ -91,6 +93,24 @@ export function CreateTagDialog({ onSubmit, trigger }: CreateTagDialogProps) {
                       className="block w-full"
                       color={field.value}
                       onChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="apps"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Apps</FormLabel>
+                  <FormControl>
+                    <ChooseMultiApps
+                      placeholder="Select apps"
+                      value={field.value}
+                      onValueChanged={field.onChange}
                     />
                   </FormControl>
                   <FormMessage />
