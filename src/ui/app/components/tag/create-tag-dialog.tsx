@@ -1,7 +1,6 @@
 import * as React from "react";
 import { z } from "zod";
 import { useZodForm } from "@/hooks/use-form";
-
 import {
   Dialog,
   DialogContent,
@@ -33,7 +32,7 @@ interface CreateTagDialogProps {
 }
 
 export function CreateTagDialog({ onSubmit, trigger }: CreateTagDialogProps) {
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpenInner] = React.useState(false);
 
   const form = useZodForm({
     schema: tagSchema,
@@ -43,6 +42,14 @@ export function CreateTagDialog({ onSubmit, trigger }: CreateTagDialogProps) {
       apps: [],
     },
   });
+
+  const setOpen = React.useCallback(
+    (open: boolean) => {
+      setOpenInner(open);
+      if (open) form.reset();
+    },
+    [setOpenInner, form],
+  );
 
   const handleSubmit = async (values: FormValues) => {
     await onSubmit(values);

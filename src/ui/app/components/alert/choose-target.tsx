@@ -32,6 +32,8 @@ import {
   NoTags,
   NoTagsFound,
 } from "@/components/empty-states";
+import type { z } from "zod";
+import type { tagSchema } from "@/lib/schema";
 
 export function ChooseTarget({
   onValueChanged: onValueChangedInner,
@@ -39,15 +41,21 @@ export function ChooseTarget({
 }: ComponentProps<typeof ChooseTargetTrigger> & {
   onValueChanged: (value: Target) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpenInner] = useState(false);
   const createTag = useAppState((state) => state.createTag);
   const allTags = useTags();
   const allApps = useApps();
 
-  // TODO: should reset search value after close
   const [, setQuery, filteredApps, filteredTags] = useTargetsSearch(
     allApps,
     allTags,
+  );
+  const setOpen = useCallback(
+    (open: boolean) => {
+      setOpenInner(open);
+      if (open) setQuery("");
+    },
+    [setOpenInner, setQuery],
   );
 
   const onValueChanged = useCallback(
@@ -59,7 +67,7 @@ export function ChooseTarget({
   );
 
   const onTagCreate = useCallback(
-    async (tag: { name: string; color: string }) => {
+    async (tag: z.infer<typeof tagSchema>) => {
       const tagId = await createTag(tag);
       onValueChanged({ tag: "Tag", id: tagId });
     },
