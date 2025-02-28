@@ -32,12 +32,18 @@ export function ChooseTag({
   onValueChanged: (value: Ref<Tag> | null) => void;
   render: (tagId: Ref<Tag> | null) => ReactNode;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpenInner] = useState(false);
   const createTag = useAppState((state) => state.createTag);
   const allTags = useTags();
 
-  // TODO: should reset search value after close
   const [, setQuery, filteredTags] = useTagsSearch(allTags);
+  const setOpen = useCallback(
+    (open: boolean) => {
+      setOpenInner(open);
+      if (open) setQuery("");
+    },
+    [setOpenInner, setQuery],
+  );
 
   const onValueChanged = useCallback(
     (val: Ref<Tag> | null) => {

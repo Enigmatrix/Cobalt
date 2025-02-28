@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 import {
   Popover,
   PopoverTrigger,
@@ -49,12 +49,18 @@ export function ChooseMultiApps({
   value: Ref<App>[];
   onValueChanged: (value: Ref<App>[]) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpenInner] = useState(false);
   const allApps = useApps();
   const valueApps = useApps(value);
 
-  // TODO: should reset search value after close
   const [, setQuery, filteredApps] = useAppsSearch(allApps);
+  const setOpen = useCallback(
+    (open: boolean) => {
+      setOpenInner(open);
+      if (open) setQuery("");
+    },
+    [setOpenInner, setQuery],
+  );
 
   const toggleOption = (option: Ref<App>) => {
     const newSelectedValues = value.includes(option)
