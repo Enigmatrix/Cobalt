@@ -20,6 +20,8 @@ import type { Ref, Tag } from "@/lib/entities";
 import { useAppState } from "@/lib/state";
 import { cn } from "@/lib/utils";
 import { NoTags, NoTagsFound } from "@/components/empty-states";
+import type { z } from "zod";
+import type { tagSchema } from "@/lib/schema";
 
 export function ChooseTag({
   value,
@@ -46,7 +48,7 @@ export function ChooseTag({
   );
 
   const onTagCreate = useCallback(
-    async (tag: { name: string; color: string }) => {
+    async (tag: z.infer<typeof tagSchema>) => {
       const tagId = await createTag(tag);
       onValueChanged(tagId);
     },
