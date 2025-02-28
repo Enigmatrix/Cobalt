@@ -12,6 +12,7 @@ export const durationSchema = z.number().int();
 export const tagSchema = z.object({
   name: z.string().min(1, "Name is required"),
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Invalid color format"),
+  apps: refSchema<App>().array(),
 });
 
 export const reminderSchema = z.object({

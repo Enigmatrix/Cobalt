@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import {
   Popover,
   PopoverTrigger,
@@ -41,9 +41,11 @@ function MiniTagItem({ tagId }: { tagId: Ref<Tag> | null }) {
 }
 
 export function ChooseMultiApps({
+  placeholder,
   value,
   onValueChanged,
 }: {
+  placeholder?: ReactNode;
   value: Ref<App>[];
   onValueChanged: (value: Ref<App>[]) => void;
 }) {
@@ -64,7 +66,7 @@ export function ChooseMultiApps({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverAnchor>
-        <div className="flex flex-wrap items-center">
+        <div className="flex flex-wrap items-center gap-2">
           {valueApps.map((app, index) => {
             return (
               <div
@@ -74,7 +76,7 @@ export function ChooseMultiApps({
                 <AppBadge app={app} remove={() => toggleOption(app.id)} />
                 {valueApps.length === index + 1 && (
                   <>
-                    <div className="ml-1 border-l  h-6" />
+                    <div className="ml-2 border-l h-6" />
                     <PopoverTrigger asChild>
                       <Button variant="ghost" size="icon" className="w-8 h-8">
                         <PlusIcon className="text-muted-foreground" />
@@ -86,9 +88,9 @@ export function ChooseMultiApps({
             );
           })}
           {valueApps.length === 0 && (
-            <div className="flex flex-wrap items-center text-muted-foreground h-10">
-              <Text className="mr-2">No apps in tag. Add some!</Text>
-              <div className="ml-1 border-l  h-6" />
+            <div className="flex flex-wrap items-center text-muted-foreground h-8">
+              {placeholder ?? <Text>No apps in tag. Add some!</Text>}
+              <div className="ml-2 border-l h-6" />
               <PopoverTrigger asChild>
                 <Button variant="ghost" size="icon" className="w-8 h-8">
                   <PlusIcon />
