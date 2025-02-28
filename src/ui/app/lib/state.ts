@@ -152,8 +152,10 @@ export const useAppState = create<AppState>((set) => {
       await removeTag(tagId);
       set((state) =>
         produce((draft: AppState) => {
-          // remove tag
-          delete draft.tags[tagId];
+          // reset apps using this tag
+          draft.tags[tagId]?.apps.forEach((appId) => {
+            draft.apps[appId]!.tag_id = null;
+          });
 
           // remove alerts using this tag
           draft.alerts = _.omitBy(
@@ -161,6 +163,9 @@ export const useAppState = create<AppState>((set) => {
             (alert) =>
               alert!.target.tag === "Tag" && alert!.target.id === tagId,
           );
+
+          // remove tag
+          delete draft.tags[tagId];
         })(state),
       );
     },
