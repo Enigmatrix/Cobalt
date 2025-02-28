@@ -10,17 +10,35 @@ import {
   CommandList,
   CommandItem,
 } from "@/components/ui/command";
-import { useApps } from "@/hooks/use-refresh";
+import { useApps, useTag } from "@/hooks/use-refresh";
 import { Text } from "@/components/ui/text";
 import { CheckIcon, PlusIcon } from "lucide-react";
 import { useAppsSearch } from "@/hooks/use-search";
-import type { App, Ref } from "@/lib/entities";
+import type { App, Ref, Tag } from "@/lib/entities";
 import { cn } from "@/lib/utils";
 import { NoApps, NoAppsFound } from "@/components/empty-states";
 import AppIcon from "@/components/app/app-icon";
 import { AppBadge } from "@/components/app/app-list-item";
 import { PopoverAnchor } from "@radix-ui/react-popover";
 import { Button } from "@/components/ui/button";
+
+function MiniTagItem({ tagId }: { tagId: Ref<Tag> | null }) {
+  const tag = useTag(tagId);
+  return (
+    tag && (
+      <div
+        style={{
+          borderColor: tag.color,
+          color: tag.color,
+          backgroundColor: "rgba(255, 255, 255, 0.2)",
+        }}
+        className="text-xs px-2 py-0.5 -my-0.5 rounded-full border whitespace-nowrap min-w-0 text-muted-foreground ml-1 truncate"
+      >
+        {tag.name}
+      </div>
+    )
+  );
+}
 
 export function ChooseMultiApps({
   value,
@@ -112,6 +130,8 @@ export function ChooseMultiApps({
                     className="mr-2 h-4 w-4 text-muted-foreground"
                   />
                   <Text>{app.name}</Text>
+                  {/* Don't show tag if for *this* tag, since a creating tag will not even be valid */}
+                  {!isSelected && <MiniTagItem tagId={app.tag_id} />}
                 </CommandItem>
               );
             })}
