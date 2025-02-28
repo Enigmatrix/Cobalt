@@ -23,6 +23,7 @@ import { dateTimeToTicks, durationToTicks } from "@/lib/time";
 export interface CreateTag {
   name: string;
   color: string;
+  apps: Ref<App>[];
 }
 
 export type AppSessionUsages = {

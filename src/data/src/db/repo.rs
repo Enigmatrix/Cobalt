@@ -193,6 +193,8 @@ pub mod infused {
         pub name: String,
         /// Color
         pub color: String,
+        /// Apps List
+        pub apps: Vec<Ref<super::App>>,
     }
 
     /// Options to update a [super::Tag]
@@ -729,19 +731,29 @@ impl Repository {
 
     /// Create a new [Tag] from a [infused::CreateTag]
     pub async fn create_tag(&mut self, tag: &infused::CreateTag) -> Result<infused::Tag> {
+        let mut tx = self.db.transaction().await?;
         let res = query("INSERT INTO tags VALUES (NULL, ?, ?)")
             .bind(&tag.name)
             .bind(&tag.color)
-            .execute(self.db.executor())
+            .execute(&mut *tx)
             .await?;
         let id = Ref::new(res.last_insert_rowid());
+        for app in &tag.apps {
+            query("UPDATE apps SET tag_id = ? WHERE id = ?")
+                .bind(&id)
+                .bind(app)
+                .execute(&mut *tx)
+                .await?;
+        }
+        tx.commit().await?;
+
         Ok(infused::Tag {
             inner: Tag {
                 id,
                 name: tag.name.clone(),
                 color: tag.color.clone(),
             },
-            apps: RefVec(Vec::new()),
+            apps: RefVec(tag.apps.clone()),
             usages: infused::ValuePerPeriod::default(),
         })
     }
