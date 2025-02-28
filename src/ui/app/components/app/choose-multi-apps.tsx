@@ -1,0 +1,130 @@
+import { useState } from "react";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandInput,
+  CommandList,
+  CommandItem,
+} from "@/components/ui/command";
+import { useApps } from "@/hooks/use-refresh";
+import { Text } from "@/components/ui/text";
+import { CheckIcon, PlusIcon } from "lucide-react";
+import { useAppsSearch } from "@/hooks/use-search";
+import type { App, Ref } from "@/lib/entities";
+import { cn } from "@/lib/utils";
+import { NoApps, NoAppsFound } from "@/components/empty-states";
+import AppIcon from "@/components/app/app-icon";
+import { AppBadge } from "@/components/app/app-list-item";
+import { PopoverAnchor } from "@radix-ui/react-popover";
+import { Button } from "@/components/ui/button";
+
+export function ChooseMultiApps({
+  value,
+  onValueChanged,
+}: {
+  value: Ref<App>[];
+  onValueChanged: (value: Ref<App>[]) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const allApps = useApps();
+  const valueApps = useApps(value);
+
+  // TODO: should reset search value after close
+  const [, setQuery, filteredApps] = useAppsSearch(allApps);
+
+  const toggleOption = (option: Ref<App>) => {
+    const newSelectedValues = value.includes(option)
+      ? value.filter((value) => value !== option)
+      : [...value, option];
+    onValueChanged(newSelectedValues);
+  };
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverAnchor>
+        <div className="flex flex-wrap items-center">
+          {valueApps.map((app, index) => {
+            return (
+              <div
+                className="flex items-center flex-nowrap min-w-0"
+                key={app.id}
+              >
+                <AppBadge app={app} remove={() => toggleOption(app.id)} />
+                {valueApps.length === index + 1 && (
+                  <>
+                    <div className="ml-1 border-l  h-6" />
+                    <PopoverTrigger asChild>
+                      <Button variant="ghost" size="icon" className="w-8 h-8">
+                        <PlusIcon className="text-muted-foreground" />
+                      </Button>
+                    </PopoverTrigger>
+                  </>
+                )}
+              </div>
+            );
+          })}
+          {valueApps.length === 0 && (
+            <div className="flex flex-wrap items-center text-muted-foreground h-10">
+              <Text className="mr-2">No apps in tag. Add some!</Text>
+              <div className="ml-1 border-l  h-6" />
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="icon" className="w-8 h-8">
+                  <PlusIcon />
+                </Button>
+              </PopoverTrigger>
+            </div>
+          )}
+        </div>
+      </PopoverAnchor>
+      <PopoverContent className="p-0">
+        <Command shouldFilter={false}>
+          <CommandInput
+            placeholder="Search..."
+            onValueChange={(val) => setQuery(val.toLowerCase())}
+          />
+          <CommandList>
+            <CommandItem value="-" className="hidden" />
+            {filteredApps.map((app) => {
+              const isSelected = value.indexOf(app.id) !== -1;
+              return (
+                <CommandItem
+                  key={app.id}
+                  value={`app-${app.id}`}
+                  onSelect={() => toggleOption(app.id)}
+                  className={cn({ "bg-muted/60": isSelected })}
+                >
+                  <div
+                    className={cn(
+                      "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
+                      isSelected
+                        ? "bg-primary text-primary-foreground"
+                        : "opacity-50 [&_svg]:invisible",
+                    )}
+                  >
+                    <CheckIcon className="h-4 w-4" />
+                  </div>
+                  <AppIcon
+                    buffer={app.icon}
+                    className="mr-2 h-4 w-4 text-muted-foreground"
+                  />
+                  <Text>{app.name}</Text>
+                </CommandItem>
+              );
+            })}
+
+            {allApps.length === 0 && (
+              <NoApps variant="small" className="m-auto" />
+            )}
+            {allApps.length !== 0 && filteredApps.length === 0 && (
+              <NoAppsFound variant="small" className="m-auto" />
+            )}
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
