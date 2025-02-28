@@ -15,7 +15,7 @@ import { type App, type Ref, type Tag } from "@/lib/entities";
 import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
 import { useCallback, useMemo, useState } from "react";
 import { DateTime, Duration } from "luxon";
-import { useApps, useTag } from "@/hooks/use-refresh";
+import { useTag } from "@/hooks/use-refresh";
 import {
   dateTimeToTicks,
   day,
@@ -28,7 +28,7 @@ import {
   weekDayFormatter,
 } from "@/lib/time";
 import { Text } from "@/components/ui/text";
-import { PlusIcon, TagIcon, TrashIcon } from "lucide-react";
+import { TagIcon, TrashIcon } from "lucide-react";
 import { EditableText } from "@/components/editable-text";
 import { ColorPicker } from "@/components/color-picker";
 import _ from "lodash";
@@ -52,36 +52,13 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useNavigate } from "react-router";
-import AppIcon from "@/components/app/app-icon";
-import { useAppsSearch } from "@/hooks/use-search";
-import { MultiSelect } from "@/components/multi-select";
-import { AppBadge } from "@/components/app/app-list-item";
 import { useTimePeriod, type TimePeriod } from "@/hooks/use-today";
 import { Gantt } from "@/components/viz/gantt";
+import { ChooseMultiApps } from "@/components/app/choose-multi-apps";
 
 export default function Tag({ params }: Route.ComponentProps) {
   const id = +params.id;
   const tag = useTag(id as Ref<Tag>)!;
-  const apps = useApps();
-  const [search, setSearch, appsFiltered] = useAppsSearch(apps);
-  const appListIds = useMemo(
-    () => appsFiltered.map((app) => app.id),
-    [appsFiltered],
-  );
-  const allAppOptions = useMemo(
-    () =>
-      apps.map((app) => ({
-        id: app.id,
-        label: app.name,
-        icon: ({ className }: { className?: string }) => (
-          <AppIcon buffer={app.icon} className={className} />
-        ),
-        render: ({ remove }: { remove: () => void }) => (
-          <AppBadge app={app} remove={remove} />
-        ),
-      })),
-    [apps],
-  );
   const updateTag = useAppState((state) => state.updateTag);
   const removeTag = useAppState((state) => state.removeTag);
   const updateTagApps = useAppState((state) => state.updateTagApps);
@@ -237,18 +214,7 @@ export default function Tag({ params }: Route.ComponentProps) {
                 </AlertDialog>
               </div>
 
-              <MultiSelect
-                className="min-h-14 border-none w-fit"
-                options={allAppOptions}
-                onValueChange={setTagApps}
-                defaultValue={tag.apps}
-                placeholder="No Apps. Add some!"
-                rightIcon={(className) => <PlusIcon className={className} />}
-                maxCount={1000}
-                search={search}
-                onSearchChanged={setSearch}
-                filteredValues={appListIds}
-              />
+              <ChooseMultiApps value={tag.apps} onValueChanged={setTagApps} />
             </div>
           </div>
 
