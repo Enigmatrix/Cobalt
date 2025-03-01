@@ -1,6 +1,11 @@
-use util::error::Result;
-use util::tracing::ResultTraceExt;
-use windows::Win32::UI::WindowsAndMessaging::{ENDSESSION_LOGOFF, WM_ENDSESSION};
+use util::error::{Context, Result};
+use util::tracing::{info, ResultTraceExt};
+use windows::Win32::System::RemoteDesktop::{
+    WTSRegisterSessionNotification, WTSUnRegisterSessionNotification, NOTIFY_FOR_THIS_SESSION,
+};
+use windows::Win32::UI::WindowsAndMessaging::{
+    ENDSESSION_LOGOFF, WM_ENDSESSION, WM_WTSSESSION_CHANGE, WTS_SESSION_LOCK, WTS_SESSION_UNLOCK,
+};
 
 use crate::objects::MessageWindow;
 
@@ -11,19 +16,32 @@ pub enum SystemEvent {
     Shutdown,
     /// Logoff
     Logoff,
+    /// Lock
+    Lock,
+    /// Unlock
+    Unlock,
+    // TODO sleep, suspend, hibernate, resume, monitor on / monitor off
 }
 
 /// Watcher for system events
-pub struct SystemEventWatcher {}
+pub struct SystemEventWatcher<'a> {
+    message_window: &'a MessageWindow,
+}
 
-impl SystemEventWatcher {
+impl<'a> SystemEventWatcher<'a> {
     /// Create a new system watcher
     pub fn new(
-        message_window: &MessageWindow,
+        message_window: &'a MessageWindow,
         // Callback is used instead of a channel because we want it to be processed ASAP.
         mut callback: impl FnMut(SystemEvent) -> Result<()> + 'static,
     ) -> Result<Self> {
         // TODO add logon
+
+        unsafe {
+            WTSRegisterSessionNotification(message_window.handle(), NOTIFY_FOR_THIS_SESSION)
+                .context("Failed to register session notification")?
+        };
+
         message_window.add_callback(Box::new(move |_, msg, wparam, lparam| {
             if msg == WM_ENDSESSION {
                 if lparam.0 as u32 & ENDSESSION_LOGOFF != 0 {
@@ -32,14 +50,33 @@ impl SystemEventWatcher {
                     // Cannot disambiguate between shutdown, restart etc.
                     callback(SystemEvent::Shutdown).warn();
                 }
+            } else if msg == WM_WTSSESSION_CHANGE {
+                if wparam.0 as u32 == WTS_SESSION_LOCK {
+                    callback(SystemEvent::Lock).warn();
+                } else if wparam.0 as u32 == WTS_SESSION_UNLOCK {
+                    callback(SystemEvent::Unlock).warn();
+                } else {
+                    info!("SESSION: unknown event {:x}", wparam.0);
+                }
+                }
             }
             None
         }));
-        Ok(Self {})
+        Ok(Self { message_window })
     }
 
     /// Poll for system watcher events
     pub fn poll(&mut self) -> Result<Option<SystemEvent>> {
         Ok(None)
+    }
+}
+
+impl<'a> Drop for SystemEventWatcher<'a> {
+    fn drop(&mut self) {
+        unsafe {
+            WTSUnRegisterSessionNotification(self.message_window.handle())
+                .context("Failed to unregister session notification")
+                .error()
+        };
     }
 }
