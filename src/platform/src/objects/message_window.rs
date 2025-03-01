@@ -18,14 +18,12 @@ unsafe extern "system" fn window_proc(
 ) -> LRESULT {
     {
         let callbacks = GetWindowLongPtrW(hwnd, GWLP_USERDATA) as *const Arc<Mutex<Vec<Callback>>>;
-        let mut callbacks = callbacks
-            .as_ref()
-            .expect("no null pointer")
-            .lock()
-            .expect("no poisoning");
-        for cb in callbacks.iter_mut() {
-            if let Some(ret) = cb(hwnd, msg, wparam, lparam) {
-                return ret;
+        if let Some(callbacks) = callbacks.as_ref() {
+            let mut callbacks = callbacks.lock().expect("no poisoning");
+            for cb in callbacks.iter_mut() {
+                if let Some(ret) = cb(hwnd, msg, wparam, lparam) {
+                    return ret;
+                }
             }
         }
     }

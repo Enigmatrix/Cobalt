@@ -10,7 +10,9 @@ use std::thread;
 
 use data::db::DatabasePool;
 use engine::{Engine, Event};
-use platform::events::{ForegroundEventWatcher, InteractionWatcher, WindowSession};
+use platform::events::{
+    ForegroundEventWatcher, InteractionWatcher, SystemEventWatcher, WindowSession,
+};
 use platform::objects::{EventLoop, MessageWindow, Timer, Timestamp, Window};
 use sentry::Sentry;
 use util::channels::{self, Receiver, Sender};
@@ -73,10 +75,17 @@ fn event_loop(
     let poll_dur = config.poll_duration().into();
     let alert_dur = config.alert_duration().into();
 
-    let win = MessageWindow::new()?;
+    let message_window = MessageWindow::new()?;
 
     let mut fg_watcher = ForegroundEventWatcher::new(fg)?;
     let it_watcher = InteractionWatcher::init(config, now)?;
+    let system_event_tx = event_tx.clone();
+    let _system_watcher = SystemEventWatcher::new(&message_window, move |event| {
+        info!("system event: {:?}", event);
+        system_event_tx
+            .send(Event::System(event))
+            .context("send system event to engine")
+    })?;
 
     let _poll_timer = Timer::new(
         poll_dur,

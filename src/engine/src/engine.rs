@@ -2,7 +2,9 @@ use std::sync::Arc;
 
 use data::db::{Database, DatabasePool, FoundOrInserted, UsageWriter};
 use data::entities::{AppIdentity, InteractionPeriod, Ref, Session, Usage};
-use platform::events::{ForegroundChangedEvent, InteractionChangedEvent, WindowSession};
+use platform::events::{
+    ForegroundChangedEvent, InteractionChangedEvent, SystemEvent, WindowSession,
+};
 use platform::objects::{Process, ProcessId, Timestamp, Window};
 use scoped_futures::ScopedFutureExt;
 use util::error::{Context, Result};
@@ -26,6 +28,7 @@ pub struct Engine {
 
 /// Events that the [Engine] can handle.
 pub enum Event {
+    System(SystemEvent),
     ForegroundChanged(ForegroundChangedEvent),
     InteractionChanged(InteractionChangedEvent),
     Tick(Timestamp),
@@ -65,6 +68,11 @@ impl Engine {
     /// Handle an [Event]
     pub async fn handle(&mut self, event: Event) -> Result<()> {
         match event {
+            Event::System(event) => {
+                info!("processing system event: {:?}", event);
+                // TODO save this to db, disable the engine (add events to turn on recording back afterwards)
+                // TODO run vacuum on db?
+            }
             Event::ForegroundChanged(ForegroundChangedEvent { at, session }) => {
                 info!("fg switch: {:?}", session);
 
