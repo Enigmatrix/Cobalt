@@ -11,7 +11,7 @@ use std::thread;
 use data::db::DatabasePool;
 use engine::{Engine, Event};
 use platform::events::{ForegroundEventWatcher, InteractionWatcher, WindowSession};
-use platform::objects::{EventLoop, Timer, Timestamp, Window};
+use platform::objects::{EventLoop, MessageWindow, Timer, Timestamp, Window};
 use sentry::Sentry;
 use util::channels::{self, Receiver, Sender};
 use util::config::{self, Config};
@@ -73,6 +73,8 @@ fn event_loop(
     let poll_dur = config.poll_duration().into();
     let alert_dur = config.alert_duration().into();
 
+    let win = MessageWindow::new()?;
+
     let mut fg_watcher = ForegroundEventWatcher::new(fg)?;
     let it_watcher = InteractionWatcher::init(config, now)?;
 
@@ -105,6 +107,7 @@ fn event_loop(
     )?;
 
     ev.run();
+    // this is never reached normally because WM_QUIT is never sent.
     Ok(())
 }
 
