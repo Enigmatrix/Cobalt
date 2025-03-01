@@ -1,11 +1,13 @@
+use std::sync::{Arc, Mutex};
+
 use util::error::{Context, Result};
-use util::tracing::{info, ResultTraceExt};
+use util::tracing::ResultTraceExt;
 use windows::core::{Error, HSTRING, PCWSTR};
 use windows::Win32::Foundation::{HINSTANCE, HWND, LPARAM, LRESULT, WPARAM};
 use windows::Win32::UI::WindowsAndMessaging::{
-    CreateWindowExW, DefWindowProcW, DestroyWindow, RegisterClassW, UnregisterClassW,
-    CW_USEDEFAULT, HWND_DESKTOP, WINDOW_STYLE, WM_ENDSESSION, WM_QUERYENDSESSION, WNDCLASSW,
-    WS_EX_NOACTIVATE,
+    CreateWindowExW, DefWindowProcW, DestroyWindow, GetWindowLongPtrW, RegisterClassW,
+    SetWindowLongPtrW, UnregisterClassW, CW_USEDEFAULT, GWLP_USERDATA, HWND_DESKTOP, WINDOW_STYLE,
+    WNDCLASSW, WS_EX_NOACTIVATE,
 };
 
 unsafe extern "system" fn window_proc(
@@ -14,20 +16,29 @@ unsafe extern "system" fn window_proc(
     wparam: WPARAM,
     lparam: LPARAM,
 ) -> LRESULT {
-    if msg == WM_QUERYENDSESSION {
-        println!("WM_QUERYENDSESSION {:x}", lparam.0);
-        info!("WM_QUERYENDSESSION {:x}", lparam.0);
-    } else if msg == WM_ENDSESSION {
-        println!("WM_ENDSESSION {:x}", lparam.0);
-        info!("WM_ENDSESSION {:x}", lparam.0);
+    {
+        let callbacks = GetWindowLongPtrW(hwnd, GWLP_USERDATA) as *const Arc<Mutex<Vec<Callback>>>;
+        let mut callbacks = callbacks
+            .as_ref()
+            .expect("no null pointer")
+            .lock()
+            .expect("no poisoning");
+        for cb in callbacks.iter_mut() {
+            if let Some(ret) = cb(hwnd, msg, wparam, lparam) {
+                return ret;
+            }
+        }
     }
     DefWindowProcW(hwnd, msg, wparam, lparam)
 }
+
+type Callback = Box<dyn FnMut(HWND, u32, WPARAM, LPARAM) -> Option<LRESULT>>;
 
 /// Hidden message window
 pub struct MessageWindow {
     hwnd: HWND,
     class_name: HSTRING,
+    callbacks: &'static Arc<Mutex<Vec<Callback>>>,
 }
 
 impl MessageWindow {
@@ -67,8 +78,21 @@ impl MessageWindow {
                 return Err(Error::from_win32()).context("Failed to create MessageWindow");
             }
 
-            Ok(Self { hwnd, class_name })
+            let callbacks = Box::leak(Box::new(Arc::new(Mutex::new(Vec::new()))));
+
+            SetWindowLongPtrW(hwnd, GWLP_USERDATA, callbacks as *mut _ as isize);
+
+            Ok(Self {
+                hwnd,
+                class_name,
+                callbacks,
+            })
         }
+    }
+
+    /// Add a callback to the message window WndProc
+    pub fn add_callback(&self, callback: Callback) {
+        self.callbacks.lock().expect("no poisoning").push(callback);
     }
 
     /// Get the handle of the window
