@@ -1,6 +1,7 @@
 use std::mem::swap;
 
 use util::error::Result;
+use util::tracing::ResultTraceExt;
 use windows::core::AgileReference;
 use windows::ApplicationModel::AppInfo as UWPAppInfo;
 use windows::Foundation::Size;
@@ -48,8 +49,8 @@ impl AppInfo {
         reader.ReadBytes(&mut logo)?;
 
         // yes, this is swapper, this is surprisingly more accurate.
-        let mut name = fv.query_value("FileDescription")?;
-        let mut description = fv.query_value("ProductName")?;
+        let mut name = fv.query_value("FileDescription").warn();
+        let mut description = fv.query_value("ProductName").warn();
         // exceptions
         if description.ends_with(".exe") {
             swap(&mut name, &mut description);
@@ -59,7 +60,7 @@ impl AppInfo {
             // not sure why FileDescription is the actual name of the app...
             name,
             description,
-            company: fv.query_value("CompanyName")?,
+            company: fv.query_value("CompanyName").warn(),
             logo,
         })
     }
