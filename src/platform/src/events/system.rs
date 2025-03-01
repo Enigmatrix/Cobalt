@@ -4,7 +4,8 @@ use windows::Win32::System::RemoteDesktop::{
     WTSRegisterSessionNotification, WTSUnRegisterSessionNotification, NOTIFY_FOR_THIS_SESSION,
 };
 use windows::Win32::UI::WindowsAndMessaging::{
-    ENDSESSION_LOGOFF, WM_ENDSESSION, WM_WTSSESSION_CHANGE, WTS_SESSION_LOCK, WTS_SESSION_UNLOCK,
+    ENDSESSION_LOGOFF, PBT_APMRESUMESUSPEND, PBT_APMSUSPEND, WM_ENDSESSION, WM_POWERBROADCAST,
+    WM_WTSSESSION_CHANGE, WTS_SESSION_LOCK, WTS_SESSION_UNLOCK,
 };
 
 use crate::objects::MessageWindow;
@@ -20,7 +21,11 @@ pub enum SystemEvent {
     Lock,
     /// Unlock
     Unlock,
-    // TODO sleep, suspend, hibernate, resume, monitor on / monitor off
+    /// Suspend
+    Suspend,
+    /// Resume
+    Resume,
+    // TODO sleep, hibernate, monitor on / monitor off
 }
 
 /// Watcher for system events
@@ -58,6 +63,13 @@ impl<'a> SystemEventWatcher<'a> {
                 } else {
                     info!("SESSION: unknown event {:x}", wparam.0);
                 }
+            } else if msg == WM_POWERBROADCAST {
+                if wparam.0 as u32 == PBT_APMSUSPEND {
+                    callback(SystemEvent::Suspend).warn();
+                } else if wparam.0 as u32 == PBT_APMRESUMESUSPEND {
+                    callback(SystemEvent::Resume).warn();
+                } else {
+                    info!("POWER: unknown event {:x}", wparam.0);
                 }
             }
             None
