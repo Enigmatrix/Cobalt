@@ -1,4 +1,5 @@
-use std::sync::{Arc, Mutex};
+use std::cell::RefCell;
+use std::rc::Rc;
 
 use util::error::{Context, Result};
 use util::tracing::ResultTraceExt;
@@ -17,9 +18,9 @@ unsafe extern "system" fn window_proc(
     lparam: LPARAM,
 ) -> LRESULT {
     {
-        let callbacks = GetWindowLongPtrW(hwnd, GWLP_USERDATA) as *const Arc<Mutex<Vec<Callback>>>;
+        let callbacks = GetWindowLongPtrW(hwnd, GWLP_USERDATA) as *const Rc<RefCell<Vec<Callback>>>;
         if let Some(callbacks) = callbacks.as_ref() {
-            let mut callbacks = callbacks.lock().expect("no poisoning");
+            let mut callbacks = callbacks.borrow_mut();
             for cb in callbacks.iter_mut() {
                 if let Some(ret) = cb(hwnd, msg, wparam, lparam) {
                     return ret;
@@ -36,7 +37,7 @@ type Callback = Box<dyn FnMut(HWND, u32, WPARAM, LPARAM) -> Option<LRESULT>>;
 pub struct MessageWindow {
     hwnd: HWND,
     class_name: HSTRING,
-    callbacks: &'static Arc<Mutex<Vec<Callback>>>,
+    callbacks: &'static Rc<RefCell<Vec<Callback>>>,
 }
 
 impl MessageWindow {
@@ -76,7 +77,7 @@ impl MessageWindow {
                 return Err(Error::from_win32()).context("Failed to create MessageWindow");
             }
 
-            let callbacks = Box::leak(Box::new(Arc::new(Mutex::new(Vec::new()))));
+            let callbacks = Box::leak(Box::new(Rc::new(RefCell::new(Vec::new()))));
 
             SetWindowLongPtrW(hwnd, GWLP_USERDATA, callbacks as *mut _ as isize);
 
@@ -90,7 +91,7 @@ impl MessageWindow {
 
     /// Add a callback to the message window WndProc
     pub fn add_callback(&self, callback: Callback) {
-        self.callbacks.lock().expect("no poisoning").push(callback);
+        self.callbacks.borrow_mut().push(callback);
     }
 
     /// Get the handle of the window
