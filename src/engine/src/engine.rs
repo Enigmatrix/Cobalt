@@ -1,7 +1,9 @@
 use std::sync::Arc;
 
 use data::db::{Database, DatabasePool, FoundOrInserted, UsageWriter};
-use data::entities::{AppIdentity, InteractionPeriod, Ref, Session, Usage};
+use data::entities::{
+    AppIdentity, InteractionPeriod, Ref, Session, SystemEvent as DataSystemEvent, Usage,
+};
 use platform::events::{
     ForegroundChangedEvent, InteractionChangedEvent, SystemEvent, WindowSession,
 };
@@ -74,25 +76,30 @@ impl Engine {
             let prev = self.active;
             self.active = !event.inactive();
 
-            // TODO save this event to db
             // TODO interaction period saving/reset
+            let now = Timestamp::now();
             if prev && !self.active {
                 // Stop usage watching, write last usage inside.
                 self.inserter
                     .insert_or_update_usage(&mut self.current_usage)
                     .await?;
-
-            // TODO run vacuum on db?
             } else if !prev && self.active {
                 // Restart usage watching.
                 let foreground = foreground_window_session()?;
                 self.current_usage = Usage {
                     id: Default::default(),
                     session_id: self.get_session_details(foreground).await?,
-                    start: Timestamp::now().to_ticks(),
-                    end: Timestamp::now().to_ticks(),
+                    start: now.to_ticks(),
+                    end: now.to_ticks(),
                 };
             }
+            self.inserter
+                .insert_system_event(&DataSystemEvent {
+                    id: Default::default(),
+                    timestamp: now.to_ticks(),
+                    event: event.into(),
+                })
+                .await?;
             info!("system event processed: {:?}", event);
             return Ok(());
         }

@@ -20,24 +20,30 @@ use crate::objects::MessageWindow;
 #[derive(Debug, Clone)]
 pub enum SystemEvent {
     /// Shutdown
-    Shutdown,
+    Shutdown = 0,
     /// Logoff
-    Logoff,
+    Logoff = 1,
     /// Lock (Win+L)
-    Lock,
+    Lock = 2,
     /// Unlock
-    Unlock,
+    Unlock = 3,
     /// Suspend
-    Suspend,
+    Suspend = 4,
     /// Resume
-    Resume,
+    Resume = 5,
     /// Monitor on
-    MonitorOn,
+    MonitorOn = 6,
     /// Monitor off
-    MonitorOff,
+    MonitorOff = 7,
     // TODO sleep, hibernate (or are these just suspend)
 
     // no need for logon event - duing logout programs are killed
+}
+
+impl From<&SystemEvent> for i64 {
+    fn from(event: &SystemEvent) -> Self {
+        event.clone() as i64
+    }
 }
 
 impl SystemEvent {

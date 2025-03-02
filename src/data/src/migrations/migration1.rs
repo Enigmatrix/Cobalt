@@ -81,6 +81,16 @@ impl Migration for Migration1 {
         .context("create table interaction_periods")?;
 
         tx.execute(
+            "CREATE TABLE system_events (
+                id                              INTEGER PRIMARY KEY NOT NULL,
+                timestamp                       INTEGER NOT NULL,
+                event                           INTEGER NOT NULL
+            )",
+        )
+        .await
+        .context("create table system_events")?;
+
+        tx.execute(
             "CREATE TABLE alerts (
                 id                              INTEGER NOT NULL,
                 version                         INTEGER NOT NULL,
