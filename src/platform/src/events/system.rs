@@ -28,6 +28,18 @@ pub enum SystemEvent {
     // TODO sleep, hibernate, monitor on / monitor off
 }
 
+impl SystemEvent {
+    /// Check if the event makes the system inactive
+    pub fn inactive(&self) -> bool {
+        match self {
+            SystemEvent::Shutdown => true,
+            SystemEvent::Logoff => true,
+            SystemEvent::Lock => true,
+            SystemEvent::Suspend => true,
+            _ => false,
+        }
+    }
+}
 /// Watcher for system events
 pub struct SystemEventWatcher<'a> {
     message_window: &'a MessageWindow,

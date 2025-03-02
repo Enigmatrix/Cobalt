@@ -14,6 +14,7 @@ use util::time::ToTicks;
 use util::tracing::{info, trace, ResultTraceExt};
 
 use crate::cache::{AppDetails, Cache, SessionDetails};
+use crate::foreground_window_session;
 use crate::resolver::AppInfoResolver;
 
 /// The main [Engine] that processes [Event]s and updates the [Database] with new [Usage]s, [Session]s and [App]s.
@@ -24,6 +25,7 @@ pub struct Engine {
     db_pool: DatabasePool,
     inserter: UsageWriter,
     spawner: Handle,
+    active: bool,
 }
 
 /// Events that the [Engine] can handle.
@@ -52,6 +54,7 @@ impl Engine {
             active_period_start: start,
             // set a default value, then update it right after
             current_usage: Default::default(),
+            active: true,
             spawner,
         };
 
@@ -67,12 +70,40 @@ impl Engine {
 
     /// Handle an [Event]
     pub async fn handle(&mut self, event: Event) -> Result<()> {
-        match event {
-            Event::System(event) => {
-                info!("processing system event: {:?}", event);
-                // TODO save this to db, disable the engine (add events to turn on recording back afterwards)
-                // TODO run vacuum on db?
+        if let Event::System(event) = &event {
+            let prev = self.active;
+            self.active = !event.inactive();
+
+            // TODO save this event to db
+            // TODO interaction period saving/reset
+            if prev && !self.active {
+                // Stop usage watching, write last usage inside.
+                self.inserter
+                    .insert_or_update_usage(&mut self.current_usage)
+                    .await?;
+
+            // TODO run vacuum on db?
+            } else if !prev && self.active {
+                // Restart usage watching.
+                let foreground = foreground_window_session()?;
+                self.current_usage = Usage {
+                    id: Default::default(),
+                    session_id: self.get_session_details(foreground).await?,
+                    start: Timestamp::now().to_ticks(),
+                    end: Timestamp::now().to_ticks(),
+                };
             }
+            info!("system event processed: {:?}", event);
+            return Ok(());
+        }
+
+        if !self.active {
+            return Ok(());
+        }
+
+        match event {
+            // handled above
+            Event::System(_) => unreachable!(),
             Event::ForegroundChanged(ForegroundChangedEvent { at, session }) => {
                 info!("fg switch: {:?}", session);
 
