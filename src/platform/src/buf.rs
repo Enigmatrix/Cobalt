@@ -107,7 +107,7 @@ impl<T, const N: usize> SmartBuf<T, N> {
     pub fn new(len: usize) -> Self {
         if len <= N {
             SmartBuf::Stack {
-                stack: MaybeUninit::uninit_array(),
+                stack: [const { MaybeUninit::<T>::uninit() }; N],
                 len,
             }
         } else {

@@ -1,4 +1,3 @@
-#![feature(maybe_uninit_uninit_array)]
 #![feature(maybe_uninit_slice)]
 #![feature(sync_unsafe_cell)]
 
