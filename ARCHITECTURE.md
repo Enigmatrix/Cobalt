@@ -71,10 +71,17 @@ erDiagram
     }
 
     interaction_periods {
+        int             id PK
         int             start
         int             end
         int             mouse_clicks
         int             key_strokes
+    }
+
+    system_events {
+        int             id PK
+        int             timestamp
+        int             event
     }
 
     alerts {

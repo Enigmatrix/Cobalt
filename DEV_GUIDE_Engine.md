@@ -7,6 +7,7 @@
 - Session: To keep track of an app and its window titles. A session can be reset if the app is closed or system shutdown. Titles are not unique.
 - Usage: A single, continuous usage of an app during a session. Idling might occur, but that is kept track seperately using interaction periods.
 - InteractionPeriod: A period of interaction (mouselicks / keystrokes). Once the user spents time idle, an entry is made that ends when the idle begins.
+- SystemEvent: A system event such as shutdown, logoff, lock, unlock, suspend, resume, monitor on, monitor off.
 - Tag: A collection of apps under a common name e.g. Gaming, Productivity
 - Alert: Record stating that we track an app or tag and perform an action (Kill/Message(Content)/Dim(Duration)) once the usage limit is hit, per day/ week / month.
 - Reminder: Record stating that for a certain threshold from an alert's usage limit, we should display a message warning the user.
