@@ -14,7 +14,8 @@ import {
   useInteractionPeriods,
   useSystemEvents,
 } from "@/hooks/use-repo";
-import { type TimePeriod, useTimePeriod } from "@/hooks/use-today";
+import { useTimePeriod } from "@/hooks/use-today";
+import type { TimePeriod } from "@/lib/time";
 import {
   durationToTicks,
   dateTimeToTicks,

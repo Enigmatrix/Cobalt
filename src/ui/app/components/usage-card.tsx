@@ -3,7 +3,8 @@ import { useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { DurationText } from "@/components/time/duration-text";
-import { useToday, type Interval, type TimePeriod } from "@/hooks/use-today";
+import { useToday } from "@/hooks/use-today";
+import type { Interval, TimePeriod } from "@/lib/time";
 
 export function UsageCard({
   interval,
