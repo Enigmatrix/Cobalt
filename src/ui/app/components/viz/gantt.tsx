@@ -19,6 +19,7 @@ import type {
   InteractionPeriod,
   Ref,
   Session,
+  SystemEvent,
   Usage,
 } from "@/lib/entities";
 import { ticksToDateTime } from "@/lib/time";
@@ -43,6 +44,8 @@ interface GanttProps {
   usagesLoading?: boolean;
   interactionPeriods?: InteractionPeriod[];
   interactionPeriodsLoading?: boolean;
+  systemEvents?: SystemEvent[];
+  systemEventsLoading?: boolean;
   defaultExpanded?: Record<Ref<App>, boolean>;
   rangeStart: DateTime;
   rangeEnd: DateTime;
@@ -141,6 +144,30 @@ function Bar({
   );
 }
 
+function Line({
+  className,
+  rangeStart,
+  rangeEnd,
+  timestamp,
+  timeUnit,
+}: {
+  className?: ClassValue;
+  rangeStart: DateTime;
+  rangeEnd: DateTime;
+  timestamp: DateTime;
+  timeUnit: TimeUnit;
+}) {
+  return (
+    <div
+      className={cn("absolute h-8 -mt-1", className)}
+      style={{
+        ...getPosition(timestamp, timestamp, rangeStart, rangeEnd, timeUnit),
+        width: "1px",
+      }}
+    />
+  );
+}
+
 function UsageBars({
   sessionUsages,
   rangeStart,
@@ -175,12 +202,14 @@ function UsageBars({
 
 function InteractionPeriodBars({
   interactionPeriods,
+  systemEvents,
   rangeStart,
   rangeEnd,
   timeUnit,
   setHoverInteractionPeriod,
 }: {
   interactionPeriods: InteractionPeriod[];
+  systemEvents: SystemEvent[];
   rangeStart: DateTime;
   rangeEnd: DateTime;
   timeUnit: TimeUnit;
@@ -199,6 +228,16 @@ function InteractionPeriodBars({
           timeUnit={timeUnit}
           onMouseOver={() => setHoverInteractionPeriod(interactionPeriod)}
           onMouseLeave={() => setHoverInteractionPeriod(null)}
+        />
+      ))}
+      {systemEvents.map((systemEvent, index) => (
+        <Line
+          key={index}
+          className="bg-primary/50 hover:bg-card-foreground"
+          timestamp={ticksToDateTime(systemEvent.timestamp)}
+          rangeStart={rangeStart}
+          rangeEnd={rangeEnd}
+          timeUnit={timeUnit}
         />
       ))}
     </>
@@ -289,6 +328,8 @@ export function Gantt({
   usagesLoading,
   interactionPeriods,
   interactionPeriodsLoading,
+  systemEvents,
+  systemEventsLoading,
   defaultExpanded,
   rangeStart,
   rangeEnd,
@@ -326,7 +367,9 @@ export function Gantt({
   );
 
   const hideTimeline =
-    (apps.length === 0 || usagesLoading) && interactionPeriods === undefined;
+    (apps.length === 0 || usagesLoading) &&
+    interactionPeriods === undefined &&
+    systemEvents === undefined;
 
   const ref = useRef<HTMLDivElement | null>(null);
 
@@ -409,14 +452,14 @@ export function Gantt({
             </h2>
           </div>
 
-          {/* Interaction Periods' header */}
-          {interactionPeriods && (
+          {/* Interaction Periods' + System Events header */}
+          {(interactionPeriods || systemEvents) && (
             <div className="border-b">
               <div className="flex items-center p-4 border-r h-[52px]">
                 <LaptopIcon className="w-6 h-6 ml-6" />
                 <Text className="font-semibold ml-4">Interactions</Text>
                 {/* BUG: this loading is as long as the usage loading ..????? */}
-                {interactionPeriodsLoading && (
+                {(interactionPeriodsLoading || systemEventsLoading) && (
                   <Loader2Icon className="animate-spin ml-4" />
                 )}
               </div>
@@ -507,14 +550,15 @@ export function Gantt({
               </div>
             )}
 
-            {interactionPeriods && (
+            {(interactionPeriods || systemEvents) && (
               <div className="border-b">
                 {/* Interaction Periods */}
                 <div className="h-[52px] relative">
                   <div className="absolute inset-x-0 top-4">
                     <InteractionPeriodBars
                       setHoverInteractionPeriod={setHoverInteractionPeriod}
-                      interactionPeriods={interactionPeriods}
+                      interactionPeriods={interactionPeriods ?? []}
+                      systemEvents={systemEvents ?? []}
                       rangeStart={rangeStart}
                       rangeEnd={rangeEnd}
                       timeUnit={timeUnit}
