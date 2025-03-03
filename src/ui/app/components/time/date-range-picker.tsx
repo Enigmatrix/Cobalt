@@ -19,6 +19,7 @@ type DateRangePickerProps = {
   value: Interval | null;
   onChange: (value: Interval | null) => void;
   render?: ReactNode;
+  dayGranularity?: boolean;
   className?: ClassValue;
 };
 
@@ -85,6 +86,7 @@ export function DateRangePicker({
   value,
   onChange,
   render,
+  dayGranularity = false,
   className,
 }: DateRangePickerProps) {
   const today = useToday();
@@ -131,48 +133,50 @@ export function DateRangePicker({
   );
 
   const startStr = useMemo(
-    () => (inner?.start ? htmlFormat(inner.start) : ""),
-    [inner?.start],
+    () => (inner?.start ? htmlFormat(inner.start, dayGranularity) : ""),
+    [inner?.start, dayGranularity],
   );
   const endStr = useMemo(
-    () => (inner?.end ? htmlFormat(inner.end) : ""),
-    [inner?.end],
+    () => (inner?.end ? htmlFormat(inner.end, dayGranularity) : ""),
+    [inner?.end, dayGranularity],
   );
 
   const setStartStr = useCallback(
     (str: string) => {
-      if (validHtmlFormat(str)) {
+      if (validHtmlFormat(str, dayGranularity)) {
         const newValue = { start: DateTime.fromISO(str), end: inner?.end };
         setInner(newValue);
       }
     },
-    [setInner, inner?.end],
+    [setInner, inner?.end, dayGranularity],
   );
 
   const setEndStr = useCallback(
     (str: string) => {
-      if (validHtmlFormat(str)) {
+      if (validHtmlFormat(str, dayGranularity)) {
         const newValue = { start: inner?.start, end: DateTime.fromISO(str) };
         setInner(newValue);
       }
     },
-    [setInner, inner?.start],
+    [setInner, inner?.start, dayGranularity],
   );
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button
-          id="date"
-          variant={"outline"}
-          className={cn(
-            "min-w-[300px] justify-start text-left font-normal",
-            !value && "text-muted-foreground",
-            className,
-          )}
-        >
-          {formatDateRange(value, quickRanges)}
-        </Button>
+        {render || (
+          <Button
+            id="date"
+            variant={"outline"}
+            className={cn(
+              "min-w-[300px] justify-start text-left font-normal",
+              !value && "text-muted-foreground",
+              className,
+            )}
+          >
+            {formatDateRange(value, quickRanges)}
+          </Button>
+        )}
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0 flex" align="start">
         <div className="flex flex-col">
@@ -180,8 +184,8 @@ export function DateRangePicker({
             <div className="flex-1 p-4">
               <Label>From</Label>
               <Input
-                type="datetime-local"
-                step="1"
+                type={dayGranularity ? "date" : "datetime-local"}
+                step={dayGranularity ? undefined : "1"}
                 className="mt-2 [&:not(dark)]:[color-scheme:light] dark:[color-scheme:dark]"
                 value={startStr}
                 onChange={(e) => setStartStr(e.target.value)}
@@ -190,8 +194,8 @@ export function DateRangePicker({
             <div className="flex-1 p-4">
               <Label>To</Label>
               <Input
-                type="datetime-local"
-                step="1"
+                type={dayGranularity ? "date" : "datetime-local"}
+                step={dayGranularity ? undefined : "1"}
                 className="mt-2 [&:not(dark)]:[color-scheme:light] dark:[color-scheme:dark]"
                 value={endStr}
                 onChange={(e) => setEndStr(e.target.value)}
@@ -258,10 +262,14 @@ const formatDateRange = (date: Interval | null, ranges: QuickRange[]) => {
   return <span>Pick a time range</span>;
 };
 
-const htmlFormat = (date: DateTime) => {
-  return date.toFormat("yyyy-MM-dd'T'HH:mm:ss");
+const htmlFormat = (date: DateTime, dayGranularity: boolean) => {
+  return dayGranularity
+    ? date.toFormat("yyyy-MM-dd")
+    : date.toFormat("yyyy-MM-dd'T'HH:mm:ss");
 };
 
-const validHtmlFormat = (str: string) =>
-  DateTime.fromFormat(str, "yyyy-MM-dd'T'HH:mm").isValid ||
-  DateTime.fromFormat(str, "yyyy-MM-dd'T'HH:mm:ss").isValid;
+const validHtmlFormat = (str: string, dayGranularity: boolean) =>
+  dayGranularity
+    ? DateTime.fromFormat(str, "yyyy-MM-dd").isValid
+    : DateTime.fromFormat(str, "yyyy-MM-dd'T'HH:mm").isValid ||
+      DateTime.fromFormat(str, "yyyy-MM-dd'T'HH:mm:ss").isValid;
