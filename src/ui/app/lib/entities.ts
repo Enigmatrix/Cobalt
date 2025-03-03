@@ -81,3 +81,20 @@ export interface InteractionPeriod {
   mouse_clicks: number;
   key_strokes: number;
 }
+
+export enum SystemEventEnum {
+  Shutdown = 0,
+  Logoff = 1,
+  Lock = 2,
+  Unlock = 3,
+  Suspend = 4,
+  Resume = 5,
+  MonitorOn = 6,
+  MonitorOff = 7,
+}
+
+export interface SystemEvent {
+  id: Ref<SystemEvent>;
+  timestamp: Timestamp;
+  event: SystemEventEnum;
+}

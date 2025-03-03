@@ -605,4 +605,27 @@ impl Repository {
 
         Ok(interactions)
     }
+
+    /// Gets all [SystemEvent]s in a time range
+    pub async fn get_system_events(
+        &mut self,
+        start: Timestamp,
+        end: Timestamp,
+    ) -> Result<Vec<SystemEvent>> {
+        let events: Vec<SystemEvent> = query_as(
+            "SELECT
+                e.id,
+                e.timestamp,
+                e.event
+            FROM system_events e, (SELECT ? AS start, ? AS end) p
+            WHERE e.timestamp > p.start AND e.timestamp <= p.end
+            ORDER BY e.timestamp ASC",
+        )
+        .bind(start)
+        .bind(end)
+        .fetch_all(self.db.executor())
+        .await?;
+
+        Ok(events)
+    }
 }

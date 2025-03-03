@@ -3,6 +3,7 @@ import {
   getAppDurationsPerPeriod,
   getAppSessionUsages,
   getInteractionPeriods,
+  getSystemEvents,
   getTagDurationsPerPeriod,
 } from "@/lib/repo";
 import type { EntityMap } from "@/lib/state";
@@ -46,6 +47,7 @@ export function makeUseRepo<T, Arg extends object>(
 
 export const useAppSessionUsages = makeUseRepo(getAppSessionUsages, {});
 export const useInteractionPeriods = makeUseRepo(getInteractionPeriods, []);
+export const useSystemEvents = makeUseRepo(getSystemEvents, []);
 
 export function useAppDurationsPerPeriod({
   start,

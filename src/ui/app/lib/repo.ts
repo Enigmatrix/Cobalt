@@ -7,6 +7,7 @@ import type {
   Tag,
   Ref,
   InteractionPeriod,
+  SystemEvent,
 } from "@/lib/entities";
 import { invoke } from "@tauri-apps/api/core";
 import type { EntityMap, EntityStore } from "@/lib/state";
@@ -172,6 +173,23 @@ export async function getInteractionPeriods({
 }): Promise<InteractionPeriod[]> {
   const queryOptions = getQueryOptions(options);
   return await invoke("get_interaction_periods", {
+    queryOptions,
+    start: dateTimeToTicks(start),
+    end: dateTimeToTicks(end),
+  });
+}
+
+export async function getSystemEvents({
+  options,
+  start,
+  end,
+}: {
+  options?: QueryOptions;
+  start: DateTime;
+  end: DateTime;
+}): Promise<SystemEvent[]> {
+  const queryOptions = getQueryOptions(options);
+  return await invoke("get_system_events", {
     queryOptions,
     start: dateTimeToTicks(start),
     end: dateTimeToTicks(end),

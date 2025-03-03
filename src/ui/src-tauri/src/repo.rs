@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use data::db::repo::{infused, WithDuration, WithGroupedDuration};
-use data::entities::{App, Duration, InteractionPeriod, Ref, Tag, Timestamp};
+use data::entities::{App, Duration, InteractionPeriod, Ref, SystemEvent, Tag, Timestamp};
 use tauri::State;
 use util::error::Context;
 use util::time::ToTicks;
@@ -212,4 +212,18 @@ pub async fn get_interaction_periods(
         state.assume_init_mut().get_repo().await?
     };
     Ok(repo.get_interaction_periods(start, end).await?)
+}
+
+#[tauri::command]
+#[tracing::instrument(err, skip(state))]
+pub async fn get_system_events(
+    state: State<'_, AppState>,
+    start: Timestamp,
+    end: Timestamp,
+) -> AppResult<Vec<SystemEvent>> {
+    let mut repo = {
+        let mut state = state.write().await;
+        state.assume_init_mut().get_repo().await?
+    };
+    Ok(repo.get_system_events(start, end).await?)
 }
