@@ -86,7 +86,6 @@ erDiagram
 
     alerts {
         int             id PK
-        int             version PK
         int_nullable    app_id FK
         int_nullable    tag_id FK
         int             usage_limit
@@ -99,23 +98,20 @@ erDiagram
     alert_events {
         int             id PK
         int             alert_id FK
-        int             alert_version FK
         int             timestamp
     }
 
     reminders {
         int             id PK
-        int             version PK
         int             alert_id FK
-        int             alert_version FK
         real            threshold
         text            message
+        tinyint         active
     }
 
     reminder_events {
         int             id PK
         int             reminder_id FK
-        int             reminder_version FK
         int             timestamp
     }
 

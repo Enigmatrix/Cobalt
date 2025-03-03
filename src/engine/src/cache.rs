@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::future::Future;
 
 use data::entities::{App, Ref, Session};
@@ -9,6 +9,7 @@ use util::error::Result;
 use util::future as tokio;
 
 /// Cache for storing information about windows, processes, apps and sessions.
+#[derive(Debug)]
 pub struct Cache {
     // TODO this might be a bad idea, the HWND might be reused by Windows,
     // so another window could be running with the same HWND after the first one closed...
@@ -19,17 +20,19 @@ pub struct Cache {
 
     // An app can have many processes open representing it.
     // A process can have many windows.
-    windows: HashMap<ProcessId, Vec<Window>>,
-    processes: HashMap<Ref<App>, Vec<ProcessId>>,
+    windows: HashMap<ProcessId, HashSet<Window>>,
+    processes: HashMap<Ref<App>, HashSet<ProcessId>>,
 }
 
 /// Details about a [Session].
+#[derive(Debug)]
 pub struct SessionDetails {
     pub session: Ref<Session>,
     pub pid: ProcessId,
 }
 
 /// Details about a [App].
+#[derive(Debug)]
 pub struct AppDetails {
     pub app: Ref<App>,
 }
@@ -95,7 +98,7 @@ impl Cache {
         self.windows
             .entry(created.pid)
             .or_default()
-            .push(ws.window.clone());
+            .insert(ws.window.clone());
 
         Ok(self.sessions.entry(ws).or_insert(created))
     }
@@ -115,7 +118,7 @@ impl Cache {
         self.processes
             .entry(created.app.clone())
             .or_default()
-            .push(process);
+            .insert(process);
 
         Ok(self.apps.entry(process).or_insert(created))
     }
@@ -128,6 +131,30 @@ impl Cache {
     // pub async fn get_or_insert_app_for_process(&mut self, process: Process, create: impl Future<Output = Result<AppDetails>>) -> Result<&AppDetails> {
     //     unimplemented!()
     // }
+
+    /// Retains all process for windows in the list, and removes the rest
+    /// of the process and windows not in the list.
+    pub fn retain_cache(&mut self) -> Result<()> {
+        self.windows.retain(|pid, windows| {
+            // check if window is alive by checking if the pid() calls
+            // still succeeds and returns the same pid as previously
+            // returned to the engine
+            windows.retain(|window| window.pid().ok() == Some(*pid));
+            !windows.is_empty()
+        });
+        let alive_windows = self.windows.values().flatten().collect::<HashSet<_>>();
+
+        // retain only sessions and apps for which their windows and apps that are alive
+        self.sessions
+            .retain(|ws, _| alive_windows.contains(&ws.window));
+        self.apps.retain(|pid, _| self.windows.contains_key(pid));
+        // retain only app refs for procesess that are alive
+        self.processes.retain(|_, pids| {
+            pids.retain(|pid| self.windows.contains_key(pid));
+            !pids.is_empty()
+        });
+        Ok(())
+    }
 }
 
 #[tokio::test]

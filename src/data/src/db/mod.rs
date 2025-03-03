@@ -66,6 +66,12 @@ impl DatabasePool {
         let conn = self.pool.acquire().await?;
         Database::new(conn)
     }
+
+    /// Shutdown this DB Pool
+    pub async fn shutdown(&self) -> Result<()> {
+        self.pool.close().await;
+        Ok(())
+    }
 }
 
 /// Database connection stored in the file system.
@@ -260,15 +266,15 @@ impl AlertManager {
     /// Gets all [App]s under the [Target]
     pub async fn target_apps(&mut self, target: &Target) -> Result<Vec<Ref<App>>> {
         Ok(match target {
-            Target::Tag(tag) => {
+            Target::Tag { id } => {
                 query("SELECT id FROM apps WHERE tag_id = ?")
-                    .bind(tag)
+                    .bind(id)
                     .map(|r: SqliteRow| r.get(0))
                     .fetch_all(self.db.executor())
                     .await?
             }
             // this will only return one result, but we get a row iterator nonetheless
-            Target::App(app) => vec![app.clone()],
+            Target::App { id } => vec![id.clone()],
         })
     }
 
@@ -311,9 +317,8 @@ impl AlertManager {
 
     /// Insert a [AlertEvent]
     pub async fn insert_alert_event(&mut self, event: &AlertEvent) -> Result<()> {
-        query("INSERT INTO alert_events VALUES (NULL, ?, ?, ?)")
-            .bind(event.alert.id)
-            .bind(event.alert.version)
+        query("INSERT INTO alert_events VALUES (NULL, ?, ?)")
+            .bind(&event.alert_id)
             .bind(event.timestamp)
             .execute(self.db.executor())
             .await?;
@@ -322,9 +327,8 @@ impl AlertManager {
 
     /// Insert a [ReminderEvent]
     pub async fn insert_reminder_event(&mut self, event: &ReminderEvent) -> Result<()> {
-        query("INSERT INTO reminder_events VALUES (NULL, ?, ?, ?)")
-            .bind(event.reminder.id)
-            .bind(event.reminder.version)
+        query("INSERT INTO reminder_events VALUES (NULL, ?, ?)")
+            .bind(&event.reminder_id)
             .bind(event.timestamp)
             .execute(self.db.executor())
             .await?;

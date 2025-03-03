@@ -3,7 +3,6 @@ use sqlx::{query, Row};
 use util::future as tokio;
 
 use super::*;
-use crate::table::{AlertVersionedId, ReminderVersionedId};
 
 pub async fn test_db() -> Result<Database> {
     let conn = SqliteConnectOptions::new()
@@ -252,7 +251,6 @@ async fn insert_app_raw(
 async fn insert_alert_raw(
     db: &mut Database,
     id: i64,
-    vers: i64,
     a0: Option<i64>,
     a1: Option<i64>,
     a2: i64,
@@ -260,10 +258,10 @@ async fn insert_alert_raw(
     a4: i64,
     a5: &str,
     a6: i64,
+    a7: bool,
 ) -> Result<()> {
     query("INSERT INTO alerts VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
         .bind(id)
-        .bind(vers)
         .bind(a0)
         .bind(a1)
         .bind(a2)
@@ -271,6 +269,7 @@ async fn insert_alert_raw(
         .bind(a4)
         .bind(a5)
         .bind(a6)
+        .bind(a7)
         .execute(db.executor())
         .await?;
     Ok(())
@@ -279,19 +278,17 @@ async fn insert_alert_raw(
 async fn insert_reminder_raw(
     db: &mut Database,
     id: i64,
-    vers: i64,
     a0: i64,
-    a1: i64,
-    a2: f64,
+    a1: f64,
     a3: &str,
+    a4: bool,
 ) -> Result<()> {
-    query("INSERT INTO reminders VALUES (?, ?, ?, ?, ?, ?)")
+    query("INSERT INTO reminders VALUES (?, ?, ?, ?, ?)")
         .bind(id)
-        .bind(vers)
         .bind(a0)
         .bind(a1)
-        .bind(a2)
         .bind(a3)
+        .bind(a4)
         .execute(db.executor())
         .await?;
     Ok(())
@@ -415,33 +412,39 @@ async fn target_apps() -> Result<()> {
     };
 
     assert_eq!(
-        mgr.target_apps(&Target::App(Ref::new(1))).await?,
+        mgr.target_apps(&Target::App { id: (Ref::new(1)) }).await?,
         vec![app1.id.clone()],
     );
 
     assert_eq!(
-        mgr.target_apps(&Target::App(Ref::new(2))).await?,
+        mgr.target_apps(&Target::App { id: (Ref::new(2)) }).await?,
         vec![app2.id.clone()],
     );
 
     assert_eq!(
-        mgr.target_apps(&Target::App(Ref::new(3))).await?,
+        mgr.target_apps(&Target::App { id: (Ref::new(3)) }).await?,
         vec![app3.id.clone()],
     );
 
-    assert_eq!(mgr.target_apps(&Target::Tag(Ref::new(1))).await?, vec![],);
+    assert_eq!(
+        mgr.target_apps(&Target::Tag { id: Ref::new(1) }).await?,
+        vec![],
+    );
 
     assert_eq!(
-        mgr.target_apps(&Target::Tag(Ref::new(2))).await?,
+        mgr.target_apps(&Target::Tag { id: Ref::new(2) }).await?,
         vec![app2.id.clone(), app4.id.clone()],
     );
 
     assert_eq!(
-        mgr.target_apps(&Target::Tag(Ref::new(3))).await?,
+        mgr.target_apps(&Target::Tag { id: Ref::new(3) }).await?,
         vec![app3.id.clone()],
     );
 
-    assert_eq!(mgr.target_apps(&Target::Tag(Ref::new(4))).await?, vec![],);
+    assert_eq!(
+        mgr.target_apps(&Target::Tag { id: Ref::new(4) }).await?,
+        vec![],
+    );
 
     Ok(())
 }
@@ -456,12 +459,12 @@ async fn insert_alert_event() -> Result<()> {
             &mut db, true, true, "name1", "desc1", "comp1", "red1", None, 1, "path1", None,
         )
         .await?;
-        insert_alert_raw(&mut db, id, 1, Some(1), None, 100, 1, 0, "", 1).await?;
+        insert_alert_raw(&mut db, id, Some(1), None, 100, 1, 0, "", 1, true).await?;
     }
 
     let mut alert_event = AlertEvent {
         id: Default::default(),
-        alert: AlertVersionedId { id, version: 1 },
+        alert_id: Ref::new(1),
         timestamp: 1337,
     };
 
@@ -493,16 +496,13 @@ async fn insert_reminder_event() -> Result<()> {
             &mut db, true, true, "name1", "desc1", "comp1", "red1", None, 1, "path1", None,
         )
         .await?;
-        insert_alert_raw(&mut db, alert_id, 1, Some(1), None, 100, 1, 0, "", 1).await?;
-        insert_reminder_raw(&mut db, reminder_id, 1, alert_id, 1, 0.75, "hello").await?;
+        insert_alert_raw(&mut db, alert_id, Some(1), None, 100, 1, 0, "", 1, true).await?;
+        insert_reminder_raw(&mut db, reminder_id, alert_id, 0.75, "hello", true).await?;
     }
 
     let mut reminder_event = ReminderEvent {
         id: Default::default(),
-        reminder: ReminderVersionedId {
-            id: reminder_id,
-            version: 1,
-        },
+        reminder_id: Ref::new(reminder_id),
         timestamp: 1337,
     };
 
@@ -524,6 +524,7 @@ async fn insert_reminder_event() -> Result<()> {
 }
 
 pub struct Times {
+    pub now: i64,
     pub day_start: i64,
     pub week_start: i64,
     pub month_start: i64,
@@ -539,6 +540,10 @@ impl ToTicks for Tick {
 
 impl TimeSystem for Times {
     type Ticks = Tick;
+
+    fn now(&self) -> Self::Ticks {
+        Tick(self.now)
+    }
 
     fn day_start(&self, _: bool) -> Self::Ticks {
         Tick(self.day_start)
@@ -654,19 +659,18 @@ pub mod arrange {
 
         let (dim_duration, message_content, tag) = match &alert.trigger_action {
             TriggerAction::Kill => (None, None, 0),
-            TriggerAction::Dim(dur) => (Some(*dur), None, 1),
-            TriggerAction::Message(content) => (None, Some(content.to_string()), 2),
+            TriggerAction::Dim { duration } => (Some(*duration), None, 1),
+            TriggerAction::Message { content } => (None, Some(content.to_string()), 2),
         };
 
         let (app_id, tag_id) = match alert.target.clone() {
-            Target::App(app) => (Some(app.0), None),
-            Target::Tag(tag) => (None, Some(tag.0)),
+            Target::App { id } => (Some(id.0), None),
+            Target::Tag { id } => (None, Some(id.0)),
         };
 
         insert_alert_raw(
             db,
-            alert.id.id,
-            alert.id.version,
+            alert.id.0,
             app_id,
             tag_id,
             alert.usage_limit,
@@ -674,6 +678,7 @@ pub mod arrange {
             dim_duration.unwrap_or(0),
             &message_content.unwrap_or("".to_string()),
             tag,
+            alert.active,
         )
         .await?;
         Ok(alert)
@@ -682,21 +687,19 @@ pub mod arrange {
     pub async fn reminder(db: &mut Database, reminder: Reminder) -> Result<Reminder> {
         insert_reminder_raw(
             db,
-            reminder.id.id,
-            reminder.id.version,
-            reminder.alert.id,
-            reminder.alert.version,
+            reminder.id.0,
+            reminder.alert_id.0,
             reminder.threshold,
             &reminder.message,
+            reminder.active,
         )
         .await?;
         Ok(reminder)
     }
 
     pub async fn alert_event(db: &mut Database, mut event: AlertEvent) -> Result<AlertEvent> {
-        let res = query("INSERT INTO alert_events VALUES (NULL, ?, ?, ?)")
-            .bind(event.alert.id)
-            .bind(event.alert.version)
+        let res = query("INSERT INTO alert_events VALUES (NULL, ?, ?)")
+            .bind(event.alert_id.0)
             .bind(event.timestamp)
             .execute(db.executor())
             .await?;
@@ -708,25 +711,19 @@ pub mod arrange {
         db: &mut Database,
         mut event: ReminderEvent,
     ) -> Result<ReminderEvent> {
-        let res = query("INSERT INTO reminder_events VALUES (NULL, ?, ?, ?)")
-            .bind(event.reminder.id)
-            .bind(event.reminder.version)
+        let res = query("INSERT INTO reminder_events VALUES (NULL, ?, ?)")
+            .bind(event.reminder_id.0)
             .bind(event.timestamp)
             .execute(db.executor())
             .await?;
         event.id = Ref::new(res.last_insert_rowid());
         Ok(event)
     }
-
-    pub fn to_id(n: i64) -> i64 {
-        n
-    }
 }
 
 mod triggered_alerts {
     use super::*;
     use crate::entities::{TimeFrame, TriggerAction};
-    use crate::table::VersionedId;
 
     #[tokio::test]
     async fn no_alerts() -> Result<()> {
@@ -735,6 +732,7 @@ mod triggered_alerts {
         let mut mgr = AlertManager::new(db)?;
         let alerts = mgr
             .triggered_alerts(&Times {
+                now: 0,
                 day_start: 0,
                 week_start: 0,
                 month_start: 0,
@@ -768,14 +766,14 @@ mod triggered_alerts {
         let _alert = arrange::alert(
             &mut db,
             Alert {
-                id: Ref::new(VersionedId {
-                    id: arrange::to_id(1),
-                    version: 1,
-                }),
-                target: Target::App(app.id.clone()),
+                id: Ref::new(1),
+                target: Target::App {
+                    id: (app.id.clone()),
+                },
                 usage_limit: 100,
                 time_frame: TimeFrame::Daily,
                 trigger_action: TriggerAction::Kill,
+                active: true,
             },
         )
         .await?;
@@ -783,6 +781,7 @@ mod triggered_alerts {
         let mut mgr = AlertManager::new(db)?;
         let alerts = mgr
             .triggered_alerts(&Times {
+                now: 0,
                 day_start: 0,
                 week_start: 0,
                 month_start: 0,
@@ -826,14 +825,14 @@ mod triggered_alerts {
         let _alert = arrange::alert(
             &mut db,
             Alert {
-                id: Ref::new(VersionedId {
-                    id: arrange::to_id(1),
-                    version: 1,
-                }),
-                target: Target::App(app.id.clone()),
+                id: Ref::new(1),
+                target: Target::App {
+                    id: (app.id.clone()),
+                },
                 usage_limit: 100,
                 time_frame: TimeFrame::Daily,
                 trigger_action: TriggerAction::Kill,
+                active: true,
             },
         )
         .await?;
@@ -841,6 +840,7 @@ mod triggered_alerts {
         let mut mgr = AlertManager::new(db)?;
         let alerts = mgr
             .triggered_alerts(&Times {
+                now: 0,
                 day_start: 0,
                 week_start: 0,
                 month_start: 0,
@@ -895,14 +895,14 @@ mod triggered_alerts {
         let alert = arrange::alert(
             &mut db,
             Alert {
-                id: Ref::new(VersionedId {
-                    id: arrange::to_id(1),
-                    version: 1,
-                }),
-                target: Target::App(app.id.clone()),
+                id: Ref::new(1),
+                target: Target::App {
+                    id: (app.id.clone()),
+                },
                 usage_limit: 100,
                 time_frame: TimeFrame::Daily,
                 trigger_action: TriggerAction::Kill,
+                active: true,
             },
         )
         .await?;
@@ -910,6 +910,7 @@ mod triggered_alerts {
         let mut mgr = AlertManager::new(db)?;
         let alerts = mgr
             .triggered_alerts(&Times {
+                now: 0,
                 day_start: 0,
                 week_start: 0,
                 month_start: 0,
@@ -971,14 +972,14 @@ mod triggered_alerts {
         let alert1 = arrange::alert(
             &mut db,
             Alert {
-                id: Ref::new(VersionedId {
-                    id: arrange::to_id(1),
-                    version: 1,
-                }),
-                target: Target::App(app.id.clone()),
+                id: Ref::new(1),
+                target: Target::App {
+                    id: (app.id.clone()),
+                },
                 usage_limit: 50,
                 time_frame: TimeFrame::Daily,
                 trigger_action: TriggerAction::Kill,
+                active: true,
             },
         )
         .await?;
@@ -986,14 +987,14 @@ mod triggered_alerts {
         let _alert2 = arrange::alert(
             &mut db,
             Alert {
-                id: Ref::new(VersionedId {
-                    id: arrange::to_id(2),
-                    version: 1,
-                }),
-                target: Target::App(app.id.clone()),
+                id: Ref::new(2),
+                target: Target::App {
+                    id: (app.id.clone()),
+                },
                 usage_limit: 51,
                 time_frame: TimeFrame::Daily,
                 trigger_action: TriggerAction::Kill,
+                active: true,
             },
         )
         .await?;
@@ -1001,6 +1002,7 @@ mod triggered_alerts {
         let mut mgr = AlertManager::new(db)?;
         let alerts = mgr
             .triggered_alerts(&Times {
+                now: 100,
                 day_start: 50,
                 week_start: 50,
                 month_start: 50,
@@ -1062,14 +1064,14 @@ mod triggered_alerts {
         let _alert1 = arrange::alert(
             &mut db,
             Alert {
-                id: Ref::new(VersionedId {
-                    id: arrange::to_id(1),
-                    version: 1,
-                }),
-                target: Target::App(app.id.clone()),
+                id: Ref::new(1),
+                target: Target::App {
+                    id: (app.id.clone()),
+                },
                 usage_limit: 10,
                 time_frame: TimeFrame::Daily,
                 trigger_action: TriggerAction::Kill,
+                active: false,
             },
         )
         .await?;
@@ -1077,14 +1079,15 @@ mod triggered_alerts {
         let alert2 = arrange::alert(
             &mut db,
             Alert {
-                id: Ref::new(VersionedId {
-                    id: arrange::to_id(1),
-                    version: 2,
-                }),
-                target: Target::App(app.id.clone()),
+                // alert1 upgraded
+                id: Ref::new(2),
+                target: Target::App {
+                    id: (app.id.clone()),
+                },
                 usage_limit: 100,
                 time_frame: TimeFrame::Daily,
                 trigger_action: TriggerAction::Kill,
+                active: true,
             },
         )
         .await?;
@@ -1092,6 +1095,7 @@ mod triggered_alerts {
         let mut mgr = AlertManager::new(db)?;
         let alerts = mgr
             .triggered_alerts(&Times {
+                now: 100,
                 day_start: 0,
                 week_start: 0,
                 month_start: 0,
@@ -1153,14 +1157,14 @@ mod triggered_alerts {
         let alert = arrange::alert(
             &mut db,
             Alert {
-                id: Ref::new(VersionedId {
-                    id: arrange::to_id(1),
-                    version: 1,
-                }),
-                target: Target::App(app.id.clone()),
+                id: Ref::new(1),
+                target: Target::App {
+                    id: (app.id.clone()),
+                },
                 usage_limit: 50,
                 time_frame: TimeFrame::Daily,
                 trigger_action: TriggerAction::Kill,
+                active: true,
             },
         )
         .await?;
@@ -1169,7 +1173,7 @@ mod triggered_alerts {
             &mut db,
             AlertEvent {
                 id: Ref::default(),
-                alert: alert.id.0.clone().into(),
+                alert_id: alert.id.clone().into(),
                 timestamp: 75,
             },
         )
@@ -1178,6 +1182,7 @@ mod triggered_alerts {
         let mut mgr = AlertManager::new(db)?;
         let alerts = mgr
             .triggered_alerts(&Times {
+                now: 100,
                 day_start: 50,
                 week_start: 0,
                 month_start: 0,
@@ -1239,14 +1244,14 @@ mod triggered_alerts {
         let alert = arrange::alert(
             &mut db,
             Alert {
-                id: Ref::new(VersionedId {
-                    id: arrange::to_id(1),
-                    version: 1,
-                }),
-                target: Target::App(app.id.clone()),
+                id: Ref::new(1),
+                target: Target::App {
+                    id: (app.id.clone()),
+                },
                 usage_limit: 50,
                 time_frame: TimeFrame::Daily,
                 trigger_action: TriggerAction::Kill,
+                active: true,
             },
         )
         .await?;
@@ -1255,7 +1260,7 @@ mod triggered_alerts {
             &mut db,
             AlertEvent {
                 id: Ref::default(),
-                alert: alert.id.0.clone().into(),
+                alert_id: alert.id.clone(),
                 timestamp: 25,
             },
         )
@@ -1264,6 +1269,7 @@ mod triggered_alerts {
         let mut mgr = AlertManager::new(db)?;
         let alerts = mgr
             .triggered_alerts(&Times {
+                now: 100,
                 day_start: 50,
                 week_start: 0,
                 month_start: 0,
@@ -1325,14 +1331,14 @@ mod triggered_alerts {
         let alert = arrange::alert(
             &mut db,
             Alert {
-                id: Ref::new(VersionedId {
-                    id: arrange::to_id(1),
-                    version: 1,
-                }),
-                target: Target::App(app.id.clone()),
+                id: Ref::new(1),
+                target: Target::App {
+                    id: (app.id.clone()),
+                },
                 usage_limit: 50,
                 time_frame: TimeFrame::Weekly,
                 trigger_action: TriggerAction::Kill,
+                active: true,
             },
         )
         .await?;
@@ -1340,6 +1346,7 @@ mod triggered_alerts {
         let mut mgr = AlertManager::new(db)?;
         let alerts = mgr
             .triggered_alerts(&Times {
+                now: 5000,
                 day_start: 1000,
                 week_start: 50,
                 month_start: 1000,
@@ -1401,14 +1408,14 @@ mod triggered_alerts {
         let alert = arrange::alert(
             &mut db,
             Alert {
-                id: Ref::new(VersionedId {
-                    id: arrange::to_id(1),
-                    version: 1,
-                }),
-                target: Target::App(app.id.clone()),
+                id: Ref::new(1),
+                target: Target::App {
+                    id: (app.id.clone()),
+                },
                 usage_limit: 50,
                 time_frame: TimeFrame::Monthly,
                 trigger_action: TriggerAction::Kill,
+                active: true,
             },
         )
         .await?;
@@ -1416,6 +1423,7 @@ mod triggered_alerts {
         let mut mgr = AlertManager::new(db)?;
         let alerts = mgr
             .triggered_alerts(&Times {
+                now: 5000,
                 day_start: 1000,
                 week_start: 1000,
                 month_start: 50,
@@ -1503,14 +1511,14 @@ mod triggered_alerts {
         let alert = arrange::alert(
             &mut db,
             Alert {
-                id: Ref::new(VersionedId {
-                    id: arrange::to_id(1),
-                    version: 1,
-                }),
-                target: Target::App(app.id.clone()),
+                id: Ref::new(1),
+                target: Target::App {
+                    id: (app.id.clone()),
+                },
                 usage_limit: 50,
                 time_frame: TimeFrame::Daily,
                 trigger_action: TriggerAction::Kill,
+                active: true,
             },
         )
         .await?;
@@ -1518,6 +1526,7 @@ mod triggered_alerts {
         let mut mgr = AlertManager::new(db)?;
         let alerts = mgr
             .triggered_alerts(&Times {
+                now: 5000,
                 day_start: 50,
                 week_start: 0,
                 month_start: 0,
@@ -1605,14 +1614,14 @@ mod triggered_alerts {
         let _alert = arrange::alert(
             &mut db,
             Alert {
-                id: Ref::new(VersionedId {
-                    id: arrange::to_id(1),
-                    version: 1,
-                }),
-                target: Target::App(app.id.clone()),
+                id: Ref::new(1),
+                target: Target::App {
+                    id: (app.id.clone()),
+                },
                 usage_limit: 50,
                 time_frame: TimeFrame::Daily,
                 trigger_action: TriggerAction::Kill,
+                active: true,
             },
         )
         .await?;
@@ -1620,6 +1629,7 @@ mod triggered_alerts {
         let mut mgr = AlertManager::new(db)?;
         let alerts = mgr
             .triggered_alerts(&Times {
+                now: 5000,
                 day_start: 50,
                 week_start: 0,
                 month_start: 0,
@@ -1825,14 +1835,14 @@ mod triggered_alerts {
         let _empty = arrange::alert(
             &mut db,
             Alert {
-                id: Ref::new(VersionedId {
-                    id: arrange::to_id(1),
-                    version: 1,
-                }),
-                target: Target::Tag(empty_tag.id.clone()),
+                id: Ref::new(1),
+                target: Target::Tag {
+                    id: empty_tag.id.clone(),
+                },
                 usage_limit: 100,
                 time_frame: TimeFrame::Daily,
                 trigger_action: TriggerAction::Kill,
+                active: true,
             },
         )
         .await?;
@@ -1840,14 +1850,14 @@ mod triggered_alerts {
         let _alert1 = arrange::alert(
             &mut db,
             Alert {
-                id: Ref::new(VersionedId {
-                    id: arrange::to_id(2),
-                    version: 1,
-                }),
-                target: Target::Tag(tag2.id.clone()),
+                id: Ref::new(2),
+                target: Target::Tag {
+                    id: tag2.id.clone(),
+                },
                 usage_limit: 120,
                 time_frame: TimeFrame::Daily,
                 trigger_action: TriggerAction::Kill,
+                active: true,
             },
         )
         .await?;
@@ -1855,14 +1865,14 @@ mod triggered_alerts {
         let alert2 = arrange::alert(
             &mut db,
             Alert {
-                id: Ref::new(VersionedId {
-                    id: arrange::to_id(3),
-                    version: 1,
-                }),
-                target: Target::Tag(tag1.id.clone()),
+                id: Ref::new(3),
+                target: Target::Tag {
+                    id: tag1.id.clone(),
+                },
                 usage_limit: 200,
                 time_frame: TimeFrame::Daily,
                 trigger_action: TriggerAction::Kill,
+                active: true,
             },
         )
         .await?;
@@ -1870,14 +1880,14 @@ mod triggered_alerts {
         let alert3 = arrange::alert(
             &mut db,
             Alert {
-                id: Ref::new(VersionedId {
-                    id: arrange::to_id(4),
-                    version: 1,
-                }),
-                target: Target::Tag(tag2.id.clone()),
+                id: Ref::new(4),
+                target: Target::Tag {
+                    id: tag2.id.clone(),
+                },
                 usage_limit: 100,
                 time_frame: TimeFrame::Daily,
                 trigger_action: TriggerAction::Kill,
+                active: true,
             },
         )
         .await?;
@@ -1885,6 +1895,7 @@ mod triggered_alerts {
         let mut mgr = AlertManager::new(db)?;
         let alerts = mgr
             .triggered_alerts(&Times {
+                now: 5000,
                 day_start: 0,
                 week_start: 0,
                 month_start: 0,
@@ -1912,7 +1923,6 @@ mod triggered_alerts {
 mod triggered_reminders {
     use super::*;
     use crate::entities::{TimeFrame, TriggerAction};
-    use crate::table::VersionedId;
 
     // generate an alert which will not fire but the reminder will.
     async fn gen_alert(db: &mut Database) -> Result<Ref<Alert>> {
@@ -1957,14 +1967,14 @@ mod triggered_reminders {
         let alert = arrange::alert(
             db,
             Alert {
-                id: Ref::new(VersionedId {
-                    id: arrange::to_id(1),
-                    version: 1,
-                }),
-                target: Target::App(app.id.clone()),
+                id: Ref::new(1),
+                target: Target::App {
+                    id: (app.id.clone()),
+                },
                 usage_limit: 200,
                 time_frame: TimeFrame::Daily,
                 trigger_action: TriggerAction::Kill,
+                active: true,
             },
         )
         .await?;
@@ -1980,6 +1990,7 @@ mod triggered_reminders {
         let mut mgr = AlertManager::new(db)?;
         let reminders = mgr
             .triggered_reminders(&Times {
+                now: 5000,
                 day_start: 50,
                 week_start: 0,
                 month_start: 0,
@@ -2003,13 +2014,11 @@ mod triggered_reminders {
         let hit = arrange::reminder(
             &mut db,
             Reminder {
-                id: Ref::new(VersionedId {
-                    id: arrange::to_id(1),
-                    version: 1,
-                }),
-                alert: alert.0.clone().into(),
+                id: Ref::new(1),
+                alert_id: alert.clone(),
                 threshold: 0.50,
                 message: "hello".to_string(),
+                active: true,
             },
         )
         .await?;
@@ -2017,13 +2026,11 @@ mod triggered_reminders {
         let _not_hit = arrange::reminder(
             &mut db,
             Reminder {
-                id: Ref::new(VersionedId {
-                    id: arrange::to_id(2),
-                    version: 1,
-                }),
-                alert: alert.0.clone().into(),
+                id: Ref::new(2),
+                alert_id: alert.clone(),
                 threshold: 0.51,
                 message: "hello".to_string(),
+                active: true,
             },
         )
         .await?;
@@ -2031,6 +2038,7 @@ mod triggered_reminders {
         let mut mgr = AlertManager::new(db)?;
         let reminders = mgr
             .triggered_reminders(&Times {
+                now: 5000,
                 day_start: 50,
                 week_start: 0,
                 month_start: 0,
@@ -2055,26 +2063,22 @@ mod triggered_reminders {
         let _not_hit = arrange::reminder(
             &mut db,
             Reminder {
-                id: Ref::new(VersionedId {
-                    id: arrange::to_id(1),
-                    version: 1,
-                }),
-                alert: alert.0.clone().into(),
+                id: Ref::new(1),
+                alert_id: alert.clone(),
                 threshold: 0.50,
                 message: "hello".to_string(),
+                active: false,
             },
         )
         .await?;
         let hit = arrange::reminder(
             &mut db,
             Reminder {
-                id: Ref::new(VersionedId {
-                    id: arrange::to_id(1),
-                    version: 2,
-                }),
-                alert: alert.0.clone().into(),
+                id: Ref::new(2),
+                alert_id: alert.clone(),
                 threshold: 0.50,
                 message: "hello".to_string(),
+                active: true,
             },
         )
         .await?;
@@ -2082,6 +2086,7 @@ mod triggered_reminders {
         let mut mgr = AlertManager::new(db)?;
         let reminders = mgr
             .triggered_reminders(&Times {
+                now: 5000,
                 day_start: 50,
                 week_start: 0,
                 month_start: 0,
@@ -2105,13 +2110,11 @@ mod triggered_reminders {
         let hit = arrange::reminder(
             &mut db,
             Reminder {
-                id: Ref::new(VersionedId {
-                    id: arrange::to_id(1),
-                    version: 1,
-                }),
-                alert: alert.0.clone().into(),
+                id: Ref::new(1),
+                alert_id: alert.clone().into(),
                 threshold: 0.50,
                 message: "hello".to_string(),
+                active: true,
             },
         )
         .await?;
@@ -2120,7 +2123,7 @@ mod triggered_reminders {
             &mut db,
             ReminderEvent {
                 id: Default::default(),
-                reminder: hit.id.0.clone().into(),
+                reminder_id: hit.id.clone(),
                 timestamp: 25,
             },
         )
@@ -2129,6 +2132,7 @@ mod triggered_reminders {
         let mut mgr = AlertManager::new(db)?;
         let reminders = mgr
             .triggered_reminders(&Times {
+                now: 5000,
                 day_start: 50,
                 week_start: 0,
                 month_start: 0,
@@ -2152,13 +2156,11 @@ mod triggered_reminders {
         let hit = arrange::reminder(
             &mut db,
             Reminder {
-                id: Ref::new(VersionedId {
-                    id: arrange::to_id(1),
-                    version: 1,
-                }),
-                alert: alert.0.clone().into(),
+                id: Ref::new(1),
+                alert_id: alert.clone(),
                 threshold: 0.50,
                 message: "hello".to_string(),
+                active: true,
             },
         )
         .await?;
@@ -2167,7 +2169,7 @@ mod triggered_reminders {
             &mut db,
             ReminderEvent {
                 id: Default::default(),
-                reminder: hit.id.0.clone().into(),
+                reminder_id: hit.id.clone(),
                 timestamp: 200,
             },
         )
@@ -2176,6 +2178,7 @@ mod triggered_reminders {
         let mut mgr = AlertManager::new(db)?;
         let reminders = mgr
             .triggered_reminders(&Times {
+                now: 5000,
                 day_start: 50,
                 week_start: 0,
                 month_start: 0,

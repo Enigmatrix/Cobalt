@@ -15,7 +15,7 @@ import { type App, type Ref, type Tag } from "@/lib/entities";
 import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
 import { useCallback, useMemo, useState } from "react";
 import { DateTime, Duration } from "luxon";
-import { useApps, useTag } from "@/hooks/use-refresh";
+import { useTag } from "@/hooks/use-refresh";
 import {
   dateTimeToTicks,
   day,
@@ -28,7 +28,7 @@ import {
   weekDayFormatter,
 } from "@/lib/time";
 import { Text } from "@/components/ui/text";
-import { PlusIcon, TagIcon, TrashIcon } from "lucide-react";
+import { TagIcon, TrashIcon } from "lucide-react";
 import { EditableText } from "@/components/editable-text";
 import { ColorPicker } from "@/components/color-picker";
 import _ from "lodash";
@@ -52,40 +52,13 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useNavigate } from "react-router";
-import AppIcon from "@/components/app/app-icon";
-import { useSearch } from "@/hooks/use-search";
-import { MultiSelect } from "@/components/multi-select";
-import { AppBadge } from "@/components/app/app-list-item";
 import { useTimePeriod, type TimePeriod } from "@/hooks/use-today";
 import { Gantt } from "@/components/viz/gantt";
+import { ChooseMultiApps } from "@/components/app/choose-multi-apps";
 
 export default function Tag({ params }: Route.ComponentProps) {
   const id = +params.id;
   const tag = useTag(id as Ref<Tag>)!;
-  const apps = useApps();
-  const [search, setSearch, appsFiltered] = useSearch(apps, [
-    "name",
-    "company",
-    "description",
-  ]);
-  const appListIds = useMemo(
-    () => appsFiltered.map((app) => app.id),
-    [appsFiltered],
-  );
-  const allAppOptions = useMemo(
-    () =>
-      apps.map((app) => ({
-        id: app.id,
-        label: app.name,
-        icon: ({ className }: { className?: string }) => (
-          <AppIcon buffer={app.icon} className={className} />
-        ),
-        render: ({ remove }: { remove: () => void }) => (
-          <AppBadge app={app} remove={remove} />
-        ),
-      })),
-    [apps],
-  );
   const updateTag = useAppState((state) => state.updateTag);
   const removeTag = useAppState((state) => state.removeTag);
   const updateTagApps = useAppState((state) => state.updateTagApps);
@@ -184,122 +157,116 @@ export default function Tag({ params }: Route.ComponentProps) {
           </BreadcrumbList>
         </Breadcrumb>
       </header>
-      <div className="flex flex-1 flex-col gap-4 p-4">
-        {/* App Info */}
-        <div className="rounded-xl bg-card border border-border px-6 pt-6 pb-4">
-          <div className="flex flex-col gap-6">
-            {/* Header with name and icon */}
-            <div className="flex items-center gap-4">
-              <TagIcon
-                className="w-12 h-12 shrink-0"
-                style={{ color: tag.color }}
-              />
-              <div className="min-w-0 shrink flex flex-col">
-                <div className="min-w-0 flex gap-4">
-                  <EditableText
-                    text={tag.name}
-                    className="min-w-0 text-2xl font-semibold grow-0"
-                    buttonClassName="ml-1"
-                    onSubmit={async (v) => await updateTag({ ...tag, name: v })}
-                  />
+
+      <div className="h-0 flex-auto overflow-auto [scrollbar-gutter:stable]">
+        <div className="flex flex-col gap-4 p-4">
+          {/* App Info */}
+          <div className="rounded-xl bg-card border border-border px-6 pt-6 pb-4">
+            <div className="flex flex-col gap-6">
+              {/* Header with name and icon */}
+              <div className="flex items-center gap-4">
+                <TagIcon
+                  className="w-12 h-12 shrink-0"
+                  style={{ color: tag.color }}
+                />
+                <div className="min-w-0 shrink flex flex-col">
+                  <div className="min-w-0 flex gap-4">
+                    <EditableText
+                      text={tag.name}
+                      className="min-w-0 text-2xl font-semibold grow-0"
+                      buttonClassName="ml-1"
+                      onSubmit={async (v) =>
+                        await updateTag({ ...tag, name: v })
+                      }
+                    />
+                  </div>
                 </div>
+                <div className="flex-1" />
+                <ColorPicker
+                  className="min-w-0 w-fit"
+                  color={color}
+                  onChange={setColor}
+                />
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button size="icon" variant="outline">
+                      <TrashIcon />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Remove Tag?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This action cannot be undone. All Apps using this Tag
+                        will be marked as Untagged.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={remove}
+                        className={buttonVariants({ variant: "destructive" })}
+                      >
+                        Remove
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
-              <div className="flex-1" />
-              <ColorPicker
-                className="min-w-0 w-fit"
-                color={color}
-                onChange={setColor}
-              />
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button size="icon" variant="outline">
-                    <TrashIcon />
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Remove Tag?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This action cannot be undone. All Apps using this Tag will
-                      be marked as Untagged.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={remove}
-                      className={buttonVariants({ variant: "destructive" })}
-                    >
-                      Remove
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+
+              <ChooseMultiApps value={tag.apps} onValueChanged={setTagApps} />
             </div>
+          </div>
 
-            <MultiSelect
-              className="min-h-14 border-none w-fit"
-              options={allAppOptions}
-              onValueChange={setTagApps}
-              defaultValue={tag.apps}
-              placeholder="No Apps. Add some!"
-              rightIcon={(className) => <PlusIcon className={className} />}
-              maxCount={1000}
-              search={search}
-              onSearchChanged={setSearch}
-              filteredValues={appListIds}
+          <div className="grid grid-cols-1 auto-rows-min gap-4 md:grid-cols-3">
+            <TagUsageBarChartCard
+              timePeriod="day"
+              period={hour}
+              xAxisLabelFormatter={hour24Formatter}
+              tag={tag}
+            />
+            <TagUsageBarChartCard
+              timePeriod="week"
+              period={day}
+              xAxisLabelFormatter={weekDayFormatter}
+              tag={tag}
+            />
+            <TagUsageBarChartCard
+              timePeriod="month"
+              period={day}
+              xAxisLabelFormatter={monthDayFormatter}
+              tag={tag}
             />
           </div>
-        </div>
+          <TimePeriodUsageCard
+            timePeriod="year"
+            usage={yearUsage}
+            totalUsage={yearTotalUsage}
+            interval={yearInterval}
+            onIntervalChanged={setYearInterval}
+            isLoading={isYearDataLoading}
+          >
+            <div className="p-4">
+              <Heatmap
+                data={yearData}
+                scaling={scaling}
+                startDate={yearRangeStart ?? yearInterval.start}
+                fullCellColorRgb={tag.color}
+                innerClassName="min-h-[200px]"
+                firstDayOfMonthClassName="stroke-card-foreground/50"
+                tagId={tag.id}
+              />
+            </div>
+          </TimePeriodUsageCard>
 
-        <div className="grid grid-cols-1 auto-rows-min gap-4 md:grid-cols-3">
-          <TagUsageBarChartCard
-            timePeriod="day"
-            period={hour}
-            xAxisLabelFormatter={hour24Formatter}
-            tag={tag}
-          />
-          <TagUsageBarChartCard
-            timePeriod="week"
-            period={day}
-            xAxisLabelFormatter={weekDayFormatter}
-            tag={tag}
-          />
-          <TagUsageBarChartCard
-            timePeriod="month"
-            period={day}
-            xAxisLabelFormatter={monthDayFormatter}
-            tag={tag}
-          />
-        </div>
-        <TimePeriodUsageCard
-          timePeriod="year"
-          usage={yearUsage}
-          totalUsage={yearTotalUsage}
-          interval={yearInterval}
-          onIntervalChanged={setYearInterval}
-          isLoading={isYearDataLoading}
-        >
-          <div className="p-4">
-            <Heatmap
-              data={yearData}
-              scaling={scaling}
-              startDate={yearRangeStart ?? yearInterval.start}
-              fullCellColorRgb={tag.color}
-              innerClassName="min-h-[200px]"
-              firstDayOfMonthClassName="stroke-card-foreground/50"
-              tagId={tag.id}
+          <div className="rounded-xl bg-muted/50 overflow-hidden flex flex-col border border-border">
+            <Gantt
+              usages={tagAppSessionUsages}
+              usagesLoading={appSessionUsagesLoading}
+              rangeStart={dayRange.start}
+              rangeEnd={dayRange.end}
             />
           </div>
-        </TimePeriodUsageCard>
-
-        <div className="rounded-xl bg-muted/50 overflow-hidden flex flex-col border border-border">
-          <Gantt
-            usages={tagAppSessionUsages}
-            usagesLoading={appSessionUsagesLoading}
-            rangeStart={dayRange.start}
-            rangeEnd={dayRange.end}
-          />
         </div>
       </div>
     </>

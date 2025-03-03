@@ -92,16 +92,15 @@ impl Migration for Migration1 {
 
         tx.execute(
             "CREATE TABLE alerts (
-                id                              INTEGER NOT NULL,
-                version                         INTEGER NOT NULL,
-                app_id                          INTEGER REFERENCES apps(id),
-                tag_id                          INTEGER REFERENCES tags(id),
+                id                              INTEGER PRIMARY KEY NOT NULL,
+                app_id                          INTEGER REFERENCES apps(id) ON DELETE CASCADE,
+                tag_id                          INTEGER REFERENCES tags(id) ON DELETE CASCADE,
                 usage_limit                     INTEGER NOT NULL,
                 time_frame                      INTEGER NOT NULL,
                 trigger_action_dim_duration     INTEGER,
                 trigger_action_message_content  TEXT,
                 trigger_action_tag              INTEGER NOT NULL,
-                PRIMARY KEY (id, version)
+                active                          TINYINT NOT NULL DEFAULT TRUE
             )",
         )
         .await
@@ -109,15 +108,11 @@ impl Migration for Migration1 {
 
         tx.execute(
             "CREATE TABLE reminders (
-                id                              INTEGER NOT NULL,
-                version                         INTEGER NOT NULL,
-                alert_id                        INTEGER NOT NULL,
-                alert_version                   INTEGER NOT NULL,
+                id                              INTEGER PRIMARY KEY NOT NULL,
+                alert_id                        INTEGER NOT NULL REFERENCES alerts(id) ON DELETE CASCADE,
                 threshold                       REAL NOT NULL,
                 message                         TEXT NOT NULL,
-                PRIMARY KEY (id, version),
-                FOREIGN KEY (alert_id, alert_version) REFERENCES alerts(id, version)
-                    ON DELETE CASCADE
+                active                          TINYINT NOT NULL DEFAULT TRUE
             )",
         )
         .await
@@ -126,11 +121,8 @@ impl Migration for Migration1 {
         tx.execute(
             "CREATE TABLE alert_events (
                 id                              INTEGER PRIMARY KEY NOT NULL,
-                alert_id                        INTEGER NOT NULL,
-                alert_version                   INTEGER NOT NULL,
-                timestamp                       INTEGER NOT NULL,
-                FOREIGN KEY (alert_id, alert_version) REFERENCES alerts(id, version)
-                    ON DELETE CASCADE
+                alert_id                        INTEGER NOT NULL REFERENCES alerts(id) ON DELETE CASCADE,
+                timestamp                       INTEGER NOT NULL
             )",
         )
         .await
@@ -139,11 +131,8 @@ impl Migration for Migration1 {
         tx.execute(
             "CREATE TABLE reminder_events (
                 id                              INTEGER PRIMARY KEY NOT NULL,
-                reminder_id                     INTEGER NOT NULL,
-                reminder_version                INTEGER NOT NULL,
-                timestamp                       INTEGER NOT NULL,
-                FOREIGN KEY (reminder_id, reminder_version) REFERENCES reminders(id, version)
-                    ON DELETE CASCADE
+                reminder_id                     INTEGER NOT NULL REFERENCES reminders(id) ON DELETE CASCADE,
+                timestamp                       INTEGER NOT NULL
             )",
         )
         .await

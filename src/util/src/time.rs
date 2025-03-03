@@ -8,6 +8,8 @@ pub trait ToTicks {
 pub trait TimeSystem {
     /// Ticks output type.
     type Ticks: ToTicks;
+    /// Get the time now
+    fn now(&self) -> Self::Ticks;
     /// Get the start of the day
     fn day_start(&self, local_tz: bool) -> Self::Ticks;
     /// Get the start of the week. The week starts on Sunday.

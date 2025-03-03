@@ -37,13 +37,14 @@ import { Text } from "@/components/ui/text";
 import { dateTimeToTicks, durationToTicks, hour } from "@/lib/time";
 import { DateTime, Duration } from "luxon";
 import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
-import { useToday } from "@/hooks/use-today";
 import { useApps, useTag } from "@/hooks/use-refresh";
-import { useSearch } from "@/hooks/use-search";
+import { useAppsSearch } from "@/hooks/use-search";
 import { DurationText } from "@/components/time/duration-text";
 import type { ClassValue } from "clsx";
 import { useAppDurationsPerPeriod } from "@/hooks/use-repo";
 import { SortDirection } from "@/hooks/use-sort";
+import { useTimePeriod } from "@/hooks/use-today";
+import { NoApps, NoAppsFound } from "@/components/empty-states";
 
 export function MiniTagItem({
   tag,
@@ -70,44 +71,39 @@ export function MiniTagItem({
 type SortProperty =
   | "name"
   | "company"
-  | "usages.usage_today"
-  | "usages.usage_week"
-  | "usages.usage_month";
+  | "usages.today"
+  | "usages.week"
+  | "usages.month";
 
 export default function Apps() {
-  const today = useToday();
   const apps = useApps();
 
   const [sortDirection, setSortDirection] = useState<SortDirection>(
     SortDirection.Descending,
   );
   const [sortProperty, setSortProperty] =
-    useState<SortProperty>("usages.usage_today");
+    useState<SortProperty>("usages.today");
 
-  const [search, setSearch, appsFiltered] = useSearch(apps, [
-    "name",
-    "company",
-    "description",
-  ]);
+  const [search, setSearch, appsFiltered] = useAppsSearch(apps);
   const appsSorted = useMemo(() => {
     return _(appsFiltered).orderBy([sortProperty], [sortDirection]).value();
   }, [appsFiltered, sortDirection, sortProperty]);
 
-  const [start, end] = useMemo(() => [today, today.endOf("day")], [today]);
+  const range = useTimePeriod("day");
   const period = hour;
   const {
     usages,
     start: loadStart,
     end: loadEnd,
-  } = useAppDurationsPerPeriod({ start, end, period });
+  } = useAppDurationsPerPeriod({ ...range, period });
 
   const ListItem = memo(
     ({ index, style }: { index: number; style: CSSProperties }) => (
       <VirtualListItem style={style}>
         <AppListItem
           app={appsSorted[index]}
-          start={loadStart ?? start}
-          end={loadEnd ?? end}
+          start={loadStart ?? range.start}
+          end={loadEnd ?? range.end}
           period={period}
           usages={usages}
         />
@@ -170,13 +166,13 @@ export default function Apps() {
               <DropdownMenuRadioItem value="company">
                 Company
               </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="usages.usage_today">
+              <DropdownMenuRadioItem value="usages.today">
                 Usage Today
               </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="usages.usage_week">
+              <DropdownMenuRadioItem value="usages.week">
                 Usage Week
               </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="usages.usage_month">
+              <DropdownMenuRadioItem value="usages.month">
                 Usage Month
               </DropdownMenuRadioItem>
             </DropdownMenuRadioGroup>
@@ -198,6 +194,10 @@ export default function Apps() {
             </List>
           )}
         </AutoSizer>
+        {apps.length === 0 && <NoApps className="m-auto" />}
+        {apps.length !== 0 && appsSorted.length === 0 && (
+          <NoAppsFound className="m-auto" />
+        )}
       </div>
     </>
   );
@@ -271,7 +271,7 @@ function AppListItem({
 
       <div className="flex-1" />
 
-      {app.usages.usage_today > 0 ? (
+      {app.usages.today > 0 ? (
         <>
           <AppUsageBarChart
             hideXAxis
@@ -282,7 +282,7 @@ function AppListItem({
             rangeMinTicks={dateTimeToTicks(start)}
             rangeMaxTicks={dateTimeToTicks(end)}
             periodTicks={durationToTicks(period)}
-            className="w-48 aspect-auto h-20 max-lg:hidden"
+            className="w-48 flex-none aspect-none h-20 max-lg:hidden"
           />
 
           <div className="flex py-2 rounded-md lg:min-w-20">
@@ -290,7 +290,7 @@ function AppListItem({
               <div className="text-xs text-card-foreground/50">Today</div>
               <DurationText
                 className="text-lg min-w-8 text-center whitespace-nowrap"
-                ticks={app.usages.usage_today}
+                ticks={app.usages.today}
               />
             </div>
           </div>

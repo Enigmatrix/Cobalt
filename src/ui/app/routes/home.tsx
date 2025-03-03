@@ -60,7 +60,7 @@ export default function Home() {
           </BreadcrumbList>
         </Breadcrumb>
       </header>
-      <div className="h-0 flex-auto overflow-auto [scrollbar-gutter:stable_both-edges]">
+      <div className="h-0 flex-auto overflow-auto [scrollbar-gutter:stable]">
         <div className="flex flex-col gap-4 p-4 overflow-y-auto">
           <div className="grid grid-cols-1 auto-rows-min gap-4 md:grid-cols-3">
             <AppUsageBarChartCard

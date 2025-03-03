@@ -1,10 +1,9 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use sqlx::prelude::FromRow;
 use sqlx::sqlite::SqliteRow;
 use sqlx::{Result, Row, Type};
 
-use crate::table::{AlertVersionedId, ReminderVersionedId};
-pub use crate::table::{Color, Duration, Id, Ref, Timestamp, VersionedId};
+pub use crate::table::{Color, Duration, Id, Ref, Timestamp};
 
 /// An app that has run on the computer.
 #[derive(Default, Debug, Clone, PartialEq, Eq, FromRow, Serialize)]
@@ -35,6 +34,7 @@ pub struct App {
 
 /// Unique identity of an [App], outside of the Database (on the FileSystem/Registry)
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[serde(tag = "tag")]
 pub enum AppIdentity {
     /// Win32 App
     Win32 {
@@ -131,32 +131,43 @@ pub struct SystemEvent {
 }
 
 /// Target of an [Alert]
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "tag")]
 pub enum Target {
     /// [App] Target
-    App(Ref<App>),
+    App {
+        /// App Identifier
+        id: Ref<App>,
+    },
     /// [Tag] Target
-    Tag(Ref<Tag>),
+    Tag {
+        /// Tag Identifier
+        id: Ref<Tag>,
+    },
 }
 
 impl FromRow<'_, SqliteRow> for Target {
     fn from_row(row: &SqliteRow) -> Result<Self> {
         Ok(if let Some(app_id) = row.get("app_id") {
-            Target::App(app_id)
+            Target::App { id: app_id }
         } else {
-            Target::Tag(row.get("tag_id"))
+            Target::Tag {
+                id: row.get("tag_id"),
+            }
         })
     }
 }
 
 impl Default for Target {
     fn default() -> Self {
-        Self::App(Default::default())
+        Self::App {
+            id: Default::default(),
+        }
     }
 }
 
 /// How long the monitoring duration should be for an [Alert]
-#[derive(Default, Debug, Clone, PartialEq, Eq, Type, Serialize)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, Type, Serialize, Deserialize)]
 #[repr(i64)]
 pub enum TimeFrame {
     #[default]
@@ -169,14 +180,21 @@ pub enum TimeFrame {
 }
 
 /// Action to take once the [Alert]'s Usage Limit has been reached.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "tag")]
 pub enum TriggerAction {
     /// Kill the offending App / App in Tags
     Kill,
     /// Dim the windows of the offending App / App in Tags
-    Dim(Duration),
+    Dim {
+        /// Duration to dim over
+        duration: Duration,
+    },
     /// Send a message to the user as a Toast notification
-    Message(String),
+    Message {
+        /// Contents of the Message
+        content: String,
+    },
 }
 
 impl FromRow<'_, SqliteRow> for TriggerAction {
@@ -184,8 +202,12 @@ impl FromRow<'_, SqliteRow> for TriggerAction {
         let tag = row.get("trigger_action_tag");
         match tag {
             0 => Ok(Self::Kill),
-            1 => Ok(Self::Dim(row.get("trigger_action_dim_duration"))),
-            2 => Ok(Self::Message(row.get("trigger_action_message_content"))),
+            1 => Ok(Self::Dim {
+                duration: row.get("trigger_action_dim_duration"),
+            }),
+            2 => Ok(Self::Message {
+                content: row.get("trigger_action_message_content"),
+            }),
             tag => Err(sqlx::Error::Decode(
                 format!("Unknown trigger action tag = {tag}").into(),
             )),
@@ -202,13 +224,12 @@ impl Default for TriggerAction {
 /// Monitoring record describing an usage limit for how long you use an [App]
 /// or a collection of [App]s under a [Tag], the actions to take when that
 /// limit is reached, and the reminders
-#[derive(Default, Debug, Clone, PartialEq, Eq, FromRow, Serialize)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, FromRow, Serialize, Deserialize)]
 pub struct Alert {
-    #[sqlx(flatten)]
     /// Identifier
     pub id: Ref<Self>,
-    #[sqlx(flatten)]
     /// Target of this [Alert]
+    #[sqlx(flatten)]
     pub target: Target,
     /// Usage Limit
     pub usage_limit: Duration,
@@ -217,31 +238,44 @@ pub struct Alert {
     #[sqlx(flatten)]
     /// Action to take on trigger
     pub trigger_action: TriggerAction,
+    /// Whether this alert is not deleted
+    pub active: bool,
 }
 
 /// Notifications to send upon a certain threshold of an [Alert]'s usage_limit
-#[derive(Default, Debug, Clone, FromRow, Serialize)] // can't impl PartialEq, Eq for f64
+#[derive(Default, Debug, Clone, FromRow, Serialize, Deserialize)] // can't impl PartialEq, Eq for f64
 pub struct Reminder {
-    #[sqlx(flatten)]
     /// Identifier
     pub id: Ref<Self>,
-    #[sqlx(flatten)]
     /// Link to [Alert]
-    pub alert: AlertVersionedId,
+    pub alert_id: Ref<Alert>,
     /// Threshold as 0-1 ratio of the Usage Limit
     pub threshold: f64,
     /// Message to send when the threshold is reached
     pub message: String,
+    /// Whether this reminder is not deleted
+    pub active: bool,
 }
+
+impl PartialEq<Reminder> for Reminder {
+    fn eq(&self, other: &Reminder) -> bool {
+        self.id == other.id
+            && self.alert_id == other.alert_id
+            && (self.threshold - other.threshold).abs() <= f64::EPSILON
+            && self.message == other.message
+            && self.active == other.active
+    }
+}
+
+impl Eq for Reminder {}
 
 /// An instance of [Alert] triggering.
 #[derive(Default, Debug, Clone, PartialEq, Eq, FromRow, Serialize)]
 pub struct AlertEvent {
     /// Identifier
     pub id: Ref<Self>,
-    #[sqlx(flatten)]
     ///  Link to [Alert]
-    pub alert: AlertVersionedId,
+    pub alert_id: Ref<Alert>,
     /// Timestamp of the [Alert] trigger
     pub timestamp: Timestamp,
 }
@@ -251,9 +285,8 @@ pub struct AlertEvent {
 pub struct ReminderEvent {
     /// Identifier
     pub id: Ref<Self>,
-    #[sqlx(flatten)]
     ///  Link to [Reminder]
-    pub reminder: ReminderVersionedId,
+    pub reminder_id: Ref<Reminder>,
     /// Timestamp of the [Reminder] trigger
     pub timestamp: Timestamp,
 }
@@ -311,13 +344,13 @@ table!(
 table!(
     Alert,
     "alerts",
-    id: VersionedId
+    id: Id
 );
 
 table!(
     Reminder,
     "reminders",
-    id: VersionedId
+    id: Id
 );
 
 table!(

@@ -1,7 +1,6 @@
 import * as React from "react";
 import { z } from "zod";
-import { useZodForm } from "@/hooks/use-fom";
-
+import { useZodForm } from "@/hooks/use-form";
 import {
   Dialog,
   DialogContent,
@@ -22,13 +21,10 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { ColorPicker } from "@/components/color-picker";
+import { tagSchema } from "@/lib/schema";
+import { ChooseMultiApps } from "../app/choose-multi-apps";
 
-const formSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Invalid color format"),
-});
-
-type FormValues = z.infer<typeof formSchema>;
+type FormValues = z.infer<typeof tagSchema>;
 
 interface CreateTagDialogProps {
   onSubmit: (values: FormValues) => Promise<void>;
@@ -36,15 +32,24 @@ interface CreateTagDialogProps {
 }
 
 export function CreateTagDialog({ onSubmit, trigger }: CreateTagDialogProps) {
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpenInner] = React.useState(false);
 
   const form = useZodForm({
-    schema: formSchema,
+    schema: tagSchema,
     defaultValues: {
       name: "",
       color: "#000000",
+      apps: [],
     },
   });
+
+  const setOpen = React.useCallback(
+    (open: boolean) => {
+      setOpenInner(open);
+      if (open) form.reset();
+    },
+    [setOpenInner, form],
+  );
 
   const handleSubmit = async (values: FormValues) => {
     await onSubmit(values);
@@ -95,6 +100,24 @@ export function CreateTagDialog({ onSubmit, trigger }: CreateTagDialogProps) {
                       className="block w-full"
                       color={field.value}
                       onChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="apps"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Apps</FormLabel>
+                  <FormControl>
+                    <ChooseMultiApps
+                      placeholder="Select apps"
+                      value={field.value}
+                      onValueChanged={field.onChange}
                     />
                   </FormControl>
                   <FormMessage />

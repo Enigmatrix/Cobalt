@@ -25,8 +25,8 @@ import { useAppState, type EntityMap } from "@/lib/state";
 import { NavLink } from "react-router";
 import { ArrowDownUp, Plus, SortAsc, SortDesc, TagIcon } from "lucide-react";
 import { useAppDurationsPerPeriod } from "@/hooks/use-repo";
-import { useSearch } from "@/hooks/use-search";
-import { useToday } from "@/hooks/use-today";
+import { useTagsSearch } from "@/hooks/use-search";
+import { useTimePeriod } from "@/hooks/use-today";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { FixedSizeList as List } from "react-window";
 import { SearchBar } from "@/components/search-bar";
@@ -46,6 +46,7 @@ import { Button } from "@/components/ui/button";
 import { dateTimeToTicks, durationToTicks, hour } from "@/lib/time";
 import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
 import { CreateTagDialog } from "@/components/tag/create-tag-dialog";
+import { NoTags, NoTagsFound } from "@/components/empty-states";
 
 export function MiniAppItem({
   app,
@@ -70,14 +71,9 @@ export function MiniAppItem({
   );
 }
 
-type SortProperty =
-  | "name"
-  | "usages.usage_today"
-  | "usages.usage_week"
-  | "usages.usage_month";
+type SortProperty = "name" | "usages.today" | "usages.week" | "usages.month";
 
 export default function Tags() {
-  const today = useToday();
   const tags = useTags();
   const createTag = useAppState((state) => state.createTag);
 
@@ -85,26 +81,26 @@ export default function Tags() {
     SortDirection.Descending,
   );
   const [sortProperty, setSortProperty] =
-    useState<SortProperty>("usages.usage_today");
-  const [search, setSearch, tagsFiltered] = useSearch(tags, ["name"]);
+    useState<SortProperty>("usages.today");
+  const [search, setSearch, tagsFiltered] = useTagsSearch(tags);
   const tagsSorted = useMemo(() => {
     return _(tagsFiltered).orderBy([sortProperty], [sortDirection]).value();
   }, [tagsFiltered, sortDirection, sortProperty]);
 
-  const [start, end] = useMemo(() => [today, today.endOf("day")], [today]);
+  const range = useTimePeriod("day");
   const period = hour;
   const {
     usages,
     start: loadStart,
     end: loadEnd,
-  } = useAppDurationsPerPeriod({ start, end, period });
+  } = useAppDurationsPerPeriod({ ...range, period });
   const ListItem = memo(
     ({ index, style }: { index: number; style: CSSProperties }) => (
       <VirtualListItem style={style}>
         <TagListItem
           tag={tagsSorted[index]}
-          start={loadStart ?? start}
-          end={loadEnd ?? end}
+          start={loadStart ?? range.start}
+          end={loadEnd ?? range.end}
           period={period}
           usages={usages}
         />
@@ -164,13 +160,13 @@ export default function Tags() {
               onValueChange={(v) => setSortProperty(v as SortProperty)}
             >
               <DropdownMenuRadioItem value="name">Name</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="usages.usage_today">
+              <DropdownMenuRadioItem value="usages.today">
                 Usage Today
               </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="usages.usage_week">
+              <DropdownMenuRadioItem value="usages.week">
                 Usage Week
               </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="usages.usage_month">
+              <DropdownMenuRadioItem value="usages.month">
                 Usage Month
               </DropdownMenuRadioItem>
             </DropdownMenuRadioGroup>
@@ -204,6 +200,10 @@ export default function Tags() {
             </List>
           )}
         </AutoSizer>
+        {tags.length === 0 && <NoTags className="m-auto" />}
+        {tags.length !== 0 && tagsSorted.length === 0 && (
+          <NoTagsFound className="m-auto" />
+        )}
       </div>
     </>
   );
@@ -291,7 +291,7 @@ function TagListItem({
 
       <div className="flex-1" />
 
-      {tag.usages.usage_today > 0 ? (
+      {tag.usages.today > 0 ? (
         <>
           <AppUsageBarChart
             hideXAxis
@@ -301,7 +301,7 @@ function TagListItem({
             rangeMinTicks={dateTimeToTicks(start)}
             rangeMaxTicks={dateTimeToTicks(end)}
             periodTicks={durationToTicks(period)}
-            className="w-48 aspect-auto h-20 max-lg:hidden"
+            className="w-48 flex-none aspect-none h-20 max-lg:hidden"
           />
 
           <div className="flex py-2 rounded-md lg:min-w-20">
@@ -309,7 +309,7 @@ function TagListItem({
               <div className="text-xs text-card-foreground/50">Today</div>
               <DurationText
                 className="text-lg min-w-8 text-center whitespace-nowrap"
-                ticks={tag.usages.usage_today}
+                ticks={tag.usages.today}
               />
             </div>
           </div>

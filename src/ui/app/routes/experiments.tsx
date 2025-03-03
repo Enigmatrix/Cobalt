@@ -12,7 +12,7 @@ import { refresh } from "@/lib/state";
 import { useTransition } from "react";
 import { LoaderIcon } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Setting } from "./settings";
+import { Setting } from "@/routes/settings";
 
 async function copySeedDb() {
   await invoke("copy_seed_db");
@@ -56,54 +56,56 @@ export default function Experiments() {
           </BreadcrumbList>
         </Breadcrumb>
       </header>
-      <div className="flex flex-1 flex-col gap-4 p-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>Database</CardTitle>
-          </CardHeader>
-          <CardContent className="gap-2 flex flex-col">
-            <Setting
-              title={
-                <>
-                  Copy <p className="font-mono inline">seed.db</p>
-                </>
-              }
-              description="Replace the current database with the seed database"
-              action={
-                <AsyncButton onClick={copySeedDb} variant="outline">
-                  Run
-                </AsyncButton>
-              }
-            />
+      <div className="h-0 flex-auto overflow-auto [scrollbar-gutter:stable]">
+        <div className="flex flex-col gap-4 p-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Database</CardTitle>
+            </CardHeader>
+            <CardContent className="gap-2 flex flex-col">
+              <Setting
+                title={
+                  <>
+                    Copy <p className="font-mono inline">seed.db</p>
+                  </>
+                }
+                description="Replace the current database with the seed database"
+                action={
+                  <AsyncButton onClick={copySeedDb} variant="outline">
+                    Run
+                  </AsyncButton>
+                }
+              />
 
-            <Setting
-              title="Update Last Usage to Now"
-              description="Update last usage in database to Now"
-              action={
-                <AsyncButton onClick={updateUsagesEnd} variant="outline">
-                  Run
-                </AsyncButton>
-              }
-            />
-          </CardContent>
-        </Card>
+              <Setting
+                title="Update Last Usage to Now"
+                description="Update last usage in database to Now"
+                action={
+                  <AsyncButton onClick={updateUsagesEnd} variant="outline">
+                    Run
+                  </AsyncButton>
+                }
+              />
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Refresh</CardTitle>
-          </CardHeader>
-          <CardContent className="gap-2 flex flex-col">
-            <Setting
-              title="Refresh Now"
-              description="Refresh all app data"
-              action={
-                <AsyncButton onClick={refreshState} variant="outline">
-                  Run
-                </AsyncButton>
-              }
-            />
-          </CardContent>
-        </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Refresh</CardTitle>
+            </CardHeader>
+            <CardContent className="gap-2 flex flex-col">
+              <Setting
+                title="Refresh Now"
+                description="Refresh all app data"
+                action={
+                  <AsyncButton onClick={refreshState} variant="outline">
+                    Run
+                  </AsyncButton>
+                }
+              />
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </>
   );

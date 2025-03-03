@@ -27,6 +27,12 @@ impl Sentry {
 
     /// Run the [Sentry] to check for triggered alerts and reminders and take action on them.
     pub async fn run(&mut self, now: PlatformTimestamp) -> Result<()> {
+        // Retain alive entries in cache before we start processing
+        // - avoids dimming dead windows / killing dead processes
+        {
+            let mut cache = self.cache.lock().await;
+            cache.retain_cache()?;
+        }
         let alerts_hits = self.mgr.triggered_alerts(&now).await?;
         for triggered_alert in alerts_hits {
             self.handle_alert(&triggered_alert, now).await?;
@@ -44,7 +50,7 @@ impl Sentry {
             self.mgr
                 .insert_reminder_event(&ReminderEvent {
                     id: Default::default(),
-                    reminder: triggered_reminder.reminder.id.0.into(),
+                    reminder_id: triggered_reminder.reminder.id.clone(),
                     timestamp: now.to_ticks(),
                 })
                 .await?;
@@ -105,21 +111,21 @@ impl Sentry {
                     cache.remove_process(pid);
                 }
             }
-            TriggerAction::Dim(dur) => {
+            TriggerAction::Dim { duration } => {
                 let windows = self.windows_for_target(&alert.target).await?;
                 let start = timestamp.unwrap_or(now.to_ticks());
                 let end: Timestamp = now.to_ticks();
-                let progress = (end - start) as f64 / (*dur as f64);
+                let progress = (end - start) as f64 / (*duration as f64);
                 for window in windows {
                     let dim_level = 1.0f64 - progress.min(1.0f64);
                     info!(?alert, "dimming window {:?} to {}", window, dim_level);
                     self.handle_dim_action(&window, dim_level).warn();
                 }
             }
-            TriggerAction::Message(msg) => {
+            TriggerAction::Message { content } => {
                 if timestamp.is_none() {
-                    info!(?alert, "send message {:?}: {:?}", name, msg);
-                    self.handle_message_action(name, msg).warn();
+                    info!(?alert, "send message {:?}: {:?}", name, content);
+                    self.handle_message_action(name, content).warn();
                 }
             }
         }
@@ -127,7 +133,7 @@ impl Sentry {
             self.mgr
                 .insert_alert_event(&AlertEvent {
                     id: Default::default(),
-                    alert: alert.id.0.clone().into(),
+                    alert_id: alert.id.clone(),
                     timestamp: now.to_ticks(),
                 })
                 .await?;

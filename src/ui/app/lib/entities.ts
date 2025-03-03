@@ -2,7 +2,6 @@ export type Ref<T> = number & { __type: T };
 export function newRef<T>(id: number): Ref<T> {
   return id as Ref<T>;
 }
-
 export type Color = string;
 export type Timestamp = number;
 export type Duration = number;
@@ -19,25 +18,13 @@ export interface WithGroupedDuration<T> {
 }
 
 export type AppIdentity =
-  | { Uwp: { aumid: string } }
-  | { Win32: { path: string } };
+  | { tag: "Uwp"; aumid: string }
+  | { tag: "Win32"; path: string };
 
-export function isUwp(
-  identity: AppIdentity,
-): identity is { Uwp: { aumid: string } } {
-  return "Uwp" in identity;
-}
-
-export function isWin32(
-  identity: AppIdentity,
-): identity is { Win32: { path: string } } {
-  return "Win32" in identity;
-}
-
-export interface UsageInfo {
-  usage_today: number;
-  usage_week: number;
-  usage_month: number;
+export interface ValuePerPeriod<T> {
+  today: T;
+  week: T;
+  month: T;
 }
 
 export interface App {
@@ -49,7 +36,7 @@ export interface App {
   identity: AppIdentity;
   icon: Buffer;
   tag_id: Ref<Tag> | null;
-  usages: UsageInfo;
+  usages: ValuePerPeriod<Duration>;
 }
 
 export interface Session {
@@ -71,7 +58,38 @@ export interface Tag {
   name: string;
   color: string;
   apps: Ref<App>[];
-  usages: UsageInfo;
+  usages: ValuePerPeriod<Duration>;
+}
+
+export type Target =
+  | { tag: "App"; id: Ref<App> }
+  | { tag: "Tag"; id: Ref<Tag> };
+
+export type TimeFrame = "Daily" | "Weekly" | "Monthly";
+
+export type TriggerAction =
+  | { tag: "Kill" }
+  | { tag: "Dim"; duration: number }
+  | { tag: "Message"; content: string };
+
+export interface Alert {
+  id: Ref<Alert>;
+  target: Target;
+  usage_limit: Duration;
+  time_frame: TimeFrame;
+  trigger_action: TriggerAction;
+
+  reminders: Reminder[];
+  events: ValuePerPeriod<number>;
+}
+
+export interface Reminder {
+  id: Ref<Reminder>;
+  alert_id: Ref<Alert>;
+  threshold: number;
+  message: string;
+
+  events: ValuePerPeriod<number>;
 }
 
 export interface InteractionPeriod {
