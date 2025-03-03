@@ -1,20 +1,42 @@
-import { useState, useMemo, useCallback } from "react";
+import {
+  useState,
+  useMemo,
+  useCallback,
+  type ComponentProps,
+  useRef,
+} from "react";
 import {
   ChevronRight,
   ChevronDown,
   LaptopIcon,
   Loader2Icon,
+  KeyboardIcon,
+  MouseIcon,
 } from "lucide-react";
 import { DateTime } from "luxon";
-import type { App, InteractionPeriod, Ref, Usage } from "@/lib/entities";
+import type {
+  App,
+  InteractionPeriod,
+  Ref,
+  Session,
+  Usage,
+} from "@/lib/entities";
 import { ticksToDateTime } from "@/lib/time";
 import type { AppSessionUsages } from "@/lib/repo";
 import { Text } from "@/components/ui/text";
 import { useApps } from "@/hooks/use-refresh";
-import AppIcon from "../app/app-icon";
+import AppIcon from "@/components/app/app-icon";
 import type { ClassValue } from "clsx";
 import { cn } from "@/lib/utils";
 import { HScrollView } from "@/components/hscroll-view";
+import { Tooltip } from "@/components/viz/tooltip";
+import { DateTimeText } from "@/components/time/time-text";
+import { DurationText } from "@/components/time/duration-text";
+
+interface HoverData {
+  session?: Session;
+  usage?: Usage;
+}
 
 interface GanttProps {
   usages: AppSessionUsages;
@@ -29,6 +51,11 @@ interface GanttProps {
 type TimeUnit = {
   unit: "minute" | "hour" | "day";
   step: number;
+};
+
+type SessionUsage = {
+  usage: Usage;
+  session: Session;
 };
 
 function getTimeUnits(start: DateTime, end: DateTime): TimeUnit {
@@ -96,7 +123,8 @@ function Bar({
   start,
   end,
   timeUnit,
-}: {
+  ...props
+}: ComponentProps<"div"> & {
   className?: ClassValue;
   rangeStart: DateTime;
   rangeEnd: DateTime;
@@ -108,32 +136,37 @@ function Bar({
     <div
       className={cn("absolute h-6", className)}
       style={getPosition(start, end, rangeStart, rangeEnd, timeUnit)}
+      {...props}
     />
   );
 }
 
 function UsageBars({
-  usages,
+  sessionUsages,
   rangeStart,
   rangeEnd,
   timeUnit,
+  setHoverUsage,
 }: {
-  usages: Usage[];
+  sessionUsages: SessionUsage[];
   rangeStart: DateTime;
   rangeEnd: DateTime;
   timeUnit: TimeUnit;
+  setHoverUsage: (usage: HoverData | null) => void;
 }) {
   return (
     <>
-      {usages.map((usage, index) => (
+      {sessionUsages.map((sessionUsage, index) => (
         <Bar
           key={index}
           className="bg-primary hover:bg-card-foreground"
-          start={ticksToDateTime(usage.start)}
-          end={ticksToDateTime(usage.end)}
+          start={ticksToDateTime(sessionUsage.usage.start)}
+          end={ticksToDateTime(sessionUsage.usage.end)}
           rangeStart={rangeStart}
           rangeEnd={rangeEnd}
           timeUnit={timeUnit}
+          onMouseOver={() => setHoverUsage(sessionUsage)}
+          onMouseLeave={() => setHoverUsage(null)}
         />
       ))}
     </>
@@ -145,11 +178,13 @@ function InteractionPeriodBars({
   rangeStart,
   rangeEnd,
   timeUnit,
+  setHoverInteractionPeriod,
 }: {
   interactionPeriods: InteractionPeriod[];
   rangeStart: DateTime;
   rangeEnd: DateTime;
   timeUnit: TimeUnit;
+  setHoverInteractionPeriod: (ip: InteractionPeriod | null) => void;
 }) {
   return (
     <>
@@ -162,6 +197,8 @@ function InteractionPeriodBars({
           rangeStart={rangeStart}
           rangeEnd={rangeEnd}
           timeUnit={timeUnit}
+          onMouseOver={() => setHoverInteractionPeriod(interactionPeriod)}
+          onMouseLeave={() => setHoverInteractionPeriod(null)}
         />
       ))}
     </>
@@ -175,6 +212,7 @@ function AppBars({
   rangeStart,
   rangeEnd,
   timeUnit,
+  setHoverUsage,
 }: {
   app: App;
   expanded: boolean;
@@ -182,32 +220,42 @@ function AppBars({
   rangeStart: DateTime;
   rangeEnd: DateTime;
   timeUnit: TimeUnit;
+  setHoverUsage: (usage: HoverData | null) => void;
 }) {
-  const allUsages = useMemo(
+  const allSessionUsagesFlat = useMemo(
     () =>
-      Object.values(usages[app.id])
-        .map((session) => session.usages)
-        .flat(),
+      Object.values(usages[app.id]).flatMap((session) =>
+        session.usages.map((usage) => ({ usage, session })),
+      ),
     [app, usages],
   );
-  const sessions = useMemo(() => Object.values(usages[app.id]), [app, usages]);
+  const allSessionUsages = useMemo(
+    () =>
+      Object.values(usages[app.id]).map((session) => ({
+        session,
+        sessionUsages: session.usages.map((usage) => ({ usage, session })),
+      })),
+    [app, usages],
+  );
+
   return (
     <div className="border-b">
       {/* App header */}
       <div className="h-[52px] bg-muted/60 relative">
         <div className="absolute inset-x-0 top-4">
           <UsageBars
-            usages={allUsages}
+            sessionUsages={allSessionUsagesFlat}
             rangeStart={rangeStart}
             rangeEnd={rangeEnd}
             timeUnit={timeUnit}
+            setHoverUsage={setHoverUsage}
           />
         </div>
       </div>
 
       {/* Sessions */}
       {expanded &&
-        sessions.map((session) => (
+        allSessionUsages.map(({ session, sessionUsages }) => (
           <div key={session.id} className="relative h-[68px] border-t">
             <div className="absolute inset-x-0 top-6">
               {/* Base task bar */}
@@ -218,13 +266,16 @@ function AppBars({
                 rangeStart={rangeStart}
                 rangeEnd={rangeEnd}
                 timeUnit={timeUnit}
+                onMouseOver={() => setHoverUsage({ session })}
+                onMouseLeave={() => setHoverUsage(null)}
               />
               {/* Usage periods */}
               <UsageBars
-                usages={session.usages}
+                sessionUsages={sessionUsages}
                 rangeStart={rangeStart}
                 rangeEnd={rangeEnd}
                 timeUnit={timeUnit}
+                setHoverUsage={setHoverUsage}
               />
             </div>
           </div>
@@ -245,6 +296,9 @@ export function Gantt({
   const [expanded, setExpanded] = useState<Record<Ref<App>, boolean>>(
     defaultExpanded ?? {},
   );
+  const [hoverUsage, setHoverUsage] = useState<HoverData | null>(null);
+  const [hoverInteractionPeriod, setHoverInteractionPeriod] =
+    useState<InteractionPeriod | null>(null);
 
   const timeUnit = useMemo(
     () => getTimeUnits(rangeStart, rangeEnd),
@@ -274,8 +328,74 @@ export function Gantt({
   const hideTimeline =
     (apps.length === 0 || usagesLoading) && interactionPeriods === undefined;
 
+  const ref = useRef<HTMLDivElement | null>(null);
+
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col" ref={ref}>
+      <Tooltip show={hoverUsage !== null} targetRef={ref}>
+        <div className="max-w-[800px]">
+          {hoverUsage?.session && (
+            <div className="flex flex-col">
+              <Text>{hoverUsage.session.title}</Text>
+              <div className="flex items-center text-muted-foreground gap-1 text-xs">
+                <DateTimeText ticks={hoverUsage.session.start} /> -
+                <DateTimeText ticks={hoverUsage.session.end} />
+                (
+                <DurationText
+                  ticks={hoverUsage.session.end - hoverUsage.session.start}
+                />
+                )
+              </div>
+            </div>
+          )}
+          {hoverUsage?.usage && (
+            <div
+              className={cn("flex flex-col", {
+                "border-t mt-2 border-border": hoverUsage.session,
+              })}
+            >
+              <Text className="text-muted-foreground">Usage</Text>
+              <div className="flex items-center text-muted-foreground gap-1 text-xs">
+                <DateTimeText ticks={hoverUsage.usage.start} /> -
+                <DateTimeText ticks={hoverUsage.usage.end} />
+                (
+                <DurationText
+                  ticks={hoverUsage.usage.end - hoverUsage.usage.start}
+                />
+                )
+              </div>
+            </div>
+          )}
+        </div>
+      </Tooltip>
+
+      <Tooltip show={hoverInteractionPeriod !== null} targetRef={ref}>
+        <div className="max-w-[800px]">
+          {hoverInteractionPeriod && (
+            <div className={cn("flex flex-col")}>
+              <div className="flex items-center gap-1 text-sm">
+                <Text className="text-base">Interaction</Text>
+                <KeyboardIcon size={16} className="ml-4" />
+                <div>{hoverInteractionPeriod.key_strokes}</div>
+                <MouseIcon size={16} className="ml-2" />
+                <div>{hoverInteractionPeriod.mouse_clicks}</div>
+              </div>
+              <div className="flex items-center text-muted-foreground gap-1 text-xs">
+                <DateTimeText ticks={hoverInteractionPeriod.start} /> -
+                <DateTimeText ticks={hoverInteractionPeriod.end} />
+                (
+                <DurationText
+                  ticks={
+                    hoverInteractionPeriod.end - hoverInteractionPeriod.start
+                  }
+                />
+                )
+              </div>
+            </div>
+          )}
+        </div>
+      </Tooltip>
+
       <div className="bg-transparent overflow-hidden flex text-muted-foreground">
         {/* Fixed left column */}
         <div className="w-[300px] flex-shrink-0">
@@ -393,6 +513,7 @@ export function Gantt({
                 <div className="h-[52px] relative">
                   <div className="absolute inset-x-0 top-4">
                     <InteractionPeriodBars
+                      setHoverInteractionPeriod={setHoverInteractionPeriod}
                       interactionPeriods={interactionPeriods}
                       rangeStart={rangeStart}
                       rangeEnd={rangeEnd}
@@ -414,6 +535,7 @@ export function Gantt({
                   rangeStart={rangeStart}
                   rangeEnd={rangeEnd}
                   timeUnit={timeUnit}
+                  setHoverUsage={setHoverUsage}
                 />
               ))}
           </div>
