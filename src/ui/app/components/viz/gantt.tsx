@@ -14,13 +14,14 @@ import {
   MouseIcon,
 } from "lucide-react";
 import { DateTime } from "luxon";
-import type {
-  App,
-  InteractionPeriod,
-  Ref,
-  Session,
-  SystemEvent,
-  Usage,
+import {
+  systemEventToString,
+  type App,
+  type InteractionPeriod,
+  type Ref,
+  type Session,
+  type SystemEvent,
+  type Usage,
 } from "@/lib/entities";
 import { ticksToDateTime } from "@/lib/time";
 import type { AppSessionUsages } from "@/lib/repo";
@@ -150,7 +151,8 @@ function Line({
   rangeEnd,
   timestamp,
   timeUnit,
-}: {
+  ...props
+}: ComponentProps<"div"> & {
   className?: ClassValue;
   rangeStart: DateTime;
   rangeEnd: DateTime;
@@ -164,6 +166,7 @@ function Line({
         ...getPosition(timestamp, timestamp, rangeStart, rangeEnd, timeUnit),
         width: "1px",
       }}
+      {...props}
     />
   );
 }
@@ -207,6 +210,7 @@ function InteractionPeriodBars({
   rangeEnd,
   timeUnit,
   setHoverInteractionPeriod,
+  setHoverSystemEvent,
 }: {
   interactionPeriods: InteractionPeriod[];
   systemEvents: SystemEvent[];
@@ -214,6 +218,7 @@ function InteractionPeriodBars({
   rangeEnd: DateTime;
   timeUnit: TimeUnit;
   setHoverInteractionPeriod: (ip: InteractionPeriod | null) => void;
+  setHoverSystemEvent: (se: SystemEvent | null) => void;
 }) {
   return (
     <>
@@ -233,11 +238,13 @@ function InteractionPeriodBars({
       {systemEvents.map((systemEvent, index) => (
         <Line
           key={index}
-          className="bg-primary/50 hover:bg-card-foreground"
+          className="bg-orange-500 hover:bg-card-foreground"
           timestamp={ticksToDateTime(systemEvent.timestamp)}
           rangeStart={rangeStart}
           rangeEnd={rangeEnd}
           timeUnit={timeUnit}
+          onMouseOver={() => setHoverSystemEvent(systemEvent)}
+          onMouseLeave={() => setHoverSystemEvent(null)}
         />
       ))}
     </>
@@ -340,6 +347,9 @@ export function Gantt({
   const [hoverUsage, setHoverUsage] = useState<HoverData | null>(null);
   const [hoverInteractionPeriod, setHoverInteractionPeriod] =
     useState<InteractionPeriod | null>(null);
+  const [hoverSystemEvent, setHoverSystemEvent] = useState<SystemEvent | null>(
+    null,
+  );
 
   const timeUnit = useMemo(
     () => getTimeUnits(rangeStart, rangeEnd),
@@ -433,6 +443,23 @@ export function Gantt({
                   }
                 />
                 )
+              </div>
+            </div>
+          )}
+        </div>
+      </Tooltip>
+
+      <Tooltip show={hoverSystemEvent !== null} targetRef={ref}>
+        <div className="max-w-[800px]">
+          {hoverSystemEvent && (
+            <div className={cn("flex flex-col")}>
+              <div className="flex items-center gap-1 text-sm">
+                <Text className="text-base">
+                  {systemEventToString(hoverSystemEvent.event)}
+                </Text>
+              </div>
+              <div className="flex items-center text-muted-foreground gap-1 text-xs">
+                <DateTimeText ticks={hoverSystemEvent.timestamp} />
               </div>
             </div>
           )}
@@ -557,6 +584,7 @@ export function Gantt({
                   <div className="absolute inset-x-0 top-4">
                     <InteractionPeriodBars
                       setHoverInteractionPeriod={setHoverInteractionPeriod}
+                      setHoverSystemEvent={setHoverSystemEvent}
                       interactionPeriods={interactionPeriods ?? []}
                       systemEvents={systemEvents ?? []}
                       rangeStart={rangeStart}
