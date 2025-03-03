@@ -14,12 +14,14 @@ import {
   MouseIcon,
 } from "lucide-react";
 import { DateTime } from "luxon";
-import type {
-  App,
-  InteractionPeriod,
-  Ref,
-  Session,
-  Usage,
+import {
+  systemEventToString,
+  type App,
+  type InteractionPeriod,
+  type Ref,
+  type Session,
+  type SystemEvent,
+  type Usage,
 } from "@/lib/entities";
 import { ticksToDateTime } from "@/lib/time";
 import type { AppSessionUsages } from "@/lib/repo";
@@ -43,6 +45,8 @@ interface GanttProps {
   usagesLoading?: boolean;
   interactionPeriods?: InteractionPeriod[];
   interactionPeriodsLoading?: boolean;
+  systemEvents?: SystemEvent[];
+  systemEventsLoading?: boolean;
   defaultExpanded?: Record<Ref<App>, boolean>;
   rangeStart: DateTime;
   rangeEnd: DateTime;
@@ -141,6 +145,32 @@ function Bar({
   );
 }
 
+function Line({
+  className,
+  rangeStart,
+  rangeEnd,
+  timestamp,
+  timeUnit,
+  ...props
+}: ComponentProps<"div"> & {
+  className?: ClassValue;
+  rangeStart: DateTime;
+  rangeEnd: DateTime;
+  timestamp: DateTime;
+  timeUnit: TimeUnit;
+}) {
+  return (
+    <div
+      className={cn("absolute h-8 -mt-1", className)}
+      style={{
+        ...getPosition(timestamp, timestamp, rangeStart, rangeEnd, timeUnit),
+        width: "1px",
+      }}
+      {...props}
+    />
+  );
+}
+
 function UsageBars({
   sessionUsages,
   rangeStart,
@@ -175,16 +205,20 @@ function UsageBars({
 
 function InteractionPeriodBars({
   interactionPeriods,
+  systemEvents,
   rangeStart,
   rangeEnd,
   timeUnit,
   setHoverInteractionPeriod,
+  setHoverSystemEvent,
 }: {
   interactionPeriods: InteractionPeriod[];
+  systemEvents: SystemEvent[];
   rangeStart: DateTime;
   rangeEnd: DateTime;
   timeUnit: TimeUnit;
   setHoverInteractionPeriod: (ip: InteractionPeriod | null) => void;
+  setHoverSystemEvent: (se: SystemEvent | null) => void;
 }) {
   return (
     <>
@@ -199,6 +233,18 @@ function InteractionPeriodBars({
           timeUnit={timeUnit}
           onMouseOver={() => setHoverInteractionPeriod(interactionPeriod)}
           onMouseLeave={() => setHoverInteractionPeriod(null)}
+        />
+      ))}
+      {systemEvents.map((systemEvent, index) => (
+        <Line
+          key={index}
+          className="bg-orange-500 hover:bg-card-foreground"
+          timestamp={ticksToDateTime(systemEvent.timestamp)}
+          rangeStart={rangeStart}
+          rangeEnd={rangeEnd}
+          timeUnit={timeUnit}
+          onMouseOver={() => setHoverSystemEvent(systemEvent)}
+          onMouseLeave={() => setHoverSystemEvent(null)}
         />
       ))}
     </>
@@ -289,6 +335,8 @@ export function Gantt({
   usagesLoading,
   interactionPeriods,
   interactionPeriodsLoading,
+  systemEvents,
+  systemEventsLoading,
   defaultExpanded,
   rangeStart,
   rangeEnd,
@@ -299,6 +347,9 @@ export function Gantt({
   const [hoverUsage, setHoverUsage] = useState<HoverData | null>(null);
   const [hoverInteractionPeriod, setHoverInteractionPeriod] =
     useState<InteractionPeriod | null>(null);
+  const [hoverSystemEvent, setHoverSystemEvent] = useState<SystemEvent | null>(
+    null,
+  );
 
   const timeUnit = useMemo(
     () => getTimeUnits(rangeStart, rangeEnd),
@@ -326,7 +377,9 @@ export function Gantt({
   );
 
   const hideTimeline =
-    (apps.length === 0 || usagesLoading) && interactionPeriods === undefined;
+    (apps.length === 0 || usagesLoading) &&
+    interactionPeriods === undefined &&
+    systemEvents === undefined;
 
   const ref = useRef<HTMLDivElement | null>(null);
 
@@ -396,6 +449,23 @@ export function Gantt({
         </div>
       </Tooltip>
 
+      <Tooltip show={hoverSystemEvent !== null} targetRef={ref}>
+        <div className="max-w-[800px]">
+          {hoverSystemEvent && (
+            <div className={cn("flex flex-col")}>
+              <div className="flex items-center gap-1 text-sm">
+                <Text className="text-base">
+                  {systemEventToString(hoverSystemEvent.event)}
+                </Text>
+              </div>
+              <div className="flex items-center text-muted-foreground gap-1 text-xs">
+                <DateTimeText ticks={hoverSystemEvent.timestamp} />
+              </div>
+            </div>
+          )}
+        </div>
+      </Tooltip>
+
       <div className="bg-transparent overflow-hidden flex text-muted-foreground">
         {/* Fixed left column */}
         <div className="w-[300px] flex-shrink-0">
@@ -409,14 +479,14 @@ export function Gantt({
             </h2>
           </div>
 
-          {/* Interaction Periods' header */}
-          {interactionPeriods && (
+          {/* Interaction Periods' + System Events header */}
+          {(interactionPeriods || systemEvents) && (
             <div className="border-b">
               <div className="flex items-center p-4 border-r h-[52px]">
                 <LaptopIcon className="w-6 h-6 ml-6" />
                 <Text className="font-semibold ml-4">Interactions</Text>
                 {/* BUG: this loading is as long as the usage loading ..????? */}
-                {interactionPeriodsLoading && (
+                {(interactionPeriodsLoading || systemEventsLoading) && (
                   <Loader2Icon className="animate-spin ml-4" />
                 )}
               </div>
@@ -507,14 +577,16 @@ export function Gantt({
               </div>
             )}
 
-            {interactionPeriods && (
+            {(interactionPeriods || systemEvents) && (
               <div className="border-b">
                 {/* Interaction Periods */}
                 <div className="h-[52px] relative">
                   <div className="absolute inset-x-0 top-4">
                     <InteractionPeriodBars
                       setHoverInteractionPeriod={setHoverInteractionPeriod}
-                      interactionPeriods={interactionPeriods}
+                      setHoverSystemEvent={setHoverSystemEvent}
+                      interactionPeriods={interactionPeriods ?? []}
+                      systemEvents={systemEvents ?? []}
                       rangeStart={rangeStart}
                       rangeEnd={rangeEnd}
                       timeUnit={timeUnit}

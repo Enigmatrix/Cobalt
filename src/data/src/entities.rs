@@ -117,6 +117,19 @@ pub struct InteractionPeriod {
     pub key_strokes: i64,
 }
 
+type SystemEventType = i64; // TODO define enum
+
+/// A system event
+#[derive(Default, Debug, Clone, PartialEq, Eq, FromRow, Serialize)]
+pub struct SystemEvent {
+    /// Identifier
+    pub id: Ref<Self>,
+    /// Timestamp
+    pub timestamp: Timestamp,
+    /// Event type
+    pub event: SystemEventType,
+}
+
 /// Target of an [Alert]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub enum Target {
@@ -286,6 +299,12 @@ table!(
 table!(
     InteractionPeriod,
     "interaction_periods",
+    id: Id
+);
+
+table!(
+    SystemEvent,
+    "system_events",
     id: Id
 );
 

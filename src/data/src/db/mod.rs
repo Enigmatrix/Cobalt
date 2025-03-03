@@ -12,7 +12,7 @@ use util::time::{TimeSystem, ToTicks};
 
 use crate::entities::{
     Alert, AlertEvent, App, AppIdentity, InteractionPeriod, Ref, Reminder, ReminderEvent, Session,
-    Tag, Target, Timestamp, Usage,
+    SystemEvent, Tag, Target, Timestamp, Usage,
 };
 use crate::migrations::Migrator;
 use crate::table::Table;
@@ -166,6 +166,16 @@ impl UsageWriter {
             .bind(interaction_period.end)
             .bind(interaction_period.mouse_clicks)
             .bind(interaction_period.key_strokes)
+            .execute(self.db.executor())
+            .await?;
+        Ok(())
+    }
+
+    /// Insert a [SystemEvent] into the [Database]
+    pub async fn insert_system_event(&mut self, event: &SystemEvent) -> Result<()> {
+        query("INSERT INTO system_events VALUES (NULL, ?, ?)")
+            .bind(event.timestamp)
+            .bind(event.event)
             .execute(self.db.executor())
             .await?;
         Ok(())

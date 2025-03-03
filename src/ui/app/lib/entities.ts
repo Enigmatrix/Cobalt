@@ -81,3 +81,43 @@ export interface InteractionPeriod {
   mouse_clicks: number;
   key_strokes: number;
 }
+
+export enum SystemEventEnum {
+  Shutdown = 0,
+  Logoff = 1,
+  Lock = 2,
+  Unlock = 3,
+  Suspend = 4,
+  Resume = 5,
+  MonitorOn = 6,
+  MonitorOff = 7,
+}
+
+export function systemEventToString(event: SystemEventEnum) {
+  switch (event) {
+    case SystemEventEnum.Shutdown:
+      return "Shutdown";
+    case SystemEventEnum.Logoff:
+      return "Logoff";
+    case SystemEventEnum.Lock:
+      return "Lock";
+    case SystemEventEnum.Unlock:
+      return "Unlock";
+    case SystemEventEnum.Suspend:
+      return "Suspend";
+    case SystemEventEnum.Resume:
+      return "Resume";
+    case SystemEventEnum.MonitorOn:
+      return "Monitor On";
+    case SystemEventEnum.MonitorOff:
+      return "Monitor Off";
+    default:
+      throw new Error(`Unknown system event: ${event}`);
+  }
+}
+
+export interface SystemEvent {
+  id: Ref<SystemEvent>;
+  timestamp: Timestamp;
+  event: SystemEventEnum;
+}

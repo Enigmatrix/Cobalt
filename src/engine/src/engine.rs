@@ -1,8 +1,12 @@
 use std::sync::Arc;
 
 use data::db::{Database, DatabasePool, FoundOrInserted, UsageWriter};
-use data::entities::{AppIdentity, InteractionPeriod, Ref, Session, Usage};
-use platform::events::{ForegroundChangedEvent, InteractionChangedEvent, WindowSession};
+use data::entities::{
+    AppIdentity, InteractionPeriod, Ref, Session, SystemEvent as DataSystemEvent, Usage,
+};
+use platform::events::{
+    ForegroundChangedEvent, InteractionChangedEvent, SystemStateEvent, WindowSession,
+};
 use platform::objects::{Process, ProcessId, Timestamp, Window};
 use scoped_futures::ScopedFutureExt;
 use util::error::{Context, Result};
@@ -12,6 +16,7 @@ use util::time::ToTicks;
 use util::tracing::{info, trace, ResultTraceExt};
 
 use crate::cache::{AppDetails, Cache, SessionDetails};
+use crate::foreground_window_session;
 use crate::resolver::AppInfoResolver;
 
 /// The main [Engine] that processes [Event]s and updates the [Database] with new [Usage]s, [Session]s and [App]s.
@@ -22,10 +27,12 @@ pub struct Engine {
     db_pool: DatabasePool,
     inserter: UsageWriter,
     spawner: Handle,
+    active: bool,
 }
 
 /// Events that the [Engine] can handle.
 pub enum Event {
+    System(SystemStateEvent),
     ForegroundChanged(ForegroundChangedEvent),
     InteractionChanged(InteractionChangedEvent),
     Tick(Timestamp),
@@ -49,6 +56,7 @@ impl Engine {
             active_period_start: start,
             // set a default value, then update it right after
             current_usage: Default::default(),
+            active: true,
             spawner,
         };
 
@@ -64,7 +72,45 @@ impl Engine {
 
     /// Handle an [Event]
     pub async fn handle(&mut self, event: Event) -> Result<()> {
+        if let Event::System(event) = &event {
+            let prev = self.active;
+            self.active = event.state.is_active();
+            let now = event.timestamp;
+
+            // TODO interaction period saving/reset
+            if prev && !self.active {
+                // Stop usage watching, write last usage inside.
+                self.inserter
+                    .insert_or_update_usage(&mut self.current_usage)
+                    .await?;
+            } else if !prev && self.active {
+                // Restart usage watching.
+                let foreground = foreground_window_session()?;
+                self.current_usage = Usage {
+                    id: Default::default(),
+                    session_id: self.get_session_details(foreground).await?,
+                    start: now.to_ticks(),
+                    end: now.to_ticks(),
+                };
+            }
+            self.inserter
+                .insert_system_event(&DataSystemEvent {
+                    id: Default::default(),
+                    timestamp: now.to_ticks(),
+                    event: (&event.event).into(),
+                })
+                .await?;
+            info!("system event processed: {:?}", event);
+            return Ok(());
+        }
+
+        if !self.active {
+            return Ok(());
+        }
+
         match event {
+            // handled above
+            Event::System(_) => unreachable!(),
             Event::ForegroundChanged(ForegroundChangedEvent { at, session }) => {
                 info!("fg switch: {:?}", session);
 

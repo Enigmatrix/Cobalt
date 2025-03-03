@@ -12,6 +12,7 @@ import {
   useAppDurationsPerPeriod,
   useAppSessionUsages,
   useInteractionPeriods,
+  useSystemEvents,
 } from "@/hooks/use-repo";
 import { type TimePeriod, useTimePeriod } from "@/hooks/use-today";
 import {
@@ -39,6 +40,12 @@ export default function Home() {
       start: range.start,
       end: range.end,
     });
+  const { ret: systemEvents, isLoading: systemEventsLoading } = useSystemEvents(
+    {
+      start: range.start,
+      end: range.end,
+    },
+  );
 
   return (
     <>
@@ -78,6 +85,8 @@ export default function Home() {
               usagesLoading={usagesLoading}
               interactionPeriods={interactions}
               interactionPeriodsLoading={interactionPeriodsLoading}
+              systemEvents={systemEvents}
+              systemEventsLoading={systemEventsLoading}
               rangeStart={range.start}
               rangeEnd={range.end}
             />
