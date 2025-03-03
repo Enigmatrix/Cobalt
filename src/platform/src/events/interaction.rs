@@ -95,7 +95,7 @@ impl InteractionWatcher {
                 self.key_strokes = 0;
                 self.active = false;
                 Ok(Some(InteractionChangedEvent::BecameIdle {
-                    at,
+                    at: at - self.max_idle_duration,
                     recorded_mouse_clicks,
                     recorded_key_presses,
                 }))
