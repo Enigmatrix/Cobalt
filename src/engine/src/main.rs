@@ -80,8 +80,9 @@ fn event_loop(
     let mut fg_watcher = ForegroundEventWatcher::new(fg)?;
     let it_watcher = InteractionWatcher::init(config, now)?;
     let system_event_tx = event_tx.clone();
+    // TODO take it_watcher as a ref, put its current state into the event
     let _system_watcher = SystemEventWatcher::new(&message_window, move |event| {
-        info!("system event: {:?}", event);
+        info!("system state event: {:?}", event);
         system_event_tx
             .send(Event::System(event))
             .context("send system event to engine")

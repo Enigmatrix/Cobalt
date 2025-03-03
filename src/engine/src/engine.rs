@@ -5,7 +5,7 @@ use data::entities::{
     AppIdentity, InteractionPeriod, Ref, Session, SystemEvent as DataSystemEvent, Usage,
 };
 use platform::events::{
-    ForegroundChangedEvent, InteractionChangedEvent, SystemEvent, WindowSession,
+    ForegroundChangedEvent, InteractionChangedEvent, SystemStateEvent, WindowSession,
 };
 use platform::objects::{Process, ProcessId, Timestamp, Window};
 use scoped_futures::ScopedFutureExt;
@@ -32,7 +32,7 @@ pub struct Engine {
 
 /// Events that the [Engine] can handle.
 pub enum Event {
-    System(SystemEvent),
+    System(SystemStateEvent),
     ForegroundChanged(ForegroundChangedEvent),
     InteractionChanged(InteractionChangedEvent),
     Tick(Timestamp),
@@ -74,10 +74,10 @@ impl Engine {
     pub async fn handle(&mut self, event: Event) -> Result<()> {
         if let Event::System(event) = &event {
             let prev = self.active;
-            self.active = !event.inactive();
+            self.active = event.state.is_active();
+            let now = event.timestamp;
 
             // TODO interaction period saving/reset
-            let now = Timestamp::now();
             if prev && !self.active {
                 // Stop usage watching, write last usage inside.
                 self.inserter
@@ -97,7 +97,7 @@ impl Engine {
                 .insert_system_event(&DataSystemEvent {
                     id: Default::default(),
                     timestamp: now.to_ticks(),
-                    event: event.into(),
+                    event: (&event.event).into(),
                 })
                 .await?;
             info!("system event processed: {:?}", event);

@@ -14,7 +14,7 @@ use windows::Win32::UI::WindowsAndMessaging::{
     WTS_SESSION_LOCK, WTS_SESSION_UNLOCK,
 };
 
-use crate::objects::MessageWindow;
+use crate::objects::{MessageWindow, Timestamp};
 
 /// System events
 #[derive(Debug, Clone)]
@@ -46,19 +46,43 @@ impl From<&SystemEvent> for i64 {
     }
 }
 
-impl SystemEvent {
-    /// Check if the event makes the system inactive
-    pub fn inactive(&self) -> bool {
-        matches!(
-            self,
-            SystemEvent::Shutdown
-                | SystemEvent::Logoff
-                | SystemEvent::Lock
-                | SystemEvent::Suspend
-                | SystemEvent::MonitorOff
-        )
+/// System state
+#[derive(Debug, Clone, Default)]
+pub struct SystemState {
+    /// Is shutdown
+    is_shutdown: bool,
+    /// Is logoff
+    is_logoff: bool,
+    /// Is lock
+    is_lock: bool,
+    /// Is suspend
+    is_suspend: bool,
+    /// Is monitor off
+    is_monitor_off: bool,
+}
+
+impl SystemState {
+    /// Check if the system is active
+    pub fn is_active(&self) -> bool {
+        !self.is_shutdown
+            && !self.is_logoff
+            && !self.is_lock
+            && !self.is_suspend
+            && !self.is_monitor_off
     }
 }
+
+/// System state event
+#[derive(Debug, Clone)]
+pub struct SystemStateEvent {
+    /// Timestamp
+    pub timestamp: Timestamp,
+    /// System state
+    pub state: SystemState,
+    /// Event
+    pub event: SystemEvent,
+}
+
 /// Watcher for system events
 pub struct SystemEventWatcher<'a> {
     message_window: &'a MessageWindow,
@@ -70,7 +94,7 @@ impl<'a> SystemEventWatcher<'a> {
     pub fn new(
         message_window: &'a MessageWindow,
         // Callback is used instead of a channel because we want it to be processed ASAP.
-        mut callback: impl FnMut(SystemEvent) -> Result<()> + 'static,
+        mut callback: impl FnMut(SystemStateEvent) -> Result<()> + 'static,
     ) -> Result<Self> {
         let hwnd = message_window.handle();
 
@@ -113,27 +137,66 @@ impl<'a> SystemEventWatcher<'a> {
         //     )
         // };
 
+        let mut state = SystemState::default();
+
         message_window.add_callback(Box::new(move |_, msg, wparam, lparam| {
+            let timestamp = Timestamp::now();
             if msg == WM_ENDSESSION {
                 if lparam.0 as u32 & ENDSESSION_LOGOFF != 0 {
-                    callback(SystemEvent::Logoff).warn();
+                    state.is_logoff = true;
+                    callback(SystemStateEvent {
+                        timestamp,
+                        state: state.clone(),
+                        event: SystemEvent::Logoff,
+                    })
+                    .warn();
                 } else {
+                    state.is_shutdown = true;
                     // Cannot disambiguate between shutdown, restart etc.
-                    callback(SystemEvent::Shutdown).warn();
+                    callback(SystemStateEvent {
+                        timestamp,
+                        state: state.clone(),
+                        event: SystemEvent::Shutdown,
+                    })
+                    .warn();
                 }
             } else if msg == WM_WTSSESSION_CHANGE {
                 if wparam.0 as u32 == WTS_SESSION_LOCK {
-                    callback(SystemEvent::Lock).warn();
+                    state.is_lock = true;
+                    callback(SystemStateEvent {
+                        timestamp,
+                        state: state.clone(),
+                        event: SystemEvent::Lock,
+                    })
+                    .warn();
                 } else if wparam.0 as u32 == WTS_SESSION_UNLOCK {
-                    callback(SystemEvent::Unlock).warn();
+                    state.is_lock = false;
+                    callback(SystemStateEvent {
+                        timestamp,
+                        state: state.clone(),
+                        event: SystemEvent::Unlock,
+                    })
+                    .warn();
                 } else {
                     info!("SESSION: unknown event {:x}", wparam.0);
                 }
             } else if msg == WM_POWERBROADCAST {
                 if wparam.0 as u32 == PBT_APMSUSPEND {
-                    callback(SystemEvent::Suspend).warn();
+                    state.is_suspend = true;
+                    callback(SystemStateEvent {
+                        timestamp,
+                        state: state.clone(),
+                        event: SystemEvent::Suspend,
+                    })
+                    .warn();
                 } else if wparam.0 as u32 == PBT_APMRESUMESUSPEND {
-                    callback(SystemEvent::Resume).warn();
+                    state.is_suspend = false;
+                    callback(SystemStateEvent {
+                        timestamp,
+                        state: state.clone(),
+                        event: SystemEvent::Resume,
+                    })
+                    .warn();
                 } else if wparam.0 as u32 == PBT_POWERSETTINGCHANGE {
                     // Extract power setting information
                     let setting_info =
@@ -144,10 +207,21 @@ impl<'a> SystemEventWatcher<'a> {
                         if power_guid == GUID_MONITOR_POWER_ON {
                             let monitor_on =
                                 unsafe { *(&setting_info.Data[0] as *const _ as *const u32) } != 0;
+                            state.is_monitor_off = !monitor_on;
                             if monitor_on {
-                                callback(SystemEvent::MonitorOn).warn();
+                                callback(SystemStateEvent {
+                                    timestamp,
+                                    state: state.clone(),
+                                    event: SystemEvent::MonitorOn,
+                                })
+                                .warn();
                             } else {
-                                callback(SystemEvent::MonitorOff).warn();
+                                callback(SystemStateEvent {
+                                    timestamp,
+                                    state: state.clone(),
+                                    event: SystemEvent::MonitorOff,
+                                })
+                                .warn();
                             }
                         }
                         // else if power_guid == GUID_CONSOLE_DISPLAY_STATE {
