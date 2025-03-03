@@ -4,7 +4,7 @@ export default function CreateAlerts() {
   return (
     <>
       <main>
-        <CreateAlertForm />
+        <CreateAlertForm onSubmit={console.log} />
       </main>
     </>
   );
