@@ -200,10 +200,30 @@ pub struct AppUpdater {
     db: Database,
 }
 
+/// [App] that needs to be updated
+#[derive(Debug, Clone, FromRow)]
+pub struct UnresolvedApp {
+    /// [App] id
+    pub id: Ref<App>,
+    /// AppIdentity
+    #[sqlx(flatten)]
+    pub identity: AppIdentity,
+}
+
 impl AppUpdater {
     /// Initialize a [AppUpdater] from a given [Database]
     pub fn new(db: Database) -> Result<Self> {
         Ok(Self { db })
+    }
+
+    /// Get all [App]s that need to be updated
+    pub async fn get_apps_to_update(&mut self) -> Result<Vec<UnresolvedApp>> {
+        let apps = query_as(
+            "SELECT id, identity_is_win32, identity_path_or_aumid FROM apps WHERE initialized = 0",
+        )
+        .fetch_all(self.db.executor())
+        .await?;
+        Ok(apps)
     }
 
     /// Update the [App] with additional information, including its icon

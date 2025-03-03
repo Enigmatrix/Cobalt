@@ -8,12 +8,13 @@
 use std::sync::Arc;
 use std::thread;
 
-use data::db::DatabasePool;
+use data::db::{AppUpdater, DatabasePool};
 use engine::{Engine, Event};
 use platform::events::{
     ForegroundEventWatcher, InteractionWatcher, SystemEventWatcher, WindowSession,
 };
 use platform::objects::{EventLoop, MessageWindow, Timer, Timestamp, Window};
+use resolver::AppInfoResolver;
 use sentry::Sentry;
 use util::channels::{self, Receiver, Sender};
 use util::config::{self, Config};
@@ -169,6 +170,16 @@ fn processor(
     let res: Result<()> = rt.block_on(async move {
         let db_pool = DatabasePool::new(config).await?;
 
+        // re-run failed app info updates
+        let _db_pool = db_pool.clone();
+        let _handle = handle.clone();
+        handle.clone().spawn(async move {
+            update_app_infos(_db_pool, _handle)
+                .await
+                .context("update app infos")
+                .error();
+        });
+
         let sentry_handle = {
             let cache = cache.clone();
             let db_pool = db_pool.clone();
@@ -206,6 +217,31 @@ fn processor(
         Ok(())
     });
     res
+}
+
+async fn update_app_infos(db_pool: DatabasePool, handle: Handle) -> Result<()> {
+    let db = db_pool.get_db().await?;
+    let mut updater = AppUpdater::new(db)?;
+    let apps = updater.get_apps_to_update().await?;
+    let mut handles = Vec::new();
+    for app in apps {
+        let _db_pool = db_pool.clone();
+        handles.push(handle.spawn(async move {
+            AppInfoResolver::update_app(_db_pool, app.id.clone(), app.identity.clone())
+                .await
+                .with_context(|| {
+                    format!(
+                        "update app({:?}, {:?}) with info at start",
+                        app.id, app.identity
+                    )
+                })
+                .error();
+        }));
+    }
+    for handle in handles {
+        handle.await?;
+    }
+    Ok(())
 }
 
 /// Get the foreground [Window], and makes it into a [WindowSession] blocking until one is present.

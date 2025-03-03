@@ -252,9 +252,11 @@ impl Engine {
                     let id = id.clone();
 
                     spawner.spawn(async move {
-                        AppInfoResolver::update_app(db_pool, id, identity)
+                        AppInfoResolver::update_app(db_pool, id.clone(), identity.clone())
                             .await
-                            .context("update app with info")
+                            .with_context(|| {
+                                format!("update app({:?}, {:?}) with info", id, identity)
+                            })
                             .error();
                     });
                 }
