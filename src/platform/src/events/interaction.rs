@@ -1,8 +1,11 @@
-use std::cell::SyncUnsafeCell;
 use std::ffi::c_void;
+use std::sync::atomic::{AtomicI64, Ordering};
+use std::sync::{Arc, Mutex, OnceLock};
 
 use util::config::Config;
 use util::error::{bail, Context, Result};
+use util::time::ToTicks;
+use util::tracing::debug;
 use windows::Win32::Foundation::{LPARAM, WPARAM};
 use windows::Win32::UI::WindowsAndMessaging::{
     HC_ACTION, KBDLLHOOKSTRUCT, LLKHF_INJECTED, MSLLHOOKSTRUCT, WH_KEYBOARD_LL, WH_MOUSE_LL,
@@ -11,108 +14,83 @@ use windows::Win32::UI::WindowsAndMessaging::{
 
 use crate::objects::{Duration, Timestamp, WindowsHook, WindowsHookType};
 
+static INTERACTION_LAST_INTERACTION: AtomicI64 = AtomicI64::new(0);
+static INTERACTION_MOUSE_CLICKS: AtomicI64 = AtomicI64::new(0);
+static INTERACTION_KEY_STROKES: AtomicI64 = AtomicI64::new(0);
+
+// Thread-safe instance container using OnceLock
+static INTERACTION_INSTANCE: OnceLock<Arc<Mutex<InteractionWatcher>>> = OnceLock::new();
+
 /// Watches for user interaction and notifies when the user becomes idle or active,
 /// including counting mouse_clicks and key_presses.
 pub struct InteractionWatcher {
     max_idle_duration: Duration,
-    active: bool,
-
-    // the below will be modified by Windows Hooks
-    last_interaction: Timestamp,
-    mouse_clicks: i64,
-    key_strokes: i64,
+    active_start: Option<Timestamp>,
 
     // Windows Hooks
     _mouse_hook: WindowsHook<MouseLL>,
     _keyboard_hook: WindowsHook<KeyboardLL>,
 }
 
-/// Event for change in interaction state.
-pub enum InteractionChangedEvent {
-    /// Just became idle
-    BecameIdle {
-        /// Timestamp of idleness
-        at: Timestamp,
-        /// Mouse clicks in the preceding active period
-        recorded_mouse_clicks: i64,
-        /// Recorded key presses in the preceding active period
-        recorded_key_presses: i64,
-    },
-    /// Just became active
-    BecameActive {
-        /// Timestamp of active start
-        at: Timestamp,
-    },
-}
-
-// # Safety
-// Since we are single-threaded, this is safe - otherwise we need Mutex/Locks.
-// The `Sync`UnsafeCell is needed to satisfy the compiler.
-static INTERACTION_INSTANCE: SyncUnsafeCell<Option<InteractionWatcher>> = SyncUnsafeCell::new(None);
-
-fn interaction_instance() -> &'static mut InteractionWatcher {
-    unsafe {
-        INTERACTION_INSTANCE
-            .get()
-            .as_mut()
-            .and_then(|i| i.as_mut())
-            .unwrap()
-    }
+/// Active Period Event
+pub struct InteractionChangedEvent {
+    /// Start of active period
+    pub start: Timestamp,
+    /// End of active period
+    pub end: Timestamp,
+    /// Mouse clicks in the active period
+    pub mouse_clicks: i64,
+    /// Recorded key presses in the active period
+    pub key_strokes: i64,
 }
 
 impl InteractionWatcher {
     /// Create a new [InteractionWatcher] with the specified [Config] and current [Timestamp].
-    pub fn init(config: &Config, at: Timestamp) -> Result<&'static mut Self> {
-        if unsafe {
-            INTERACTION_INSTANCE
-                .get()
-                .as_ref()
-                .is_some_and(|i| i.is_some())
-        } {
+    pub fn init(config: &Config, at: Timestamp) -> Result<Arc<Mutex<Self>>> {
+        // Check if already initialized
+        if INTERACTION_INSTANCE.get().is_some() {
             bail!("InteractionWatcher already initialized");
         }
+
+        // Create the new instance
         let instance = Self {
             max_idle_duration: config.max_idle_duration().into(),
-            active: true,
-            last_interaction: at,
-            mouse_clicks: 0,
-            key_strokes: 0,
+            active_start: Some(at),
             _mouse_hook: WindowsHook::global().context("mouse ll windows hook")?,
             _keyboard_hook: WindowsHook::global().context("keyboard ll windows hook")?,
         };
-        unsafe { *INTERACTION_INSTANCE.get() = Some(instance) };
-        Ok(interaction_instance())
+
+        // Initialize the global instance if not already done
+        let instance_container =
+            INTERACTION_INSTANCE.get_or_init(|| Arc::new(Mutex::new(instance)));
+
+        Ok(instance_container.clone())
     }
 
     /// Poll for a new [`InteractionChangedEvent`].
     pub fn poll(&mut self, at: Timestamp) -> Result<Option<InteractionChangedEvent>> {
-        let interaction_gap_duration = at - self.last_interaction;
-        if self.active {
+        let last_interaction =
+            Timestamp::from_ticks(INTERACTION_LAST_INTERACTION.load(Ordering::Relaxed));
+        let interaction_gap_duration = at - last_interaction;
+        if let Some(start) = self.active_start {
             if interaction_gap_duration > self.max_idle_duration {
-                let recorded_mouse_clicks = self.mouse_clicks;
-                let recorded_key_presses = self.key_strokes;
-                self.mouse_clicks = 0;
-                self.key_strokes = 0;
-                self.active = false;
-                Ok(Some(InteractionChangedEvent::BecameIdle {
-                    at: at - self.max_idle_duration,
-                    recorded_mouse_clicks,
-                    recorded_key_presses,
-                }))
-            } else {
-                Ok(None)
+                debug!("became idle at {:?}", at);
+                let recorded_mouse_clicks = INTERACTION_MOUSE_CLICKS.swap(0, Ordering::Relaxed);
+                let recorded_key_presses = INTERACTION_KEY_STROKES.swap(0, Ordering::Relaxed);
+                self.active_start = None;
+                return Ok(Some(InteractionChangedEvent {
+                    start,
+                    end: last_interaction,
+                    mouse_clicks: recorded_mouse_clicks,
+                    key_strokes: recorded_key_presses,
+                }));
             }
+            return Ok(None);
         } else if interaction_gap_duration < self.max_idle_duration {
-            self.active = true;
-            Ok(Some(InteractionChangedEvent::BecameActive { at }))
-        } else {
-            Ok(None)
+            debug!("became active at {:?}", at);
+            self.active_start = Some(at);
         }
-    }
-
-    /// Interact with this watcher
-    pub fn interact(&mut self, timestamp: Timestamp) {
-        self.last_interaction = self.last_interaction.max(timestamp)
+        Ok(None)
     }
 }
 
@@ -124,7 +102,8 @@ impl WindowsHookType for MouseLL {
         let lparam = unsafe { &mut *(lparam.0 as *mut c_void as *mut MSLLHOOKSTRUCT) };
         // we do not count fake, 'injected' mouse events to be user mouse clicks
         if code as u32 == HC_ACTION && lparam.flags & LLKHF_INJECTED.0 == 0 {
-            interaction_instance().interact(Timestamp::from_event_millis(lparam.time));
+            let ts = Timestamp::from_event_millis(lparam.time);
+            INTERACTION_LAST_INTERACTION.fetch_max(ts.to_ticks(), Ordering::Relaxed);
 
             let mouse_ev = wparam.0 as u32;
             if mouse_ev == WM_LBUTTONDOWN
@@ -132,7 +111,7 @@ impl WindowsHookType for MouseLL {
                 || mouse_ev == WM_MBUTTONDOWN
                 || mouse_ev == WM_XBUTTONDOWN
             {
-                interaction_instance().mouse_clicks += 1;
+                INTERACTION_MOUSE_CLICKS.fetch_add(1, Ordering::Relaxed);
             }
         }
     }
@@ -150,10 +129,11 @@ impl WindowsHookType for KeyboardLL {
         let lparam = unsafe { &mut *(lparam.0 as *mut c_void as *mut KBDLLHOOKSTRUCT) };
         // we do not count fake, 'injected' mouse events to be user mouse clicks
         if code as u32 == HC_ACTION && lparam.flags.0 & LLKHF_INJECTED.0 == 0 {
-            interaction_instance().interact(Timestamp::from_event_millis(lparam.time));
+            let ts = Timestamp::from_event_millis(lparam.time);
+            INTERACTION_LAST_INTERACTION.fetch_max(ts.to_ticks(), Ordering::Relaxed);
 
             if wparam.0 as u32 == WM_KEYDOWN {
-                interaction_instance().key_strokes += 1;
+                INTERACTION_KEY_STROKES.fetch_add(1, Ordering::Relaxed);
             }
         }
     }
