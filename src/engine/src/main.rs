@@ -100,7 +100,7 @@ fn event_loop(
             } else {
                 event_tx.send(Event::Tick(now))?;
             }
-            if let Some(event) = it_watcher.poll(now)? {
+            if let Some(event) = it_watcher.lock().unwrap().poll(now)? {
                 event_tx.send(Event::InteractionChanged(event))?;
             }
             Ok(())
