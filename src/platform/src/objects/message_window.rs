@@ -111,6 +111,10 @@ impl Drop for MessageWindow {
             UnregisterClassW(PCWSTR::from_raw(self.class_name.as_ptr()), None)
                 .context("Failed to unregister MessageWindow class")
                 .error();
+
+            let callbacks =
+                GetWindowLongPtrW(self.hwnd, GWLP_USERDATA) as *mut Rc<RefCell<Vec<Callback>>>;
+            drop(Box::from_raw(callbacks));
         }
     }
 }
