@@ -14,7 +14,7 @@ use windows::Win32::UI::WindowsAndMessaging::{
     WTS_SESSION_LOCK, WTS_SESSION_UNLOCK,
 };
 
-use crate::objects::{MessageWindow, Timestamp};
+use crate::objects::{Duration, MessageWindow, Timestamp};
 
 /// System events
 #[derive(Debug, Clone)]
@@ -137,6 +137,7 @@ impl<'a> SystemEventWatcher<'a> {
         //     )
         // };
 
+        let init_time = Timestamp::now();
         let mut state = SystemState::default();
 
         message_window.add_callback(Box::new(move |_, msg, wparam, lparam| {
@@ -203,6 +204,12 @@ impl<'a> SystemEventWatcher<'a> {
                         unsafe { (lparam.0 as *const POWERBROADCAST_SETTING).as_ref() };
                     if let Some(setting_info) = setting_info {
                         let power_guid = setting_info.PowerSetting;
+
+                        // for some reason, the power setting notification is sent during registration as well.
+                        // so we need to ignore the first one.
+                        if (Timestamp::now() - init_time) < Duration::from_millis(1000) {
+                            return None;
+                        }
 
                         if power_guid == GUID_MONITOR_POWER_ON {
                             let monitor_on =
