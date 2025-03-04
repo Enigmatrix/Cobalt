@@ -61,10 +61,37 @@ impl InteractionWatcher {
         };
 
         // Initialize the global instance if not already done
-        let instance_container =
-            INTERACTION_INSTANCE.get_or_init(|| Arc::new(Mutex::new(instance)));
+        let instance_container = INTERACTION_INSTANCE.get_or_init(|| {
+            INTERACTION_LAST_INTERACTION.store(at.to_ticks(), Ordering::Relaxed);
+            Arc::new(Mutex::new(instance))
+        });
 
         Ok(instance_container.clone())
+    }
+
+    /// Short-circuit the interaction watcher if the user is active.
+    pub fn short_circuit(
+        &mut self,
+        is_active: bool,
+        now: Timestamp,
+    ) -> Option<InteractionChangedEvent> {
+        if is_active {
+            self.active_start = Some(now);
+            None
+        } else if let Some(start) = self.active_start {
+            self.active_start = None;
+            let recorded_mouse_clicks = INTERACTION_MOUSE_CLICKS.swap(0, Ordering::Relaxed);
+            let recorded_key_presses = INTERACTION_KEY_STROKES.swap(0, Ordering::Relaxed);
+            Some(InteractionChangedEvent {
+                start,
+                end: now,
+                mouse_clicks: recorded_mouse_clicks,
+                key_strokes: recorded_key_presses,
+            })
+        } else {
+            // already not active
+            None
+        }
     }
 
     /// Poll for a new [`InteractionChangedEvent`].

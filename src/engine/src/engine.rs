@@ -31,7 +31,11 @@ pub struct Engine {
 
 /// Events that the [Engine] can handle.
 pub enum Event {
-    System(SystemStateEvent),
+    System {
+        event: SystemStateEvent,
+        last_interaction: Option<InteractionChangedEvent>,
+        now: Timestamp,
+    },
     ForegroundChanged(ForegroundChangedEvent),
     InteractionChanged(InteractionChangedEvent),
     Tick(Timestamp),
@@ -70,17 +74,32 @@ impl Engine {
 
     /// Handle an [Event]
     pub async fn handle(&mut self, event: Event) -> Result<()> {
-        if let Event::System(event) = &event {
+        if let Event::System {
+            event,
+            now,
+            last_interaction,
+        } = &event
+        {
             let prev = self.active;
             self.active = event.state.is_active();
-            let now = event.timestamp;
 
-            // TODO interaction period saving/reset
             if prev && !self.active {
                 // Stop usage watching, write last usage inside.
                 self.inserter
                     .insert_or_update_usage(&mut self.current_usage)
                     .await?;
+                // Save the interaction period if it exists.
+                if let Some(interaction_period) = last_interaction {
+                    self.inserter
+                        .insert_interaction_period(&InteractionPeriod {
+                            id: Default::default(),
+                            start: interaction_period.start.to_ticks(),
+                            end: interaction_period.end.to_ticks(),
+                            mouse_clicks: interaction_period.mouse_clicks,
+                            key_strokes: interaction_period.key_strokes,
+                        })
+                        .await?;
+                }
             } else if !prev && self.active {
                 // Restart usage watching.
                 let foreground = foreground_window_session()?;
@@ -108,7 +127,7 @@ impl Engine {
 
         match event {
             // handled above
-            Event::System(_) => unreachable!(),
+            Event::System { .. } => unreachable!(),
             Event::ForegroundChanged(ForegroundChangedEvent { at, session }) => {
                 info!("fg switch: {:?}", session);
 
@@ -157,7 +176,6 @@ impl Engine {
                         key_strokes,
                     })
                     .await?;
-                // don't need to update active_period_start, as it will be updated when we become active again
             }
         };
         Ok(())
