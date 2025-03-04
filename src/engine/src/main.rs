@@ -81,11 +81,21 @@ fn event_loop(
     let mut fg_watcher = ForegroundEventWatcher::new(fg)?;
     let it_watcher = InteractionWatcher::init(config, now)?;
     let system_event_tx = event_tx.clone();
-    // TODO take it_watcher as a ref, put its current state into the event
+
+    let _it_watcher = it_watcher.clone();
     let _system_watcher = SystemEventWatcher::new(&message_window, move |event| {
-        info!("system state event: {:?}", event);
+        let now = Timestamp::now();
+        info!("system state event: {:?}, {:?}", event, now);
+        let last_interaction = _it_watcher
+            .lock()
+            .unwrap()
+            .short_circuit(event.state.is_active(), now);
         system_event_tx
-            .send(Event::System(event))
+            .send(Event::System {
+                event,
+                last_interaction,
+                now,
+            })
             .context("send system event to engine")
     })?;
 
