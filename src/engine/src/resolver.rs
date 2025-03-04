@@ -39,7 +39,7 @@ impl AppInfoResolver {
             color: Self::random_color(),
             identity,
             tag_id: None,
-            icon: Some(app_info.logo),
+            icon: app_info.logo,
         };
         updater.update_app(&app).await?;
         Ok(())

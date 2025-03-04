@@ -1,9 +1,9 @@
 use std::mem::swap;
 
-use util::error::Result;
+use util::error::{Context, Result};
 use util::tracing::ResultTraceExt;
 use windows::core::AgileReference;
-use windows::ApplicationModel::AppInfo as UWPAppInfo;
+use windows::ApplicationModel::{AppDisplayInfo, AppInfo as UWPAppInfo};
 use windows::Foundation::Size;
 use windows::Storage::FileProperties::ThumbnailMode;
 use windows::Storage::StorageFile;
@@ -20,7 +20,7 @@ pub struct AppInfo {
     /// Company
     pub company: String,
     /// Logo as bytes
-    pub logo: Vec<u8>,
+    pub logo: Option<Vec<u8>>,
 }
 
 /// Image size for Win32 apps
@@ -35,18 +35,11 @@ impl AppInfo {
 
         let mut fv = FileVersionInfo::new(path)?;
 
-        let logo = file
-            .resolve()?
-            .GetThumbnailAsyncOverloadDefaultOptions(ThumbnailMode::SingleItem, WIN32_IMAGE_SIZE)?;
-        let (size, reader) = {
-            let logo = logo.await?;
-            let size = logo.Size()? as usize;
-            let reader = DataReader::CreateDataReader(&logo)?;
-            (size, reader)
-        };
-        reader.LoadAsync(size as u32)?.await?;
-        let mut logo = vec![0u8; size];
-        reader.ReadBytes(&mut logo)?;
+        let logo = Self::win32_logo(&file)
+            .await
+            .map(Some)
+            .with_context(|| format!("get win32 logo for {path:?}"))
+            .warn();
 
         // yes, this is swapper, this is surprisingly more accurate.
         let mut name = fv.query_value("FileDescription").warn();
@@ -70,7 +63,37 @@ impl AppInfo {
         let app_info = UWPAppInfo::GetFromAppUserModelId(&aumid.into())?;
         let display_info = app_info.DisplayInfo()?;
         let package = app_info.Package()?;
+        let logo = Self::uwp_logo(&display_info)
+            .await
+            .map(Some)
+            .with_context(|| format!("get uwp logo for {aumid:?}"))
+            .warn();
 
+        Ok(AppInfo {
+            name: display_info.DisplayName()?.to_string_lossy(),
+            description: display_info.Description()?.to_string_lossy(),
+            company: package.PublisherDisplayName()?.to_string_lossy(),
+            logo,
+        })
+    }
+
+    async fn win32_logo(file: &AgileReference<StorageFile>) -> Result<Vec<u8>> {
+        let logo = file
+            .resolve()?
+            .GetThumbnailAsyncOverloadDefaultOptions(ThumbnailMode::SingleItem, WIN32_IMAGE_SIZE)?;
+        let (size, reader) = {
+            let logo = logo.await?;
+            let size = logo.Size()? as usize;
+            let reader = DataReader::CreateDataReader(&logo)?;
+            (size, reader)
+        };
+        reader.LoadAsync(size as u32)?.await?;
+        let mut logo = vec![0u8; size];
+        reader.ReadBytes(&mut logo)?;
+        Ok(logo)
+    }
+
+    async fn uwp_logo(display_info: &AppDisplayInfo) -> Result<Vec<u8>> {
         let (size, reader) = {
             let logo = display_info
                 .GetLogo(Size {
@@ -87,13 +110,7 @@ impl AppInfo {
         reader.LoadAsync(size as u32)?.await?;
         let mut logo = vec![0u8; size];
         reader.ReadBytes(&mut logo)?;
-
-        Ok(AppInfo {
-            name: display_info.DisplayName()?.to_string_lossy(),
-            description: display_info.Description()?.to_string_lossy(),
-            company: package.PublisherDisplayName()?.to_string_lossy(),
-            logo,
-        })
+        Ok(logo)
     }
 }
 
@@ -111,7 +128,7 @@ mod tests {
         assert_eq!("Notepad", app_info.name);
         assert_eq!("Microsoft® Windows® Operating System", app_info.description);
         assert_eq!("Microsoft Corporation", app_info.company);
-        assert_ne!(0, app_info.logo.len());
+        assert_ne!(0, app_info.logo.unwrap().len());
         Ok(())
     }
 
@@ -122,7 +139,7 @@ mod tests {
         assert_eq!("Narrator", app_info.name);
         assert_eq!("Narrator Home", app_info.description);
         assert_eq!("Microsoft", app_info.company);
-        assert_ne!(0, app_info.logo.len());
+        assert_ne!(0, app_info.logo.unwrap().len());
         Ok(())
     }
 }

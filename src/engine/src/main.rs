@@ -8,12 +8,13 @@
 use std::sync::Arc;
 use std::thread;
 
-use data::db::DatabasePool;
+use data::db::{AppUpdater, DatabasePool};
 use engine::{Engine, Event};
 use platform::events::{
     ForegroundEventWatcher, InteractionWatcher, SystemEventWatcher, WindowSession,
 };
 use platform::objects::{EventLoop, MessageWindow, Timer, Timestamp, Window};
+use resolver::AppInfoResolver;
 use sentry::Sentry;
 use util::channels::{self, Receiver, Sender};
 use util::config::{self, Config};
@@ -80,11 +81,21 @@ fn event_loop(
     let mut fg_watcher = ForegroundEventWatcher::new(fg)?;
     let it_watcher = InteractionWatcher::init(config, now)?;
     let system_event_tx = event_tx.clone();
-    // TODO take it_watcher as a ref, put its current state into the event
+
+    let _it_watcher = it_watcher.clone();
     let _system_watcher = SystemEventWatcher::new(&message_window, move |event| {
-        info!("system state event: {:?}", event);
+        let now = Timestamp::now();
+        info!("system state event: {:?}, {:?}", event, now);
+        let last_interaction = _it_watcher
+            .lock()
+            .unwrap()
+            .short_circuit(event.state.is_active(), now);
         system_event_tx
-            .send(Event::System(event))
+            .send(Event::System {
+                event,
+                last_interaction,
+                now,
+            })
             .context("send system event to engine")
     })?;
 
@@ -99,7 +110,7 @@ fn event_loop(
             } else {
                 event_tx.send(Event::Tick(now))?;
             }
-            if let Some(event) = it_watcher.poll(now)? {
+            if let Some(event) = it_watcher.lock().unwrap().poll(now)? {
                 event_tx.send(Event::InteractionChanged(event))?;
             }
             Ok(())
@@ -169,6 +180,16 @@ fn processor(
     let res: Result<()> = rt.block_on(async move {
         let db_pool = DatabasePool::new(config).await?;
 
+        // re-run failed app info updates
+        let _db_pool = db_pool.clone();
+        let _handle = handle.clone();
+        handle.clone().spawn(async move {
+            update_app_infos(_db_pool, _handle)
+                .await
+                .context("update app infos")
+                .error();
+        });
+
         let sentry_handle = {
             let cache = cache.clone();
             let db_pool = db_pool.clone();
@@ -206,6 +227,31 @@ fn processor(
         Ok(())
     });
     res
+}
+
+async fn update_app_infos(db_pool: DatabasePool, handle: Handle) -> Result<()> {
+    let db = db_pool.get_db().await?;
+    let mut updater = AppUpdater::new(db)?;
+    let apps = updater.get_apps_to_update().await?;
+    let mut handles = Vec::new();
+    for app in apps {
+        let _db_pool = db_pool.clone();
+        handles.push(handle.spawn(async move {
+            AppInfoResolver::update_app(_db_pool, app.id.clone(), app.identity.clone())
+                .await
+                .with_context(|| {
+                    format!(
+                        "update app({:?}, {:?}) with info at start",
+                        app.id, app.identity
+                    )
+                })
+                .error();
+        }));
+    }
+    for handle in handles {
+        handle.await?;
+    }
+    Ok(())
 }
 
 /// Get the foreground [Window], and makes it into a [WindowSession] blocking until one is present.
