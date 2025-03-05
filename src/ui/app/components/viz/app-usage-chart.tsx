@@ -22,6 +22,7 @@ export interface AppUsageBarChartProps {
   rangeMinTicks: number;
   rangeMaxTicks: number;
   maxYIsPeriod?: boolean;
+  intervalTicks?: number;
   hideXAxis?: boolean;
   hideYAxis?: boolean;
   gridVertical?: boolean;
@@ -42,6 +43,7 @@ export function AppUsageBarChart({
   rangeMinTicks,
   rangeMaxTicks,
   maxYIsPeriod = false,
+  intervalTicks,
   hideXAxis = false,
   hideYAxis = false,
   gradientBars = false,
@@ -136,7 +138,7 @@ export function AppUsageBarChart({
         show: !hideYAxis,
         min: 0,
         max: maxYIsPeriod ? periodTicks : undefined,
-        interval: periodTicks / 4,
+        interval: intervalTicks ?? (maxYIsPeriod ? periodTicks / 4 : undefined),
         splitLine: {
           show: !hideYAxis,
 
@@ -258,6 +260,7 @@ export function AppUsageBarChart({
     periodTicks,
     rangeMinTicks,
     rangeMaxTicks,
+    intervalTicks,
     singleAppId,
     gradientBars,
     barRadius,

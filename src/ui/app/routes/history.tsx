@@ -52,6 +52,20 @@ function AppUsagePerPeriodHistory() {
   const week = useTimePeriod("week");
   const [interval, setInterval] = useState<Interval | null>(week);
   const [period, setPeriod] = useState<DateTimeUnit>("day");
+  const [intervalTicks, maxYIsPeriod] = useMemo(() => {
+    switch (period) {
+      case "hour":
+        return [durationToTicks(Duration.fromObject({ minutes: 15 })), true];
+      case "day":
+        return [durationToTicks(Duration.fromObject({ hours: 2 })), false];
+      case "week":
+        return [durationToTicks(Duration.fromObject({ hours: 6 })), false];
+      case "month":
+        return [durationToTicks(Duration.fromObject({ days: 1 })), false];
+      default:
+        throw new Error(`Unknown period: ${period}`);
+    }
+  }, [period]);
   const periodDuration = useMemo(
     () => Duration.fromObject({ [period]: 1 }),
     [period],
@@ -121,7 +135,8 @@ function AppUsagePerPeriodHistory() {
             end ?? interval?.end ?? DateTime.now(),
           )}
           className="flex-1 h-full min-w-[400px] p-2"
-          maxYIsPeriod={false}
+          maxYIsPeriod={maxYIsPeriod}
+          intervalTicks={intervalTicks}
           animationsEnabled={false}
           hideApps={uncheckedApps}
           barRadius={3}
