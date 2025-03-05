@@ -16,8 +16,8 @@ export interface AppUsageBarChartProps {
   data: EntityMap<App, WithGroupedDuration<App>[]>;
   singleAppId?: Ref<App>;
   periodTicks: number;
-  rangeMinTicks?: number;
-  rangeMaxTicks?: number;
+  rangeMinTicks: number;
+  rangeMaxTicks: number;
   maxYIsPeriod?: boolean;
   hideXAxis?: boolean;
   gridVertical?: boolean;
@@ -36,7 +36,7 @@ type AppUsageBarChartData = {
 };
 
 export function AppUsageBarChart({
-  data: unflattenedData,
+  data,
   singleAppId,
   periodTicks,
   rangeMinTicks,
@@ -62,58 +62,12 @@ export function AppUsageBarChart({
 
   const involvedApps = useMemo(
     () =>
-      _(
-        singleAppId
-          ? { [singleAppId]: unflattenedData[singleAppId] }
-          : unflattenedData,
-      )
-        .keys()
+      _(singleAppId ? [singleAppId] : Object.keys(data))
         .map((id) => apps[id as unknown as Ref<App>])
         .thru(handleStaleApps)
         .value(),
-    [handleStaleApps, apps, unflattenedData, singleAppId],
+    [handleStaleApps, apps, data, singleAppId],
   );
-
-  const data: AppUsageBarChartData[] = useMemo(() => {
-    let ret = _(unflattenedData)
-      .values()
-      .thru(handleStaleApps)
-      .flatten()
-      .groupBy((d) => d.group)
-      .mapValues((durs) => {
-        return _.fromPairs([
-          ...durs.map((d) => {
-            return [d.id, d.duration];
-          }),
-          ["key", ticksToDateTime(durs[0].group).toMillis()],
-        ]);
-      })
-      .value();
-
-    if (rangeMinTicks !== undefined && rangeMaxTicks !== undefined) {
-      ret = _.merge(
-        ret,
-        _(_.range(rangeMinTicks, rangeMaxTicks, periodTicks))
-          .map((t) => {
-            return [t, { key: ticksToDateTime(t).toMillis() }];
-          })
-          .fromPairs()
-          .value(),
-      );
-    }
-
-    return _(ret)
-      .values()
-      .flatten()
-      .sortBy((d) => d.key)
-      .value();
-  }, [
-    unflattenedData,
-    handleStaleApps,
-    rangeMinTicks,
-    rangeMaxTicks,
-    periodTicks,
-  ]);
 
   React.useEffect(() => {
     if (!chartRef.current) return;
@@ -134,9 +88,12 @@ export function AppUsageBarChart({
           const castedParams =
             params as echarts.DefaultLabelFormatterCallbackParams[];
           const seriesValues = Object.fromEntries(
-            castedParams.map((v) => [v.seriesId, v.value]),
+            castedParams.map((v) => [
+              v.seriesId,
+              (v.value as [number, number])[1],
+            ]),
           );
-          setHoverTickAt(DateTime.fromMillis(+castedParams[0].name));
+          setHoverTickAt(ticksToDateTime(+castedParams[0].name));
           setHoverSeries(seriesValues);
           return "";
         },
@@ -150,12 +107,12 @@ export function AppUsageBarChart({
       },
       xAxis: {
         type: "category",
-        data: data.map((d) => d.key),
+        data: _.range(rangeMinTicks!, rangeMaxTicks!, periodTicks),
         axisLabel: {
           show: !hideXAxis,
           padding: [6, 0, 0, 0],
           formatter: (value: string) =>
-            dateTimeFormatter(DateTime.fromMillis(+value)),
+            dateTimeFormatter(ticksToDateTime(+value)),
         },
         show: !hideXAxis,
         axisLine: {
@@ -180,7 +137,12 @@ export function AppUsageBarChart({
         name: app.name,
         type: "bar",
         stack: "total",
-        data: data.map((d) => d[app.id] || 0),
+        // [index, value][]
+        data: data[app.id]?.map((d) => [
+          (d.group - rangeMinTicks!) / periodTicks,
+          d.duration,
+        ]),
+
         itemStyle: {
           color: gradientBars
             ? {
