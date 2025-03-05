@@ -1,13 +1,34 @@
 import { useApps, useTags } from "@/hooks/use-refresh";
 import type { App, Ref, Tag } from "@/lib/entities";
-import { useMemo, useState, type Dispatch, type SetStateAction } from "react";
-import { TagIcon, ChevronDown, ChevronRight } from "lucide-react";
+import {
+  useCallback,
+  useMemo,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
+import {
+  TagIcon,
+  ChevronDown,
+  ChevronRight,
+  EllipsisVertical,
+} from "lucide-react";
 import { Text } from "@/components/ui/text";
 import { cn } from "@/lib/utils";
 import AppIcon from "@/components/app/app-icon";
 import _ from "lodash";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { ClassValue } from "clsx";
+import { SearchBar } from "@/components/search-bar";
+import { useAppsSearch } from "@/hooks/use-search";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import type { CheckedState } from "@radix-ui/react-checkbox";
 
 const Untagged = Symbol("untagged");
 export type AppTagId = Ref<Tag> | typeof Untagged;
@@ -17,24 +38,21 @@ export function VerticalLegend({
   className,
   uncheckedApps,
   setUncheckedApps,
-  uncheckedTags,
-  setUncheckedTags,
 }: {
   appIds?: Ref<App>[];
   uncheckedApps: Record<Ref<App>, boolean>;
   setUncheckedApps: Dispatch<SetStateAction<Record<Ref<App>, boolean>>>;
-  uncheckedTags: Record<AppTagId, boolean>;
-  setUncheckedTags: Dispatch<SetStateAction<Record<AppTagId, boolean>>>;
   className?: ClassValue;
 }) {
   const apps = useApps(appIds);
+  const [query, setQuery, filteredApps] = useAppsSearch(apps);
   const tagIds = useMemo(() => {
-    return _(apps)
+    return _(filteredApps)
       .map((app) => app.tag_id)
       .filter((tagId) => tagId !== null)
       .uniq()
       .value();
-  }, [apps]);
+  }, [filteredApps]);
   const tags = useTags(tagIds);
 
   // State for expanded/collapsed tags
@@ -58,10 +76,6 @@ export function VerticalLegend({
   };
 
   const checkTag = (id: AppTagId, checked: boolean) => {
-    setUncheckedTags((prev) => ({
-      ...prev,
-      [id]: !checked,
-    }));
     setUncheckedApps((prev) => {
       const newState = { ...prev };
       apps
@@ -73,13 +87,98 @@ export function VerticalLegend({
     });
   };
 
+  const showUntagged = useMemo(() => {
+    return filteredApps.some((app) => app.tag_id === null);
+  }, [filteredApps]);
+
+  const selectAllApps = () => {
+    setUncheckedApps({});
+  };
+
+  const unselectAllApps = () => {
+    setUncheckedApps(() => {
+      const newState: Record<Ref<App>, boolean> = {};
+      apps.forEach((app) => {
+        newState[app.id] = true;
+      });
+      return newState;
+    });
+  };
+
+  const selectAllFilteredApps = () => {
+    setUncheckedApps((prev) => {
+      const newState = { ...prev };
+      filteredApps.forEach((app) => {
+        newState[app.id] = false;
+      });
+      return newState;
+    });
+  };
+
+  const unselectAllFilteredApps = () => {
+    setUncheckedApps((prev) => {
+      const newState = { ...prev };
+      filteredApps.forEach((app) => {
+        newState[app.id] = true;
+      });
+      return newState;
+    });
+  };
+
+  const tagStatus = useCallback(
+    (tagId: AppTagId): CheckedState => {
+      const allUnchecked = apps
+        .filter((app) => app.tag_id === (tagId === Untagged ? null : tagId))
+        .every((app) => !!uncheckedApps[app.id]);
+      const allChecked = apps
+        .filter((app) => app.tag_id === (tagId === Untagged ? null : tagId))
+        .every((app) => !uncheckedApps[app.id]);
+      return allChecked ? true : allUnchecked ? false : "indeterminate";
+    },
+    [apps, uncheckedApps],
+  );
+
   return (
     <div className={cn("overflow-auto h-full", className)}>
       <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <EllipsisVertical />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={selectAllApps}>
+                Select All
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={unselectAllApps}>
+                Unselect All
+              </DropdownMenuItem>
+              {query && filteredApps.length > 0 && (
+                <>
+                  <DropdownMenuItem onClick={selectAllFilteredApps}>
+                    Select All Filtered
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={unselectAllFilteredApps}>
+                    Unselect All Filtered
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <SearchBar
+            placeholder="Filter"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+        </div>
         {/* Tags with their apps */}
         {[
           ...tags,
-          { id: Untagged, name: "Untagged", color: "#000000" } as const,
+          ...(showUntagged
+            ? [{ id: Untagged, name: "Untagged", color: "#000000" } as const]
+            : []),
         ].map((tag) => {
           const tagIdStr = tag.id.toString();
           return (
@@ -97,7 +196,7 @@ export function VerticalLegend({
                   )}
                 </button>
                 <Checkbox
-                  checked={!uncheckedTags[tag.id]}
+                  checked={tagStatus(tag.id)}
                   onCheckedChange={(checked) =>
                     checkTag(tag.id, checked === true)
                   }
@@ -116,7 +215,7 @@ export function VerticalLegend({
 
               {/* Apps under this tag */}
               {!unexpandedTags[tagIdStr] &&
-                apps
+                filteredApps
                   .filter(
                     (app) =>
                       app.tag_id === (tag.id === Untagged ? null : tag.id),

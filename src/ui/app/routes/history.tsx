@@ -21,10 +21,7 @@ import {
   SelectTrigger,
 } from "@/components/ui/select";
 import { useTimePeriod } from "@/hooks/use-today";
-import {
-  VerticalLegend,
-  type AppTagId,
-} from "@/components/viz/vertical-legend";
+import { VerticalLegend } from "@/components/viz/vertical-legend";
 import { DurationText } from "@/components/time/duration-text";
 import type { App, Ref } from "@/lib/entities";
 
@@ -73,9 +70,6 @@ function AppUsagePerPeriodHistory() {
   // State for checked tags/apps
   const [uncheckedApps, setUncheckedApps] = useState<Record<Ref<App>, boolean>>(
     {},
-  );
-  const [uncheckedTags, setUncheckedTags] = useState<Record<AppTagId, boolean>>(
-    {} as Record<AppTagId, boolean>,
   );
 
   return (
@@ -134,11 +128,9 @@ function AppUsagePerPeriodHistory() {
         />
 
         <VerticalLegend
-          className="max-w-[300px] w-[280px] h-full overflow-y-auto p-2"
+          className="max-w-[300px] w-[280px] h-full overflow-y-auto p-2 border-l [scrollbar-gutter:stable]"
           uncheckedApps={uncheckedApps}
           setUncheckedApps={setUncheckedApps}
-          uncheckedTags={uncheckedTags}
-          setUncheckedTags={setUncheckedTags}
         />
       </div>
     </div>
