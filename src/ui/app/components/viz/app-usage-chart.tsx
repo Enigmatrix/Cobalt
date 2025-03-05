@@ -16,6 +16,7 @@ import { getVarColorAsHex } from "@/lib/color-utils";
 
 export interface AppUsageBarChartProps {
   data: EntityMap<App, WithGroupedDuration<App>[]>;
+  hideApps?: Record<Ref<App>, boolean>;
   singleAppId?: Ref<App>;
   periodTicks: number;
   rangeMinTicks: number;
@@ -35,6 +36,7 @@ export interface AppUsageBarChartProps {
 
 export function AppUsageBarChart({
   data,
+  hideApps,
   singleAppId,
   periodTicks,
   rangeMinTicks,
@@ -65,8 +67,9 @@ export function AppUsageBarChart({
       _(singleAppId ? [singleAppId] : Object.keys(data))
         .map((id) => apps[id as unknown as Ref<App>])
         .thru(handleStaleApps)
+        .filter((app) => !hideApps?.[app.id])
         .value(),
-    [handleStaleApps, apps, data, singleAppId],
+    [handleStaleApps, apps, data, singleAppId, hideApps],
   );
 
   React.useEffect(() => {
