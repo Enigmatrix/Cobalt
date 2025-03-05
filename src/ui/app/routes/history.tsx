@@ -24,6 +24,7 @@ import { useTimePeriod } from "@/hooks/use-today";
 import { VerticalLegend } from "@/components/viz/vertical-legend";
 import { DurationText } from "@/components/time/duration-text";
 import type { App, Ref } from "@/lib/entities";
+import { Loader2 } from "lucide-react";
 
 export default function History() {
   return (
@@ -51,9 +52,27 @@ export default function History() {
 function AppUsagePerPeriodHistory() {
   const week = useTimePeriod("week");
   const [interval, setInterval] = useState<Interval | null>(week);
-  const [period, setPeriod] = useState<DateTimeUnit>("day");
+  const [periodText, setPeriodText] = useState<DateTimeUnit>("day");
+
+  const periodDuration = useMemo(
+    () => Duration.fromObject({ [periodText]: 1 }),
+    [periodText],
+  );
+  const {
+    isLoading,
+    totalUsage,
+    usages: appUsages,
+    period: loadPeriod,
+    start,
+    end,
+  } = useAppDurationsPerPeriod({
+    start: interval?.start,
+    end: interval?.end,
+    period: periodDuration,
+  });
+
   const [intervalTicks, maxYIsPeriod] = useMemo(() => {
-    switch (period) {
+    switch (periodText) {
       case "hour":
         return [durationToTicks(Duration.fromObject({ minutes: 15 })), true];
       case "day":
@@ -63,23 +82,14 @@ function AppUsagePerPeriodHistory() {
       case "month":
         return [durationToTicks(Duration.fromObject({ days: 1 })), false];
       default:
-        throw new Error(`Unknown period: ${period}`);
+        throw new Error(`Unknown period: ${periodText}`);
     }
-  }, [period]);
-  const periodDuration = useMemo(
-    () => Duration.fromObject({ [period]: 1 }),
-    [period],
-  );
-  const {
-    totalUsage,
-    usages: appUsages,
-    start,
-    end,
-  } = useAppDurationsPerPeriod({
-    start: interval?.start,
-    end: interval?.end,
-    period: periodDuration,
-  });
+    // this should take periodText as a dependency, but we only take in loadPeriod
+    // which is a output of useAppDurationsPerPeriod, else we get yaxis flashes
+    // with the older data's yaxis interval before the data is loading
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadPeriod]);
 
   // State for checked tags/apps
   const [uncheckedApps, setUncheckedApps] = useState<Record<Ref<App>, boolean>>(
@@ -93,6 +103,7 @@ function AppUsagePerPeriodHistory() {
           <Label className="font-medium text-muted-foreground">Usage</Label>
           <DurationText ticks={totalUsage} className="text-lg font-semibold" />
         </div>
+        {isLoading && <Loader2 className="animate-spin w-4 h-4" />}
         <div className="flex-1 md:min-w-0" />
         <div className="flex flex-col gap-1.5">
           <Label className="font-medium text-muted-foreground">
@@ -108,8 +119,8 @@ function AppUsagePerPeriodHistory() {
         <div className="flex flex-col gap-1.5">
           <Label className="font-medium text-muted-foreground">Period</Label>
           <Select
-            value={period}
-            onValueChange={(s) => setPeriod(s as DateTimeUnit)}
+            value={periodText}
+            onValueChange={(s) => setPeriodText(s as DateTimeUnit)}
           >
             <SelectTrigger className="min-w-32 font-medium">
               <SelectValue placeholder="Select a period" />
@@ -127,7 +138,7 @@ function AppUsagePerPeriodHistory() {
       <div className="flex flex-1 min-h-0 overflow-hidden rounded-lg bg-card shadow-sm border border-border">
         <AppUsageBarChart
           data={appUsages}
-          periodTicks={durationToTicks(periodDuration)}
+          periodTicks={durationToTicks(loadPeriod ?? periodDuration)}
           rangeMinTicks={dateTimeToTicks(
             start ?? interval?.start ?? DateTime.now(),
           )}
