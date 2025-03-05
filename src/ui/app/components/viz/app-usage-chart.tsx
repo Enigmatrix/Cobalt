@@ -4,7 +4,7 @@ import { DateTime } from "luxon";
 import _ from "lodash";
 import { useAppState, type EntityMap } from "@/lib/state";
 import { useRefresh } from "@/hooks/use-refresh";
-import { ticksToDateTime, toHumanDateTime } from "@/lib/time";
+import { ticksToDateTime, toHumanDateTime, toHumanDuration } from "@/lib/time";
 import { toDataUrl } from "@/components/app/app-icon";
 import type { App, Ref, WithGroupedDuration } from "@/lib/entities";
 import type { ClassValue } from "clsx";
@@ -20,6 +20,7 @@ export interface AppUsageBarChartProps {
   rangeMaxTicks: number;
   maxYIsPeriod?: boolean;
   hideXAxis?: boolean;
+  hideYAxis?: boolean;
   gridVertical?: boolean;
   gridHorizontal?: boolean;
   gradientBars?: boolean;
@@ -38,6 +39,7 @@ export function AppUsageBarChart({
   rangeMaxTicks,
   maxYIsPeriod = false,
   hideXAxis = false,
+  hideYAxis = false,
   gradientBars = false,
   dateTimeFormatter = toHumanDateTime,
   animationsEnabled = true,
@@ -101,8 +103,8 @@ export function AppUsageBarChart({
       grid: {
         left: "4px",
         right: "4px",
-        top: 0,
         bottom: hideXAxis ? "0" : "15px",
+        top: hideYAxis ? "0" : "15px",
         containLabel: true,
       },
       xAxis: {
@@ -125,11 +127,22 @@ export function AppUsageBarChart({
       },
       yAxis: {
         type: "value",
+        show: !hideYAxis,
         min: 0,
         max: maxYIsPeriod ? periodTicks : undefined,
-        show: false,
+        interval: periodTicks / 4,
+        splitLine: {
+          show: !hideYAxis,
+          lineStyle: {
+            color: "hsl(var(--muted))",
+          },
+        },
+        axisLine: {
+          show: !hideYAxis,
+        },
         axisLabel: {
-          formatter: () => "",
+          show: !hideYAxis,
+          formatter: (params) => toHumanDuration(params),
         },
       },
       series: involvedApps.map((app) => ({
@@ -233,6 +246,7 @@ export function AppUsageBarChart({
     involvedApps,
     dateTimeFormatter,
     hideXAxis,
+    hideYAxis,
     maxYIsPeriod,
     periodTicks,
     rangeMinTicks,
