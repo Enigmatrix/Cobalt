@@ -96,3 +96,11 @@ export const formatRgba = (rgb: RGB, a = 1): string => {
 export const formatHsla = (hsl: HSL, a = 1): string => {
   return `hsla(${hsl.h}, ${hsl.s}%, ${hsl.l}%, ${a})`;
 };
+
+export const getVarColorAsHex = (varName: string, a = 1): string => {
+  const varVal = getComputedStyle(document.documentElement).getPropertyValue(
+    "--" + varName,
+  );
+  const [h, s, l] = varVal.split(" ").map((v) => parseFloat(v));
+  return formatRgba(hslToRgb({ h, s, l }), a);
+};

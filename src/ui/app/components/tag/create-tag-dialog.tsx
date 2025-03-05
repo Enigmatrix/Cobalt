@@ -22,7 +22,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { ColorPicker } from "@/components/color-picker";
 import { tagSchema } from "@/lib/schema";
-import { ChooseMultiApps } from "../app/choose-multi-apps";
+import { ChooseMultiApps } from "@/components/app/choose-multi-apps";
 
 type FormValues = z.infer<typeof tagSchema>;
 

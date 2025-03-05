@@ -11,6 +11,8 @@ import type { ClassValue } from "clsx";
 import { cn } from "@/lib/utils";
 import { Tooltip } from "@/components/viz/tooltip";
 import { AppUsageChartTooltipContent } from "@/components/viz/app-usage-chart-tooltip";
+import { useTheme } from "@/components/theme-provider";
+import { getVarColorAsHex } from "@/lib/color-utils";
 
 export interface AppUsageBarChartProps {
   data: EntityMap<App, WithGroupedDuration<App>[]>;
@@ -47,6 +49,7 @@ export function AppUsageBarChart({
   onHover,
   barRadius,
 }: AppUsageBarChartProps) {
+  const { theme } = useTheme();
   const apps = useAppState((state) => state.apps);
   const { handleStaleApps } = useRefresh();
   const [hoverSeries, setHoverSeries] = useState<EntityMap<App, number>>({});
@@ -133,8 +136,9 @@ export function AppUsageBarChart({
         interval: periodTicks / 4,
         splitLine: {
           show: !hideYAxis,
+
           lineStyle: {
-            color: "hsl(var(--muted))",
+            color: getVarColorAsHex("muted-foreground", 0.15),
           },
         },
         axisLine: {
@@ -256,6 +260,7 @@ export function AppUsageBarChart({
     barRadius,
     onHover,
     animationsEnabled,
+    theme,
   ]);
 
   return (
