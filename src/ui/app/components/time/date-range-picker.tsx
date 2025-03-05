@@ -106,7 +106,7 @@ export function DateRangePicker({
         onChange(null);
       }
     },
-    [inner],
+    [onChange, setInnerInner],
   );
 
   const calendarValue = useMemo(

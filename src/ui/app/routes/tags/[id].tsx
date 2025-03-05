@@ -52,10 +52,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useNavigate } from "react-router";
-import AppIcon from "@/components/app/app-icon";
-import { useSearch } from "@/hooks/use-search";
-import { MultiSelect } from "@/components/multi-select";
-import { AppBadge } from "@/components/app/app-list-item";
 import { useTimePeriod } from "@/hooks/use-today";
 import type { TimePeriod } from "@/lib/time";
 import { Gantt } from "@/components/viz/gantt";
