@@ -30,11 +30,6 @@ export interface AppUsageBarChartProps {
   barRadius?: number | [number, number, number, number];
 }
 
-type AppUsageBarChartData = {
-  [app: Ref<App>]: number; // app => duration
-  key: number; // group (timestamp)
-};
-
 export function AppUsageBarChart({
   data,
   singleAppId,
@@ -52,11 +47,11 @@ export function AppUsageBarChart({
 }: AppUsageBarChartProps) {
   const apps = useAppState((state) => state.apps);
   const { handleStaleApps } = useRefresh();
-  const [hoveredAppId, setHoveredAppId] = useState<Ref<App> | null>(null);
   const [hoverSeries, setHoverSeries] = useState<EntityMap<App, number>>({});
-  const [hoverTickAt, setHoverTickAt] = useState<DateTime>(
-    DateTime.fromSeconds(0),
-  );
+  const [hoveredData, setHoveredData] = useState<{
+    date: DateTime;
+    appId?: Ref<App>;
+  } | null>(null);
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstanceRef = useRef<echarts.ECharts | null>(null);
 
@@ -83,18 +78,23 @@ export function AppUsageBarChart({
         trigger: "axis",
         axisPointer: {
           type: "shadow",
+
+          label: {
+            show: false,
+            formatter: (params) => {
+              const seriesValues = Object.fromEntries(
+                params.seriesData.map((v) => [
+                  v.seriesId,
+                  (v.value as [number, number])[1],
+                ]),
+              );
+              setHoverSeries(seriesValues);
+              return "";
+            },
+          },
         },
-        formatter(params) {
-          const castedParams =
-            params as echarts.DefaultLabelFormatterCallbackParams[];
-          const seriesValues = Object.fromEntries(
-            castedParams.map((v) => [
-              v.seriesId,
-              (v.value as [number, number])[1],
-            ]),
-          );
-          setHoverTickAt(ticksToDateTime(+castedParams[0].name));
-          setHoverSeries(seriesValues);
+        formatter() {
+          // disables echarts tooltip
           return "";
         },
       },
@@ -188,22 +188,29 @@ export function AppUsageBarChart({
       })),
     } satisfies echarts.EChartsOption;
 
-    chart.on("mouseover", (params) => {
+    chart.getZr().on("mousemove", (params) => {
+      const pos = [params.offsetX, params.offsetY];
+      const isInGrid = chart.containPixel("grid", pos);
+      if (isInGrid) {
+        const pointerData = chart.convertFromPixel("grid", pos);
+        setHoveredData({
+          date: ticksToDateTime(pointerData[0] * periodTicks + rangeMinTicks),
+        });
+      } else if (!isInGrid) {
+        setHoveredData(null);
+        onHover?.(undefined);
+      }
+    });
+
+    chart.on("mousemove", (params) => {
       const appId = +(params.seriesId ?? 0) as Ref<App>;
-      setHoveredAppId(appId);
+      setHoveredData({ date: ticksToDateTime(+params.name), appId });
       if (onHover) {
         onHover({
           id: appId,
           duration: params.value as number,
           group: params.axisValue as number,
         });
-      }
-    });
-
-    chart.on("mouseout", () => {
-      setHoveredAppId(null);
-      if (onHover) {
-        onHover(undefined);
       }
     });
 
@@ -228,6 +235,8 @@ export function AppUsageBarChart({
     hideXAxis,
     maxYIsPeriod,
     periodTicks,
+    rangeMinTicks,
+    rangeMaxTicks,
     singleAppId,
     gradientBars,
     barRadius,
@@ -237,12 +246,12 @@ export function AppUsageBarChart({
 
   return (
     <div ref={chartRef} className={cn("w-full h-full", className)}>
-      <Tooltip targetRef={chartRef} show={hoveredAppId !== null}>
+      <Tooltip targetRef={chartRef} show={!!hoveredData}>
         <AppUsageChartTooltipContent
-          hoveredAppId={hoveredAppId}
+          hoveredAppId={hoveredData?.appId ?? null}
           singleAppId={singleAppId}
           payload={hoverSeries}
-          dt={hoverTickAt}
+          dt={hoveredData?.date ?? DateTime.fromSeconds(0)}
           maximumApps={10}
         />
       </Tooltip>
