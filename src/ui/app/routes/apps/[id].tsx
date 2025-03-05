@@ -45,9 +45,10 @@ import {
   useAppDurationsPerPeriod,
   useAppSessionUsages,
 } from "@/hooks/use-repo";
-import { useTimePeriod, type TimePeriod } from "@/hooks/use-today";
+import { useTimePeriod } from "@/hooks/use-today";
 import { Gantt } from "@/components/viz/gantt";
 import { ChooseTag } from "@/components/tag/choose-tag";
+import type { TimePeriod } from "@/lib/time";
 
 export default function App({ params }: Route.ComponentProps) {
   const id = +params.id;

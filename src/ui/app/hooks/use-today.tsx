@@ -1,5 +1,7 @@
 import { useAppState } from "@/lib/state";
-import { Interval as LuxonInterval, type DateTime } from "luxon";
+import type { TimePeriod } from "@/lib/time";
+import { Interval as LuxonInterval } from "luxon";
+import type { Interval } from "@/lib/time";
 import { useMemo } from "react";
 
 export function useToday() {
@@ -15,14 +17,6 @@ export function useToday() {
 export function getToday() {
   const lastRefresh = useAppState.getState().lastRefresh;
   return lastRefresh.startOf("day");
-}
-
-export type TimePeriod = "day" | "week" | "month" | "year";
-
-// Like Luxon's Interval type, but not half-open.
-export interface Interval {
-  start: DateTime;
-  end: DateTime;
 }
 
 export function useTimePeriod(unit: TimePeriod): Interval {

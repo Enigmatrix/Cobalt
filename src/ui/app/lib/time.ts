@@ -1,6 +1,14 @@
 import humanizeDuration from "pretty-ms";
 import { DateTime, Duration } from "luxon";
 
+export type TimePeriod = "day" | "week" | "month" | "year";
+
+// Like Luxon's Interval type, but not half-open.
+export interface Interval {
+  start: DateTime;
+  end: DateTime;
+}
+
 export function toHumanDuration(
   ticks: number,
   showSymbolForZero: boolean = true,

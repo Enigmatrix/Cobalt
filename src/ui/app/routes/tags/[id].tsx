@@ -52,7 +52,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useNavigate } from "react-router";
-import { useTimePeriod, type TimePeriod } from "@/hooks/use-today";
+import { useTimePeriod } from "@/hooks/use-today";
+import type { TimePeriod } from "@/lib/time";
 import { Gantt } from "@/components/viz/gantt";
 import { ChooseMultiApps } from "@/components/app/choose-multi-apps";
 
