@@ -1,6 +1,6 @@
 import { useApps, useTags } from "@/hooks/use-refresh";
 import type { App, Ref, Tag } from "@/lib/entities";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import { TagIcon, ChevronDown, ChevronRight } from "lucide-react";
 import { Text } from "@/components/ui/text";
 import { cn } from "@/lib/utils";
@@ -10,13 +10,21 @@ import { Checkbox } from "@/components/ui/checkbox";
 import type { ClassValue } from "clsx";
 
 const Untagged = Symbol("untagged");
-type AppTagId = Ref<Tag> | typeof Untagged;
+export type AppTagId = Ref<Tag> | typeof Untagged;
 
 export function VerticalLegend({
   appIds,
   className,
+  uncheckedApps,
+  setUncheckedApps,
+  uncheckedTags,
+  setUncheckedTags,
 }: {
   appIds?: Ref<App>[];
+  uncheckedApps: Record<Ref<App>, boolean>;
+  setUncheckedApps: Dispatch<SetStateAction<Record<Ref<App>, boolean>>>;
+  uncheckedTags: Record<AppTagId, boolean>;
+  setUncheckedTags: Dispatch<SetStateAction<Record<AppTagId, boolean>>>;
   className?: ClassValue;
 }) {
   const apps = useApps(appIds);
@@ -32,13 +40,6 @@ export function VerticalLegend({
   // State for expanded/collapsed tags
   const [unexpandedTags, setUnexpandedTags] = useState<Record<string, boolean>>(
     {},
-  );
-  // State for checked tags/apps
-  const [uncheckedApps, setUncheckedApps] = useState<Record<Ref<App>, boolean>>(
-    {},
-  );
-  const [uncheckedTags, setUncheckedTags] = useState<Record<AppTagId, boolean>>(
-    {} as Record<AppTagId, boolean>,
   );
 
   // Toggle expansion state for a tag
