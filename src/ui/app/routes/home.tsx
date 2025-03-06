@@ -15,7 +15,6 @@ import {
   useSystemEvents,
 } from "@/hooks/use-repo";
 import { useTimePeriod } from "@/hooks/use-today";
-import type { TimePeriod } from "@/lib/time";
 import {
   hour24Formatter,
   weekDayFormatter,
@@ -100,7 +99,7 @@ function AppUsageBarChartCard({
   period,
   xAxisLabelFormatter,
 }: {
-  timePeriod: TimePeriod;
+  timePeriod: Period;
   period: Period;
   xAxisLabelFormatter: (dt: DateTime) => string;
 }) {

@@ -49,7 +49,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useNavigate } from "react-router";
 import { useTimePeriod } from "@/hooks/use-today";
-import type { TimePeriod } from "@/lib/time";
 import { Gantt } from "@/components/viz/gantt";
 import { ChooseMultiApps } from "@/components/app/choose-multi-apps";
 
@@ -276,7 +275,7 @@ function TagUsageBarChartCard({
   xAxisLabelFormatter,
   tag,
 }: {
-  timePeriod: TimePeriod;
+  timePeriod: Period;
   period: Period;
   xAxisLabelFormatter: (dt: DateTime) => string;
   tag: Tag;

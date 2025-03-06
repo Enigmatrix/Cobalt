@@ -2,8 +2,6 @@ import humanizeDuration from "pretty-ms";
 import { DateTime, Duration } from "luxon";
 import type { Period } from "@/lib/entities";
 
-export type TimePeriod = "day" | "week" | "month" | "year";
-
 // Like Luxon's Interval type, but not half-open.
 export interface Interval {
   start: DateTime;

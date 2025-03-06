@@ -44,7 +44,6 @@ import {
 import { useTimePeriod } from "@/hooks/use-today";
 import { Gantt } from "@/components/viz/gantt";
 import { ChooseTag } from "@/components/tag/choose-tag";
-import type { TimePeriod } from "@/lib/time";
 
 export default function App({ params }: Route.ComponentProps) {
   const id = +params.id;
@@ -325,7 +324,7 @@ function AppUsageBarChartCard({
   xAxisLabelFormatter,
   appId,
 }: {
-  timePeriod: TimePeriod;
+  timePeriod: Period;
   period: Period;
   xAxisLabelFormatter: (dt: DateTime) => string;
   appId: Ref<App>;

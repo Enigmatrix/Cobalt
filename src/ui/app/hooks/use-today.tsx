@@ -1,8 +1,8 @@
 import { useAppState } from "@/lib/state";
-import type { TimePeriod } from "@/lib/time";
 import { Interval as LuxonInterval } from "luxon";
 import type { Interval } from "@/lib/time";
 import { useMemo } from "react";
+import type { Period } from "@/lib/entities";
 
 export function useToday() {
   const lastRefresh = useAppState((state) => state.lastRefresh);
@@ -19,7 +19,7 @@ export function getToday() {
   return lastRefresh.startOf("day");
 }
 
-export function useTimePeriod(unit: TimePeriod): Interval {
+export function useTimePeriod(unit: Period): Interval {
   const today = useToday();
   const range = useMemo(() => {
     const luxonInterval = LuxonInterval.after(today.startOf(unit), {

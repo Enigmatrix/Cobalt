@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { DurationText } from "@/components/time/duration-text";
 import { useToday } from "@/hooks/use-today";
-import type { Interval, TimePeriod } from "@/lib/time";
+import type { Interval } from "@/lib/time";
+import type { Period } from "@/lib/entities";
 
 export function UsageCard({
   interval,
@@ -95,7 +96,7 @@ export function UsageCard({
 }
 
 export interface TimePeriodUsageCardProps {
-  timePeriod: TimePeriod;
+  timePeriod: Period;
   interval: Interval;
   onIntervalChanged: (interval: Interval) => void;
 
@@ -104,6 +105,15 @@ export interface TimePeriodUsageCardProps {
   children: React.ReactNode;
   isLoading: boolean;
 }
+
+const hourTitle = (today: DateTime, interval: Interval) => {
+  const dt = interval.start;
+  const format =
+    dt.toFormat("yyyy LLL dd") === today.toFormat("yyyy LLL dd")
+      ? "HH:mm"
+      : "yyyy LLL dd HH:mm";
+  return dt.toFormat(format);
+};
 
 const dayTitle = (today: DateTime, interval: Interval) => {
   const dt = interval.start;
@@ -140,6 +150,7 @@ const yearTitle = (today: DateTime, interval: Interval) => {
 };
 
 const titles = {
+  hour: hourTitle,
   day: dayTitle,
   week: weekTitle,
   month: monthTitle,
