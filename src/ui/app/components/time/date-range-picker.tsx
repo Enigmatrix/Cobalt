@@ -10,9 +10,9 @@ import type { ClassValue } from "clsx";
 import { DateTime } from "luxon";
 import { useCallback, useMemo, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import { Label } from "../ui/label";
-import { Input } from "../ui/input";
-import { Calendar } from "../ui/calendar";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Calendar } from "@/components/ui/calendar";
 import type { DateRange } from "react-day-picker";
 
 type DateRangePickerProps = {
