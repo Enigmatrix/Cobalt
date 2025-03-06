@@ -17,7 +17,6 @@ import { useCallback, useMemo, useState } from "react";
 import { DateTime } from "luxon";
 import { useTag } from "@/hooks/use-refresh";
 import {
-  dateTimeToTicks,
   hour24Formatter,
   monthDayFormatter,
   ticksToDateTime,
@@ -311,8 +310,8 @@ function TagUsageBarChartCard({
         <AppUsageBarChart
           data={usages}
           period={period}
-          rangeMinTicks={dateTimeToTicks(start ?? interval.start)}
-          rangeMaxTicks={dateTimeToTicks(end ?? interval.end)}
+          start={start ?? interval.start}
+          end={end ?? interval.end}
           dateTimeFormatter={xAxisLabelFormatter}
           className="aspect-none"
           maxYIsPeriod

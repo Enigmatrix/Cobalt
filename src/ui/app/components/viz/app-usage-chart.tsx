@@ -1,6 +1,6 @@
 import React, { useMemo, useRef, useState } from "react";
 import * as echarts from "echarts";
-import { DateTime } from "luxon";
+import { DateTime, Duration } from "luxon";
 import _ from "lodash";
 import { useAppState, type EntityMap } from "@/lib/state";
 import { useRefresh } from "@/hooks/use-refresh";
@@ -25,21 +25,22 @@ export interface AppUsageBarChartProps {
   data: EntityMap<App, WithGroupedDuration<App>[]>;
   hideApps?: Record<Ref<App>, boolean>;
   singleAppId?: Ref<App>;
-  rangeMinTicks: number;
-  rangeMaxTicks: number;
+  start: DateTime;
+  end: DateTime;
+  interval?: Duration;
+  period: Period;
+
   maxYIsPeriod?: boolean;
-  intervalTicks?: number;
   hideXAxis?: boolean;
   hideYAxis?: boolean;
   gridVertical?: boolean;
   gridHorizontal?: boolean;
   gradientBars?: boolean;
   animationsEnabled?: boolean;
-  period: Period;
+  barRadius?: number | [number, number, number, number];
   className?: ClassValue;
   dateTimeFormatter?: (dt: DateTime) => string;
   onHover?: (data?: WithGroupedDuration<App>) => void;
-  barRadius?: number | [number, number, number, number];
 }
 
 function getDateTimeRange(
@@ -59,10 +60,10 @@ export function AppUsageBarChart({
   data,
   hideApps,
   singleAppId,
-  rangeMinTicks,
-  rangeMaxTicks,
+  start,
+  end,
   maxYIsPeriod = false,
-  intervalTicks,
+  interval,
   hideXAxis = false,
   hideYAxis = false,
   gradientBars = false,
@@ -100,11 +101,7 @@ export function AppUsageBarChart({
     const chart = echarts.init(chartRef.current, undefined, {});
     chartInstanceRef.current = chart;
 
-    const xaxisRange = getDateTimeRange(
-      ticksToDateTime(rangeMinTicks),
-      ticksToDateTime(rangeMaxTicks),
-      period,
-    );
+    const xaxisRange = getDateTimeRange(start, end, period);
     const xaxisLookup = Object.fromEntries(
       xaxisRange.map((tick, index) => [tick, index]),
     );
@@ -168,7 +165,11 @@ export function AppUsageBarChart({
         show: !hideYAxis,
         min: 0,
         max: maxYIsPeriod ? periodTicks : undefined,
-        interval: intervalTicks ?? (maxYIsPeriod ? periodTicks / 4 : undefined),
+        interval: interval
+          ? durationToTicks(interval)
+          : maxYIsPeriod
+            ? periodTicks / 4
+            : undefined,
         splitLine: {
           show: !hideYAxis,
 
@@ -285,9 +286,9 @@ export function AppUsageBarChart({
     hideXAxis,
     hideYAxis,
     maxYIsPeriod,
-    rangeMinTicks,
-    rangeMaxTicks,
-    intervalTicks,
+    start,
+    end,
+    interval,
     singleAppId,
     gradientBars,
     barRadius,

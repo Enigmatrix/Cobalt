@@ -34,7 +34,6 @@ import { Button } from "@/components/ui/button";
 import { ArrowDownUp, SortAsc, SortDesc } from "lucide-react";
 import _ from "lodash";
 import { Text } from "@/components/ui/text";
-import { dateTimeToTicks } from "@/lib/time";
 import { DateTime } from "luxon";
 import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
 import { useApps, useTag } from "@/hooks/use-refresh";
@@ -277,8 +276,8 @@ function AppListItem({
             data={usages}
             period="hour"
             singleAppId={app.id}
-            rangeMinTicks={dateTimeToTicks(start)}
-            rangeMaxTicks={dateTimeToTicks(end)}
+            start={start}
+            end={end}
             className="w-48 flex-none aspect-none h-20 max-lg:hidden"
           />
 

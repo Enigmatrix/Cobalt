@@ -43,7 +43,6 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { dateTimeToTicks } from "@/lib/time";
 import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
 import { CreateTagDialog } from "@/components/tag/create-tag-dialog";
 import { NoTags, NoTagsFound } from "@/components/empty-states";
@@ -295,8 +294,8 @@ function TagListItem({
             gradientBars
             maxYIsPeriod
             data={usagesFiltered}
-            rangeMinTicks={dateTimeToTicks(start)}
-            rangeMaxTicks={dateTimeToTicks(end)}
+            start={start}
+            end={end}
             period="hour"
             className="w-48 flex-none aspect-none h-20 max-lg:hidden"
           />

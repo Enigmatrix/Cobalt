@@ -6,7 +6,7 @@ import {
   BreadcrumbPage,
   BreadcrumbList,
 } from "@/components/ui/breadcrumb";
-import { dateTimeToTicks, durationToTicks, type Interval } from "@/lib/time";
+import { type Interval } from "@/lib/time";
 import { useMemo, useState } from "react";
 import { DateTime, Duration } from "luxon";
 import { Label } from "@/components/ui/label";
@@ -95,16 +95,16 @@ function AppUsagePerPeriodHistory() {
     period: period,
   });
 
-  const [intervalTicks, maxYIsPeriod] = useMemo(() => {
+  const [yAxisInterval, maxYIsPeriod] = useMemo(() => {
     switch (period) {
       case "hour":
-        return [durationToTicks(Duration.fromObject({ minutes: 15 })), true];
+        return [Duration.fromObject({ minutes: 15 }), true];
       case "day":
-        return [durationToTicks(Duration.fromObject({ hours: 2 })), false];
+        return [Duration.fromObject({ hours: 2 }), false];
       case "week":
-        return [durationToTicks(Duration.fromObject({ hours: 6 })), false];
+        return [Duration.fromObject({ hours: 6 }), false];
       case "month":
-        return [durationToTicks(Duration.fromObject({ days: 1 })), false];
+        return [Duration.fromObject({ days: 1 }), false];
       default:
         throw new Error(`Unknown period: ${period}`);
     }
@@ -160,15 +160,11 @@ function AppUsagePerPeriodHistory() {
         <AppUsageBarChart
           data={appUsages}
           period={loadPeriod ?? period}
-          rangeMinTicks={dateTimeToTicks(
-            start ?? interval?.start ?? DateTime.now(),
-          )}
-          rangeMaxTicks={dateTimeToTicks(
-            end ?? interval?.end ?? DateTime.now(),
-          )}
+          start={start ?? interval?.start ?? DateTime.now()}
+          end={end ?? interval?.end ?? DateTime.now()}
           className="flex-1 h-full min-w-[400px] p-2"
           maxYIsPeriod={maxYIsPeriod}
-          intervalTicks={intervalTicks}
+          interval={yAxisInterval}
           animationsEnabled={false}
           hideApps={uncheckedApps}
           barRadius={3}

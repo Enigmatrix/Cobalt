@@ -18,7 +18,6 @@ import { useCallback, useMemo, useState } from "react";
 import { DateTime } from "luxon";
 import { useApp, useTag } from "@/hooks/use-refresh";
 import {
-  dateTimeToTicks,
   hour24Formatter,
   monthDayFormatter,
   ticksToDateTime,
@@ -348,8 +347,8 @@ function AppUsageBarChartCard({
         <AppUsageBarChart
           data={usages}
           singleAppId={appId}
-          rangeMinTicks={dateTimeToTicks(start ?? interval.start)}
-          rangeMaxTicks={dateTimeToTicks(end ?? interval.end)}
+          start={start ?? interval.start}
+          end={end ?? interval.end}
           dateTimeFormatter={xAxisLabelFormatter}
           period={period}
           gradientBars

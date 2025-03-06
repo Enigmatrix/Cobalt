@@ -17,7 +17,6 @@ import {
 import { useTimePeriod } from "@/hooks/use-today";
 import type { TimePeriod } from "@/lib/time";
 import {
-  dateTimeToTicks,
   hour24Formatter,
   weekDayFormatter,
   monthDayFormatter,
@@ -121,8 +120,8 @@ function AppUsageBarChartCard({
         <AppUsageBarChart
           data={usages}
           period={period}
-          rangeMinTicks={dateTimeToTicks(start ?? interval.start)}
-          rangeMaxTicks={dateTimeToTicks(end ?? interval.end)}
+          start={start ?? interval.start}
+          end={end ?? interval.end}
           dateTimeFormatter={xAxisLabelFormatter}
           className="aspect-none"
           maxYIsPeriod
