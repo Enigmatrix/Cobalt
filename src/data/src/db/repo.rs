@@ -6,7 +6,7 @@ use serde::Serialize;
 use sqlx::SqliteExecutor;
 
 use super::*;
-use crate::entities::{Duration, TriggerAction};
+use crate::entities::{Duration, Period, TriggerAction};
 
 /// Collection of methods to do large, complicated queries against apps etc.
 pub struct Repository {
@@ -550,6 +550,49 @@ impl Repository {
             .collect())
     }
 
+    fn sql_period_start_end(expr: &str, period: &Period) -> (String, String) {
+        match period {
+            Period::Hour => (
+                format!("unixepoch((unixepoch({expr}, 'unixepoch', 'localtime')/3600) * 3600, 'unixepoch', 'utc')"),
+                format!("unixepoch((unixepoch({expr}, 'unixepoch', 'localtime')/3600) * 3600 + 3600, 'unixepoch', 'utc')"),
+            ),
+            Period::Day => (
+                format!("unixepoch({expr}, 'unixepoch', 'localtime', 'start of day', 'utc')"),
+                format!("unixepoch({expr}, 'unixepoch', 'localtime', 'start of day', '+1 day', 'utc')"),
+            ),
+            Period::Week => (
+                format!("unixepoch({expr}, 'unixepoch', 'localtime', 'start of day', 'weekday 0', '-6 days', 'utc')"),
+                format!("unixepoch({expr}, 'unixepoch', 'localtime', 'start of day', 'weekday 0', '+1 day', 'utc')"),
+            ),
+            Period::Month => (
+                format!("unixepoch({expr}, 'unixepoch', 'localtime', 'start of month', 'utc')"),
+                format!("unixepoch({expr}, 'unixepoch', 'localtime', 'start of month', '+1 month', 'utc')"),
+            ),
+            Period::Year => (
+                format!("unixepoch({expr}, 'unixepoch', 'localtime', 'start of year', 'utc')"),
+                format!("unixepoch({expr}, 'unixepoch', 'localtime', 'start of year', '+1 year', 'utc')"),
+            ),
+        }
+    }
+
+    fn sql_period_next(expr: &str, period: &Period) -> String {
+        match period {
+            Period::Hour => format!("(({expr}) + 3600)"),
+            Period::Day => format!("unixepoch({expr}, 'unixepoch', '+1 day')"),
+            Period::Week => format!("unixepoch({expr}, 'unixepoch', '+7 days')"),
+            Period::Month => format!("unixepoch({expr}, 'unixepoch', '+1 month')"),
+            Period::Year => format!("unixepoch({expr}, 'unixepoch', '+1 year')"),
+        }
+    }
+
+    fn sql_ticks_to_unix(expr: &str) -> String {
+        format!("((({expr}) / 10000 - 62135596800000)/1000)")
+    }
+
+    fn sql_unix_to_ticks(expr: &str) -> String {
+        format!("((({expr}) * 1000 + 62135596800000)*10000)")
+    }
+
     /// Gets all [App]s and its total usage duration in a start-end range,
     /// grouped per period. Assumes start <= end, and that start and end are
     /// aligned in multiples of period.
@@ -557,17 +600,23 @@ impl Repository {
         &mut self,
         start: Timestamp,
         end: Timestamp,
-        period: Duration,
+        period: Period,
     ) -> Result<HashMap<Ref<App>, Vec<WithGroupedDuration<App>>>> {
-        // This expression is surprisingly slow compared to its previous
-        // iteration (tho more correct ofc). Fix it later.
-        let app_durs = query_as(
-            "WITH RECURSIVE
-            params(period, start, end) AS (SELECT ?, ?, ?),
+        let (period_start, period_end) =
+            Self::sql_period_start_end(&Self::sql_ticks_to_unix("u.start"), &period);
+
+        let period_next = Self::sql_period_next("period_end", &period);
+        let period_next_ticks = Self::sql_unix_to_ticks(&period_next);
+
+        let period_start_ticks = Self::sql_unix_to_ticks("period_start");
+        let period_end_ticks = Self::sql_unix_to_ticks("period_end");
+
+        let query = format!("WITH RECURSIVE
+            params(start, end) AS (SELECT ?, ?),
             period_intervals AS (
                 SELECT a.id AS id,
-                    p.start + (p.period * CAST((u.start - p.start) / p.period AS INT)) AS period_start,
-                    p.start + (p.period * (CAST((u.start - p.start) / p.period AS INT) + 1)) AS period_end,
+                    {period_start} AS period_start,
+                    {period_end} AS period_end,
                     u.start AS usage_start,
                     MIN(u.end, p.end) AS usage_end
                 FROM apps a, params p
@@ -578,25 +627,25 @@ impl Repository {
                 UNION ALL
 
                 SELECT id,
-                    period_start + p.period AS period_start,
-                    period_end + p.period AS period_end,
+                    period_end AS period_start,
+                    {period_next} AS period_end,
                     usage_start,
                     usage_end
                 FROM period_intervals, params p
-                WHERE period_start + p.period < MIN(usage_end, p.end)
+                WHERE {period_next_ticks} < MIN(usage_end, p.end)
             )
 
             SELECT id,
-                period_start AS `group`,
-                SUM(MIN(period_end, usage_end) - MAX(period_start, usage_start)) AS duration
+                {period_start_ticks} AS `group`,
+                SUM(MIN({period_end_ticks}, usage_end) - MAX({period_start_ticks}, usage_start)) AS duration
             FROM period_intervals
-            GROUP BY id, period_start;",
-        )
-        .bind(period)
-        .bind(start)
-        .bind(end)
-        .fetch_all(self.db.executor())
-        .await?;
+            GROUP BY id, period_start");
+
+        let app_durs = query_as(&query)
+            .bind(start)
+            .bind(end)
+            .fetch_all(self.db.executor())
+            .await?;
 
         Ok(app_durs.into_iter().fold(
             HashMap::new(),
@@ -616,17 +665,23 @@ impl Repository {
         &mut self,
         start: Timestamp,
         end: Timestamp,
-        period: Duration,
+        period: Period,
     ) -> Result<HashMap<Ref<Tag>, Vec<WithGroupedDuration<Tag>>>> {
-        // This expression is surprisingly slow compared to its previous
-        // iteration (tho more correct ofc). Fix it later.
-        let app_durs = query_as(
-            "WITH RECURSIVE
-            params(period, start, end) AS (SELECT ?, ?, ?),
+        let (period_start, period_end) =
+            Self::sql_period_start_end(&Self::sql_ticks_to_unix("u.start"), &period);
+
+        let period_next = Self::sql_period_next("period_end", &period);
+        let period_next_ticks = Self::sql_unix_to_ticks(&period_next);
+
+        let period_start_ticks = Self::sql_unix_to_ticks("period_start");
+        let period_end_ticks = Self::sql_unix_to_ticks("period_end");
+
+        let query = format!("WITH RECURSIVE
+            params(start, end) AS (SELECT ?, ?),
             period_intervals AS (
                 SELECT a.tag_id AS id,
-                    p.start + (p.period * CAST((u.start - p.start) / p.period AS INT)) AS period_start,
-                    p.start + (p.period * (CAST((u.start - p.start) / p.period AS INT) + 1)) AS period_end,
+                    {period_start} AS period_start,
+                    {period_end} AS period_end,
                     u.start AS usage_start,
                     MIN(u.end, p.end) AS usage_end
                 FROM apps a, params p
@@ -637,27 +692,27 @@ impl Repository {
                 UNION ALL
 
                 SELECT id,
-                    period_start + p.period AS period_start,
-                    period_end + p.period AS period_end,
+                    period_end AS period_start,
+                    {period_next} AS period_end,
                     usage_start,
                     usage_end
                 FROM period_intervals, params p
-                WHERE period_start + p.period < MIN(usage_end, p.end)
+                WHERE {period_next_ticks} < MIN(usage_end, p.end)
             )
 
             SELECT id,
-                period_start AS `group`,
-                SUM(MIN(period_end, usage_end) - MAX(period_start, usage_start)) AS duration
+                {period_start_ticks} AS `group`,
+                SUM(MIN({period_end_ticks}, usage_end) - MAX({period_start_ticks}, usage_start)) AS duration
             FROM period_intervals
-            GROUP BY id, period_start;",
-        )
-        .bind(period)
-        .bind(start)
-        .bind(end)
-        .fetch_all(self.db.executor())
-        .await?;
+            GROUP BY id, period_start");
 
-        Ok(app_durs.into_iter().fold(
+        let tag_durs = query_as(&query)
+            .bind(start)
+            .bind(end)
+            .fetch_all(self.db.executor())
+            .await?;
+
+        Ok(tag_durs.into_iter().fold(
             HashMap::new(),
             |mut acc, tag_dur: WithGroupedDuration<Tag>| {
                 acc.entry(tag_dur.id.clone()).or_default().push(tag_dur);
