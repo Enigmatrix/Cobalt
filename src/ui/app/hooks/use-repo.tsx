@@ -9,7 +9,7 @@ import {
 import type { EntityMap } from "@/lib/state";
 import _ from "lodash";
 import type { DateTime, Duration } from "luxon";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState, useTransition, useRef } from "react";
 import { useRefresh } from "@/hooks/use-refresh";
 
 export function useRepo<T, Arg extends object>(
@@ -20,10 +20,21 @@ export function useRepo<T, Arg extends object>(
   const { refreshToken } = useRefresh();
   const [ret, setRet] = useState<T>(def);
   const [isLoading, startTransition] = useTransition();
+  const latestRequestRef = useRef<number>(0);
+  const requestCounterRef = useRef<number>(0);
+
   useEffect(() => {
     startTransition(async () => {
+      // Increment the counter for each new request
+      const requestId = ++requestCounterRef.current;
+      latestRequestRef.current = requestId;
+
       const result = await fn(arg);
-      setRet(result);
+
+      // Only update state if this is still the latest request
+      if (latestRequestRef.current === requestId) {
+        setRet(result);
+      }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -70,25 +81,36 @@ export function useAppDurationsPerPeriod({
     period?: Duration;
   }>({ appUsage: 0, totalUsage: 0, usages: {}, start, end, period });
   const [isLoading, startTransition] = useTransition();
+  const latestRequestRef = useRef<number>(0);
+  const requestCounterRef = useRef<number>(0);
+
   useEffect(() => {
     startTransition(async () => {
       if (!start || !end || !period) return;
+
+      // Increment the counter for each new request
+      const requestId = ++requestCounterRef.current;
+      latestRequestRef.current = requestId;
 
       const usages = await getAppDurationsPerPeriod({
         start,
         end,
         period,
       });
-      const appUsage = appId ? _(usages[appId]).sumBy("duration") : 0;
-      const totalUsage = _(usages).values().flatten().sumBy("duration");
-      setRet({
-        appUsage,
-        totalUsage,
-        usages,
-        start,
-        end,
-        period,
-      });
+
+      // Only update state if this is still the latest request
+      if (latestRequestRef.current === requestId) {
+        const appUsage = appId ? _(usages[appId]).sumBy("duration") : 0;
+        const totalUsage = _(usages).values().flatten().sumBy("duration");
+        setRet({
+          appUsage,
+          totalUsage,
+          usages,
+          start,
+          end,
+          period,
+        });
+      }
     });
   }, [start, end, period, appId, refreshToken, startTransition]);
   return { ...ret, isLoading };
@@ -115,25 +137,36 @@ export function useTagDurationsPerPeriod({
     period?: Duration;
   }>({ tagUsage: 0, totalUsage: 0, usages: {}, start, end, period });
   const [isLoading, startTransition] = useTransition();
+  const latestRequestRef = useRef<number>(0);
+  const requestCounterRef = useRef<number>(0);
+
   useEffect(() => {
     startTransition(async () => {
       if (!start || !end || !period) return;
+
+      // Increment the counter for each new request
+      const requestId = ++requestCounterRef.current;
+      latestRequestRef.current = requestId;
 
       const usages = await getTagDurationsPerPeriod({
         start,
         end,
         period,
       });
-      const tagUsage = tag?.id ? _(usages[tag.id]).sumBy("duration") : 0;
-      const totalUsage = _(usages).values().flatten().sumBy("duration");
-      setRet({
-        tagUsage,
-        totalUsage,
-        usages,
-        start,
-        end,
-        period,
-      });
+
+      // Only update state if this is still the latest request
+      if (latestRequestRef.current === requestId) {
+        const tagUsage = tag?.id ? _(usages[tag.id]).sumBy("duration") : 0;
+        const totalUsage = _(usages).values().flatten().sumBy("duration");
+        setRet({
+          tagUsage,
+          totalUsage,
+          usages,
+          start,
+          end,
+          period,
+        });
+      }
     });
   }, [start, end, period, refreshToken, startTransition, tag?.id, tag?.apps]);
   return { ...ret, isLoading };

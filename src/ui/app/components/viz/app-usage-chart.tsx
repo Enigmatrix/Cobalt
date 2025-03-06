@@ -16,11 +16,13 @@ import { getVarColorAsHex } from "@/lib/color-utils";
 
 export interface AppUsageBarChartProps {
   data: EntityMap<App, WithGroupedDuration<App>[]>;
+  hideApps?: Record<Ref<App>, boolean>;
   singleAppId?: Ref<App>;
   periodTicks: number;
   rangeMinTicks: number;
   rangeMaxTicks: number;
   maxYIsPeriod?: boolean;
+  intervalTicks?: number;
   hideXAxis?: boolean;
   hideYAxis?: boolean;
   gridVertical?: boolean;
@@ -35,11 +37,13 @@ export interface AppUsageBarChartProps {
 
 export function AppUsageBarChart({
   data,
+  hideApps,
   singleAppId,
   periodTicks,
   rangeMinTicks,
   rangeMaxTicks,
   maxYIsPeriod = false,
+  intervalTicks,
   hideXAxis = false,
   hideYAxis = false,
   gradientBars = false,
@@ -65,8 +69,9 @@ export function AppUsageBarChart({
       _(singleAppId ? [singleAppId] : Object.keys(data))
         .map((id) => apps[id as unknown as Ref<App>])
         .thru(handleStaleApps)
+        .filter((app) => !hideApps?.[app.id])
         .value(),
-    [handleStaleApps, apps, data, singleAppId],
+    [handleStaleApps, apps, data, singleAppId, hideApps],
   );
 
   React.useEffect(() => {
@@ -133,7 +138,7 @@ export function AppUsageBarChart({
         show: !hideYAxis,
         min: 0,
         max: maxYIsPeriod ? periodTicks : undefined,
-        interval: periodTicks / 4,
+        interval: intervalTicks ?? (maxYIsPeriod ? periodTicks / 4 : undefined),
         splitLine: {
           show: !hideYAxis,
 
@@ -255,6 +260,7 @@ export function AppUsageBarChart({
     periodTicks,
     rangeMinTicks,
     rangeMaxTicks,
+    intervalTicks,
     singleAppId,
     gradientBars,
     barRadius,
