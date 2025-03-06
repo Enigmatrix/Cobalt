@@ -295,6 +295,7 @@ function TagListItem({
         <>
           <AppUsageBarChart
             hideXAxis
+            hideYAxis
             gradientBars
             maxYIsPeriod
             data={usagesFiltered}

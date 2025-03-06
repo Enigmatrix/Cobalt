@@ -275,6 +275,7 @@ function AppListItem({
         <>
           <AppUsageBarChart
             hideXAxis
+            hideYAxis
             gradientBars
             maxYIsPeriod
             data={usages}

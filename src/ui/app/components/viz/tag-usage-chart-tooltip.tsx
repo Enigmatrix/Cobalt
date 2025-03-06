@@ -22,7 +22,7 @@ function HoverCard({
   at: DateTime;
 }) {
   return (
-    <div className="flex items-center gap-2 border-border py-2">
+    <div className="flex items-center gap-2 py-2">
       <TagIcon
         className="w-6 h-6 shrink-0 ml-2 mr-1"
         style={{ color: tag.color }}
@@ -101,20 +101,27 @@ export const TagUsageChartTooltipContent = React.forwardRef<
         className={cn("grid max-w-80 items-start gap-1.5 text-xs", className)}
         ref={ref}
       >
-        {highlightedTag && (
+        {highlightedTag ? (
           <HoverCard
             tag={highlightedTag}
             usageTicks={highlightedTagUsageTicks}
             totalUsageTicks={totalUsageTicks}
             at={dt}
           />
+        ) : (
+          dt && (
+            <div className="flex text-muted-foreground">
+              <DateTimeText
+                className="text-xs text-muted-foreground"
+                datetime={dt}
+              />
+              <div className="flex-1 min-w-4"></div>
+              <DurationText ticks={totalUsageTicks ?? 0} />
+            </div>
+          )
         )}
-        {!singleTagId && (
-          <div
-            className={cn("grid gap-1.5", {
-              "pt-1 border-t border-border": highlightedTag,
-            })}
-          >
+        {!singleTagId && Object.keys(payload).length > 0 && (
+          <div className="grid gap-1.5 pt-1 border-t border-border">
             {involvedTagSorted
               .slice(0, maximumTags)
               .map(({ tag, usageTicks }) => {

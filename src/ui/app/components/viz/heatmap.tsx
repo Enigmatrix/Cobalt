@@ -197,7 +197,7 @@ const Heatmap: React.FC<HeatmapProps> = ({
           {renderAxes()}
         </svg>
       </div>
-      <Tooltip targetRef={containerRef} show={tooltipData !== undefined}>
+      <Tooltip targetRef={containerRef} show={tooltipData !== null}>
         {appId && (
           <AppUsageChartTooltipContent
             hoveredAppId={null}

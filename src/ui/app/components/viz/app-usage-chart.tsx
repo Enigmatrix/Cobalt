@@ -4,22 +4,27 @@ import { DateTime } from "luxon";
 import _ from "lodash";
 import { useAppState, type EntityMap } from "@/lib/state";
 import { useRefresh } from "@/hooks/use-refresh";
-import { ticksToDateTime, toHumanDateTime } from "@/lib/time";
+import { ticksToDateTime, toHumanDateTime, toHumanDuration } from "@/lib/time";
 import { toDataUrl } from "@/components/app/app-icon";
 import type { App, Ref, WithGroupedDuration } from "@/lib/entities";
 import type { ClassValue } from "clsx";
 import { cn } from "@/lib/utils";
 import { Tooltip } from "@/components/viz/tooltip";
 import { AppUsageChartTooltipContent } from "@/components/viz/app-usage-chart-tooltip";
+import { useTheme } from "@/components/theme-provider";
+import { getVarColorAsHex } from "@/lib/color-utils";
 
 export interface AppUsageBarChartProps {
   data: EntityMap<App, WithGroupedDuration<App>[]>;
+  hideApps?: Record<Ref<App>, boolean>;
   singleAppId?: Ref<App>;
   periodTicks: number;
-  rangeMinTicks?: number;
-  rangeMaxTicks?: number;
+  rangeMinTicks: number;
+  rangeMaxTicks: number;
   maxYIsPeriod?: boolean;
+  intervalTicks?: number;
   hideXAxis?: boolean;
+  hideYAxis?: boolean;
   gridVertical?: boolean;
   gridHorizontal?: boolean;
   gradientBars?: boolean;
@@ -30,19 +35,17 @@ export interface AppUsageBarChartProps {
   barRadius?: number | [number, number, number, number];
 }
 
-type AppUsageBarChartData = {
-  [app: Ref<App>]: number; // app => duration
-  key: number; // group (timestamp)
-};
-
 export function AppUsageBarChart({
-  data: unflattenedData,
+  data,
+  hideApps,
   singleAppId,
   periodTicks,
   rangeMinTicks,
   rangeMaxTicks,
   maxYIsPeriod = false,
+  intervalTicks,
   hideXAxis = false,
+  hideYAxis = false,
   gradientBars = false,
   dateTimeFormatter = toHumanDateTime,
   animationsEnabled = true,
@@ -50,70 +53,26 @@ export function AppUsageBarChart({
   onHover,
   barRadius,
 }: AppUsageBarChartProps) {
+  const { theme } = useTheme();
   const apps = useAppState((state) => state.apps);
   const { handleStaleApps } = useRefresh();
-  const [hoveredAppId, setHoveredAppId] = useState<Ref<App> | null>(null);
   const [hoverSeries, setHoverSeries] = useState<EntityMap<App, number>>({});
-  const [hoverTickAt, setHoverTickAt] = useState<DateTime>(
-    DateTime.fromSeconds(0),
-  );
+  const [hoveredData, setHoveredData] = useState<{
+    date: DateTime;
+    appId?: Ref<App>;
+  } | null>(null);
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstanceRef = useRef<echarts.ECharts | null>(null);
 
   const involvedApps = useMemo(
     () =>
-      _(
-        singleAppId
-          ? { [singleAppId]: unflattenedData[singleAppId] }
-          : unflattenedData,
-      )
-        .keys()
+      _(singleAppId ? [singleAppId] : Object.keys(data))
         .map((id) => apps[id as unknown as Ref<App>])
         .thru(handleStaleApps)
+        .filter((app) => !hideApps?.[app.id])
         .value(),
-    [handleStaleApps, apps, unflattenedData, singleAppId],
+    [handleStaleApps, apps, data, singleAppId, hideApps],
   );
-
-  const data: AppUsageBarChartData[] = useMemo(() => {
-    let ret = _(unflattenedData)
-      .values()
-      .thru(handleStaleApps)
-      .flatten()
-      .groupBy((d) => d.group)
-      .mapValues((durs) => {
-        return _.fromPairs([
-          ...durs.map((d) => {
-            return [d.id, d.duration];
-          }),
-          ["key", ticksToDateTime(durs[0].group).toMillis()],
-        ]);
-      })
-      .value();
-
-    if (rangeMinTicks !== undefined && rangeMaxTicks !== undefined) {
-      ret = _.merge(
-        ret,
-        _(_.range(rangeMinTicks, rangeMaxTicks, periodTicks))
-          .map((t) => {
-            return [t, { key: ticksToDateTime(t).toMillis() }];
-          })
-          .fromPairs()
-          .value(),
-      );
-    }
-
-    return _(ret)
-      .values()
-      .flatten()
-      .sortBy((d) => d.key)
-      .value();
-  }, [
-    unflattenedData,
-    handleStaleApps,
-    rangeMinTicks,
-    rangeMaxTicks,
-    periodTicks,
-  ]);
 
   React.useEffect(() => {
     if (!chartRef.current) return;
@@ -129,33 +88,41 @@ export function AppUsageBarChart({
         trigger: "axis",
         axisPointer: {
           type: "shadow",
+
+          label: {
+            show: false,
+            formatter: (params) => {
+              const seriesValues = Object.fromEntries(
+                params.seriesData.map((v) => [
+                  v.seriesId,
+                  (v.value as [number, number])[1],
+                ]),
+              );
+              setHoverSeries(seriesValues);
+              return "";
+            },
+          },
         },
-        formatter(params) {
-          const castedParams =
-            params as echarts.DefaultLabelFormatterCallbackParams[];
-          const seriesValues = Object.fromEntries(
-            castedParams.map((v) => [v.seriesId, v.value]),
-          );
-          setHoverTickAt(DateTime.fromMillis(+castedParams[0].name));
-          setHoverSeries(seriesValues);
+        formatter() {
+          // disables echarts tooltip
           return "";
         },
       },
       grid: {
         left: "4px",
         right: "4px",
-        top: 0,
         bottom: hideXAxis ? "0" : "15px",
+        top: hideYAxis ? "0" : "15px",
         containLabel: true,
       },
       xAxis: {
         type: "category",
-        data: data.map((d) => d.key),
+        data: _.range(rangeMinTicks!, rangeMaxTicks!, periodTicks),
         axisLabel: {
           show: !hideXAxis,
           padding: [6, 0, 0, 0],
           formatter: (value: string) =>
-            dateTimeFormatter(DateTime.fromMillis(+value)),
+            dateTimeFormatter(ticksToDateTime(+value)),
         },
         show: !hideXAxis,
         axisLine: {
@@ -168,11 +135,23 @@ export function AppUsageBarChart({
       },
       yAxis: {
         type: "value",
+        show: !hideYAxis,
         min: 0,
         max: maxYIsPeriod ? periodTicks : undefined,
-        show: false,
+        interval: intervalTicks ?? (maxYIsPeriod ? periodTicks / 4 : undefined),
+        splitLine: {
+          show: !hideYAxis,
+
+          lineStyle: {
+            color: getVarColorAsHex("muted-foreground", 0.15),
+          },
+        },
+        axisLine: {
+          show: !hideYAxis,
+        },
         axisLabel: {
-          formatter: () => "",
+          show: !hideYAxis,
+          formatter: (params) => toHumanDuration(params),
         },
       },
       series: involvedApps.map((app) => ({
@@ -180,7 +159,12 @@ export function AppUsageBarChart({
         name: app.name,
         type: "bar",
         stack: "total",
-        data: data.map((d) => d[app.id] || 0),
+        // [index, value][]
+        data: data[app.id]?.map((d) => [
+          (d.group - rangeMinTicks!) / periodTicks,
+          d.duration,
+        ]),
+
         itemStyle: {
           color: gradientBars
             ? {
@@ -226,22 +210,29 @@ export function AppUsageBarChart({
       })),
     } satisfies echarts.EChartsOption;
 
-    chart.on("mouseover", (params) => {
+    chart.getZr().on("mousemove", (params) => {
+      const pos = [params.offsetX, params.offsetY];
+      const isInGrid = chart.containPixel("grid", pos);
+      if (isInGrid) {
+        const pointerData = chart.convertFromPixel("grid", pos);
+        setHoveredData({
+          date: ticksToDateTime(pointerData[0] * periodTicks + rangeMinTicks),
+        });
+      } else if (!isInGrid) {
+        setHoveredData(null);
+        onHover?.(undefined);
+      }
+    });
+
+    chart.on("mousemove", (params) => {
       const appId = +(params.seriesId ?? 0) as Ref<App>;
-      setHoveredAppId(appId);
+      setHoveredData({ date: ticksToDateTime(+params.name), appId });
       if (onHover) {
         onHover({
           id: appId,
           duration: params.value as number,
           group: params.axisValue as number,
         });
-      }
-    });
-
-    chart.on("mouseout", () => {
-      setHoveredAppId(null);
-      if (onHover) {
-        onHover(undefined);
       }
     });
 
@@ -264,23 +255,28 @@ export function AppUsageBarChart({
     involvedApps,
     dateTimeFormatter,
     hideXAxis,
+    hideYAxis,
     maxYIsPeriod,
     periodTicks,
+    rangeMinTicks,
+    rangeMaxTicks,
+    intervalTicks,
     singleAppId,
     gradientBars,
     barRadius,
     onHover,
     animationsEnabled,
+    theme,
   ]);
 
   return (
     <div ref={chartRef} className={cn("w-full h-full", className)}>
-      <Tooltip targetRef={chartRef} show={hoveredAppId !== null}>
+      <Tooltip targetRef={chartRef} show={!!hoveredData}>
         <AppUsageChartTooltipContent
-          hoveredAppId={hoveredAppId}
+          hoveredAppId={hoveredData?.appId ?? null}
           singleAppId={singleAppId}
           payload={hoverSeries}
-          dt={hoverTickAt}
+          dt={hoveredData?.date ?? DateTime.fromSeconds(0)}
           maximumApps={10}
         />
       </Tooltip>
