@@ -10,7 +10,7 @@ import type { Tag, App, WithGroupedDuration } from "@/lib/entities";
 import { Text } from "@/components/ui/text";
 import { cn } from "@/lib/utils";
 import type { ClassValue } from "clsx";
-import { DateTime, Duration } from "luxon";
+import { DateTime } from "luxon";
 import AppIcon from "@/components/app/app-icon";
 import {
   memo,
@@ -43,7 +43,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { dateTimeToTicks, durationToTicks, hour } from "@/lib/time";
+import { dateTimeToTicks } from "@/lib/time";
 import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
 import { CreateTagDialog } from "@/components/tag/create-tag-dialog";
 import { NoTags, NoTagsFound } from "@/components/empty-states";
@@ -88,12 +88,11 @@ export default function Tags() {
   }, [tagsFiltered, sortDirection, sortProperty]);
 
   const range = useTimePeriod("day");
-  const period = hour;
   const {
     usages,
     start: loadStart,
     end: loadEnd,
-  } = useAppDurationsPerPeriod({ ...range, period });
+  } = useAppDurationsPerPeriod({ ...range, period: "hour" });
   const ListItem = memo(
     ({ index, style }: { index: number; style: CSSProperties }) => (
       <VirtualListItem style={style}>
@@ -101,7 +100,6 @@ export default function Tags() {
           tag={tagsSorted[index]}
           start={loadStart ?? range.start}
           end={loadEnd ?? range.end}
-          period={period}
           usages={usages}
         />
       </VirtualListItem>
@@ -237,13 +235,11 @@ function TagListItem({
   usages,
   start,
   end,
-  period,
 }: {
   tag: Tag;
   usages: EntityMap<App, WithGroupedDuration<App>[]>;
   start: DateTime;
   end: DateTime;
-  period: Duration;
 }) {
   const apps = useApps(tag.apps);
   const usagesFiltered = useMemo(() => {
@@ -301,7 +297,7 @@ function TagListItem({
             data={usagesFiltered}
             rangeMinTicks={dateTimeToTicks(start)}
             rangeMaxTicks={dateTimeToTicks(end)}
-            periodTicks={durationToTicks(period)}
+            period="hour"
             className="w-48 flex-none aspect-none h-20 max-lg:hidden"
           />
 

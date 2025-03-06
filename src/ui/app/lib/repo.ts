@@ -14,11 +14,12 @@ import type {
   TimeFrame,
   TriggerAction,
   Reminder,
+  Period,
 } from "@/lib/entities";
 import { invoke } from "@tauri-apps/api/core";
 import type { EntityMap, EntityStore } from "@/lib/state";
-import type { DateTime, Duration } from "luxon";
-import { dateTimeToTicks, durationToTicks } from "@/lib/time";
+import type { DateTime } from "luxon";
+import { dateTimeToTicks } from "@/lib/time";
 
 export interface CreateTag {
   name: string;
@@ -121,14 +122,14 @@ export async function getAppDurationsPerPeriod({
   options?: QueryOptions;
   start: DateTime;
   end: DateTime;
-  period: Duration;
+  period: Period;
 }): Promise<EntityMap<App, WithGroupedDuration<App>[]>> {
   const queryOptions = getQueryOptions(options);
   return await invoke("get_app_durations_per_period", {
     queryOptions,
     start: dateTimeToTicks(start),
     end: dateTimeToTicks(end),
-    period: durationToTicks(period),
+    period,
   });
 }
 
@@ -141,14 +142,14 @@ export async function getTagDurationsPerPeriod({
   options?: QueryOptions;
   start: DateTime;
   end: DateTime;
-  period: Duration;
+  period: Period;
 }): Promise<EntityMap<Tag, WithGroupedDuration<Tag>[]>> {
   const queryOptions = getQueryOptions(options);
   return await invoke("get_tag_durations_per_period", {
     queryOptions,
     start: dateTimeToTicks(start),
     end: dateTimeToTicks(end),
-    period: durationToTicks(period),
+    period,
   });
 }
 

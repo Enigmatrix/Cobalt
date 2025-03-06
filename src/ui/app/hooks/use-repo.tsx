@@ -1,4 +1,10 @@
-import type { App, Ref, Tag, WithGroupedDuration } from "@/lib/entities";
+import type {
+  App,
+  Period,
+  Ref,
+  Tag,
+  WithGroupedDuration,
+} from "@/lib/entities";
 import {
   getAppDurationsPerPeriod,
   getAppSessionUsages,
@@ -8,7 +14,7 @@ import {
 } from "@/lib/repo";
 import type { EntityMap } from "@/lib/state";
 import _ from "lodash";
-import type { DateTime, Duration } from "luxon";
+import type { DateTime } from "luxon";
 import { useEffect, useState, useTransition, useRef } from "react";
 import { useRefresh } from "@/hooks/use-refresh";
 
@@ -68,7 +74,7 @@ export function useAppDurationsPerPeriod({
 }: {
   start?: DateTime;
   end?: DateTime;
-  period?: Duration;
+  period?: Period;
   appId?: Ref<App>;
 }) {
   const { refreshToken } = useRefresh();
@@ -78,7 +84,7 @@ export function useAppDurationsPerPeriod({
     usages: EntityMap<App, WithGroupedDuration<App>[]>;
     start?: DateTime;
     end?: DateTime;
-    period?: Duration;
+    period?: Period;
   }>({ appUsage: 0, totalUsage: 0, usages: {}, start, end, period });
   const [isLoading, startTransition] = useTransition();
   const latestRequestRef = useRef<number>(0);
@@ -124,7 +130,7 @@ export function useTagDurationsPerPeriod({
 }: {
   start?: DateTime;
   end?: DateTime;
-  period?: Duration;
+  period?: Period;
   tag?: Tag;
 }) {
   const { refreshToken } = useRefresh();
@@ -134,7 +140,7 @@ export function useTagDurationsPerPeriod({
     usages: EntityMap<Tag, WithGroupedDuration<Tag>[]>;
     start?: DateTime;
     end?: DateTime;
-    period?: Duration;
+    period?: Period;
   }>({ tagUsage: 0, totalUsage: 0, usages: {}, start, end, period });
   const [isLoading, startTransition] = useTransition();
   const latestRequestRef = useRef<number>(0);

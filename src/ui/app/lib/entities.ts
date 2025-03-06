@@ -5,6 +5,7 @@ export function newRef<T>(id: number): Ref<T> {
 export type Color = string;
 export type Timestamp = number;
 export type Duration = number;
+export type Period = "hour" | "day" | "week" | "month" | "year";
 
 export interface WithDuration<T> {
   id: Ref<T>;
