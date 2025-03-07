@@ -45,6 +45,12 @@
     "resources": {
       "../../../appsettings.json": "appsettings.json",
       "../../../target/release/engine.exe": "engine.exe"
+    },
+    "windows": {
+      "wix": {
+        "fragmentPaths": ["./installer/startup-task.wxs"],
+        "componentRefs": ["EngineStartup"]
+      }
     }
   }
 }

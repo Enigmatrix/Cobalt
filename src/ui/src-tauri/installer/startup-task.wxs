@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Fragment>
+    <DirectoryRef Id="TARGETDIR">
+      <Component Id="EngineStartup" Guid="*" >
+        <RegistryKey Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\Run" Action="createAndRemoveOnUninstall">
+          <RegistryValue Name="Cobalt_Engine" Type="string" Value="&quot;[INSTALLDIR]engine.exe&quot;" KeyPath="no" />
+        </RegistryKey>
+      </Component>
+    </DirectoryRef>
+  </Fragment>
+</Wix> 
