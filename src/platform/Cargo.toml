@@ -30,6 +30,7 @@ features = [
     "Win32_System_RemoteDesktop",
     "Win32_System_Power",
     "Win32_System_SystemServices",
+    "Win32_System_WindowsProgramming",
 
     "Foundation",
     "Foundation_Collections",
