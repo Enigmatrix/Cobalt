@@ -1,5 +1,7 @@
 use std::collections::HashMap;
+use std::sync::LazyLock;
 
+use chrono::Local;
 use repo::*;
 use util::future as tokio;
 
@@ -8,6 +10,18 @@ use super::*;
 use crate::db::repo::infused::{CreateAlert, CreateReminder, ValuePerPeriod};
 use crate::db::tests::arrange::*;
 use crate::entities::{TimeFrame, TriggerAction};
+use crate::table::Period;
+
+const ONE_HOUR: i64 = 60 * 60 * 1000 * 10000;
+const TEST_DATE: i64 = (1735776000 * 1000 + 62_135_596_800_000) * 10000;
+static LOCAL_TEST_DATE: LazyLock<i64> = LazyLock::new(|| add_tz_shift(TEST_DATE));
+
+fn add_tz_shift(ts: i64) -> i64 {
+    // Get the current timezone offset in seconds
+    let local_offset = Local::now().offset().local_minus_utc();
+    // Convert seconds to 100-nanosecond intervals (same as the existing timestamp format)
+    ts - (local_offset as i64) * 10_000_000
+}
 
 fn create_to_alert(c: CreateAlert, id: i64) -> Alert {
     Alert {
@@ -709,224 +723,184 @@ async fn get_app_durations_per_period_singular_ts_test() -> Result<()> {
     .await?
     .id;
 
-    usages(&mut db, app1.clone(), vec![(10, 110)]).await?;
+    usages(
+        &mut db,
+        app1.clone(),
+        vec![(
+            *LOCAL_TEST_DATE + ONE_HOUR + 10,
+            *LOCAL_TEST_DATE + 2 * ONE_HOUR + 110,
+        )],
+    )
+    .await?;
 
     let mut repo = Repository::new(db)?;
 
     // test intersections + no usage found for app2
 
-    let app_durations = repo.get_app_durations_per_period(0, 200, 150).await?;
-    assert_eq!(
-        durmapperiod(vec![(app1.clone(), vec![(0, 100)])]),
-        app_durations
-    );
-
-    let app_durations = repo.get_app_durations_per_period(0, 100, 100).await?;
-    assert_eq!(
-        durmapperiod(vec![(app1.clone(), vec![(0, 90)])]),
-        app_durations
-    );
-
-    let app_durations = repo.get_app_durations_per_period(0, 50, 100).await?;
-    assert_eq!(
-        durmapperiod(vec![(app1.clone(), vec![(0, 40)])]),
-        app_durations
-    );
-
-    let app_durations = repo.get_app_durations_per_period(100, 200, 100).await?;
-    assert_eq!(
-        durmapperiod(vec![(app1.clone(), vec![(100, 10)])]),
-        app_durations
-    );
-
-    let app_durations = repo.get_app_durations_per_period(50, 250, 100).await?;
-    assert_eq!(
-        durmapperiod(vec![(app1.clone(), vec![(50, 60)])]),
-        app_durations
-    );
-
-    let app_durations = repo.get_app_durations_per_period(-250, 50, 200).await?;
-    assert_eq!(
-        durmapperiod(vec![(app1.clone(), vec![(-50, 40)])]),
-        app_durations
-    );
-
-    // add usage for app2 which is out of range. rerun the same tests.
-    usages(&mut repo.db, app2.clone(), vec![(400, 500)]).await?;
-
-    let app_durations = repo.get_app_durations_per_period(0, 200, 150).await?;
-    assert_eq!(
-        durmapperiod(vec![(app1.clone(), vec![(0, 100)])]),
-        app_durations
-    );
-
-    let app_durations = repo.get_app_durations_per_period(0, 100, 100).await?;
-    assert_eq!(
-        durmapperiod(vec![(app1.clone(), vec![(0, 90)])]),
-        app_durations
-    );
-
-    let app_durations = repo.get_app_durations_per_period(0, 50, 100).await?;
-    assert_eq!(
-        durmapperiod(vec![(app1.clone(), vec![(0, 40)])]),
-        app_durations
-    );
-
-    let app_durations = repo.get_app_durations_per_period(100, 200, 100).await?;
-    assert_eq!(
-        durmapperiod(vec![(app1.clone(), vec![(100, 10)])]),
-        app_durations
-    );
-
-    let app_durations = repo.get_app_durations_per_period(50, 250, 100).await?;
-    assert_eq!(
-        durmapperiod(vec![(app1.clone(), vec![(50, 60)])]),
-        app_durations
-    );
-
-    let app_durations = repo.get_app_durations_per_period(-250, 50, 200).await?;
-    assert_eq!(
-        durmapperiod(vec![(app1.clone(), vec![(-50, 40)])]),
-        app_durations
-    );
-
-    // test multiple groupings per usage period
-
-    let app_durations = repo.get_app_durations_per_period(10, 50, 10).await?;
+    // full range, no intersection
+    let app_durations = repo
+        .get_app_durations_per_period(
+            *LOCAL_TEST_DATE,
+            *LOCAL_TEST_DATE + 3 * ONE_HOUR,
+            Period::Day,
+        )
+        .await?;
     assert_eq!(
         durmapperiod(vec![(
             app1.clone(),
-            vec![(10, 10), (20, 10), (30, 10), (40, 10)]
+            vec![(*LOCAL_TEST_DATE, ONE_HOUR + 100)]
         )]),
         app_durations
     );
 
-    // misaligned end
-
-    let app_durations = repo.get_app_durations_per_period(10, 49, 10).await?;
+    // intersect before
+    let app_durations = repo
+        .get_app_durations_per_period(
+            *LOCAL_TEST_DATE + ONE_HOUR,
+            *LOCAL_TEST_DATE + 2 * ONE_HOUR,
+            Period::Day,
+        )
+        .await?;
     assert_eq!(
         durmapperiod(vec![(
             app1.clone(),
-            vec![(10, 10), (20, 10), (30, 10), (40, 9)]
+            vec![(*LOCAL_TEST_DATE, ONE_HOUR - 10)]
         )]),
         app_durations
     );
 
-    let app_durations = repo.get_app_durations_per_period(10, 51, 10).await?;
+    // intersect after
+    let app_durations = repo
+        .get_app_durations_per_period(
+            *LOCAL_TEST_DATE + 2 * ONE_HOUR,
+            *LOCAL_TEST_DATE + 3 * ONE_HOUR,
+            Period::Day,
+        )
+        .await?;
+    assert_eq!(
+        durmapperiod(vec![(app1.clone(), vec![(*LOCAL_TEST_DATE, 110)])]),
+        app_durations
+    );
+
+    // exact
+    let app_durations = repo
+        .get_app_durations_per_period(
+            *LOCAL_TEST_DATE + ONE_HOUR + 10,
+            *LOCAL_TEST_DATE + 2 * ONE_HOUR + 110,
+            Period::Day,
+        )
+        .await?;
     assert_eq!(
         durmapperiod(vec![(
             app1.clone(),
-            vec![(10, 10), (20, 10), (30, 10), (40, 10), (50, 1)]
+            vec![(*LOCAL_TEST_DATE, ONE_HOUR + 100)]
         )]),
         app_durations
     );
 
-    // misaligned start
-
-    let app_durations = repo.get_app_durations_per_period(9, 50, 10).await?;
+    // full range, no intersection, hour split
+    let app_durations = repo
+        .get_app_durations_per_period(
+            *LOCAL_TEST_DATE,
+            *LOCAL_TEST_DATE + 5 * ONE_HOUR,
+            Period::Hour,
+        )
+        .await?;
     assert_eq!(
         durmapperiod(vec![(
             app1.clone(),
-            vec![(9, 9), (19, 10), (29, 10), (39, 10), (49, 1)]
+            vec![
+                (*LOCAL_TEST_DATE + ONE_HOUR, ONE_HOUR - 10),
+                (*LOCAL_TEST_DATE + 2 * ONE_HOUR, 110)
+            ]
         )]),
         app_durations
     );
-
-    let app_durations = repo.get_app_durations_per_period(11, 50, 10).await?;
-    assert_eq!(
-        durmapperiod(vec![(
-            app1.clone(),
-            vec![(11, 10), (21, 10), (31, 10), (41, 9)]
-        )]),
-        app_durations
-    );
-
-    Ok(())
-}
-
-#[tokio::test]
-async fn get_app_durations_per_period_multiple_ts_test() -> Result<()> {
-    let mut db = test_db().await?;
-
-    let app1 = arrange::app(
-        &mut db,
-        App {
-            id: Ref::new(1),
-            name: "name".to_string(),
-            description: "desc".to_string(),
-            company: "comp".to_string(),
-            color: "red".to_string(),
-            identity: AppIdentity::Win32 {
-                path: "path1".to_string(),
-            },
-            tag_id: None,
-            icon: None,
-        },
-    )
-    .await?
-    .id;
-
-    let app2 = arrange::app(
-        &mut db,
-        App {
-            id: Ref::new(2),
-            name: "name".to_string(),
-            description: "desc".to_string(),
-            company: "comp".to_string(),
-            color: "red".to_string(),
-            identity: AppIdentity::Win32 {
-                path: "path2".to_string(),
-            },
-            tag_id: None,
-            icon: None,
-        },
-    )
-    .await?
-    .id;
 
     usages(
-        &mut db,
-        app1.clone(),
-        vec![(10, 110), (130, 200), (220, 240), (240, 1000)],
+        &mut repo.db,
+        app2.clone(),
+        vec![(
+            *LOCAL_TEST_DATE + ONE_HOUR + 20,
+            *LOCAL_TEST_DATE + 5 * ONE_HOUR + 120,
+        )],
     )
     .await?;
-    usages(&mut db, app2.clone(), vec![(110, 130), (200, 220)]).await?;
 
-    let mut repo = Repository::new(db)?;
-
-    let app_durations = repo.get_app_durations_per_period(0, 300, 50).await?;
+    let app_durations = repo
+        .get_app_durations_per_period(
+            *LOCAL_TEST_DATE,
+            *LOCAL_TEST_DATE + 5 * ONE_HOUR,
+            Period::Hour,
+        )
+        .await?;
     assert_eq!(
         durmapperiod(vec![
             (
                 app1.clone(),
                 vec![
-                    (0, 40),
-                    (50, 50),
-                    (100, 30),
-                    (150, 50),
-                    (200, 30),
-                    (250, 50)
+                    (*LOCAL_TEST_DATE + ONE_HOUR, ONE_HOUR - 10),
+                    (*LOCAL_TEST_DATE + 2 * ONE_HOUR, 110)
                 ]
             ),
-            (app2.clone(), vec![(100, 20), (200, 20)])
+            (
+                app2.clone(),
+                vec![
+                    (*LOCAL_TEST_DATE + ONE_HOUR, ONE_HOUR - 20),
+                    (*LOCAL_TEST_DATE + 2 * ONE_HOUR, ONE_HOUR),
+                    (*LOCAL_TEST_DATE + 3 * ONE_HOUR, ONE_HOUR),
+                    (*LOCAL_TEST_DATE + 4 * ONE_HOUR, ONE_HOUR),
+                ]
+            )
         ]),
         app_durations
     );
 
-    let app_durations = repo.get_app_durations_per_period(10, 500, 100).await?;
+    usages(
+        &mut repo.db,
+        app1.clone(),
+        vec![(
+            *LOCAL_TEST_DATE + 5 * ONE_HOUR + 200,
+            *LOCAL_TEST_DATE + 6 * ONE_HOUR + 200,
+        )],
+    )
+    .await?;
+
+    let app_durations = repo
+        .get_app_durations_per_period(
+            *LOCAL_TEST_DATE,
+            *LOCAL_TEST_DATE + 7 * ONE_HOUR,
+            Period::Hour,
+        )
+        .await?;
     assert_eq!(
         durmapperiod(vec![
             (
                 app1.clone(),
-                vec![(10, 100), (110, 70), (210, 90), (310, 100), (410, 90)]
+                vec![
+                    (*LOCAL_TEST_DATE + ONE_HOUR, ONE_HOUR - 10),
+                    (*LOCAL_TEST_DATE + 2 * ONE_HOUR, 110),
+                    (*LOCAL_TEST_DATE + 5 * ONE_HOUR, ONE_HOUR - 200),
+                    (*LOCAL_TEST_DATE + 6 * ONE_HOUR, 200),
+                ]
             ),
-            (app2.clone(), vec![(110, 30), (210, 10)])
+            (
+                app2.clone(),
+                vec![
+                    (*LOCAL_TEST_DATE + ONE_HOUR, ONE_HOUR - 20),
+                    (*LOCAL_TEST_DATE + 2 * ONE_HOUR, ONE_HOUR),
+                    (*LOCAL_TEST_DATE + 3 * ONE_HOUR, ONE_HOUR),
+                    (*LOCAL_TEST_DATE + 4 * ONE_HOUR, ONE_HOUR),
+                    (*LOCAL_TEST_DATE + 5 * ONE_HOUR, 120),
+                ]
+            )
         ]),
         app_durations
     );
 
     Ok(())
 }
+
 #[tokio::test]
 async fn create_alert() -> Result<()> {
     let mut db = test_db().await?;

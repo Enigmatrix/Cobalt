@@ -606,7 +606,6 @@ impl Repository {
             Self::sql_period_start_end(&Self::sql_ticks_to_unix("u.start"), &period);
 
         let period_next = Self::sql_period_next("period_end", &period);
-        let period_next_ticks = Self::sql_unix_to_ticks(&period_next);
 
         let period_start_ticks = Self::sql_unix_to_ticks("period_start");
         let period_end_ticks = Self::sql_unix_to_ticks("period_end");
@@ -618,7 +617,7 @@ impl Repository {
                     {period_start} AS period_start,
                     {period_end} AS period_end,
                     u.start AS usage_start,
-                    MIN(u.end, p.end) AS usage_end
+                    u.end AS usage_end
                 FROM apps a, params p
                 INNER JOIN sessions s ON a.id = s.app_id
                 INNER JOIN usages u ON s.id = u.session_id
@@ -632,13 +631,13 @@ impl Repository {
                     usage_start,
                     usage_end
                 FROM period_intervals, params p
-                WHERE {period_next_ticks} < MIN(usage_end, p.end)
+                WHERE {period_end_ticks} < MIN(usage_end, p.end)
             )
 
             SELECT id,
                 {period_start_ticks} AS `group`,
-                SUM(MIN({period_end_ticks}, usage_end) - MAX({period_start_ticks}, usage_start)) AS duration
-            FROM period_intervals
+                SUM(MIN({period_end_ticks}, usage_end, p.end) - MAX({period_start_ticks}, usage_start, p.start)) AS duration
+            FROM period_intervals, params p
             GROUP BY id, period_start");
 
         let app_durs = query_as(&query)
@@ -671,7 +670,6 @@ impl Repository {
             Self::sql_period_start_end(&Self::sql_ticks_to_unix("u.start"), &period);
 
         let period_next = Self::sql_period_next("period_end", &period);
-        let period_next_ticks = Self::sql_unix_to_ticks(&period_next);
 
         let period_start_ticks = Self::sql_unix_to_ticks("period_start");
         let period_end_ticks = Self::sql_unix_to_ticks("period_end");
@@ -683,7 +681,7 @@ impl Repository {
                     {period_start} AS period_start,
                     {period_end} AS period_end,
                     u.start AS usage_start,
-                    MIN(u.end, p.end) AS usage_end
+                    u.end AS usage_end
                 FROM apps a, params p
                 INNER JOIN sessions s ON a.id = s.app_id
                 INNER JOIN usages u ON s.id = u.session_id
@@ -697,13 +695,13 @@ impl Repository {
                     usage_start,
                     usage_end
                 FROM period_intervals, params p
-                WHERE {period_next_ticks} < MIN(usage_end, p.end)
+                WHERE {period_end_ticks} < MIN(usage_end, p.end)
             )
 
             SELECT id,
                 {period_start_ticks} AS `group`,
-                SUM(MIN({period_end_ticks}, usage_end) - MAX({period_start_ticks}, usage_start)) AS duration
-            FROM period_intervals
+                SUM(MIN({period_end_ticks}, usage_end, p.end) - MAX({period_start_ticks}, usage_start, p.start)) AS duration
+            FROM period_intervals, params p
             GROUP BY id, period_start");
 
         let tag_durs = query_as(&query)
