@@ -12,7 +12,7 @@ import {
   toHumanDateTime,
   toHumanDuration,
 } from "@/lib/time";
-import { toDataUrl } from "@/components/app/app-icon";
+import { DEFAULT_ICON_SVG_URL, toDataUrl } from "@/components/app/app-icon";
 import type { App, Period, Ref, WithGroupedDuration } from "@/lib/entities";
 import type { ClassValue } from "clsx";
 import { cn } from "@/lib/utils";
@@ -226,7 +226,7 @@ export function AppUsageBarChart({
           show: !singleAppId,
           position: "inside",
           backgroundColor: {
-            image: toDataUrl(app.icon)!,
+            image: toDataUrl(app.icon) ?? DEFAULT_ICON_SVG_URL,
           },
           formatter: () => {
             return `{empty|}`;
