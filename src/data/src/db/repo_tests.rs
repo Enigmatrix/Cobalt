@@ -15,10 +15,8 @@ use crate::entities::{TimeFrame, TriggerAction};
 use crate::table::Period;
 
 const ONE_HOUR: i64 = 60 * 60 * 1000 * 10000;
-// 2025-01-02 00:00:00
 const TEST_DATE: i64 = (1735776000 * 1000 + 62_135_596_800_000) * 10000;
 static LOCAL_TEST_DATE: LazyLock<i64> = LazyLock::new(|| add_tz_shift(TEST_DATE));
-const ONE_DAY: i64 = 24 * 60 * 60 * 1000 * 10000;
 
 fn add_tz_shift(ts: i64) -> i64 {
     // Get the current timezone offset in seconds
@@ -463,13 +461,13 @@ async fn get_alerts() -> Result<()> {
     );
 
     let events = vec![
-        (alert11.id.clone(), *LOCAL_TEST_DATE + 10),
-        (alert11.id.clone(), *LOCAL_TEST_DATE + 15),
-        (alert12.id.clone(), *LOCAL_TEST_DATE - ONE_HOUR), // same week, month
-        (alert12.id.clone(), *LOCAL_TEST_DATE + 20),
-        (alert31.id.clone(), *LOCAL_TEST_DATE + 1),
-        (alert32.id.clone(), *LOCAL_TEST_DATE + 2),
-        (alert33.id.clone(), *LOCAL_TEST_DATE - ONE_DAY * 3), // same week only
+        (alert11.id.clone(), 10),
+        (alert11.id.clone(), 15),
+        (alert12.id.clone(), 16),
+        (alert12.id.clone(), 20),
+        (alert31.id.clone(), 1),
+        (alert32.id.clone(), 2),
+        (alert33.id.clone(), 6),
     ];
     for (alert_id, timestamp) in events {
         arrange::alert_event(
@@ -485,7 +483,7 @@ async fn get_alerts() -> Result<()> {
 
     let alerts = repo
         .get_alerts(Times {
-            now: *LOCAL_TEST_DATE + ONE_HOUR * 5,
+            now: 5000,
             day_start: 20,
             week_start: 10,
             month_start: 5,
@@ -519,8 +517,8 @@ async fn get_alerts() -> Result<()> {
                 alert33.id.clone(),
                 ValuePerPeriod {
                     today: 0,
-                    week: 1,
-                    month: 0,
+                    week: 0,
+                    month: 1,
                 }
             )
         ]

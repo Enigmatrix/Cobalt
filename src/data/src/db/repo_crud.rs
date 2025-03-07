@@ -5,12 +5,11 @@ use sqlx::SqliteExecutor;
 use super::repo::Repository;
 use super::*;
 use crate::entities::TriggerAction;
-use crate::table::Period;
 
 /// SQL expression for getting the duration of all apps in day, week, month range.
 pub const APP_DUR: &str = "SELECT a.id AS id,
                 COALESCE(SUM(MIN(u.end, p.end) - MAX(u.start, p.start)), 0) AS duration
-            FROM apps a, (SELECT (<START>) AS start, (<END>) AS end) p
+            FROM apps a, (SELECT ? AS start, ? AS end) p
             INNER JOIN sessions s ON a.id = s.app_id
             INNER JOIN usages u ON s.id = u.session_id
             WHERE u.end > p.start AND u.start <= p.end
@@ -18,18 +17,18 @@ pub const APP_DUR: &str = "SELECT a.id AS id,
 
 const TAG_DUR: &str = "SELECT a.tag_id AS id,
                 COALESCE(SUM(MIN(u.end, p.end) - MAX(u.start, p.start)), 0) AS duration
-            FROM apps a, (SELECT (<START>) AS start, (<END>) AS end) p
+            FROM apps a, (SELECT ? AS start, ? AS end) p
             INNER JOIN sessions s ON a.id = s.app_id
             INNER JOIN usages u ON s.id = u.session_id
             WHERE u.end > p.start AND u.start <= p.end
             GROUP BY a.tag_id";
 
 const ALERT_EVENT_COUNT: &str = "SELECT e.alert_id, COUNT(e.id) FROM alert_events e
-            WHERE e.timestamp BETWEEN (<START>) AND (<END>)
+            WHERE timestamp BETWEEN ? AND ?
             GROUP BY e.alert_id";
 
 const REMINDER_EVENT_COUNT: &str = "SELECT e.reminder_id, COUNT(e.id) FROM reminder_events e
-            WHERE e.timestamp BETWEEN (<START>) AND (<END>)
+            WHERE timestamp BETWEEN ? AND ?
             GROUP BY e.reminder_id";
 
 impl Repository {
@@ -38,31 +37,16 @@ impl Repository {
         &mut self,
         ts: impl TimeSystem,
     ) -> Result<HashMap<Ref<App>, infused::App>> {
-        let now = "?";
-        let day_start = Self::sql_unix_to_ticks(
-            &Self::sql_period_start_end(&Self::sql_ticks_to_unix("?"), &Period::Day).0,
-        );
-        let week_start = Self::sql_unix_to_ticks(
-            &Self::sql_period_start_end(&Self::sql_ticks_to_unix("?"), &Period::Week).0,
-        );
-        let month_start = Self::sql_unix_to_ticks(
-            &Self::sql_period_start_end(&Self::sql_ticks_to_unix("?"), &Period::Month).0,
-        );
-        let day_expr = APP_DUR
-            .replace("<START>", &day_start)
-            .replace("<END>", &now);
-        let week_expr = APP_DUR
-            .replace("<START>", &week_start)
-            .replace("<END>", &now);
-        let month_expr = APP_DUR
-            .replace("<START>", &month_start)
-            .replace("<END>", &now);
+        // 1+N (well, 1+1) query pattern here - introduces a little gap for
+        // race condition but doesn't matter much. This query pattern doesn't
+        // significantly affect the performance of the application for SQLite
+        // compared to other DB formats.
 
         let apps: Vec<infused::App> = query_as(&format!(
             "WITH
-                usage_today(id, dur) AS ({day_expr}),
-                usage_week(id, dur) AS ({week_expr}),
-                usage_month(id, dur) AS ({month_expr})
+                usage_today(id, dur) AS ({APP_DUR}),
+                usage_week(id, dur) AS ({APP_DUR}),
+                usage_month(id, dur) AS ({APP_DUR})
             SELECT a.*,
                 COALESCE(d.dur, 0) AS today,
                 COALESCE(w.dur, 0) AS week,
@@ -74,11 +58,11 @@ impl Repository {
             WHERE a.initialized = 1
             GROUP BY a.id"
         ))
+        .bind(ts.day_start(true).to_ticks())
         .bind(ts.now().to_ticks())
+        .bind(ts.week_start(true).to_ticks())
         .bind(ts.now().to_ticks())
-        .bind(ts.now().to_ticks())
-        .bind(ts.now().to_ticks())
-        .bind(ts.now().to_ticks())
+        .bind(ts.month_start(true).to_ticks())
         .bind(ts.now().to_ticks())
         .fetch_all(self.db.executor())
         .await?;
@@ -96,31 +80,11 @@ impl Repository {
         &mut self,
         ts: impl TimeSystem,
     ) -> Result<HashMap<Ref<Tag>, infused::Tag>> {
-        let now = "?";
-        let day_start = Self::sql_unix_to_ticks(
-            &Self::sql_period_start_end(&Self::sql_ticks_to_unix("?"), &Period::Day).0,
-        );
-        let week_start = Self::sql_unix_to_ticks(
-            &Self::sql_period_start_end(&Self::sql_ticks_to_unix("?"), &Period::Week).0,
-        );
-        let month_start = Self::sql_unix_to_ticks(
-            &Self::sql_period_start_end(&Self::sql_ticks_to_unix("?"), &Period::Month).0,
-        );
-        let day_expr = TAG_DUR
-            .replace("<START>", &day_start)
-            .replace("<END>", &now);
-        let week_expr = TAG_DUR
-            .replace("<START>", &week_start)
-            .replace("<END>", &now);
-        let month_expr = TAG_DUR
-            .replace("<START>", &month_start)
-            .replace("<END>", &now);
-
         let tags: Vec<infused::Tag> = query_as(&format!(
             "WITH
-                usage_today(id, dur) AS ({day_expr}),
-                usage_week(id, dur) AS ({week_expr}),
-                usage_month(id, dur) AS ({month_expr})
+                usage_today(id, dur) AS ({TAG_DUR}),
+                usage_week(id, dur) AS ({TAG_DUR}),
+                usage_month(id, dur) AS ({TAG_DUR})
             SELECT t.*, GROUP_CONCAT(a.id, ',') apps,
                 COALESCE(d.dur, 0) AS today,
                 COALESCE(w.dur, 0) AS week,
@@ -132,11 +96,11 @@ impl Repository {
                 LEFT JOIN apps a ON t.id = a.tag_id AND a.initialized = 1
             GROUP BY t.id"
         ))
+        .bind(ts.day_start(true).to_ticks())
         .bind(ts.now().to_ticks())
+        .bind(ts.week_start(true).to_ticks())
         .bind(ts.now().to_ticks())
-        .bind(ts.now().to_ticks())
-        .bind(ts.now().to_ticks())
-        .bind(ts.now().to_ticks())
+        .bind(ts.month_start(true).to_ticks())
         .bind(ts.now().to_ticks())
         .fetch_all(self.db.executor())
         .await?;
@@ -162,40 +126,11 @@ impl Repository {
             events: infused::ValuePerPeriod<i64>,
         }
 
-        let now = "?";
-        let day_start = Self::sql_unix_to_ticks(
-            &Self::sql_period_start_end(&Self::sql_ticks_to_unix("?"), &Period::Day).0,
-        );
-        let week_start = Self::sql_unix_to_ticks(
-            &Self::sql_period_start_end(&Self::sql_ticks_to_unix("?"), &Period::Week).0,
-        );
-        let month_start = Self::sql_unix_to_ticks(
-            &Self::sql_period_start_end(&Self::sql_ticks_to_unix("?"), &Period::Month).0,
-        );
-        let alerts_day_expr = ALERT_EVENT_COUNT
-            .replace("<START>", &day_start)
-            .replace("<END>", &now);
-        let alerts_week_expr = ALERT_EVENT_COUNT
-            .replace("<START>", &week_start)
-            .replace("<END>", &now);
-        let alerts_month_expr = ALERT_EVENT_COUNT
-            .replace("<START>", &month_start)
-            .replace("<END>", &now);
-        let reminders_day_expr = REMINDER_EVENT_COUNT
-            .replace("<START>", &day_start)
-            .replace("<END>", &now);
-        let reminders_week_expr = REMINDER_EVENT_COUNT
-            .replace("<START>", &week_start)
-            .replace("<END>", &now);
-        let reminders_month_expr = REMINDER_EVENT_COUNT
-            .replace("<START>", &month_start)
-            .replace("<END>", &now);
-
         let alerts: Vec<AlertNoReminders> = query_as(&format!(
             "WITH
-                events_today(id, count) AS ({alerts_day_expr}),
-                events_week(id, count) AS ({alerts_week_expr}),
-                events_month(id, count) AS ({alerts_month_expr})
+                events_today(id, count) AS ({ALERT_EVENT_COUNT}),
+                events_week(id, count) AS ({ALERT_EVENT_COUNT}),
+                events_month(id, count) AS ({ALERT_EVENT_COUNT})
             SELECT al.*,
                 COALESCE(t.count, 0) AS today,
                 COALESCE(w.count, 0) AS week,
@@ -207,20 +142,20 @@ impl Repository {
             GROUP BY al.id
             HAVING al.active <> 0"
         ))
+        .bind(ts.day_start(true).to_ticks())
         .bind(ts.now().to_ticks())
+        .bind(ts.week_start(true).to_ticks())
         .bind(ts.now().to_ticks())
-        .bind(ts.now().to_ticks())
-        .bind(ts.now().to_ticks())
-        .bind(ts.now().to_ticks())
+        .bind(ts.month_start(true).to_ticks())
         .bind(ts.now().to_ticks())
         .fetch_all(self.db.executor())
         .await?;
 
         let reminders: Vec<infused::Reminder> = query_as(&format!(
             "WITH
-                events_today(id, count) AS ({reminders_day_expr}),
-                events_week(id, count) AS ({reminders_week_expr}),
-                events_month(id, count) AS ({reminders_month_expr})
+                events_today(id, count) AS ({REMINDER_EVENT_COUNT}),
+                events_week(id, count) AS ({REMINDER_EVENT_COUNT}),
+                events_month(id, count) AS ({REMINDER_EVENT_COUNT})
             SELECT r.*,
                 COALESCE(t.count, 0) AS today,
                 COALESCE(w.count, 0) AS week,
@@ -232,11 +167,11 @@ impl Repository {
             GROUP BY r.id
             HAVING r.active <> 0"
         ))
+        .bind(ts.day_start(true).to_ticks())
         .bind(ts.now().to_ticks())
+        .bind(ts.week_start(true).to_ticks())
         .bind(ts.now().to_ticks())
-        .bind(ts.now().to_ticks())
-        .bind(ts.now().to_ticks())
-        .bind(ts.now().to_ticks())
+        .bind(ts.month_start(true).to_ticks())
         .bind(ts.now().to_ticks())
         .fetch_all(self.db.executor())
         .await?;
