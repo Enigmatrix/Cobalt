@@ -43,8 +43,9 @@ impl Repository {
         // yes, we need to do this WITH expression and COALESCE
         // once more so that all apps are present in the result.
 
+        let app_dur_expr = APP_DUR.replace("<START>", "?").replace("<END>", "?");
         let app_durs = query_as(&format!(
-            "WITH appdur(id, dur) AS ({APP_DUR})
+            "WITH appdur(id, dur) AS ({app_dur_expr})
             SELECT a.*, COALESCE(d.dur, 0) AS duration
             FROM apps a
                 LEFT JOIN appdur d ON a.id = d.id"
@@ -60,7 +61,7 @@ impl Repository {
             .collect())
     }
 
-    fn sql_period_start_end(expr: &str, period: &Period) -> (String, String) {
+    pub(crate) fn sql_period_start_end(expr: &str, period: &Period) -> (String, String) {
         match period {
             Period::Hour => (
                 format!("unixepoch((unixepoch({expr}, 'unixepoch', 'localtime')/3600) * 3600, 'unixepoch', 'utc')"),
@@ -85,7 +86,7 @@ impl Repository {
         }
     }
 
-    fn sql_period_next(expr: &str, period: &Period) -> String {
+    pub(crate) fn sql_period_next(expr: &str, period: &Period) -> String {
         match period {
             Period::Hour => format!("(({expr}) + 3600)"),
             Period::Day => format!("unixepoch({expr}, 'unixepoch', '+1 day')"),
@@ -95,11 +96,11 @@ impl Repository {
         }
     }
 
-    fn sql_ticks_to_unix(expr: &str) -> String {
+    pub(crate) fn sql_ticks_to_unix(expr: &str) -> String {
         format!("((({expr}) / 10000 - 62135596800000)/1000)")
     }
 
-    fn sql_unix_to_ticks(expr: &str) -> String {
+    pub(crate) fn sql_unix_to_ticks(expr: &str) -> String {
         format!("((({expr}) * 1000 + 62135596800000)*10000)")
     }
 
