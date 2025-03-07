@@ -6,9 +6,9 @@ import {
   BreadcrumbPage,
   BreadcrumbList,
 } from "@/components/ui/breadcrumb";
-import { dateTimeToTicks, durationToTicks, type Interval } from "@/lib/time";
+import { type Interval } from "@/lib/time";
 import { useMemo, useState } from "react";
-import { DateTime, Duration, type DateTimeUnit } from "luxon";
+import { DateTime, Duration } from "luxon";
 import { Label } from "@/components/ui/label";
 import { DateRangePicker } from "@/components/time/date-range-picker";
 import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
@@ -28,7 +28,7 @@ import {
 import { useTimePeriod } from "@/hooks/use-today";
 import { VerticalLegend } from "@/components/viz/vertical-legend";
 import { DurationText } from "@/components/time/duration-text";
-import type { App, Ref } from "@/lib/entities";
+import type { App, Period, Ref } from "@/lib/entities";
 import { Loader2 } from "lucide-react";
 import { Gantt } from "@/components/viz/gantt";
 import { cn } from "@/lib/utils";
@@ -80,12 +80,8 @@ export default function History() {
 function AppUsagePerPeriodHistory() {
   const week = useTimePeriod("week");
   const [interval, setInterval] = useState<Interval | null>(week);
-  const [periodText, setPeriodText] = useState<DateTimeUnit>("day");
+  const [period, setPeriod] = useState<Period>("day");
 
-  const periodDuration = useMemo(
-    () => Duration.fromObject({ [periodText]: 1 }),
-    [periodText],
-  );
   const {
     isLoading,
     totalUsage,
@@ -96,23 +92,23 @@ function AppUsagePerPeriodHistory() {
   } = useAppDurationsPerPeriod({
     start: interval?.start,
     end: interval?.end,
-    period: periodDuration,
+    period: period,
   });
 
-  const [intervalTicks, maxYIsPeriod] = useMemo(() => {
-    switch (periodText) {
+  const [yAxisInterval, maxYIsPeriod] = useMemo(() => {
+    switch (period) {
       case "hour":
-        return [durationToTicks(Duration.fromObject({ minutes: 15 })), true];
+        return [Duration.fromObject({ minutes: 15 }), true];
       case "day":
-        return [durationToTicks(Duration.fromObject({ hours: 2 })), false];
+        return [Duration.fromObject({ hours: 2 }), false];
       case "week":
-        return [durationToTicks(Duration.fromObject({ hours: 6 })), false];
+        return [Duration.fromObject({ hours: 6 }), false];
       case "month":
-        return [durationToTicks(Duration.fromObject({ days: 1 })), false];
+        return [Duration.fromObject({ days: 1 }), false];
       default:
-        throw new Error(`Unknown period: ${periodText}`);
+        throw new Error(`Unknown period: ${period}`);
     }
-    // this should take periodText as a dependency, but we only take in loadPeriod
+    // this should take period as a dependency, but we only take in loadPeriod
     // which is a output of useAppDurationsPerPeriod, else we get yaxis flashes
     // with the older data's yaxis interval before the data is loading
 
@@ -146,10 +142,7 @@ function AppUsagePerPeriodHistory() {
         </div>
         <div className="flex flex-col gap-1.5">
           <Label className="font-medium text-muted-foreground">Period</Label>
-          <Select
-            value={periodText}
-            onValueChange={(s) => setPeriodText(s as DateTimeUnit)}
-          >
+          <Select value={period} onValueChange={(s) => setPeriod(s as Period)}>
             <SelectTrigger className="min-w-32 font-medium">
               <SelectValue placeholder="Select a period" />
             </SelectTrigger>
@@ -166,16 +159,12 @@ function AppUsagePerPeriodHistory() {
       <div className="flex flex-1 min-h-0 overflow-hidden rounded-lg bg-card shadow-sm border border-border">
         <AppUsageBarChart
           data={appUsages}
-          periodTicks={durationToTicks(loadPeriod ?? periodDuration)}
-          rangeMinTicks={dateTimeToTicks(
-            start ?? interval?.start ?? DateTime.now(),
-          )}
-          rangeMaxTicks={dateTimeToTicks(
-            end ?? interval?.end ?? DateTime.now(),
-          )}
+          period={loadPeriod ?? period}
+          start={start ?? interval?.start ?? DateTime.now()}
+          end={end ?? interval?.end ?? DateTime.now()}
           className="flex-1 h-full min-w-[400px] p-2"
           maxYIsPeriod={maxYIsPeriod}
-          intervalTicks={intervalTicks}
+          interval={yAxisInterval}
           animationsEnabled={false}
           hideApps={uncheckedApps}
           barRadius={3}

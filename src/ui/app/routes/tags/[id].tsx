@@ -11,16 +11,12 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { useAppState } from "@/lib/state";
-import { type App, type Ref, type Tag } from "@/lib/entities";
+import { type App, type Period, type Ref, type Tag } from "@/lib/entities";
 import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
 import { useCallback, useMemo, useState } from "react";
-import { DateTime, Duration } from "luxon";
+import { DateTime } from "luxon";
 import { useTag } from "@/hooks/use-refresh";
 import {
-  dateTimeToTicks,
-  day,
-  durationToTicks,
-  hour,
   hour24Formatter,
   monthDayFormatter,
   ticksToDateTime,
@@ -53,7 +49,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useNavigate } from "react-router";
 import { useTimePeriod } from "@/hooks/use-today";
-import type { TimePeriod } from "@/lib/time";
 import { Gantt } from "@/components/viz/gantt";
 import { ChooseMultiApps } from "@/components/app/choose-multi-apps";
 
@@ -95,7 +90,7 @@ export default function Tag({ params }: Route.ComponentProps) {
   } = useTagDurationsPerPeriod({
     start: yearInterval.start,
     end: yearInterval.end,
-    period: day,
+    period: "day",
     tag,
   });
   const yearData = useMemo(() => {
@@ -222,19 +217,19 @@ export default function Tag({ params }: Route.ComponentProps) {
           <div className="grid grid-cols-1 auto-rows-min gap-4 md:grid-cols-3">
             <TagUsageBarChartCard
               timePeriod="day"
-              period={hour}
+              period="hour"
               xAxisLabelFormatter={hour24Formatter}
               tag={tag}
             />
             <TagUsageBarChartCard
               timePeriod="week"
-              period={day}
+              period="day"
               xAxisLabelFormatter={weekDayFormatter}
               tag={tag}
             />
             <TagUsageBarChartCard
               timePeriod="month"
-              period={day}
+              period="day"
               xAxisLabelFormatter={monthDayFormatter}
               tag={tag}
             />
@@ -280,8 +275,8 @@ function TagUsageBarChartCard({
   xAxisLabelFormatter,
   tag,
 }: {
-  timePeriod: TimePeriod;
-  period: Duration;
+  timePeriod: Period;
+  period: Period;
   xAxisLabelFormatter: (dt: DateTime) => string;
   tag: Tag;
 }) {
@@ -297,7 +292,7 @@ function TagUsageBarChartCard({
   } = useAppDurationsPerPeriod({
     start: interval.start,
     end: interval.end,
-    period: period,
+    period,
   });
   const { usages, tagUsage } = useMemo(() => {
     const usages = _(tag.apps)
@@ -313,9 +308,9 @@ function TagUsageBarChartCard({
       <div className="aspect-video flex-1 mx-1 max-w-full">
         <AppUsageBarChart
           data={usages}
-          periodTicks={durationToTicks(period)}
-          rangeMinTicks={dateTimeToTicks(start ?? interval.start)}
-          rangeMaxTicks={dateTimeToTicks(end ?? interval.end)}
+          period={period}
+          start={start ?? interval.start}
+          end={end ?? interval.end}
           dateTimeFormatter={xAxisLabelFormatter}
           className="aspect-none"
           maxYIsPeriod

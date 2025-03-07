@@ -1,12 +1,19 @@
 import React, { useMemo, useRef, useState } from "react";
 import * as echarts from "echarts";
-import { DateTime } from "luxon";
+import { DateTime, Duration } from "luxon";
 import _ from "lodash";
 import { useAppState, type EntityMap } from "@/lib/state";
 import { useRefresh } from "@/hooks/use-refresh";
-import { ticksToDateTime, toHumanDateTime, toHumanDuration } from "@/lib/time";
-import { toDataUrl } from "@/components/app/app-icon";
-import type { App, Ref, WithGroupedDuration } from "@/lib/entities";
+import {
+  dateTimeToTicks,
+  durationToTicks,
+  periodToDuration,
+  ticksToDateTime,
+  toHumanDateTime,
+  toHumanDuration,
+} from "@/lib/time";
+import { DEFAULT_ICON_SVG_URL, toDataUrl } from "@/components/app/app-icon";
+import type { App, Period, Ref, WithGroupedDuration } from "@/lib/entities";
 import type { ClassValue } from "clsx";
 import { cn } from "@/lib/utils";
 import { Tooltip } from "@/components/viz/tooltip";
@@ -18,36 +25,50 @@ export interface AppUsageBarChartProps {
   data: EntityMap<App, WithGroupedDuration<App>[]>;
   hideApps?: Record<Ref<App>, boolean>;
   singleAppId?: Ref<App>;
-  periodTicks: number;
-  rangeMinTicks: number;
-  rangeMaxTicks: number;
+  start: DateTime;
+  end: DateTime;
+  interval?: Duration;
+  period: Period;
+
   maxYIsPeriod?: boolean;
-  intervalTicks?: number;
   hideXAxis?: boolean;
   hideYAxis?: boolean;
   gridVertical?: boolean;
   gridHorizontal?: boolean;
   gradientBars?: boolean;
   animationsEnabled?: boolean;
+  barRadius?: number | [number, number, number, number];
   className?: ClassValue;
   dateTimeFormatter?: (dt: DateTime) => string;
   onHover?: (data?: WithGroupedDuration<App>) => void;
-  barRadius?: number | [number, number, number, number];
+}
+
+function getDateTimeRange(
+  start: DateTime,
+  end: DateTime,
+  period: Period,
+): number[] {
+  const startRange = start.startOf(period);
+  const range = [];
+  for (let i = startRange; i < end; i = i.plus({ [period]: 1 })) {
+    range.push(i);
+  }
+  return range.map((dt) => dateTimeToTicks(dt));
 }
 
 export function AppUsageBarChart({
   data,
   hideApps,
   singleAppId,
-  periodTicks,
-  rangeMinTicks,
-  rangeMaxTicks,
+  start,
+  end,
   maxYIsPeriod = false,
-  intervalTicks,
+  interval,
   hideXAxis = false,
   hideYAxis = false,
   gradientBars = false,
   dateTimeFormatter = toHumanDateTime,
+  period,
   animationsEnabled = true,
   className,
   onHover,
@@ -79,6 +100,12 @@ export function AppUsageBarChart({
 
     const chart = echarts.init(chartRef.current, undefined, {});
     chartInstanceRef.current = chart;
+
+    const xaxisRange = getDateTimeRange(start, end, period);
+    const xaxisLookup = Object.fromEntries(
+      xaxisRange.map((tick, index) => [tick, index]),
+    );
+    const periodTicks = durationToTicks(periodToDuration(period));
 
     const option: echarts.EChartsOption = {
       animation: animationsEnabled,
@@ -117,7 +144,7 @@ export function AppUsageBarChart({
       },
       xAxis: {
         type: "category",
-        data: _.range(rangeMinTicks!, rangeMaxTicks!, periodTicks),
+        data: xaxisRange,
         axisLabel: {
           show: !hideXAxis,
           padding: [6, 0, 0, 0],
@@ -138,7 +165,11 @@ export function AppUsageBarChart({
         show: !hideYAxis,
         min: 0,
         max: maxYIsPeriod ? periodTicks : undefined,
-        interval: intervalTicks ?? (maxYIsPeriod ? periodTicks / 4 : undefined),
+        interval: interval
+          ? durationToTicks(interval)
+          : maxYIsPeriod
+            ? periodTicks / 4
+            : undefined,
         splitLine: {
           show: !hideYAxis,
 
@@ -160,10 +191,7 @@ export function AppUsageBarChart({
         type: "bar",
         stack: "total",
         // [index, value][]
-        data: data[app.id]?.map((d) => [
-          (d.group - rangeMinTicks!) / periodTicks,
-          d.duration,
-        ]),
+        data: data[app.id]?.map((d) => [xaxisLookup[d.group], d.duration]),
 
         itemStyle: {
           color: gradientBars
@@ -198,7 +226,7 @@ export function AppUsageBarChart({
           show: !singleAppId,
           position: "inside",
           backgroundColor: {
-            image: toDataUrl(app.icon)!,
+            image: toDataUrl(app.icon) ?? DEFAULT_ICON_SVG_URL,
           },
           formatter: () => {
             return `{empty|}`;
@@ -216,7 +244,7 @@ export function AppUsageBarChart({
       if (isInGrid) {
         const pointerData = chart.convertFromPixel("grid", pos);
         setHoveredData({
-          date: ticksToDateTime(pointerData[0] * periodTicks + rangeMinTicks),
+          date: ticksToDateTime(xaxisRange[pointerData[0]]),
         });
       } else if (!isInGrid) {
         setHoveredData(null);
@@ -254,13 +282,13 @@ export function AppUsageBarChart({
     data,
     involvedApps,
     dateTimeFormatter,
+    period,
     hideXAxis,
     hideYAxis,
     maxYIsPeriod,
-    periodTicks,
-    rangeMinTicks,
-    rangeMaxTicks,
-    intervalTicks,
+    start,
+    end,
+    interval,
     singleAppId,
     gradientBars,
     barRadius,

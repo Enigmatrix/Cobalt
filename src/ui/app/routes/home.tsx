@@ -15,19 +15,15 @@ import {
   useSystemEvents,
 } from "@/hooks/use-repo";
 import { useTimePeriod } from "@/hooks/use-today";
-import type { TimePeriod } from "@/lib/time";
 import {
-  durationToTicks,
-  dateTimeToTicks,
-  hour,
   hour24Formatter,
-  day,
   weekDayFormatter,
   monthDayFormatter,
 } from "@/lib/time";
-import { type Duration, DateTime } from "luxon";
+import { DateTime } from "luxon";
 import { useState, useMemo } from "react";
 import { Gantt } from "@/components/viz/gantt";
+import type { Period } from "@/lib/entities";
 
 export default function Home() {
   const range = useTimePeriod("day");
@@ -66,17 +62,17 @@ export default function Home() {
           <div className="grid grid-cols-1 auto-rows-min gap-4 md:grid-cols-3">
             <AppUsageBarChartCard
               timePeriod="day"
-              period={hour}
+              period="hour"
               xAxisLabelFormatter={hour24Formatter}
             />
             <AppUsageBarChartCard
               timePeriod="week"
-              period={day}
+              period="day"
               xAxisLabelFormatter={weekDayFormatter}
             />
             <AppUsageBarChartCard
               timePeriod="month"
-              period={day}
+              period="day"
               xAxisLabelFormatter={monthDayFormatter}
             />
           </div>
@@ -103,8 +99,8 @@ function AppUsageBarChartCard({
   period,
   xAxisLabelFormatter,
 }: {
-  timePeriod: TimePeriod;
-  period: Duration;
+  timePeriod: Period;
+  period: Period;
   xAxisLabelFormatter: (dt: DateTime) => string;
 }) {
   const startingInterval = useTimePeriod(timePeriod);
@@ -114,7 +110,7 @@ function AppUsageBarChartCard({
     useAppDurationsPerPeriod({
       start: interval.start,
       end: interval.end,
-      period: period,
+      period,
     });
 
   const children = useMemo(
@@ -122,9 +118,9 @@ function AppUsageBarChartCard({
       <div className="aspect-video flex-1 mx-1 max-w-full">
         <AppUsageBarChart
           data={usages}
-          periodTicks={durationToTicks(period)}
-          rangeMinTicks={dateTimeToTicks(start ?? interval.start)}
-          rangeMaxTicks={dateTimeToTicks(end ?? interval.end)}
+          period={period}
+          start={start ?? interval.start}
+          end={end ?? interval.end}
           dateTimeFormatter={xAxisLabelFormatter}
           className="aspect-none"
           maxYIsPeriod

@@ -29,6 +29,12 @@ pub enum FoundOrInserted<T: Table> {
 /// Repository module
 pub mod repo;
 
+/// Repository module (mostly just CRUD)
+pub mod repo_crud;
+
+/// Entities with extra information embedded.
+pub mod infused;
+
 impl<T: Table> From<FoundOrInserted<T>> for Ref<T> {
     fn from(value: FoundOrInserted<T>) -> Self {
         match value {

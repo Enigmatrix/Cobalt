@@ -14,3 +14,6 @@ log = "0.4.22"
 serde = "1.0.217"
 sqlx = { version = "0.8", features = [ "runtime-tokio", "sqlite", "derive", "macros" ] }
 util = { path = "../util" }
+
+[dev-dependencies]
+chrono = "0.4"

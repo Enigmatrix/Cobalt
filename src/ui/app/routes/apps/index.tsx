@@ -34,8 +34,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowDownUp, SortAsc, SortDesc } from "lucide-react";
 import _ from "lodash";
 import { Text } from "@/components/ui/text";
-import { dateTimeToTicks, durationToTicks, hour } from "@/lib/time";
-import { DateTime, Duration } from "luxon";
+import { DateTime } from "luxon";
 import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
 import { useApps, useTag } from "@/hooks/use-refresh";
 import { useAppsSearch } from "@/hooks/use-search";
@@ -90,12 +89,11 @@ export default function Apps() {
   }, [appsFiltered, sortDirection, sortProperty]);
 
   const range = useTimePeriod("day");
-  const period = hour;
   const {
     usages,
     start: loadStart,
     end: loadEnd,
-  } = useAppDurationsPerPeriod({ ...range, period });
+  } = useAppDurationsPerPeriod({ ...range, period: "hour" });
 
   const ListItem = memo(
     ({ index, style }: { index: number; style: CSSProperties }) => (
@@ -104,7 +102,6 @@ export default function Apps() {
           app={appsSorted[index]}
           start={loadStart ?? range.start}
           end={loadEnd ?? range.end}
-          period={period}
           usages={usages}
         />
       </VirtualListItem>
@@ -231,13 +228,11 @@ function AppListItem({
   usages,
   start,
   end,
-  period,
 }: {
   app: App;
   usages: EntityMap<App, WithGroupedDuration<App>[]>;
   start: DateTime;
   end: DateTime;
-  period: Duration;
 }) {
   const tag = useTag(app.tag_id);
 
@@ -279,10 +274,10 @@ function AppListItem({
             gradientBars
             maxYIsPeriod
             data={usages}
+            period="hour"
             singleAppId={app.id}
-            rangeMinTicks={dateTimeToTicks(start)}
-            rangeMaxTicks={dateTimeToTicks(end)}
-            periodTicks={durationToTicks(period)}
+            start={start}
+            end={end}
             className="w-48 flex-none aspect-none h-20 max-lg:hidden"
           />
 

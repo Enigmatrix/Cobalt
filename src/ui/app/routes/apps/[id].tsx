@@ -11,17 +11,13 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { useAppState } from "@/lib/state";
-import { type App, type Ref, type Tag } from "@/lib/entities";
+import { type App, type Period, type Ref, type Tag } from "@/lib/entities";
 import AppIcon from "@/components/app/app-icon";
 import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
 import { useCallback, useMemo, useState } from "react";
-import { DateTime, Duration } from "luxon";
+import { DateTime } from "luxon";
 import { useApp, useTag } from "@/hooks/use-refresh";
 import {
-  dateTimeToTicks,
-  day,
-  durationToTicks,
-  hour,
   hour24Formatter,
   monthDayFormatter,
   ticksToDateTime,
@@ -48,7 +44,6 @@ import {
 import { useTimePeriod } from "@/hooks/use-today";
 import { Gantt } from "@/components/viz/gantt";
 import { ChooseTag } from "@/components/tag/choose-tag";
-import type { TimePeriod } from "@/lib/time";
 
 export default function App({ params }: Route.ComponentProps) {
   const id = +params.id;
@@ -81,7 +76,7 @@ export default function App({ params }: Route.ComponentProps) {
   } = useAppDurationsPerPeriod({
     start: yearInterval.start,
     end: yearInterval.end,
-    period: day,
+    period: "day",
     appId: app.id,
   });
   const yearData = useMemo(() => {
@@ -209,19 +204,19 @@ export default function App({ params }: Route.ComponentProps) {
           <div className="grid grid-cols-1 auto-rows-min gap-4 md:grid-cols-3">
             <AppUsageBarChartCard
               timePeriod="day"
-              period={hour}
+              period="hour"
               xAxisLabelFormatter={hour24Formatter}
               appId={app.id}
             />
             <AppUsageBarChartCard
               timePeriod="week"
-              period={day}
+              period="day"
               xAxisLabelFormatter={weekDayFormatter}
               appId={app.id}
             />
             <AppUsageBarChartCard
               timePeriod="month"
-              period={day}
+              period="day"
               xAxisLabelFormatter={monthDayFormatter}
               appId={app.id}
             />
@@ -329,8 +324,8 @@ function AppUsageBarChartCard({
   xAxisLabelFormatter,
   appId,
 }: {
-  timePeriod: TimePeriod;
-  period: Duration;
+  timePeriod: Period;
+  period: Period;
   xAxisLabelFormatter: (dt: DateTime) => string;
   appId: Ref<App>;
 }) {
@@ -341,7 +336,7 @@ function AppUsageBarChartCard({
     useAppDurationsPerPeriod({
       start: interval.start,
       end: interval.end,
-      period: period,
+      period,
       appId,
     });
 
@@ -351,10 +346,10 @@ function AppUsageBarChartCard({
         <AppUsageBarChart
           data={usages}
           singleAppId={appId}
-          periodTicks={durationToTicks(period)}
-          rangeMinTicks={dateTimeToTicks(start ?? interval.start)}
-          rangeMaxTicks={dateTimeToTicks(end ?? interval.end)}
+          start={start ?? interval.start}
+          end={end ?? interval.end}
           dateTimeFormatter={xAxisLabelFormatter}
+          period={period}
           gradientBars
           className="aspect-none"
           maxYIsPeriod

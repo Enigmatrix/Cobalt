@@ -70,3 +70,19 @@ pub type Color = String;
 pub type Timestamp = i64;
 /// Duration as Windows ticks
 pub type Duration = i64;
+
+/// Time Period for grouping usages
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Period {
+    /// Hour
+    Hour,
+    /// Day
+    Day,
+    /// Week
+    Week,
+    /// Month
+    Month,
+    /// Year
+    Year,
+}

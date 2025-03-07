@@ -1,7 +1,6 @@
 import humanizeDuration from "pretty-ms";
 import { DateTime, Duration } from "luxon";
-
-export type TimePeriod = "day" | "week" | "month" | "year";
+import type { Period } from "@/lib/entities";
 
 // Like Luxon's Interval type, but not half-open.
 export interface Interval {
@@ -52,6 +51,10 @@ export function ticksToDateTime(ticks: number): DateTime {
   return DateTime.fromMillis(ticks / 10_000 - 62_135_596_800_000);
 }
 
+export function periodToDuration(period: Period): Duration {
+  return Duration.fromObject({ [period]: 1 });
+}
+
 export function toHumanDateTime(dt: DateTime): string {
   // if time part is 00:00:00, then return date part only
   if (dt.toFormat("HH:mm:ss") === "00:00:00") {
@@ -66,9 +69,6 @@ export function toHumanDateTime(dt: DateTime): string {
 export function toHumanDateTimeFull(dt: DateTime): string {
   return dt.toFormat("LLL dd, y hh:mm:ss a");
 }
-
-export const hour = Duration.fromObject({ hour: 1 });
-export const day = Duration.fromObject({ day: 1 });
 
 export const hour24Formatter = (dateTime: DateTime) =>
   dateTime.toFormat("HHmm");

@@ -3,7 +3,7 @@ use sqlx::prelude::FromRow;
 use sqlx::sqlite::SqliteRow;
 use sqlx::{Result, Row, Type};
 
-pub use crate::table::{Color, Duration, Id, Ref, Timestamp};
+pub use crate::table::{Color, Duration, Id, Period, Ref, Timestamp};
 
 /// An app that has run on the computer.
 #[derive(Default, Debug, Clone, PartialEq, Eq, FromRow, Serialize)]
