@@ -77,9 +77,13 @@ impl Config {
 
 /// Get the configuration from the appsettings.json file
 pub fn get_config() -> Result<Config> {
-    Ok(Figment::new()
-        .merge(Json::file("appsettings.json"))
-        .extract()?)
+    let mut figment = Figment::new();
+    figment = figment.merge(Json::file("appsettings.json"));
+    #[cfg(debug_assertions)]
+    {
+        figment = figment.merge(Json::file("dev/appsettings.Debug.json"));
+    }
+    Ok(figment.extract()?)
 }
 
 #[test]
