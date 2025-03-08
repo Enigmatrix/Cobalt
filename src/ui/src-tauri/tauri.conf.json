@@ -47,6 +47,7 @@
     },
     "windows": {
       "wix": {
+        "template": "./installer/main.wxs",
         "fragmentPaths": ["./installer/startup-task.wxs"],
         "componentRefs": ["EngineExe", "EngineStartup"]
       }
