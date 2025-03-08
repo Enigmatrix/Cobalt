@@ -1,5 +1,7 @@
 [package]
 name = "util"
+homepage.workspace = true
+authors.workspace = true
 version.workspace = true
 edition.workspace = true
 
