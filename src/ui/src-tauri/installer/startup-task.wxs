@@ -23,5 +23,15 @@
         </RegistryKey>
       </Component>
     </DirectoryRef>
+    
+    <!-- Launch engine after installation/upgrade/repair -->
+    <CustomAction Id="LaunchEngine" 
+                  ExeCommand="[INSTALLDIR]engine.exe" 
+                  Directory="INSTALLDIR"
+                  Return="asyncNoWait" />
+    <InstallExecuteSequence>
+      <Custom Action="LaunchEngine" After="InstallFinalize">NOT(REMOVE)</Custom>
+    </InstallExecuteSequence>
+
   </Fragment>
 </Wix> 
