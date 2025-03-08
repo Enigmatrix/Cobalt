@@ -14,3 +14,6 @@ platform = { path = "../platform" }
 rand = { version = "0.8.5", features = ["std_rng"] }
 scoped-futures = "0.1.4"
 util = { path = "../util" }
+
+[build-dependencies]
+static_vcruntime = "2.0"
