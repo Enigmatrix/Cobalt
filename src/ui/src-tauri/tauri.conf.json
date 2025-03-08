@@ -49,7 +49,7 @@
     "windows": {
       "wix": {
         "fragmentPaths": ["./installer/startup-task.wxs"],
-        "componentRefs": ["EngineStartup"]
+        "componentRefs": ["EngineExe", "EngineStartup"]
       }
     }
   }
