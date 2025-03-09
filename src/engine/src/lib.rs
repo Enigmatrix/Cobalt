@@ -29,7 +29,8 @@ mod engine;
 mod resolver;
 mod sentry;
 
-fn main() {
+/// Entry point for the engine
+pub fn main() {
     if let Err(report) = real_main() {
         error!("fatal error caught in main: {:?}", report);
         std::process::exit(1);

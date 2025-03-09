@@ -42,8 +42,7 @@
       "icons/icon.ico"
     ],
     "resources": {
-      "../../../appsettings.json": "appsettings.json",
-      "../../../target/release/engine.exe": "engine.exe"
+      "../../../appsettings.json": "appsettings.json"
     },
     "windows": {
       "wix": {
