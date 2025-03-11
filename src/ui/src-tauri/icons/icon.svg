@@ -1,0 +1,30 @@
+<svg viewBox="0 0 360 360" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Linear Gradient -->
+    <linearGradient id="blueGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00ccff"/>
+      <stop offset="100%" style="stop-color:#4A90E2"/>
+    </linearGradient>
+
+    <!-- Drop Shadow Filter -->
+    <filter id="dropShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="5" dy="5" stdDeviation="5" flood-color="black" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+
+  <!-- Outer Group for Padding -->
+  <g transform="translate(-30, -30),scale(1.18)">
+    <path 
+      fill-rule="evenodd" 
+      clip-rule="evenodd" 
+      d="M165 30C145 30 130 45 130 65C130 67 128 70 125 71C123 72 121 73 119 74C115 76 112 76 110 75C90 64 65 72 55 91L45 110C35 129 42 152 60 162C62 163 64 167 64 173C64 176 64 180 64 183C64 187 62 191 60 192C42 202 35 225 45 244L55 263C65 282 90 290 110 279C112 278 115 278 119 280C121 281 123 282 125 283C128 284 130 287 130 289C130 309 145 324 165 324H195C215 324 230 309 230 289C230 287 232 284 235 283C237 282 239 281 241 280C245 278 248 278 250 279C270 290 295 282 305 263L315 244C325 225 318 202 300 192C298 191 296 187 296 183C296 180 296 176 296 173C296 167 298 163 300 162C318 152 325 129 315 110L305 91C295 72 270 64 250 75C248 76 245 76 241 74C239 73 237 72 235 71C232 70 230 67 230 65C230 45 215 30 195 30H165Z"
+      fill="url(#blueGradient)"
+      filter="url(#dropShadow)"
+    />
+  </g>
+    <g id="clock_hands" fill="#FFFFFF" transform="translate(180, 180)">
+    <line x1="0" y1="0" x2="0" y2="-90" stroke="#FFFFFF" stroke-width="45" stroke-linecap="round"/>
+    <line x1="0" y1="0" x2="60" y2="60" stroke="#FFFFFF" stroke-width="45" stroke-linecap="round" />
+  </g>
+
+</svg>
