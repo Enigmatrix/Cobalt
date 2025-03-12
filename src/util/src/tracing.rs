@@ -63,7 +63,7 @@ pub fn setup(config: &Config, target: Target) -> Result<()> {
         Target::Engine => (config.engine_log_filter(), "Cobalt.Engine.log"),
     };
 
-    let rolling = daily("logs", log_file);
+    let rolling = daily(config.logs_dir()?, log_file);
 
     // Create a non-colored layer for file output
     let file_layer = fmt::layer()

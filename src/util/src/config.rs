@@ -4,13 +4,12 @@ use figment::providers::{Format, Json};
 use figment::Figment;
 use serde::Deserialize;
 
-use crate::error::{anyhow, Result};
+use crate::error::Result;
 
 /// [Config] of the Engine
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct Config {
-    connection_strings: ConnectionStrings,
     engine_log_filter: String,
     ui_log_filter: String,
     max_idle_duration: Duration,
@@ -19,14 +18,35 @@ pub struct Config {
 }
 
 impl Config {
+    fn data_local_dir(segment: &str) -> Result<String> {
+        #[cfg(debug_assertions)]
+        {
+            Ok(segment.to_string())
+        }
+
+        // The dirs crate is what tauri uses to get the data directory.
+        // me.cobalt.enigmatrix is the bundle identifier for the app.
+        #[cfg(not(debug_assertions))]
+        {
+            use crate::error::{eyre, ContextCompat};
+            dirs::data_local_dir()
+                .context("data local dir")?
+                .join("me.enigmatrix.cobalt")
+                .join(segment)
+                .into_os_string()
+                .into_string()
+                .map_err(|oss| eyre!("convert path to utf8: {:?}", oss))
+        }
+    }
+
     /// Returns the connection string to the query context database
-    pub fn connection_string(&self) -> Result<&str> {
-        Ok(self
-            .connection_strings
-            .query_context
-            .split_once("=")
-            .ok_or_else(|| anyhow!("format of the connection string is Data Source=<path>"))?
-            .1)
+    pub fn connection_string(&self) -> Result<String> {
+        Self::data_local_dir("main.db")
+    }
+
+    /// Returns the connection string to the query context database
+    pub fn logs_dir(&self) -> Result<String> {
+        Self::data_local_dir("logs")
     }
 
     /// Engine Log filter (tracing)
@@ -55,17 +75,15 @@ impl Config {
     }
 }
 
-#[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "PascalCase")]
-struct ConnectionStrings {
-    query_context: String,
-}
-
 /// Get the configuration from the appsettings.json file
 pub fn get_config() -> Result<Config> {
-    Ok(Figment::new()
-        .merge(Json::file("appsettings.json"))
-        .extract()?)
+    let mut figment = Figment::new();
+    figment = figment.merge(Json::file("appsettings.json"));
+    #[cfg(debug_assertions)]
+    {
+        figment = figment.merge(Json::file("dev/appsettings.Debug.json"));
+    }
+    Ok(figment.extract()?)
 }
 
 #[test]

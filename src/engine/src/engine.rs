@@ -13,7 +13,7 @@ use util::error::{Context, Result};
 use util::future::runtime::Handle;
 use util::future::sync::Mutex;
 use util::time::ToTicks;
-use util::tracing::{info, trace, ResultTraceExt};
+use util::tracing::{debug, info, trace, ResultTraceExt};
 
 use crate::cache::{AppDetails, Cache, SessionDetails};
 use crate::foreground_window_session;
@@ -129,7 +129,7 @@ impl Engine {
             // handled above
             Event::System { .. } => unreachable!(),
             Event::ForegroundChanged(ForegroundChangedEvent { at, session }) => {
-                info!("fg switch: {:?}", session);
+                debug!("fg switch: {:?}", session);
 
                 self.current_usage.end = at.to_ticks();
                 self.inserter
@@ -165,7 +165,7 @@ impl Engine {
                 mouse_clicks,
                 key_strokes,
             }) => {
-                info!("record interaction period {:?} - {:?}", start, end);
+                debug!("record interaction period {:?} - {:?}", start, end);
 
                 self.inserter
                     .insert_interaction_period(&InteractionPeriod {
@@ -211,7 +211,7 @@ impl Engine {
         spawner: &Handle,
         ws: WindowSession,
     ) -> Result<SessionDetails> {
-        info!(?ws, "insert session");
+        trace!(?ws, "insert session");
 
         let pid = ws.window.pid()?;
         let AppDetails { app } = cache

@@ -13,7 +13,7 @@ use engine::{Engine, Event};
 use platform::events::{
     ForegroundEventWatcher, InteractionWatcher, SystemEventWatcher, WindowSession,
 };
-use platform::objects::{EventLoop, MessageWindow, Timer, Timestamp, Window};
+use platform::objects::{EventLoop, MessageWindow, Timer, Timestamp, User, Window};
 use resolver::AppInfoResolver;
 use sentry::Sentry;
 use util::channels::{self, Receiver, Sender};
@@ -29,7 +29,8 @@ mod engine;
 mod resolver;
 mod sentry;
 
-fn main() {
+/// Entry point for the engine
+pub fn main() {
     if let Err(report) = real_main() {
         error!("fatal error caught in main: {:?}", report);
         std::process::exit(1);
@@ -41,6 +42,7 @@ fn real_main() -> Result<()> {
     util::setup(&config, Target::Engine)?;
     info!("starting engine");
     platform::setup()?;
+    info!("running as {:?}", User::current()?);
 
     let (event_tx, event_rx) = channels::unbounded();
     let (alert_tx, alert_rx) = channels::unbounded();

@@ -91,12 +91,14 @@ name = "app"
 version = "0.5.0"
 dependencies = [
  "data",
+ "engine",
  "platform",
  "serde",
  "serde_json",
  "tauri",
  "tauri-build",
  "tauri-plugin-opener",
+ "tauri-plugin-single-instance",
  "tauri-plugin-updater",
  "util",
 ]
@@ -4730,6 +4732,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "tauri-plugin-single-instance"
+version = "2.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "25bbc73eed15bba8ad290a52614f2711280df4bf575b36ce78f64367074b90b7"
+dependencies = [
+ "serde",
+ "serde_json",
+ "tauri",
+ "thiserror 2.0.11",
+ "tracing",
+ "windows-sys 0.59.0",
+ "zbus",
+]
+
+[[package]]
 name = "tauri-plugin-updater"
 version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5422,6 +5439,7 @@ name = "util"
 version = "0.5.0"
 dependencies = [
  "color-eyre",
+ "dirs 6.0.0",
  "figment",
  "flume",
  "serde",

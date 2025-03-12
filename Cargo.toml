@@ -4,6 +4,8 @@ members = ["src/*", "src/ui/src-tauri"]
 exclude = ["src/ui"]
 
 [workspace.package]
+homepage = "https://enigmatrix.me/projects/cobalt"
+authors = ["Enigmatrix"]
 version = "0.5.0"
 edition = "2021"
 

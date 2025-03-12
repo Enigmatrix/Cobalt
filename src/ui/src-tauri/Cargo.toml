@@ -1,8 +1,11 @@
 [package]
 name = "app"
+homepage.workspace = true
+authors.workspace = true
 version.workspace = true
 edition.workspace = true
 rust-version = "1.77.2"
+default-run = "app"
 
 [lints]
 workspace = true
@@ -13,6 +16,10 @@ workspace = true
 name = "app_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
+[[bin]]
+name = "engine"
+path = "src/bin/engine.rs"
+
 [build-dependencies]
 tauri-build = { version = "2.0.2", features = [] }
 
@@ -22,8 +29,10 @@ serde = { version = "1.0", features = ["derive"] }
 data = { path = "../../data" }
 platform = { path = "../../platform" }
 util = { path = "../../util" }
+engine = { path = "../../engine" }
 tauri = { version = "2.1.0", features = [] }
 tauri-plugin-opener = "2.2.5"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+tauri-plugin-single-instance = "2"
 tauri-plugin-updater = "2"
