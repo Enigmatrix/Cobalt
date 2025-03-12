@@ -10,10 +10,21 @@ export function checkForUpdatesBackground() {
 export async function checkForUpdatesAsync() {
   const update = await check();
   if (update) {
-    const toastId = toast.loading("Update downloading ...");
+    let ignore = false;
+    const toastId = toast.loading("Update downloading ...", {
+      id: "update-download",
+      onDismiss: () => {
+        ignore = true;
+        update.close().catch(error);
+      },
+      dismissible: true,
+      closeButton: true,
+      duration: Infinity,
+    });
     let downloaded = 0;
     let contentLength = 0;
     await update.download((event) => {
+      if (ignore) return;
       switch (event.event) {
         case "Started":
           if (event.data.contentLength) {
@@ -31,12 +42,12 @@ export async function checkForUpdatesAsync() {
           break;
         }
         case "Finished":
-          toast.success("Update download complete!", {
+          toast.success("Update ready", {
             id: toastId,
             action: {
               label: "Install",
               onClick: () => {
-                toast.dismiss(toastId);
+                // this will close the app and install the update
                 update.install().catch(error);
               },
             },
