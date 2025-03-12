@@ -28,6 +28,13 @@
                  InstallScope="perMachine"
                  SummaryCodepage="!(loc.TauriCodepage)"/>
 
+        <!-- Force terminate application during uninstall/upgrade.
+        None of our bins use Restart Manager, so we force kill them
+        after Restart Manager fails to gracefully kill them -->
+        <Property Id="MSIRMSHUTDOWN" Value="1" />
+        <Property Id="MSIRESTARTMANAGERCONTROL" Value="DisableShutdown" />
+        <!-- <Property Id="MSIFASTINSTALL" Value="1" /> -->
+
         <!-- https://docs.microsoft.com/en-us/windows/win32/msi/reinstallmode -->
         <!-- reinstall all files; rewrite all registry entries; reinstall all shortcuts -->
         <Property Id="REINSTALLMODE" Value="amus" />
