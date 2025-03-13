@@ -15,7 +15,7 @@ pub struct ForegroundChangedEvent {
     pub session: WindowSession,
 }
 
-/// A session of a [Window]. Each session has a unique title.
+/// A session of [Window]. Each session has a unique title.
 #[derive(Debug, Clone, Hash, Eq, PartialEq)]
 pub struct WindowSession {
     /// Foreground [Window]

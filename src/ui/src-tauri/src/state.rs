@@ -67,7 +67,7 @@ impl AppStateInner {
 }
 
 #[derive(Default)]
-/// Represents data that be in Uninit or Init state
+/// Represents data that can be in Uninit or Init state
 pub enum Initable<T> {
     #[default]
     Uninit,

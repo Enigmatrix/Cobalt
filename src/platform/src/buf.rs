@@ -103,7 +103,7 @@ pub enum SmartBuf<T, const N: usize = SMART_BUF_STACK_MAX> {
 impl<T, const N: usize> SmartBuf<T, N> {
     /// Create a new [`SmartBuf`] with a given length. Chooses to do a heap allocation
     /// if the length is above N and uses the stack otherwise. Stack allocation is free
-    /// anyway, it's only inefficient if its being moved a lot.
+    /// anyway, it's only inefficient if it's being moved a lot.
     pub fn new(len: usize) -> Self {
         if len <= N {
             SmartBuf::Stack {
