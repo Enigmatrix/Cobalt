@@ -16,19 +16,19 @@ This guide covers the development workflow and architecture of the Cobalt UI (Vi
 
 ## Routes
 
-Routes are setup the via the method in https://reactrouter.com/start/framework/routing in the [src/ui/app/routes.ts](src/ui/app/routes.ts) file.
+Routes are setup the via the method in https://reactrouter.com/start/framework/routing in the [/src/ui/app/routes.ts](/src/ui/app/routes.ts) file.
 
 We currently have routes for the following:
-- Home: [src/ui/app/routes/home.tsx](src/ui/app/routes/home.tsx)
-- Apps: [src/ui/app/routes/apps/index.tsx](src/ui/app/routes/apps/index.tsx)
-    - App: [src/ui/app/routes/apps/[id].tsx](src/ui/app/routes/apps/[id].tsx)
-- Tags: [src/ui/app/routes/tags/index.tsx](src/ui/app/routes/tags/index.tsx)
-    - Tag: [src/ui/app/routes/tags/[id].tsx](src/ui/app/routes/tags/[id].tsx)
-- Alerts: [src/ui/app/routes/alerts/index.tsx](src/ui/app/routes/alerts/index.tsx)
-    - Alert: [src/ui/app/routes/alerts/[id].tsx](src/ui/app/routes/alerts/[id].tsx)
-- History: [src/ui/app/routes/history.tsx](src/ui/app/routes/history.tsx)
-- Experiments (only in `dev`): [src/ui/app/routes/experiments.tsx](src/ui/app/routes/experiments.tsx)
-- Settings: [src/ui/app/routes/settings.tsx](src/ui/app/routes/settings.tsx)
+- Home: [/src/ui/app/routes/home.tsx](/src/ui/app/routes/home.tsx)
+- Apps: [/src/ui/app/routes/apps/index.tsx](/src/ui/app/routes/apps/index.tsx)
+    - App: [/src/ui/app/routes/apps/[id].tsx](/src/ui/app/routes/apps/[id].tsx)
+- Tags: [/src/ui/app/routes/tags/index.tsx](/src/ui/app/routes/tags/index.tsx)
+    - Tag: [/src/ui/app/routes/tags/[id].tsx](/src/ui/app/routes/tags/[id].tsx)
+- Alerts: [/src/ui/app/routes/alerts/index.tsx](/src/ui/app/routes/alerts/index.tsx)
+    - Alert: [/src/ui/app/routes/alerts/[id].tsx](/src/ui/app/routes/alerts/[id].tsx)
+- History: [/src/ui/app/routes/history.tsx](/src/ui/app/routes/history.tsx)
+- Experiments (only in `dev`): [/src/ui/app/routes/experiments.tsx](/src/ui/app/routes/experiments.tsx)
+- Settings: [/src/ui/app/routes/settings.tsx](/src/ui/app/routes/settings.tsx)
 
 ## Project Structure
 
@@ -78,11 +78,11 @@ The development server includes:
 ## UI Architecture
 
 ### Components
-We put all Shadcn components in [src/ui/app/components/ui](src/ui/app/components/ui). Components that are not Shadcn components are put in [src/ui/app/components](src/ui/app/components), in appropriate subdirectories e.g. apps, tags, etc.
+We put all Shadcn components in [/src/ui/app/components/ui](/src/ui/app/components/ui). Components that are not Shadcn components are put in [/src/ui/app/components](/src/ui/app/components), in appropriate subdirectories e.g. apps, tags, etc.
 
 ### State Management
 
-We use `zustand` to manage state in [src/ui/app/lib/state.ts](src/ui/app/lib/state.ts). The store can be used via the `useAppState` hook.
+We use `zustand` to manage state in [/src/ui/app/lib/state.ts](/src/ui/app/lib/state.ts). The store can be used via the `useAppState` hook.
 
 The store can be refreshed using `refresh()`, but must be initialized via `initState()` first. Note that this function also initializes the corresponding state on the Tauri Rust side.
 
