@@ -6,15 +6,23 @@ View usage statistics of all your apps. Track and determine where you are wastin
 > Cobalt was established before in the [archive/main](https://github.com/Enigmatrix/Cobalt/tree/archive/main) branch, and you can try the previous product from the [Github Releases](https://github.com/Enigmatrix/Cobalt/releases).
 > This branch is for the next version of Cobalt.
 
-## Architecture
-See the [architecture description](./ARCHITECTURE.md) for more information, and the more featured developer's guides 
-(for [Engine](./DEV_GUIDE_Engine.md) and [Viewer](./DEV_GUIDE_Viewer.md)) for specifics.
+## Docs
+See the [ARCHITECTURE.md](./docs/ARCHITECTURE.md) for more information, and the more detailed developer guides 
+(general [DEV_GUIDE.md](./docs/DEV_GUIDE.md), then [Engine](./docs/DEV_GUIDE_Engine.md) and [UI](./docs/DEV_GUIDE_UI.md)) for specifics.
 
 ## Running
 
 ```bash
-# UI
-cd src/ui
-bun i
-bun tauri dev
+# Build all
+cargo build
+# Install UI dependencies
+cd src/ui; bun i
+
+# Run the Engine
+cargo run --bin engine
+# Run the UI
+cd src/ui; bun run dev
+
+# Test
+cargo test
 ```
