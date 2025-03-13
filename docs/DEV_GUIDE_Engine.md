@@ -109,7 +109,7 @@ The main database connection and query execution is handled in `src/data/src/db/
 using SQLite Connection Pooling for connections.
 
 ### Data Access Layer
-Migrations are handled when the `Database` is initialized, in [data/src/migrations/mod.rs](src/data/src/migrations/mod.rs), by implementing the `Migration` trait (e.g. `migrationX.rs`) and specifiying an `version()` larger than the other migrations. Initialization of `Database` automatically runs migrations that are not yet applied. The `Database` holds
+Migrations are handled when the `Database` is initialized, in [data/src/migrations/mod.rs](src/data/src/migrations/mod.rs), by implementing the `Migration` trait (e.g. `migrationX.rs`) and specifying a `version()` larger than the other migrations. Initialization of `Database` automatically runs migrations that are not yet applied. The `Database` holds
 the connection and runs the queries, and is able to create new transactions.
 
 `Database` is used by specific objects like `UsageInserter`, `AppUpdater`, `AlertManager` and `Repository`. [Repository](src/data/src/db/repo.rs) holds more

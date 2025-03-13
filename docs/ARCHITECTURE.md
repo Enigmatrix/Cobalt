@@ -51,7 +51,7 @@ graph TD
    * Foreground window, process, and system event monitoring
 1. Usage, Session, App, and SystemEvent data is collected and stored in the SQLite database
 1. The UI retrieves data from the database for visualization
-   * Engine retreives the same information for alerting and reminders
+   * Engine retrieves the same information for alerting and reminders
 1. Configuration changes in the UI affect how the Engine processes and responds to events
 
 ## Key Components
@@ -121,10 +121,10 @@ The React-based UI for visualizing usage info and configuring the system.
 
 The SQLite database stores all tracked data and configuration. Key entities are:
 
-- **App**: An actual app on the system. Uniquely identified by its AppIdentity, but we use an Id as the Primary Key for performance reasons. Icons are stored as blobs. Notably, when an App is inserted not all fields might be initialized, there will be a slightly delay where the Engine finds the actual details to fill in using Resolver. But the insertion happens first since we need to insert the session and usage as well.
+- **App**: An actual app on the system. Uniquely identified by its AppIdentity, but we use an Id as the Primary Key for performance reasons. Icons are stored as blobs. Notably, when an App is inserted not all fields might be initialized, there will be a slight delay where the Engine finds the actual details to fill in using Resolver. But the insertion happens first since we need to insert the session and usage as well.
 - **Session**: To keep track of an app and its window titles. A session can be reset if the app is closed or system shutdown. Titles are not unique.
-- **Usage**: A single, continuous usage of an app during a session. Idling might occur, but that is kept track seperately using interaction periods.
-- **InteractionPeriod**: A period of interaction (mouselicks / keystrokes). Once the user spents time idle, an entry is made that ends when the idle begins.
+- **Usage**: A single, continuous usage of an app during a session. Idling might occur, but that is kept track separately using interaction periods.
+- **InteractionPeriod**: A period of interaction (mouse clicks / keystrokes). Once the user spends time idle, an entry is made that ends when the idle begins.
 - **SystemEvent**: A system event such as shutdown, logoff, lock, unlock, suspend, resume, monitor on, monitor off.
 - **Tag**: A collection of apps under a common name e.g. Gaming, Productivity
 - **Alert**: Record stating that we track an app or tag and perform an action (Kill/Message(Content)/Dim(Duration)) once the usage limit is hit, per day/ week / month.

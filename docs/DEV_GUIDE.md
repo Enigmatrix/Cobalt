@@ -49,7 +49,7 @@ cd src/ui; bun run dev
 cargo test
 ```
 
-If you want to run both components together with a shared database , run the Engine
+If you want to run both components together with a shared database, run the Engine
 with `cd src/ui/src-tauri; cargo run --bin engine` instead, since the database is in
 `src/ui/src-tauri/main.db` during `bun run dev`.
 
@@ -97,7 +97,7 @@ the current directory + `logs/` for Engine. In prod it's output to `%LOCALAPPDAT
 ### Utils
 
 We use utils to import common libraries. We use `flume` for channels, 
-`config-rs` for configuration (read from `appsettings.json`, same as the Viewer), `color-eyre` for errors, `future-rs` for futures and `tracing / tracing-subscriber` for tracing. We also define our own time system (well, its traits atleast) to be implemented by the `platform::objects::Timestamp`.
+`config-rs` for configuration (read from `appsettings.json`, same as the Viewer), `color-eyre` for errors, `future-rs` for futures and `tracing / tracing-subscriber` for tracing. We also define our own time system (well, its traits at least) to be implemented by the `platform::objects::Timestamp`.
 
 ## Release Process
 
