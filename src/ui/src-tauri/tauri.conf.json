@@ -14,7 +14,11 @@
       {
         "title": "Cobalt",
         "resizable": true,
-        "fullscreen": false
+        "fullscreen": false,
+        "width": 1024,
+        "height": 640,
+        "minWidth": 800,
+        "minHeight": 500
       }
     ],
     "security": {
