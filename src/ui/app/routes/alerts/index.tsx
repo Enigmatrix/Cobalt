@@ -61,10 +61,10 @@ export default function Alerts() {
           </BreadcrumbList>
         </Breadcrumb>
 
-        <div className="xl:flex-1 flex-none" />
+        <div className="flex-1" />
 
         <SearchBar
-          className="max-w-80 m-auto xl:m-0"
+          className="max-w-80"
           placeholder="Search..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}

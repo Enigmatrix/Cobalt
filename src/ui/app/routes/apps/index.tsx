@@ -121,10 +121,10 @@ export default function Apps() {
           </BreadcrumbList>
         </Breadcrumb>
 
-        <div className="xl:flex-1 flex-none" />
+        <div className="flex-1" />
 
         <SearchBar
-          className="max-w-80 m-auto xl:m-0"
+          className="max-w-80"
           placeholder="Search..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -132,7 +132,7 @@ export default function Apps() {
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon">
+            <Button variant="outline" size="icon" className="shrink-0">
               <ArrowDownUp size={16} />
             </Button>
           </DropdownMenuTrigger>
