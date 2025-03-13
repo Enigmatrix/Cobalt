@@ -41,15 +41,13 @@ export default function History() {
 
   return (
     <div className="flex flex-col bg-background h-screen overflow-hidden">
-      <header className="flex h-16 shrink-0 items-center gap-2 border-b px-6">
+      <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
         <SidebarTrigger className="-ml-1" />
         <Separator orientation="vertical" className="mr-2 h-4" />
         <Breadcrumb>
           <BreadcrumbList>
-            <BreadcrumbItem className="hidden md:block">
-              <BreadcrumbPage className="text-lg font-medium">
-                History
-              </BreadcrumbPage>
+            <BreadcrumbItem>
+              <BreadcrumbPage>History</BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
@@ -59,8 +57,8 @@ export default function History() {
               <SelectValue placeholder="Select a view" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="app-usage">App Usage</SelectItem>
-              <SelectItem value="session-history">Session History</SelectItem>
+              <SelectItem value="app-usage">Grouped Usages</SelectItem>
+              <SelectItem value="session-history">Sessions & Usages</SelectItem>
             </SelectContent>
           </Select>
         </div>
