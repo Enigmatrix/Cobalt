@@ -28,7 +28,7 @@ const ThemeSwitch = React.forwardRef<
       <TooltipTrigger asChild>
         <SwitchPrimitives.Root
           className={cn(
-            "peer inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 bg-input",
+            "peer inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 bg-input hover:bg-accent/70",
             className,
           )}
           checked={value === "dark"}
@@ -40,13 +40,19 @@ const ThemeSwitch = React.forwardRef<
         >
           <SwitchPrimitives.Thumb
             className={cn(
-              "pointer-events-none flex h-5 w-5 rounded-full bg-background shadow-lg ring-0 transition-transform data-[state=checked]:translate-x-5 data-[state=unchecked]:translate-x-0",
+              "pointer-events-none flex h-5 w-5 rounded-full bg-background shadow-lg ring-0 transition-transform duration-300 ease-in-out data-[state=checked]:translate-x-5 data-[state=unchecked]:translate-x-0",
             )}
           >
             {value === "dark" ? (
-              <Moon size={16} className="m-auto" />
+              <Moon
+                size={16}
+                className="m-auto animate-in fade-in duration-300"
+              />
             ) : (
-              <Sun size={16} className="m-auto" />
+              <Sun
+                size={16}
+                className="m-auto animate-in fade-in duration-300"
+              />
             )}
           </SwitchPrimitives.Thumb>
         </SwitchPrimitives.Root>
