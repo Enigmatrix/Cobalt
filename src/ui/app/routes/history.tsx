@@ -40,20 +40,14 @@ export default function History() {
   const fullPage = useMemo(() => view === "session-history", [view]);
 
   return (
-    <div
-      className={cn("flex flex-col bg-background", {
-        "h-screen overflow-hidden": !fullPage,
-      })}
-    >
-      <header className="flex h-16 shrink-0 items-center gap-2 border-b px-6">
+    <div className="flex flex-col bg-background h-screen overflow-hidden">
+      <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
         <SidebarTrigger className="-ml-1" />
         <Separator orientation="vertical" className="mr-2 h-4" />
         <Breadcrumb>
           <BreadcrumbList>
-            <BreadcrumbItem className="hidden md:block">
-              <BreadcrumbPage className="text-lg font-medium">
-                History
-              </BreadcrumbPage>
+            <BreadcrumbItem>
+              <BreadcrumbPage>History</BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
@@ -63,13 +57,19 @@ export default function History() {
               <SelectValue placeholder="Select a view" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="app-usage">App Usage</SelectItem>
-              <SelectItem value="session-history">Session History</SelectItem>
+              <SelectItem value="app-usage">Grouped Usages</SelectItem>
+              <SelectItem value="session-history">Sessions & Usages</SelectItem>
             </SelectContent>
           </Select>
         </div>
       </header>
-      <div className="flex flex-col flex-1 gap-6 p-6 overflow-hidden">
+      <div
+        className={cn("flex flex-col flex-1 gap-6 p-4", {
+          "overflow-hidden": !fullPage,
+          "overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]":
+            fullPage,
+        })}
+      >
         {view === "app-usage" && <AppUsagePerPeriodHistory />}
         {view === "session-history" && <SessionHistory />}
       </div>
@@ -202,7 +202,7 @@ function SessionHistory() {
   );
 
   return (
-    <div className="flex flex-col flex-1 gap-6 overflow-hidden">
+    <div className="flex flex-col gap-6">
       <div className="flex flex-wrap gap-6 items-center rounded-lg bg-card border border-border p-4 shadow-sm">
         {/* <div className="flex flex-col gap-1.5">
           <Label className="font-medium text-muted-foreground">Usage</Label>
@@ -225,17 +225,19 @@ function SessionHistory() {
         </div>
       </div>
 
-      <div className="flex flex-1 min-h-0 overflow-hidden rounded-lg bg-card shadow-sm border border-border">
-        <Gantt
-          usages={usages}
-          usagesLoading={usagesLoading}
-          interactionPeriods={interactions}
-          interactionPeriodsLoading={interactionPeriodsLoading}
-          systemEvents={systemEvents}
-          systemEventsLoading={systemEventsLoading}
-          rangeStart={effectiveInterval.start}
-          rangeEnd={effectiveInterval.end}
-        />
+      <div className="flex flex-1 min-h-0 rounded-lg bg-card shadow-sm border border-border">
+        <div className="max-w-full">
+          <Gantt
+            usages={usages}
+            usagesLoading={usagesLoading}
+            interactionPeriods={interactions}
+            interactionPeriodsLoading={interactionPeriodsLoading}
+            systemEvents={systemEvents}
+            systemEventsLoading={systemEventsLoading}
+            rangeStart={effectiveInterval.start}
+            rangeEnd={effectiveInterval.end}
+          />
+        </div>
       </div>
     </div>
   );

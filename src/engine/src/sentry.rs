@@ -8,7 +8,7 @@ use platform::objects::{
 use util::error::Result;
 use util::future::sync::Mutex;
 use util::time::ToTicks;
-use util::tracing::{info, ResultTraceExt};
+use util::tracing::{debug, info, ResultTraceExt};
 
 use crate::cache::Cache;
 
@@ -118,7 +118,13 @@ impl Sentry {
                 let progress = (end - start) as f64 / (*duration as f64);
                 for window in windows {
                     let dim_level = 1.0f64 - progress.min(1.0f64);
-                    info!(?alert, "dimming window {:?} to {}", window, dim_level);
+                    if dim_level == 1.0f64 {
+                        info!(?alert, "start dimming window {:?}", window);
+                    } else if dim_level == 0.0f64 {
+                        info!(?alert, "end dimming window {:?}", window);
+                    } else {
+                        debug!(?alert, "dimming window {:?} to {}", window, dim_level);
+                    }
                     self.handle_dim_action(&window, dim_level).warn();
                 }
             }

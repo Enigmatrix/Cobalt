@@ -18,7 +18,6 @@ export function toHumanDuration(
     : humanizeDuration(ticks / 10_000, {
         unitCount: 2,
         hideYear: true,
-        separateMilliseconds: true,
       });
 }
 
@@ -31,7 +30,6 @@ export function toHumanDurationFull(
     ? symbolForZero
     : humanizeDuration(ticks / 10_000, {
         hideYear: true,
-        separateMilliseconds: true,
       });
 }
 

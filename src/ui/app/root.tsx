@@ -19,6 +19,7 @@ import { initState } from "@/lib/state";
 import { Toaster } from "@/components/ui/sonner";
 import { info, error as errorLog } from "@/lib/log";
 import { openUrl as open } from "@tauri-apps/plugin-opener";
+import { SplashScreen } from "@/splashscreen";
 
 export const links: Route.LinksFunction = () => [
   { rel: "stylesheet", href: stylesheet },
@@ -45,12 +46,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
 export default function App() {
   const initStatePromise = useMemo(initState, []);
   const location = useLocation();
+
   useEffect(() => {
     info("navigate:", location);
   }, [location]);
+
   return (
     <ThemeProvider defaultTheme="dark">
-      <Suspense fallback={<div>TODO Loading State</div>}>
+      <Suspense fallback={<SplashScreen />}>
         <Await resolve={initStatePromise}>
           <SidebarProvider>
             <AppSidebar />
@@ -64,6 +67,7 @@ export default function App() {
     </ThemeProvider>
   );
 }
+
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   errorLog("caught at ErrorBoundary", {
     error,
