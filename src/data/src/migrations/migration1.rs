@@ -43,7 +43,7 @@ impl Migration for Migration1 {
                 identity_path_or_aumid          TEXT NOT NULL,
                 icon                            BLOB,
                 created_at                      INTEGER NOT NULL,
-                initialized_at                  INTEGER NOT NULL,
+                initialized_at                  INTEGER,
                 updated_at                      INTEGER NOT NULL
             )",
         )

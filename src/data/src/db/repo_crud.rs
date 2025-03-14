@@ -55,7 +55,7 @@ impl Repository {
                 LEFT JOIN usage_today d ON a.id = d.id
                 LEFT JOIN usage_week  w ON a.id = w.id
                 LEFT JOIN usage_month m ON a.id = m.id
-            WHERE a.initialized = 1
+            WHERE a.initialized_at IS NOT NULL
             GROUP BY a.id"
         ))
         .bind(ts.day_start(true).to_ticks())
@@ -93,7 +93,7 @@ impl Repository {
                 LEFT JOIN usage_today d ON t.id = d.id
                 LEFT JOIN usage_week  w ON t.id = w.id
                 LEFT JOIN usage_month m ON t.id = m.id
-                LEFT JOIN apps a ON t.id = a.tag_id AND a.initialized = 1
+                LEFT JOIN apps a ON t.id = a.tag_id AND a.initialized_at IS NOT NULL
             GROUP BY t.id"
         ))
         .bind(ts.day_start(true).to_ticks())

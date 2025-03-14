@@ -28,18 +28,30 @@ async fn insert_new_app() -> Result<()> {
     let db = test_db().await?;
     let mut writer = UsageWriter::new(db)?;
     let res = writer
-        .find_or_insert_app(&AppIdentity::Win32 {
-            path: "notepad.exe".to_string(),
-        })
+        .find_or_insert_app(
+            &AppIdentity::Win32 {
+                path: "notepad.exe".to_string(),
+            },
+            Times {
+                now: 400,
+                ..Default::default()
+            },
+        )
         .await?;
     assert_eq!(res, FoundOrInserted::Inserted(Ref::<App>::new(1)));
 
-    let res: Vec<(bool, String)> = query("SELECT * FROM apps")
-        .map(|r: SqliteRow| (r.get("initialized"), r.get("identity_path_or_aumid")))
+    let res: Vec<(Option<i64>, i64, String)> = query("SELECT * FROM apps")
+        .map(|r: SqliteRow| {
+            (
+                r.get("initialized_at"),
+                r.get("created_at"),
+                r.get("identity_path_or_aumid"),
+            )
+        })
         .fetch_all(writer.db.executor())
         .await?;
 
-    assert_eq!(vec![(false, "notepad.exe".to_string())], res);
+    assert_eq!(vec![(None, 400, "notepad.exe".to_string())], res);
     Ok(())
 }
 
@@ -48,17 +60,42 @@ async fn found_old_app() -> Result<()> {
     let db = test_db().await?;
     let mut writer = UsageWriter::new(db)?;
     let res = writer
-        .find_or_insert_app(&AppIdentity::Win32 {
-            path: "notepad.exe".to_string(),
-        })
+        .find_or_insert_app(
+            &AppIdentity::Win32 {
+                path: "notepad.exe".to_string(),
+            },
+            Times {
+                now: 400,
+                ..Default::default()
+            },
+        )
         .await?;
     assert_eq!(res, FoundOrInserted::Inserted(Ref::<App>::new(1)));
     let res = writer
-        .find_or_insert_app(&AppIdentity::Win32 {
-            path: "notepad.exe".to_string(),
-        })
+        .find_or_insert_app(
+            &AppIdentity::Win32 {
+                path: "notepad.exe".to_string(),
+            },
+            Times {
+                now: 500,
+                ..Default::default()
+            },
+        )
         .await?;
     assert_eq!(res, FoundOrInserted::Found(Ref::<App>::new(1)));
+
+    let res: Vec<(Option<i64>, i64, String)> = query("SELECT * FROM apps")
+        .map(|r: SqliteRow| {
+            (
+                r.get("initialized_at"),
+                r.get("created_at"),
+                r.get("identity_path_or_aumid"),
+            )
+        })
+        .fetch_all(writer.db.executor())
+        .await?;
+
+    assert_eq!(vec![(None, 400, "notepad.exe".to_string())], res);
     Ok(())
 }
 
@@ -67,9 +104,12 @@ async fn insert_session() -> Result<()> {
     let db = test_db().await?;
     let mut writer = UsageWriter::new(db)?;
     writer
-        .find_or_insert_app(&AppIdentity::Win32 {
-            path: "notepad.exe".to_string(),
-        })
+        .find_or_insert_app(
+            &AppIdentity::Win32 {
+                path: "notepad.exe".to_string(),
+            },
+            Times::default(),
+        )
         .await?;
     let mut sess = Session {
         id: Default::default(),
@@ -91,9 +131,12 @@ async fn insert_usage() -> Result<()> {
     let db = test_db().await?;
     let mut writer = UsageWriter::new(db)?;
     writer
-        .find_or_insert_app(&AppIdentity::Win32 {
-            path: "notepad.exe".to_string(),
-        })
+        .find_or_insert_app(
+            &AppIdentity::Win32 {
+                path: "notepad.exe".to_string(),
+            },
+            Times::default(),
+        )
         .await?;
     let mut sess = Session {
         id: Default::default(),
@@ -121,9 +164,12 @@ async fn update_usage_after_insert_usage() -> Result<()> {
     let db = test_db().await?;
     let mut writer = UsageWriter::new(db)?;
     writer
-        .find_or_insert_app(&AppIdentity::Win32 {
-            path: "notepad.exe".to_string(),
-        })
+        .find_or_insert_app(
+            &AppIdentity::Win32 {
+                path: "notepad.exe".to_string(),
+            },
+            Times::default(),
+        )
         .await?;
     let mut sess = Session {
         id: Default::default(),
@@ -154,9 +200,12 @@ async fn insert_interaction_period() -> Result<()> {
     let db = test_db().await?;
     let mut writer = UsageWriter::new(db)?;
     writer
-        .find_or_insert_app(&AppIdentity::Win32 {
-            path: "notepad.exe".to_string(),
-        })
+        .find_or_insert_app(
+            &AppIdentity::Win32 {
+                path: "notepad.exe".to_string(),
+            },
+            Times::default(),
+        )
         .await?;
     let mut ip = InteractionPeriod {
         id: Default::default(),
@@ -182,10 +231,19 @@ async fn update_app() -> Result<()> {
     let identity = AppIdentity::Win32 {
         path: "notepad.exe".to_string(),
     };
-    writer.find_or_insert_app(&identity).await?;
+    writer
+        .find_or_insert_app(
+            &identity,
+            Times {
+                now: 400,
+                ..Default::default()
+            },
+        )
+        .await?;
+
     let mut updater = AppUpdater::new(writer.db)?;
     let icon = [42, 233].repeat(50); // 50 * 2 = 100 bytes length
-    let app = App {
+    let mut app = App {
         id: Ref::new(1),
         name: "name".to_string(),
         description: "desc".to_string(),
@@ -194,12 +252,21 @@ async fn update_app() -> Result<()> {
         identity: identity.clone(), // ignored by query
         icon: Some(icon.clone()),
         tag_id: None,
+        created_at: 400,
+        updated_at: 400,
     };
-    updater.update_app(&app).await?;
+    updater
+        .update_app(
+            &app,
+            Times {
+                now: 500,
+                ..Default::default()
+            },
+        )
+        .await?;
 
     #[derive(FromRow, PartialEq, Eq, Debug)]
     struct Res {
-        initialized: bool,
         #[sqlx(flatten)]
         app: App,
         icon: Vec<u8>,
@@ -209,20 +276,13 @@ async fn update_app() -> Result<()> {
         .fetch_all(updater.db.executor())
         .await?;
 
-    assert_eq!(
-        vec![Res {
-            initialized: true,
-            app,
-            icon
-        }],
-        res
-    );
+    app.updated_at = 500;
+    assert_eq!(vec![Res { app, icon }], res);
     Ok(())
 }
 
 async fn insert_app_raw(
     db: &mut Database,
-    a0: bool,
     a1: bool,
     a2: &str,
     a3: &str,
@@ -232,9 +292,11 @@ async fn insert_app_raw(
     a6: u32,
     a7: &str,
     a8: Option<Vec<u8>>,
+    created_at: i64,
+    initialized_at: Option<i64>,
+    updated_at: i64,
 ) -> Result<Ref<App>> {
-    let res = query("INSERT INTO apps VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
-        .bind(a0)
+    let res = query("INSERT INTO apps VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
         .bind(a1)
         .bind(a2)
         .bind(a3)
@@ -244,6 +306,9 @@ async fn insert_app_raw(
         .bind(a6)
         .bind(a7)
         .bind(a8)
+        .bind(created_at)
+        .bind(initialized_at)
+        .bind(updated_at)
         .execute(db.executor())
         .await?;
     Ok(Ref::new(res.last_insert_rowid()))
@@ -260,8 +325,10 @@ async fn insert_alert_raw(
     a5: &str,
     a6: i64,
     a7: bool,
+    a8: i64,
+    a9: i64,
 ) -> Result<()> {
-    query("INSERT INTO alerts VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
+    query("INSERT INTO alerts VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
         .bind(id)
         .bind(a0)
         .bind(a1)
@@ -271,6 +338,8 @@ async fn insert_alert_raw(
         .bind(a5)
         .bind(a6)
         .bind(a7)
+        .bind(a8)
+        .bind(a9)
         .execute(db.executor())
         .await?;
     Ok(())
@@ -283,22 +352,34 @@ async fn insert_reminder_raw(
     a1: f64,
     a3: &str,
     a4: bool,
+    a5: i64,
+    a6: i64,
 ) -> Result<()> {
-    query("INSERT INTO reminders VALUES (?, ?, ?, ?, ?)")
+    query("INSERT INTO reminders VALUES (?, ?, ?, ?, ?, ?, ?)")
         .bind(id)
         .bind(a0)
         .bind(a1)
         .bind(a3)
         .bind(a4)
+        .bind(a5)
+        .bind(a6)
         .execute(db.executor())
         .await?;
     Ok(())
 }
 
-async fn insert_tag_raw(db: &mut Database, a0: &str, a1: &str) -> Result<Ref<Tag>> {
-    let res = query("INSERT INTO tags VALUES (NULL, ?, ?)")
+async fn insert_tag_raw(
+    db: &mut Database,
+    a0: &str,
+    a1: &str,
+    a2: i64,
+    a3: i64,
+) -> Result<Ref<Tag>> {
+    let res = query("INSERT INTO tags VALUES (NULL, ?, ?, ?, ?)")
         .bind(a0)
         .bind(a1)
+        .bind(a2)
+        .bind(a3)
         .execute(db.executor())
         .await?;
     Ok(Ref::new(res.last_insert_rowid()))
@@ -308,18 +389,29 @@ async fn insert_tag_raw(db: &mut Database, a0: &str, a1: &str) -> Result<Ref<Tag
 async fn target_apps() -> Result<()> {
     let mut db = test_db().await?;
     {
-        insert_tag_raw(&mut db, "tag_name1", "blue1").await?;
-        insert_tag_raw(&mut db, "tag_name2", "blue2").await?;
-        insert_tag_raw(&mut db, "tag_name3", "blue3").await?;
-        insert_tag_raw(&mut db, "tag_name4", "blue4").await?;
+        insert_tag_raw(&mut db, "tag_name1", "blue1", 0, 0).await?;
+        insert_tag_raw(&mut db, "tag_name2", "blue2", 0, 0).await?;
+        insert_tag_raw(&mut db, "tag_name3", "blue3", 0, 0).await?;
+        insert_tag_raw(&mut db, "tag_name4", "blue4", 0, 0).await?;
 
         insert_app_raw(
-            &mut db, true, true, "name1", "desc1", "comp1", "red1", None, 1, "path1", None,
+            &mut db,
+            true,
+            "name1",
+            "desc1",
+            "comp1",
+            "red1",
+            None,
+            1,
+            "path1",
+            None,
+            0,
+            Some(0),
+            0,
         )
         .await?;
         insert_app_raw(
             &mut db,
-            true,
             true,
             "name2",
             "desc2",
@@ -329,11 +421,13 @@ async fn target_apps() -> Result<()> {
             0,
             "aumid2",
             None,
+            0,
+            Some(0),
+            0,
         )
         .await?;
         insert_app_raw(
             &mut db,
-            true,
             true,
             "name3",
             "desc3",
@@ -343,11 +437,13 @@ async fn target_apps() -> Result<()> {
             1,
             "path3",
             None,
+            0,
+            Some(0),
+            0,
         )
         .await?;
         insert_app_raw(
             &mut db,
-            true,
             true,
             "name4",
             "desc4",
@@ -357,6 +453,9 @@ async fn target_apps() -> Result<()> {
             1,
             "path4",
             None,
+            0,
+            Some(0),
+            0,
         )
         .await?;
     }
@@ -374,6 +473,8 @@ async fn target_apps() -> Result<()> {
         },
         tag_id: None,
         icon: None,
+        created_at: 0,
+        updated_at: 0,
     };
     let app2 = App {
         id: Ref::new(2),
@@ -386,6 +487,8 @@ async fn target_apps() -> Result<()> {
         },
         tag_id: Some(Ref::new(2)),
         icon: None,
+        created_at: 0,
+        updated_at: 0,
     };
     let app3 = App {
         id: Ref::new(3),
@@ -398,6 +501,8 @@ async fn target_apps() -> Result<()> {
         },
         tag_id: Some(Ref::new(3)),
         icon: None,
+        created_at: 0,
+        updated_at: 0,
     };
     let app4 = App {
         id: Ref::new(4),
@@ -410,6 +515,8 @@ async fn target_apps() -> Result<()> {
         },
         tag_id: Some(Ref::new(2)),
         icon: None,
+        created_at: 0,
+        updated_at: 0,
     };
 
     assert_eq!(
@@ -457,10 +564,22 @@ async fn insert_alert_event() -> Result<()> {
     let id = 1;
     {
         insert_app_raw(
-            &mut db, true, true, "name1", "desc1", "comp1", "red1", None, 1, "path1", None,
+            &mut db,
+            true,
+            "name1",
+            "desc1",
+            "comp1",
+            "red1",
+            None,
+            1,
+            "path1",
+            None,
+            0,
+            Some(0),
+            0,
         )
         .await?;
-        insert_alert_raw(&mut db, id, Some(1), None, 100, 1, 0, "", 1, true).await?;
+        insert_alert_raw(&mut db, id, Some(1), None, 100, 1, 0, "", 1, true, 0, 0).await?;
     }
 
     let mut alert_event = AlertEvent {
@@ -495,11 +614,37 @@ async fn insert_reminder_event() -> Result<()> {
     let reminder_id = 1;
     {
         insert_app_raw(
-            &mut db, true, true, "name1", "desc1", "comp1", "red1", None, 1, "path1", None,
+            &mut db,
+            true,
+            "name1",
+            "desc1",
+            "comp1",
+            "red1",
+            None,
+            1,
+            "path1",
+            None,
+            0,
+            Some(0),
+            0,
         )
         .await?;
-        insert_alert_raw(&mut db, alert_id, Some(1), None, 100, 1, 0, "", 1, true).await?;
-        insert_reminder_raw(&mut db, reminder_id, alert_id, 0.75, "hello", true).await?;
+        insert_alert_raw(
+            &mut db,
+            alert_id,
+            Some(1),
+            None,
+            100,
+            1,
+            0,
+            "",
+            1,
+            true,
+            0,
+            0,
+        )
+        .await?;
+        insert_reminder_raw(&mut db, reminder_id, alert_id, 0.75, "hello", true, 0, 0).await?;
     }
 
     let mut reminder_event = ReminderEvent {
@@ -526,6 +671,7 @@ async fn insert_reminder_event() -> Result<()> {
     Ok(())
 }
 
+#[derive(Debug, Clone, Default)]
 pub struct Times {
     pub now: i64,
     pub day_start: i64,
@@ -568,7 +714,6 @@ pub mod arrange {
     pub async fn app(db: &mut Database, mut app: App) -> Result<App> {
         app.id = insert_app_raw(
             db,
-            true,
             false,
             &app.name,
             &app.description,
@@ -585,6 +730,9 @@ pub mod arrange {
                 AppIdentity::Uwp { aumid } => aumid,
             },
             app.icon.clone(),
+            0,
+            Some(0),
+            0,
         )
         .await?;
         Ok(app)
@@ -594,7 +742,6 @@ pub mod arrange {
         app.id = insert_app_raw(
             db,
             false,
-            false,
             &app.name,
             &app.description,
             &app.company,
@@ -610,6 +757,9 @@ pub mod arrange {
                 AppIdentity::Uwp { aumid } => aumid,
             },
             app.icon.clone(),
+            0,
+            None,
+            0,
         )
         .await?;
         Ok(app)
@@ -649,7 +799,7 @@ pub mod arrange {
     // }
 
     pub async fn tag(db: &mut Database, mut tag: Tag) -> Result<Tag> {
-        tag.id = insert_tag_raw(db, &tag.name, &tag.color).await?;
+        tag.id = insert_tag_raw(db, &tag.name, &tag.color, tag.created_at, tag.updated_at).await?;
         Ok(tag)
     }
 
@@ -682,6 +832,8 @@ pub mod arrange {
             &message_content.unwrap_or("".to_string()),
             tag,
             alert.active,
+            alert.created_at,
+            alert.updated_at,
         )
         .await?;
         Ok(alert)
@@ -695,6 +847,8 @@ pub mod arrange {
             reminder.threshold,
             &reminder.message,
             reminder.active,
+            reminder.created_at,
+            reminder.updated_at,
         )
         .await?;
         Ok(reminder)
@@ -764,6 +918,8 @@ mod triggered_alerts {
                 },
                 tag_id: None,
                 icon: None,
+                created_at: 0,
+                updated_at: 0,
             },
         )
         .await?;
@@ -779,6 +935,8 @@ mod triggered_alerts {
                 time_frame: TimeFrame::Daily,
                 trigger_action: TriggerAction::Kill,
                 active: true,
+                created_at: 0,
+                updated_at: 0,
             },
         )
         .await?;
@@ -813,6 +971,8 @@ mod triggered_alerts {
                 },
                 tag_id: None,
                 icon: None,
+                created_at: 0,
+                updated_at: 0,
             },
         )
         .await?;
@@ -838,6 +998,8 @@ mod triggered_alerts {
                 time_frame: TimeFrame::Daily,
                 trigger_action: TriggerAction::Kill,
                 active: true,
+                created_at: 0,
+                updated_at: 0,
             },
         )
         .await?;
@@ -872,6 +1034,8 @@ mod triggered_alerts {
                 },
                 tag_id: None,
                 icon: None,
+                created_at: 0,
+                updated_at: 0,
             },
         )
         .await?;
@@ -908,6 +1072,8 @@ mod triggered_alerts {
                 time_frame: TimeFrame::Daily,
                 trigger_action: TriggerAction::Kill,
                 active: true,
+                created_at: 0,
+                updated_at: 0,
             },
         )
         .await?;
@@ -949,6 +1115,8 @@ mod triggered_alerts {
                 },
                 tag_id: None,
                 icon: None,
+                created_at: 0,
+                updated_at: 0,
             },
         )
         .await?;
@@ -985,6 +1153,8 @@ mod triggered_alerts {
                 time_frame: TimeFrame::Daily,
                 trigger_action: TriggerAction::Kill,
                 active: true,
+                created_at: 0,
+                updated_at: 0,
             },
         )
         .await?;
@@ -1000,6 +1170,8 @@ mod triggered_alerts {
                 time_frame: TimeFrame::Daily,
                 trigger_action: TriggerAction::Kill,
                 active: true,
+                created_at: 0,
+                updated_at: 0,
             },
         )
         .await?;
@@ -1041,6 +1213,8 @@ mod triggered_alerts {
                 },
                 tag_id: None,
                 icon: None,
+                created_at: 0,
+                updated_at: 0,
             },
         )
         .await?;
@@ -1077,6 +1251,8 @@ mod triggered_alerts {
                 time_frame: TimeFrame::Daily,
                 trigger_action: TriggerAction::Kill,
                 active: false,
+                created_at: 0,
+                updated_at: 0,
             },
         )
         .await?;
@@ -1093,6 +1269,8 @@ mod triggered_alerts {
                 time_frame: TimeFrame::Daily,
                 trigger_action: TriggerAction::Kill,
                 active: true,
+                created_at: 0,
+                updated_at: 0,
             },
         )
         .await?;
@@ -1134,6 +1312,8 @@ mod triggered_alerts {
                 },
                 tag_id: None,
                 icon: None,
+                created_at: 0,
+                updated_at: 0,
             },
         )
         .await?;
@@ -1170,6 +1350,8 @@ mod triggered_alerts {
                 time_frame: TimeFrame::Daily,
                 trigger_action: TriggerAction::Kill,
                 active: true,
+                created_at: 0,
+                updated_at: 0,
             },
         )
         .await?;
@@ -1222,6 +1404,8 @@ mod triggered_alerts {
                 },
                 tag_id: None,
                 icon: None,
+                created_at: 0,
+                updated_at: 0,
             },
         )
         .await?;
@@ -1258,6 +1442,8 @@ mod triggered_alerts {
                 time_frame: TimeFrame::Daily,
                 trigger_action: TriggerAction::Kill,
                 active: true,
+                created_at: 0,
+                updated_at: 0,
             },
         )
         .await?;
@@ -1310,6 +1496,8 @@ mod triggered_alerts {
                 },
                 tag_id: None,
                 icon: None,
+                created_at: 0,
+                updated_at: 0,
             },
         )
         .await?;
@@ -1346,6 +1534,8 @@ mod triggered_alerts {
                 time_frame: TimeFrame::Weekly,
                 trigger_action: TriggerAction::Kill,
                 active: true,
+                created_at: 0,
+                updated_at: 0,
             },
         )
         .await?;
@@ -1387,6 +1577,8 @@ mod triggered_alerts {
                 },
                 tag_id: None,
                 icon: None,
+                created_at: 0,
+                updated_at: 0,
             },
         )
         .await?;
@@ -1423,6 +1615,8 @@ mod triggered_alerts {
                 time_frame: TimeFrame::Monthly,
                 trigger_action: TriggerAction::Kill,
                 active: true,
+                created_at: 0,
+                updated_at: 0,
             },
         )
         .await?;
@@ -1464,6 +1658,8 @@ mod triggered_alerts {
                 },
                 tag_id: None,
                 icon: None,
+                created_at: 0,
+                updated_at: 0,
             },
         )
         .await?;
@@ -1526,6 +1722,8 @@ mod triggered_alerts {
                 time_frame: TimeFrame::Daily,
                 trigger_action: TriggerAction::Kill,
                 active: true,
+                created_at: 0,
+                updated_at: 0,
             },
         )
         .await?;
@@ -1567,6 +1765,8 @@ mod triggered_alerts {
                 },
                 tag_id: None,
                 icon: None,
+                created_at: 0,
+                updated_at: 0,
             },
         )
         .await?;
@@ -1629,6 +1829,8 @@ mod triggered_alerts {
                 time_frame: TimeFrame::Daily,
                 trigger_action: TriggerAction::Kill,
                 active: true,
+                created_at: 0,
+                updated_at: 0,
             },
         )
         .await?;
@@ -1656,6 +1858,8 @@ mod triggered_alerts {
                 id: Ref::default(),
                 name: "tag_name1".to_string(),
                 color: "blue1".to_string(),
+                created_at: 0,
+                updated_at: 0,
             },
         )
         .await?;
@@ -1665,6 +1869,8 @@ mod triggered_alerts {
                 id: Ref::default(),
                 name: "tag_name2".to_string(),
                 color: "blue2".to_string(),
+                created_at: 0,
+                updated_at: 0,
             },
         )
         .await?;
@@ -1674,6 +1880,8 @@ mod triggered_alerts {
                 id: Ref::default(),
                 name: "emptytag".to_string(),
                 color: "e1".to_string(),
+                created_at: 0,
+                updated_at: 0,
             },
         )
         .await?;
@@ -1691,6 +1899,8 @@ mod triggered_alerts {
                 },
                 tag_id: None,
                 icon: None,
+                created_at: 0,
+                updated_at: 0,
             },
         )
         .await?;
@@ -1708,6 +1918,8 @@ mod triggered_alerts {
                 },
                 tag_id: Some(Ref::new(1)),
                 icon: None,
+                created_at: 0,
+                updated_at: 0,
             },
         )
         .await?;
@@ -1725,6 +1937,8 @@ mod triggered_alerts {
                 },
                 tag_id: Some(Ref::new(2)),
                 icon: None,
+                created_at: 0,
+                updated_at: 0,
             },
         )
         .await?;
@@ -1742,6 +1956,8 @@ mod triggered_alerts {
                 },
                 tag_id: Some(Ref::new(1)),
                 icon: None,
+                created_at: 0,
+                updated_at: 0,
             },
         )
         .await?;
@@ -1850,6 +2066,8 @@ mod triggered_alerts {
                 time_frame: TimeFrame::Daily,
                 trigger_action: TriggerAction::Kill,
                 active: true,
+                created_at: 0,
+                updated_at: 0,
             },
         )
         .await?;
@@ -1865,6 +2083,8 @@ mod triggered_alerts {
                 time_frame: TimeFrame::Daily,
                 trigger_action: TriggerAction::Kill,
                 active: true,
+                created_at: 0,
+                updated_at: 0,
             },
         )
         .await?;
@@ -1880,6 +2100,8 @@ mod triggered_alerts {
                 time_frame: TimeFrame::Daily,
                 trigger_action: TriggerAction::Kill,
                 active: true,
+                created_at: 0,
+                updated_at: 0,
             },
         )
         .await?;
@@ -1895,6 +2117,8 @@ mod triggered_alerts {
                 time_frame: TimeFrame::Daily,
                 trigger_action: TriggerAction::Kill,
                 active: true,
+                created_at: 0,
+                updated_at: 0,
             },
         )
         .await?;
@@ -1946,6 +2170,8 @@ mod triggered_reminders {
                 },
                 tag_id: None,
                 icon: None,
+                created_at: 0,
+                updated_at: 0,
             },
         )
         .await?;
@@ -1982,6 +2208,8 @@ mod triggered_reminders {
                 time_frame: TimeFrame::Daily,
                 trigger_action: TriggerAction::Kill,
                 active: true,
+                created_at: 0,
+                updated_at: 0,
             },
         )
         .await?;
@@ -2026,6 +2254,8 @@ mod triggered_reminders {
                 threshold: 0.50,
                 message: "hello".to_string(),
                 active: true,
+                created_at: 0,
+                updated_at: 0,
             },
         )
         .await?;
@@ -2038,6 +2268,8 @@ mod triggered_reminders {
                 threshold: 0.51,
                 message: "hello".to_string(),
                 active: true,
+                created_at: 0,
+                updated_at: 0,
             },
         )
         .await?;
@@ -2075,6 +2307,8 @@ mod triggered_reminders {
                 threshold: 0.50,
                 message: "hello".to_string(),
                 active: false,
+                created_at: 0,
+                updated_at: 0,
             },
         )
         .await?;
@@ -2086,6 +2320,8 @@ mod triggered_reminders {
                 threshold: 0.50,
                 message: "hello".to_string(),
                 active: true,
+                created_at: 0,
+                updated_at: 0,
             },
         )
         .await?;
@@ -2122,6 +2358,8 @@ mod triggered_reminders {
                 threshold: 0.50,
                 message: "hello".to_string(),
                 active: true,
+                created_at: 0,
+                updated_at: 0,
             },
         )
         .await?;
@@ -2169,6 +2407,8 @@ mod triggered_reminders {
                 threshold: 0.50,
                 message: "hello".to_string(),
                 active: true,
+                created_at: 0,
+                updated_at: 0,
             },
         )
         .await?;
@@ -2216,6 +2456,8 @@ mod triggered_reminders {
                 threshold: 0.50,
                 message: "hello".to_string(),
                 active: true,
+                created_at: 0,
+                updated_at: 0,
             },
         )
         .await?;
