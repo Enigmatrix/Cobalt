@@ -257,6 +257,20 @@ pub async fn remove_alert(state: State<'_, AppState>, alert_id: Ref<Alert>) -> A
 
 #[tauri::command]
 #[tracing::instrument(err, skip(state))]
+pub async fn create_alert_event_ignore(
+    state: State<'_, AppState>,
+    alert_id: Ref<Alert>,
+    timestamp: Timestamp,
+) -> AppResult<()> {
+    let mut repo = {
+        let mut state = state.write().await;
+        state.assume_init_mut().get_repo().await?
+    };
+    Ok(repo.create_alert_event_ignore(alert_id, timestamp).await?)
+}
+
+#[tauri::command]
+#[tracing::instrument(err, skip(state))]
 pub async fn get_app_session_usages(
     state: State<'_, AppState>,
     start: Timestamp,

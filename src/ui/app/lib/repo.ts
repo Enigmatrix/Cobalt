@@ -18,7 +18,7 @@ import type {
 } from "@/lib/entities";
 import { invoke } from "@tauri-apps/api/core";
 import type { EntityMap, EntityStore } from "@/lib/state";
-import type { DateTime } from "luxon";
+import { DateTime } from "luxon";
 import { dateTimeToTicks } from "@/lib/time";
 
 export interface CreateTag {
@@ -203,6 +203,13 @@ export async function updateAlert(
 
 export async function removeAlert(alertId: Ref<Alert>): Promise<void> {
   return await invoke("remove_alert", { alertId });
+}
+
+export async function createAlertEventIgnore(
+  alertId: Ref<Alert>,
+): Promise<void> {
+  const timestamp = dateTimeToTicks(DateTime.now());
+  return await invoke("create_alert_event_ignore", { alertId, timestamp });
 }
 
 export async function getAppSessionUsages({

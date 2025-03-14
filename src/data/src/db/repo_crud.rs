@@ -4,7 +4,7 @@ use sqlx::SqliteExecutor;
 
 use super::repo::Repository;
 use super::*;
-use crate::entities::TriggerAction;
+use crate::entities::{Reason, TriggerAction};
 
 /// SQL expression for getting the duration of all apps in day, week, month range.
 pub const APP_DUR: &str = "SELECT a.id AS id,
@@ -619,6 +619,22 @@ impl Repository {
             .await?;
         Ok(())
     }
+
+    /// Create Alert event ignore
+    pub async fn create_alert_event_ignore(
+        &mut self,
+        alert_id: Ref<Alert>,
+        timestamp: Timestamp,
+    ) -> Result<()> {
+        query("INSERT INTO alert_events VALUES (NULL, ?, ?, ?)")
+            .bind(alert_id)
+            .bind(timestamp)
+            .bind(Reason::Ignored)
+            .execute(self.db.executor())
+            .await?;
+        Ok(())
+    }
+
     /// Gets all [InteractionPeriod]s in a time range
     pub async fn get_interaction_periods(
         &mut self,
