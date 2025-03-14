@@ -124,7 +124,8 @@ impl<T, const N: usize> Buffer<T> for SmartBuf<T, N> {
             SmartBuf::Stack { stack, len } => &mut stack[..*len],
             SmartBuf::Heap { heap } => &mut heap[..],
         };
-        unsafe { uninit_buf.assume_init_mut() }
+        // this is the code for `MaybeUninit::assume_init_mut`
+        unsafe { &mut *(uninit_buf as *mut _ as *mut [T]) }
     }
 }
 
