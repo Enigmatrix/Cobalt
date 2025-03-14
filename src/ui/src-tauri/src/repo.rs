@@ -159,22 +159,24 @@ pub async fn update_usages_end(state: State<'_, AppState>) -> AppResult<()> {
 #[tauri::command]
 #[tracing::instrument(err, skip(state))]
 pub async fn update_app(state: State<'_, AppState>, app: infused::UpdatedApp) -> AppResult<()> {
+    let now = platform::objects::Timestamp::now();
     let mut repo = {
         let mut state = state.write().await;
         state.assume_init_mut().get_repo().await?
     };
-    repo.update_app(&app).await?;
+    repo.update_app(&app, now).await?;
     Ok(())
 }
 
 #[tauri::command]
 #[tracing::instrument(err, skip(state))]
 pub async fn update_tag(state: State<'_, AppState>, tag: infused::UpdatedTag) -> AppResult<()> {
+    let now = platform::objects::Timestamp::now();
     let mut repo = {
         let mut state = state.write().await;
         state.assume_init_mut().get_repo().await?
     };
-    repo.update_tag(&tag).await?;
+    repo.update_tag(&tag, now).await?;
     Ok(())
 }
 
@@ -186,11 +188,12 @@ pub async fn update_tag_apps(
     removed_apps: Vec<Ref<App>>,
     added_apps: Vec<Ref<App>>,
 ) -> AppResult<()> {
+    let now = platform::objects::Timestamp::now();
     let mut repo = {
         let mut state = state.write().await;
         state.assume_init_mut().get_repo().await?
     };
-    repo.update_tag_apps(tag_id, removed_apps, added_apps)
+    repo.update_tag_apps(tag_id, removed_apps, added_apps, now)
         .await?;
     Ok(())
 }
@@ -201,11 +204,12 @@ pub async fn create_tag(
     state: State<'_, AppState>,
     tag: infused::CreateTag,
 ) -> AppResult<infused::Tag> {
+    let now = platform::objects::Timestamp::now();
     let mut repo = {
         let mut state = state.write().await;
         state.assume_init_mut().get_repo().await?
     };
-    Ok(repo.create_tag(&tag).await?)
+    Ok(repo.create_tag(&tag, now).await?)
 }
 
 #[tauri::command]
@@ -224,11 +228,12 @@ pub async fn create_alert(
     state: State<'_, AppState>,
     alert: infused::CreateAlert,
 ) -> AppResult<infused::Alert> {
+    let now = platform::objects::Timestamp::now();
     let mut repo = {
         let mut state = state.write().await;
         state.assume_init_mut().get_repo().await?
     };
-    Ok(repo.create_alert(alert).await?)
+    Ok(repo.create_alert(alert, now).await?)
 }
 
 #[tauri::command]
@@ -238,11 +243,12 @@ pub async fn update_alert(
     prev: infused::Alert,
     next: infused::UpdatedAlert,
 ) -> AppResult<infused::Alert> {
+    let now = platform::objects::Timestamp::now();
     let mut repo = {
         let mut state = state.write().await;
         state.assume_init_mut().get_repo().await?
     };
-    Ok(repo.update_alert(prev, next).await?)
+    Ok(repo.update_alert(prev, next, now).await?)
 }
 
 #[tauri::command]
