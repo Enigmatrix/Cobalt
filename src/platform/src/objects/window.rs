@@ -24,9 +24,15 @@ use crate::win32;
  */
 
 /// Representation of a [`Window`] on the user's desktop
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct Window {
     hwnd: HWND,
+}
+
+impl std::fmt::Debug for Window {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Window({:x})", self.hwnd.0)
+    }
 }
 
 impl Hash for Window {
