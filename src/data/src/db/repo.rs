@@ -33,7 +33,7 @@ impl Repository {
         Ok(())
     }
 
-    /// Gets all [App]s and its total usage duration in a start-end range.
+    /// Gets all [App]s and their total usage duration in a start-end range.
     /// Assumes start <= end.
     pub async fn get_app_durations(
         &mut self,
@@ -103,7 +103,7 @@ impl Repository {
         format!("((({expr}) * 1000 + 62135596800000)*10000)")
     }
 
-    /// Gets all [App]s and its total usage duration in a start-end range,
+    /// Gets all [App]s and their total usage duration in a start-end range,
     /// grouped per period. Assumes start <= end, and that start and end are
     /// aligned in multiples of period.
     pub async fn get_app_durations_per_period(
@@ -167,7 +167,7 @@ impl Repository {
 
     // TODO write tests
 
-    /// Gets all [Tags]s and its total usage duration in a start-end range,
+    /// Gets all [Tags]s and their total usage duration in a start-end range,
     /// grouped per period. Assumes start <= end, and that start and end are
     /// aligned in multiples of period.
     pub async fn get_tag_durations_per_period(

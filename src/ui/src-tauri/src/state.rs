@@ -9,7 +9,7 @@ use util::Target;
 use crate::error::*;
 
 #[tauri::command]
-/// Initiailize the app state. Should only be called once
+/// Initialize the app state. Should only be called once
 pub async fn init_state(state: tauri::State<'_, AppState>) -> AppResult<()> {
     let mut state = state.write().await;
     if let &Initable::Init(_) = &*state {
@@ -67,7 +67,7 @@ impl AppStateInner {
 }
 
 #[derive(Default)]
-/// Represents data that be in Uninit or Init state
+/// Represents data that can be in Uninit or Init state
 pub enum Initable<T> {
     #[default]
     Uninit,

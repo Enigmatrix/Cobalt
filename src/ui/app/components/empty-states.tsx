@@ -73,7 +73,7 @@ export function EmptyState({
     tags: {
       icon: Tag,
       title: "No tags created",
-      description: "Create your first tag to organizer your apps.",
+      description: "Create your first tag to organize your apps.",
       showCreateButton: true,
       createButtonText: "Create Tag",
     },
