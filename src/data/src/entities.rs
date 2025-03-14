@@ -10,9 +10,6 @@ pub use crate::table::{Color, Duration, Id, Period, Ref, Timestamp};
 pub struct App {
     /// Identified
     pub id: Ref<Self>,
-    // /// true if the app details have finalized.
-    // /// else, all fields except id, identity and initialized are empty
-    // pub initialized: bool,
     // /// only used for [UsageWriter::find_or_insert_app]
     // pub found: bool,
     /// Name
@@ -30,6 +27,13 @@ pub struct App {
     pub icon: Option<Vec<u8>>,
     /// Link to [Tag]
     pub tag_id: Option<Ref<Tag>>,
+    /// Created at
+    pub created_at: Timestamp,
+    // /// set if the app details have finalized.
+    // /// else, all fields except id, identity, created_at, updated_at and initialized_at are empty
+    // pub initialized_at: Timestamp,
+    /// Updated at
+    pub updated_at: Timestamp,
 }
 
 /// Unique identity of an [App], outside of the Database (on the FileSystem/Registry)
@@ -76,6 +80,10 @@ pub struct Tag {
     pub name: String,
     /// Color
     pub color: Color,
+    /// Created at
+    pub created_at: Timestamp,
+    /// Updated at
+    pub updated_at: Timestamp,
 }
 
 /// Non-continuous session of [App] usage
@@ -240,6 +248,10 @@ pub struct Alert {
     pub trigger_action: TriggerAction,
     /// Whether this alert is not deleted
     pub active: bool,
+    /// Created at
+    pub created_at: Timestamp,
+    /// Updated at
+    pub updated_at: Timestamp,
 }
 
 /// Notifications to send upon a certain threshold of an [Alert]'s usage_limit
@@ -255,6 +267,10 @@ pub struct Reminder {
     pub message: String,
     /// Whether this reminder is not deleted
     pub active: bool,
+    /// Created at
+    pub created_at: Timestamp,
+    /// Updated at
+    pub updated_at: Timestamp,
 }
 
 impl PartialEq<Reminder> for Reminder {

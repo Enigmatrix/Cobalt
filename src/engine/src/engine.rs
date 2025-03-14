@@ -64,7 +64,7 @@ impl Engine {
 
         ret.current_usage = Usage {
             id: Default::default(),
-            session_id: ret.get_session_details(foreground).await?,
+            session_id: ret.get_session_details(foreground, start.clone()).await?,
             start: start.to_ticks(),
             end: start.to_ticks(),
         };
@@ -105,7 +105,7 @@ impl Engine {
                 let foreground = foreground_window_session()?;
                 self.current_usage = Usage {
                     id: Default::default(),
-                    session_id: self.get_session_details(foreground).await?,
+                    session_id: self.get_session_details(foreground, now.clone()).await?,
                     start: now.to_ticks(),
                     end: now.to_ticks(),
                 };
@@ -136,7 +136,7 @@ impl Engine {
                     .insert_or_update_usage(&mut self.current_usage)
                     .await?;
 
-                let session_result = self.get_session_details(session).await;
+                let session_result = self.get_session_details(session, at.clone()).await;
 
                 // If we have an error getting the session, we don't change the current usage.
                 // An alternative would be to insert some sort of 'invalid usage' marker.
@@ -182,7 +182,11 @@ impl Engine {
     }
 
     /// Get the [Session] details for the given [WindowSession]
-    async fn get_session_details(&mut self, ws: WindowSession) -> Result<Ref<Session>> {
+    async fn get_session_details(
+        &mut self,
+        ws: WindowSession,
+        at: Timestamp,
+    ) -> Result<Ref<Session>> {
         let mut cache = self.cache.lock().await;
         let session_details = cache
             .get_or_insert_session_for_window(ws.clone(), |cache| {
@@ -193,6 +197,7 @@ impl Engine {
                         &mut self.inserter,
                         &self.spawner,
                         ws,
+                        at,
                     )
                     .await
                 }
@@ -210,13 +215,14 @@ impl Engine {
         inserter: &mut UsageWriter,
         spawner: &Handle,
         ws: WindowSession,
+        at: Timestamp,
     ) -> Result<SessionDetails> {
         trace!(?ws, "insert session");
 
         let pid = ws.window.pid()?;
         let AppDetails { app } = cache
             .get_or_insert_app_for_process(pid, |_| async {
-                Self::create_app_for_process(inserter, db_pool, spawner, pid, &ws.window).await
+                Self::create_app_for_process(inserter, db_pool, spawner, pid, &ws.window, at).await
             })
             .await?;
 
@@ -240,6 +246,7 @@ impl Engine {
         spawner: &Handle,
         pid: ProcessId,
         window: &Window,
+        at: Timestamp,
     ) -> Result<AppDetails> {
         trace!(?window, ?pid, "create/find app for process");
 
@@ -254,7 +261,7 @@ impl Engine {
             AppIdentity::Win32 { path }
         };
 
-        let found_app = inserter.find_or_insert_app(&identity).await?;
+        let found_app = inserter.find_or_insert_app(&identity, at).await?;
         let app_id = match found_app {
             FoundOrInserted::Found(id) => id,
             FoundOrInserted::Inserted(id) => {

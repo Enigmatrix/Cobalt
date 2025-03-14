@@ -136,7 +136,6 @@ The SQLite database stores all tracked data and configuration. Key entities are:
 erDiagram
     apps {
         int             id PK
-        tinyint         initialized "true if details are set"
         tinyint         found   "temp col, true if found by upsert"
         text            name
         text            description
@@ -146,12 +145,17 @@ erDiagram
         int             identity_is_win32     UK "UNIQUE(is_win32, path_or_aumid)"
         text            identity_path_or_aumid   UK "UNIQUE(is_win32, path_or_aumid)"
         blob_nullable   icon
+        int             created_at
+        int_nullable    initialized_at "set if details are set"
+        int             updated_at
     }
 
     tags {
         int             id PK
         text            name UK
         text            color
+        int             created_at
+        int             updated_at
     }
 
     sessions {
@@ -191,6 +195,8 @@ erDiagram
         text_nullable   trigger_action_message_content     "Content of Message(Content)"
         int             trigger_action_tag      "Kill / Dim / Message"
         tinyint         active
+        int             created_at
+        int             updated_at
     }
 
     alert_events {
@@ -206,6 +212,8 @@ erDiagram
         real            threshold
         text            message
         tinyint         active
+        int             created_at
+        int             updated_at
     }
 
     reminder_events {

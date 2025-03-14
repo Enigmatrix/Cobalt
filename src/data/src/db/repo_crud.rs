@@ -269,7 +269,11 @@ impl Repository {
     }
 
     /// Create a new [Tag] from a [infused::CreateTag]
-    pub async fn create_tag(&mut self, tag: &infused::CreateTag) -> Result<infused::Tag> {
+    pub async fn create_tag(
+        &mut self,
+        tag: &infused::CreateTag,
+        ts: impl TimeSystem,
+    ) -> Result<infused::Tag> {
         let mut tx = self.db.transaction().await?;
         let res = query("INSERT INTO tags VALUES (NULL, ?, ?)")
             .bind(&tag.name)
@@ -291,6 +295,8 @@ impl Repository {
                 id,
                 name: tag.name.clone(),
                 color: tag.color.clone(),
+                created_at: ts.now().to_ticks(),
+                updated_at: ts.now().to_ticks(),
             },
             apps: infused::RefVec(tag.apps.clone()),
             usages: infused::ValuePerPeriod::default(),
