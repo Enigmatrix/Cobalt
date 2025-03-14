@@ -2,6 +2,8 @@ use sqlx::prelude::FromRow;
 use sqlx::{query, Row};
 use util::future as tokio;
 
+use crate::entities::Reason;
+
 use super::*;
 
 pub async fn test_db() -> Result<Database> {
@@ -466,6 +468,7 @@ async fn insert_alert_event() -> Result<()> {
         id: Default::default(),
         alert_id: Ref::new(1),
         timestamp: 1337,
+        reason: Reason::Hit,
     };
 
     let mut db = {
@@ -504,6 +507,7 @@ async fn insert_reminder_event() -> Result<()> {
         id: Default::default(),
         reminder_id: Ref::new(reminder_id),
         timestamp: 1337,
+        reason: Reason::Hit,
     };
 
     let mut db = {
@@ -698,9 +702,10 @@ pub mod arrange {
     }
 
     pub async fn alert_event(db: &mut Database, mut event: AlertEvent) -> Result<AlertEvent> {
-        let res = query("INSERT INTO alert_events VALUES (NULL, ?, ?)")
+        let res = query("INSERT INTO alert_events VALUES (NULL, ?, ?, ?)")
             .bind(event.alert_id.0)
             .bind(event.timestamp)
+            .bind(&event.reason)
             .execute(db.executor())
             .await?;
         event.id = Ref::new(res.last_insert_rowid());
@@ -711,9 +716,10 @@ pub mod arrange {
         db: &mut Database,
         mut event: ReminderEvent,
     ) -> Result<ReminderEvent> {
-        let res = query("INSERT INTO reminder_events VALUES (NULL, ?, ?)")
+        let res = query("INSERT INTO reminder_events VALUES (NULL, ?, ?, ?)")
             .bind(event.reminder_id.0)
             .bind(event.timestamp)
+            .bind(&event.reason)
             .execute(db.executor())
             .await?;
         event.id = Ref::new(res.last_insert_rowid());
@@ -1175,6 +1181,7 @@ mod triggered_alerts {
                 id: Ref::default(),
                 alert_id: alert.id.clone().into(),
                 timestamp: 75,
+                reason: Reason::Hit,
             },
         )
         .await?;
@@ -1262,6 +1269,7 @@ mod triggered_alerts {
                 id: Ref::default(),
                 alert_id: alert.id.clone(),
                 timestamp: 25,
+                reason: Reason::Hit,
             },
         )
         .await?;
@@ -2125,6 +2133,7 @@ mod triggered_reminders {
                 id: Default::default(),
                 reminder_id: hit.id.clone(),
                 timestamp: 25,
+                reason: Reason::Hit,
             },
         )
         .await?;
@@ -2171,6 +2180,7 @@ mod triggered_reminders {
                 id: Default::default(),
                 reminder_id: hit.id.clone(),
                 timestamp: 200,
+                reason: Reason::Hit,
             },
         )
         .await?;

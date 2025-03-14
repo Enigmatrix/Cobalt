@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use data::db::{AlertManager, Database, TriggeredAlert};
-use data::entities::{AlertEvent, ReminderEvent, Target, Timestamp, TriggerAction};
+use data::entities::{AlertEvent, Reason, ReminderEvent, Target, Timestamp, TriggerAction};
 use platform::objects::{
     Process, ProcessId, Progress, Timestamp as PlatformTimestamp, ToastManager, Window,
 };
@@ -52,6 +52,7 @@ impl Sentry {
                     id: Default::default(),
                     reminder_id: triggered_reminder.reminder.id.clone(),
                     timestamp: now.to_ticks(),
+                    reason: Reason::Hit,
                 })
                 .await?;
         }
@@ -141,6 +142,7 @@ impl Sentry {
                     id: Default::default(),
                     alert_id: alert.id.clone(),
                     timestamp: now.to_ticks(),
+                    reason: Reason::Hit,
                 })
                 .await?;
         }

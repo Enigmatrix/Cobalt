@@ -269,6 +269,17 @@ impl PartialEq<Reminder> for Reminder {
 
 impl Eq for Reminder {}
 
+/// Reason for the [AlertEvent]/[ReminderEvent]
+#[derive(Default, Debug, Clone, PartialEq, Eq, Type, Serialize, Deserialize)]
+#[repr(i64)]
+pub enum Reason {
+    #[default]
+    /// The [Alert]/[Reminder] was triggered
+    Hit,
+    /// The [Alert]/[Reminder] was ignored
+    Ignored,
+}
+
 /// An instance of [Alert] triggering.
 #[derive(Default, Debug, Clone, PartialEq, Eq, FromRow, Serialize)]
 pub struct AlertEvent {
@@ -278,6 +289,8 @@ pub struct AlertEvent {
     pub alert_id: Ref<Alert>,
     /// Timestamp of the [Alert] trigger
     pub timestamp: Timestamp,
+    /// Reason for the [AlertEvent]
+    pub reason: Reason,
 }
 
 /// An instance of [Reminder] triggering.
@@ -289,6 +302,8 @@ pub struct ReminderEvent {
     pub reminder_id: Ref<Reminder>,
     /// Timestamp of the [Reminder] trigger
     pub timestamp: Timestamp,
+    /// Reason for the [ReminderEvent]
+    pub reason: Reason,
 }
 
 macro_rules! table {

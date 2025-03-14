@@ -122,7 +122,8 @@ impl Migration for Migration1 {
             "CREATE TABLE alert_events (
                 id                              INTEGER PRIMARY KEY NOT NULL,
                 alert_id                        INTEGER NOT NULL REFERENCES alerts(id) ON DELETE CASCADE,
-                timestamp                       INTEGER NOT NULL
+                timestamp                       INTEGER NOT NULL,
+                reason                          INTEGER NOT NULL
             )",
         )
         .await
@@ -132,7 +133,8 @@ impl Migration for Migration1 {
             "CREATE TABLE reminder_events (
                 id                              INTEGER PRIMARY KEY NOT NULL,
                 reminder_id                     INTEGER NOT NULL REFERENCES reminders(id) ON DELETE CASCADE,
-                timestamp                       INTEGER NOT NULL
+                timestamp                       INTEGER NOT NULL,
+                reason                          INTEGER NOT NULL
             )",
         )
         .await

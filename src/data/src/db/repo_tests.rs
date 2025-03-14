@@ -11,7 +11,7 @@ use crate::db::infused::{
     CreateAlert, CreateReminder, RefVec, ValuePerPeriod, WithDuration, WithGroupedDuration,
 };
 use crate::db::tests::arrange::*;
-use crate::entities::{TimeFrame, TriggerAction};
+use crate::entities::{Reason, TimeFrame, TriggerAction};
 use crate::table::Period;
 
 const ONE_HOUR: i64 = 60 * 60 * 1000 * 10000;
@@ -476,6 +476,7 @@ async fn get_alerts() -> Result<()> {
                 id: Ref::new(0),
                 alert_id: alert_id.clone(),
                 timestamp,
+                reason: Reason::Hit,
             },
         )
         .await?;

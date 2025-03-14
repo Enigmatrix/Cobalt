@@ -343,9 +343,10 @@ impl AlertManager {
 
     /// Insert a [AlertEvent]
     pub async fn insert_alert_event(&mut self, event: &AlertEvent) -> Result<()> {
-        query("INSERT INTO alert_events VALUES (NULL, ?, ?)")
+        query("INSERT INTO alert_events VALUES (NULL, ?, ?, ?)")
             .bind(&event.alert_id)
             .bind(event.timestamp)
+            .bind(&event.reason)
             .execute(self.db.executor())
             .await?;
         Ok(())
@@ -353,9 +354,10 @@ impl AlertManager {
 
     /// Insert a [ReminderEvent]
     pub async fn insert_reminder_event(&mut self, event: &ReminderEvent) -> Result<()> {
-        query("INSERT INTO reminder_events VALUES (NULL, ?, ?)")
+        query("INSERT INTO reminder_events VALUES (NULL, ?, ?, ?)")
             .bind(&event.reminder_id)
             .bind(event.timestamp)
+            .bind(&event.reason)
             .execute(self.db.executor())
             .await?;
         Ok(())
