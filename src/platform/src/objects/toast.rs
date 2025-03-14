@@ -18,7 +18,7 @@ pub struct Progress {
     pub status: String,
 }
 
-const AUMID: &str = "Cobalt";
+const AUMID: &str = "me.enigmatrix.cobalt";
 
 /// Toast notification manager using the WinRT APIs.
 pub struct ToastManager;
