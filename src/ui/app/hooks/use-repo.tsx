@@ -44,7 +44,7 @@ export function useRepo<T, Arg extends object>(
     startTransition,
     setRet,
     fn,
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps, @typescript-eslint/no-unsafe-assignment
     ...Object.entries(arg).flat(),
   ]);
   return { ret, isLoading };

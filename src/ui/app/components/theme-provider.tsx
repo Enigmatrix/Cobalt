@@ -47,7 +47,7 @@ export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
     theme,
     setTheme: (theme: Theme) => {
       localStorage.setItem(storageKey, theme);
-      setTauriTheme(theme === "system" ? null : theme); // this is async but we ignore the result
+      void setTauriTheme(theme === "system" ? null : theme); // this is async but we ignore the result
       setTheme(theme);
     },
   };

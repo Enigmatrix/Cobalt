@@ -25,9 +25,9 @@ export function EditableText({
     setIsEditing(false);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = async (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
-      handleSubmit();
+      await handleSubmit();
       setIsEditing(false);
     }
     if (e.key === "Escape") {
