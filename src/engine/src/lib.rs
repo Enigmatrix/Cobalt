@@ -258,9 +258,6 @@ async fn update_app_infos(db_pool: DatabasePool, handle: Handle) -> Result<()> {
 
 /// Get the foreground [Window], and makes it into a [WindowSession] blocking until one is present.
 fn foreground_window_session() -> Result<WindowSession> {
-    loop {
-        if let Some(window) = Window::foreground() {
-            return WindowSession::new(window);
-        }
-    }
+    let window = Window::foreground().unwrap_or_else(|| Window::desktop());
+    WindowSession::new(window)
 }
