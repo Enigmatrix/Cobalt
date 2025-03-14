@@ -24,11 +24,11 @@ const TAG_DUR: &str = "SELECT a.tag_id AS id,
             GROUP BY a.tag_id";
 
 const ALERT_EVENT_COUNT: &str = "SELECT e.alert_id, COUNT(e.id) FROM alert_events e
-            WHERE timestamp BETWEEN ? AND ?
+            WHERE reason = 0 AND timestamp BETWEEN ? AND ?
             GROUP BY e.alert_id";
 
 const REMINDER_EVENT_COUNT: &str = "SELECT e.reminder_id, COUNT(e.id) FROM reminder_events e
-            WHERE timestamp BETWEEN ? AND ?
+            WHERE reason = 0 AND timestamp BETWEEN ? AND ?
             GROUP BY e.reminder_id";
 
 impl Repository {
