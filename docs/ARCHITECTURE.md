@@ -197,6 +197,7 @@ erDiagram
         int             id PK
         int             alert_id FK
         int             timestamp
+        int             reason
     }
 
     reminders {
@@ -211,6 +212,7 @@ erDiagram
         int             id PK
         int             reminder_id FK
         int             timestamp
+        int             reason
     }
 
     apps ||--o{ sessions : sessions
