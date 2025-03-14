@@ -64,7 +64,7 @@ impl Engine {
 
         ret.current_usage = Usage {
             id: Default::default(),
-            session_id: ret.get_session_details(foreground, start.clone()).await?,
+            session_id: ret.get_session_details(foreground, start).await?,
             start: start.to_ticks(),
             end: start.to_ticks(),
         };
@@ -105,7 +105,7 @@ impl Engine {
                 let foreground = foreground_window_session()?;
                 self.current_usage = Usage {
                     id: Default::default(),
-                    session_id: self.get_session_details(foreground, now.clone()).await?,
+                    session_id: self.get_session_details(foreground, *now).await?,
                     start: now.to_ticks(),
                     end: now.to_ticks(),
                 };
@@ -136,7 +136,7 @@ impl Engine {
                     .insert_or_update_usage(&mut self.current_usage)
                     .await?;
 
-                let session_result = self.get_session_details(session, at.clone()).await;
+                let session_result = self.get_session_details(session, at).await;
 
                 // If we have an error getting the session, we don't change the current usage.
                 // An alternative would be to insert some sort of 'invalid usage' marker.
