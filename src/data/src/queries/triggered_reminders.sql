@@ -44,7 +44,9 @@ SELECT r.*, (CASE WHEN al.app_id IS NOT NULL THEN (
         AND d.dur >= al.usage_limit * r.threshold
     WHERE d.range_start >
         (SELECT COALESCE(MAX(re.timestamp), 0) FROM reminder_events re
-            WHERE r.id = re.reminder_id
-            )
+            WHERE r.id = re.reminder_id) AND
+        d.range_start >
+        (SELECT COALESCE(MAX(ae.timestamp), 0) FROM alert_events ae
+            WHERE al.id = ae.alert_id)
     GROUP BY r.id
     HAVING al.active <> 0 AND r.active <> 0

@@ -2,9 +2,8 @@ use sqlx::prelude::FromRow;
 use sqlx::{query, Row};
 use util::future as tokio;
 
-use crate::entities::Reason;
-
 use super::*;
+use crate::entities::Reason;
 
 pub async fn test_db() -> Result<Database> {
     let conn = SqliteConnectOptions::new()
@@ -2181,6 +2180,53 @@ mod triggered_reminders {
                 reminder_id: hit.id.clone(),
                 timestamp: 200,
                 reason: Reason::Hit,
+            },
+        )
+        .await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let reminders = mgr
+            .triggered_reminders(&Times {
+                now: 5000,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+        assert_eq!(
+            reminders
+                .into_iter()
+                .map(|r| (r.reminder.id, r.name))
+                .collect::<Vec<_>>(),
+            vec![]
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    pub async fn alert_event_after_start_matters_for_reminder_query() -> Result<()> {
+        let mut db = test_db().await?;
+
+        let alert = gen_alert(&mut db).await?;
+        let _hit = arrange::reminder(
+            &mut db,
+            Reminder {
+                id: Ref::new(1),
+                alert_id: alert.clone(),
+                threshold: 0.50,
+                message: "hello".to_string(),
+                active: true,
+            },
+        )
+        .await?;
+
+        arrange::alert_event(
+            &mut db,
+            AlertEvent {
+                id: Default::default(),
+                alert_id: alert.clone(),
+                timestamp: 200,
+                reason: Reason::Ignored,
             },
         )
         .await?;
