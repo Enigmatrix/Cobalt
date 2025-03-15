@@ -1,10 +1,28 @@
 type RGB = { r: number; g: number; b: number };
 type HSL = { h: number; s: number; l: number };
 
-export const rgbToHex = ({ r, g, b }: RGB): string => {
-  const toHex = (n: number) =>
-    Math.max(0, Math.min(255, n)).toString(16).padStart(2, "0");
-  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+// ref: https://github.com/catppuccin/catppuccin
+// Mocha colors
+export const COLORS = [
+  "#f5e0dc",
+  "#f2cdcd",
+  "#f5c2e7",
+  "#cba6f7",
+  "#f38ba8",
+  "#eba0ac",
+  "#fab387",
+  "#f9e2af",
+  "#a6e3a1",
+  "#94e2d5",
+  "#89dceb",
+  "#74c7ec",
+  "#89b4fa",
+  "#b4befe",
+  "#cdd6f4", // Text
+];
+
+export const randomColor = () => {
+  return COLORS[Math.floor(Math.random() * COLORS.length)];
 };
 
 export const hexToRgb = (hex: string): RGB | null => {
@@ -16,43 +34,6 @@ export const hexToRgb = (hex: string): RGB | null => {
         b: Number.parseInt(result[3], 16),
       }
     : null;
-};
-
-export const rgbToHsl = ({ r, g, b }: RGB): HSL => {
-  r /= 255;
-  g /= 255;
-  b /= 255;
-
-  const max = Math.max(r, g, b);
-  const min = Math.min(r, g, b);
-  let h = 0;
-  let s = 0;
-  const l = (max + min) / 2;
-
-  if (max !== min) {
-    const d = max - min;
-    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-
-    switch (max) {
-      case r:
-        h = (g - b) / d + (g < b ? 6 : 0);
-        break;
-      case g:
-        h = (b - r) / d + 2;
-        break;
-      case b:
-        h = (r - g) / d + 4;
-        break;
-    }
-
-    h /= 6;
-  }
-
-  return {
-    h: Math.round(h * 360),
-    s: Math.round(s * 100),
-    l: Math.round(l * 100),
-  };
 };
 
 export const hslToRgb = ({ h, s, l }: HSL): RGB => {
@@ -91,10 +72,6 @@ export const hslToRgb = ({ h, s, l }: HSL): RGB => {
 
 export const formatRgba = (rgb: RGB, a = 1): string => {
   return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${a})`;
-};
-
-export const formatHsla = (hsl: HSL, a = 1): string => {
-  return `hsla(${hsl.h}, ${hsl.s}%, ${hsl.l}%, ${a})`;
 };
 
 export const getVarColorAsHex = (varName: string, a = 1): string => {
