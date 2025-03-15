@@ -6,10 +6,10 @@ import {
   BreadcrumbPage,
   BreadcrumbList,
 } from "@/components/ui/breadcrumb";
-import { Button, type ButtonProps } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { invoke } from "@tauri-apps/api/core";
 import { refresh } from "@/lib/state";
-import { useTransition } from "react";
+import { useTransition, type ComponentProps } from "react";
 import { LoaderIcon } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Setting } from "@/routes/settings";
@@ -30,7 +30,9 @@ function AsyncButton({
   onClick,
   children,
   ...props
-}: Omit<ButtonProps, "onClick"> & { onClick: () => Promise<void> }) {
+}: Omit<ComponentProps<typeof Button>, "onClick"> & {
+  onClick: () => Promise<void>;
+}) {
   const [isLoading, startTransition] = useTransition();
 
   return (
