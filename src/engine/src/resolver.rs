@@ -25,7 +25,6 @@ impl AppInfoResolver {
         identity: AppIdentity,
     ) -> Result<()> {
         info!("updating app info {:?} ({:?})", app, identity);
-
         let app_info = Self::resolve(&identity).await?;
 
         let db = db_pool.get_db().await?;
@@ -40,8 +39,10 @@ impl AppInfoResolver {
             identity,
             tag_id: None,
             icon: app_info.logo,
+            ..Default::default()
         };
-        updater.update_app(&app).await?;
+        let now = platform::objects::Timestamp::now();
+        updater.update_app(&app, now).await?;
         Ok(())
     }
 

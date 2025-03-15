@@ -138,6 +138,10 @@ pub struct Alert {
     #[sqlx(flatten)]
     /// Action to take on trigger
     pub trigger_action: TriggerAction,
+    /// Created at
+    pub created_at: Timestamp,
+    /// Updated at
+    pub updated_at: Timestamp,
     /// List of linked [Reminder]s
     pub reminders: Vec<Reminder>,
     /// List of hit [super::AlertEvent]s
@@ -156,6 +160,10 @@ pub struct Reminder {
     pub threshold: f64,
     /// Message to send when the threshold is reached
     pub message: String,
+    /// Created at
+    pub created_at: Timestamp,
+    /// Updated at
+    pub updated_at: Timestamp,
     /// List of hit [super::ReminderEvent]s
     #[sqlx(flatten)]
     pub events: ValuePerPeriod<i64>,
@@ -168,6 +176,8 @@ impl PartialEq<Reminder> for Reminder {
             && (self.threshold - other.threshold).abs() <= f64::EPSILON
             && self.message == other.message
             && self.events == other.events
+            && self.created_at == other.created_at
+            && self.updated_at == other.updated_at
     }
 }
 

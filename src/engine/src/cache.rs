@@ -161,7 +161,7 @@ impl Cache {
 async fn inner_mut_compiles() {
     use scoped_futures::ScopedFutureExt;
 
-    let window: Window = Window::foreground().unwrap();
+    let window: Window = Window::foreground().unwrap_or_else(Window::desktop);
     let process: ProcessId = 1;
     let mut cache = Cache::new();
 

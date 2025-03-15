@@ -11,7 +11,7 @@ use crate::db::infused::{
     CreateAlert, CreateReminder, RefVec, ValuePerPeriod, WithDuration, WithGroupedDuration,
 };
 use crate::db::tests::arrange::*;
-use crate::entities::{TimeFrame, TriggerAction};
+use crate::entities::{Reason, TimeFrame, TriggerAction};
 use crate::table::Period;
 
 const ONE_HOUR: i64 = 60 * 60 * 1000 * 10000;
@@ -33,6 +33,8 @@ fn create_to_alert(c: CreateAlert, id: i64) -> Alert {
         time_frame: c.time_frame,
         trigger_action: c.trigger_action,
         active: true,
+        created_at: 0,
+        updated_at: 0,
     }
 }
 
@@ -44,6 +46,8 @@ fn infused_to_alert(c: infused::Alert) -> Alert {
         time_frame: c.time_frame,
         trigger_action: c.trigger_action,
         active: true,
+        created_at: 0,
+        updated_at: 0,
     }
 }
 
@@ -64,6 +68,8 @@ async fn get_apps() -> Result<()> {
             },
             tag_id: None,
             icon: None,
+            created_at: 0,
+            updated_at: 0,
         },
     )
     .await?;
@@ -81,6 +87,8 @@ async fn get_apps() -> Result<()> {
             },
             tag_id: None,
             icon: None,
+            created_at: 0,
+            updated_at: 0,
         },
     )
     .await?;
@@ -98,6 +106,8 @@ async fn get_apps() -> Result<()> {
             },
             tag_id: None,
             icon: None,
+            created_at: 0,
+            updated_at: 0,
         },
     )
     .await?;
@@ -115,6 +125,8 @@ async fn get_apps() -> Result<()> {
             },
             tag_id: None,
             icon: None,
+            created_at: 0,
+            updated_at: 0,
         },
     )
     .await?;
@@ -132,6 +144,8 @@ async fn get_apps() -> Result<()> {
             },
             tag_id: None,
             icon: None,
+            created_at: 0,
+            updated_at: 0,
         },
     )
     .await?;
@@ -142,6 +156,8 @@ async fn get_apps() -> Result<()> {
             id: Ref::new(1),
             name: "tag1".to_string(),
             color: "red".to_string(),
+            created_at: 0,
+            updated_at: 0,
         },
     )
     .await?;
@@ -151,6 +167,8 @@ async fn get_apps() -> Result<()> {
             id: Ref::new(2),
             name: "tag2".to_string(),
             color: "red".to_string(),
+            created_at: 0,
+            updated_at: 0,
         },
     )
     .await?;
@@ -160,6 +178,8 @@ async fn get_apps() -> Result<()> {
             id: Ref::new(3),
             name: "tag3".to_string(),
             color: "red".to_string(),
+            created_at: 0,
+            updated_at: 0,
         },
     )
     .await?;
@@ -169,6 +189,8 @@ async fn get_apps() -> Result<()> {
             id: Ref::new(4),
             name: "tag4".to_string(),
             color: "red".to_string(),
+            created_at: 0,
+            updated_at: 0,
         },
     )
     .await?;
@@ -196,6 +218,8 @@ async fn get_tags() -> Result<()> {
             id: Ref::new(1),
             name: "tag1".to_string(),
             color: "red".to_string(),
+            created_at: 0,
+            updated_at: 0,
         },
     )
     .await?;
@@ -205,6 +229,8 @@ async fn get_tags() -> Result<()> {
             id: Ref::new(2),
             name: "tag2".to_string(),
             color: "red".to_string(),
+            created_at: 0,
+            updated_at: 0,
         },
     )
     .await?;
@@ -214,6 +240,8 @@ async fn get_tags() -> Result<()> {
             id: Ref::new(3),
             name: "tag3".to_string(),
             color: "red".to_string(),
+            created_at: 0,
+            updated_at: 0,
         },
     )
     .await?;
@@ -223,6 +251,8 @@ async fn get_tags() -> Result<()> {
             id: Ref::new(4),
             name: "tag4".to_string(),
             color: "red".to_string(),
+            created_at: 0,
+            updated_at: 0,
         },
     )
     .await?;
@@ -240,6 +270,8 @@ async fn get_tags() -> Result<()> {
             },
             tag_id: None,
             icon: None,
+            created_at: 0,
+            updated_at: 0,
         },
     )
     .await?;
@@ -257,6 +289,8 @@ async fn get_tags() -> Result<()> {
             },
             tag_id: Some(Ref::new(1)),
             icon: None,
+            created_at: 0,
+            updated_at: 0,
         },
     )
     .await?;
@@ -274,6 +308,8 @@ async fn get_tags() -> Result<()> {
             },
             tag_id: Some(Ref::new(2)),
             icon: None,
+            created_at: 0,
+            updated_at: 0,
         },
     )
     .await?;
@@ -291,6 +327,8 @@ async fn get_tags() -> Result<()> {
             },
             tag_id: Some(Ref::new(1)),
             icon: None,
+            created_at: 0,
+            updated_at: 0,
         },
     )
     .await?;
@@ -308,6 +346,8 @@ async fn get_tags() -> Result<()> {
             },
             tag_id: Some(Ref::new(3)),
             icon: None,
+            created_at: 0,
+            updated_at: 0,
         },
     )
     .await?;
@@ -325,6 +365,8 @@ async fn get_tags() -> Result<()> {
             },
             tag_id: Some(Ref::new(3)),
             icon: None,
+            created_at: 0,
+            updated_at: 0,
         },
     )
     .await?;
@@ -370,6 +412,8 @@ async fn get_alerts() -> Result<()> {
             },
             tag_id: None,
             icon: None,
+            created_at: 0,
+            updated_at: 0,
         },
     )
     .await?
@@ -382,6 +426,8 @@ async fn get_alerts() -> Result<()> {
         time_frame: TimeFrame::Daily,
         trigger_action: TriggerAction::Kill,
         active: false,
+        created_at: 0,
+        updated_at: 0,
     };
     let alert12 = Alert {
         id: Ref::new(2),
@@ -390,6 +436,8 @@ async fn get_alerts() -> Result<()> {
         time_frame: TimeFrame::Daily,
         trigger_action: TriggerAction::Kill,
         active: true,
+        created_at: 0,
+        updated_at: 0,
     };
     let alert21 = Alert {
         id: Ref::new(3),
@@ -397,6 +445,8 @@ async fn get_alerts() -> Result<()> {
         target: Target::App { id: app1.clone() },
         time_frame: TimeFrame::Weekly,
         trigger_action: TriggerAction::Dim { duration: 1 },
+        created_at: 0,
+        updated_at: 0,
         active: true,
     };
     let alert31 = Alert {
@@ -408,6 +458,8 @@ async fn get_alerts() -> Result<()> {
             content: "urmam".into(),
         },
         active: false,
+        created_at: 0,
+        updated_at: 0,
     };
     let alert32 = Alert {
         id: Ref::new(5),
@@ -418,6 +470,8 @@ async fn get_alerts() -> Result<()> {
             content: "urmam".into(),
         },
         active: false,
+        created_at: 0,
+        updated_at: 0,
     };
     let alert33 = Alert {
         id: Ref::new(6),
@@ -428,6 +482,8 @@ async fn get_alerts() -> Result<()> {
             content: "urmam".into(),
         },
         active: true,
+        created_at: 0,
+        updated_at: 0,
     };
 
     let _alert11 = arrange::alert(&mut db, alert11.clone()).await?;
@@ -476,6 +532,7 @@ async fn get_alerts() -> Result<()> {
                 id: Ref::new(0),
                 alert_id: alert_id.clone(),
                 timestamp,
+                reason: Reason::Hit,
             },
         )
         .await?;
@@ -601,6 +658,8 @@ async fn get_app_durations() -> Result<()> {
             },
             tag_id: None,
             icon: None,
+            created_at: 0,
+            updated_at: 0,
         },
     )
     .await?
@@ -619,6 +678,8 @@ async fn get_app_durations() -> Result<()> {
             },
             tag_id: None,
             icon: None,
+            created_at: 0,
+            updated_at: 0,
         },
     )
     .await?
@@ -702,6 +763,8 @@ async fn get_app_durations_per_period_singular_ts_test() -> Result<()> {
             },
             tag_id: None,
             icon: None,
+            created_at: 0,
+            updated_at: 0,
         },
     )
     .await?
@@ -720,6 +783,8 @@ async fn get_app_durations_per_period_singular_ts_test() -> Result<()> {
             },
             tag_id: None,
             icon: None,
+            created_at: 0,
+            updated_at: 0,
         },
     )
     .await?
@@ -920,6 +985,8 @@ async fn create_alert() -> Result<()> {
                 threshold: r.threshold,
                 message: r.message,
                 events: Default::default(),
+                created_at: 0,
+                updated_at: 0,
             })
             .collect()
     }
@@ -943,6 +1010,8 @@ async fn create_alert() -> Result<()> {
             },
             tag_id: None,
             icon: None,
+            created_at: 0,
+            updated_at: 0,
         },
     )
     .await?
@@ -958,7 +1027,8 @@ async fn create_alert() -> Result<()> {
         trigger_action: TriggerAction::Kill,
         reminders: Vec::new(),
     };
-    let created1 = repo.create_alert(alert1.clone()).await?;
+    let ts = Times::default();
+    let created1 = repo.create_alert(alert1.clone(), ts.clone()).await?;
     assert_eq!(
         infused_to_alert(created1.clone()),
         create_to_alert(alert1, 1)
@@ -976,7 +1046,7 @@ async fn create_alert() -> Result<()> {
             message: "Half way there".into(),
         }],
     };
-    let created2 = repo.create_alert(alert2.clone()).await?;
+    let created2 = repo.create_alert(alert2.clone(), ts.clone()).await?;
     let created2id = Ref::new(2);
     assert_eq!(
         infused_to_alert(created2.clone()),
@@ -1014,7 +1084,7 @@ async fn create_alert() -> Result<()> {
         ],
     };
 
-    let created3 = repo.create_alert(alert3.clone()).await?;
+    let created3 = repo.create_alert(alert3.clone(), ts.clone()).await?;
     let created3id = Ref::new(3);
     assert_eq!(
         infused_to_alert(created3.clone()),

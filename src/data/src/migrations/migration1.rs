@@ -21,7 +21,9 @@ impl Migration for Migration1 {
             "CREATE TABLE tags (
                 id                              INTEGER PRIMARY KEY NOT NULL,
                 name                            TEXT NOT NULL,
-                color                           TEXT NOT NULL
+                color                           TEXT NOT NULL,
+                created_at                      INTEGER NOT NULL,
+                updated_at                      INTEGER NOT NULL
             )",
         )
         .await
@@ -31,7 +33,6 @@ impl Migration for Migration1 {
         tx.execute(
             "CREATE TABLE apps (
                 id                              INTEGER PRIMARY KEY NOT NULL,
-                initialized                     TINYINT NOT NULL DEFAULT FALSE,
                 found                           TINYINT NOT NULL DEFAULT FALSE,
                 name                            TEXT,
                 description                     TEXT,
@@ -40,7 +41,10 @@ impl Migration for Migration1 {
                 tag_id                          INTEGER REFERENCES tags(id) ON DELETE SET NULL,
                 identity_is_win32               INTEGER NOT NULL,
                 identity_path_or_aumid          TEXT NOT NULL,
-                icon                            BLOB
+                icon                            BLOB,
+                created_at                      INTEGER NOT NULL,
+                initialized_at                  INTEGER,
+                updated_at                      INTEGER NOT NULL
             )",
         )
         .await
@@ -100,7 +104,9 @@ impl Migration for Migration1 {
                 trigger_action_dim_duration     INTEGER,
                 trigger_action_message_content  TEXT,
                 trigger_action_tag              INTEGER NOT NULL,
-                active                          TINYINT NOT NULL DEFAULT TRUE
+                active                          TINYINT NOT NULL DEFAULT TRUE,
+                created_at                      INTEGER NOT NULL,
+                updated_at                      INTEGER NOT NULL
             )",
         )
         .await
@@ -112,7 +118,9 @@ impl Migration for Migration1 {
                 alert_id                        INTEGER NOT NULL REFERENCES alerts(id) ON DELETE CASCADE,
                 threshold                       REAL NOT NULL,
                 message                         TEXT NOT NULL,
-                active                          TINYINT NOT NULL DEFAULT TRUE
+                active                          TINYINT NOT NULL DEFAULT TRUE,
+                created_at                      INTEGER NOT NULL,
+                updated_at                      INTEGER NOT NULL
             )",
         )
         .await
@@ -122,7 +130,8 @@ impl Migration for Migration1 {
             "CREATE TABLE alert_events (
                 id                              INTEGER PRIMARY KEY NOT NULL,
                 alert_id                        INTEGER NOT NULL REFERENCES alerts(id) ON DELETE CASCADE,
-                timestamp                       INTEGER NOT NULL
+                timestamp                       INTEGER NOT NULL,
+                reason                          INTEGER NOT NULL
             )",
         )
         .await
@@ -132,7 +141,8 @@ impl Migration for Migration1 {
             "CREATE TABLE reminder_events (
                 id                              INTEGER PRIMARY KEY NOT NULL,
                 reminder_id                     INTEGER NOT NULL REFERENCES reminders(id) ON DELETE CASCADE,
-                timestamp                       INTEGER NOT NULL
+                timestamp                       INTEGER NOT NULL,
+                reason                          INTEGER NOT NULL
             )",
         )
         .await

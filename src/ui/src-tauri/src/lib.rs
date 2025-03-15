@@ -43,6 +43,7 @@ pub fn run() {
             repo::create_alert,
             repo::update_alert,
             repo::remove_alert,
+            repo::create_alert_event_ignore,
             repo::get_app_session_usages,
             repo::get_interaction_periods,
             repo::get_system_events,

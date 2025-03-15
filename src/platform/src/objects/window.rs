@@ -7,8 +7,9 @@ use windows::Win32::System::Com::CoTaskMemFree;
 use windows::Win32::System::Com::StructuredStorage::PropVariantToStringAlloc;
 use windows::Win32::UI::Shell::PropertiesSystem::{IPropertyStore, SHGetPropertyStoreForWindow};
 use windows::Win32::UI::WindowsAndMessaging::{
-    GetForegroundWindow, GetWindowTextLengthW, GetWindowTextW, GetWindowThreadProcessId,
-    SetLayeredWindowAttributes, SetWindowLongW, GWL_EXSTYLE, LWA_ALPHA, WS_EX_LAYERED,
+    GetDesktopWindow, GetForegroundWindow, GetWindowTextLengthW, GetWindowTextW,
+    GetWindowThreadProcessId, SetLayeredWindowAttributes, SetWindowLongW, GWL_EXSTYLE, LWA_ALPHA,
+    WS_EX_LAYERED,
 };
 
 use crate::buf::{buf, Buffer, WideBuffer};
@@ -56,6 +57,12 @@ impl Window {
         } else {
             Some(Self::new(fg))
         }
+    }
+
+    /// Get the Desktop [Window]
+    pub fn desktop() -> Self {
+        let hwnd = unsafe { GetDesktopWindow() };
+        Self::new(hwnd)
     }
 
     /// Get the [ProcessId] of the [Window]

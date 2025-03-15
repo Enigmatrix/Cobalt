@@ -4,7 +4,7 @@ use sqlx::SqliteExecutor;
 
 use super::repo::Repository;
 use super::*;
-use crate::entities::TriggerAction;
+use crate::entities::{Reason, TriggerAction};
 
 /// SQL expression for getting the duration of all apps in day, week, month range.
 pub const APP_DUR: &str = "SELECT a.id AS id,
@@ -24,11 +24,11 @@ const TAG_DUR: &str = "SELECT a.tag_id AS id,
             GROUP BY a.tag_id";
 
 const ALERT_EVENT_COUNT: &str = "SELECT e.alert_id, COUNT(e.id) FROM alert_events e
-            WHERE timestamp BETWEEN ? AND ?
+            WHERE reason = 0 AND timestamp BETWEEN ? AND ?
             GROUP BY e.alert_id";
 
 const REMINDER_EVENT_COUNT: &str = "SELECT e.reminder_id, COUNT(e.id) FROM reminder_events e
-            WHERE timestamp BETWEEN ? AND ?
+            WHERE reason = 0 AND timestamp BETWEEN ? AND ?
             GROUP BY e.reminder_id";
 
 impl Repository {
@@ -55,7 +55,7 @@ impl Repository {
                 LEFT JOIN usage_today d ON a.id = d.id
                 LEFT JOIN usage_week  w ON a.id = w.id
                 LEFT JOIN usage_month m ON a.id = m.id
-            WHERE a.initialized = 1
+            WHERE a.initialized_at IS NOT NULL
             GROUP BY a.id"
         ))
         .bind(ts.day_start(true).to_ticks())
@@ -93,7 +93,7 @@ impl Repository {
                 LEFT JOIN usage_today d ON t.id = d.id
                 LEFT JOIN usage_week  w ON t.id = w.id
                 LEFT JOIN usage_month m ON t.id = m.id
-                LEFT JOIN apps a ON t.id = a.tag_id AND a.initialized = 1
+                LEFT JOIN apps a ON t.id = a.tag_id AND a.initialized_at IS NOT NULL
             GROUP BY t.id"
         ))
         .bind(ts.day_start(true).to_ticks())
@@ -187,6 +187,8 @@ impl Repository {
                         usage_limit: alert.inner.usage_limit,
                         time_frame: alert.inner.time_frame,
                         trigger_action: alert.inner.trigger_action,
+                        created_at: alert.inner.created_at,
+                        updated_at: alert.inner.updated_at,
 
                         events: alert.events,
                         reminders: Vec::new(),
@@ -206,7 +208,11 @@ impl Repository {
         Ok(alerts)
     }
     /// Update the [App] with additional information
-    pub async fn update_app(&mut self, app: &infused::UpdatedApp) -> Result<()> {
+    pub async fn update_app(
+        &mut self,
+        app: &infused::UpdatedApp,
+        ts: impl TimeSystem,
+    ) -> Result<()> {
         query(
             "UPDATE apps SET
                     name = ?,
@@ -214,7 +220,7 @@ impl Repository {
                     company = ?,
                     color = ?,
                     tag_id = ?,
-                    initialized = 1
+                    updated_at = ?
                 WHERE id = ?",
         )
         .bind(&app.name)
@@ -222,6 +228,7 @@ impl Repository {
         .bind(&app.company)
         .bind(&app.color)
         .bind(&app.tag_id)
+        .bind(ts.now().to_ticks())
         .bind(&app.id)
         .execute(self.db.executor())
         .await?;
@@ -229,7 +236,11 @@ impl Repository {
     }
 
     /// Update the [Tag] with additional information
-    pub async fn update_tag(&mut self, tag: &infused::UpdatedTag) -> Result<()> {
+    pub async fn update_tag(
+        &mut self,
+        tag: &infused::UpdatedTag,
+        ts: impl TimeSystem,
+    ) -> Result<()> {
         query(
             "UPDATE tags SET
                     name = ?,
@@ -238,6 +249,7 @@ impl Repository {
         )
         .bind(&tag.name)
         .bind(&tag.color)
+        .bind(ts.now().to_ticks())
         .bind(&tag.id)
         .execute(self.db.executor())
         .await?;
@@ -250,6 +262,7 @@ impl Repository {
         tag_id: Ref<Tag>,
         removed_apps: Vec<Ref<App>>,
         added_apps: Vec<Ref<App>>,
+        ts: impl TimeSystem,
     ) -> Result<()> {
         let mut tx = self.db.transaction().await?;
         let updates = removed_apps.into_iter().map(|app| (app, None)).chain(
@@ -258,8 +271,9 @@ impl Repository {
                 .map(|app| (app, Some(tag_id.clone()))),
         );
         for (app, tag) in updates {
-            query("UPDATE apps SET tag_id = ? WHERE id = ?")
+            query("UPDATE apps SET tag_id = ?, updated_at = ? WHERE id = ?")
                 .bind(tag)
+                .bind(ts.now().to_ticks())
                 .bind(app)
                 .execute(&mut *tx)
                 .await?;
@@ -269,17 +283,24 @@ impl Repository {
     }
 
     /// Create a new [Tag] from a [infused::CreateTag]
-    pub async fn create_tag(&mut self, tag: &infused::CreateTag) -> Result<infused::Tag> {
+    pub async fn create_tag(
+        &mut self,
+        tag: &infused::CreateTag,
+        ts: impl TimeSystem,
+    ) -> Result<infused::Tag> {
         let mut tx = self.db.transaction().await?;
-        let res = query("INSERT INTO tags VALUES (NULL, ?, ?)")
+        let res = query("INSERT INTO tags VALUES (NULL, ?, ?, ?, ?)")
             .bind(&tag.name)
             .bind(&tag.color)
+            .bind(ts.now().to_ticks())
+            .bind(ts.now().to_ticks())
             .execute(&mut *tx)
             .await?;
         let id = Ref::new(res.last_insert_rowid());
         for app in &tag.apps {
-            query("UPDATE apps SET tag_id = ? WHERE id = ?")
+            query("UPDATE apps SET tag_id = ?, updated_at = ? WHERE id = ?")
                 .bind(&id)
+                .bind(ts.now().to_ticks())
                 .bind(app)
                 .execute(&mut *tx)
                 .await?;
@@ -291,6 +312,8 @@ impl Repository {
                 id,
                 name: tag.name.clone(),
                 color: tag.color.clone(),
+                created_at: ts.now().to_ticks(),
+                updated_at: ts.now().to_ticks(),
             },
             apps: infused::RefVec(tag.apps.clone()),
             usages: infused::ValuePerPeriod::default(),
@@ -324,7 +347,11 @@ impl Repository {
     }
 
     /// Creates a [Alert]
-    pub async fn create_alert(&mut self, alert: infused::CreateAlert) -> Result<infused::Alert> {
+    pub async fn create_alert(
+        &mut self,
+        alert: infused::CreateAlert,
+        ts: impl TimeSystem,
+    ) -> Result<infused::Alert> {
         let mut tx = self.db.transaction().await?;
 
         let (app_id, tag_id) = Self::destructure_target(&alert.target);
@@ -333,7 +360,7 @@ impl Repository {
 
         // Insert the alert
         let alert_id: Ref<Alert> =
-            query("INSERT INTO alerts VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id")
+            query("INSERT INTO alerts VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id")
                 .bind(app_id)
                 .bind(tag_id)
                 .bind(alert.usage_limit)
@@ -342,6 +369,8 @@ impl Repository {
                 .bind(message_content)
                 .bind(tag)
                 .bind(true)
+                .bind(ts.now().to_ticks())
+                .bind(ts.now().to_ticks())
                 .fetch_one(&mut *tx)
                 .await?
                 .get(0);
@@ -350,11 +379,13 @@ impl Repository {
 
         // Insert the reminders
         for reminder in alert.reminders {
-            let id = query("INSERT INTO reminders VALUES (NULL, ?, ?, ?, ?) RETURNING id")
+            let id = query("INSERT INTO reminders VALUES (NULL, ?, ?, ?, ?, ?, ?) RETURNING id")
                 .bind(&alert_id)
                 .bind(reminder.threshold)
                 .bind(&reminder.message)
                 .bind(true)
+                .bind(ts.now().to_ticks())
+                .bind(ts.now().to_ticks())
                 .fetch_one(&mut *tx)
                 .await?
                 .get(0);
@@ -363,6 +394,8 @@ impl Repository {
                 alert_id: alert_id.clone(),
                 threshold: reminder.threshold,
                 message: reminder.message,
+                created_at: ts.now().to_ticks(),
+                updated_at: ts.now().to_ticks(),
                 events: infused::ValuePerPeriod::default(),
             };
             reminders.push(reminder);
@@ -376,6 +409,8 @@ impl Repository {
             usage_limit: alert.usage_limit,
             time_frame: alert.time_frame,
             trigger_action: alert.trigger_action,
+            created_at: ts.now().to_ticks(),
+            updated_at: ts.now().to_ticks(),
             reminders,
             events: infused::ValuePerPeriod::default(),
         };
@@ -388,6 +423,7 @@ impl Repository {
         &mut self,
         prev: infused::Alert,
         mut next: infused::UpdatedAlert,
+        ts: impl TimeSystem,
     ) -> Result<infused::Alert> {
         let mut tx = self.db.transaction().await?;
         let has_any_alert_events = Self::has_any_alert_events(&mut *tx, &prev.id).await?;
@@ -399,7 +435,8 @@ impl Repository {
 
         let prev_reminders: HashMap<_, _> = prev
             .reminders
-            .into_iter()
+            .iter()
+            .cloned()
             .map(|r| (r.id.clone(), r))
             .collect();
 
@@ -409,28 +446,36 @@ impl Repository {
             usage_limit: next.usage_limit,
             time_frame: next.time_frame.clone(),
             trigger_action: next.trigger_action.clone(),
+            created_at: prev.created_at,
+            updated_at: ts.now().to_ticks(),
             reminders: Vec::new(),
             events: infused::ValuePerPeriod::default(),
         };
 
         if should_upgrade_alert {
-            next.id = Self::upgrade_alert_only(&mut tx, &next).await?;
+            next.id = Self::upgrade_alert_only(&mut tx, &prev, &next, &ts).await?;
 
             for mut reminder in next.reminders {
                 if !reminder.active {
                     continue;
                 }
-                Self::insert_reminder_only(&mut *tx, &next.id, &mut reminder).await?;
+                let prev_reminder = prev_reminders.get(&reminder.id);
+                Self::insert_reminder_only(&mut *tx, prev_reminder, &next.id, &mut reminder, &ts)
+                    .await?;
                 next_alert.reminders.push(infused::Reminder {
                     id: reminder.id,
                     alert_id: next.id.clone(),
                     threshold: reminder.threshold,
                     message: reminder.message,
+                    created_at: prev_reminder
+                        .map(|r| r.created_at)
+                        .unwrap_or(ts.now().to_ticks()),
+                    updated_at: ts.now().to_ticks(),
                     events: infused::ValuePerPeriod::default(), // since this is a new reminder.
                 });
             }
         } else {
-            Self::update_alert_only(&mut *tx, &next).await?;
+            Self::update_alert_only(&mut *tx, &next, &ts).await?;
             next_alert.events = prev.events;
 
             for mut reminder in next.reminders {
@@ -442,23 +487,35 @@ impl Repository {
                     alert_id: next.id.clone(),
                     threshold: reminder.threshold,
                     message: reminder.message.clone(),
+                    created_at: ts.now().to_ticks(),
+                    updated_at: ts.now().to_ticks(),
                     events: infused::ValuePerPeriod::default(),
                 };
                 if let Some(prev_reminder) = prev_reminder {
                     let should_upgrade_reminder =
                         has_any_reminder_events && (reminder.threshold != prev_reminder.threshold);
 
+                    next_reminder.created_at = prev_reminder.created_at;
                     if should_upgrade_reminder {
                         // Even if this reminder is no longer active, if it's threshold changes & has a
                         // event we should insert (upgrade) the reminder.
-                        Self::upgrade_reminder_only(&mut tx, &next.id, &mut reminder).await?;
+                        Self::upgrade_reminder_only(
+                            &mut tx,
+                            prev_reminder,
+                            &next.id,
+                            &mut reminder,
+                            &ts,
+                        )
+                        .await?;
                         next_reminder.id = reminder.id;
                     } else {
-                        Self::update_reminder_only(&mut *tx, &mut reminder).await?;
+                        Self::update_reminder_only(&mut *tx, prev_reminder, &mut reminder, &ts)
+                            .await?;
                         next_reminder.events = prev_reminder.events.clone();
                     }
                 } else {
-                    Self::insert_reminder_only(&mut *tx, &next.id, &mut reminder).await?;
+                    Self::insert_reminder_only(&mut *tx, None, &next.id, &mut reminder, &ts)
+                        .await?;
                     next_reminder.id = reminder.id;
                 }
                 next_alert.reminders.push(next_reminder);
@@ -497,6 +554,7 @@ impl Repository {
     async fn update_alert_only<'a, E: SqliteExecutor<'a>>(
         executor: E,
         alert: &infused::UpdatedAlert,
+        ts: &impl TimeSystem,
     ) -> Result<()> {
         let (app_id, tag_id) = Self::destructure_target(&alert.target);
         let (dim_duration, message_content, tag) =
@@ -509,7 +567,8 @@ impl Repository {
                 time_frame = ?,
                 dim_duration = ?,
                 message_content = ?,
-                trigger_action_tag = ?
+                trigger_action_tag = ?,
+                updated_at = ?
             WHERE id = ?",
         )
         .bind(app_id)
@@ -519,6 +578,7 @@ impl Repository {
         .bind(dim_duration)
         .bind(message_content)
         .bind(tag)
+        .bind(ts.now().to_ticks())
         .bind(&alert.id)
         .execute(executor)
         .await?;
@@ -527,9 +587,12 @@ impl Repository {
 
     async fn upgrade_alert_only(
         executor: &mut sqlx::SqliteConnection,
+        prev: &infused::Alert,
         alert: &infused::UpdatedAlert,
+        ts: &impl TimeSystem,
     ) -> Result<Ref<Alert>> {
-        query("UPDATE alerts SET active = 0 WHERE id = ?")
+        query("UPDATE alerts SET active = 0, updated_at = ? WHERE id = ?")
+            .bind(ts.now().to_ticks())
             .bind(&alert.id)
             .execute(&mut *executor)
             .await?;
@@ -537,32 +600,43 @@ impl Repository {
         let (app_id, tag_id) = Self::destructure_target(&alert.target);
         let (dim_duration, message_content, tag) =
             Self::destructure_trigger_action(&alert.trigger_action);
-        let new_id = query("INSERT INTO alerts VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id")
-            .bind(app_id)
-            .bind(tag_id)
-            .bind(alert.usage_limit)
-            .bind(&alert.time_frame)
-            .bind(dim_duration)
-            .bind(message_content)
-            .bind(tag)
-            .bind(true)
-            .fetch_one(&mut *executor)
-            .await?
-            .get(0);
+        let new_id =
+            query("INSERT INTO alerts VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id")
+                .bind(app_id)
+                .bind(tag_id)
+                .bind(alert.usage_limit)
+                .bind(&alert.time_frame)
+                .bind(dim_duration)
+                .bind(message_content)
+                .bind(tag)
+                .bind(true)
+                .bind(prev.created_at)
+                .bind(ts.now().to_ticks())
+                .fetch_one(&mut *executor)
+                .await?
+                .get(0);
 
         Ok(new_id)
     }
 
     async fn insert_reminder_only<'a, E: SqliteExecutor<'a>>(
         executor: E,
+        prev_reminder: Option<&infused::Reminder>,
         alert_id: &Ref<Alert>,
         reminder: &mut infused::UpdatedReminder,
+        ts: &impl TimeSystem,
     ) -> Result<()> {
-        reminder.id = query("INSERT INTO reminders VALUES(NULL, ?, ?, ?, ?) RETURNING id")
+        reminder.id = query("INSERT INTO reminders VALUES(NULL, ?, ?, ?, ?, ?, ?) RETURNING id")
             .bind(alert_id)
             .bind(reminder.threshold)
             .bind(&reminder.message)
             .bind(true)
+            .bind(
+                prev_reminder
+                    .map(|r| r.created_at)
+                    .unwrap_or(ts.now().to_ticks()),
+            )
+            .bind(ts.now().to_ticks())
             .fetch_one(executor)
             .await?
             .get(0);
@@ -571,13 +645,16 @@ impl Repository {
 
     async fn update_reminder_only<'a, E: SqliteExecutor<'a>>(
         executor: E,
+        _prev_reminder: &infused::Reminder,
         reminder: &mut infused::UpdatedReminder,
+        ts: &impl TimeSystem,
     ) -> Result<()> {
         reminder.id =
-            query("UPDATE reminders SET threshold = ?, message = ?, active = ? WHERE id = ?")
+            query("UPDATE reminders SET threshold = ?, message = ?, active = ?, updated_at = ? WHERE id = ?")
                 .bind(reminder.threshold)
                 .bind(&reminder.message)
                 .bind(reminder.active)
+                .bind(ts.now().to_ticks())
                 .bind(&reminder.id)
                 .fetch_one(executor)
                 .await?
@@ -587,19 +664,24 @@ impl Repository {
 
     async fn upgrade_reminder_only(
         executor: &mut sqlx::SqliteConnection,
+        prev_reminder: &infused::Reminder,
         alert_id: &Ref<Alert>,
         reminder: &mut infused::UpdatedReminder,
+        ts: &impl TimeSystem,
     ) -> Result<()> {
-        query("UPDATE reminders SET active = 0 WHERE id = ?")
+        query("UPDATE reminders SET active = 0, updated_at = ? WHERE id = ?")
+            .bind(ts.now().to_ticks())
             .bind(&reminder.id)
             .execute(&mut *executor)
             .await?;
 
-        reminder.id = query("INSERT INTO reminders VALUES(NULL, ?, ?, ?, ?) RETURNING id")
+        reminder.id = query("INSERT INTO reminders VALUES(NULL, ?, ?, ?, ?, ?, ?) RETURNING id")
             .bind(alert_id)
             .bind(reminder.threshold)
             .bind(&reminder.message)
             .bind(true)
+            .bind(prev_reminder.created_at)
+            .bind(ts.now().to_ticks())
             .fetch_one(&mut *executor)
             .await?
             .get(0);
@@ -619,6 +701,22 @@ impl Repository {
             .await?;
         Ok(())
     }
+
+    /// Create Alert event ignore
+    pub async fn create_alert_event_ignore(
+        &mut self,
+        alert_id: Ref<Alert>,
+        timestamp: Timestamp,
+    ) -> Result<()> {
+        query("INSERT INTO alert_events VALUES (NULL, ?, ?, ?)")
+            .bind(alert_id)
+            .bind(timestamp)
+            .bind(Reason::Ignored)
+            .execute(self.db.executor())
+            .await?;
+        Ok(())
+    }
+
     /// Gets all [InteractionPeriod]s in a time range
     pub async fn get_interaction_periods(
         &mut self,

@@ -117,16 +117,19 @@ impl UsageWriter {
     pub async fn find_or_insert_app(
         &mut self,
         identity: &AppIdentity,
+        ts: impl TimeSystem,
     ) -> Result<FoundOrInserted<App>> {
         let (tag, text0) = Self::destructure_identity(identity);
         let (app_id, found): (Ref<App>, bool) = query_as(
             // We set found=1 to force this query to return a result row regardless of
             // conflict result.
-            "INSERT INTO apps (identity_is_win32, identity_path_or_aumid) VALUES (?, ?) ON CONFLICT
+            "INSERT INTO apps (identity_is_win32, identity_path_or_aumid, created_at, updated_at) VALUES (?, ?, ?, ?) ON CONFLICT
                 DO UPDATE SET found = 1 RETURNING id, found",
         )
         .bind(tag)
         .bind(text0)
+        .bind(ts.now().to_ticks())
+        .bind(ts.now().to_ticks())
         .fetch_one(self.db.executor())
         .await?;
 
@@ -225,7 +228,7 @@ impl AppUpdater {
     /// Get all [App]s that need to be updated
     pub async fn get_apps_to_update(&mut self) -> Result<Vec<UnresolvedApp>> {
         let apps = query_as(
-            "SELECT id, identity_is_win32, identity_path_or_aumid FROM apps WHERE initialized = 0",
+            "SELECT id, identity_is_win32, identity_path_or_aumid FROM apps WHERE initialized_at IS NULL",
         )
         .fetch_all(self.db.executor())
         .await?;
@@ -233,7 +236,7 @@ impl AppUpdater {
     }
 
     /// Update the [App] with additional information, including its icon
-    pub async fn update_app(&mut self, app: &App) -> Result<()> {
+    pub async fn update_app(&mut self, app: &App, ts: impl TimeSystem) -> Result<()> {
         query(
             "UPDATE apps SET
                     name = ?,
@@ -241,7 +244,8 @@ impl AppUpdater {
                     company = ?,
                     color = ?,
                     icon = ?,
-                    initialized = 1
+                    updated_at = ?,
+                    initialized_at = ?
                 WHERE id = ?",
         )
         .bind(&app.name)
@@ -249,6 +253,8 @@ impl AppUpdater {
         .bind(&app.company)
         .bind(&app.color)
         .bind(app.icon.as_ref())
+        .bind(ts.now().to_ticks())
+        .bind(ts.now().to_ticks())
         .bind(&app.id)
         .execute(self.db.executor())
         .await?;
@@ -276,6 +282,8 @@ pub struct TriggeredReminder {
     pub reminder: Reminder,
     /// Name of the offending target (App/Tag)
     pub name: String,
+    /// Usage limit
+    pub usage_limit: crate::table::Duration,
 }
 
 /// Reference to hold statements regarding [Alert] and [Reminder] queries
@@ -343,9 +351,10 @@ impl AlertManager {
 
     /// Insert a [AlertEvent]
     pub async fn insert_alert_event(&mut self, event: &AlertEvent) -> Result<()> {
-        query("INSERT INTO alert_events VALUES (NULL, ?, ?)")
+        query("INSERT INTO alert_events VALUES (NULL, ?, ?, ?)")
             .bind(&event.alert_id)
             .bind(event.timestamp)
+            .bind(&event.reason)
             .execute(self.db.executor())
             .await?;
         Ok(())
@@ -353,9 +362,10 @@ impl AlertManager {
 
     /// Insert a [ReminderEvent]
     pub async fn insert_reminder_event(&mut self, event: &ReminderEvent) -> Result<()> {
-        query("INSERT INTO reminder_events VALUES (NULL, ?, ?)")
+        query("INSERT INTO reminder_events VALUES (NULL, ?, ?, ?)")
             .bind(&event.reminder_id)
             .bind(event.timestamp)
+            .bind(&event.reason)
             .execute(self.db.executor())
             .await?;
         Ok(())

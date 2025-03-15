@@ -239,6 +239,11 @@ impl Duration {
         Duration(millis * 10_000)
     }
 
+    /// Create a [`Duration`] from ticks
+    pub const fn from_ticks(ticks: i64) -> Duration {
+        Duration(ticks)
+    }
+
     /// Get the number of milliseconds in the [`Duration`]
     pub fn millis(&self) -> u32 {
         (self.0 / 10_000) as u32
