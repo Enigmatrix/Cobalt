@@ -168,8 +168,8 @@ async fn sentry_loop(
 /// Runs the [Engine] and [Sentry] loops in an asynchronous executor.
 fn processor(
     config: &Config,
-    fg: WindowSession,
-    now: Timestamp,
+    mut fg: WindowSession,
+    mut now: Timestamp,
     event_rx: Receiver<Event>,
     alert_rx: Receiver<Timestamp>,
 ) -> Result<()> {
@@ -211,6 +211,8 @@ fn processor(
         for attempt in 0.. {
             if attempt > 0 {
                 info!("restarting engine loop");
+                fg = foreground_window_session()?;
+                now = Timestamp::now();
             }
             engine_loop(
                 db_pool.clone(),
