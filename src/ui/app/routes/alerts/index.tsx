@@ -154,19 +154,16 @@ function AlertListItem({ alert }: { alert: Alert }) {
     <NavLink
       to={`/alerts/${alert.id}`}
       className={cn(
-        "h-24 shadow-sm rounded-md flex flex-col",
-        "ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-        "disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none cursor-pointer",
+        "h-24 shadow-xs rounded-md flex flex-col",
+        "ring-offset-background transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+        "disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none",
         "bg-card text-card-foreground hover:bg-muted/75 border-border border",
       )}
     >
       <div className="h-20 flex items-center gap-2 p-4 @container">
         {alert.target.tag === "App" && app ? (
           <>
-            <AppIcon
-              buffer={app.icon}
-              className="mx-2 h-10 w-10 flex-shrink-0"
-            />
+            <AppIcon buffer={app.icon} className="mx-2 h-10 w-10 shrink-0" />
 
             <div className="flex flex-col min-w-0">
               <div className="inline-flex items-center gap-2">
@@ -189,7 +186,7 @@ function AlertListItem({ alert }: { alert: Alert }) {
         ) : alert.target.tag === "Tag" && tag ? (
           <>
             <TagIcon
-              className="mx-2 h-10 w-10 flex-shrink-0"
+              className="mx-2 h-10 w-10 shrink-0"
               style={{ color: tag.color }}
             />
             <div className="flex flex-col min-w-0 gap-1">
@@ -292,7 +289,7 @@ function TimeProgressBar({
           <Tooltip key={index}>
             <TooltipTrigger asChild>
               <div
-                className="absolute top-1/2 -translate-y-1/2 bg-primary border border-border rounded-full cursor-pointer"
+                className="absolute top-1/2 bg-primary border border-border rounded-full"
                 style={{
                   left: `${reminder.threshold * 100}%`,
                   width: circleRadius * 2,

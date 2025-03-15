@@ -78,6 +78,10 @@ export const getVarColorAsHex = (varName: string, a = 1): string => {
   const varVal = getComputedStyle(document.documentElement).getPropertyValue(
     "--" + varName,
   );
-  const [h, s, l] = varVal.split(" ").map((v) => parseFloat(v));
+  const [h, s, l] = varVal
+    .split("(")[1]
+    .split(")")[0]
+    .split(" ")
+    .map((v) => parseFloat(v));
   return formatRgba(hslToRgb({ h, s, l }), a);
 };

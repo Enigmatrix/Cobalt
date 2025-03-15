@@ -122,7 +122,7 @@ function AppUsagePerPeriodHistory() {
 
   return (
     <div className="flex flex-col flex-1 gap-6 overflow-hidden">
-      <div className="flex flex-wrap gap-6 items-center rounded-lg bg-card border border-border p-4 shadow-sm">
+      <div className="flex flex-wrap gap-6 items-center rounded-lg bg-card border border-border p-4 shadow-xs">
         <div className="flex flex-col gap-1.5">
           <Label className="font-medium text-muted-foreground">Usage</Label>
           <DurationText ticks={totalUsage} className="text-lg font-semibold" />
@@ -156,7 +156,7 @@ function AppUsagePerPeriodHistory() {
         </div>
       </div>
 
-      <div className="flex flex-1 min-h-0 overflow-hidden rounded-lg bg-card shadow-sm border border-border">
+      <div className="flex flex-1 min-h-0 overflow-hidden rounded-lg bg-card shadow-xs border border-border">
         <AppUsageBarChart
           data={appUsages}
           period={loadPeriod ?? period}
@@ -203,7 +203,7 @@ function SessionHistory() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap gap-6 items-center rounded-lg bg-card border border-border p-4 shadow-sm">
+      <div className="flex flex-wrap gap-6 items-center rounded-lg bg-card border border-border p-4 shadow-xs">
         {/* <div className="flex flex-col gap-1.5">
           <Label className="font-medium text-muted-foreground">Usage</Label>
           <DurationText ticks={totalUsage} className="text-lg font-semibold" />
@@ -225,7 +225,7 @@ function SessionHistory() {
         </div>
       </div>
 
-      <div className="flex flex-1 min-h-0 rounded-lg bg-card shadow-sm border border-border">
+      <div className="flex flex-1 min-h-0 rounded-lg bg-card shadow-xs border border-border">
         <div className="max-w-full">
           <Gantt
             usages={usages}

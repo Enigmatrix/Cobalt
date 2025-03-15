@@ -102,7 +102,7 @@ export function DurationPicker({
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="min-w-[300px] w-[--radix-popover-trigger-width] p-4"
+        className="min-w-[300px] w-(--radix-popover-trigger-width) p-4"
         align="start"
       >
         <div className="space-y-4">

@@ -35,8 +35,8 @@ export function HScrollView({
     <div
       className={cn(
         "relative",
-        'before:pointer-events-none before:absolute before:inset-y-0 before:left-0 before:w-[20px] before:bg-gradient-to-r before:from-black/30 before:to-transparent before:opacity-0 before:transition-opacity before:duration-200 before:content-[""]',
-        'after:pointer-events-none after:absolute after:inset-y-0 after:right-0 after:w-[20px] after:bg-gradient-to-l after:from-black/30 after:to-transparent after:opacity-0 after:transition-opacity after:duration-200 after:content-[""]',
+        'before:pointer-events-none before:absolute before:inset-y-0 before:left-0 before:w-[20px] before:bg-linear-to-r before:from-black/30 before:to-transparent before:opacity-0 before:transition-opacity before:duration-200 before:content-[""]',
+        'after:pointer-events-none after:absolute after:inset-y-0 after:right-0 after:w-[20px] after:bg-linear-to-l after:from-black/30 after:to-transparent after:opacity-0 after:transition-opacity after:duration-200 after:content-[""]',
         showLeftShadow && "before:opacity-100",
         showRightShadow && "after:opacity-100",
         className,

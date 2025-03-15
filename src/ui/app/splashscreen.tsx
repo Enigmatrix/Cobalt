@@ -13,7 +13,7 @@ export function SplashScreen() {
         <div className="absolute inset-0 overflow-hidden">
           <div
             className={cn(
-              "absolute inset-0 bg-gradient-to-br from-primary/90 via-primary to-primary/70 transition-opacity duration-500",
+              "absolute inset-0 bg-linear-to-br from-primary/90 via-primary to-primary/70 transition-opacity duration-500",
             )}
           />
         </div>
@@ -25,7 +25,9 @@ export function SplashScreen() {
             alt="Cobalt Logo"
             className="h-20 w-20 animate-pulse"
           />
-          <div className="text-xl mt-2 font-semibold">Cobalt</div>
+          <div className="text-xl mt-2 font-semibold text-primary-foreground">
+            Cobalt
+          </div>
         </div>
       </div>
     </div>
