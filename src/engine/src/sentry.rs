@@ -157,7 +157,7 @@ impl Sentry {
 
     /// Message the user with the given [TriggeredAlert]'s name and message.
     pub fn handle_message_action(&self, name: &str, msg: &str) -> Result<()> {
-        ToastManager::show_basic(name, msg)?;
+        ToastManager::show_alert(&format!("Alert: {}", name), msg)?;
         Ok(())
     }
 
@@ -169,13 +169,13 @@ impl Sentry {
 
     /// Message the user with the given [TriggeredReminder]'s name and message and progress.
     pub fn handle_reminder_message(&self, name: &str, msg: &str, value: f64) -> Result<()> {
-        ToastManager::show_with_progress(
-            name,
+        ToastManager::show_reminder(
+            &format!("Reminder: {}", name),
             msg,
             Progress {
-                title: String::new(),
+                title: None,
                 value,
-                value_string_override: "".to_string(),
+                value_string_override: None,
                 //status: "1h/1h 40m".to_string(),
                 status: "".to_string(),
             },
