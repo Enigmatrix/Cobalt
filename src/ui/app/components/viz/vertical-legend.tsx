@@ -184,7 +184,7 @@ export function VerticalLegend({
           return (
             <div key={tagIdStr} className="flex flex-col">
               {/* Tag item */}
-              <div className="flex items-center gap-2 p-1 hover:bg-accent/50 rounded-md cursor-pointer">
+              <div className="flex items-center gap-2 p-1 hover:bg-accent/50 rounded-md">
                 <button
                   onClick={() => toggleExpandTag(tagIdStr)}
                   className="p-1"
@@ -225,7 +225,7 @@ export function VerticalLegend({
                     return (
                       <div
                         key={appIdStr}
-                        className="flex items-center gap-2 pl-9 p-1 hover:bg-accent/50 rounded-md cursor-pointer"
+                        className="flex items-center gap-2 pl-9 p-1 hover:bg-accent/50 rounded-md"
                       >
                         <Checkbox
                           checked={!uncheckedApps[app.id]}

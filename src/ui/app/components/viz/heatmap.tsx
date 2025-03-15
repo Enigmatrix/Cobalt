@@ -62,7 +62,7 @@ const Heatmap: React.FC<HeatmapProps> = ({
   innerClassName,
   axisClassName,
   firstDayOfMonthClassName,
-  emptyCellColorRgb = "hsl(var(--muted))",
+  emptyCellColorRgb = "var(--muted)",
   fullCellColorRgb = "#00FF00",
   scaling,
   appId,

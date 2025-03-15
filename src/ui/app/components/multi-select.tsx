@@ -257,7 +257,7 @@ export function MultiSelect<T>({
                       )}
                       <Text>{option?.label ?? ""}</Text>
                       <XIcon
-                        className="ml-2 h-4 w-4 cursor-pointer"
+                        className="ml-2 h-4 w-4"
                         onClick={(event) => {
                           event.stopPropagation();
                           toggleOption(value);
@@ -275,7 +275,7 @@ export function MultiSelect<T>({
                   >
                     {`+ ${selectedValues.length - maxCount} more`}
                     <XIcon
-                      className="ml-2 h-4 w-4 cursor-pointer"
+                      className="ml-2 h-4 w-4"
                       onClick={(event) => {
                         event.stopPropagation();
                         clearExtraOptions();
@@ -287,7 +287,7 @@ export function MultiSelect<T>({
               <div className="flex items-center justify-between">
                 {showClear && (
                   <XIcon
-                    className="h-4 mx-2 cursor-pointer text-muted-foreground"
+                    className="h-4 mx-2 text-muted-foreground"
                     onClick={(event) => {
                       event.stopPropagation();
                       handleClear();
@@ -298,7 +298,7 @@ export function MultiSelect<T>({
                   orientation="vertical"
                   className="flex min-h-6 h-full"
                 />
-                {rightIcon("h-4 mx-2 cursor-pointer text-muted-foreground")}
+                {rightIcon("h-4 mx-2 text-muted-foreground")}
               </div>
             </div>
           ) : (
@@ -306,7 +306,7 @@ export function MultiSelect<T>({
               <span className="text-sm text-muted-foreground mx-3">
                 {placeholder}
               </span>
-              {rightIcon("h-4 cursor-pointer text-muted-foreground mx-2")}
+              {rightIcon("h-4 text-muted-foreground mx-2")}
             </div>
           )}
         </Button>
@@ -327,11 +327,7 @@ export function MultiSelect<T>({
             <CommandEmpty>No results found.</CommandEmpty>
             <CommandGroup>
               {showToggleSelectAll && (
-                <CommandItem
-                  key="all"
-                  onSelect={toggleAll}
-                  className="cursor-pointer"
-                >
+                <CommandItem key="all" onSelect={toggleAll}>
                   <div
                     className={cn(
                       "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
@@ -360,7 +356,6 @@ export function MultiSelect<T>({
                     key={JSON.stringify(option.id)}
                     value={JSON.stringify(option.id)}
                     onSelect={() => toggleOption(option.id)}
-                    className="cursor-pointer"
                   >
                     <div
                       className={cn(
@@ -388,7 +383,7 @@ export function MultiSelect<T>({
                     <>
                       <CommandItem
                         onSelect={handleClear}
-                        className="flex-1 justify-center cursor-pointer"
+                        className="flex-1 justify-center"
                       >
                         Clear
                       </CommandItem>
@@ -401,7 +396,7 @@ export function MultiSelect<T>({
                   {showClose && (
                     <CommandItem
                       onSelect={() => setIsPopoverOpen(false)}
-                      className="flex-1 justify-center cursor-pointer max-w-full"
+                      className="flex-1 justify-center max-w-full"
                     >
                       Close
                     </CommandItem>

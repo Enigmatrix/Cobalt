@@ -254,7 +254,7 @@ function TagListItem({
       className={cn(
         "h-20 shadow-xs rounded-md flex items-center gap-2 p-4 @container",
         "ring-offset-background transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-        "disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none cursor-pointer",
+        "disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none",
         "bg-card text-card-foreground hover:bg-muted/75 border-border border",
       )}
     >

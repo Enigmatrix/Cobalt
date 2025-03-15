@@ -498,7 +498,7 @@ export function Gantt({
             apps.map((app) => (
               <div key={app.id} className="border-b">
                 <div
-                  className="flex items-center p-4 bg-muted/80 cursor-pointer hover:bg-muted/60 border-r h-[52px]"
+                  className="flex items-center p-4 bg-muted/80 hover:bg-muted/60 border-r h-[52px]"
                   onClick={() => toggleApp(app.id)}
                 >
                   {expanded[app.id] ? (

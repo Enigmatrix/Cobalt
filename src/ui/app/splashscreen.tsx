@@ -25,7 +25,9 @@ export function SplashScreen() {
             alt="Cobalt Logo"
             className="h-20 w-20 animate-pulse"
           />
-          <div className="text-xl mt-2 font-semibold">Cobalt</div>
+          <div className="text-xl mt-2 font-semibold text-primary-foreground">
+            Cobalt
+          </div>
         </div>
       </div>
     </div>
