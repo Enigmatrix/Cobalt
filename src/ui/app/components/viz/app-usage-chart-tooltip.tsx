@@ -43,124 +43,112 @@ function HoverCard({
   );
 }
 
-export const AppUsageChartTooltipContent = React.forwardRef<
-  HTMLDivElement,
-  React.ComponentProps<"div"> & {
-    payload: EntityMap<App, number>;
-    dt: DateTime;
-    hideIndicator?: boolean;
-    maximumApps?: number;
-    hoveredAppId: Ref<App> | null;
-    singleAppId?: Ref<App>;
-  }
->(
-  (
-    {
-      payload,
-      dt,
-      className,
-      hideIndicator = false,
-      hoveredAppId,
-      maximumApps,
-      singleAppId,
-    },
+export const AppUsageChartTooltipContent = (
+  {
     ref,
-  ) => {
-    const involvedAppIds = useMemo(
-      () => Object.keys(payload).map((id) => +id as Ref<App>),
-      [payload],
-    );
-    const totalUsageTicks = useMemo(
-      () => (singleAppId ? undefined : _(payload).values().sum()),
-      [singleAppId, payload],
-    );
-    const involvedApps = useApps(involvedAppIds);
-    const involvedAppSorted = useMemo(
-      () =>
-        _(involvedApps)
-          .map((app) => ({ app, usageTicks: payload[app.id]! }))
-          .filter((v) => v.usageTicks > 0)
-          .orderBy(["usageTicks"], ["desc"])
-          .value(),
-      [involvedApps, payload],
-    );
+    payload,
+    dt,
+    className,
+    hideIndicator = false,
+    hoveredAppId,
+    maximumApps,
+    singleAppId
+  }
+) => {
+  const involvedAppIds = useMemo(
+    () => Object.keys(payload).map((id) => +id as Ref<App>),
+    [payload],
+  );
+  const totalUsageTicks = useMemo(
+    () => (singleAppId ? undefined : _(payload).values().sum()),
+    [singleAppId, payload],
+  );
+  const involvedApps = useApps(involvedAppIds);
+  const involvedAppSorted = useMemo(
+    () =>
+      _(involvedApps)
+        .map((app) => ({ app, usageTicks: payload[app.id]! }))
+        .filter((v) => v.usageTicks > 0)
+        .orderBy(["usageTicks"], ["desc"])
+        .value(),
+    [involvedApps, payload],
+  );
 
-    const highlightedAppId = singleAppId || hoveredAppId;
-    const highlightedApp = involvedApps.find(
-      (app) => app.id === highlightedAppId,
-    );
-    const highlightedAppUsageTicks = highlightedAppId
-      ? (payload[highlightedAppId] ?? 0)
-      : 0;
+  const highlightedAppId = singleAppId || hoveredAppId;
+  const highlightedApp = involvedApps.find(
+    (app) => app.id === highlightedAppId,
+  );
+  const highlightedAppUsageTicks = highlightedAppId
+    ? (payload[highlightedAppId] ?? 0)
+    : 0;
 
-    return (
-      <div
-        className={cn("grid max-w-80 items-start gap-1.5 text-xs", className)}
-        ref={ref}
-      >
-        {highlightedApp ? (
-          <HoverCard
-            app={highlightedApp}
-            usageTicks={highlightedAppUsageTicks}
-            totalUsageTicks={totalUsageTicks}
-            at={dt}
-          />
-        ) : (
-          dt && (
-            <div className="flex text-muted-foreground">
-              <DateTimeText
-                className="text-xs text-muted-foreground"
-                datetime={dt}
-              />
-              <div className="flex-1 min-w-4"></div>
-              <DurationText ticks={totalUsageTicks ?? 0} />
-            </div>
-          )
-        )}
-        {!singleAppId && Object.keys(payload).length > 0 && (
-          <div className="grid gap-1.5 pt-1 border-t border-border">
-            {involvedAppSorted
-              .slice(0, maximumApps)
-              .map(({ app, usageTicks }) => {
-                return (
-                  <div
-                    key={app.id}
-                    className={cn(
-                      "flex w-full flex-wrap items-stretch gap-2 [&>svg]:h-2.5 [&>svg]:w-2.5 [&>svg]:text-muted-foreground",
-                    )}
-                  >
-                    <>
-                      {!hideIndicator && (
-                        <AppIcon
-                          buffer={app.icon}
-                          className="w-4 h-4 shrink-0"
-                        />
-                      )}
-                      <div className="flex flex-1 justify-between items-center">
-                        <div className="grid gap-1.5">
-                          <Text className="text-muted-foreground">
-                            {app.name}
-                          </Text>
-                        </div>
-                        <DurationText
-                          className="font-mono font-medium tabular-nums text-foreground ml-2 shrink-0"
-                          ticks={usageTicks}
-                        />
-                      </div>
-                    </>
-                  </div>
-                );
-              })}
-            {maximumApps !== undefined &&
-              involvedAppSorted.length > maximumApps && (
-                <span className="text-muted-foreground">
-                  + {involvedAppSorted.length - maximumApps} more
-                </span>
-              )}
+  return (
+    <div
+      className={cn("grid max-w-80 items-start gap-1.5 text-xs", className)}
+      ref={ref}
+    >
+      {highlightedApp ? (
+        <HoverCard
+          app={highlightedApp}
+          usageTicks={highlightedAppUsageTicks}
+          totalUsageTicks={totalUsageTicks}
+          at={dt}
+        />
+      ) : (
+        dt && (
+          <div className="flex text-muted-foreground">
+            <DateTimeText
+              className="text-xs text-muted-foreground"
+              datetime={dt}
+            />
+            <div className="flex-1 min-w-4"></div>
+            <DurationText ticks={totalUsageTicks ?? 0} />
           </div>
-        )}
-      </div>
-    );
-  },
-);
+        )
+      )}
+      {!singleAppId && Object.keys(payload).length > 0 && (
+        <div className="grid gap-1.5 pt-1 border-t border-border">
+          {involvedAppSorted
+            .slice(0, maximumApps)
+            .map(({ app, usageTicks }) => {
+              return (
+                <div
+                  key={app.id}
+                  className={cn(
+                    "flex w-full flex-wrap items-stretch gap-2 [&>svg]:h-2.5 [&>svg]:w-2.5 [&>svg]:text-muted-foreground",
+                  )}
+                >
+                  <>
+                    {!hideIndicator && (
+                      <AppIcon
+                        buffer={app.icon}
+                        className="w-4 h-4 shrink-0"
+                      />
+                    )}
+                    <div className="flex flex-1 justify-between items-center">
+                      <div className="grid gap-1.5">
+                        <Text className="text-muted-foreground">
+                          {app.name}
+                        </Text>
+                      </div>
+                      <DurationText
+                        className="font-mono font-medium tabular-nums text-foreground ml-2 shrink-0"
+                        ticks={usageTicks}
+                      />
+                    </div>
+                  </>
+                </div>
+              );
+            })}
+          {maximumApps !== undefined &&
+            involvedAppSorted.length > maximumApps && (
+              <span className="text-muted-foreground">
+                + {involvedAppSorted.length - maximumApps} more
+              </span>
+            )}
+        </div>
+      )}
+    </div>
+  );
+};
 AppUsageChartTooltipContent.displayName = "AppUsageChartTooltipContent";

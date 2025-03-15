@@ -19,44 +19,49 @@ type ThemeSwitchProps = Omit<
   onValueChange: (value: Theme) => void;
 };
 
-const ThemeSwitch = React.forwardRef<
-  React.ElementRef<typeof SwitchPrimitives.Root>,
-  ThemeSwitchProps
->(({ className, value, onValueChange, ...props }, ref) => (
-  <TooltipProvider>
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <SwitchPrimitives.Root
+const ThemeSwitch = (
+  {
+    ref,
+    className,
+    value,
+    onValueChange,
+    ...props
+  }: ThemeSwitchProps & {
+    ref: React.RefObject<React.ElementRef<typeof SwitchPrimitives.Root>>;
+  }
+) => (<TooltipProvider>
+  <Tooltip>
+    <TooltipTrigger asChild>
+      <SwitchPrimitives.Root
+        className={cn(
+          "peer inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 bg-input",
+          className,
+        )}
+        checked={value === "dark"}
+        onCheckedChange={(checked) =>
+          onValueChange(checked ? "dark" : "light")
+        }
+        {...props}
+        ref={ref}
+      >
+        <SwitchPrimitives.Thumb
           className={cn(
-            "peer inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 bg-input",
-            className,
+            "pointer-events-none flex h-5 w-5 rounded-full bg-background shadow-lg ring-0 transition-transform data-[state=checked]:translate-x-5 data-[state=unchecked]:translate-x-0",
           )}
-          checked={value === "dark"}
-          onCheckedChange={(checked) =>
-            onValueChange(checked ? "dark" : "light")
-          }
-          {...props}
-          ref={ref}
         >
-          <SwitchPrimitives.Thumb
-            className={cn(
-              "pointer-events-none flex h-5 w-5 rounded-full bg-background shadow-lg ring-0 transition-transform data-[state=checked]:translate-x-5 data-[state=unchecked]:translate-x-0",
-            )}
-          >
-            {value === "dark" ? (
-              <Moon size={16} className="m-auto" />
-            ) : (
-              <Sun size={16} className="m-auto" />
-            )}
-          </SwitchPrimitives.Thumb>
-        </SwitchPrimitives.Root>
-      </TooltipTrigger>
-      <TooltipContent>
-        Currently: {value === "dark" ? "Dark" : "Light"} Mode
-      </TooltipContent>
-    </Tooltip>
-  </TooltipProvider>
-));
+          {value === "dark" ? (
+            <Moon size={16} className="m-auto" />
+          ) : (
+            <Sun size={16} className="m-auto" />
+          )}
+        </SwitchPrimitives.Thumb>
+      </SwitchPrimitives.Root>
+    </TooltipTrigger>
+    <TooltipContent>
+      Currently: {value === "dark" ? "Dark" : "Light"} Mode
+    </TooltipContent>
+  </Tooltip>
+</TooltipProvider>);
 ThemeSwitch.displayName = "ThemeSwitch";
 
 export { ThemeSwitch };
