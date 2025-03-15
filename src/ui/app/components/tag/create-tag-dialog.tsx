@@ -23,6 +23,7 @@ import { Input } from "@/components/ui/input";
 import { ColorPicker } from "@/components/color-picker";
 import { tagSchema } from "@/lib/schema";
 import { ChooseMultiApps } from "@/components/app/choose-multi-apps";
+import { randomColor } from "@/lib/color-utils";
 
 type FormValues = z.infer<typeof tagSchema>;
 
@@ -38,7 +39,7 @@ export function CreateTagDialog({ onSubmit, trigger }: CreateTagDialogProps) {
     schema: tagSchema,
     defaultValues: {
       name: "",
-      color: "#000000",
+      color: randomColor(),
       apps: [],
     },
   });
