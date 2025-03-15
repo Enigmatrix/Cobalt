@@ -122,39 +122,48 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center text-center px-6 py-8 rounded-lg bg-background/50",
+        "flex flex-col items-center justify-center text-center px-6 py-8 rounded-lg bg-background/50 transition-all duration-300 animate-in fade-in",
         config.containerClass,
         className,
       )}
     >
       <div
         className={cn(
-          "rounded-full bg-muted flex items-center justify-center",
+          "rounded-full bg-muted flex items-center justify-center transition-transform duration-500 hover:scale-110",
           config.iconContainerClass,
         )}
       >
         <IconComponent
           size={config.iconSize}
-          className="text-muted-foreground"
+          className="text-muted-foreground animate-[float_3s_ease-in-out_infinite]"
         />
       </div>
       <div className="space-y-1 max-w-[18rem]">
-        <h3 className={cn("font-semibold text-foreground", config.titleClass)}>
+        <h3
+          className={cn(
+            "font-semibold text-foreground animate-in slide-in-from-bottom-2 duration-300",
+            config.titleClass,
+          )}
+        >
           {stateConfig.title}
         </h3>
-        <p className={cn("text-muted-foreground", config.descriptionClass)}>
+        <p
+          className={cn(
+            "text-muted-foreground animate-in slide-in-from-bottom-3 duration-300",
+            config.descriptionClass,
+          )}
+        >
           {stateConfig.description}
         </p>
       </div>
 
       {stateConfig.showCreateButton && onCreateClick && (
         <Button
-          variant="outline"
-          size={config.buttonSize}
           onClick={onCreateClick}
-          className="mt-4"
+          size={config.buttonSize}
+          className="mt-4 animate-in slide-in-from-bottom-4 duration-300"
         >
-          <Plus className="mr-2" size={config.iconSize * 0.75} />
+          <Plus className="mr-2" size={16} />
           {stateConfig.createButtonText}
         </Button>
       )}
