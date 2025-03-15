@@ -282,6 +282,8 @@ pub struct TriggeredReminder {
     pub reminder: Reminder,
     /// Name of the offending target (App/Tag)
     pub name: String,
+    /// Usage limit
+    pub usage_limit: crate::table::Duration,
 }
 
 /// Reference to hold statements regarding [Alert] and [Reminder] queries

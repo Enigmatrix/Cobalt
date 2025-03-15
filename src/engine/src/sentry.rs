@@ -1,7 +1,9 @@
 use std::sync::Arc;
 
 use data::db::{AlertManager, Database, TriggeredAlert};
-use data::entities::{AlertEvent, Reason, ReminderEvent, Target, Timestamp, TriggerAction};
+use data::entities::{
+    AlertEvent, Duration, Reason, ReminderEvent, Target, Timestamp, TriggerAction,
+};
 use platform::objects::{
     Process, ProcessId, Progress, Timestamp as PlatformTimestamp, ToastManager, Window,
 };
@@ -45,6 +47,7 @@ impl Sentry {
                 &triggered_reminder.name,
                 &triggered_reminder.reminder.message,
                 triggered_reminder.reminder.threshold,
+                triggered_reminder.usage_limit,
             )
             .warn();
             self.mgr
@@ -168,16 +171,32 @@ impl Sentry {
     }
 
     /// Message the user with the given [TriggeredReminder]'s name and message and progress.
-    pub fn handle_reminder_message(&self, name: &str, msg: &str, value: f64) -> Result<()> {
+    pub fn handle_reminder_message(
+        &self,
+        name: &str,
+        msg: &str,
+        value: f64,
+        usage_limit: Duration,
+    ) -> Result<()> {
         ToastManager::show_reminder(
-            &format!("Reminder: {}", name),
+            name,
             msg,
             Progress {
                 title: None,
                 value,
                 value_string_override: None,
-                //status: "1h/1h 40m".to_string(),
-                status: "".to_string(),
+                status: format!(
+                    "{} / {}",
+                    util::time::human_duration(
+                        platform::objects::Duration::from_ticks(
+                            (usage_limit as f64 * value) as i64
+                        )
+                        .into()
+                    ),
+                    util::time::human_duration(
+                        platform::objects::Duration::from_ticks(usage_limit).into()
+                    )
+                ),
             },
         )?;
         Ok(())
