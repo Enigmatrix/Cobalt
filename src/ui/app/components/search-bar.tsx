@@ -3,15 +3,10 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 import { Search } from "lucide-react";
 
-const SearchBar = (
-  {
-    ref,
-    className,
-    ...props
-  }: React.ComponentProps<"input"> & {
-    ref: React.RefObject<HTMLInputElement>;
-  }
-) => {
+const SearchBar = React.forwardRef<
+  HTMLInputElement,
+  React.ComponentProps<"input">
+>(({ className, ...props }, ref) => {
   return (
     <div
       className={cn(
@@ -28,7 +23,7 @@ const SearchBar = (
       />
     </div>
   );
-};
+});
 SearchBar.displayName = "SearchBar";
 
 export { SearchBar };
