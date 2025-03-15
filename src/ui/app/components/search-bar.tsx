@@ -17,7 +17,7 @@ const SearchBar = React.forwardRef<
       <Search size={16} />
       <input
         type="search"
-        className="text-base bg-transparent px-2 py-2 w-full placeholder:text-muted-foreground outline-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+        className="text-base bg-transparent px-2 py-2 w-full placeholder:text-muted-foreground outline-hidden disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
         ref={ref}
         {...props}
       />

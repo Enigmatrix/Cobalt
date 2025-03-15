@@ -154,8 +154,8 @@ function AlertListItem({ alert }: { alert: Alert }) {
     <NavLink
       to={`/alerts/${alert.id}`}
       className={cn(
-        "h-24 shadow-sm rounded-md flex flex-col",
-        "ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+        "h-24 shadow-xs rounded-md flex flex-col",
+        "ring-offset-background transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
         "disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none cursor-pointer",
         "bg-card text-card-foreground hover:bg-muted/75 border-border border",
       )}
@@ -165,7 +165,7 @@ function AlertListItem({ alert }: { alert: Alert }) {
           <>
             <AppIcon
               buffer={app.icon}
-              className="mx-2 h-10 w-10 flex-shrink-0"
+              className="mx-2 h-10 w-10 shrink-0"
             />
 
             <div className="flex flex-col min-w-0">
@@ -189,7 +189,7 @@ function AlertListItem({ alert }: { alert: Alert }) {
         ) : alert.target.tag === "Tag" && tag ? (
           <>
             <TagIcon
-              className="mx-2 h-10 w-10 flex-shrink-0"
+              className="mx-2 h-10 w-10 shrink-0"
               style={{ color: tag.color }}
             />
             <div className="flex flex-col min-w-0 gap-1">

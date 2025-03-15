@@ -312,7 +312,7 @@ export function MultiSelect<T>({
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="p-0 w-[--radix-popover-trigger-width]"
+        className="p-0 w-(--radix-popover-trigger-width)"
         align="start"
         onEscapeKeyDown={() => setIsPopoverOpen(false)}
       >

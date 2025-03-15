@@ -252,14 +252,14 @@ function TagListItem({
     <NavLink
       to={`/tags/${tag.id}`}
       className={cn(
-        "h-20 shadow-sm rounded-md flex items-center gap-2 p-4 @container",
-        "ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+        "h-20 shadow-xs rounded-md flex items-center gap-2 p-4 @container",
+        "ring-offset-background transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
         "disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none cursor-pointer",
         "bg-card text-card-foreground hover:bg-muted/75 border-border border",
       )}
     >
       <TagIcon
-        className="mx-2 h-10 w-10 flex-shrink-0"
+        className="mx-2 h-10 w-10 shrink-0"
         style={{ color: tag.color }}
       />
 

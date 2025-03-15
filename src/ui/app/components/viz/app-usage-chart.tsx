@@ -114,7 +114,7 @@ export function AppUsageBarChart({
       tooltip: {
         trigger: "axis",
         axisPointer: {
-          type: "shadow",
+          type: "shadow-sm",
 
           label: {
             show: false,

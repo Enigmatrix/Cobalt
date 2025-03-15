@@ -468,7 +468,7 @@ export function Gantt({
 
       <div className="bg-transparent overflow-hidden flex text-muted-foreground">
         {/* Fixed left column */}
-        <div className="w-[300px] flex-shrink-0">
+        <div className="w-[300px] shrink-0">
           <div
             className={cn("h-14 border-r border-r-transparent flex", {
               "border-b": !hideTimeline,
@@ -539,7 +539,7 @@ export function Gantt({
 
         {/* Scrollable timeline container */}
         <HScrollView
-          className="flex-grow overflow-auto"
+          className="grow overflow-auto"
           innerClassName="group relative"
           onMouseMove={(e) => {
             const container = e.currentTarget;
@@ -552,7 +552,7 @@ export function Gantt({
         >
           {/* Vertical line that follows mouse */}
           <div
-            className="absolute top-0 bottom-0 w-px border-l border-dashed border-muted-foreground z-[999] pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"
+            className="absolute top-0 bottom-0 w-px border-l border-dashed border-muted-foreground z-999 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"
             style={{
               left: "var(--mouse-x)",
               transform: "translateX(-50%)",
@@ -567,7 +567,7 @@ export function Gantt({
                     i % (timeUnit.unit === "minute" ? 4 : 1) === 0 && (
                       <div
                         key={time.toISO()}
-                        className="text-sm text-muted-foreground flex-shrink-0 border-l pl-1 border-muted-foreground"
+                        className="text-sm text-muted-foreground shrink-0 border-l pl-1 border-muted-foreground"
                         style={{ width: "100px" }}
                       >
                         {formatTime(time, timeUnit.unit)}
