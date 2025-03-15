@@ -112,12 +112,12 @@ export function CreateAlertDialog({
                       showIcon={false}
                       className="w-full text-foreground"
                       {...field}
-                      duration={
-                        value === undefined ? undefined : ticksToDuration(value)
+                      value={
+                        value === undefined ? null : ticksToDuration(value)
                       }
-                      setDuration={(dur) =>
+                      onValueChange={(dur) =>
                         onChange(
-                          dur === undefined ? undefined : durationToTicks(dur),
+                          dur === null ? undefined : durationToTicks(dur),
                         )
                       }
                     />
@@ -194,18 +194,16 @@ export function CreateAlertDialog({
                           showIcon={false}
                           className="w-full text-foreground"
                           {...field}
-                          duration={
+                          value={
                             value?.duration === undefined
-                              ? undefined
+                              ? null
                               : ticksToDuration(value.duration)
                           }
-                          setDuration={(dur) =>
+                          onValueChange={(dur) =>
                             onChange({
                               tag: "Dim",
                               duration:
-                                dur === undefined
-                                  ? undefined
-                                  : durationToTicks(dur),
+                                dur === null ? undefined : durationToTicks(dur),
                             })
                           }
                         />
