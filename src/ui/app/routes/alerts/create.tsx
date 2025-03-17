@@ -35,7 +35,7 @@ import { useAppState } from "@/lib/state";
 import { useNavigate } from "react-router";
 import { Duration } from "luxon";
 import { useTimePeriod } from "@/hooks/use-today";
-import type { Period, Target } from "@/lib/entities";
+import type { Period, Target, TimeFrame } from "@/lib/entities";
 import { DateTime } from "luxon";
 import { useAppDurationsPerPeriod } from "@/hooks/use-repo";
 import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
@@ -65,6 +65,8 @@ export default function CreateAlerts() {
     [createAlert, navigate],
   );
   const target = form.watch("target");
+  const usageLimit = form.watch("usage_limit");
+  const timeFrame = form.watch("time_frame");
 
   return (
     <>
@@ -77,7 +79,11 @@ export default function CreateAlerts() {
               <TabsTrigger value="actions">Actions</TabsTrigger>
             </TabsList>
             <TabsContent value="usage" className="flex-1 flex flex-col">
-              <AppUsageBarChartView target={target} />
+              <AppUsageBarChartView
+                target={target}
+                usageLimit={usageLimit}
+                timeFrame={timeFrame}
+              />
             </TabsContent>
             <TabsContent value="actions">
               <div>TODO show action video</div>
@@ -386,10 +392,46 @@ export function CreateAlertForm({
   );
 }
 
-export function AppUsageBarChartView({ target }: { target?: Target }) {
+export function AppUsageBarChartView({
+  target,
+  usageLimit,
+  timeFrame,
+}: {
+  target?: Target;
+  usageLimit: number;
+  timeFrame: TimeFrame;
+}) {
   const week = useTimePeriod("week");
   const [interval, setInterval] = useState<Interval | null>(week);
   const [period, setPeriod] = useState<Period>("day");
+  const scaledUsageLimit = useMemo(() => {
+    if (!usageLimit || !timeFrame) return undefined;
+
+    const toDuration = (timeFrame: TimeFrame) => {
+      switch (timeFrame) {
+        case "Daily":
+          return 24;
+        case "Weekly":
+          return 24 * 7;
+        case "Monthly":
+          return 24 * 30;
+      }
+    };
+
+    const perHourUsageLimit = usageLimit / toDuration(timeFrame);
+    switch (period) {
+      case "hour":
+        return perHourUsageLimit;
+      case "day":
+        return perHourUsageLimit * 24;
+      case "week":
+        return perHourUsageLimit * 24 * 7;
+      case "month":
+        return perHourUsageLimit * 24 * 30;
+      case "year":
+        return perHourUsageLimit * 24 * 365;
+    }
+  }, [period, usageLimit, timeFrame]);
 
   const {
     usages: appUsages,
@@ -464,6 +506,16 @@ export function AppUsageBarChartView({ target }: { target?: Target }) {
           <AppUsageBarChart
             data={appUsages}
             hightlightedAppIds={targetApps?.map((app) => app.id) ?? undefined}
+            markerLines={
+              scaledUsageLimit
+                ? [
+                    {
+                      yAxis: scaledUsageLimit,
+                      type: "dashed",
+                    },
+                  ]
+                : undefined
+            }
             period={loadPeriod ?? period}
             start={start ?? interval?.start ?? DateTime.now()}
             end={end ?? interval?.end ?? DateTime.now()}

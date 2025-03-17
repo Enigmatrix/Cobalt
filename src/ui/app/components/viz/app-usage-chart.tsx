@@ -26,6 +26,11 @@ export interface AppUsageBarChartProps {
   // apps to highlight, order them by index in array. will be drawn left to right = top to bottom. unhighlighted apps will be drawn on top of highlighted apps.
   hightlightedAppIds?: Ref<App>[];
   unhighlightedAppOpacity?: number;
+  markerLines?: {
+    yAxis: number;
+    color?: string;
+    type?: "dashed" | "solid";
+  }[];
   hideApps?: Record<Ref<App>, boolean>;
   singleAppId?: Ref<App>;
   start: DateTime;
@@ -63,6 +68,7 @@ export function AppUsageBarChart({
   data,
   hightlightedAppIds,
   unhighlightedAppOpacity = 0.5,
+  markerLines,
   hideApps,
   singleAppId,
   start,
@@ -191,60 +197,80 @@ export function AppUsageBarChart({
           formatter: (params) => toHumanDuration(params),
         },
       },
-      series: involvedApps.map((app) => ({
-        id: app.id,
-        name: app.name,
-        type: "bar",
-        stack: "total",
-        // [index, value][]
-        data: data[app.id]?.map((d) => [xaxisLookup[d.group], d.duration]),
+      series: [
+        ...(involvedApps.map((app) => ({
+          id: app.id,
+          name: app.name,
+          type: "bar",
+          stack: "total",
+          // [index, value][]
+          data: data[app.id]?.map((d) => [xaxisLookup[d.group], d.duration]),
 
-        itemStyle: {
-          opacity: hightlightedAppIds?.includes(app.id)
-            ? 1
-            : unhighlightedAppOpacity,
-          color: gradientBars
-            ? {
-                type: "linear",
-                x: 0,
-                y: 0,
-                x2: 0,
-                y2: 1,
-                colorStops: [
-                  {
-                    offset: 0,
-                    color: app.color,
-                  },
-                  {
-                    offset: 1,
-                    color: echarts.color.modifyAlpha(app.color, 0.7),
-                  },
-                ],
-              }
-            : app.color,
-          borderRadius: barRadius ?? 2,
-        },
+          itemStyle: {
+            opacity:
+              (hightlightedAppIds?.includes(app.id) ?? true)
+                ? undefined
+                : unhighlightedAppOpacity,
+            color: gradientBars
+              ? {
+                  type: "linear",
+                  x: 0,
+                  y: 0,
+                  x2: 0,
+                  y2: 1,
+                  colorStops: [
+                    {
+                      offset: 0,
+                      color: app.color,
+                    },
+                    {
+                      offset: 1,
+                      color: echarts.color.modifyAlpha(app.color, 0.7),
+                    },
+                  ],
+                }
+              : app.color,
+            borderRadius: barRadius ?? 2,
+          },
 
-        labelLayout(params) {
-          let diam = Math.min(params.rect.width, params.rect.height) * 0.7;
-          diam = Math.min(diam, 32);
-          diam = diam < 5 ? 0 : diam;
-          return { width: diam, height: diam };
-        },
-        label: {
-          show: !singleAppId,
-          position: "inside",
-          backgroundColor: {
-            image: toDataUrl(app.icon) ?? DEFAULT_ICON_SVG_URL,
+          labelLayout(params) {
+            let diam = Math.min(params.rect.width, params.rect.height) * 0.7;
+            diam = Math.min(diam, 32);
+            diam = diam < 5 ? 0 : diam;
+            return { width: diam, height: diam };
           },
-          formatter: () => {
-            return `{empty|}`;
+          label: {
+            show: !singleAppId,
+            position: "inside",
+            backgroundColor: {
+              image: toDataUrl(app.icon) ?? DEFAULT_ICON_SVG_URL,
+            },
+            formatter: () => {
+              return `{empty|}`;
+            },
+            rich: {
+              empty: {},
+            },
           },
-          rich: {
-            empty: {},
+        })) satisfies echarts.SeriesOption[]),
+        ...((markerLines ?? []).map((line) => ({
+          type: "line",
+          markLine: {
+            silent: true,
+            symbol: "none",
+            data: [
+              {
+                yAxis: line.yAxis,
+                lineStyle: {
+                  color: line.color ?? getVarColorAsHex("muted-foreground"),
+                  type: line.type,
+                },
+              },
+            ],
           },
-        },
-      })),
+          data: [],
+        })) satisfies echarts.SeriesOption[]),
+      ],
     } satisfies echarts.EChartsOption;
 
     chart.getZr().on("mousemove", (params) => {
@@ -305,6 +331,7 @@ export function AppUsageBarChart({
     animationsEnabled,
     hightlightedAppIds,
     unhighlightedAppOpacity,
+    markerLines,
     theme,
   ]);
 
