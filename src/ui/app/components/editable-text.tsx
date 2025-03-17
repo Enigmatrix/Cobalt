@@ -45,7 +45,7 @@ export function EditableText({
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={handleKeyDown}
           onBlur={handleSubmit}
-          className="bg-transparent outline-none min-w-0"
+          className="bg-transparent outline-hidden min-w-0"
           style={{ width: `${value.length + 2}ch` }}
           autoFocus
         />

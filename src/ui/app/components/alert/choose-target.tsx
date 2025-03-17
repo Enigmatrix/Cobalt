@@ -22,7 +22,7 @@ import { ChevronDown, ChevronRight, Plus, TagIcon } from "lucide-react";
 import AppIcon from "@/components/app/app-icon";
 import { useTargetsSearch } from "@/hooks/use-search";
 import { CreateTagDialog } from "@/components/tag/create-tag-dialog";
-import { Button, type ButtonProps } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import type { Target } from "@/lib/entities";
 import { useAppState } from "@/lib/state";
 import { cn } from "@/lib/utils";
@@ -160,7 +160,7 @@ function ChooseTargetTrigger({
   className,
   placeholder,
   ...props
-}: Omit<ButtonProps, "value"> & {
+}: Omit<ComponentProps<typeof Button>, "value"> & {
   value: Target | undefined;
   placeholder?: ReactNode;
 }) {

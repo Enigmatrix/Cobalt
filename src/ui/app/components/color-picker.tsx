@@ -32,7 +32,7 @@ export function ColorPicker({
         >
           <div className="w-full flex items-center gap-2">
             <div
-              className="h-4 w-4 rounded !bg-center !bg-cover transition-all border"
+              className="h-4 w-4 rounded bg-center! bg-cover! transition-all border"
               style={{ backgroundColor: color }}
             />
             <div className="truncate flex-1">{color}</div>
@@ -46,7 +46,7 @@ export function ColorPicker({
           color={color}
           onChange={(v) => onChange?.(v.toLowerCase())}
           className={cn(
-            "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+            "flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
             "m-auto min-w-20 w-full",
           )}
         />
@@ -54,7 +54,7 @@ export function ColorPicker({
           {COLORS.map((color) => (
             <div
               key={color}
-              className="h-4 w-4 rounded !bg-center !bg-cover transition-all border"
+              className="h-4 w-4 rounded bg-center! bg-cover! transition-all border"
               style={{ backgroundColor: color }}
               onClick={() => onChange?.(color)}
             />

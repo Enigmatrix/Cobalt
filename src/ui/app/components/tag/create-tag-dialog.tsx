@@ -63,7 +63,7 @@ export function CreateTagDialog({ onSubmit, trigger }: CreateTagDialogProps) {
       <DialogTrigger asChild>
         {trigger || <Button variant="outline">Create Tag</Button>}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="flex flex-col sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Create Tag</DialogTitle>
           <DialogDescription>
@@ -115,11 +115,13 @@ export function CreateTagDialog({ onSubmit, trigger }: CreateTagDialogProps) {
                 <FormItem>
                   <FormLabel>Apps</FormLabel>
                   <FormControl>
-                    <ChooseMultiApps
-                      placeholder="Select apps"
-                      value={field.value}
-                      onValueChanged={field.onChange}
-                    />
+                    <div className="max-w-full overflow-hidden">
+                      <ChooseMultiApps
+                        placeholder="Select apps"
+                        value={field.value}
+                        onValueChanged={field.onChange}
+                      />
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
