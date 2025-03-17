@@ -35,7 +35,7 @@ import { useAppState } from "@/lib/state";
 import { useNavigate } from "react-router";
 import { Duration } from "luxon";
 import { useTimePeriod } from "@/hooks/use-today";
-import type { Period } from "@/lib/entities";
+import type { Period, Target } from "@/lib/entities";
 import { DateTime } from "luxon";
 import { useAppDurationsPerPeriod } from "@/hooks/use-repo";
 import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
@@ -43,10 +43,18 @@ import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { DateRangePicker } from "@/components/time/date-range-picker";
+import { useTargetApps } from "@/hooks/use-refresh";
+import type { UseFormReturn } from "react-hook-form";
 
 type FormValues = z.infer<typeof alertSchema>;
 
 export default function CreateAlerts() {
+  const form = useZodForm({
+    schema: alertSchema,
+    defaultValues: {
+      reminders: [],
+    },
+  });
   const createAlert = useAppState((state) => state.createAlert);
   const navigate = useNavigate();
   const onSubmit = useCallback(
@@ -56,10 +64,12 @@ export default function CreateAlerts() {
     },
     [createAlert, navigate],
   );
+  const target = form.watch("target");
+
   return (
     <>
       <main className="grid grid-cols-[360px_minmax(0,1fr)] h-full ">
-        <CreateAlertForm onSubmit={onSubmit} />
+        <CreateAlertForm onSubmit={onSubmit} form={form} />
         <div className="flex flex-col p-4">
           <Tabs defaultValue="usage" className="flex-1 flex flex-col">
             <TabsList className="self-center">
@@ -67,7 +77,7 @@ export default function CreateAlerts() {
               <TabsTrigger value="actions">Actions</TabsTrigger>
             </TabsList>
             <TabsContent value="usage" className="flex-1 flex flex-col">
-              <AppUsageBarChartView />
+              <AppUsageBarChartView target={target} />
             </TabsContent>
             <TabsContent value="actions">
               <div>TODO show action video</div>
@@ -81,16 +91,11 @@ export default function CreateAlerts() {
 
 export function CreateAlertForm({
   onSubmit,
+  form,
 }: {
   onSubmit: (values: FormValues) => void;
+  form: UseFormReturn<FormValues>;
 }) {
-  const form = useZodForm({
-    schema: alertSchema,
-    defaultValues: {
-      reminders: [],
-    },
-  });
-
   const items = [
     {
       id: 1,
@@ -381,7 +386,7 @@ export function CreateAlertForm({
   );
 }
 
-export function AppUsageBarChartView() {
+export function AppUsageBarChartView({ target }: { target?: Target }) {
   const week = useTimePeriod("week");
   const [interval, setInterval] = useState<Interval | null>(week);
   const [period, setPeriod] = useState<Period>("day");
@@ -416,6 +421,8 @@ export function AppUsageBarChartView() {
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadPeriod]);
+
+  const targetApps = useTargetApps(target);
 
   return (
     <div className="flex flex-1">
@@ -456,6 +463,7 @@ export function AppUsageBarChartView() {
         <div className="aspect-video ">
           <AppUsageBarChart
             data={appUsages}
+            hightlightedAppIds={targetApps?.map((app) => app.id) ?? undefined}
             period={loadPeriod ?? period}
             start={start ?? interval?.start ?? DateTime.now()}
             end={end ?? interval?.end ?? DateTime.now()}
