@@ -11,7 +11,7 @@ import {
 import type { z } from "zod";
 import { ChooseTarget } from "@/components/alert/choose-target";
 import { DurationPicker } from "@/components/time/duration-picker";
-import { durationToTicks, ticksToDuration } from "@/lib/time";
+import { durationToTicks, ticksToDuration, type Interval } from "@/lib/time";
 import {
   Select,
   SelectContent,
@@ -30,9 +30,17 @@ import {
   TimelineItem,
 } from "@/components/ui/timeline";
 import { Button } from "@/components/ui/button";
-import { useCallback } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useAppState } from "@/lib/state";
 import { useNavigate } from "react-router";
+import { Duration } from "luxon";
+import { useTimePeriod } from "@/hooks/use-today";
+import type { Period } from "@/lib/entities";
+import { DateTime } from "luxon";
+import { useAppDurationsPerPeriod } from "@/hooks/use-repo";
+import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type FormValues = z.infer<typeof alertSchema>;
 
@@ -48,9 +56,22 @@ export default function CreateAlerts() {
   );
   return (
     <>
-      <main className="flex flex-1">
+      <main className="grid grid-cols-[360px_minmax(0,1fr)] h-full ">
         <CreateAlertForm onSubmit={onSubmit} />
-        <div className="flex-1"></div>
+        <div className="flex flex-col p-4">
+          <Tabs defaultValue="usage" className="flex-1 flex flex-col">
+            <TabsList className="self-center">
+              <TabsTrigger value="usage">Usage</TabsTrigger>
+              <TabsTrigger value="actions">Actions</TabsTrigger>
+            </TabsList>
+            <TabsContent value="usage" className="flex-1 flex flex-col">
+              <AppUsageBarChartView />
+            </TabsContent>
+            <TabsContent value="actions">
+              <div>TODO show action video</div>
+            </TabsContent>
+          </Tabs>
+        </div>
       </main>
     </>
   );
@@ -355,5 +376,57 @@ export function CreateAlertForm({
         </form>
       </Form>
     </>
+  );
+}
+
+export function AppUsageBarChartView() {
+  const week = useTimePeriod("week");
+  const [interval, setInterval] = useState<Interval | null>(week);
+  const [period, setPeriod] = useState<Period>("day");
+
+  const {
+    isLoading,
+    totalUsage,
+    usages: appUsages,
+    period: loadPeriod,
+    start,
+    end,
+  } = useAppDurationsPerPeriod({
+    start: interval?.start,
+    end: interval?.end,
+    period: period,
+  });
+
+  const [yAxisInterval, maxYIsPeriod] = useMemo(() => {
+    switch (period) {
+      case "hour":
+        return [Duration.fromObject({ minutes: 15 }), true];
+      case "day":
+        return [Duration.fromObject({ hours: 2 }), false];
+      case "week":
+        return [Duration.fromObject({ hours: 6 }), false];
+      case "month":
+        return [Duration.fromObject({ days: 1 }), false];
+      default:
+        throw new Error(`Unknown period: ${period}`);
+    }
+  }, [loadPeriod]);
+
+  return (
+    <div className="flex flex-1">
+      <div className="aspect-video flex-1 my-auto max-w-full">
+        <AppUsageBarChart
+          data={appUsages}
+          period={loadPeriod ?? period}
+          start={start ?? interval?.start ?? DateTime.now()}
+          end={end ?? interval?.end ?? DateTime.now()}
+          className="w-full h-full"
+          maxYIsPeriod={maxYIsPeriod}
+          interval={yAxisInterval}
+          animationsEnabled={false}
+          barRadius={3}
+        />
+      </div>
+    </div>
   );
 }
