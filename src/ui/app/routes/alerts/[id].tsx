@@ -9,6 +9,7 @@ import {
   BreadcrumbLink,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { NavLink } from "react-router";
 
 export default function Alert({ params }: Route.ComponentProps) {
   const id = +params.id;
@@ -20,7 +21,9 @@ export default function Alert({ params }: Route.ComponentProps) {
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem className="hidden md:block">
-              <BreadcrumbLink href="/alerts">Alerts</BreadcrumbLink>
+              <BreadcrumbLink asChild>
+                <NavLink to="/alerts">Alerts</NavLink>
+              </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator className="hidden md:block" />
             <BreadcrumbItem>

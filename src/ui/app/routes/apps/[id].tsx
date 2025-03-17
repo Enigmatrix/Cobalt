@@ -114,7 +114,9 @@ export default function App({ params }: Route.ComponentProps) {
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem className="hidden md:block">
-              <BreadcrumbLink href="/apps">Apps</BreadcrumbLink>
+              <BreadcrumbLink asChild>
+                <NavLink to="/apps">Apps</NavLink>
+              </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator className="hidden md:block" />
             <BreadcrumbItem>
@@ -164,14 +166,16 @@ export default function App({ params }: Route.ComponentProps) {
               </div>
 
               {/* Description */}
-              <EditableText
-                className="text-muted-foreground self-start"
-                buttonClassName="text-muted-foreground/50"
-                text={app.description}
-                onSubmit={async (v) =>
-                  await updateApp({ ...app, description: v })
-                }
-              />
+              <div className="flex">
+                <EditableText
+                  className="text-muted-foreground max-w-full"
+                  buttonClassName="text-muted-foreground/50"
+                  text={app.description}
+                  onSubmit={async (v) =>
+                    await updateApp({ ...app, description: v })
+                  }
+                />
+              </div>
 
               {/* App Identity */}
               <div className="text-sm inline-flex border-border border rounded-lg overflow-hidden max-w-fit min-w-0 bg-muted/30 items-center">

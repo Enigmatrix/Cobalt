@@ -16,7 +16,7 @@ export function AppBadge({ app, remove }: { app: App; remove?: () => void }) {
       <Text className="text-base">{app.name}</Text>
       {remove && (
         <XIcon
-          className="ml-2 h-4 w-4"
+          className="ml-2 h-4 w-4 shrink-0"
           onClick={(event) => {
             event.stopPropagation();
             remove();

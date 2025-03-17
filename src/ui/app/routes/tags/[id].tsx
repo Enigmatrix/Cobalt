@@ -47,7 +47,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { useNavigate } from "react-router";
+import { NavLink, useNavigate } from "react-router";
 import { useTimePeriod } from "@/hooks/use-today";
 import { Gantt } from "@/components/viz/gantt";
 import { ChooseMultiApps } from "@/components/app/choose-multi-apps";
@@ -138,7 +138,9 @@ export default function Tag({ params }: Route.ComponentProps) {
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem className="hidden md:block">
-              <BreadcrumbLink href="/tags">Tags</BreadcrumbLink>
+              <BreadcrumbLink asChild>
+                <NavLink to="/tags">Tags</NavLink>
+              </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator className="hidden md:block" />
             <BreadcrumbItem>
