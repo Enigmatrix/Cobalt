@@ -30,7 +30,6 @@ import {
   TimelineItem,
 } from "@/components/ui/timeline";
 import { Button } from "@/components/ui/button";
-import { CheckIcon } from "lucide-react";
 import { useCallback } from "react";
 import { useAppState } from "@/lib/state";
 import { useNavigate } from "react-router";
@@ -252,6 +251,78 @@ export function CreateAlertForm({
         </>
       ),
     },
+    {
+      id: 4,
+      title: "Reminders",
+      content: (
+        <FormField
+          control={form.control}
+          name="reminders"
+          render={({ field }) => (
+            <FormItem>
+              <FormControl>
+                <div className="space-y-2">
+                  {field.value.map((reminder, index) => (
+                    <div key={index} className="flex gap-2 items-end">
+                      <Input
+                        type="number"
+                        min={0}
+                        max={1}
+                        step={0.01}
+                        placeholder="Threshold (0-1)"
+                        value={reminder.threshold}
+                        className="w-24"
+                        onChange={(e) => {
+                          const newValue = [...field.value];
+                          newValue[index].threshold = parseFloat(
+                            e.target.value,
+                          );
+                          field.onChange(newValue);
+                        }}
+                      />
+                      <Input
+                        placeholder="Reminder message"
+                        value={reminder.message}
+                        onChange={(e) => {
+                          const newValue = [...field.value];
+                          newValue[index].message = e.target.value;
+                          field.onChange(newValue);
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        onClick={() => {
+                          const newValue = [...field.value];
+                          newValue.splice(index, 1);
+                          field.onChange(newValue);
+                        }}
+                      >
+                        <span className="sr-only">Delete reminder</span>×
+                      </Button>
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      field.onChange([
+                        ...field.value,
+                        { threshold: 0.5, message: "" },
+                      ]);
+                    }}
+                  >
+                    Add Reminder
+                  </Button>
+                </div>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      ),
+    },
   ];
 
   return (
@@ -259,7 +330,7 @@ export function CreateAlertForm({
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
-          className="min-w-[320px] space-y-4 px-8 m-auto"
+          className="w-[360px] space-y-4 px-8 m-auto py-8"
         >
           <Timeline value={0}>
             {items.map((item) => (
@@ -278,7 +349,7 @@ export function CreateAlertForm({
             ))}
           </Timeline>
 
-          <div className="flex justify-end">
+          <div className="flex justify-end mt-4">
             <Button type="submit">Submit</Button>
           </div>
         </form>
