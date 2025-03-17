@@ -208,12 +208,12 @@ export function CreateAlertForm({
                     }}
                   >
                     <SelectTrigger className="hover:bg-muted w-full">
-                      <SelectValue placeholder="Action Type" />
+                      <SelectValue placeholder="Type" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Kill">Kill</SelectItem>
                       <SelectItem value="Dim">Dim</SelectItem>
                       <SelectItem value="Message">Message</SelectItem>
+                      <SelectItem value="Kill">Kill</SelectItem>
                     </SelectContent>
                   </Select>
                 </FormControl>

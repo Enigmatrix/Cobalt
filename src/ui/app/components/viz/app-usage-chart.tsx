@@ -67,7 +67,7 @@ function getDateTimeRange(
 export function AppUsageBarChart({
   data,
   hightlightedAppIds,
-  unhighlightedAppOpacity = 0.5,
+  unhighlightedAppOpacity = 0.3,
   markerLines,
   hideApps,
   singleAppId,
