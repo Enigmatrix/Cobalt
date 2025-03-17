@@ -23,6 +23,9 @@ import { getVarColorAsHex } from "@/lib/color-utils";
 
 export interface AppUsageBarChartProps {
   data: EntityMap<App, WithGroupedDuration<App>[]>;
+  // apps to highlight, order them by index in array. will be drawn left to right = top to bottom. unhighlighted apps will be drawn on top of highlighted apps.
+  hightlightedAppIds?: Ref<App>[];
+  unhighlightedAppOpacity?: number;
   hideApps?: Record<Ref<App>, boolean>;
   singleAppId?: Ref<App>;
   start: DateTime;
@@ -58,6 +61,8 @@ function getDateTimeRange(
 
 export function AppUsageBarChart({
   data,
+  hightlightedAppIds,
+  unhighlightedAppOpacity = 0.5,
   hideApps,
   singleAppId,
   start,
@@ -91,8 +96,9 @@ export function AppUsageBarChart({
         .map((id) => apps[id as unknown as Ref<App>])
         .thru(handleStaleApps)
         .filter((app) => !hideApps?.[app.id])
+        .orderBy((app) => hightlightedAppIds?.indexOf(app.id) ?? -1, "desc")
         .value(),
-    [handleStaleApps, apps, data, singleAppId, hideApps],
+    [handleStaleApps, apps, data, singleAppId, hideApps, hightlightedAppIds],
   );
 
   React.useEffect(() => {
@@ -194,6 +200,9 @@ export function AppUsageBarChart({
         data: data[app.id]?.map((d) => [xaxisLookup[d.group], d.duration]),
 
         itemStyle: {
+          opacity: hightlightedAppIds?.includes(app.id)
+            ? 1
+            : unhighlightedAppOpacity,
           color: gradientBars
             ? {
                 type: "linear",
@@ -294,6 +303,8 @@ export function AppUsageBarChart({
     barRadius,
     onHover,
     animationsEnabled,
+    hightlightedAppIds,
+    unhighlightedAppOpacity,
     theme,
   ]);
 
