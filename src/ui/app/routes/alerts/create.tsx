@@ -41,6 +41,8 @@ import { useAppDurationsPerPeriod } from "@/hooks/use-repo";
 import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Label } from "@/components/ui/label";
+import { DateRangePicker } from "@/components/time/date-range-picker";
 
 type FormValues = z.infer<typeof alertSchema>;
 
@@ -385,8 +387,6 @@ export function AppUsageBarChartView() {
   const [period, setPeriod] = useState<Period>("day");
 
   const {
-    isLoading,
-    totalUsage,
     usages: appUsages,
     period: loadPeriod,
     start,
@@ -410,22 +410,62 @@ export function AppUsageBarChartView() {
       default:
         throw new Error(`Unknown period: ${period}`);
     }
+    // this should take period as a dependency, but we only take in loadPeriod
+    // which is a output of useAppDurationsPerPeriod, else we get yaxis flashes
+    // with the older data's yaxis interval before the data is loading
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadPeriod]);
 
   return (
     <div className="flex flex-1">
-      <div className="aspect-video flex-1 my-auto max-w-full">
-        <AppUsageBarChart
-          data={appUsages}
-          period={loadPeriod ?? period}
-          start={start ?? interval?.start ?? DateTime.now()}
-          end={end ?? interval?.end ?? DateTime.now()}
-          className="w-full h-full"
-          maxYIsPeriod={maxYIsPeriod}
-          interval={yAxisInterval}
-          animationsEnabled={false}
-          barRadius={3}
-        />
+      <div className="flex-1 my-auto space-y-4 max-w-full">
+        <div className="flex gap-4 justify-end">
+          <FormItem>
+            <Label className="font-medium text-muted-foreground place-self-end">
+              Period
+            </Label>
+            <Select
+              value={period}
+              onValueChange={(s) => setPeriod(s as Period)}
+            >
+              <SelectTrigger className="min-w-32 font-medium">
+                <SelectValue placeholder="Select a period" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="hour">Hour</SelectItem>
+                <SelectItem value="day">Day</SelectItem>
+                <SelectItem value="week">Week</SelectItem>
+                <SelectItem value="month">Month</SelectItem>
+              </SelectContent>
+            </Select>
+          </FormItem>
+
+          <FormItem>
+            <Label className="font-medium text-muted-foreground place-self-end">
+              Time Range
+            </Label>
+            <DateRangePicker
+              value={interval}
+              onChange={setInterval}
+              dayGranularity={true}
+              className="w-full min-w-32"
+            />
+          </FormItem>
+        </div>
+        <div className="aspect-video ">
+          <AppUsageBarChart
+            data={appUsages}
+            period={loadPeriod ?? period}
+            start={start ?? interval?.start ?? DateTime.now()}
+            end={end ?? interval?.end ?? DateTime.now()}
+            className="w-full h-full"
+            maxYIsPeriod={maxYIsPeriod}
+            interval={yAxisInterval}
+            animationsEnabled={false}
+            barRadius={3}
+          />
+        </div>
       </div>
     </div>
   );
