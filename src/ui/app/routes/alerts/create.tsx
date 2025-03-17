@@ -22,7 +22,6 @@ import {
 import { Input } from "@/components/ui/input";
 import {
   Timeline,
-  TimelineDate,
   TimelineContent,
   TimelineIndicator,
   TimelineTitle,
@@ -31,17 +30,27 @@ import {
   TimelineItem,
 } from "@/components/ui/timeline";
 import { Button } from "@/components/ui/button";
-import type { UseFormReturn } from "react-hook-form";
 import { CheckIcon } from "lucide-react";
-import { useMemo } from "react";
+import { useCallback } from "react";
+import { useAppState } from "@/lib/state";
+import { useNavigate } from "react-router";
 
 type FormValues = z.infer<typeof alertSchema>;
 
 export default function CreateAlerts() {
+  const createAlert = useAppState((state) => state.createAlert);
+  const navigate = useNavigate();
+  const onSubmit = useCallback(
+    async (values: FormValues) => {
+      await createAlert(values);
+      navigate("/alerts");
+    },
+    [createAlert, navigate],
+  );
   return (
     <>
       <main className="flex flex-1">
-        <CreateAlertForm onSubmit={() => {}} />
+        <CreateAlertForm onSubmit={onSubmit} />
         <div className="flex-1"></div>
       </main>
     </>
@@ -64,10 +73,6 @@ export function CreateAlertForm({
     {
       id: 1,
       title: "Target",
-      completed(form: UseFormReturn<FormValues>) {
-        const targetState = form.getFieldState("target");
-        return targetState.isDirty && !targetState.invalid;
-      },
       content: (
         <FormField
           control={form.control}
@@ -90,17 +95,7 @@ export function CreateAlertForm({
     },
     {
       id: 2,
-      title: "Duration",
-      completed(form: UseFormReturn<FormValues>) {
-        const timeFrameState = form.getFieldState("time_frame");
-        const usageLimitState = form.getFieldState("usage_limit");
-        return (
-          timeFrameState.isDirty &&
-          !timeFrameState.invalid &&
-          usageLimitState.isDirty &&
-          !usageLimitState.invalid
-        );
-      },
+      title: "Limit",
       content: (
         <>
           <FormField
@@ -135,11 +130,11 @@ export function CreateAlertForm({
             name="usage_limit"
             render={({ field: { value, onChange, ...field } }) => (
               <FormItem>
-                <FormLabel>Usage Limit</FormLabel>
+                <FormLabel>Limit</FormLabel>
                 <FormControl>
                   <DurationPicker
                     showIcon={false}
-                    className="w-full text-foreground"
+                    className="w-full text-muted-foreground"
                     {...field}
                     value={value === undefined ? null : ticksToDuration(value)}
                     onValueChange={(dur) =>
@@ -157,10 +152,6 @@ export function CreateAlertForm({
     {
       id: 3,
       title: "Action",
-      completed(form: UseFormReturn<FormValues>) {
-        const triggerActionState = form.getFieldState("trigger_action");
-        return triggerActionState.isDirty && !triggerActionState.invalid;
-      },
       content: (
         <>
           <FormField
@@ -172,7 +163,16 @@ export function CreateAlertForm({
                   <Select
                     {...field}
                     value={field.value?.tag}
-                    onValueChange={(v) => field.onChange({ tag: v })}
+                    onValueChange={(v) => {
+                      // Reset the form when changing action type
+                      if (v === "Kill") {
+                        field.onChange({ tag: v });
+                      } else if (v === "Dim") {
+                        field.onChange({ tag: v, duration: undefined });
+                      } else if (v === "Message") {
+                        field.onChange({ tag: v, content: "" });
+                      }
+                    }}
                   >
                     <SelectTrigger className="hover:bg-muted w-full">
                       <SelectValue placeholder="Action Type" />
@@ -253,11 +253,6 @@ export function CreateAlertForm({
       ),
     },
   ];
-  const watcher = form.watch();
-  const incompleteStep = useMemo(
-    () => items.find((item) => !item.completed(form)),
-    [watcher],
-  );
 
   return (
     <>
@@ -266,20 +261,15 @@ export function CreateAlertForm({
           onSubmit={form.handleSubmit(onSubmit)}
           className="min-w-[320px] space-y-4 px-8 m-auto"
         >
-          <Timeline value={(incompleteStep?.id ?? 4) - 1}>
+          <Timeline value={0}>
             {items.map((item) => (
               <TimelineItem key={item.id} step={item.id}>
                 <TimelineHeader>
-                  <TimelineSeparator className="mt-2.5 group-data-[orientation=vertical]/timeline:h-[calc(100%-2rem-0.25rem)]" />
+                  <TimelineSeparator className="bg-primary/60 mt-2.5 group-data-[orientation=vertical]/timeline:h-[calc(100%-2rem-0.25rem)]" />
                   <TimelineTitle className="-mt-1/2 text-base">
                     {item.title}
                   </TimelineTitle>
-                  <TimelineIndicator className="group-data-completed/timeline-item:bg-primary group-data-completed/timeline-item:text-primary-foreground flex size-6 items-center justify-center group-data-completed/timeline-item:border-none group-data-[orientation=vertical]/timeline:-left-6">
-                    <CheckIcon
-                      className="group-not-data-completed/timeline-item:hidden"
-                      size={16}
-                    />
-                  </TimelineIndicator>
+                  <TimelineIndicator className="border-primary/80 group-data-completed/timeline-item:bg-primary group-data-completed/timeline-item:text-primary-foreground flex size-6 items-center justify-center group-data-completed/timeline-item:border-none group-data-[orientation=vertical]/timeline:-left-6" />
                 </TimelineHeader>
                 <TimelineContent className="mt-2 space-y-4">
                   {item.content}
