@@ -13,7 +13,6 @@ import AppIcon from "@/components/app/app-icon";
 import { memo, useMemo, type CSSProperties, type ReactNode } from "react";
 import { DurationText } from "@/components/time/duration-text";
 import { useApps, useAlerts, useApp, useTag } from "@/hooks/use-refresh";
-import { useAppState } from "@/lib/state";
 import { NavLink } from "react-router";
 import { Plus, TagIcon } from "lucide-react";
 import AutoSizer from "react-virtualized-auto-sizer";
@@ -21,7 +20,6 @@ import { FixedSizeList as List } from "react-window";
 import { HorizontalOverflowList } from "@/components/overflow-list";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CreateAlertDialog } from "@/components/alert/create-alert-dialog";
 import { MiniAppItem } from "@/routes/tags";
 import { MiniTagItem } from "@/routes/apps";
 import { useAlertsSearch } from "@/hooks/use-search";
@@ -36,7 +34,6 @@ import { NoAlerts, NoAlertsFound } from "@/components/empty-states";
 
 export default function Alerts() {
   const alerts = useAlerts();
-  const createAlert = useAppState((state) => state.createAlert);
   const [search, setSearch, alertsFiltered] = useAlertsSearch(alerts);
   const alertsSorted = alertsFiltered; // TODO: sort
 
@@ -70,17 +67,12 @@ export default function Alerts() {
           onChange={(e) => setSearch(e.target.value)}
         />
 
-        <CreateAlertDialog
-          trigger={
-            <Button variant="outline">
-              <Plus />
-              Create Alert
-            </Button>
-          }
-          onSubmit={async (alert) => {
-            await createAlert(alert);
-          }}
-        ></CreateAlertDialog>
+        <NavLink to="/alerts/create">
+          <Button variant="outline">
+            <Plus />
+            Create Alert
+          </Button>
+        </NavLink>
       </header>
 
       <div className="flex flex-1 flex-col max-w-full overflow-hidden">

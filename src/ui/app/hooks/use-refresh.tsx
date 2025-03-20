@@ -1,4 +1,4 @@
-import type { App, Tag, Alert, Ref } from "@/lib/entities";
+import type { App, Tag, Alert, Ref, Target } from "@/lib/entities";
 import { useAppState, refresh } from "@/lib/state";
 import { useCallback, useMemo } from "react";
 
@@ -82,4 +82,13 @@ export function useAlert(alertId: Ref<Alert> | null): Alert | null {
     return handleStaleAlerts([allAlerts[alertId]])[0];
   }, [allAlerts, handleStaleAlerts, alertId]);
   return alert;
+}
+
+export function useTargetApps(target?: Target | null): App[] | null {
+  const app = useApp(target?.tag === "App" ? target.id : null);
+  const tag = useTag(target?.tag === "Tag" ? target.id : null);
+  // Tag's list of Apps
+  const tagApps = useApps(tag?.apps ?? []);
+  if (!target) return null;
+  return target.tag === "App" ? (app === null ? [] : [app]) : tagApps;
 }

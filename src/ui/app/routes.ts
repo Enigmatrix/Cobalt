@@ -17,6 +17,7 @@ export default [
   ]),
   ...prefix("alerts", [
     index("routes/alerts/index.tsx"),
+    route("create", "routes/alerts/create.tsx"),
     route(":id", "routes/alerts/[id].tsx"),
   ]),
   route("history", "routes/history.tsx"),
