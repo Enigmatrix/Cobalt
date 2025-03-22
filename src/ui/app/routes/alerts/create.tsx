@@ -578,7 +578,7 @@ export function AppUsageBarChartView({
         <div className="aspect-video ">
           <AppUsageBarChart
             data={appUsages}
-            hightlightedAppIds={targetApps?.map((app) => app.id) ?? undefined}
+            highlightedAppIds={targetApps?.map((app) => app.id) ?? undefined}
             markerLines={
               scaledUsageLimit
                 ? [

@@ -52,6 +52,7 @@ export const AppUsageChartTooltipContent = React.forwardRef<
     maximumApps?: number;
     hoveredAppId: Ref<App> | null;
     singleAppId?: Ref<App>;
+    highlightedAppIds?: Ref<App>[];
   }
 >(
   (
@@ -63,6 +64,7 @@ export const AppUsageChartTooltipContent = React.forwardRef<
       hoveredAppId,
       maximumApps,
       singleAppId,
+      highlightedAppIds,
     },
     ref,
   ) => {
@@ -81,8 +83,9 @@ export const AppUsageChartTooltipContent = React.forwardRef<
           .map((app) => ({ app, usageTicks: payload[app.id]! }))
           .filter((v) => v.usageTicks > 0)
           .orderBy(["usageTicks"], ["desc"])
+          .orderBy((v) => highlightedAppIds?.indexOf(v.app.id) ?? -1, "desc")
           .value(),
-      [involvedApps, payload],
+      [involvedApps, payload, highlightedAppIds],
     );
 
     const highlightedAppId = singleAppId || hoveredAppId;
@@ -138,7 +141,12 @@ export const AppUsageChartTooltipContent = React.forwardRef<
                       )}
                       <div className="flex flex-1 justify-between items-center">
                         <div className="grid gap-1.5">
-                          <Text className="text-muted-foreground">
+                          <Text
+                            className={cn({
+                              "text-muted-foreground":
+                                !highlightedAppIds?.includes(app.id),
+                            })}
+                          >
                             {app.name}
                           </Text>
                         </div>
