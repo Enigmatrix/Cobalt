@@ -53,6 +53,7 @@ import { DateRangePicker } from "@/components/time/date-range-picker";
 import { useTargetApps } from "@/hooks/use-refresh";
 import type { UseFormReturn } from "react-hook-form";
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+import { useFieldArray } from "react-hook-form";
 
 type FormValues = z.infer<typeof alertSchema>;
 
@@ -110,6 +111,11 @@ export function CreateAlertForm({
   onSubmit: (values: FormValues) => void;
   form: UseFormReturn<FormValues>;
 }) {
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "reminders",
+  });
+
   const items = [
     {
       id: 1,
@@ -295,74 +301,80 @@ export function CreateAlertForm({
     },
     {
       id: 4,
-      title: "Reminders",
+      title: (
+        <div className="flex">
+          <div>Reminders</div>
+          <Button
+            variant="outline"
+            size="sm"
+            type="button"
+            className="ml-auto"
+            onClick={() => {
+              append({ threshold: 0.5, message: "" });
+            }}
+          >
+            Add
+          </Button>
+        </div>
+      ),
       content: (
-        <FormField
-          control={form.control}
-          name="reminders"
-          render={({ field }) => (
-            <FormItem>
-              <FormControl>
-                <div className="space-y-2">
-                  {field.value.map((reminder, index) => (
-                    <div key={index} className="flex gap-2 items-end">
+        <>
+          {fields.map((field, index) => (
+            <div key={field.id} className="flex gap-2 items-end">
+              <FormField
+                control={form.control}
+                name={`reminders.${index}.threshold`}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
                       <Input
                         type="number"
                         min={0}
                         max={1}
                         step={0.01}
                         placeholder="Threshold (0-1)"
-                        value={reminder.threshold}
                         className="w-24"
-                        onChange={(e) => {
-                          const newValue = [...field.value];
-                          newValue[index].threshold = parseFloat(
-                            e.target.value,
-                          );
-                          field.onChange(newValue);
-                        }}
+                        {...field}
+                        onChange={(e) =>
+                          field.onChange(parseFloat(e.target.value))
+                        }
                       />
-                      <Input
-                        placeholder="Reminder message"
-                        value={reminder.message}
-                        onChange={(e) => {
-                          const newValue = [...field.value];
-                          newValue[index].message = e.target.value;
-                          field.onChange(newValue);
-                        }}
-                      />
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="icon"
-                        onClick={() => {
-                          const newValue = [...field.value];
-                          newValue.splice(index, 1);
-                          field.onChange(newValue);
-                        }}
-                      >
-                        <span className="sr-only">Delete reminder</span>×
-                      </Button>
-                    </div>
-                  ))}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      field.onChange([
-                        ...field.value,
-                        { threshold: 0.5, message: "" },
-                      ]);
-                    }}
-                  >
-                    Add Reminder
-                  </Button>
-                </div>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name={`reminders.${index}.message`}
+                render={({ field }) => (
+                  <FormItem className="flex-1">
+                    <FormControl>
+                      <Input placeholder="Reminder message" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button
+                type="button"
+                variant="destructive"
+                size="icon"
+                onClick={() => remove(index)}
+              >
+                <span className="sr-only">Delete reminder</span>×
+              </Button>
+            </div>
+          ))}
+        </>
+      ),
+    },
+    {
+      id: 5,
+      title: (
+        <Button type="submit" className="-mt-1">
+          Submit
+        </Button>
       ),
     },
   ];
@@ -384,16 +396,16 @@ export function CreateAlertForm({
                   </TimelineTitle>
                   <TimelineIndicator className="border-primary/80 group-data-completed/timeline-item:bg-primary group-data-completed/timeline-item:text-primary-foreground flex size-6 items-center justify-center group-data-completed/timeline-item:border-none group-data-[orientation=vertical]/timeline:-left-6" />
                 </TimelineHeader>
-                <TimelineContent className="mt-2 space-y-4">
-                  {item.content}
-                </TimelineContent>
+                {item.content && (
+                  <TimelineContent className="mt-2 space-y-4">
+                    {item.content}
+                  </TimelineContent>
+                )}
               </TimelineItem>
             ))}
           </Timeline>
 
-          <div className="flex justify-end mt-4">
-            <Button type="submit">Submit</Button>
-          </div>
+          <div className="flex justify-end mt-4"></div>
         </form>
       </Form>
     </>
