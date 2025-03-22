@@ -17,8 +17,8 @@
         "fullscreen": false,
         "width": 1024,
         "height": 640,
-        "minWidth": 800,
-        "minHeight": 500
+        "minWidth": 1024,
+        "minHeight": 640
       }
     ],
     "security": {

@@ -80,8 +80,10 @@ export default function CreateAlerts() {
   return (
     <>
       <main className="grid grid-cols-[360px_minmax(0,1fr)] h-full ">
-        <CreateAlertForm onSubmit={onSubmit} form={form} />
-        <div className="flex flex-col p-4">
+        <div className="max-h-screen overflow-y-auto my-auto">
+          <CreateAlertForm onSubmit={onSubmit} form={form} />
+        </div>
+        <div className="flex flex-col p-8">
           <Tabs defaultValue="usage" className="flex-1 flex flex-col">
             <TabsList className="self-center">
               <TabsTrigger value="usage">Usage</TabsTrigger>
@@ -384,7 +386,7 @@ export function CreateAlertForm({
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
-          className="w-[360px] space-y-4 px-8 m-auto py-8"
+          className="space-y-4 p-8 m-auto"
         >
           <Timeline value={0}>
             {items.map((item) => (
