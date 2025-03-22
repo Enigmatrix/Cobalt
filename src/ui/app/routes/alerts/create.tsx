@@ -11,7 +11,14 @@ import {
 import type { z } from "zod";
 import { ChooseTarget } from "@/components/alert/choose-target";
 import { DurationPicker } from "@/components/time/duration-picker";
-import { durationToTicks, ticksToDuration, type Interval } from "@/lib/time";
+import {
+  durationToTicks,
+  findIntervalPeriod,
+  nextInterval,
+  prevInterval,
+  ticksToDuration,
+  type Interval,
+} from "@/lib/time";
 import {
   Select,
   SelectContent,
@@ -34,7 +41,7 @@ import { useCallback, useMemo, useState } from "react";
 import { useAppState } from "@/lib/state";
 import { useNavigate } from "react-router";
 import { Duration } from "luxon";
-import { useTimePeriod } from "@/hooks/use-today";
+import { useTimePeriod, useToday } from "@/hooks/use-today";
 import type { Period, Target, TimeFrame } from "@/lib/entities";
 import { DateTime } from "luxon";
 import { useAppDurationsPerPeriod } from "@/hooks/use-repo";
@@ -45,6 +52,7 @@ import { Label } from "@/components/ui/label";
 import { DateRangePicker } from "@/components/time/date-range-picker";
 import { useTargetApps } from "@/hooks/use-refresh";
 import type { UseFormReturn } from "react-hook-form";
+import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 
 type FormValues = z.infer<typeof alertSchema>;
 
@@ -401,9 +409,39 @@ export function AppUsageBarChartView({
   usageLimit: number;
   timeFrame: TimeFrame;
 }) {
+  const today = useToday();
   const week = useTimePeriod("week");
   const [interval, setInterval] = useState<Interval | null>(week);
   const [period, setPeriod] = useState<Period>("day");
+
+  // TODO commonolize this with usage-card.tsx if there are more usages!
+  const guessedIntervalPeriod = useMemo(() => {
+    if (!interval) return undefined;
+    return findIntervalPeriod(interval);
+  }, [interval]);
+
+  const canGoPrevInterval = useMemo(() => {
+    return !!guessedIntervalPeriod; // can always go back as long as we have an interval
+  }, [guessedIntervalPeriod]);
+
+  const canGoNextInterval = useMemo(() => {
+    if (!interval || !guessedIntervalPeriod) return false;
+    const nextStart = nextInterval(interval, guessedIntervalPeriod);
+    return today.plus({ day: 1 }) > nextStart.start;
+  }, [guessedIntervalPeriod, interval, today]);
+
+  const goPrevInterval = useCallback(() => {
+    if (!interval || !guessedIntervalPeriod) return;
+    const newInterval = prevInterval(interval, guessedIntervalPeriod);
+    setInterval(newInterval);
+  }, [guessedIntervalPeriod, interval]);
+
+  const goNextInterval = useCallback(() => {
+    if (!interval || !guessedIntervalPeriod) return;
+    const newInterval = nextInterval(interval, guessedIntervalPeriod);
+    setInterval(newInterval);
+  }, [guessedIntervalPeriod, interval]);
+
   const scaledUsageLimit = useMemo(() => {
     if (!usageLimit || !timeFrame) return undefined;
 
@@ -490,17 +528,38 @@ export function AppUsageBarChartView({
             </Select>
           </FormItem>
 
-          <FormItem>
-            <Label className="font-medium text-muted-foreground place-self-end">
-              Time Range
-            </Label>
-            <DateRangePicker
-              value={interval}
-              onChange={setInterval}
-              dayGranularity={true}
-              className="w-full min-w-32"
-            />
-          </FormItem>
+          <div className="flex gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              disabled={!canGoPrevInterval}
+              onClick={goPrevInterval}
+              className="mt-6"
+            >
+              <ChevronLeftIcon className="size-4" />
+            </Button>
+            <FormItem>
+              <Label className="font-medium text-muted-foreground place-self-end">
+                Time Range
+              </Label>
+              <DateRangePicker
+                value={interval}
+                onChange={setInterval}
+                dayGranularity={true}
+                className="w-full min-w-32"
+              />
+            </FormItem>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              disabled={!canGoNextInterval}
+              onClick={goNextInterval}
+              className="mt-6"
+            >
+              <ChevronRightIcon className="size-4" />
+            </Button>
+          </div>
         </div>
         <div className="aspect-video ">
           <AppUsageBarChart

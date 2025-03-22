@@ -6,6 +6,13 @@ export type Color = string;
 export type Timestamp = number;
 export type Duration = number;
 export type Period = "hour" | "day" | "week" | "month" | "year";
+export const PERIODS: Period[] = [
+  "hour",
+  "day",
+  "week",
+  "month",
+  "year",
+] as const;
 
 export interface WithDuration<T> {
   id: Ref<T>;
