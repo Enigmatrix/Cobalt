@@ -75,6 +75,17 @@ export type Target =
 
 export type TimeFrame = "Daily" | "Weekly" | "Monthly";
 
+export function timeFrameToPeriod(timeFrame: TimeFrame): Period {
+  switch (timeFrame) {
+    case "Daily":
+      return "day";
+    case "Weekly":
+      return "week";
+    case "Monthly":
+      return "month";
+  }
+}
+
 export type TriggerAction =
   | { tag: "Kill" }
   | { tag: "Dim"; duration: number }

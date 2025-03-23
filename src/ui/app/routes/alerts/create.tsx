@@ -414,6 +414,23 @@ export function CreateAlertForm({
   );
 }
 
+const hoursInPeriod = (period: Period) => {
+  switch (period) {
+    case "hour":
+      return 1;
+    case "day":
+      return 24;
+    case "week":
+      return 24 * 7;
+    // assume 30 days per month
+    case "month":
+      return 24 * 30;
+    // assume 365 days per year
+    case "year":
+      return 24 * 365;
+  }
+};
+
 export function AppUsageBarChartView({
   target,
   usageLimit,
@@ -459,30 +476,9 @@ export function AppUsageBarChartView({
   const scaledUsageLimit = useMemo(() => {
     if (!usageLimit || !timeFrame) return undefined;
 
-    const toDuration = (timeFrame: TimeFrame) => {
-      switch (timeFrame) {
-        case "Daily":
-          return 24;
-        case "Weekly":
-          return 24 * 7;
-        case "Monthly":
-          return 24 * 30;
-      }
-    };
-
-    const perHourUsageLimit = usageLimit / toDuration(timeFrame);
-    switch (period) {
-      case "hour":
-        return perHourUsageLimit;
-      case "day":
-        return perHourUsageLimit * 24;
-      case "week":
-        return perHourUsageLimit * 24 * 7;
-      case "month":
-        return perHourUsageLimit * 24 * 30;
-      case "year":
-        return perHourUsageLimit * 24 * 365;
-    }
+    const perHourUsageLimit =
+      usageLimit / hoursInPeriod(timeFrameToPeriod(timeFrame));
+    return perHourUsageLimit * hoursInPeriod(period);
   }, [period, usageLimit, timeFrame]);
 
   const {
