@@ -39,11 +39,13 @@ export interface CreateAlert {
   time_frame: TimeFrame;
   trigger_action: TriggerAction;
   reminders: CreateReminder[];
+  ignore_trigger: boolean;
 }
 
 export interface CreateReminder {
   threshold: number;
   message: string;
+  ignore_trigger: boolean;
 }
 
 export interface UpdatedAlert {

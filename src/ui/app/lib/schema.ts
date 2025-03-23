@@ -41,6 +41,7 @@ export const alertSchema = z
     time_frame: z.enum(["Daily", "Weekly", "Monthly"]),
     trigger_action: triggerActionSchema,
     reminders: reminderSchema.array(),
+    ignore_trigger: z.boolean(),
   })
   .refine(
     (data) => {

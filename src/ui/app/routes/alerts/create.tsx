@@ -42,9 +42,14 @@ import { useAppState } from "@/lib/state";
 import { useNavigate } from "react-router";
 import { Duration } from "luxon";
 import { useTimePeriod, useToday } from "@/hooks/use-today";
-import type { Period, Target, TimeFrame } from "@/lib/entities";
+import {
+  timeFrameToPeriod,
+  type Period,
+  type Target,
+  type TimeFrame,
+} from "@/lib/entities";
 import { DateTime } from "luxon";
-import { useAppDurationsPerPeriod } from "@/hooks/use-repo";
+import { useAppDurations, useAppDurationsPerPeriod } from "@/hooks/use-repo";
 import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -52,36 +57,113 @@ import { Label } from "@/components/ui/label";
 import { DateRangePicker } from "@/components/time/date-range-picker";
 import { useTargetApps } from "@/hooks/use-refresh";
 import type { UseFormReturn } from "react-hook-form";
-import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+import {
+  TriangleAlertIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+} from "lucide-react";
 import { useFieldArray } from "react-hook-form";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Checkbox } from "@/components/ui/checkbox";
+import type { CreateAlert } from "@/lib/repo";
 
 type FormValues = z.infer<typeof alertSchema>;
+
+interface TriggerInfo {
+  alert: boolean;
+  reminders: { id?: number; trigger: boolean }[];
+}
+
+export function useTriggerInfo(
+  target?: Target,
+  usageLimit?: number,
+  timeFrame?: TimeFrame,
+  reminders?: { id?: number; threshold: number; message: string }[],
+): TriggerInfo {
+  const interval = useTimePeriod(timeFrameToPeriod(timeFrame ?? "Daily"));
+
+  const targetApps = useTargetApps(target);
+  const { ret: appDurations } = useAppDurations({
+    start: interval.start,
+    end: interval.end,
+  });
+  const totalUsage = useMemo(() => {
+    if (!targetApps) return 0;
+    return targetApps.reduce(
+      (acc, curr) => acc + (appDurations[curr.id]?.duration ?? 0),
+      0,
+    );
+  }, [appDurations, targetApps]);
+
+  const triggerInfo = useMemo(() => {
+    if (!usageLimit || !timeFrame || !target)
+      return { alert: false, reminders: [] };
+
+    const alert = totalUsage > usageLimit;
+    const reminderTriggers = (reminders ?? []).map((reminder) => ({
+      id: reminder.id,
+      trigger: totalUsage > reminder.threshold * usageLimit,
+    }));
+    return { alert, reminders: reminderTriggers };
+  }, [totalUsage, target, timeFrame, usageLimit, reminders]);
+
+  return triggerInfo;
+}
 
 export default function CreateAlerts() {
   const form = useZodForm({
     schema: alertSchema,
     defaultValues: {
+      ignore_trigger: false,
       reminders: [],
     },
   });
   const createAlert = useAppState((state) => state.createAlert);
   const navigate = useNavigate();
-  const onSubmit = useCallback(
-    async (values: FormValues) => {
-      await createAlert(values);
-      navigate("/alerts");
-    },
-    [createAlert, navigate],
-  );
   const target = form.watch("target");
   const usageLimit = form.watch("usage_limit");
   const timeFrame = form.watch("time_frame");
+  const reminders = form.watch("reminders");
+
+  const triggerInfo = useTriggerInfo(target, usageLimit, timeFrame, reminders);
+
+  const onSubmit = useCallback(
+    async (values: FormValues) => {
+      // FormValues is not the same as CreateAlert
+      // the ignore_trigger in FormValues means ignore all firing alerts and reminders
+      // but in CreateAlert, it's customizable for each alert and reminder.
+
+      const object: CreateAlert = {
+        ...structuredClone(values),
+        ignore_trigger: false,
+        reminders: values.reminders.map((reminder) => ({
+          ...reminder,
+          ignore_trigger: false,
+        })),
+      };
+
+      if (values.ignore_trigger) {
+        object.ignore_trigger = triggerInfo.alert;
+        object.reminders.forEach((reminder, index) => {
+          reminder.ignore_trigger = triggerInfo.reminders[index].trigger;
+        });
+      }
+
+      await createAlert(object);
+      navigate("/alerts");
+    },
+    [createAlert, navigate, triggerInfo],
+  );
 
   return (
     <>
       <main className="grid grid-cols-[360px_minmax(0,1fr)] h-full ">
         <div className="max-h-screen overflow-y-auto my-auto">
-          <CreateAlertForm onSubmit={onSubmit} form={form} />
+          <CreateAlertForm
+            onSubmit={onSubmit}
+            form={form}
+            triggerInfo={triggerInfo}
+          />
         </div>
         <div className="flex flex-col p-8">
           <Tabs defaultValue="usage" className="flex-1 flex flex-col">
@@ -109,9 +191,11 @@ export default function CreateAlerts() {
 export function CreateAlertForm({
   onSubmit,
   form,
+  triggerInfo,
 }: {
   onSubmit: (values: FormValues) => void;
   form: UseFormReturn<FormValues>;
+  triggerInfo: TriggerInfo;
 }) {
   const { fields, append, remove } = useFieldArray({
     control: form.control,
@@ -377,6 +461,59 @@ export function CreateAlertForm({
         <Button type="submit" className="-mt-1">
           Submit
         </Button>
+      ),
+      content: (
+        <>
+          {(triggerInfo.alert ||
+            triggerInfo.reminders.some((r) => r.trigger)) && (
+            <Alert className="mt-2">
+              <TriangleAlertIcon className="h-4 w-4" />
+              <AlertTitle>Warning</AlertTitle>
+              <AlertDescription>
+                {triggerInfo.alert &&
+                triggerInfo.reminders.some((r) => r.trigger) ? (
+                  <div>
+                    This alert and{" "}
+                    {triggerInfo.reminders.filter((r) => r.trigger).length}{" "}
+                    {triggerInfo.reminders.filter((r) => r.trigger).length === 1
+                      ? "reminder"
+                      : "reminders"}{" "}
+                    will immediately trigger once submitted.
+                  </div>
+                ) : triggerInfo.alert &&
+                  triggerInfo.reminders.every((r) => !r.trigger) ? (
+                  <div>This alert will immediately trigger once submitted.</div>
+                ) : triggerInfo.reminders.some((r) => r.trigger) ? (
+                  <div>
+                    {triggerInfo.reminders.filter((r) => r.trigger).length}{" "}
+                    {triggerInfo.reminders.filter((r) => r.trigger).length === 1
+                      ? "reminder"
+                      : "reminders"}{" "}
+                    will immediately trigger once submitted.
+                  </div>
+                ) : null}
+
+                <FormField
+                  control={form.control}
+                  name="ignore_trigger"
+                  render={({ field: { value, onChange, ...field } }) => (
+                    <FormItem className="mt-4 flex gap-2 items-center">
+                      <FormControl>
+                        <Checkbox
+                          checked={value}
+                          onCheckedChange={onChange}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormLabel>Ignore for current period</FormLabel>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </AlertDescription>
+            </Alert>
+          )}
+        </>
       ),
     },
   ];

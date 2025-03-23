@@ -6,6 +6,7 @@ import type {
   WithGroupedDuration,
 } from "@/lib/entities";
 import {
+  getAppDurations,
   getAppDurationsPerPeriod,
   getAppSessionUsages,
   getInteractionPeriods,
@@ -62,6 +63,7 @@ export function makeUseRepo<T, Arg extends object>(
   return (arg: Arg) => useRepo<T, Arg>(fn, def, arg);
 }
 
+export const useAppDurations = makeUseRepo(getAppDurations, {});
 export const useAppSessionUsages = makeUseRepo(getAppSessionUsages, {});
 export const useInteractionPeriods = makeUseRepo(getInteractionPeriods, []);
 export const useSystemEvents = makeUseRepo(getSystemEvents, []);
