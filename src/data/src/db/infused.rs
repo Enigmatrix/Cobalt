@@ -206,7 +206,7 @@ pub struct UpdatedTag {
 }
 
 /// Options to create a new [super::Alert]
-#[derive(Debug, PartialEq, Eq, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct CreateAlert {
     /// Target of this [Alert]
     pub target: Target,
@@ -218,6 +218,8 @@ pub struct CreateAlert {
     pub trigger_action: TriggerAction,
     /// Reminders
     pub reminders: Vec<CreateReminder>,
+    /// Whether to ignore the trigger
+    pub ignore_trigger: bool,
 }
 
 /// Options to create a new [super::Reminder]
@@ -227,15 +229,9 @@ pub struct CreateReminder {
     pub threshold: f64,
     /// Message
     pub message: String,
+    /// Whether to ignore the trigger
+    pub ignore_trigger: bool,
 }
-
-impl PartialEq<CreateReminder> for CreateReminder {
-    fn eq(&self, other: &CreateReminder) -> bool {
-        (self.threshold - other.threshold).abs() <= f64::EPSILON && self.message == other.message
-    }
-}
-
-impl Eq for CreateReminder {}
 
 /// Options to update a [super::Alert]
 #[derive(Debug, PartialEq, Eq, Clone, Deserialize)]

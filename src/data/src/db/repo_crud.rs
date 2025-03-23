@@ -375,6 +375,15 @@ impl Repository {
                 .await?
                 .get(0);
 
+        if alert.ignore_trigger {
+            query("INSERT INTO alert_events VALUES (NULL, ?, ?, ?)")
+                .bind(&alert_id)
+                .bind(ts.now().to_ticks())
+                .bind(Reason::Ignored)
+                .execute(&mut *tx)
+                .await?;
+        }
+
         let mut reminders = Vec::new();
 
         // Insert the reminders
@@ -389,6 +398,16 @@ impl Repository {
                 .fetch_one(&mut *tx)
                 .await?
                 .get(0);
+
+            if reminder.ignore_trigger {
+                query("INSERT INTO reminder_events VALUES (NULL, ?, ?, ?)")
+                    .bind(&id)
+                    .bind(ts.now().to_ticks())
+                    .bind(Reason::Ignored)
+                    .execute(&mut *tx)
+                    .await?;
+            }
+
             let reminder = infused::Reminder {
                 id,
                 alert_id: alert_id.clone(),
