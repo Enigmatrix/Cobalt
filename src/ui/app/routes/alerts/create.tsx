@@ -74,6 +74,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { CreateAlert } from "@/lib/repo";
 import { Badge } from "@/components/ui/badge";
+import { DurationText } from "@/components/time/duration-text";
 
 type FormValues = z.infer<typeof alertSchema>;
 
@@ -217,14 +218,53 @@ export default function CreateAlerts() {
                     </AlertDescription>
                   </Alert>
                 ) : (
-                  <TimeProgressBar
-                    usage_limit={usageLimit}
-                    current_usage={triggerInfo.currentUsage}
-                    reminders={reminders}
-                    circleRadius={12}
-                    onReminderAdd={(v) => append({ ...v })}
-                    onReminderUpdate={handleReminderUpdate}
-                  />
+                  <div className="flex-1 flex flex-col gap-2 my-auto">
+                    <div className="grid grid-cols-2 gap-4 mb-1">
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium text-muted-foreground">
+                          Current Usage
+                        </span>
+                        <div className="flex items-baseline gap-2">
+                          <DurationText
+                            className="text-lg font-semibold pr-1"
+                            ticks={triggerInfo.currentUsage}
+                          />
+                          {triggerInfo.currentUsage !== 0 && (
+                            <span
+                              className={`text-sm tabular-nums ${
+                                triggerInfo.currentUsage / usageLimit >= 1
+                                  ? "text-destructive"
+                                  : "text-muted-foreground"
+                              }`}
+                            >
+                              {Math.min(
+                                100,
+                                (triggerInfo.currentUsage / usageLimit) * 100,
+                              ).toFixed(0)}
+                              %
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-end">
+                        <span className="text-sm font-medium text-muted-foreground">
+                          Usage Limit
+                        </span>
+                        <DurationText
+                          className="text-lg font-semibold pl-1"
+                          ticks={usageLimit}
+                        />
+                      </div>
+                    </div>
+                    <TimeProgressBar
+                      usage_limit={usageLimit}
+                      current_usage={triggerInfo.currentUsage}
+                      reminders={reminders}
+                      circleRadius={12}
+                      onReminderAdd={(v) => append({ ...v })}
+                      onReminderUpdate={handleReminderUpdate}
+                    />
+                  </div>
                 )}
               </div>
             </TabsContent>
@@ -468,7 +508,7 @@ export function CreateAlertForm({
                         type="number"
                         min={0}
                         max={1}
-                        step={0.01}
+                        step="any"
                         placeholder="Threshold (0-1)"
                         className="w-16"
                         {...field}
