@@ -66,6 +66,7 @@ import { useFieldArray } from "react-hook-form";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { CreateAlert } from "@/lib/repo";
+import { Badge } from "@/components/ui/badge";
 
 type FormValues = z.infer<typeof alertSchema>;
 
@@ -406,7 +407,10 @@ export function CreateAlertForm({
       content: (
         <>
           {fields.map((field, index) => (
-            <div key={field.id} className="flex gap-2 items-end">
+            <div key={field.id} className="flex gap-2 items-center">
+              <Badge variant="outline" className="">
+                {index + 1}
+              </Badge>
               <FormField
                 control={form.control}
                 name={`reminders.${index}.threshold`}
@@ -419,7 +423,7 @@ export function CreateAlertForm({
                         max={1}
                         step={0.01}
                         placeholder="Threshold (0-1)"
-                        className="w-24"
+                        className="w-16"
                         {...field}
                         onChange={(e) =>
                           field.onChange(parseFloat(e.target.value))
