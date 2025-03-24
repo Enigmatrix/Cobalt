@@ -1,22 +1,10 @@
 import { useZodForm } from "@/hooks/use-form";
 import { alertSchema } from "@/lib/schema";
+import { FormItem } from "@/components/ui/form";
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import type { z } from "zod";
-import { ChooseTarget } from "@/components/alert/choose-target";
-import { DurationPicker } from "@/components/time/duration-picker";
-import {
-  durationToTicks,
   findIntervalPeriod,
   nextInterval,
   prevInterval,
-  ticksToDuration,
   type Interval,
 } from "@/lib/time";
 import {
@@ -26,16 +14,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import {
-  Timeline,
-  TimelineContent,
-  TimelineIndicator,
-  TimelineTitle,
-  TimelineSeparator,
-  TimelineHeader,
-  TimelineItem,
-} from "@/components/ui/timeline";
 import { Button } from "@/components/ui/button";
 import {
   useCallback,
@@ -56,16 +34,14 @@ import {
   type TimeFrame,
 } from "@/lib/entities";
 import { DateTime } from "luxon";
-import { useAppDurations, useAppDurationsPerPeriod } from "@/hooks/use-repo";
+import { useAppDurationsPerPeriod } from "@/hooks/use-repo";
 import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { DateRangePicker } from "@/components/time/date-range-picker";
 import { useTargetApps } from "@/hooks/use-refresh";
-import type { FieldArrayWithId, UseFormReturn } from "react-hook-form";
 import {
-  TriangleAlertIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   InfoIcon,
@@ -73,54 +49,10 @@ import {
 } from "lucide-react";
 import { useFieldArray } from "react-hook-form";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Checkbox } from "@/components/ui/checkbox";
 import type { CreateAlert } from "@/lib/repo";
-import { Badge } from "@/components/ui/badge";
 import { DurationText } from "@/components/time/duration-text";
-
-type FormValues = z.infer<typeof alertSchema>;
-
-interface TriggerInfo {
-  currentUsage: number;
-  alert: boolean;
-  reminders: { id?: number; trigger: boolean }[];
-}
-
-export function useTriggerInfo(
-  target?: Target,
-  usageLimit?: number,
-  timeFrame?: TimeFrame,
-  reminders?: { id?: number; threshold: number; message: string }[],
-): TriggerInfo {
-  const interval = useTimePeriod(timeFrameToPeriod(timeFrame ?? "Daily"));
-
-  const targetApps = useTargetApps(target);
-  const { ret: appDurations } = useAppDurations({
-    start: interval.start,
-    end: interval.end,
-  });
-  const totalUsage = useMemo(() => {
-    if (!targetApps) return 0;
-    return targetApps.reduce(
-      (acc, curr) => acc + (appDurations[curr.id]?.duration ?? 0),
-      0,
-    );
-  }, [appDurations, targetApps]);
-
-  const triggerInfo = useMemo(() => {
-    if (!usageLimit || !timeFrame || !target)
-      return { alert: false, reminders: [], currentUsage: totalUsage };
-
-    const alert = totalUsage > usageLimit;
-    const reminderTriggers = (reminders ?? []).map((reminder) => ({
-      id: reminder.id,
-      trigger: totalUsage > reminder.threshold * usageLimit,
-    }));
-    return { alert, reminders: reminderTriggers, currentUsage: totalUsage };
-  }, [totalUsage, target, timeFrame, usageLimit, reminders]);
-
-  return triggerInfo;
-}
+import { useTriggerInfo } from "@/hooks/use-trigger-info";
+import { AlertForm, type FormValues } from "@/components/alert/alert-form";
 
 export default function CreateAlerts() {
   const form = useZodForm({
@@ -182,7 +114,7 @@ export default function CreateAlerts() {
     <>
       <main className="grid grid-cols-[360px_minmax(0,1fr)] h-full ">
         <div className="max-h-screen overflow-y-auto my-auto">
-          <CreateAlertForm
+          <AlertForm
             onSubmit={onSubmit}
             form={form}
             triggerInfo={triggerInfo}
@@ -259,8 +191,8 @@ export default function CreateAlerts() {
                       </div>
                     </div>
                     <TimeProgressBar
-                      usage_limit={usageLimit}
-                      current_usage={triggerInfo.currentUsage}
+                      usageLimit={usageLimit}
+                      currentUsage={triggerInfo.currentUsage}
                       reminders={reminders}
                       circleRadius={12}
                       onReminderAdd={(v) => append({ ...v })}
@@ -273,386 +205,6 @@ export default function CreateAlerts() {
           </Tabs>
         </div>
       </main>
-    </>
-  );
-}
-
-export function CreateAlertForm({
-  onSubmit,
-  form,
-  triggerInfo,
-  remindersFields: fields,
-  remindersAppend: append,
-  remindersRemove: remove,
-}: {
-  onSubmit: (values: FormValues) => void;
-  form: UseFormReturn<FormValues>;
-  triggerInfo: TriggerInfo;
-  remindersFields: FieldArrayWithId<FormValues, "reminders", "id">[];
-  remindersAppend: (value: { threshold: number; message: string }) => void;
-  remindersRemove: (index: number) => void;
-}) {
-  const items = [
-    {
-      id: 1,
-      title: "Target",
-      content: (
-        <FormField
-          control={form.control}
-          name="target"
-          render={({ field: { value, onChange, ...field } }) => (
-            <FormItem>
-              <FormControl>
-                <ChooseTarget
-                  {...field}
-                  value={value}
-                  onValueChanged={onChange}
-                  className="w-full justify-start"
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      ),
-    },
-    {
-      id: 2,
-      title: "Limit",
-      content: (
-        <>
-          <FormField
-            control={form.control}
-            name="time_frame"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Period</FormLabel>
-                <FormControl>
-                  <Select
-                    {...field}
-                    value={field.value}
-                    onValueChange={field.onChange}
-                  >
-                    <SelectTrigger className="hover:bg-muted w-full">
-                      <SelectValue placeholder="Period" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Daily">Daily</SelectItem>
-                      <SelectItem value="Weekly">Weekly</SelectItem>
-                      <SelectItem value="Monthly">Monthly</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="usage_limit"
-            render={({ field: { value, onChange, ...field } }) => (
-              <FormItem>
-                <FormLabel>Limit</FormLabel>
-                <FormControl>
-                  <DurationPicker
-                    showIcon={false}
-                    className="w-full text-muted-foreground"
-                    {...field}
-                    value={value === undefined ? null : ticksToDuration(value)}
-                    onValueChange={(dur) =>
-                      onChange(dur === null ? undefined : durationToTicks(dur))
-                    }
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </>
-      ),
-    },
-    {
-      id: 3,
-      title: "Action",
-      content: (
-        <>
-          <FormField
-            control={form.control}
-            name="trigger_action"
-            render={({ field }) => (
-              <FormItem>
-                <FormControl>
-                  <Select
-                    {...field}
-                    value={field.value?.tag}
-                    onValueChange={(v) => {
-                      // Reset the form when changing action type
-                      if (v === "Kill") {
-                        field.onChange({ tag: v });
-                      } else if (v === "Dim") {
-                        field.onChange({ tag: v, duration: undefined });
-                      } else if (v === "Message") {
-                        field.onChange({ tag: v, content: "" });
-                      }
-                    }}
-                  >
-                    <SelectTrigger className="hover:bg-muted w-full">
-                      <SelectValue placeholder="Type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Dim">Dim</SelectItem>
-                      <SelectItem value="Message">Message</SelectItem>
-                      <SelectItem value="Kill">Kill</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="trigger_action"
-            render={({ field: { value, onChange, ...field } }) => (
-              <>
-                {value?.tag === "Dim" && (
-                  <FormItem>
-                    <FormLabel>Dim Duration</FormLabel>
-                    <FormControl>
-                      <DurationPicker
-                        showIcon={false}
-                        className="w-full text-foreground"
-                        {...field}
-                        value={
-                          value?.duration === undefined
-                            ? null
-                            : ticksToDuration(value.duration)
-                        }
-                        onValueChange={(dur) =>
-                          onChange({
-                            tag: "Dim",
-                            duration:
-                              dur === null ? undefined : durationToTicks(dur),
-                          })
-                        }
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              </>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="trigger_action"
-            render={({ field }) => (
-              <>
-                {field.value?.tag === "Message" && (
-                  <FormItem>
-                    <FormLabel>Message Content</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        value={field.value.content ?? ""}
-                        onChange={(e) =>
-                          field.onChange({
-                            tag: "Message",
-                            content: e.target.value,
-                          })
-                        }
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              </>
-            )}
-          />
-        </>
-      ),
-    },
-    {
-      id: 4,
-      title: (
-        <div className="flex">
-          <div>Reminders</div>
-          <Button
-            variant="outline"
-            size="sm"
-            type="button"
-            className="ml-auto"
-            onClick={() => {
-              append({ threshold: 0.5, message: "" });
-            }}
-          >
-            Add
-          </Button>
-        </div>
-      ),
-      content: (
-        <>
-          {fields.map((field, index) => (
-            <div key={field.id} className="flex flex-col gap-2">
-              <div className="flex gap-2 items-center">
-                <Badge variant="outline" className="">
-                  {index + 1}
-                </Badge>
-                <FormField
-                  control={form.control}
-                  name={`reminders.${index}.threshold`}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          min={0}
-                          max={1}
-                          step="any"
-                          placeholder="Threshold (0-1)"
-                          className="w-16"
-                          {...field}
-                          onChange={(e) =>
-                            field.onChange(parseFloat(e.target.value))
-                          }
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name={`reminders.${index}.message`}
-                  render={({ field }) => (
-                    <FormItem className="flex-1">
-                      <FormControl>
-                        <Input placeholder="Reminder message" {...field} />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-                <Button
-                  type="button"
-                  variant="destructive"
-                  size="icon"
-                  onClick={() => remove(index)}
-                >
-                  <span className="sr-only">Delete reminder</span>×
-                </Button>
-              </div>
-
-              <div className="flex flex-col">
-                <FormField
-                  control={form.control}
-                  name={`reminders.${index}.threshold`}
-                  render={() => <FormMessage />}
-                />
-                <FormField
-                  control={form.control}
-                  name={`reminders.${index}.message`}
-                  render={() => <FormMessage />}
-                />
-              </div>
-            </div>
-          ))}
-        </>
-      ),
-    },
-    {
-      id: 5,
-      title: (
-        <Button type="submit" className="-mt-1">
-          Submit
-        </Button>
-      ),
-      content: (
-        <>
-          {(triggerInfo.alert ||
-            triggerInfo.reminders.some((r) => r.trigger)) && (
-            <Alert className="mt-2">
-              <TriangleAlertIcon className="h-4 w-4" />
-              <AlertTitle>Warning</AlertTitle>
-              <AlertDescription>
-                {triggerInfo.alert &&
-                triggerInfo.reminders.some((r) => r.trigger) ? (
-                  <div>
-                    This alert and{" "}
-                    {triggerInfo.reminders.filter((r) => r.trigger).length}{" "}
-                    {triggerInfo.reminders.filter((r) => r.trigger).length === 1
-                      ? "reminder"
-                      : "reminders"}{" "}
-                    will immediately trigger once submitted.
-                  </div>
-                ) : triggerInfo.alert &&
-                  triggerInfo.reminders.every((r) => !r.trigger) ? (
-                  <div>This alert will immediately trigger once submitted.</div>
-                ) : triggerInfo.reminders.some((r) => r.trigger) ? (
-                  <div>
-                    {triggerInfo.reminders.filter((r) => r.trigger).length}{" "}
-                    {triggerInfo.reminders.filter((r) => r.trigger).length === 1
-                      ? "reminder"
-                      : "reminders"}{" "}
-                    will immediately trigger once submitted.
-                  </div>
-                ) : null}
-
-                <FormField
-                  control={form.control}
-                  name="ignore_trigger"
-                  render={({ field: { value, onChange, ...field } }) => (
-                    <FormItem className="mt-4 flex gap-2 items-center">
-                      <FormControl>
-                        <Checkbox
-                          checked={value}
-                          onCheckedChange={onChange}
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormLabel>Ignore for current period</FormLabel>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </AlertDescription>
-            </Alert>
-          )}
-        </>
-      ),
-    },
-  ];
-
-  return (
-    <>
-      <Form {...form}>
-        <form
-          onSubmit={form.handleSubmit(onSubmit)}
-          className="space-y-4 p-8 m-auto"
-        >
-          <Timeline value={0}>
-            {items.map((item) => (
-              <TimelineItem key={item.id} step={item.id}>
-                <TimelineHeader>
-                  <TimelineSeparator className="bg-primary/60 mt-2.5 group-data-[orientation=vertical]/timeline:h-[calc(100%-2rem-0.25rem)]" />
-                  <TimelineTitle className="-mt-1/2 text-base">
-                    {item.title}
-                  </TimelineTitle>
-                  <TimelineIndicator className="border-primary/80 group-data-completed/timeline-item:bg-primary group-data-completed/timeline-item:text-primary-foreground flex size-6 items-center justify-center group-data-completed/timeline-item:border-none group-data-[orientation=vertical]/timeline:-left-6" />
-                </TimelineHeader>
-                {item.content && (
-                  <TimelineContent className="mt-2 space-y-4">
-                    {item.content}
-                  </TimelineContent>
-                )}
-              </TimelineItem>
-            ))}
-          </Timeline>
-
-          <div className="flex justify-end mt-4"></div>
-        </form>
-      </Form>
     </>
   );
 }
@@ -844,21 +396,21 @@ export function AppUsageBarChartView({
 }
 
 function TimeProgressBar({
-  usage_limit,
-  current_usage,
+  usageLimit,
+  currentUsage,
   reminders,
   circleRadius,
   onReminderAdd,
   onReminderUpdate,
 }: {
-  usage_limit: number;
-  current_usage: number;
+  usageLimit: number;
+  currentUsage: number;
   reminders: { id?: number; threshold: number; message: string }[];
   circleRadius: number;
   onReminderAdd?: (params: { threshold: number; message: string }) => void;
   onReminderUpdate?: (index: number, threshold: number) => void;
 }) {
-  const percentage = (current_usage / usage_limit) * 100;
+  const percentage = (currentUsage / usageLimit) * 100;
   const progressBarRef = useRef<HTMLDivElement>(null);
 
   // State for hover and drag interactions
@@ -982,7 +534,7 @@ function TimeProgressBar({
                 <div className="text-xs font-medium">{`${((reminder.threshold || 0) * 100).toFixed(0)}%`}</div>
                 <div className="text-xs text-muted-foreground">
                   <DurationText
-                    ticks={(reminder.threshold || 0) * usage_limit}
+                    ticks={(reminder.threshold || 0) * usageLimit}
                   />
                 </div>
               </div>
@@ -996,7 +548,7 @@ function TimeProgressBar({
         </Fragment>
       );
     },
-    [circleRadius, dragState.index, usage_limit, handleMouseDown],
+    [circleRadius, dragState.index, usageLimit, handleMouseDown],
   );
 
   return (
