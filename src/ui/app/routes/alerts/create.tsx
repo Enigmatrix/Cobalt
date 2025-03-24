@@ -1,11 +1,6 @@
 import { useZodForm } from "@/hooks/use-form";
 import { alertSchema } from "@/lib/schema";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
   Form,
   FormControl,
   FormField,
@@ -42,7 +37,14 @@ import {
   TimelineItem,
 } from "@/components/ui/timeline";
 import { Button } from "@/components/ui/button";
-import { useCallback, useMemo, useState, useRef, useEffect } from "react";
+import {
+  useCallback,
+  useMemo,
+  useState,
+  useRef,
+  useEffect,
+  Fragment,
+} from "react";
 import { useAppState } from "@/lib/state";
 import { useNavigate } from "react-router";
 import { Duration } from "luxon";
@@ -171,9 +173,9 @@ export default function CreateAlerts() {
 
   const handleReminderUpdate = useCallback(
     (index: number, threshold: number) => {
-      update(index, { threshold, message: fields[index].message });
+      update(index, { threshold, message: reminders[index].message });
     },
-    [update, fields],
+    [update, reminders],
   );
 
   return (
@@ -955,27 +957,46 @@ function TimeProgressBar({
     (reminder: { threshold: number; message: string }, index: number) => {
       const isDragging = dragState.index === index;
       return (
-        <Tooltip key={index}>
-          <TooltipTrigger asChild>
-            <div
-              className={`absolute top-1/2 bg-primary border border-border rounded-full cursor-move transition-shadow
+        <Fragment key={index}>
+          <div
+            className={`absolute top-1/2 bg-primary border border-border rounded-full cursor-move transition-shadow
               ${isDragging ? "ring-2 ring-primary shadow-lg" : "hover:ring-1 hover:ring-primary/50"}`}
-              style={{
-                left: `${reminder.threshold * 100}%`,
-                width: circleRadius * 2,
-                height: circleRadius * 2,
-                transform: `translate(-${circleRadius}px, -50%)`,
-              }}
-              onMouseDown={(e) => handleMouseDown(e, index)}
-            />
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>{`${(reminder.threshold * 100).toFixed(0)}% - ${reminder.message}`}</p>
-          </TooltipContent>
-        </Tooltip>
+            style={{
+              left: `${reminder.threshold * 100}%`,
+              width: circleRadius * 2,
+              height: circleRadius * 2,
+              transform: `translate(-${circleRadius}px, -50%)`,
+            }}
+            onMouseDown={(e) => handleMouseDown(e, index)}
+          />
+          <div
+            className="absolute text-popover-foreground bg-popover border border-border rounded-md shadow-lg max-w-[200px]"
+            style={{
+              left: `${reminder.threshold * 100}%`,
+              transform: `translate(-50%, 4px)`,
+            }}
+          >
+            <p className="absolute border-border bg-popover fill-popover z-50 size-2.5 translate-y-[calc(-50%_-_2px)] -translate-x-1/2 origin-center left-1/2 rotate-45 rounded-[2px] border-l border-t" />
+            <div className="p-2 space-y-1">
+              <div className="flex items-center gap-2">
+                <div className="text-xs font-medium">{`${((reminder.threshold || 0) * 100).toFixed(0)}%`}</div>
+                <div className="text-xs text-muted-foreground">
+                  <DurationText
+                    ticks={(reminder.threshold || 0) * usage_limit}
+                  />
+                </div>
+              </div>
+              {reminder.message && (
+                <div className="text-sm line-clamp-2 break-words">
+                  {reminder.message}
+                </div>
+              )}
+            </div>
+          </div>
+        </Fragment>
       );
     },
-    [circleRadius, dragState.index, handleMouseDown],
+    [circleRadius, dragState.index, usage_limit, handleMouseDown],
   );
 
   return (
