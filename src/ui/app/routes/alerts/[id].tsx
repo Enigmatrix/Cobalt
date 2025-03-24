@@ -9,10 +9,33 @@ import {
   BreadcrumbLink,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { NavLink } from "react-router";
+import { NavLink, useNavigate } from "react-router";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Edit2Icon, TrashIcon } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useAppState } from "@/lib/state";
+import { useCallback } from "react";
+import type { Alert, Ref } from "@/lib/entities";
 
 export default function Alert({ params }: Route.ComponentProps) {
-  const id = +params.id;
+  const id = +params.id as Ref<Alert>;
+  const removeAlert = useAppState((state) => state.removeAlert);
+  const navigate = useNavigate();
+  const remove = useCallback(async () => {
+    await navigate("/alerts");
+    await removeAlert(id);
+  }, [removeAlert, navigate, id]);
+
   return (
     <>
       <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
@@ -32,13 +55,55 @@ export default function Alert({ params }: Route.ComponentProps) {
           </BreadcrumbList>
         </Breadcrumb>
       </header>
-      <div className="flex flex-1 flex-col gap-4 p-4">
-        <div className="grid auto-rows-min gap-4 md:grid-cols-3">
-          <div className="aspect-video rounded-xl bg-muted/50" />
-          <div className="aspect-video rounded-xl bg-muted/50" />
-          <div className="aspect-video rounded-xl bg-muted/50" />
+      <div className="h-0 flex-auto overflow-auto [scrollbar-gutter:stable]">
+        <div className="flex flex-col gap-4 p-4">
+          {/* Alert Info */}
+          <div className="rounded-xl bg-card border border-border p-6">
+            <div className="flex flex-col gap-4">
+              {/* Header with name and icon */}
+              <div className="flex items-center gap-4">
+                <div className="flex-1" />
+                <Button variant="outline" size="icon" asChild>
+                  <NavLink to={`/alerts/edit/${id}`}>
+                    <Edit2Icon />
+                  </NavLink>
+                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button size="icon" variant="outline">
+                      <TrashIcon />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Remove Alert?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This action cannot be undone. All alert history will be
+                        removed.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={remove}
+                        className={buttonVariants({ variant: "destructive" })}
+                      >
+                        Remove
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid auto-rows-min gap-4 md:grid-cols-3">
+            <div className="aspect-video rounded-xl bg-muted/50" />
+            <div className="aspect-video rounded-xl bg-muted/50" />
+            <div className="aspect-video rounded-xl bg-muted/50" />
+          </div>
+          <div className="min-h-[100vh] flex-1 rounded-xl bg-muted/50 md:min-h-min" />
         </div>
-        <div className="min-h-[100vh] flex-1 rounded-xl bg-muted/50 md:min-h-min" />
       </div>
     </>
   );
