@@ -254,13 +254,11 @@ pub struct UpdatedAlert {
 #[derive(Debug, Clone, Deserialize)]
 pub struct UpdatedReminder {
     /// Identifier
-    pub id: Ref<super::Reminder>,
+    pub id: Option<Ref<super::Reminder>>,
     /// Threshold
     pub threshold: f64,
     /// Message
     pub message: String,
-    /// Whether this reminder is not deleted
-    pub active: bool,
 }
 
 impl PartialEq<UpdatedReminder> for UpdatedReminder {
@@ -268,7 +266,6 @@ impl PartialEq<UpdatedReminder> for UpdatedReminder {
         self.id == other.id
             && (self.threshold - other.threshold).abs() <= f64::EPSILON
             && self.message == other.message
-            && self.active == other.active
     }
 }
 

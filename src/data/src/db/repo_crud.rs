@@ -475,14 +475,14 @@ impl Repository {
             next.id = Self::upgrade_alert_only(&mut tx, &prev, &next, &ts).await?;
 
             for mut reminder in next.reminders {
-                if !reminder.active {
-                    continue;
-                }
-                let prev_reminder = prev_reminders.get(&reminder.id);
+                // Reminder is deleted from prev if it doesn't appear in next.reminders.
+                // We don't need to bother updating the previous reminder during an alert upgrade - the queries won't fetch them.
+
+                let prev_reminder = reminder.id.clone().and_then(|id| prev_reminders.get(&id));
                 Self::insert_reminder_only(&mut *tx, prev_reminder, &next.id, &mut reminder, &ts)
                     .await?;
                 next_alert.reminders.push(infused::Reminder {
-                    id: reminder.id,
+                    id: reminder.id.unwrap(), // insert_reminder updates id to Some
                     alert_id: next.id.clone(),
                     threshold: reminder.threshold,
                     message: reminder.message,
@@ -497,10 +497,19 @@ impl Repository {
             Self::update_alert_only(&mut *tx, &next, &ts).await?;
             next_alert.events = prev.events;
 
+            // Remove reminders that are no longer in next.reminders
+            for reminder in prev.reminders.iter() {
+                if !next
+                    .reminders
+                    .iter()
+                    .any(|r| r.id.as_ref().map(|id| id == &reminder.id) == Some(true))
+                {
+                    Self::remove_reminder_only(&mut *tx, &reminder.id, &ts).await?;
+                }
+            }
+
+            // Update/Upgrade reminders that are still in next.reminders
             for mut reminder in next.reminders {
-                let has_any_reminder_events =
-                    Self::has_any_reminder_events(&mut *tx, &reminder.id).await?;
-                let prev_reminder = prev_reminders.get(&reminder.id);
                 let mut next_reminder = infused::Reminder {
                     id: Ref::new(0),
                     alert_id: next.id.clone(),
@@ -510,7 +519,11 @@ impl Repository {
                     updated_at: ts.now().to_ticks(),
                     events: infused::ValuePerPeriod::default(),
                 };
-                if let Some(prev_reminder) = prev_reminder {
+                if let Some(id) = reminder.id.clone() {
+                    let has_any_reminder_events =
+                        Self::has_any_reminder_events(&mut *tx, &id).await?;
+                    let prev_reminder = prev_reminders.get(&id).unwrap(); // unwrap is safe because if the id is Some, then the reminder must exist in prev_reminders.
+
                     let should_upgrade_reminder =
                         has_any_reminder_events && (reminder.threshold != prev_reminder.threshold);
 
@@ -526,16 +539,17 @@ impl Repository {
                             &ts,
                         )
                         .await?;
-                        next_reminder.id = reminder.id;
+                        next_reminder.id = reminder.id.unwrap(); // upgrade_reminder_only updates id to Some
                     } else {
                         Self::update_reminder_only(&mut *tx, prev_reminder, &mut reminder, &ts)
                             .await?;
+                        next_reminder.id = id;
                         next_reminder.events = prev_reminder.events.clone();
                     }
                 } else {
                     Self::insert_reminder_only(&mut *tx, None, &next.id, &mut reminder, &ts)
                         .await?;
-                    next_reminder.id = reminder.id;
+                    next_reminder.id = reminder.id.unwrap(); // insert_reminder updates id to Some
                 }
                 next_alert.reminders.push(next_reminder);
             }
@@ -584,8 +598,8 @@ impl Repository {
                 tag_id = ?,
                 usage_limit = ?,
                 time_frame = ?,
-                dim_duration = ?,
-                message_content = ?,
+                trigger_action_dim_duration = ?,
+                trigger_action_message_content = ?,
                 trigger_action_tag = ?,
                 updated_at = ?
             WHERE id = ?",
@@ -668,16 +682,26 @@ impl Repository {
         reminder: &mut infused::UpdatedReminder,
         ts: &impl TimeSystem,
     ) -> Result<()> {
-        reminder.id =
-            query("UPDATE reminders SET threshold = ?, message = ?, active = ?, updated_at = ? WHERE id = ?")
-                .bind(reminder.threshold)
-                .bind(&reminder.message)
-                .bind(reminder.active)
-                .bind(ts.now().to_ticks())
-                .bind(&reminder.id)
-                .fetch_one(executor)
-                .await?
-                .get(0);
+        query("UPDATE reminders SET threshold = ?, message = ?, updated_at = ? WHERE id = ?")
+            .bind(reminder.threshold)
+            .bind(&reminder.message)
+            .bind(ts.now().to_ticks())
+            .bind(&reminder.id)
+            .execute(executor)
+            .await?;
+        Ok(())
+    }
+
+    async fn remove_reminder_only<'a, E: SqliteExecutor<'a>>(
+        executor: E,
+        id: &Ref<Reminder>,
+        ts: &impl TimeSystem,
+    ) -> Result<()> {
+        query("UPDATE reminders SET active = 0, updated_at = ? WHERE id = ?")
+            .bind(ts.now().to_ticks())
+            .bind(id)
+            .execute(executor)
+            .await?;
         Ok(())
     }
 

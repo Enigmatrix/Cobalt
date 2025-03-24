@@ -19,6 +19,7 @@ export default [
     index("routes/alerts/index.tsx"),
     route("create", "routes/alerts/create.tsx"),
     route(":id", "routes/alerts/[id].tsx"),
+    route("edit/:id", "routes/alerts/edit.tsx"),
   ]),
   route("history", "routes/history.tsx"),
   route("settings", "routes/settings.tsx"),

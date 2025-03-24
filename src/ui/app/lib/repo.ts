@@ -55,12 +55,15 @@ export interface UpdatedAlert {
   time_frame: TimeFrame;
   trigger_action: TriggerAction;
   reminders: UpdatedReminder[];
+  ignore_trigger: boolean;
 }
 
 export interface UpdatedReminder {
-  id: Ref<Reminder>;
+  // undefined when creating a new reminder
+  id?: Ref<Reminder>;
   threshold: number;
   message: string;
+  ignore_trigger: boolean;
 }
 
 interface QueryOptions {

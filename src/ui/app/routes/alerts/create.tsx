@@ -395,7 +395,7 @@ export function AppUsageBarChartView({
   );
 }
 
-function TimeProgressBar({
+export function TimeProgressBar({
   usageLimit,
   currentUsage,
   reminders,
