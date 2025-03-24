@@ -6,6 +6,13 @@ export type Color = string;
 export type Timestamp = number;
 export type Duration = number;
 export type Period = "hour" | "day" | "week" | "month" | "year";
+export const PERIODS: Period[] = [
+  "hour",
+  "day",
+  "week",
+  "month",
+  "year",
+] as const;
 
 export interface WithDuration<T> {
   id: Ref<T>;
@@ -67,6 +74,17 @@ export type Target =
   | { tag: "Tag"; id: Ref<Tag> };
 
 export type TimeFrame = "Daily" | "Weekly" | "Monthly";
+
+export function timeFrameToPeriod(timeFrame: TimeFrame): Period {
+  switch (timeFrame) {
+    case "Daily":
+      return "day";
+    case "Weekly":
+      return "week";
+    case "Monthly":
+      return "month";
+  }
+}
 
 export type TriggerAction =
   | { tag: "Kill" }

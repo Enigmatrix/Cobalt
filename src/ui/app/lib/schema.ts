@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { Ref, App, Tag } from "@/lib/entities";
+import type { Ref, App, Tag, Reminder, Alert } from "@/lib/entities";
 import { Duration } from "luxon";
 import { ticksToDuration } from "@/lib/time";
 
@@ -16,6 +16,7 @@ export const tagSchema = z.object({
 });
 
 export const reminderSchema = z.object({
+  id: refSchema<Reminder>().optional(),
   threshold: z.number().min(0).max(1),
   message: z.string().min(1, "Message is required"),
 });
@@ -36,11 +37,13 @@ export const targetSchema = z.discriminatedUnion("tag", [
 
 export const alertSchema = z
   .object({
+    id: refSchema<Alert>().optional(),
     target: targetSchema,
     usage_limit: durationSchema,
     time_frame: z.enum(["Daily", "Weekly", "Monthly"]),
     trigger_action: triggerActionSchema,
     reminders: reminderSchema.array(),
+    ignore_trigger: z.boolean(),
   })
   .refine(
     (data) => {

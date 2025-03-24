@@ -1026,6 +1026,7 @@ async fn create_alert() -> Result<()> {
         time_frame: TimeFrame::Daily,
         trigger_action: TriggerAction::Kill,
         reminders: Vec::new(),
+        ignore_trigger: false,
     };
     let ts = Times::default();
     let created1 = repo.create_alert(alert1.clone(), ts.clone()).await?;
@@ -1044,7 +1045,9 @@ async fn create_alert() -> Result<()> {
         reminders: vec![CreateReminder {
             threshold: 0.5,
             message: "Half way there".into(),
+            ignore_trigger: false,
         }],
+        ignore_trigger: false,
     };
     let created2 = repo.create_alert(alert2.clone(), ts.clone()).await?;
     let created2id = Ref::new(2);
@@ -1072,16 +1075,20 @@ async fn create_alert() -> Result<()> {
             CreateReminder {
                 threshold: 0.25,
                 message: "Quarter way".into(),
+                ignore_trigger: false,
             },
             CreateReminder {
                 threshold: 0.5,
                 message: "Half way there".into(),
+                ignore_trigger: false,
             },
             CreateReminder {
                 threshold: 0.75,
                 message: "Almost there".into(),
+                ignore_trigger: false,
             },
         ],
+        ignore_trigger: false,
     };
 
     let created3 = repo.create_alert(alert3.clone(), ts.clone()).await?;

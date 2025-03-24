@@ -55,6 +55,7 @@ export const TagUsageChartTooltipContent = React.forwardRef<
     maximumTags?: number;
     hoveredTagId: Ref<Tag> | null;
     singleTagId?: Ref<Tag>;
+    highlightedTagIds?: Ref<Tag>[];
   }
 >(
   (
@@ -66,6 +67,7 @@ export const TagUsageChartTooltipContent = React.forwardRef<
       hoveredTagId,
       maximumTags,
       singleTagId,
+      highlightedTagIds,
     },
     ref,
   ) => {
@@ -84,8 +86,9 @@ export const TagUsageChartTooltipContent = React.forwardRef<
           .map((tag) => ({ tag, usageTicks: payload[tag.id]! }))
           .filter((v) => v.usageTicks > 0)
           .orderBy(["usageTicks"], ["desc"])
+          .orderBy((v) => highlightedTagIds?.indexOf(v.tag.id) ?? -1, "desc")
           .value(),
-      [involvedTags, payload],
+      [involvedTags, payload, highlightedTagIds],
     );
 
     const highlightedTagId = singleTagId || hoveredTagId;
@@ -141,7 +144,12 @@ export const TagUsageChartTooltipContent = React.forwardRef<
                       )}
                       <div className="flex flex-1 justify-between items-center">
                         <div className="grid gap-1.5">
-                          <Text className="text-muted-foreground">
+                          <Text
+                            className={cn({
+                              "text-muted-foreground":
+                                !highlightedTagIds?.includes(tag.id),
+                            })}
+                          >
                             {tag.name}
                           </Text>
                         </div>

@@ -158,7 +158,7 @@ export default function Tag({ params }: Route.ComponentProps) {
 
       <div className="h-0 flex-auto overflow-auto [scrollbar-gutter:stable]">
         <div className="flex flex-col gap-4 p-4">
-          {/* App Info */}
+          {/* Tag Info */}
           <div className="rounded-xl bg-card border border-border px-6 pt-6 pb-4">
             <div className="flex flex-col gap-6">
               {/* Header with name and icon */}
