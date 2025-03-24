@@ -255,7 +255,7 @@ export function AlertForm({
         </div>
       ),
       content: (
-        <>
+        <div className="flex flex-col gap-2">
           {fields.map((field, index) => (
             <div key={field.id} className="flex flex-col gap-2">
               <div className="flex gap-2 items-center">
@@ -319,7 +319,7 @@ export function AlertForm({
               </div>
             </div>
           ))}
-        </>
+        </div>
       ),
     },
     {
