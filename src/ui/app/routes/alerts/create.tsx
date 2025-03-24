@@ -494,53 +494,66 @@ export function CreateAlertForm({
       content: (
         <>
           {fields.map((field, index) => (
-            <div key={field.id} className="flex gap-2 items-center">
-              <Badge variant="outline" className="">
-                {index + 1}
-              </Badge>
-              <FormField
-                control={form.control}
-                name={`reminders.${index}.threshold`}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        min={0}
-                        max={1}
-                        step="any"
-                        placeholder="Threshold (0-1)"
-                        className="w-16"
-                        {...field}
-                        onChange={(e) =>
-                          field.onChange(parseFloat(e.target.value))
-                        }
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name={`reminders.${index}.message`}
-                render={({ field }) => (
-                  <FormItem className="flex-1">
-                    <FormControl>
-                      <Input placeholder="Reminder message" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button
-                type="button"
-                variant="destructive"
-                size="icon"
-                onClick={() => remove(index)}
-              >
-                <span className="sr-only">Delete reminder</span>×
-              </Button>
+            <div key={field.id} className="flex flex-col gap-2">
+              <div className="flex gap-2 items-center">
+                <Badge variant="outline" className="">
+                  {index + 1}
+                </Badge>
+                <FormField
+                  control={form.control}
+                  name={`reminders.${index}.threshold`}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min={0}
+                          max={1}
+                          step="any"
+                          placeholder="Threshold (0-1)"
+                          className="w-16"
+                          {...field}
+                          onChange={(e) =>
+                            field.onChange(parseFloat(e.target.value))
+                          }
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name={`reminders.${index}.message`}
+                  render={({ field }) => (
+                    <FormItem className="flex-1">
+                      <FormControl>
+                        <Input placeholder="Reminder message" {...field} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="icon"
+                  onClick={() => remove(index)}
+                >
+                  <span className="sr-only">Delete reminder</span>×
+                </Button>
+              </div>
+
+              <div className="flex flex-col">
+                <FormField
+                  control={form.control}
+                  name={`reminders.${index}.threshold`}
+                  render={() => <FormMessage />}
+                />
+                <FormField
+                  control={form.control}
+                  name={`reminders.${index}.message`}
+                  render={() => <FormMessage />}
+                />
+              </div>
             </div>
           ))}
         </>
