@@ -44,4 +44,4 @@ SELECT al.*, ae.timestamp, (CASE WHEN al.app_id IS NOT NULL THEN (
         AND ae.timestamp >= d.range_start
     WHERE d.dur >= al.usage_limit
     GROUP BY al.id
-    HAVING al.active <> 0
+    HAVING al.prev IS NULL

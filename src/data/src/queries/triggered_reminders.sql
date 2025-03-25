@@ -49,4 +49,4 @@ SELECT r.*, (CASE WHEN al.app_id IS NOT NULL THEN (
         (SELECT COALESCE(MAX(ae.timestamp), 0) FROM alert_events ae
             WHERE al.id = ae.alert_id)
     GROUP BY r.id
-    HAVING al.active <> 0 AND r.active <> 0
+    HAVING al.prev IS NULL AND r.prev IS NULL
