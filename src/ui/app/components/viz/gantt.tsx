@@ -429,9 +429,9 @@ export function Gantt({
               <div className="flex items-center gap-1 text-sm">
                 <Text className="text-base">Interaction</Text>
                 <KeyboardIcon size={16} className="ml-4" />
-                <div>{hoverInteractionPeriod.key_strokes}</div>
+                <div>{hoverInteractionPeriod.keyStrokes}</div>
                 <MouseIcon size={16} className="ml-2" />
-                <div>{hoverInteractionPeriod.mouse_clicks}</div>
+                <div>{hoverInteractionPeriod.mouseClicks}</div>
               </div>
               <div className="flex items-center text-muted-foreground gap-1 text-xs">
                 <DateTimeText ticks={hoverInteractionPeriod.start} /> -

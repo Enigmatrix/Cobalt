@@ -103,3 +103,14 @@ jobs:
           includeUpdaterJson: true
           tauriScript: bun tauri
           tagName: nightly
+      - name: Update tag (nightly)
+        if: github.ref == 'refs/heads/main'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.git.updateRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: 'tags/nightly',
+              sha: context.sha
+            })

@@ -76,8 +76,8 @@ export const useAppState = create<AppState>((set) => {
 
       set((state) =>
         produce((draft: AppState) => {
-          const oldTagId = draft.apps[app.id]?.tag_id;
-          const newTagId = app.tag_id;
+          const oldTagId = draft.apps[app.id]?.tagId;
+          const newTagId = app.tagId;
           if (oldTagId) {
             const apps = draft.tags[oldTagId]?.apps;
             if (apps) {
@@ -111,12 +111,12 @@ export const useAppState = create<AppState>((set) => {
       set((state) =>
         produce((draft: AppState) => {
           removedApps.forEach((appId) => {
-            draft.apps[appId]!.tag_id = null;
+            draft.apps[appId]!.tagId = null;
           });
 
           addedApps.forEach((appId) => {
-            const oldTagId = draft.apps[appId]!.tag_id;
-            draft.apps[appId]!.tag_id = tag.id;
+            const oldTagId = draft.apps[appId]!.tagId;
+            draft.apps[appId]!.tagId = tag.id;
             if (oldTagId) {
               const tag = draft.tags[oldTagId]!;
 
@@ -135,8 +135,8 @@ export const useAppState = create<AppState>((set) => {
         produce((draft: AppState) => {
           draft.tags[newTag.id] = newTag;
           newTag.apps.forEach((appId) => {
-            const oldTagId = draft.apps[appId]!.tag_id;
-            draft.apps[appId]!.tag_id = newTag.id;
+            const oldTagId = draft.apps[appId]!.tagId;
+            draft.apps[appId]!.tagId = newTag.id;
             if (oldTagId) {
               const tag = draft.tags[oldTagId]!;
 
@@ -154,7 +154,7 @@ export const useAppState = create<AppState>((set) => {
         produce((draft: AppState) => {
           // reset apps using this tag
           draft.tags[tagId]?.apps.forEach((appId) => {
-            draft.apps[appId]!.tag_id = null;
+            draft.apps[appId]!.tagId = null;
           });
 
           // remove alerts using this tag

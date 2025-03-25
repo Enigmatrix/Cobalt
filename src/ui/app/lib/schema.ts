@@ -39,11 +39,11 @@ export const alertSchema = z
   .object({
     id: refSchema<Alert>().optional(),
     target: targetSchema,
-    usage_limit: durationSchema,
-    time_frame: z.enum(["Daily", "Weekly", "Monthly"]),
-    trigger_action: triggerActionSchema,
+    usageLimit: durationSchema,
+    timeFrame: z.enum(["Daily", "Weekly", "Monthly"]),
+    triggerAction: triggerActionSchema,
     reminders: reminderSchema.array(),
-    ignore_trigger: z.boolean(),
+    ignoreTrigger: z.boolean(),
   })
   .refine(
     (data) => {
@@ -54,12 +54,12 @@ export const alertSchema = z
       };
 
       return (
-        data.time_frame &&
-        ticksToDuration(data.usage_limit) <= maxDuration[data.time_frame]
+        data.timeFrame &&
+        ticksToDuration(data.usageLimit) <= maxDuration[data.timeFrame]
       );
     },
     {
-      path: ["usage_limit"],
+      path: ["usageLimit"],
       message: "Usage Limit cannot exceed the Time Frame",
     },
   );

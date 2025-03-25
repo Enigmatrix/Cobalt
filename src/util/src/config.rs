@@ -1,5 +1,6 @@
 use std::time::Duration;
 
+pub use dirs::*;
 use figment::providers::{Format, Json};
 use figment::Figment;
 use serde::Deserialize;

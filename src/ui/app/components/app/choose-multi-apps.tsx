@@ -139,7 +139,7 @@ export function ChooseMultiApps({
                   />
                   <Text>{app.name}</Text>
                   {/* Don't show tag if for *this* tag, since a creating tag will not even be valid */}
-                  {!isSelected && <MiniTagItem tagId={app.tag_id} />}
+                  {!isSelected && <MiniTagItem tagId={app.tagId} />}
                 </CommandItem>
               );
             })}

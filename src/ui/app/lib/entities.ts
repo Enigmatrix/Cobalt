@@ -43,7 +43,7 @@ export interface App {
   color: Color;
   identity: AppIdentity;
   icon: Buffer;
-  tag_id: Ref<Tag> | null;
+  tagId: Ref<Tag> | null;
   usages: ValuePerPeriod<Duration>;
 }
 
@@ -94,9 +94,9 @@ export type TriggerAction =
 export interface Alert {
   id: Ref<Alert>;
   target: Target;
-  usage_limit: Duration;
-  time_frame: TimeFrame;
-  trigger_action: TriggerAction;
+  usageLimit: Duration;
+  timeFrame: TimeFrame;
+  triggerAction: TriggerAction;
 
   reminders: Reminder[];
   events: ValuePerPeriod<number>;
@@ -104,7 +104,7 @@ export interface Alert {
 
 export interface Reminder {
   id: Ref<Reminder>;
-  alert_id: Ref<Alert>;
+  alertId: Ref<Alert>;
   threshold: number;
   message: string;
 
@@ -115,8 +115,8 @@ export interface InteractionPeriod {
   id: Ref<Usage>;
   start: Timestamp;
   end: Timestamp;
-  mouse_clicks: number;
-  key_strokes: number;
+  mouseClicks: number;
+  keyStrokes: number;
 }
 
 export enum SystemEventEnum {

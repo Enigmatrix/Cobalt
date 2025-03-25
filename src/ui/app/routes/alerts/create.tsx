@@ -58,15 +58,15 @@ export default function CreateAlerts() {
   const form = useZodForm({
     schema: alertSchema,
     defaultValues: {
-      ignore_trigger: false,
+      ignoreTrigger: false,
       reminders: [],
     },
   });
   const createAlert = useAppState((state) => state.createAlert);
   const navigate = useNavigate();
   const target = form.watch("target");
-  const usageLimit = form.watch("usage_limit");
-  const timeFrame = form.watch("time_frame");
+  const usageLimit = form.watch("usageLimit");
+  const timeFrame = form.watch("timeFrame");
   const reminders = form.watch("reminders");
   const { fields, append, remove, update } = useFieldArray({
     control: form.control,
@@ -78,22 +78,22 @@ export default function CreateAlerts() {
   const onSubmit = useCallback(
     async (values: FormValues) => {
       // FormValues is not the same as CreateAlert
-      // the ignore_trigger in FormValues means ignore all firing alerts and reminders
+      // the ignoreTrigger in FormValues means ignore all firing alerts and reminders
       // but in CreateAlert, it's customizable for each alert and reminder.
 
       const object: CreateAlert = {
         ...structuredClone(values),
-        ignore_trigger: false,
+        ignoreTrigger: false,
         reminders: values.reminders.map((reminder) => ({
           ...reminder,
-          ignore_trigger: false,
+          ignoreTrigger: false,
         })),
       };
 
-      if (values.ignore_trigger) {
-        object.ignore_trigger = triggerInfo.alert;
+      if (values.ignoreTrigger) {
+        object.ignoreTrigger = triggerInfo.alert;
         object.reminders.forEach((reminder, index) => {
-          reminder.ignore_trigger = triggerInfo.reminders[index].trigger;
+          reminder.ignoreTrigger = triggerInfo.reminders[index].trigger;
         });
       }
 

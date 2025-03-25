@@ -35,27 +35,27 @@ export type AppSessionUsages = {
 
 export interface CreateAlert {
   target: Target;
-  usage_limit: DataDuration;
-  time_frame: TimeFrame;
-  trigger_action: TriggerAction;
+  usageLimit: DataDuration;
+  timeFrame: TimeFrame;
+  triggerAction: TriggerAction;
   reminders: CreateReminder[];
-  ignore_trigger: boolean;
+  ignoreTrigger: boolean;
 }
 
 export interface CreateReminder {
   threshold: number;
   message: string;
-  ignore_trigger: boolean;
+  ignoreTrigger: boolean;
 }
 
 export interface UpdatedAlert {
   id: Ref<Alert>;
   target: Target;
-  usage_limit: DataDuration;
-  time_frame: TimeFrame;
-  trigger_action: TriggerAction;
+  usageLimit: DataDuration;
+  timeFrame: TimeFrame;
+  triggerAction: TriggerAction;
   reminders: UpdatedReminder[];
-  ignore_trigger: boolean;
+  ignoreTrigger: boolean;
 }
 
 export interface UpdatedReminder {
@@ -63,7 +63,7 @@ export interface UpdatedReminder {
   id?: Ref<Reminder>;
   threshold: number;
   message: string;
-  ignore_trigger: boolean;
+  ignoreTrigger: boolean;
 }
 
 interface QueryOptions {
@@ -165,7 +165,7 @@ export async function updateApp(app: App): Promise<void> {
     description: app.description,
     company: app.company,
     color: app.color,
-    tag_id: app.tag_id,
+    tagId: app.tagId,
   };
   return await invoke("update_app", { app: updatedApp });
 }

@@ -127,7 +127,7 @@ function AlertListItem({ alert }: { alert: Alert }) {
 
   const currentUsage = useMemo(() => {
     const usages = alert.target.tag === "App" ? app?.usages : tag?.usages;
-    switch (alert.time_frame) {
+    switch (alert.timeFrame) {
       case "Daily":
         return usages?.today;
       case "Weekly":
@@ -138,7 +138,7 @@ function AlertListItem({ alert }: { alert: Alert }) {
   }, [app, tag, alert]);
 
   // App's tag
-  const appTag = useTag(app?.tag_id ?? null);
+  const appTag = useTag(app?.tagId ?? null);
   // Tag's list of Apps
   const tagApps = useApps(tag?.apps ?? []);
 
@@ -209,18 +209,18 @@ function AlertListItem({ alert }: { alert: Alert }) {
 
         <div className="flex flex-col items-end ml-auto py-2 ">
           <div className="text-sm flex gap-1 items-center">
-            <span>{alert.trigger_action.tag}</span>
-            {alert.trigger_action.tag === "Dim" && (
+            <span>{alert.triggerAction.tag}</span>
+            {alert.triggerAction.tag === "Dim" && (
               <div className="flex items-center">
                 <span>(</span>
-                <DurationText ticks={alert.trigger_action.duration} />
+                <DurationText ticks={alert.triggerAction.duration} />
                 <span>)</span>
               </div>
             )}
-            {alert.trigger_action.tag === "Message" && (
+            {alert.triggerAction.tag === "Message" && (
               <div className="flex items-center">
                 <span>(</span>
-                <Text className="max-w-24">{alert.trigger_action.content}</Text>
+                <Text className="max-w-24">{alert.triggerAction.content}</Text>
                 <span>)</span>
               </div>
             )}
@@ -234,17 +234,17 @@ function AlertListItem({ alert }: { alert: Alert }) {
             <span className="ml-2 mr-1">/</span>
             <DurationText
               className="text-center whitespace-nowrap"
-              ticks={alert.usage_limit}
+              ticks={alert.usageLimit}
             />
             <span className="mr-1">,</span>
-            <span>{alert.time_frame}</span>
+            <span>{alert.timeFrame}</span>
           </div>
         </div>
       </div>
       <div className="-mt-1 mx-2">
         <TimeProgressBar
-          usage_limit={alert.usage_limit}
-          current_usage={currentUsage ?? 0}
+          usageLimit={alert.usageLimit}
+          currentUsage={currentUsage ?? 0}
           reminders={alert.reminders}
           circleRadius={5}
         />
@@ -255,18 +255,18 @@ function AlertListItem({ alert }: { alert: Alert }) {
 
 function TimeProgressBar({
   className,
-  usage_limit,
-  current_usage,
+  usageLimit,
+  currentUsage,
   reminders,
   circleRadius,
 }: {
   className?: ClassValue;
-  usage_limit: number;
-  current_usage: number;
+  usageLimit: number;
+  currentUsage: number;
   reminders: Reminder[];
   circleRadius: number;
 }) {
-  const percentage = (current_usage / usage_limit) * 100;
+  const percentage = (currentUsage / usageLimit) * 100;
 
   return (
     <div
