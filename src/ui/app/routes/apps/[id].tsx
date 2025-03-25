@@ -148,9 +148,9 @@ export default function App({ params }: Route.ComponentProps) {
                       }
                     />
                     <TagSelect
-                      tagId={app.tag_id}
+                      tagId={app.tagId}
                       setTagId={async (tagId) =>
-                        await updateApp({ ...app, tag_id: tagId })
+                        await updateApp({ ...app, tagId: tagId })
                       }
                       className="min-w-0"
                     />

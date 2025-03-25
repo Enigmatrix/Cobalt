@@ -48,7 +48,7 @@ export function VerticalLegend({
   const [query, setQuery, filteredApps] = useAppsSearch(apps);
   const tagIds = useMemo(() => {
     return _(filteredApps)
-      .map((app) => app.tag_id)
+      .map((app) => app.tagId)
       .filter((tagId) => tagId !== null)
       .uniq()
       .value();
@@ -79,7 +79,7 @@ export function VerticalLegend({
     setUncheckedApps((prev) => {
       const newState = { ...prev };
       apps
-        .filter((app) => app.tag_id === (id === Untagged ? null : +id))
+        .filter((app) => app.tagId === (id === Untagged ? null : +id))
         .forEach((app) => {
           newState[app.id] = !checked;
         });
@@ -88,7 +88,7 @@ export function VerticalLegend({
   };
 
   const showUntagged = useMemo(() => {
-    return filteredApps.some((app) => app.tag_id === null);
+    return filteredApps.some((app) => app.tagId === null);
   }, [filteredApps]);
 
   const selectAllApps = () => {
@@ -128,10 +128,10 @@ export function VerticalLegend({
   const tagStatus = useCallback(
     (tagId: AppTagId): CheckedState => {
       const allUnchecked = apps
-        .filter((app) => app.tag_id === (tagId === Untagged ? null : tagId))
+        .filter((app) => app.tagId === (tagId === Untagged ? null : tagId))
         .every((app) => !!uncheckedApps[app.id]);
       const allChecked = apps
-        .filter((app) => app.tag_id === (tagId === Untagged ? null : tagId))
+        .filter((app) => app.tagId === (tagId === Untagged ? null : tagId))
         .every((app) => !uncheckedApps[app.id]);
       return allChecked ? true : allUnchecked ? false : "indeterminate";
     },
@@ -218,7 +218,7 @@ export function VerticalLegend({
                 filteredApps
                   .filter(
                     (app) =>
-                      app.tag_id === (tag.id === Untagged ? null : tag.id),
+                      app.tagId === (tag.id === Untagged ? null : tag.id),
                   )
                   .map((app) => {
                     const appIdStr = app.id.toString();

@@ -84,7 +84,7 @@ export function AlertForm({
         <>
           <FormField
             control={form.control}
-            name="time_frame"
+            name="timeFrame"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Period</FormLabel>
@@ -111,7 +111,7 @@ export function AlertForm({
 
           <FormField
             control={form.control}
-            name="usage_limit"
+            name="usageLimit"
             render={({ field: { value, onChange, ...field } }) => (
               <FormItem>
                 <FormLabel>Limit</FormLabel>
@@ -140,7 +140,7 @@ export function AlertForm({
         <>
           <FormField
             control={form.control}
-            name="trigger_action"
+            name="triggerAction"
             render={({ field }) => (
               <FormItem>
                 <FormControl>
@@ -175,7 +175,7 @@ export function AlertForm({
 
           <FormField
             control={form.control}
-            name="trigger_action"
+            name="triggerAction"
             render={({ field: { value, onChange, ...field } }) => (
               <>
                 {value?.tag === "Dim" && (
@@ -209,7 +209,7 @@ export function AlertForm({
 
           <FormField
             control={form.control}
-            name="trigger_action"
+            name="triggerAction"
             render={({ field }) => (
               <>
                 {field.value?.tag === "Message" && (
@@ -361,7 +361,7 @@ export function AlertForm({
 
               <FormField
                 control={form.control}
-                name="ignore_trigger"
+                name="ignoreTrigger"
                 render={({ field: { value, onChange, ...field } }) => (
                   <FormItem className="mt-4 flex gap-2 items-center">
                     <FormControl>

@@ -234,7 +234,7 @@ function AppListItem({
   start: DateTime;
   end: DateTime;
 }) {
-  const tag = useTag(app.tag_id);
+  const tag = useTag(app.tagId);
 
   return (
     <NavLink

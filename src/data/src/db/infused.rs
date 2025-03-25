@@ -50,6 +50,7 @@ impl<T: Table> sqlx::Type<Sqlite> for RefVec<T> {
 
 /// Duration grouped into target
 #[derive(Clone, Debug, Default, PartialEq, Eq, FromRow, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct WithDuration<T: Table> {
     /// Target Identifier
     pub id: Ref<T>,
@@ -59,6 +60,7 @@ pub struct WithDuration<T: Table> {
 
 /// Duration grouped into target, period chunks
 #[derive(Clone, Debug, Default, PartialEq, Eq, FromRow, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct WithGroupedDuration<T: Table> {
     /// Target Identifier
     pub id: Ref<T>,
@@ -70,6 +72,7 @@ pub struct WithGroupedDuration<T: Table> {
 
 /// Value per common periods
 #[derive(Debug, Default, Clone, PartialEq, Eq, Serialize, Deserialize, FromRow)]
+#[serde(rename_all = "camelCase")]
 pub struct ValuePerPeriod<T> {
     /// Value today
     pub today: T,
@@ -81,6 +84,7 @@ pub struct ValuePerPeriod<T> {
 
 /// Options to update a [super::App]
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct UpdatedApp {
     /// Identifier
     pub id: Ref<super::App>,
@@ -98,6 +102,7 @@ pub struct UpdatedApp {
 
 /// [super::App] with additional information
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, FromRow)]
+#[serde(rename_all = "camelCase")]
 pub struct App {
     #[sqlx(flatten)]
     #[serde(flatten)]
@@ -111,6 +116,7 @@ pub struct App {
 
 /// [super::Tag] with additional information
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, FromRow)]
+#[serde(rename_all = "camelCase")]
 pub struct Tag {
     #[sqlx(flatten)]
     #[serde(flatten)]
@@ -125,6 +131,7 @@ pub struct Tag {
 
 /// [super::Alert] with additional information
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, FromRow)]
+#[serde(rename_all = "camelCase")]
 pub struct Alert {
     /// Identifier
     pub id: Ref<super::Alert>,
@@ -151,6 +158,7 @@ pub struct Alert {
 
 /// [super::Reminder] with additional information
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
+#[serde(rename_all = "camelCase")]
 pub struct Reminder {
     /// Identifier
     pub id: Ref<super::Reminder>,
@@ -185,6 +193,7 @@ impl Eq for Reminder {}
 
 /// Options to create a new [super::Tag]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CreateTag {
     /// Name
     pub name: String,
@@ -196,6 +205,7 @@ pub struct CreateTag {
 
 /// Options to update a [super::Tag]
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct UpdatedTag {
     /// Identifier
     pub id: Ref<super::Tag>,
@@ -207,6 +217,7 @@ pub struct UpdatedTag {
 
 /// Options to create a new [super::Alert]
 #[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CreateAlert {
     /// Target of this [Alert]
     pub target: Target,
@@ -224,6 +235,7 @@ pub struct CreateAlert {
 
 /// Options to create a new [super::Reminder]
 #[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CreateReminder {
     /// Threshold
     pub threshold: f64,
@@ -235,6 +247,7 @@ pub struct CreateReminder {
 
 /// Options to update a [super::Alert]
 #[derive(Debug, PartialEq, Eq, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct UpdatedAlert {
     /// Identifier
     pub id: Ref<super::Alert>,
@@ -252,6 +265,7 @@ pub struct UpdatedAlert {
 
 /// Options to update a [super::Reminder]
 #[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct UpdatedReminder {
     /// Identifier
     pub id: Option<Ref<super::Reminder>>,
@@ -273,6 +287,7 @@ impl Eq for UpdatedReminder {}
 
 /// [super::Session] with additional information
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Session {
     /// Identifier
     pub id: Ref<super::Session>,

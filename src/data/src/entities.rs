@@ -7,6 +7,7 @@ pub use crate::table::{Color, Duration, Id, Period, Ref, Timestamp};
 
 /// An app that has run on the computer.
 #[derive(Default, Debug, Clone, PartialEq, Eq, FromRow, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct App {
     /// Identified
     pub id: Ref<Self>,
@@ -73,6 +74,7 @@ impl Default for AppIdentity {
 
 /// Collection of [App] with a name
 #[derive(Default, Debug, Clone, PartialEq, Eq, FromRow, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Tag {
     /// Identifier
     pub id: Ref<Self>,
@@ -88,6 +90,7 @@ pub struct Tag {
 
 /// Non-continuous session of [App] usage
 #[derive(Default, Debug, Clone, PartialEq, Eq, FromRow, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Session {
     /// Identified
     pub id: Ref<Self>,
@@ -99,6 +102,7 @@ pub struct Session {
 
 /// Continuous usage of [App] in a [Session]
 #[derive(Default, Debug, Clone, PartialEq, Eq, FromRow, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Usage {
     /// Identifier
     pub id: Ref<Self>,
@@ -112,6 +116,7 @@ pub struct Usage {
 
 /// A period of continuous usage without idling
 #[derive(Default, Debug, Clone, PartialEq, Eq, FromRow, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct InteractionPeriod {
     /// Identifier
     pub id: Ref<Self>,
@@ -129,6 +134,7 @@ type SystemEventType = i64; // TODO define enum
 
 /// A system event
 #[derive(Default, Debug, Clone, PartialEq, Eq, FromRow, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SystemEvent {
     /// Identifier
     pub id: Ref<Self>,
@@ -233,6 +239,7 @@ impl Default for TriggerAction {
 /// or a collection of [App]s under a [Tag], the actions to take when that
 /// limit is reached, and the reminders
 #[derive(Default, Debug, Clone, PartialEq, Eq, FromRow, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Alert {
     /// Identifier
     pub id: Ref<Self>,
@@ -256,6 +263,7 @@ pub struct Alert {
 
 /// Notifications to send upon a certain threshold of an [Alert]'s usage_limit
 #[derive(Default, Debug, Clone, FromRow, Serialize, Deserialize)] // can't impl PartialEq, Eq for f64
+#[serde(rename_all = "camelCase")]
 pub struct Reminder {
     /// Identifier
     pub id: Ref<Self>,
@@ -298,6 +306,7 @@ pub enum Reason {
 
 /// An instance of [Alert] triggering.
 #[derive(Default, Debug, Clone, PartialEq, Eq, FromRow, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AlertEvent {
     /// Identifier
     pub id: Ref<Self>,
@@ -311,6 +320,7 @@ pub struct AlertEvent {
 
 /// An instance of [Reminder] triggering.
 #[derive(Default, Debug, Clone, PartialEq, Eq, FromRow, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ReminderEvent {
     /// Identifier
     pub id: Ref<Self>,
