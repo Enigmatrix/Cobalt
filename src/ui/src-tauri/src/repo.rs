@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::path::Path;
 
 use data::db::infused;
 use data::entities::{Alert, App, InteractionPeriod, Period, Ref, SystemEvent, Tag, Timestamp};
@@ -6,6 +7,7 @@ use tauri::State;
 use util::error::Context;
 use util::time::ToTicks;
 use util::tracing;
+use util::tracing::log::warn;
 
 use crate::error::AppResult;
 use crate::state::{init_state, AppState, Initable, QueryOptions};
@@ -109,9 +111,43 @@ pub async fn get_tag_durations_per_period(
     Ok(res)
 }
 
+fn check_and_remove_file(file: &str) -> util::error::Result<()> {
+    if std::fs::metadata(file)
+        .map(|f| f.is_file())
+        .unwrap_or(false)
+    {
+        std::fs::remove_file(file).context(format!("remove {}", file))?;
+    } else {
+        warn!("file {} not found", file);
+    }
+    Ok(())
+}
+
+fn check_and_copy_file(dir: &Path, file: &str) -> util::error::Result<()> {
+    let from_file = dir.join(file);
+    if std::fs::metadata(&from_file)
+        .map(|f| f.is_file())
+        .unwrap_or(false)
+    {
+        std::fs::copy(from_file, file).context(format!("copy {}", file))?;
+    } else {
+        warn!("file {} not found", file);
+    }
+    Ok(())
+}
+
+fn remove_db_files() -> util::error::Result<()> {
+    // remove previous files (especially the non-main.db files)
+    check_and_remove_file("main.db")?;
+    check_and_remove_file("main.db-journal")?;
+    check_and_remove_file("main.db-shm")?;
+    check_and_remove_file("main.db-wal")?;
+    Ok(())
+}
+
 #[tauri::command]
 #[tracing::instrument(err, skip(state))]
-pub async fn copy_seed_db(state: State<'_, AppState>) -> AppResult<()> {
+pub async fn copy_from_seed_db(state: State<'_, AppState>) -> AppResult<()> {
     // drop previous state - also drops the db connection
     {
         let mut state = state.write().await;
@@ -119,23 +155,37 @@ pub async fn copy_seed_db(state: State<'_, AppState>) -> AppResult<()> {
         *state = Initable::Uninit;
     }
 
-    fn check_and_remove(file: &str) -> util::error::Result<()> {
-        if std::fs::metadata(file)
-            .map(|f| f.is_file())
-            .unwrap_or(false)
-        {
-            std::fs::remove_file(file).context(format!("remove {}", file))?;
-        }
-        Ok(())
-    }
-
-    // remove previous files (especially the non-main.db files)
-    check_and_remove("main.db")?;
-    check_and_remove("main.db-journal")?;
-    check_and_remove("main.db-shm")?;
-    check_and_remove("main.db-wal")?;
+    remove_db_files()?;
 
     std::fs::copy("../../../dev/seed.db", "main.db").context("copy seed.db")?;
+
+    // reinit state (repo)
+    init_state(state).await?;
+    Ok(())
+}
+
+#[tauri::command]
+#[tracing::instrument(err, skip(state))]
+pub async fn copy_from_install_db(state: State<'_, AppState>) -> AppResult<()> {
+    use util::error::ContextCompat;
+
+    // drop previous state - also drops the db connection
+    {
+        let mut state = state.write().await;
+        state.assume_init().shutdown().await?;
+        *state = Initable::Uninit;
+    }
+
+    remove_db_files()?;
+
+    let install_dir = util::config::data_local_dir()
+        .context("data local dir")?
+        .join("me.enigmatrix.cobalt");
+
+    check_and_copy_file(&install_dir, "main.db")?;
+    check_and_copy_file(&install_dir, "main.db-journal")?;
+    check_and_copy_file(&install_dir, "main.db-shm")?;
+    check_and_copy_file(&install_dir, "main.db-wal")?;
 
     // reinit state (repo)
     init_state(state).await?;

@@ -15,7 +15,11 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Setting } from "@/routes/settings";
 
 async function copySeedDb() {
-  await invoke("copy_seed_db");
+  await invoke("copy_from_seed_db");
+}
+
+async function copyInstallDb() {
+  await invoke("copy_from_install_db");
 }
 
 async function updateUsagesEnd() {
@@ -74,6 +78,16 @@ export default function Experiments() {
                 description="Replace the current database with the seed database"
                 action={
                   <AsyncButton onClick={copySeedDb} variant="outline">
+                    Run
+                  </AsyncButton>
+                }
+              />
+
+              <Setting
+                title={<>Copy install db</>}
+                description="Replace the current database with the installed database"
+                action={
+                  <AsyncButton onClick={copyInstallDb} variant="outline">
                     Run
                   </AsyncButton>
                 }
