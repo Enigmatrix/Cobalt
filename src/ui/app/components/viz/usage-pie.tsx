@@ -16,6 +16,7 @@ import {
 } from "recharts";
 import { toDataUrl } from "@/components/app/app-icon";
 import _ from "lodash";
+import { DurationText } from "@/components/time/duration-text";
 
 const RADIAN = Math.PI / 180;
 
@@ -45,6 +46,12 @@ export function AppUsagePieChart({
 }: AppUsagePieChartProps) {
   const apps = useApps(Object.keys(data).map((id) => +id as Ref<App>));
   const tags = useTags();
+
+  const totalUsage = useMemo(() => {
+    return _(apps)
+      .filter((app) => !hideApps[app.id])
+      .reduce((sum, app) => sum + (data[app.id]?.duration ?? 0), 0);
+  }, [apps, data, hideApps]);
 
   const appData = useMemo(() => {
     return _(apps)
@@ -121,8 +128,6 @@ export function AppUsagePieChart({
     const maxSize = Math.min(radiusDiff, angleLengthValue) * Math.SQRT1_2;
     const size = Math.max(Math.min(maxSize * 0.9, 32), 0); // 10% padding
 
-    console.log("label", props);
-
     return (
       <image
         x={x - size / 2}
@@ -136,7 +141,10 @@ export function AppUsagePieChart({
   };
 
   return (
-    <div className={cn("w-full h-full min-h-[300px]", className)}>
+    <div className={cn("w-full h-full min-h-[300px] relative", className)}>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <DurationText ticks={totalUsage} />
+      </div>
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           {/* Inner pie chart for tags */}
