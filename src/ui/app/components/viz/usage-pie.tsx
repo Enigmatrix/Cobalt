@@ -11,12 +11,10 @@ import {
   Cell,
   ResponsiveContainer,
   Tooltip,
-  LabelList,
   type PieLabel,
+  type TooltipProps,
 } from "recharts";
-import type { ContentType } from "recharts/types/component/Label";
-import AppIcon, { toDataUrl } from "@/components/app/app-icon";
-import { TagIcon } from "lucide-react";
+import { toDataUrl } from "@/components/app/app-icon";
 import _ from "lodash";
 
 const RADIAN = Math.PI / 180;
@@ -38,7 +36,7 @@ const UNTAGGED_COLOR = "#6B7280"; // gray-500
 
 export function AppUsagePieChart({
   data,
-  highlightedAppIds = [],
+  highlightedAppIds,
   unhighlightedAppOpacity = 0.5,
   hideApps = {},
   className,
@@ -96,7 +94,8 @@ export function AppUsagePieChart({
     return tagData;
   }, [tags, apps, data, hideApps]);
 
-  const CustomTooltip = ({ active, payload }: any) => {
+  // sussy argument
+  const CustomTooltip = ({ active, payload }: TooltipProps<number, string>) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
@@ -150,11 +149,10 @@ export function AppUsagePieChart({
             outerRadius={80}
             dataKey="duration"
           >
-            {tagData.map((entry, index) => (
+            {tagData.map((entry) => (
               <Cell
                 key={`tag-${entry.id}`}
                 fill={entry.color}
-                opacity={0.8}
                 onMouseEnter={() => onTagHover?.(entry)}
                 onMouseLeave={() => onTagHover?.(undefined)}
               />
@@ -173,12 +171,12 @@ export function AppUsagePieChart({
             labelLine={false}
             label={renderCustomizedLabel}
           >
-            {appData.map((entry, index) => (
+            {appData.map((entry) => (
               <Cell
                 key={`app-${entry.id}`}
                 fill={entry.color}
                 opacity={
-                  highlightedAppIds.includes(entry.id)
+                  (highlightedAppIds?.includes(entry.id) ?? true)
                     ? 1
                     : unhighlightedAppOpacity
                 }
