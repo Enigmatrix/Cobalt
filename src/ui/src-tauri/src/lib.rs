@@ -19,7 +19,7 @@ pub fn run() {
                             .get_webview_window("main")
                             .expect("no main window")
                             .set_focus();
-                    }));
+                    }))?;
             }
 
             #[cfg(desktop)]
