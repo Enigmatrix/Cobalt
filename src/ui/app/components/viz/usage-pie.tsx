@@ -4,19 +4,19 @@ import type { EntityMap } from "@/lib/state";
 import type { ClassValue } from "clsx";
 import { cn } from "@/lib/utils";
 import { useApps, useTags } from "@/hooks/use-refresh";
-import { useMemo } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   PieChart,
   Pie,
   Cell,
   ResponsiveContainer,
-  Tooltip,
   type PieLabel,
-  type TooltipProps,
 } from "recharts";
 import { toDataUrl } from "@/components/app/app-icon";
 import _ from "lodash";
 import { DurationText } from "@/components/time/duration-text";
+import { AppUsageChartTooltipContent } from "@/components/viz/app-usage-chart-tooltip";
+import { Tooltip } from "@/components/viz/tooltip";
 
 const RADIAN = Math.PI / 180;
 
@@ -52,6 +52,10 @@ export function AppUsagePieChart({
       .filter((app) => !hideApps[app.id])
       .reduce((sum, app) => sum + (data[app.id]?.duration ?? 0), 0);
   }, [apps, data, hideApps]);
+
+  const payload = useMemo(() => {
+    return _.mapValues(data, (duration) => duration?.duration ?? 0);
+  }, [data]);
 
   const appData = useMemo(() => {
     return _(apps)
@@ -101,21 +105,9 @@ export function AppUsagePieChart({
     return tagData;
   }, [tags, apps, data, hideApps]);
 
-  // sussy argument
-  const CustomTooltip = ({ active, payload }: TooltipProps<number, string>) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload;
-      return (
-        <div className="bg-background border rounded-lg p-2 shadow-lg">
-          <p className="font-medium">{data.name}</p>
-          <p className="text-sm text-muted-foreground">
-            Duration: {Math.round(data.duration / 1000)}s
-          </p>
-        </div>
-      );
-    }
-    return null;
-  };
+  const [hoveredApp, setHoveredApp] = useState<WithDuration<App> | undefined>(
+    undefined,
+  );
 
   const renderCustomizedLabel: PieLabel = (props) => {
     const { cx, cy, midAngle, innerRadius, outerRadius, percent, icon } = props;
@@ -140,8 +132,21 @@ export function AppUsagePieChart({
     );
   };
 
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
   return (
-    <div className={cn("w-full h-full min-h-[300px] relative", className)}>
+    <div
+      ref={containerRef}
+      className={cn("w-full h-full min-h-[300px] relative", className)}
+    >
+      <Tooltip targetRef={containerRef} show={!!hoveredApp}>
+        <AppUsageChartTooltipContent
+          hoveredAppId={hoveredApp?.id ?? null}
+          maximumApps={10}
+          highlightedAppIds={highlightedAppIds}
+          payload={payload}
+        />
+      </Tooltip>
       <div className="absolute inset-0 flex items-center justify-center">
         <DurationText ticks={totalUsage} />
       </div>
@@ -198,13 +203,17 @@ export function AppUsagePieChart({
                     ? 1
                     : unhighlightedAppOpacity
                 }
-                onMouseEnter={() => onHover?.(entry)}
-                onMouseLeave={() => onHover?.(undefined)}
+                onMouseEnter={() => {
+                  setHoveredApp(entry);
+                  onHover?.(entry);
+                }}
+                onMouseLeave={() => {
+                  setHoveredApp(undefined);
+                  onHover?.(undefined);
+                }}
               />
             ))}
           </Pie>
-
-          <Tooltip content={<CustomTooltip />} />
         </PieChart>
       </ResponsiveContainer>
     </div>
