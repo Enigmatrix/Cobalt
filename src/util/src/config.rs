@@ -6,6 +6,7 @@ use figment::Figment;
 use serde::Deserialize;
 
 use crate::error::Result;
+use crate::{Target, TARGET};
 
 /// [Config] of the Engine
 #[derive(Debug, Clone, Deserialize)]
@@ -23,7 +24,11 @@ impl Config {
     pub fn config_path(segment: &str) -> Result<String> {
         #[cfg(debug_assertions)]
         {
-            Ok("../../../".to_string() + segment)
+            let target = TARGET.lock().unwrap().clone();
+            match target {
+                Target::Engine => Ok(segment.to_string()),
+                Target::Ui => Ok("../../../".to_string() + segment),
+            }
         }
 
         // The dirs crate is what tauri uses to get the data directory.
