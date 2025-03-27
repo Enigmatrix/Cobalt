@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import { cn } from "@/lib/utils";
 import _ from "lodash";
 import type { Ref, Tag } from "@/lib/entities";
-import { type EntityMap } from "@/lib/state";
+import { untagged, type EntityMap } from "@/lib/state";
 import { DateTime } from "luxon";
 import { DurationText } from "@/components/time/duration-text";
 import { DateTimeText } from "@/components/time/time-text";
@@ -88,7 +88,14 @@ export const TagUsageChartTooltipContent = React.forwardRef<
       () => (singleTagId ? undefined : _(payload).values().sum()),
       [singleTagId, payload],
     );
-    const involvedTags = useTags(involvedTagIds);
+    const involvedTagsWithoutUntagged = useTags(involvedTagIds);
+    const involvedTags = useMemo(
+      () => [
+        ...involvedTagsWithoutUntagged,
+        ...(payload[untagged.id] ? [untagged] : []),
+      ],
+      [involvedTagsWithoutUntagged, payload],
+    );
     const involvedTagSorted = useMemo(
       () =>
         _(involvedTags)
