@@ -8,20 +8,21 @@ mod tracing;
 /// Tauri run entry point
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
-        .setup(|app| {
-            #[cfg(not(debug_assertions))]
-            {
-                use tauri::Manager;
-                app.handle()
-                    .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
-                        let _ = app
-                            .get_webview_window("main")
-                            .expect("no main window")
-                            .set_focus();
-                    }))?;
-            }
+    #[cfg(debug_assertions)]
+    let builder = tauri::Builder::default();
+    #[cfg(not(debug_assertions))]
+    let builder =
+        tauri::Builder::default().plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            use tauri::Manager;
 
+            #[cfg(desktop)]
+            let _ = app
+                .get_webview_window("main")
+                .expect("no main window")
+                .set_focus();
+        }));
+    builder
+        .setup(|app| {
             #[cfg(desktop)]
             app.handle()
                 .plugin(tauri_plugin_updater::Builder::new().build())?;
