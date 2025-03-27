@@ -1,6 +1,6 @@
 import type { App, Ref, Tag } from "@/lib/entities";
 import type { WithDuration } from "@/lib/entities";
-import type { EntityMap } from "@/lib/state";
+import { untagged, type EntityMap } from "@/lib/state";
 import type { ClassValue } from "clsx";
 import { cn } from "@/lib/utils";
 import { useApps, useTags } from "@/hooks/use-refresh";
@@ -16,6 +16,7 @@ import { toDataUrl } from "@/components/app/app-icon";
 import _ from "lodash";
 import { DurationText } from "@/components/time/duration-text";
 import { AppUsageChartTooltipContent } from "@/components/viz/app-usage-chart-tooltip";
+import { TagUsageChartTooltipContent } from "@/components/viz/tag-usage-chart-tooltip";
 import { Tooltip } from "@/components/viz/tooltip";
 
 const RADIAN = Math.PI / 180;
@@ -32,9 +33,6 @@ export interface AppUsagePieChartProps {
   onTagHover?: (data?: Tag) => void;
 }
 
-// TODO make this the same as the other untagged color we use
-const UNTAGGED_COLOR = "#6B7280"; // gray-500
-
 export function AppUsagePieChart({
   data,
   highlightedAppIds,
@@ -44,7 +42,11 @@ export function AppUsagePieChart({
   onHover,
   onTagHover,
 }: AppUsagePieChartProps) {
-  const apps = useApps(Object.keys(data).map((id) => +id as Ref<App>));
+  const appIds = useMemo(
+    () => Object.keys(data).map((id) => +id as Ref<App>),
+    [data],
+  );
+  const apps = useApps(appIds);
   const tags = useTags();
 
   const totalUsage = useMemo(() => {
@@ -56,6 +58,14 @@ export function AppUsagePieChart({
   const payload = useMemo(() => {
     return _.mapValues(data, (duration) => duration?.duration ?? 0);
   }, [data]);
+
+  const tagPayload = useMemo(() => {
+    return _(apps)
+      .map((app) => [app.tagId ?? -1, data[app.id]?.duration ?? 0])
+      .groupBy(0)
+      .mapValues((x) => x.reduce((sum, [, duration]) => sum + duration, 0))
+      .value();
+  }, [apps, data]);
 
   const appData = useMemo(() => {
     return _(apps)
@@ -91,11 +101,7 @@ export function AppUsagePieChart({
       ...(untaggedDuration > 0
         ? [
             {
-              id: -1 as Ref<Tag>,
-              name: "Untagged",
-              color: UNTAGGED_COLOR,
-              apps: [],
-              usages: { today: 0, week: 0, month: 0 },
+              ...untagged,
               duration: untaggedDuration,
             },
           ]
@@ -106,6 +112,9 @@ export function AppUsagePieChart({
   }, [tags, apps, data, hideApps]);
 
   const [hoveredApp, setHoveredApp] = useState<WithDuration<App> | undefined>(
+    undefined,
+  );
+  const [hoveredTag, setHoveredTag] = useState<WithDuration<Tag> | undefined>(
     undefined,
   );
 
@@ -147,6 +156,13 @@ export function AppUsagePieChart({
           payload={payload}
         />
       </Tooltip>
+      <Tooltip targetRef={containerRef} show={!!hoveredTag}>
+        <TagUsageChartTooltipContent
+          hoveredTagId={hoveredTag?.id ?? null}
+          maximumTags={10}
+          payload={tagPayload}
+        />
+      </Tooltip>
       <div className="absolute inset-0 flex items-center justify-center">
         <DurationText ticks={totalUsage} />
       </div>
@@ -171,8 +187,14 @@ export function AppUsagePieChart({
                 stroke="transparent"
                 key={`tag-${entry.id}`}
                 fill={entry.color}
-                onMouseEnter={() => onTagHover?.(entry)}
-                onMouseLeave={() => onTagHover?.(undefined)}
+                onMouseEnter={() => {
+                  setHoveredTag(entry);
+                  onTagHover?.(entry);
+                }}
+                onMouseLeave={() => {
+                  setHoveredTag(undefined);
+                  onTagHover?.(undefined);
+                }}
               />
             ))}
           </Pie>
