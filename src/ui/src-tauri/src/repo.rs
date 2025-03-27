@@ -112,11 +112,12 @@ pub async fn get_tag_durations_per_period(
 }
 
 fn check_and_remove_file(file: &str) -> util::error::Result<()> {
-    if std::fs::metadata(file)
+    let file = util::config::Config::config_path(file)?;
+    if std::fs::metadata(&file)
         .map(|f| f.is_file())
         .unwrap_or(false)
     {
-        std::fs::remove_file(file).context(format!("remove {}", file))?;
+        std::fs::remove_file(&file).context(format!("remove {}", &file))?;
     } else {
         warn!("file {} not found", file);
     }
@@ -125,11 +126,12 @@ fn check_and_remove_file(file: &str) -> util::error::Result<()> {
 
 fn check_and_copy_file(dir: &Path, file: &str) -> util::error::Result<()> {
     let from_file = dir.join(file);
+    let to_file = util::config::Config::config_path(file)?;
     if std::fs::metadata(&from_file)
         .map(|f| f.is_file())
         .unwrap_or(false)
     {
-        std::fs::copy(from_file, file).context(format!("copy {}", file))?;
+        std::fs::copy(from_file, to_file).context(format!("copy {}", file))?;
     } else {
         warn!("file {} not found", file);
     }
