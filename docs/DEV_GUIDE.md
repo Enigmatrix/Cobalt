@@ -38,20 +38,18 @@ We use cargo workspaces to manage the project. However, instead of declaring the
 # Build all
 cargo build
 # Install UI dependencies
-cd src/ui; bun i
+bun i
 
 # Run the Engine
 cargo run --bin engine
 # Run the UI
-cd src/ui; bun run dev
+bun dev
 
 # Test
 cargo test
 ```
 
-If you want to run both components together with a shared database, run the Engine
-with `cd src/ui/src-tauri; cargo run --bin engine` instead, since the database is in
-`src/ui/src-tauri/main.db` during `bun run dev`.
+The Engine and UI are run with a shared database in `./main.db` in dev mode.
 
 When running the UI in dev mode, there is a page called `Experiments`:
 
@@ -71,8 +69,8 @@ cargo fmt # Format code
 cargo clippy # Lint code
 
 # UI
-cd src/ui; bun format:fix # Format code
-cd src/ui; bun lint # Lint code
+bun format:fix # Format code
+bun lint # Lint code
 ```
 
 ### Logging
@@ -149,7 +147,7 @@ Configuration is in `src/ui/src-tauri/tauri.conf.json` and `src/ui/src-tauri/tau
 
 To build distribution packages:
 ```bash
-cd src/ui; bun tauri build
+bun build
 ```
 
 Output locations:

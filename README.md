@@ -16,12 +16,12 @@ See the [ARCHITECTURE.md](./docs/ARCHITECTURE.md) for more information, and the 
 # Build all
 cargo build
 # Install UI dependencies
-cd src/ui; bun i
+bun i
 
 # Run the Engine
 cargo run --bin engine
 # Run the UI
-cd src/ui; bun run dev
+bun dev
 
 # Test
 cargo test
