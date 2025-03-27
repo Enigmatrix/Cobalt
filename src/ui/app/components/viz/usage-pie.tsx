@@ -149,6 +149,7 @@ export function AppUsagePieChart({
         <PieChart>
           {/* Inner pie chart for tags */}
           <Pie
+            isAnimationActive={false}
             data={tagData}
             startAngle={0}
             cx="50%"
@@ -159,6 +160,10 @@ export function AppUsagePieChart({
           >
             {tagData.map((entry) => (
               <Cell
+                style={{
+                  outline: "none",
+                }}
+                stroke="transparent"
                 key={`tag-${entry.id}`}
                 fill={entry.color}
                 onMouseEnter={() => onTagHover?.(entry)}
@@ -169,18 +174,23 @@ export function AppUsagePieChart({
 
           {/* Outer pie chart for apps */}
           <Pie
+            isAnimationActive={false}
             data={appData}
             startAngle={0}
             cx="50%"
             cy="50%"
             innerRadius={90}
-            outerRadius={110}
+            outerRadius={130}
             dataKey="duration"
             labelLine={false}
             label={renderCustomizedLabel}
           >
             {appData.map((entry) => (
               <Cell
+                style={{
+                  outline: "none",
+                }}
+                stroke="transparent"
                 key={`app-${entry.id}`}
                 fill={entry.color}
                 opacity={
