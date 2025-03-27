@@ -1,0 +1,14 @@
+{
+  "version": "0.0.1",
+  "private": true,
+  "workspaces": ["src/ui"],
+  "scripts": {
+    "dev": "bun --cwd src/ui tauri:dev",
+    "build": "bun --cwd src/ui tauri:build",
+    "typecheck": "bun --cwd src/ui typecheck",
+    "format": "bun --cwd src/ui format",
+    "format:fix": "bun --cwd src/ui format:fix",
+    "lint": "bun --cwd src/ui lint",
+    "lint:fix": "bun --cwd src/ui lint:fix"
+  }
+}

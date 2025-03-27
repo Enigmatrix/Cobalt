@@ -6,7 +6,7 @@ use tracing_subscriber::{fmt, registry, EnvFilter};
 
 use crate::config::Config;
 use crate::error::*;
-use crate::Target;
+use crate::{Target, TARGET};
 
 /// Extension trait for [Result] to log the error, warn, info, debug,
 /// or trace straight to the log.
@@ -57,7 +57,8 @@ impl<T: Default> ResultTraceExt<T> for Result<T> {
 }
 
 /// Setup the tracing layer with the given filter directives.
-pub fn setup(config: &Config, target: Target) -> Result<()> {
+pub fn setup(config: &Config) -> Result<()> {
+    let target = TARGET.lock().unwrap().clone();
     let (filter_directives, log_file) = match target {
         Target::Ui => (config.ui_log_filter(), "Cobalt.Ui.log"),
         Target::Engine => (config.engine_log_filter(), "Cobalt.Engine.log"),

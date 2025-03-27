@@ -13,32 +13,39 @@ pub mod time;
 /// Logging, tracing helpers
 pub mod tracing;
 
-use std::sync::Once;
+use std::sync::{LazyLock, Mutex, Once};
 
 use crate::config::Config;
 use crate::error::Result;
 
 /// Configuration Target
+#[derive(Debug, Clone, Default)]
 pub enum Target {
     /// UI module target
     Ui,
     /// Engine module target
+    #[default]
     Engine,
 }
 
 static INIT: Once = Once::new();
+static TARGET: LazyLock<Mutex<Target>> = LazyLock::new(|| Mutex::new(Target::default()));
 
 /// Setup all utils. This function will only run once, all other invocations
 /// will be ignored (vacous success).
 pub fn setup(config: &Config, target: Target) -> Result<()> {
     let mut result = Ok(());
     INIT.call_once(|| {
-        fn inner_setup(config: &Config, target: Target) -> Result<()> {
+        {
+            let mut t = TARGET.lock().unwrap();
+            *t = target;
+        }
+        fn inner_setup(config: &Config) -> Result<()> {
             error::setup()?;
-            tracing::setup(config, target)?;
+            tracing::setup(config)?;
             Ok(())
         }
-        result = inner_setup(config, target);
+        result = inner_setup(config);
     });
     result
 }

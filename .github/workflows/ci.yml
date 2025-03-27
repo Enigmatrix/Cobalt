@@ -13,9 +13,6 @@ jobs:
   
   js:
     runs-on: windows-latest
-    defaults:
-      run:
-        working-directory: src/ui
 
     steps:
       - uses: actions/checkout@v4
@@ -84,14 +81,12 @@ jobs:
         with:
           bun-version: 1.2.2
       - name: Install Dependencies
-        working-directory: src/ui
         run: bun install --frozen-lockfile
 
       - name: Build Tauri App only
         if: github.ref != 'refs/heads/main'
         uses: tauri-apps/tauri-action@v0
         with:
-          projectPath: src/ui
           tauriScript: bun tauri
       - name: Build Tauri App (nightly)
         if: github.ref == 'refs/heads/main'
@@ -99,7 +94,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          projectPath: src/ui
           includeUpdaterJson: true
           tauriScript: bun tauri
           tagName: nightly

@@ -31,7 +31,6 @@ jobs:
         with:
           bun-version: 1.2.2
       - name: Install Dependencies
-        working-directory: src/ui
         run: bun install --frozen-lockfile
 
       - name: Build Tauri App (Release Tag)
@@ -40,8 +39,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
         with:
-          projectPath: src/ui
-          args: -c ./src-tauri/tauri.conf.release.json
+          args: -c ./src/ui/src-tauri/tauri.conf.release.json
           includeUpdaterJson: true
           tauriScript: bun tauri
           tagName: v__VERSION__
