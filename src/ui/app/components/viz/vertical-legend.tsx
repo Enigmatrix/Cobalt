@@ -29,9 +29,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import type { CheckedState } from "@radix-ui/react-checkbox";
-
-const Untagged = Symbol("untagged");
-export type AppTagId = Ref<Tag> | typeof Untagged;
+import { untagged } from "@/lib/state";
 
 export function VerticalLegend({
   appIds,
@@ -75,11 +73,11 @@ export function VerticalLegend({
     }));
   };
 
-  const checkTag = (id: AppTagId, checked: boolean) => {
+  const checkTag = (id: Ref<Tag>, checked: boolean) => {
     setUncheckedApps((prev) => {
       const newState = { ...prev };
       apps
-        .filter((app) => app.tagId === (id === Untagged ? null : +id))
+        .filter((app) => app.tagId === (id === untagged.id ? null : +id))
         .forEach((app) => {
           newState[app.id] = !checked;
         });
@@ -126,12 +124,12 @@ export function VerticalLegend({
   };
 
   const tagStatus = useCallback(
-    (tagId: AppTagId): CheckedState => {
+    (tagId: Ref<Tag>): CheckedState => {
       const allUnchecked = apps
-        .filter((app) => app.tagId === (tagId === Untagged ? null : tagId))
+        .filter((app) => app.tagId === (tagId === untagged.id ? null : tagId))
         .every((app) => !!uncheckedApps[app.id]);
       const allChecked = apps
-        .filter((app) => app.tagId === (tagId === Untagged ? null : tagId))
+        .filter((app) => app.tagId === (tagId === untagged.id ? null : tagId))
         .every((app) => !uncheckedApps[app.id]);
       return allChecked ? true : allUnchecked ? false : "indeterminate";
     },
@@ -174,12 +172,7 @@ export function VerticalLegend({
           />
         </div>
         {/* Tags with their apps */}
-        {[
-          ...tags,
-          ...(showUntagged
-            ? [{ id: Untagged, name: "Untagged", color: "#000000" } as const]
-            : []),
-        ].map((tag) => {
+        {[...tags, ...(showUntagged ? [untagged] : [])].map((tag) => {
           const tagIdStr = tag.id.toString();
           return (
             <div key={tagIdStr} className="flex flex-col">
@@ -218,7 +211,7 @@ export function VerticalLegend({
                 filteredApps
                   .filter(
                     (app) =>
-                      app.tagId === (tag.id === Untagged ? null : tag.id),
+                      app.tagId === (tag.id === untagged.id ? null : tag.id),
                   )
                   .map((app) => {
                     const appIdStr = app.id.toString();
