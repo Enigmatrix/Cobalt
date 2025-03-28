@@ -8,6 +8,7 @@ on:
 env:
   CARGO_TERM_COLOR: always
   CARGO_INCREMENTAL: 0
+  CARGO_PROFILE_TEST_DEBUG: 0
   CARGO_NET_RETRY: 10
   RUST_BACKTRACE: short
   RUSTUP_MAX_RETRIES: 10
@@ -43,7 +44,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
         with:
-          args: -c ./src/ui/src-tauri/tauri.conf.release.json
+          args: -c ./src/ui/src-tauri/tauri.conf.release.json -- --locked
           includeUpdaterJson: true
           tauriScript: bun tauri
           tagName: v__VERSION__

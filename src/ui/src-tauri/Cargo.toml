@@ -4,7 +4,6 @@ homepage.workspace = true
 authors.workspace = true
 version.workspace = true
 edition.workspace = true
-rust-version = "1.77.2"
 default-run = "app"
 
 [lints]
