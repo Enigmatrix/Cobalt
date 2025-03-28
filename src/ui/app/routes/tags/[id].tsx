@@ -11,12 +11,13 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { useAppState } from "@/lib/state";
-import { type App, type Period, type Ref, type Tag } from "@/lib/entities";
+import type { App, Ref, Tag } from "@/lib/entities";
 import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
 import { useCallback, useMemo, useState } from "react";
 import { DateTime } from "luxon";
 import { useTag } from "@/hooks/use-refresh";
 import {
+  type Period,
   hour24Formatter,
   monthDayFormatter,
   ticksToDateTime,

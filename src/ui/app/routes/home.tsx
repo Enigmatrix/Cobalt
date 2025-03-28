@@ -16,6 +16,7 @@ import {
 } from "@/hooks/use-repo";
 import { usePeriodInterval } from "@/hooks/use-today";
 import {
+  type Period,
   hour24Formatter,
   weekDayFormatter,
   monthDayFormatter,
@@ -23,7 +24,6 @@ import {
 import { DateTime } from "luxon";
 import { useState, useMemo } from "react";
 import { Gantt } from "@/components/viz/gantt";
-import type { Period } from "@/lib/entities";
 
 export default function Home() {
   const interval = usePeriodInterval("day");

@@ -21,12 +21,7 @@ import { useAppState } from "@/lib/state";
 import { useNavigate } from "react-router";
 import { Duration } from "luxon";
 import { useIntervalControlsWithDefault } from "@/hooks/use-today";
-import {
-  timeFrameToPeriod,
-  type Period,
-  type Target,
-  type TimeFrame,
-} from "@/lib/entities";
+import { timeFrameToPeriod, type Target, type TimeFrame } from "@/lib/entities";
 import { DateTime } from "luxon";
 import { useAppDurationsPerPeriod } from "@/hooks/use-repo";
 import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
@@ -47,6 +42,7 @@ import type { CreateAlert } from "@/lib/repo";
 import { DurationText } from "@/components/time/duration-text";
 import { useTriggerInfo } from "@/hooks/use-trigger-info";
 import { AlertForm, type FormValues } from "@/components/alert/alert-form";
+import type { Period } from "@/lib/time";
 
 export default function CreateAlerts() {
   const form = useZodForm({

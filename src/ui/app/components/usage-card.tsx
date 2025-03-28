@@ -5,7 +5,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { DurationText } from "@/components/time/duration-text";
 import { useToday } from "@/hooks/use-today";
 import type { Interval } from "@/lib/time";
-import type { Period } from "@/lib/entities";
+import type { Period } from "@/lib/time";
 
 export function UsageCard({
   interval,

@@ -30,7 +30,8 @@ import {
 } from "@/hooks/use-today";
 import { VerticalLegend } from "@/components/viz/vertical-legend";
 import { DurationText } from "@/components/time/duration-text";
-import type { App, Period, Ref } from "@/lib/entities";
+import type { App, Ref } from "@/lib/entities";
+import type { Period } from "@/lib/time";
 import { ChevronLeftIcon, ChevronRightIcon, Loader2 } from "lucide-react";
 import { Gantt } from "@/components/viz/gantt";
 import { cn } from "@/lib/utils";

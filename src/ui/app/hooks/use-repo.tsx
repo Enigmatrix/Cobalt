@@ -1,10 +1,5 @@
-import type {
-  App,
-  Period,
-  Ref,
-  Tag,
-  WithGroupedDuration,
-} from "@/lib/entities";
+import type { App, Ref, Tag, WithGroupedDuration } from "@/lib/entities";
+import type { Period } from "@/lib/time";
 import {
   getAppDurations,
   getAppDurationsPerPeriod,

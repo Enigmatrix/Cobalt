@@ -1,12 +1,22 @@
 import humanizeDuration from "pretty-ms";
 import { DateTime, Duration } from "luxon";
-import { type Period } from "@/lib/entities";
+import type { EntityPeriod } from "@/lib/entities";
 
 // Like Luxon's Interval type, but not half-open.
 export interface Interval {
   start: DateTime;
   end: DateTime;
 }
+
+export type Period = EntityPeriod;
+
+export const PERIODS: Period[] = [
+  "hour",
+  "day",
+  "week",
+  "month",
+  "year",
+] as const;
 
 export function toHumanDuration(
   ticks: number,
