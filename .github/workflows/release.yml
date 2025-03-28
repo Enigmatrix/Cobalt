@@ -43,7 +43,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
         with:
-          args: -c ./src/ui/src-tauri/tauri.conf.release.json
+          args: -c ./src/ui/src-tauri/tauri.conf.release.json -- --locked
           includeUpdaterJson: true
           tauriScript: bun tauri
           tagName: v__VERSION__

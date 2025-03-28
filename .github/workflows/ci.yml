@@ -57,9 +57,9 @@ jobs:
       - name: Setup Rust cache
         uses: Swatinem/rust-cache@v2
       - name: Build
-        run: cargo build --verbose # this might download deps, should be cached
+        run: cargo build --locked # this might download deps, should be cached
       - name: Test
-        run: cargo test --verbose # this also downloads deps, but not cached...
+        run: cargo test --locked # this also downloads deps, but not cached...
       - name: Lint (Format)
         run: cargo fmt --all -- --check
       - name: Lint (Clippy)
@@ -91,6 +91,7 @@ jobs:
         if: github.ref != 'refs/heads/main'
         uses: tauri-apps/tauri-action@v0
         with:
+          args: -- --locked
           tauriScript: bun tauri
       - name: Build Tauri App (nightly)
         if: github.ref == 'refs/heads/main'
@@ -98,6 +99,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
+          args: -- --locked
           includeUpdaterJson: true
           tauriScript: bun tauri
           tagName: nightly
