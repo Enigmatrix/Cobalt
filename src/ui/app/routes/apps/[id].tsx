@@ -41,7 +41,7 @@ import {
   useAppDurationsPerPeriod,
   useAppSessionUsages,
 } from "@/hooks/use-repo";
-import { useTimePeriod } from "@/hooks/use-today";
+import { usePeriodInterval } from "@/hooks/use-today";
 import { Gantt } from "@/components/viz/gantt";
 import { ChooseTag } from "@/components/tag/choose-tag";
 
@@ -64,7 +64,7 @@ export default function App({ params }: Route.ComponentProps) {
 
   const { copy, hasCopied } = useClipboard();
 
-  const yearPeriod = useTimePeriod("year");
+  const yearPeriod = usePeriodInterval("year");
   const [yearInterval, setYearInterval] = useState(yearPeriod);
 
   const {
@@ -94,7 +94,7 @@ export default function App({ params }: Route.ComponentProps) {
     return _.clamp(ticksToDuration(value).rescale().hours / 8, 0.2, 1);
   }, []);
 
-  const dayRange = useTimePeriod("day");
+  const dayRange = usePeriodInterval("day");
   const { ret: appSessionUsages, isLoading: appSessionUsagesLoading } =
     useAppSessionUsages({
       start: dayRange.start,
@@ -333,7 +333,7 @@ function AppUsageBarChartCard({
   xAxisLabelFormatter: (dt: DateTime) => string;
   appId: Ref<App>;
 }) {
-  const startingInterval = useTimePeriod(timePeriod);
+  const startingInterval = usePeriodInterval(timePeriod);
   const [interval, setInterval] = useState(startingInterval);
 
   const { isLoading, appUsage, totalUsage, usages, start, end } =

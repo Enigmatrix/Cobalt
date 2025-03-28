@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useTimePeriod } from "@/hooks/use-today";
+import { usePeriodInterval } from "@/hooks/use-today";
 import { timeFrameToPeriod, type Target, type TimeFrame } from "@/lib/entities";
 import { useAppDurations } from "@/hooks/use-repo";
 import { useTargetApps } from "@/hooks/use-refresh";
@@ -16,7 +16,7 @@ export function useTriggerInfo(
   timeFrame?: TimeFrame,
   reminders?: { id?: number; threshold: number; message: string }[],
 ): TriggerInfo {
-  const interval = useTimePeriod(timeFrameToPeriod(timeFrame ?? "Daily"));
+  const interval = usePeriodInterval(timeFrameToPeriod(timeFrame ?? "Daily"));
 
   const targetApps = useTargetApps(target);
   const { ret: appDurations } = useAppDurations({

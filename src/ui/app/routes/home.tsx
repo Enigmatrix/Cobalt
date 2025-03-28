@@ -14,7 +14,7 @@ import {
   useInteractionPeriods,
   useSystemEvents,
 } from "@/hooks/use-repo";
-import { useTimePeriod } from "@/hooks/use-today";
+import { usePeriodInterval } from "@/hooks/use-today";
 import {
   hour24Formatter,
   weekDayFormatter,
@@ -26,7 +26,7 @@ import { Gantt } from "@/components/viz/gantt";
 import type { Period } from "@/lib/entities";
 
 export default function Home() {
-  const range = useTimePeriod("day");
+  const range = usePeriodInterval("day");
 
   const { ret: usages, isLoading: usagesLoading } = useAppSessionUsages({
     start: range.start,
@@ -103,7 +103,7 @@ function AppUsageBarChartCard({
   period: Period;
   xAxisLabelFormatter: (dt: DateTime) => string;
 }) {
-  const startingInterval = useTimePeriod(timePeriod);
+  const startingInterval = usePeriodInterval(timePeriod);
   const [interval, setInterval] = useState(startingInterval);
 
   const { isLoading, totalUsage, usages, start, end } =

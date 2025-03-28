@@ -48,7 +48,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { NavLink, useNavigate } from "react-router";
-import { useTimePeriod } from "@/hooks/use-today";
+import { usePeriodInterval } from "@/hooks/use-today";
 import { Gantt } from "@/components/viz/gantt";
 import { ChooseMultiApps } from "@/components/app/choose-multi-apps";
 
@@ -78,7 +78,7 @@ export default function Tag({ params }: Route.ComponentProps) {
     await removeTag(tag.id);
   }, [removeTag, navigate, tag.id]);
 
-  const yearPeriod = useTimePeriod("year");
+  const yearPeriod = usePeriodInterval("year");
   const [yearInterval, setYearInterval] = useState(yearPeriod);
 
   const {
@@ -115,7 +115,7 @@ export default function Tag({ params }: Route.ComponentProps) {
     [tag, updateTagApps],
   );
 
-  const dayRange = useTimePeriod("day");
+  const dayRange = usePeriodInterval("day");
 
   const { ret: appSessionUsages, isLoading: appSessionUsagesLoading } =
     useAppSessionUsages({
@@ -282,7 +282,7 @@ function TagUsageBarChartCard({
   xAxisLabelFormatter: (dt: DateTime) => string;
   tag: Tag;
 }) {
-  const startingInterval = useTimePeriod(timePeriod);
+  const startingInterval = usePeriodInterval(timePeriod);
   const [interval, setInterval] = useState(startingInterval);
 
   const {

@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/select";
 import {
   useIntervalControlsWithDefault,
-  useTimePeriod,
+  usePeriodInterval,
 } from "@/hooks/use-today";
 import { VerticalLegend } from "@/components/viz/vertical-legend";
 import { DurationText } from "@/components/time/duration-text";
@@ -208,7 +208,7 @@ function AppUsagePerPeriodHistory() {
 }
 
 function SessionHistory() {
-  const week = useTimePeriod("week");
+  const week = usePeriodInterval("week");
   const { interval, setInterval, canGoNext, goNext, canGoPrev, goPrev } =
     useIntervalControlsWithDefault("week");
 

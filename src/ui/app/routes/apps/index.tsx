@@ -42,7 +42,7 @@ import { DurationText } from "@/components/time/duration-text";
 import type { ClassValue } from "clsx";
 import { useAppDurationsPerPeriod } from "@/hooks/use-repo";
 import { SortDirection } from "@/hooks/use-sort";
-import { useTimePeriod } from "@/hooks/use-today";
+import { usePeriodInterval } from "@/hooks/use-today";
 import { NoApps, NoAppsFound } from "@/components/empty-states";
 
 export function MiniTagItem({
@@ -88,7 +88,7 @@ export default function Apps() {
     return _(appsFiltered).orderBy([sortProperty], [sortDirection]).value();
   }, [appsFiltered, sortDirection, sortProperty]);
 
-  const range = useTimePeriod("day");
+  const range = usePeriodInterval("day");
   const {
     usages,
     start: loadStart,

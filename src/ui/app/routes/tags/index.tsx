@@ -26,7 +26,7 @@ import { NavLink } from "react-router";
 import { ArrowDownUp, Plus, SortAsc, SortDesc, TagIcon } from "lucide-react";
 import { useAppDurationsPerPeriod } from "@/hooks/use-repo";
 import { useTagsSearch } from "@/hooks/use-search";
-import { useTimePeriod } from "@/hooks/use-today";
+import { usePeriodInterval } from "@/hooks/use-today";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { FixedSizeList as List } from "react-window";
 import { SearchBar } from "@/components/search-bar";
@@ -86,7 +86,7 @@ export default function Tags() {
     return _(tagsFiltered).orderBy([sortProperty], [sortDirection]).value();
   }, [tagsFiltered, sortDirection, sortProperty]);
 
-  const range = useTimePeriod("day");
+  const range = usePeriodInterval("day");
   const {
     usages,
     start: loadStart,

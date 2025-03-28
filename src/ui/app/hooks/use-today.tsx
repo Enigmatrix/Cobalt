@@ -19,16 +19,15 @@ export function getToday() {
   return lastRefresh.startOf("day");
 }
 
-// TODO rename this to Interval
-export function useTimePeriod(unit: Period): Interval {
+export function usePeriodInterval(unit: Period): Interval {
   const today = useToday();
-  const range = useMemo(() => {
+  const interval = useMemo(() => {
     const luxonInterval = LuxonInterval.after(today.startOf(unit), {
       [unit]: 1,
     });
     return { start: luxonInterval.start!, end: luxonInterval.end! };
   }, [today, unit]);
-  return range;
+  return interval;
 }
 
 export interface IntervalControls {
@@ -89,7 +88,7 @@ export function useIntervalControlsWithDefault(
   interval: Interval | null;
   setInterval: (interval: Interval | null) => void;
 } {
-  const initialInterval = useTimePeriod(initialPeriod);
+  const initialInterval = usePeriodInterval(initialPeriod);
   const [interval, setInterval] = useState<Interval | null>(initialInterval);
   const controls = useIntervalControls(interval, setInterval);
   return { ...controls, interval, setInterval };
