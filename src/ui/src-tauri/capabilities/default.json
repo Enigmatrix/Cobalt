@@ -3,7 +3,7 @@
   "identifier": "default",
   "description": "enables the default permissions",
   "windows": ["main"],
-  "permissions": ["core:default", "updater:default", "opener:deny-open-path", "opener:deny-reveal-item-in-dir", {
+  "permissions": ["core:default", "updater:default", "opener:deny-open-path", "opener:deny-reveal-item-in-dir", "core:app:allow-set-app-theme", {
     "identifier": "opener:allow-open-url",
     "allow": [{
       "url": "https://github.com/Enigmatrix/Cobalt/issues"

@@ -1,3 +1,4 @@
+import { setTheme } from "@tauri-apps/api/app";
 import { invoke } from "@tauri-apps/api/core";
 import { create } from "zustand";
 import type { Alert, App, Ref, Tag } from "@/lib/entities";
@@ -23,8 +24,12 @@ import { checkForUpdatesBackground } from "@/lib/updater";
 import { info } from "@/lib/log";
 import { produce } from "immer";
 import _ from "lodash";
+import { getTheme } from "@/components/theme-provider";
 
 export async function initState() {
+  const theme = getTheme();
+  await setTheme(theme === "system" ? null : theme);
+
   // init rust-side state
   await invoke("init_state");
   await refresh();
