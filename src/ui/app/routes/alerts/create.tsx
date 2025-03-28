@@ -2,12 +2,6 @@ import { useZodForm } from "@/hooks/use-form";
 import { alertSchema } from "@/lib/schema";
 import { FormItem } from "@/components/ui/form";
 import {
-  findIntervalPeriod,
-  nextInterval,
-  prevInterval,
-  type Interval,
-} from "@/lib/time";
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -26,7 +20,7 @@ import {
 import { useAppState } from "@/lib/state";
 import { useNavigate } from "react-router";
 import { Duration } from "luxon";
-import { useTimePeriod, useToday } from "@/hooks/use-today";
+import { useIntervalControlsWithDefault } from "@/hooks/use-today";
 import {
   timeFrameToPeriod,
   type Period,
@@ -235,38 +229,10 @@ export function AppUsageBarChartView({
   usageLimit: number;
   timeFrame: TimeFrame;
 }) {
-  const today = useToday();
-  const week = useTimePeriod("week");
-  const [interval, setInterval] = useState<Interval | null>(week);
   const [period, setPeriod] = useState<Period>("day");
 
-  // TODO commonolize this with usage-card.tsx if there are more usages!
-  const guessedIntervalPeriod = useMemo(() => {
-    if (!interval) return undefined;
-    return findIntervalPeriod(interval);
-  }, [interval]);
-
-  const canGoPrevInterval = useMemo(() => {
-    return !!guessedIntervalPeriod; // can always go back as long as we have an interval
-  }, [guessedIntervalPeriod]);
-
-  const canGoNextInterval = useMemo(() => {
-    if (!interval || !guessedIntervalPeriod) return false;
-    const nextStart = nextInterval(interval, guessedIntervalPeriod);
-    return today.plus({ day: 1 }) > nextStart.start;
-  }, [guessedIntervalPeriod, interval, today]);
-
-  const goPrevInterval = useCallback(() => {
-    if (!interval || !guessedIntervalPeriod) return;
-    const newInterval = prevInterval(interval, guessedIntervalPeriod);
-    setInterval(newInterval);
-  }, [guessedIntervalPeriod, interval]);
-
-  const goNextInterval = useCallback(() => {
-    if (!interval || !guessedIntervalPeriod) return;
-    const newInterval = nextInterval(interval, guessedIntervalPeriod);
-    setInterval(newInterval);
-  }, [guessedIntervalPeriod, interval]);
+  const { interval, setInterval, canGoNext, goNext, canGoPrev, goPrev } =
+    useIntervalControlsWithDefault("week");
 
   const scaledUsageLimit = useMemo(() => {
     if (!usageLimit || !timeFrame) return undefined;
@@ -337,8 +303,8 @@ export function AppUsageBarChartView({
             <Button
               variant="ghost"
               size="icon"
-              disabled={!canGoPrevInterval}
-              onClick={goPrevInterval}
+              disabled={!canGoPrev}
+              onClick={goPrev}
               className="mt-6"
             >
               <ChevronLeftIcon className="size-4" />
@@ -358,8 +324,8 @@ export function AppUsageBarChartView({
             <Button
               variant="ghost"
               size="icon"
-              disabled={!canGoNextInterval}
-              onClick={goNextInterval}
+              disabled={!canGoNext}
+              onClick={goNext}
               className="mt-6"
             >
               <ChevronRightIcon className="size-4" />

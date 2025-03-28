@@ -1,7 +1,7 @@
 import { useAppState } from "@/lib/state";
 import { Interval as LuxonInterval } from "luxon";
 import type { Interval } from "@/lib/time";
-import { useMemo } from "react";
+import { useMemo, useCallback, useState } from "react";
 import type { Period } from "@/lib/entities";
 
 export function useToday() {
@@ -19,6 +19,7 @@ export function getToday() {
   return lastRefresh.startOf("day");
 }
 
+// TODO rename this to Interval
 export function useTimePeriod(unit: Period): Interval {
   const today = useToday();
   const range = useMemo(() => {
@@ -29,3 +30,69 @@ export function useTimePeriod(unit: Period): Interval {
   }, [today, unit]);
   return range;
 }
+
+export interface IntervalControls {
+  canGoNext: boolean;
+  goNext: () => void;
+  canGoPrev: boolean;
+  goPrev: () => void;
+}
+
+export function useIntervalControls(
+  interval: Interval | null,
+  setInterval: (interval: Interval | null) => void,
+): IntervalControls {
+  const today = useToday();
+
+  const duration = useMemo(() => {
+    return interval?.end.diff(interval.start, [
+      "years",
+      "months",
+      "days",
+      "hours",
+      "minutes",
+      "seconds",
+      "milliseconds",
+    ]);
+  }, [interval]);
+  const canGoNext = useMemo(
+    () =>
+      interval !== null &&
+      duration !== undefined &&
+      today.plus({ day: 1 }) > interval.start.plus(duration),
+    [interval, today, duration],
+  );
+  // can always go prev, as long as we have an interval
+  const canGoPrev = useMemo(() => interval !== null, [interval]);
+
+  const goNext = useCallback(() => {
+    if (!interval || !duration) return;
+    setInterval({
+      start: interval.start.plus(duration),
+      end: interval.end.plus(duration),
+    });
+  }, [interval, duration, setInterval]);
+  const goPrev = useCallback(() => {
+    if (!interval || !duration) return;
+    setInterval({
+      start: interval.start.minus(duration),
+      end: interval.end.minus(duration),
+    });
+  }, [interval, duration, setInterval]);
+
+  return { canGoNext, goNext, canGoPrev, goPrev };
+}
+
+export function useIntervalControlsWithDefault(
+  initialPeriod: Period,
+): IntervalControls & {
+  interval: Interval | null;
+  setInterval: (interval: Interval | null) => void;
+} {
+  const initialInterval = useTimePeriod(initialPeriod);
+  const [interval, setInterval] = useState<Interval | null>(initialInterval);
+  const controls = useIntervalControls(interval, setInterval);
+  return { ...controls, interval, setInterval };
+}
+
+// TODO rename `range` to `interval` all over the place.
