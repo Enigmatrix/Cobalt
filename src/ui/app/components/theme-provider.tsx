@@ -1,11 +1,10 @@
 import { createContext, useContext, useEffect, useState } from "react";
+import { setTheme as setTauriTheme } from "@tauri-apps/api/app";
 
 export type Theme = "dark" | "light" | "system";
 
 type ThemeProviderProps = {
   children: React.ReactNode;
-  defaultTheme?: Theme;
-  storageKey?: string;
 };
 
 type ThemeProviderState = {
@@ -20,15 +19,11 @@ const initialState: ThemeProviderState = {
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
 
-export function ThemeProvider({
-  children,
-  defaultTheme = "system",
-  storageKey = "vite-ui-theme",
-  ...props
-}: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(
-    () => (localStorage.getItem(storageKey) as Theme) || defaultTheme,
-  );
+const storageKey = "vite-ui-theme";
+const defaultTheme = "dark";
+
+export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
+  const [theme, setTheme] = useState<Theme>(getTheme());
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -52,6 +47,7 @@ export function ThemeProvider({
     theme,
     setTheme: (theme: Theme) => {
       localStorage.setItem(storageKey, theme);
+      setTauriTheme(theme === "system" ? null : theme); // this is async but we ignore the result
       setTheme(theme);
     },
   };
@@ -70,4 +66,8 @@ export const useTheme = () => {
     throw new Error("useTheme must be used within a ThemeProvider");
 
   return context;
+};
+
+export const getTheme = () => {
+  return (localStorage.getItem(storageKey) as Theme) || defaultTheme;
 };

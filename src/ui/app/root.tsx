@@ -52,7 +52,7 @@ export default function App() {
   }, [location]);
 
   return (
-    <ThemeProvider defaultTheme="dark">
+    <ThemeProvider>
       <Suspense fallback={<SplashScreen />}>
         <Await resolve={initStatePromise}>
           <SidebarProvider>
@@ -89,7 +89,7 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   }
 
   return (
-    <ThemeProvider defaultTheme="dark">
+    <ThemeProvider>
       <main className="pt-16 p-4 container mx-auto">
         <div className="border border-destructive rounded-md p-4 space-y-2 bg-destructive/10">
           <h1 className="text-xl font-bold text-destructive">Error</h1>
