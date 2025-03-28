@@ -59,12 +59,12 @@ jobs:
         uses: Swatinem/rust-cache@v2
       - name: Build
         run: cargo build --locked # this might download deps, should be cached
+      - name: Lint (Clippy)
+        run: cargo clippy --frozen -- -D warnings
       - name: Test
         run: cargo test --locked # this also downloads deps, but not cached...
       - name: Lint (Format)
         run: cargo fmt --all -- --check
-      - name: Lint (Clippy)
-        run: cargo clippy --frozen --locked -- -D warnings
 
   tauri:
     runs-on: windows-latest
