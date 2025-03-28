@@ -11,12 +11,13 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { useAppState } from "@/lib/state";
-import { type App, type Period, type Ref, type Tag } from "@/lib/entities";
+import type { App, Ref, Tag } from "@/lib/entities";
 import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
 import { useCallback, useMemo, useState } from "react";
 import { DateTime } from "luxon";
 import { useTag } from "@/hooks/use-refresh";
 import {
+  type Period,
   hour24Formatter,
   monthDayFormatter,
   ticksToDateTime,
@@ -48,7 +49,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { NavLink, useNavigate } from "react-router";
-import { useTimePeriod } from "@/hooks/use-today";
+import { usePeriodInterval } from "@/hooks/use-time";
 import { Gantt } from "@/components/viz/gantt";
 import { ChooseMultiApps } from "@/components/app/choose-multi-apps";
 
@@ -78,15 +79,15 @@ export default function Tag({ params }: Route.ComponentProps) {
     await removeTag(tag.id);
   }, [removeTag, navigate, tag.id]);
 
-  const yearPeriod = useTimePeriod("year");
-  const [yearInterval, setYearInterval] = useState(yearPeriod);
+  const yearInitInterval = usePeriodInterval("year");
+  const [yearInterval, setYearInterval] = useState(yearInitInterval);
 
   const {
     isLoading: isYearDataLoading,
     tagUsage: yearUsage,
     totalUsage: yearTotalUsage,
     usages: yearUsages,
-    start: yearRangeStart,
+    start: yearStart,
   } = useTagDurationsPerPeriod({
     start: yearInterval.start,
     end: yearInterval.end,
@@ -115,12 +116,12 @@ export default function Tag({ params }: Route.ComponentProps) {
     [tag, updateTagApps],
   );
 
-  const dayRange = useTimePeriod("day");
+  const day = usePeriodInterval("day");
 
   const { ret: appSessionUsages, isLoading: appSessionUsagesLoading } =
     useAppSessionUsages({
-      start: dayRange.start,
-      end: dayRange.end,
+      start: day.start,
+      end: day.end,
     });
   const tagAppSessionUsages = useMemo(() => {
     return _(tag.apps)
@@ -248,7 +249,7 @@ export default function Tag({ params }: Route.ComponentProps) {
               <Heatmap
                 data={yearData}
                 scaling={scaling}
-                startDate={yearRangeStart ?? yearInterval.start}
+                startDate={yearStart ?? yearInterval.start}
                 fullCellColorRgb={tag.color}
                 innerClassName="min-h-[200px]"
                 firstDayOfMonthClassName="stroke-card-foreground/50"
@@ -261,8 +262,7 @@ export default function Tag({ params }: Route.ComponentProps) {
             <Gantt
               usages={tagAppSessionUsages}
               usagesLoading={appSessionUsagesLoading}
-              rangeStart={dayRange.start}
-              rangeEnd={dayRange.end}
+              interval={day}
             />
           </div>
         </div>
@@ -282,7 +282,7 @@ function TagUsageBarChartCard({
   xAxisLabelFormatter: (dt: DateTime) => string;
   tag: Tag;
 }) {
-  const startingInterval = useTimePeriod(timePeriod);
+  const startingInterval = usePeriodInterval(timePeriod);
   const [interval, setInterval] = useState(startingInterval);
 
   const {

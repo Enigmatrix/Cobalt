@@ -1,6 +1,6 @@
 import humanizeDuration from "pretty-ms";
 import { DateTime, Duration } from "luxon";
-import { type Period, PERIODS } from "@/lib/entities";
+import type { EntityPeriod } from "@/lib/entities";
 
 // Like Luxon's Interval type, but not half-open.
 export interface Interval {
@@ -8,35 +8,15 @@ export interface Interval {
   end: DateTime;
 }
 
-export function isIntervalPeriod(interval: Interval, period: Period): boolean {
-  return (
-    +interval.start.startOf(period) === +interval.start &&
-    +interval.end === +interval.start.plus({ [period]: 1 })
-  );
-}
+export type Period = EntityPeriod;
 
-export function prevInterval(interval: Interval, period: Period): Interval {
-  return {
-    start: interval.start.minus({ [period]: 1 }),
-    end: interval.end.minus({ [period]: 1 }),
-  };
-}
-
-export function nextInterval(interval: Interval, period: Period): Interval {
-  return {
-    start: interval.start.plus({ [period]: 1 }),
-    end: interval.end.plus({ [period]: 1 }),
-  };
-}
-
-export function findIntervalPeriod(interval: Interval): Period | undefined {
-  for (const period of PERIODS) {
-    if (isIntervalPeriod(interval, period)) {
-      return period;
-    }
-  }
-  return undefined;
-}
+export const PERIODS: Period[] = [
+  "hour",
+  "day",
+  "week",
+  "month",
+  "year",
+] as const;
 
 export function toHumanDuration(
   ticks: number,

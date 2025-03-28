@@ -1,4 +1,4 @@
-import { useToday } from "@/hooks/use-today";
+import { useToday } from "@/hooks/use-time";
 import { type Interval, toHumanDateTime } from "@/lib/time";
 import { cn } from "@/lib/utils";
 import {

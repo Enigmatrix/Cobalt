@@ -14,12 +14,11 @@ import type {
   TimeFrame,
   TriggerAction,
   Reminder,
-  Period,
 } from "@/lib/entities";
 import { invoke } from "@tauri-apps/api/core";
 import type { EntityMap, EntityStore } from "@/lib/state";
 import { DateTime } from "luxon";
-import { dateTimeToTicks } from "@/lib/time";
+import { dateTimeToTicks, type Period } from "@/lib/time";
 
 export interface CreateTag {
   name: string;

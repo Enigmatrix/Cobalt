@@ -11,13 +11,14 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { useAppState } from "@/lib/state";
-import { type App, type Period, type Ref, type Tag } from "@/lib/entities";
+import { type App, type Ref, type Tag } from "@/lib/entities";
 import AppIcon from "@/components/app/app-icon";
 import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
 import { useCallback, useMemo, useState } from "react";
 import { DateTime } from "luxon";
 import { useApp, useTag } from "@/hooks/use-refresh";
 import {
+  type Period,
   hour24Formatter,
   monthDayFormatter,
   ticksToDateTime,
@@ -41,7 +42,7 @@ import {
   useAppDurationsPerPeriod,
   useAppSessionUsages,
 } from "@/hooks/use-repo";
-import { useTimePeriod } from "@/hooks/use-today";
+import { usePeriodInterval } from "@/hooks/use-time";
 import { Gantt } from "@/components/viz/gantt";
 import { ChooseTag } from "@/components/tag/choose-tag";
 
@@ -64,15 +65,15 @@ export default function App({ params }: Route.ComponentProps) {
 
   const { copy, hasCopied } = useClipboard();
 
-  const yearPeriod = useTimePeriod("year");
-  const [yearInterval, setYearInterval] = useState(yearPeriod);
+  const yearInitInterval = usePeriodInterval("year");
+  const [yearInterval, setYearInterval] = useState(yearInitInterval);
 
   const {
     isLoading: isYearDataLoading,
     appUsage: yearUsage,
     totalUsage: yearTotalUsage,
     usages: yearUsages,
-    start: yearRangeStart,
+    start: yearStart,
   } = useAppDurationsPerPeriod({
     start: yearInterval.start,
     end: yearInterval.end,
@@ -94,11 +95,11 @@ export default function App({ params }: Route.ComponentProps) {
     return _.clamp(ticksToDuration(value).rescale().hours / 8, 0.2, 1);
   }, []);
 
-  const dayRange = useTimePeriod("day");
+  const day = usePeriodInterval("day");
   const { ret: appSessionUsages, isLoading: appSessionUsagesLoading } =
     useAppSessionUsages({
-      start: dayRange.start,
-      end: dayRange.end,
+      start: day.start,
+      end: day.end,
     });
   const onlyAppSessionUsages = useMemo(() => {
     return appSessionUsages[app.id]
@@ -237,7 +238,7 @@ export default function App({ params }: Route.ComponentProps) {
               <Heatmap
                 data={yearData}
                 scaling={scaling}
-                startDate={yearRangeStart ?? yearInterval.start}
+                startDate={yearStart ?? yearInterval.start}
                 fullCellColorRgb={app.color}
                 innerClassName="min-h-[200px]"
                 firstDayOfMonthClassName="stroke-card-foreground/50"
@@ -251,8 +252,7 @@ export default function App({ params }: Route.ComponentProps) {
               usages={onlyAppSessionUsages}
               usagesLoading={appSessionUsagesLoading}
               defaultExpanded={{ [app.id]: true }}
-              rangeStart={dayRange.start}
-              rangeEnd={dayRange.end}
+              interval={day}
             />
           </div>
         </div>
@@ -333,7 +333,7 @@ function AppUsageBarChartCard({
   xAxisLabelFormatter: (dt: DateTime) => string;
   appId: Ref<App>;
 }) {
-  const startingInterval = useTimePeriod(timePeriod);
+  const startingInterval = usePeriodInterval(timePeriod);
   const [interval, setInterval] = useState(startingInterval);
 
   const { isLoading, appUsage, totalUsage, usages, start, end } =

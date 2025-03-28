@@ -5,14 +5,9 @@ export function newRef<T>(id: number): Ref<T> {
 export type Color = string;
 export type Timestamp = number;
 export type Duration = number;
-export type Period = "hour" | "day" | "week" | "month" | "year";
-export const PERIODS: Period[] = [
-  "hour",
-  "day",
-  "week",
-  "month",
-  "year",
-] as const;
+type Period = "hour" | "day" | "week" | "month" | "year";
+// change the exported type so that users use the time.ts Period type instead
+export type EntityPeriod = Period;
 
 export interface WithDuration<T> {
   id: Ref<T>;

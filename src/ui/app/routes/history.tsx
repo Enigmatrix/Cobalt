@@ -6,7 +6,6 @@ import {
   BreadcrumbPage,
   BreadcrumbList,
 } from "@/components/ui/breadcrumb";
-import { type Interval } from "@/lib/time";
 import { useMemo, useState } from "react";
 import { DateTime, Duration } from "luxon";
 import { Label } from "@/components/ui/label";
@@ -25,13 +24,19 @@ import {
   SelectValue,
   SelectTrigger,
 } from "@/components/ui/select";
-import { useTimePeriod } from "@/hooks/use-today";
+import {
+  useIntervalControlsWithDefault,
+  usePeriodInterval,
+} from "@/hooks/use-time";
 import { VerticalLegend } from "@/components/viz/vertical-legend";
 import { DurationText } from "@/components/time/duration-text";
-import type { App, Period, Ref } from "@/lib/entities";
-import { Loader2 } from "lucide-react";
+import type { App, Ref } from "@/lib/entities";
+import type { Period } from "@/lib/time";
+import { ChevronLeftIcon, ChevronRightIcon, Loader2 } from "lucide-react";
 import { Gantt } from "@/components/viz/gantt";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { FormItem } from "@/components/ui/form";
 
 type View = "app-usage" | "session-history";
 
@@ -78,9 +83,9 @@ export default function History() {
 }
 
 function AppUsagePerPeriodHistory() {
-  const week = useTimePeriod("week");
-  const [interval, setInterval] = useState<Interval | null>(week);
   const [period, setPeriod] = useState<Period>("day");
+  const { interval, setInterval, canGoNext, goNext, canGoPrev, goPrev } =
+    useIntervalControlsWithDefault("week");
 
   const {
     isLoading,
@@ -129,19 +134,10 @@ function AppUsagePerPeriodHistory() {
         </div>
         {isLoading && <Loader2 className="animate-spin w-4 h-4" />}
         <div className="flex-1 md:min-w-0" />
-        <div className="flex flex-col gap-1.5">
-          <Label className="font-medium text-muted-foreground">
-            Time Range
+        <FormItem>
+          <Label className="font-medium text-muted-foreground place-self-end">
+            Period
           </Label>
-          <DateRangePicker
-            value={interval}
-            onChange={setInterval}
-            dayGranularity={true}
-            className="w-full min-w-32"
-          />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label className="font-medium text-muted-foreground">Period</Label>
           <Select value={period} onValueChange={(s) => setPeriod(s as Period)}>
             <SelectTrigger className="min-w-32 font-medium">
               <SelectValue placeholder="Select a period" />
@@ -153,6 +149,38 @@ function AppUsagePerPeriodHistory() {
               <SelectItem value="month">Month</SelectItem>
             </SelectContent>
           </Select>
+        </FormItem>
+
+        <div className="flex gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            disabled={!canGoPrev}
+            onClick={goPrev}
+            className="mt-5.5"
+          >
+            <ChevronLeftIcon className="size-4" />
+          </Button>
+          <FormItem>
+            <Label className="font-medium text-muted-foreground place-self-end">
+              Time Range
+            </Label>
+            <DateRangePicker
+              value={interval}
+              onChange={setInterval}
+              dayGranularity={true}
+              className="w-full min-w-32"
+            />
+          </FormItem>
+          <Button
+            variant="ghost"
+            size="icon"
+            disabled={!canGoNext}
+            onClick={goNext}
+            className="mt-5.5"
+          >
+            <ChevronRightIcon className="size-4" />
+          </Button>
         </div>
       </div>
 
@@ -181,8 +209,10 @@ function AppUsagePerPeriodHistory() {
 }
 
 function SessionHistory() {
-  const week = useTimePeriod("week");
-  const [interval, setInterval] = useState<Interval | null>(week);
+  const week = usePeriodInterval("week");
+  const { interval, setInterval, canGoNext, goNext, canGoPrev, goPrev } =
+    useIntervalControlsWithDefault("week");
+
   const effectiveInterval = interval ?? week;
 
   const { ret: usages, isLoading: usagesLoading } = useAppSessionUsages({
@@ -212,16 +242,36 @@ function SessionHistory() {
           interactionPeriodsLoading ||
           systemEventsLoading) && <Loader2 className="animate-spin w-4 h-4" />}
         <div className="flex-1 md:min-w-0" />
-        <div className="flex flex-col gap-1.5">
-          <Label className="font-medium text-muted-foreground">
-            Time Range
-          </Label>
-          <DateRangePicker
-            value={interval}
-            onChange={setInterval}
-            dayGranularity={true}
-            className="w-full min-w-32"
-          />
+        <div className="flex gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            disabled={!canGoPrev}
+            onClick={goPrev}
+            className="mt-5.5"
+          >
+            <ChevronLeftIcon className="size-4" />
+          </Button>
+          <FormItem>
+            <Label className="font-medium text-muted-foreground place-self-end">
+              Time Range
+            </Label>
+            <DateRangePicker
+              value={interval}
+              onChange={setInterval}
+              dayGranularity={true}
+              className="w-full min-w-32"
+            />
+          </FormItem>
+          <Button
+            variant="ghost"
+            size="icon"
+            disabled={!canGoNext}
+            onClick={goNext}
+            className="mt-5.5"
+          >
+            <ChevronRightIcon className="size-4" />
+          </Button>
         </div>
       </div>
 
@@ -234,8 +284,7 @@ function SessionHistory() {
             interactionPeriodsLoading={interactionPeriodsLoading}
             systemEvents={systemEvents}
             systemEventsLoading={systemEventsLoading}
-            rangeStart={effectiveInterval.start}
-            rangeEnd={effectiveInterval.end}
+            interval={effectiveInterval}
           />
         </div>
       </div>

@@ -14,8 +14,9 @@ import {
   useInteractionPeriods,
   useSystemEvents,
 } from "@/hooks/use-repo";
-import { useTimePeriod } from "@/hooks/use-today";
+import { usePeriodInterval } from "@/hooks/use-time";
 import {
+  type Period,
   hour24Formatter,
   weekDayFormatter,
   monthDayFormatter,
@@ -23,24 +24,23 @@ import {
 import { DateTime } from "luxon";
 import { useState, useMemo } from "react";
 import { Gantt } from "@/components/viz/gantt";
-import type { Period } from "@/lib/entities";
 
 export default function Home() {
-  const range = useTimePeriod("day");
+  const interval = usePeriodInterval("day");
 
   const { ret: usages, isLoading: usagesLoading } = useAppSessionUsages({
-    start: range.start,
-    end: range.end,
+    start: interval.start,
+    end: interval.end,
   });
   const { ret: interactions, isLoading: interactionPeriodsLoading } =
     useInteractionPeriods({
-      start: range.start,
-      end: range.end,
+      start: interval.start,
+      end: interval.end,
     });
   const { ret: systemEvents, isLoading: systemEventsLoading } = useSystemEvents(
     {
-      start: range.start,
-      end: range.end,
+      start: interval.start,
+      end: interval.end,
     },
   );
 
@@ -84,8 +84,7 @@ export default function Home() {
               interactionPeriodsLoading={interactionPeriodsLoading}
               systemEvents={systemEvents}
               systemEventsLoading={systemEventsLoading}
-              rangeStart={range.start}
-              rangeEnd={range.end}
+              interval={interval}
             />
           </div>
         </div>
@@ -103,7 +102,7 @@ function AppUsageBarChartCard({
   period: Period;
   xAxisLabelFormatter: (dt: DateTime) => string;
 }) {
-  const startingInterval = useTimePeriod(timePeriod);
+  const startingInterval = usePeriodInterval(timePeriod);
   const [interval, setInterval] = useState(startingInterval);
 
   const { isLoading, totalUsage, usages, start, end } =

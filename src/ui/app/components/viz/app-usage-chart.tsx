@@ -5,6 +5,7 @@ import _ from "lodash";
 import { useAppState, type EntityMap } from "@/lib/state";
 import { useRefresh } from "@/hooks/use-refresh";
 import {
+  type Period,
   dateTimeToTicks,
   durationToTicks,
   periodToDuration,
@@ -13,7 +14,7 @@ import {
   toHumanDuration,
 } from "@/lib/time";
 import { DEFAULT_ICON_SVG_URL, toDataUrl } from "@/components/app/app-icon";
-import type { App, Period, Ref, WithGroupedDuration } from "@/lib/entities";
+import type { App, Ref, WithGroupedDuration } from "@/lib/entities";
 import type { ClassValue } from "clsx";
 import { cn } from "@/lib/utils";
 import { Tooltip } from "@/components/viz/tooltip";

@@ -26,7 +26,7 @@ import { NavLink } from "react-router";
 import { ArrowDownUp, Plus, SortAsc, SortDesc, TagIcon } from "lucide-react";
 import { useAppDurationsPerPeriod } from "@/hooks/use-repo";
 import { useTagsSearch } from "@/hooks/use-search";
-import { useTimePeriod } from "@/hooks/use-today";
+import { usePeriodInterval } from "@/hooks/use-time";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { FixedSizeList as List } from "react-window";
 import { SearchBar } from "@/components/search-bar";
@@ -86,19 +86,19 @@ export default function Tags() {
     return _(tagsFiltered).orderBy([sortProperty], [sortDirection]).value();
   }, [tagsFiltered, sortDirection, sortProperty]);
 
-  const range = useTimePeriod("day");
+  const interval = usePeriodInterval("day");
   const {
     usages,
     start: loadStart,
     end: loadEnd,
-  } = useAppDurationsPerPeriod({ ...range, period: "hour" });
+  } = useAppDurationsPerPeriod({ ...interval, period: "hour" });
   const ListItem = memo(
     ({ index, style }: { index: number; style: CSSProperties }) => (
       <VirtualListItem style={style}>
         <TagListItem
           tag={tagsSorted[index]}
-          start={loadStart ?? range.start}
-          end={loadEnd ?? range.end}
+          start={loadStart ?? interval.start}
+          end={loadEnd ?? interval.end}
           usages={usages}
         />
       </VirtualListItem>
