@@ -86,19 +86,19 @@ export default function Tags() {
     return _(tagsFiltered).orderBy([sortProperty], [sortDirection]).value();
   }, [tagsFiltered, sortDirection, sortProperty]);
 
-  const range = usePeriodInterval("day");
+  const interval = usePeriodInterval("day");
   const {
     usages,
     start: loadStart,
     end: loadEnd,
-  } = useAppDurationsPerPeriod({ ...range, period: "hour" });
+  } = useAppDurationsPerPeriod({ ...interval, period: "hour" });
   const ListItem = memo(
     ({ index, style }: { index: number; style: CSSProperties }) => (
       <VirtualListItem style={style}>
         <TagListItem
           tag={tagsSorted[index]}
-          start={loadStart ?? range.start}
-          end={loadEnd ?? range.end}
+          start={loadStart ?? interval.start}
+          end={loadEnd ?? interval.end}
           usages={usages}
         />
       </VirtualListItem>

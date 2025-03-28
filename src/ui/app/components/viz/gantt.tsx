@@ -23,7 +23,7 @@ import {
   type SystemEvent,
   type Usage,
 } from "@/lib/entities";
-import { ticksToDateTime } from "@/lib/time";
+import { ticksToDateTime, type Interval } from "@/lib/time";
 import type { AppSessionUsages } from "@/lib/repo";
 import { Text } from "@/components/ui/text";
 import { useApps } from "@/hooks/use-refresh";
@@ -48,8 +48,7 @@ interface GanttProps {
   systemEvents?: SystemEvent[];
   systemEventsLoading?: boolean;
   defaultExpanded?: Record<Ref<App>, boolean>;
-  rangeStart: DateTime;
-  rangeEnd: DateTime;
+  interval: Interval;
 }
 
 type TimeUnit = {
@@ -104,14 +103,15 @@ function formatTime(date: DateTime, unit: "minute" | "hour" | "day"): string {
 function getPosition(
   start: DateTime,
   end: DateTime,
-  rangeStart: DateTime,
-  rangeEnd: DateTime,
+  interval: Interval,
   timeUnit: TimeUnit,
 ) {
-  const totalDuration = rangeEnd
-    .diff(rangeStart, timeUnit.unit)
+  const totalDuration = interval.end
+    .diff(interval.start, timeUnit.unit)
     .get(timeUnit.unit);
-  const startOffset = start.diff(rangeStart, timeUnit.unit).get(timeUnit.unit);
+  const startOffset = start
+    .diff(interval.start, timeUnit.unit)
+    .get(timeUnit.unit);
   const duration = end.diff(start, timeUnit.unit).get(timeUnit.unit);
 
   const left = (startOffset / totalDuration) * 100;
@@ -122,16 +122,14 @@ function getPosition(
 
 function Bar({
   className,
-  rangeStart,
-  rangeEnd,
+  interval,
   start,
   end,
   timeUnit,
   ...props
 }: ComponentProps<"div"> & {
   className?: ClassValue;
-  rangeStart: DateTime;
-  rangeEnd: DateTime;
+  interval: Interval;
   start: DateTime;
   end: DateTime;
   timeUnit: TimeUnit;
@@ -139,7 +137,7 @@ function Bar({
   return (
     <div
       className={cn("absolute h-6", className)}
-      style={getPosition(start, end, rangeStart, rangeEnd, timeUnit)}
+      style={getPosition(start, end, interval, timeUnit)}
       {...props}
     />
   );
@@ -147,15 +145,13 @@ function Bar({
 
 function Line({
   className,
-  rangeStart,
-  rangeEnd,
+  interval,
   timestamp,
   timeUnit,
   ...props
 }: ComponentProps<"div"> & {
   className?: ClassValue;
-  rangeStart: DateTime;
-  rangeEnd: DateTime;
+  interval: Interval;
   timestamp: DateTime;
   timeUnit: TimeUnit;
 }) {
@@ -163,7 +159,7 @@ function Line({
     <div
       className={cn("absolute h-8 -mt-1", className)}
       style={{
-        ...getPosition(timestamp, timestamp, rangeStart, rangeEnd, timeUnit),
+        ...getPosition(timestamp, timestamp, interval, timeUnit),
         width: "1px",
       }}
       {...props}
@@ -173,14 +169,12 @@ function Line({
 
 function UsageBars({
   sessionUsages,
-  rangeStart,
-  rangeEnd,
+  interval,
   timeUnit,
   setHoverUsage,
 }: {
   sessionUsages: SessionUsage[];
-  rangeStart: DateTime;
-  rangeEnd: DateTime;
+  interval: Interval;
   timeUnit: TimeUnit;
   setHoverUsage: (usage: HoverData | null) => void;
 }) {
@@ -192,8 +186,7 @@ function UsageBars({
           className="bg-primary hover:bg-card-foreground"
           start={ticksToDateTime(sessionUsage.usage.start)}
           end={ticksToDateTime(sessionUsage.usage.end)}
-          rangeStart={rangeStart}
-          rangeEnd={rangeEnd}
+          interval={interval}
           timeUnit={timeUnit}
           onMouseOver={() => setHoverUsage(sessionUsage)}
           onMouseLeave={() => setHoverUsage(null)}
@@ -206,16 +199,14 @@ function UsageBars({
 function InteractionPeriodBars({
   interactionPeriods,
   systemEvents,
-  rangeStart,
-  rangeEnd,
+  interval,
   timeUnit,
   setHoverInteractionPeriod,
   setHoverSystemEvent,
 }: {
   interactionPeriods: InteractionPeriod[];
   systemEvents: SystemEvent[];
-  rangeStart: DateTime;
-  rangeEnd: DateTime;
+  interval: Interval;
   timeUnit: TimeUnit;
   setHoverInteractionPeriod: (ip: InteractionPeriod | null) => void;
   setHoverSystemEvent: (se: SystemEvent | null) => void;
@@ -228,8 +219,7 @@ function InteractionPeriodBars({
           className="bg-primary/50 hover:bg-card-foreground"
           start={ticksToDateTime(interactionPeriod.start)}
           end={ticksToDateTime(interactionPeriod.end)}
-          rangeStart={rangeStart}
-          rangeEnd={rangeEnd}
+          interval={interval}
           timeUnit={timeUnit}
           onMouseOver={() => setHoverInteractionPeriod(interactionPeriod)}
           onMouseLeave={() => setHoverInteractionPeriod(null)}
@@ -240,8 +230,7 @@ function InteractionPeriodBars({
           key={index}
           className="bg-orange-500 hover:bg-card-foreground"
           timestamp={ticksToDateTime(systemEvent.timestamp)}
-          rangeStart={rangeStart}
-          rangeEnd={rangeEnd}
+          interval={interval}
           timeUnit={timeUnit}
           onMouseOver={() => setHoverSystemEvent(systemEvent)}
           onMouseLeave={() => setHoverSystemEvent(null)}
@@ -255,16 +244,14 @@ function AppBars({
   app,
   expanded,
   usages,
-  rangeStart,
-  rangeEnd,
+  interval,
   timeUnit,
   setHoverUsage,
 }: {
   app: App;
   expanded: boolean;
   usages: AppSessionUsages;
-  rangeStart: DateTime;
-  rangeEnd: DateTime;
+  interval: Interval;
   timeUnit: TimeUnit;
   setHoverUsage: (usage: HoverData | null) => void;
 }) {
@@ -291,8 +278,7 @@ function AppBars({
         <div className="absolute inset-x-0 top-4">
           <UsageBars
             sessionUsages={allSessionUsagesFlat}
-            rangeStart={rangeStart}
-            rangeEnd={rangeEnd}
+            interval={interval}
             timeUnit={timeUnit}
             setHoverUsage={setHoverUsage}
           />
@@ -309,8 +295,7 @@ function AppBars({
                 className="bg-primary/20"
                 start={ticksToDateTime(session.start)}
                 end={ticksToDateTime(session.end)}
-                rangeStart={rangeStart}
-                rangeEnd={rangeEnd}
+                interval={interval}
                 timeUnit={timeUnit}
                 onMouseOver={() => setHoverUsage({ session })}
                 onMouseLeave={() => setHoverUsage(null)}
@@ -318,8 +303,7 @@ function AppBars({
               {/* Usage periods */}
               <UsageBars
                 sessionUsages={sessionUsages}
-                rangeStart={rangeStart}
-                rangeEnd={rangeEnd}
+                interval={interval}
                 timeUnit={timeUnit}
                 setHoverUsage={setHoverUsage}
               />
@@ -338,8 +322,7 @@ export function Gantt({
   systemEvents,
   systemEventsLoading,
   defaultExpanded,
-  rangeStart,
-  rangeEnd,
+  interval,
 }: GanttProps) {
   const [expanded, setExpanded] = useState<Record<Ref<App>, boolean>>(
     defaultExpanded ?? {},
@@ -352,12 +335,13 @@ export function Gantt({
   );
 
   const timeUnit = useMemo(
-    () => getTimeUnits(rangeStart, rangeEnd),
-    [rangeStart, rangeEnd],
+    () => getTimeUnits(interval.start, interval.end),
+    [interval],
   );
   const timeArray = useMemo(
-    () => getTimeArray(rangeStart, rangeEnd, timeUnit.unit, timeUnit.step),
-    [rangeStart, rangeEnd, timeUnit],
+    () =>
+      getTimeArray(interval.start, interval.end, timeUnit.unit, timeUnit.step),
+    [interval, timeUnit],
   );
 
   const involvedApps = useMemo(
@@ -587,8 +571,7 @@ export function Gantt({
                       setHoverSystemEvent={setHoverSystemEvent}
                       interactionPeriods={interactionPeriods ?? []}
                       systemEvents={systemEvents ?? []}
-                      rangeStart={rangeStart}
-                      rangeEnd={rangeEnd}
+                      interval={interval}
                       timeUnit={timeUnit}
                     />
                   </div>
@@ -604,8 +587,7 @@ export function Gantt({
                   app={app}
                   expanded={expanded[app.id]}
                   usages={usages}
-                  rangeStart={rangeStart}
-                  rangeEnd={rangeEnd}
+                  interval={interval}
                   timeUnit={timeUnit}
                   setHoverUsage={setHoverUsage}
                 />

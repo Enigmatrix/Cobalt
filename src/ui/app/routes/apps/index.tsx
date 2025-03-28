@@ -88,20 +88,20 @@ export default function Apps() {
     return _(appsFiltered).orderBy([sortProperty], [sortDirection]).value();
   }, [appsFiltered, sortDirection, sortProperty]);
 
-  const range = usePeriodInterval("day");
+  const interval = usePeriodInterval("day");
   const {
     usages,
     start: loadStart,
     end: loadEnd,
-  } = useAppDurationsPerPeriod({ ...range, period: "hour" });
+  } = useAppDurationsPerPeriod({ ...interval, period: "hour" });
 
   const ListItem = memo(
     ({ index, style }: { index: number; style: CSSProperties }) => (
       <VirtualListItem style={style}>
         <AppListItem
           app={appsSorted[index]}
-          start={loadStart ?? range.start}
-          end={loadEnd ?? range.end}
+          start={loadStart ?? interval.start}
+          end={loadEnd ?? interval.end}
           usages={usages}
         />
       </VirtualListItem>

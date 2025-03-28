@@ -93,5 +93,3 @@ export function useIntervalControlsWithDefault(
   const controls = useIntervalControls(interval, setInterval);
   return { ...controls, interval, setInterval };
 }
-
-// TODO rename `range` to `interval` all over the place.

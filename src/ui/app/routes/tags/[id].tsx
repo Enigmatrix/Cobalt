@@ -78,15 +78,15 @@ export default function Tag({ params }: Route.ComponentProps) {
     await removeTag(tag.id);
   }, [removeTag, navigate, tag.id]);
 
-  const yearPeriod = usePeriodInterval("year");
-  const [yearInterval, setYearInterval] = useState(yearPeriod);
+  const yearInitInterval = usePeriodInterval("year");
+  const [yearInterval, setYearInterval] = useState(yearInitInterval);
 
   const {
     isLoading: isYearDataLoading,
     tagUsage: yearUsage,
     totalUsage: yearTotalUsage,
     usages: yearUsages,
-    start: yearRangeStart,
+    start: yearStart,
   } = useTagDurationsPerPeriod({
     start: yearInterval.start,
     end: yearInterval.end,
@@ -115,12 +115,12 @@ export default function Tag({ params }: Route.ComponentProps) {
     [tag, updateTagApps],
   );
 
-  const dayRange = usePeriodInterval("day");
+  const day = usePeriodInterval("day");
 
   const { ret: appSessionUsages, isLoading: appSessionUsagesLoading } =
     useAppSessionUsages({
-      start: dayRange.start,
-      end: dayRange.end,
+      start: day.start,
+      end: day.end,
     });
   const tagAppSessionUsages = useMemo(() => {
     return _(tag.apps)
@@ -248,7 +248,7 @@ export default function Tag({ params }: Route.ComponentProps) {
               <Heatmap
                 data={yearData}
                 scaling={scaling}
-                startDate={yearRangeStart ?? yearInterval.start}
+                startDate={yearStart ?? yearInterval.start}
                 fullCellColorRgb={tag.color}
                 innerClassName="min-h-[200px]"
                 firstDayOfMonthClassName="stroke-card-foreground/50"
@@ -261,8 +261,7 @@ export default function Tag({ params }: Route.ComponentProps) {
             <Gantt
               usages={tagAppSessionUsages}
               usagesLoading={appSessionUsagesLoading}
-              rangeStart={dayRange.start}
-              rangeEnd={dayRange.end}
+              interval={day}
             />
           </div>
         </div>

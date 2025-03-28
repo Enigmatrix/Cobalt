@@ -64,15 +64,15 @@ export default function App({ params }: Route.ComponentProps) {
 
   const { copy, hasCopied } = useClipboard();
 
-  const yearPeriod = usePeriodInterval("year");
-  const [yearInterval, setYearInterval] = useState(yearPeriod);
+  const yearInitInterval = usePeriodInterval("year");
+  const [yearInterval, setYearInterval] = useState(yearInitInterval);
 
   const {
     isLoading: isYearDataLoading,
     appUsage: yearUsage,
     totalUsage: yearTotalUsage,
     usages: yearUsages,
-    start: yearRangeStart,
+    start: yearStart,
   } = useAppDurationsPerPeriod({
     start: yearInterval.start,
     end: yearInterval.end,
@@ -94,11 +94,11 @@ export default function App({ params }: Route.ComponentProps) {
     return _.clamp(ticksToDuration(value).rescale().hours / 8, 0.2, 1);
   }, []);
 
-  const dayRange = usePeriodInterval("day");
+  const day = usePeriodInterval("day");
   const { ret: appSessionUsages, isLoading: appSessionUsagesLoading } =
     useAppSessionUsages({
-      start: dayRange.start,
-      end: dayRange.end,
+      start: day.start,
+      end: day.end,
     });
   const onlyAppSessionUsages = useMemo(() => {
     return appSessionUsages[app.id]
@@ -237,7 +237,7 @@ export default function App({ params }: Route.ComponentProps) {
               <Heatmap
                 data={yearData}
                 scaling={scaling}
-                startDate={yearRangeStart ?? yearInterval.start}
+                startDate={yearStart ?? yearInterval.start}
                 fullCellColorRgb={app.color}
                 innerClassName="min-h-[200px]"
                 firstDayOfMonthClassName="stroke-card-foreground/50"
@@ -251,8 +251,7 @@ export default function App({ params }: Route.ComponentProps) {
               usages={onlyAppSessionUsages}
               usagesLoading={appSessionUsagesLoading}
               defaultExpanded={{ [app.id]: true }}
-              rangeStart={dayRange.start}
-              rangeEnd={dayRange.end}
+              interval={day}
             />
           </div>
         </div>

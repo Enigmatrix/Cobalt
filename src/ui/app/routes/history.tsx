@@ -283,8 +283,7 @@ function SessionHistory() {
             interactionPeriodsLoading={interactionPeriodsLoading}
             systemEvents={systemEvents}
             systemEventsLoading={systemEventsLoading}
-            rangeStart={effectiveInterval.start}
-            rangeEnd={effectiveInterval.end}
+            interval={effectiveInterval}
           />
         </div>
       </div>
