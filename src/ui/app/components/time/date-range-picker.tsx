@@ -8,7 +8,13 @@ import {
 } from "@/components/ui/popover";
 import type { ClassValue } from "clsx";
 import { DateTime } from "luxon";
-import { useCallback, useMemo, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -94,8 +100,14 @@ export function DateRangePicker({
 
   const [open, setOpen] = useState(false);
 
+  // source of truth for the date range picker's controls
   // value but can be partially-filled
   const [inner, setInnerInner] = useState<Partial<Interval> | null>(value);
+  // normally incredibly dangerous and can lead to infinite loops.
+  // but react uses Object.is to check for changes and it's safe here
+  useEffect(() => {
+    setInnerInner(value);
+  }, [value]);
 
   const setInner = useCallback(
     (partial: Partial<Interval> | null) => {
