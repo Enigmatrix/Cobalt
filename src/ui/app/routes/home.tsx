@@ -14,7 +14,7 @@ import {
   useInteractionPeriods,
   useSystemEvents,
 } from "@/hooks/use-repo";
-import { usePeriodInterval } from "@/hooks/use-today";
+import { usePeriodInterval } from "@/hooks/use-time";
 import {
   type Period,
   hour24Formatter,

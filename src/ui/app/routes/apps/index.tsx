@@ -42,7 +42,7 @@ import { DurationText } from "@/components/time/duration-text";
 import type { ClassValue } from "clsx";
 import { useAppDurationsPerPeriod } from "@/hooks/use-repo";
 import { SortDirection } from "@/hooks/use-sort";
-import { usePeriodInterval } from "@/hooks/use-today";
+import { usePeriodInterval } from "@/hooks/use-time";
 import { NoApps, NoAppsFound } from "@/components/empty-states";
 
 export function MiniTagItem({

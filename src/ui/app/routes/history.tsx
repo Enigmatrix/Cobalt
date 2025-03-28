@@ -27,7 +27,7 @@ import {
 import {
   useIntervalControlsWithDefault,
   usePeriodInterval,
-} from "@/hooks/use-today";
+} from "@/hooks/use-time";
 import { VerticalLegend } from "@/components/viz/vertical-legend";
 import { DurationText } from "@/components/time/duration-text";
 import type { App, Ref } from "@/lib/entities";

@@ -20,7 +20,7 @@ import {
 import { useAppState } from "@/lib/state";
 import { useNavigate } from "react-router";
 import { Duration } from "luxon";
-import { useIntervalControlsWithDefault } from "@/hooks/use-today";
+import { useIntervalControlsWithDefault } from "@/hooks/use-time";
 import { timeFrameToPeriod, type Target, type TimeFrame } from "@/lib/entities";
 import { DateTime } from "luxon";
 import { useAppDurationsPerPeriod } from "@/hooks/use-repo";
