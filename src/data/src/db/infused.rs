@@ -261,6 +261,8 @@ pub struct UpdatedAlert {
     pub trigger_action: TriggerAction,
     /// Reminders
     pub reminders: Vec<UpdatedReminder>,
+    /// Whether to ignore the trigger
+    pub ignore_trigger: bool,
 }
 
 /// Options to update a [super::Reminder]
@@ -273,6 +275,8 @@ pub struct UpdatedReminder {
     pub threshold: f64,
     /// Message
     pub message: String,
+    /// Whether to ignore the trigger
+    pub ignore_trigger: bool,
 }
 
 impl PartialEq<UpdatedReminder> for UpdatedReminder {

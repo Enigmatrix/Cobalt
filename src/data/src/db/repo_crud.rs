@@ -376,12 +376,16 @@ impl Repository {
                 .get(0);
 
         if alert.ignore_trigger {
-            query("INSERT INTO alert_events VALUES (NULL, ?, ?, ?)")
-                .bind(&alert_id)
-                .bind(ts.now().to_ticks())
-                .bind(Reason::Ignored)
-                .execute(&mut *tx)
-                .await?;
+            Self::insert_alert_event(
+                &mut tx,
+                &AlertEvent {
+                    id: Ref::new(0),
+                    alert_id: alert_id.clone(),
+                    timestamp: ts.now().to_ticks(),
+                    reason: Reason::Ignored,
+                },
+            )
+            .await?;
         }
 
         let mut reminders = Vec::new();
@@ -471,8 +475,23 @@ impl Repository {
             events: infused::ValuePerPeriod::default(),
         };
 
+        // only upgrades of alerts/reminders can get an ignore xxx event when ignore_trigger=true
+
         if should_upgrade_alert {
             next.id = Self::upgrade_alert_only(&mut tx, &prev, &next, &ts).await?;
+
+            if next.ignore_trigger {
+                Self::insert_alert_event(
+                    &mut tx,
+                    &AlertEvent {
+                        id: Ref::new(0),
+                        alert_id: next.id.clone(),
+                        timestamp: ts.now().to_ticks(),
+                        reason: Reason::Ignored,
+                    },
+                )
+                .await?;
+            }
 
             for mut reminder in next.reminders {
                 // Reminder is deleted from prev if it doesn't appear in next.reminders.
@@ -482,7 +501,7 @@ impl Repository {
                 Self::insert_reminder_only(&mut *tx, prev_reminder, &next.id, &mut reminder, &ts)
                     .await?;
                 next_alert.reminders.push(infused::Reminder {
-                    id: reminder.id.unwrap(), // insert_reminder updates id to Some
+                    id: reminder.id.clone().unwrap(), // insert_reminder updates id to Some
                     alert_id: next.id.clone(),
                     threshold: reminder.threshold,
                     message: reminder.message,
@@ -492,6 +511,19 @@ impl Repository {
                     updated_at: ts.now().to_ticks(),
                     events: infused::ValuePerPeriod::default(), // since this is a new reminder.
                 });
+
+                if reminder.ignore_trigger {
+                    Self::insert_reminder_event(
+                        &mut tx,
+                        &ReminderEvent {
+                            id: Ref::new(0),
+                            reminder_id: reminder.id.unwrap(),
+                            timestamp: ts.now().to_ticks(),
+                            reason: Reason::Ignored,
+                        },
+                    )
+                    .await?;
+                }
             }
         } else {
             Self::update_alert_only(&mut *tx, &next, &ts).await?;
@@ -540,16 +572,43 @@ impl Repository {
                         )
                         .await?;
                         next_reminder.id = reminder.id.unwrap(); // upgrade_reminder_only updates id to Some
+
+                        if reminder.ignore_trigger {
+                            Self::insert_reminder_event(
+                                &mut tx,
+                                &ReminderEvent {
+                                    id: Ref::new(0),
+                                    reminder_id: next_reminder.id.clone(),
+                                    timestamp: ts.now().to_ticks(),
+                                    reason: Reason::Ignored,
+                                },
+                            )
+                            .await?;
+                        }
                     } else {
                         Self::update_reminder_only(&mut *tx, prev_reminder, &mut reminder, &ts)
                             .await?;
                         next_reminder.id = id;
                         next_reminder.events = prev_reminder.events.clone();
+                        // no change to trigger status, no need to bother looking at ignore_trigger.
                     }
                 } else {
                     Self::insert_reminder_only(&mut *tx, None, &next.id, &mut reminder, &ts)
                         .await?;
                     next_reminder.id = reminder.id.unwrap(); // insert_reminder updates id to Some
+
+                    if reminder.ignore_trigger {
+                        Self::insert_reminder_event(
+                            &mut tx,
+                            &ReminderEvent {
+                                id: Ref::new(0),
+                                reminder_id: next_reminder.id.clone(),
+                                timestamp: ts.now().to_ticks(),
+                                reason: Reason::Ignored,
+                            },
+                        )
+                        .await?;
+                    }
                 }
                 next_alert.reminders.push(next_reminder);
             }
@@ -731,6 +790,34 @@ impl Repository {
         Ok(())
     }
 
+    /// Insert a [AlertEvent]
+    pub async fn insert_alert_event(
+        executor: &mut sqlx::SqliteConnection,
+        event: &AlertEvent,
+    ) -> Result<()> {
+        query("INSERT INTO alert_events VALUES (NULL, ?, ?, ?)")
+            .bind(&event.alert_id)
+            .bind(event.timestamp)
+            .bind(&event.reason)
+            .execute(executor)
+            .await?;
+        Ok(())
+    }
+
+    /// Insert a [ReminderEvent]
+    pub async fn insert_reminder_event(
+        executor: &mut sqlx::SqliteConnection,
+        event: &ReminderEvent,
+    ) -> Result<()> {
+        query("INSERT INTO reminder_events VALUES (NULL, ?, ?, ?)")
+            .bind(&event.reminder_id)
+            .bind(event.timestamp)
+            .bind(&event.reason)
+            .execute(executor)
+            .await?;
+        Ok(())
+    }
+
     /// Removes a [Alert]
     pub async fn remove_alert(&mut self, alert_id: Ref<Alert>) -> Result<()> {
         // If this a soft delete, then how would deleting a tag work if this alert uses it?
@@ -751,12 +838,16 @@ impl Repository {
         alert_id: Ref<Alert>,
         timestamp: Timestamp,
     ) -> Result<()> {
-        query("INSERT INTO alert_events VALUES (NULL, ?, ?, ?)")
-            .bind(alert_id)
-            .bind(timestamp)
-            .bind(Reason::Ignored)
-            .execute(self.db.executor())
-            .await?;
+        Self::insert_alert_event(
+            &mut self.db.conn,
+            &AlertEvent {
+                id: Ref::new(0),
+                alert_id,
+                timestamp,
+                reason: Reason::Ignored,
+            },
+        )
+        .await?;
         Ok(())
     }
 
