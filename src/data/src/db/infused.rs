@@ -129,6 +129,74 @@ pub struct Tag {
     pub usages: ValuePerPeriod<Duration>,
 }
 
+/// Status of a [super::Alert]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[serde(tag = "tag")]
+pub enum AlertTriggerStatus {
+    /// Hit
+    Hit {
+        /// Timestamp
+        timestamp: Timestamp,
+    },
+    /// Ignored
+    Ignored {
+        /// Timestamp
+        timestamp: Timestamp,
+    },
+    /// Not yet hit
+    Untriggered,
+}
+
+impl FromRow<'_, SqliteRow> for AlertTriggerStatus {
+    fn from_row(row: &SqliteRow) -> Result<Self, sqlx::Error> {
+        let status = row.get("alert_status");
+        let timestamp = row.get("alert_status_timestamp");
+        match status {
+            Some(0) => Ok(AlertTriggerStatus::Hit { timestamp }),
+            Some(1) => Ok(AlertTriggerStatus::Ignored { timestamp }),
+            _ => Ok(AlertTriggerStatus::Untriggered),
+        }
+    }
+}
+
+/// Status of a [super::Reminder]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[serde(tag = "tag")]
+pub enum ReminderTriggerStatus {
+    /// Hit
+    Hit {
+        /// Timestamp
+        timestamp: Timestamp,
+    },
+    /// Ignored
+    Ignored {
+        /// Timestamp
+        timestamp: Timestamp,
+        /// Ignored because the alert itself was ignored.
+        ignored_by_alert: bool,
+    },
+    /// Not yet hit
+    Untriggered,
+}
+
+impl FromRow<'_, SqliteRow> for ReminderTriggerStatus {
+    fn from_row(row: &SqliteRow) -> Result<Self, sqlx::Error> {
+        let status = row.get("reminder_status");
+        let timestamp = row.get("reminder_status_timestamp");
+        let ignored_by_alert = row.get("reminder_status_alert_ignored");
+        match status {
+            Some(0) => Ok(ReminderTriggerStatus::Hit { timestamp }),
+            Some(1) => Ok(ReminderTriggerStatus::Ignored {
+                timestamp,
+                ignored_by_alert,
+            }),
+            _ => Ok(ReminderTriggerStatus::Untriggered),
+        }
+    }
+}
+
 /// [super::Alert] with additional information
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, FromRow)]
 #[serde(rename_all = "camelCase")]
@@ -151,6 +219,9 @@ pub struct Alert {
     pub updated_at: Timestamp,
     /// List of linked [Reminder]s
     pub reminders: Vec<Reminder>,
+    /// Status of the [super::Alert]
+    #[sqlx(flatten)]
+    pub status: AlertTriggerStatus,
     /// List of hit [super::AlertEvent]s
     #[sqlx(flatten)]
     pub events: ValuePerPeriod<i64>,
@@ -172,6 +243,9 @@ pub struct Reminder {
     pub created_at: Timestamp,
     /// Updated at
     pub updated_at: Timestamp,
+    /// Status of the [super::Reminder]
+    #[sqlx(flatten)]
+    pub status: ReminderTriggerStatus,
     /// List of hit [super::ReminderEvent]s
     #[sqlx(flatten)]
     pub events: ValuePerPeriod<i64>,
@@ -261,6 +335,8 @@ pub struct UpdatedAlert {
     pub trigger_action: TriggerAction,
     /// Reminders
     pub reminders: Vec<UpdatedReminder>,
+    /// Whether to ignore the trigger
+    pub ignore_trigger: bool,
 }
 
 /// Options to update a [super::Reminder]
@@ -273,6 +349,8 @@ pub struct UpdatedReminder {
     pub threshold: f64,
     /// Message
     pub message: String,
+    /// Whether to ignore the trigger
+    pub ignore_trigger: bool,
 }
 
 impl PartialEq<UpdatedReminder> for UpdatedReminder {
