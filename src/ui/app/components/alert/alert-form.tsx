@@ -57,184 +57,17 @@ export function AlertForm({
     {
       id: 1,
       title: "Target",
-      content: (
-        <FormField
-          control={form.control}
-          name="target"
-          render={({ field: { value, onChange, ...field } }) => (
-            <FormItem>
-              <FormControl>
-                <ChooseTarget
-                  {...field}
-                  value={value}
-                  onValueChanged={onChange}
-                  className="w-full justify-start"
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      ),
+      content: <TargetStepContent form={form} />,
     },
     {
       id: 2,
       title: "Limit",
-      content: (
-        <>
-          <FormField
-            control={form.control}
-            name="timeFrame"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Period</FormLabel>
-                <FormControl>
-                  <Select
-                    {...field}
-                    value={field.value}
-                    onValueChange={field.onChange}
-                  >
-                    <SelectTrigger className="hover:bg-muted w-full">
-                      <SelectValue placeholder="Period" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Daily">Daily</SelectItem>
-                      <SelectItem value="Weekly">Weekly</SelectItem>
-                      <SelectItem value="Monthly">Monthly</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="usageLimit"
-            render={({ field: { value, onChange, ...field } }) => (
-              <FormItem>
-                <FormLabel>Limit</FormLabel>
-                <FormControl>
-                  <DurationPicker
-                    showIcon={false}
-                    className="w-full text-muted-foreground"
-                    {...field}
-                    value={value === undefined ? null : ticksToDuration(value)}
-                    onValueChange={(dur) =>
-                      onChange(dur === null ? undefined : durationToTicks(dur))
-                    }
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </>
-      ),
+      content: <LimitStepContent form={form} />,
     },
     {
       id: 3,
       title: "Action",
-      content: (
-        <>
-          <FormField
-            control={form.control}
-            name="triggerAction"
-            render={({ field }) => (
-              <FormItem>
-                <FormControl>
-                  <Select
-                    {...field}
-                    value={field.value?.tag}
-                    onValueChange={(v) => {
-                      // Reset the form when changing action type
-                      if (v === "Kill") {
-                        field.onChange({ tag: v });
-                      } else if (v === "Dim") {
-                        field.onChange({ tag: v, duration: undefined });
-                      } else if (v === "Message") {
-                        field.onChange({ tag: v, content: "" });
-                      }
-                    }}
-                  >
-                    <SelectTrigger className="hover:bg-muted w-full">
-                      <SelectValue placeholder="Type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Dim">Dim</SelectItem>
-                      <SelectItem value="Message">Message</SelectItem>
-                      <SelectItem value="Kill">Kill</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="triggerAction"
-            render={({ field: { value, onChange, ...field } }) => (
-              <>
-                {value?.tag === "Dim" && (
-                  <FormItem>
-                    <FormLabel>Dim Duration</FormLabel>
-                    <FormControl>
-                      <DurationPicker
-                        showIcon={false}
-                        className="w-full text-foreground"
-                        {...field}
-                        value={
-                          value?.duration === undefined
-                            ? null
-                            : ticksToDuration(value.duration)
-                        }
-                        onValueChange={(dur) =>
-                          onChange({
-                            tag: "Dim",
-                            duration:
-                              dur === null ? undefined : durationToTicks(dur),
-                          })
-                        }
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              </>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="triggerAction"
-            render={({ field }) => (
-              <>
-                {field.value?.tag === "Message" && (
-                  <FormItem>
-                    <FormLabel>Message Content</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        value={field.value.content ?? ""}
-                        onChange={(e) =>
-                          field.onChange({
-                            tag: "Message",
-                            content: e.target.value,
-                          })
-                        }
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              </>
-            )}
-          />
-        </>
-      ),
+      content: <ActionStepContent form={form} />,
     },
     {
       id: 4,
@@ -255,71 +88,7 @@ export function AlertForm({
         </div>
       ),
       content: (
-        <div className="flex flex-col gap-2">
-          {fields.map((field, index) => (
-            <div key={field.id} className="flex flex-col gap-2">
-              <div className="flex gap-2 items-center">
-                <Badge variant="outline" className="">
-                  {index + 1}
-                </Badge>
-                <FormField
-                  control={form.control}
-                  name={`reminders.${index}.threshold`}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          min={0}
-                          max={1}
-                          step="any"
-                          placeholder="Threshold (0-1)"
-                          className="w-16"
-                          {...field}
-                          onChange={(e) =>
-                            field.onChange(parseFloat(e.target.value))
-                          }
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name={`reminders.${index}.message`}
-                  render={({ field }) => (
-                    <FormItem className="flex-1">
-                      <FormControl>
-                        <Input placeholder="Reminder message" {...field} />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-                <Button
-                  type="button"
-                  variant="destructive"
-                  size="icon"
-                  onClick={() => remove(index)}
-                >
-                  <span className="sr-only">Delete reminder</span>×
-                </Button>
-              </div>
-
-              <div className="flex flex-col">
-                <FormField
-                  control={form.control}
-                  name={`reminders.${index}.threshold`}
-                  render={() => <FormMessage />}
-                />
-                <FormField
-                  control={form.control}
-                  name={`reminders.${index}.message`}
-                  render={() => <FormMessage />}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
+        <RemindersStepContent form={form} fields={fields} remove={remove} />
       ),
     },
     {
@@ -413,5 +182,261 @@ export function AlertForm({
         </form>
       </Form>
     </>
+  );
+}
+
+function TargetStepContent({ form }: { form: UseFormReturn<FormValues> }) {
+  return (
+    <FormField
+      control={form.control}
+      name="target"
+      render={({ field: { value, onChange, ...field } }) => (
+        <FormItem>
+          <FormControl>
+            <ChooseTarget
+              {...field}
+              value={value}
+              onValueChanged={onChange}
+              className="w-full justify-start"
+            />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  );
+}
+
+function LimitStepContent({ form }: { form: UseFormReturn<FormValues> }) {
+  return (
+    <>
+      <FormField
+        control={form.control}
+        name="timeFrame"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Period</FormLabel>
+            <FormControl>
+              <Select
+                {...field}
+                value={field.value}
+                onValueChange={field.onChange}
+              >
+                <SelectTrigger className="hover:bg-muted w-full">
+                  <SelectValue placeholder="Period" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="daily">Daily</SelectItem>
+                  <SelectItem value="weekly">Weekly</SelectItem>
+                  <SelectItem value="monthly">Monthly</SelectItem>
+                </SelectContent>
+              </Select>
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={form.control}
+        name="usageLimit"
+        render={({ field: { value, onChange, ...field } }) => (
+          <FormItem>
+            <FormLabel>Limit</FormLabel>
+            <FormControl>
+              <DurationPicker
+                showIcon={false}
+                className="w-full text-muted-foreground"
+                {...field}
+                value={value === undefined ? null : ticksToDuration(value)}
+                onValueChange={(dur) =>
+                  onChange(dur === null ? undefined : durationToTicks(dur))
+                }
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    </>
+  );
+}
+
+function ActionStepContent({ form }: { form: UseFormReturn<FormValues> }) {
+  return (
+    <>
+      <FormField
+        control={form.control}
+        name="triggerAction"
+        render={({ field }) => (
+          <FormItem>
+            <FormControl>
+              <Select
+                {...field}
+                value={field.value?.tag}
+                onValueChange={(v) => {
+                  // Reset the form when changing action type
+                  if (v === "kill") {
+                    field.onChange({ tag: v });
+                  } else if (v === "dim") {
+                    field.onChange({ tag: v, duration: undefined });
+                  } else if (v === "message") {
+                    field.onChange({ tag: v, content: "" });
+                  }
+                }}
+              >
+                <SelectTrigger className="hover:bg-muted w-full">
+                  <SelectValue placeholder="Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="dim">Dim</SelectItem>
+                  <SelectItem value="message">Message</SelectItem>
+                  <SelectItem value="kill">Kill</SelectItem>
+                </SelectContent>
+              </Select>
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={form.control}
+        name="triggerAction"
+        render={({ field: { value, onChange, ...field } }) => (
+          <>
+            {value?.tag === "dim" && (
+              <FormItem>
+                <FormLabel>Dim Duration</FormLabel>
+                <FormControl>
+                  <DurationPicker
+                    showIcon={false}
+                    className="w-full text-foreground"
+                    {...field}
+                    value={
+                      value?.duration === undefined
+                        ? null
+                        : ticksToDuration(value.duration)
+                    }
+                    onValueChange={(dur) =>
+                      onChange({
+                        tag: "dim",
+                        duration:
+                          dur === null ? undefined : durationToTicks(dur),
+                      })
+                    }
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          </>
+        )}
+      />
+
+      <FormField
+        control={form.control}
+        name="triggerAction"
+        render={({ field }) => (
+          <>
+            {field.value?.tag === "message" && (
+              <FormItem>
+                <FormLabel>Message Content</FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    value={field.value.content ?? ""}
+                    onChange={(e) =>
+                      field.onChange({
+                        tag: "message",
+                        content: e.target.value,
+                      })
+                    }
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          </>
+        )}
+      />
+    </>
+  );
+}
+
+function RemindersStepContent({
+  form,
+  fields,
+  remove,
+}: {
+  form: UseFormReturn<FormValues>;
+  fields: FieldArrayWithId<FormValues, "reminders", "id">[];
+  remove: (index: number) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      {fields.map((field, index) => (
+        <div key={field.id} className="flex flex-col gap-2">
+          <div className="flex gap-2 items-center">
+            <Badge variant="outline" className="">
+              {index + 1}
+            </Badge>
+            <FormField
+              control={form.control}
+              name={`reminders.${index}.threshold`}
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={1}
+                      step="any"
+                      placeholder="Threshold (0-1)"
+                      className="w-16"
+                      {...field}
+                      onChange={(e) =>
+                        field.onChange(parseFloat(e.target.value))
+                      }
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name={`reminders.${index}.message`}
+              render={({ field }) => (
+                <FormItem className="flex-1">
+                  <FormControl>
+                    <Input placeholder="Reminder message" {...field} />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            <Button
+              type="button"
+              variant="destructive"
+              size="icon"
+              onClick={() => remove(index)}
+            >
+              <span className="sr-only">Delete reminder</span>×
+            </Button>
+          </div>
+
+          <div className="flex flex-col">
+            <FormField
+              control={form.control}
+              name={`reminders.${index}.threshold`}
+              render={() => <FormMessage />}
+            />
+            <FormField
+              control={form.control}
+              name={`reminders.${index}.message`}
+              render={() => <FormMessage />}
+            />
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }

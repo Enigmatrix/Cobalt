@@ -85,10 +85,10 @@ export function useAlert(alertId: Ref<Alert> | null): Alert | null {
 }
 
 export function useTargetApps(target?: Target | null): App[] | null {
-  const app = useApp(target?.tag === "App" ? target.id : null);
-  const tag = useTag(target?.tag === "Tag" ? target.id : null);
+  const app = useApp(target?.tag === "app" ? target.id : null);
+  const tag = useTag(target?.tag === "tag" ? target.id : null);
   // Tag's list of Apps
   const tagApps = useApps(tag?.apps ?? []);
   if (!target) return null;
-  return target.tag === "App" ? (app === null ? [] : [app]) : tagApps;
+  return target.tag === "app" ? (app === null ? [] : [app]) : tagApps;
 }

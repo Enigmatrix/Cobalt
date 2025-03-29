@@ -985,6 +985,7 @@ async fn create_alert() -> Result<()> {
                 threshold: r.threshold,
                 message: r.message,
                 events: Default::default(),
+                status: infused::ReminderTriggerStatus::Untriggered,
                 created_at: 0,
                 updated_at: 0,
             })

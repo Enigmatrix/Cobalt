@@ -69,7 +69,7 @@ export function ChooseTarget({
   const onTagCreate = useCallback(
     async (tag: z.infer<typeof tagSchema>) => {
       const tagId = await createTag(tag);
-      onValueChanged({ tag: "Tag", id: tagId });
+      onValueChanged({ tag: "tag", id: tagId });
     },
     [createTag, onValueChanged],
   );
@@ -94,9 +94,9 @@ export function ChooseTarget({
                   value={`tag-${tag.id}`}
                   className={cn({
                     "bg-muted/60":
-                      props.value?.tag === "Tag" && props.value?.id === tag.id,
+                      props.value?.tag === "tag" && props.value?.id === tag.id,
                   })}
-                  onSelect={() => onValueChanged({ tag: "Tag", id: tag.id })}
+                  onSelect={() => onValueChanged({ tag: "tag", id: tag.id })}
                 >
                   <TagIcon
                     className="w-4 h-4 shrink-0"
@@ -133,9 +133,9 @@ export function ChooseTarget({
                   value={`app-${app.id}`}
                   className={cn({
                     "bg-muted/60":
-                      props.value?.tag === "App" && props.value?.id === app.id,
+                      props.value?.tag === "app" && props.value?.id === app.id,
                   })}
-                  onSelect={() => onValueChanged({ tag: "App", id: app.id })}
+                  onSelect={() => onValueChanged({ tag: "app", id: app.id })}
                 >
                   <AppIcon buffer={app.icon} className="w-4 h-4 shrink-0" />
                   <Text>{app.name}</Text>
@@ -164,20 +164,20 @@ function ChooseTargetTrigger({
   value: Target | undefined;
   placeholder?: ReactNode;
 }) {
-  const app = useApp(value?.tag === "App" ? value.id : null);
-  const tag = useTag(value?.tag === "Tag" ? value.id : null);
+  const app = useApp(value?.tag === "app" ? value.id : null);
+  const tag = useTag(value?.tag === "tag" ? value.id : null);
   return (
     <Button
       variant="outline"
       {...props}
       className={cn("flex gap-2 items-center", className)}
     >
-      {value?.tag === "App" && app ? (
+      {value?.tag === "app" && app ? (
         <>
           <AppIcon buffer={app.icon} className="w-5 h-5 shrink-0" />
           <Text>{app.name}</Text>
         </>
-      ) : value?.tag === "Tag" && tag ? (
+      ) : value?.tag === "tag" && tag ? (
         <>
           <TagIcon className="w-5 h-5 shrink-0" style={{ color: tag.color }} />
           <Text>{tag.name}</Text>
