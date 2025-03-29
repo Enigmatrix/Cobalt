@@ -123,25 +123,53 @@ impl Repository {
             #[sqlx(flatten)]
             inner: super::Alert,
             #[sqlx(flatten)]
+            status: infused::AlertTriggerStatus,
+            #[sqlx(flatten)]
             events: infused::ValuePerPeriod<i64>,
         }
 
         let alerts: Vec<AlertNoReminders> = query_as(&format!(
             "WITH
+                range_start(id, range_start) AS (
+                    SELECT al.id,
+                        CASE
+                            WHEN al.time_frame = 0 THEN ?
+                            WHEN al.time_frame = 1 THEN ?
+                            ELSE ?
+                        END range_start
+                    FROM alerts al
+                ),
+                trigger_status(id, status, timestamp) AS (
+                    SELECT al.id,
+                        e.reason,
+                        e.timestamp
+                    FROM alerts al
+                    INNER JOIN range_start t
+                        ON t.id = al.id
+                    LEFT JOIN alert_events e
+                        ON e.alert_id = al.id
+                        AND e.timestamp >= t.range_start
+                ),
                 events_today(id, count) AS ({ALERT_EVENT_COUNT}),
                 events_week(id, count) AS ({ALERT_EVENT_COUNT}),
                 events_month(id, count) AS ({ALERT_EVENT_COUNT})
             SELECT al.*,
+                COALESCE(ts.status, 2) AS alert_status,
+                ts.timestamp AS alert_status_timestamp,
                 COALESCE(t.count, 0) AS today,
                 COALESCE(w.count, 0) AS week,
                 COALESCE(m.count, 0) AS month
             FROM alerts al
+                LEFT JOIN trigger_status ts ON ts.id = al.id
                 LEFT JOIN events_today t ON t.id = al.id
                 LEFT JOIN events_week w ON w.id = al.id
                 LEFT JOIN events_month m ON m.id = al.id
             GROUP BY al.id
             HAVING al.active <> 0"
         ))
+        .bind(ts.day_start(true).to_ticks())
+        .bind(ts.week_start(true).to_ticks())
+        .bind(ts.month_start(true).to_ticks())
         .bind(ts.day_start(true).to_ticks())
         .bind(ts.now().to_ticks())
         .bind(ts.week_start(true).to_ticks())
@@ -153,20 +181,55 @@ impl Repository {
 
         let reminders: Vec<infused::Reminder> = query_as(&format!(
             "WITH
+                range_start(id, range_start) AS (
+                    SELECT r.id,
+                        CASE
+                            WHEN al.time_frame = 0 THEN ?
+                            WHEN al.time_frame = 1 THEN ?
+                            ELSE ?
+                        END range_start
+                    FROM reminders r
+                        INNER JOIN alerts al ON r.alert_id = al.id
+                ),
+                trigger_status(id, status, timestamp, alert_ignored) AS (
+                    SELECT r.id,
+                        e.reason,
+                        e.timestamp,
+                        COALESCE((SELECT ae.reason
+                            FROM alert_events ae
+                            WHERE ae.alert_id = r.alert_id
+                                AND ae.reason = 1
+                                AND ae.timestamp >= t.range_start
+                            LIMIT 1), 0)
+                        AS alert_ignored
+                    FROM reminders r
+                    INNER JOIN range_start t
+                        ON t.id = r.id
+                    LEFT JOIN reminder_events e
+                        ON e.reminder_id = r.id
+                        AND e.timestamp >= t.range_start
+                ),
                 events_today(id, count) AS ({REMINDER_EVENT_COUNT}),
                 events_week(id, count) AS ({REMINDER_EVENT_COUNT}),
                 events_month(id, count) AS ({REMINDER_EVENT_COUNT})
             SELECT r.*,
+                COALESCE(ts.status, 2) AS reminder_status,
+                ts.timestamp AS reminder_status_timestamp,
+                ts.alert_ignored AS reminder_status_alert_ignored,
                 COALESCE(t.count, 0) AS today,
                 COALESCE(w.count, 0) AS week,
                 COALESCE(m.count, 0) AS month
             FROM reminders r
+                LEFT JOIN trigger_status ts ON ts.id = r.id
                 LEFT JOIN events_today t ON t.id = r.id
                 LEFT JOIN events_week w ON w.id = r.id
                 LEFT JOIN events_month m ON m.id = r.id
             GROUP BY r.id
             HAVING r.active <> 0"
         ))
+        .bind(ts.day_start(true).to_ticks())
+        .bind(ts.week_start(true).to_ticks())
+        .bind(ts.month_start(true).to_ticks())
         .bind(ts.day_start(true).to_ticks())
         .bind(ts.now().to_ticks())
         .bind(ts.week_start(true).to_ticks())
@@ -189,6 +252,7 @@ impl Repository {
                         trigger_action: alert.inner.trigger_action,
                         created_at: alert.inner.created_at,
                         updated_at: alert.inner.updated_at,
+                        status: alert.status,
 
                         events: alert.events,
                         reminders: Vec::new(),
@@ -419,6 +483,7 @@ impl Repository {
                 message: reminder.message,
                 created_at: ts.now().to_ticks(),
                 updated_at: ts.now().to_ticks(),
+                status: infused::ReminderTriggerStatus::Untriggered,
                 events: infused::ValuePerPeriod::default(),
             };
             reminders.push(reminder);
@@ -435,6 +500,7 @@ impl Repository {
             created_at: ts.now().to_ticks(),
             updated_at: ts.now().to_ticks(),
             reminders,
+            status: infused::AlertTriggerStatus::Untriggered,
             events: infused::ValuePerPeriod::default(),
         };
 
@@ -472,6 +538,7 @@ impl Repository {
             created_at: prev.created_at,
             updated_at: ts.now().to_ticks(),
             reminders: Vec::new(),
+            status: infused::AlertTriggerStatus::Untriggered,
             events: infused::ValuePerPeriod::default(),
         };
 
@@ -491,6 +558,9 @@ impl Repository {
                     },
                 )
                 .await?;
+                next_alert.status = infused::AlertTriggerStatus::Ignored {
+                    timestamp: ts.now().to_ticks(),
+                };
             }
 
             for mut reminder in next.reminders {
@@ -509,6 +579,15 @@ impl Repository {
                         .map(|r| r.created_at)
                         .unwrap_or(ts.now().to_ticks()),
                     updated_at: ts.now().to_ticks(),
+                    status: if reminder.ignore_trigger {
+                        infused::ReminderTriggerStatus::Ignored {
+                            timestamp: ts.now().to_ticks(),
+                            // a bit wonky - it's ignored because *this reminder* is ignored as well, but we can't express that.
+                            ignored_by_alert: next.ignore_trigger,
+                        }
+                    } else {
+                        infused::ReminderTriggerStatus::Untriggered
+                    },
                     events: infused::ValuePerPeriod::default(), // since this is a new reminder.
                 });
 
@@ -528,6 +607,7 @@ impl Repository {
         } else {
             Self::update_alert_only(&mut *tx, &next, &ts).await?;
             next_alert.events = prev.events;
+            next_alert.status = prev.status;
 
             // Remove reminders that are no longer in next.reminders
             for reminder in prev.reminders.iter() {
@@ -549,6 +629,7 @@ impl Repository {
                     message: reminder.message.clone(),
                     created_at: ts.now().to_ticks(),
                     updated_at: ts.now().to_ticks(),
+                    status: infused::ReminderTriggerStatus::Untriggered,
                     events: infused::ValuePerPeriod::default(),
                 };
                 if let Some(id) = reminder.id.clone() {
@@ -584,12 +665,18 @@ impl Repository {
                                 },
                             )
                             .await?;
+                            next_reminder.status = infused::ReminderTriggerStatus::Ignored {
+                                timestamp: ts.now().to_ticks(),
+                                // a bit wonky - it's ignored because *this reminder* is ignored as well, but we can't express that.
+                                ignored_by_alert: next.ignore_trigger,
+                            };
                         }
                     } else {
                         Self::update_reminder_only(&mut *tx, prev_reminder, &mut reminder, &ts)
                             .await?;
                         next_reminder.id = id;
                         next_reminder.events = prev_reminder.events.clone();
+                        next_reminder.status = prev_reminder.status.clone();
                         // no change to trigger status, no need to bother looking at ignore_trigger.
                     }
                 } else {
@@ -608,6 +695,11 @@ impl Repository {
                             },
                         )
                         .await?;
+                        next_reminder.status = infused::ReminderTriggerStatus::Ignored {
+                            timestamp: ts.now().to_ticks(),
+                            // a bit wonky - it's ignored because *this reminder* is ignored as well, but we can't express that.
+                            ignored_by_alert: next.ignore_trigger,
+                        };
                     }
                 }
                 next_alert.reminders.push(next_reminder);
