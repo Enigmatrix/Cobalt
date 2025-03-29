@@ -122,17 +122,17 @@ function VirtualListItem({
 }
 
 function AlertListItem({ alert }: { alert: Alert }) {
-  const app = useApp(alert.target.tag === "App" ? alert.target.id : null);
-  const tag = useTag(alert.target.tag === "Tag" ? alert.target.id : null);
+  const app = useApp(alert.target.tag === "app" ? alert.target.id : null);
+  const tag = useTag(alert.target.tag === "tag" ? alert.target.id : null);
 
   const currentUsage = useMemo(() => {
-    const usages = alert.target.tag === "App" ? app?.usages : tag?.usages;
+    const usages = alert.target.tag === "app" ? app?.usages : tag?.usages;
     switch (alert.timeFrame) {
-      case "Daily":
+      case "daily":
         return usages?.today;
-      case "Weekly":
+      case "weekly":
         return usages?.week;
-      case "Monthly":
+      case "monthly":
         return usages?.month;
     }
   }, [app, tag, alert]);
@@ -153,7 +153,7 @@ function AlertListItem({ alert }: { alert: Alert }) {
       )}
     >
       <div className="h-20 flex items-center gap-2 p-4 @container">
-        {alert.target.tag === "App" && app ? (
+        {alert.target.tag === "app" && app ? (
           <>
             <AppIcon buffer={app.icon} className="mx-2 h-10 w-10 shrink-0" />
 
@@ -175,7 +175,7 @@ function AlertListItem({ alert }: { alert: Alert }) {
               </span>
             </div>
           </>
-        ) : alert.target.tag === "Tag" && tag ? (
+        ) : alert.target.tag === "tag" && tag ? (
           <>
             <TagIcon
               className="mx-2 h-10 w-10 shrink-0"
@@ -210,14 +210,14 @@ function AlertListItem({ alert }: { alert: Alert }) {
         <div className="flex flex-col items-end ml-auto py-2 ">
           <div className="text-sm flex gap-1 items-center">
             <span>{alert.triggerAction.tag}</span>
-            {alert.triggerAction.tag === "Dim" && (
+            {alert.triggerAction.tag === "dim" && (
               <div className="flex items-center">
                 <span>(</span>
                 <DurationText ticks={alert.triggerAction.duration} />
                 <span>)</span>
               </div>
             )}
-            {alert.triggerAction.tag === "Message" && (
+            {alert.triggerAction.tag === "message" && (
               <div className="flex items-center">
                 <span>(</span>
                 <Text className="max-w-24">{alert.triggerAction.content}</Text>
@@ -277,16 +277,19 @@ function TimeProgressBar({
         style={{ width: `${Math.min(100, percentage)}%` }}
       />
       {reminders.map((reminder, index) => {
-        console.log(reminder.status)
+        console.log(reminder.status);
         return (
           <Tooltip key={index}>
             <TooltipTrigger asChild>
               <div
-                className={cn("absolute top-1/2 border border-border rounded-full", {
-                  "bg-blue-500": reminder.status.tag == "hit",
-                  "bg-gray-500": reminder.status.tag == "ignored",
-                  "bg-blue-300": reminder.status.tag == "untriggered",
-                })}
+                className={cn(
+                  "absolute top-1/2 border border-border rounded-full",
+                  {
+                    "bg-blue-500": reminder.status.tag == "hit",
+                    "bg-gray-500": reminder.status.tag == "ignored",
+                    "bg-blue-300": reminder.status.tag == "untriggered",
+                  },
+                )}
                 style={{
                   left: `${reminder.threshold * 100}%`,
                   width: circleRadius * 2,

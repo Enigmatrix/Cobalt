@@ -51,8 +51,8 @@ export function useAlertsSearch(alerts: Alert[]) {
       // Apps and Tags will definitely be found, thus the !
       return {
         alert,
-        app: alert.target.tag === "App" ? allApps[alert.target.id]! : undefined,
-        tag: alert.target.tag === "Tag" ? allTags[alert.target.id]! : undefined,
+        app: alert.target.tag === "app" ? allApps[alert.target.id]! : undefined,
+        tag: alert.target.tag === "tag" ? allTags[alert.target.id]! : undefined,
       };
     });
   }, [alerts, allApps, allTags]);

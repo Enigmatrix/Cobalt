@@ -16,7 +16,7 @@ export function useTriggerInfo(
   timeFrame?: TimeFrame,
   reminders?: { id?: number; threshold: number; message: string }[],
 ): TriggerInfo {
-  const interval = usePeriodInterval(timeFrameToPeriod(timeFrame ?? "Daily"));
+  const interval = usePeriodInterval(timeFrameToPeriod(timeFrame ?? "daily"));
 
   const targetApps = useTargetApps(target);
   const { ret: appDurations } = useAppDurations({

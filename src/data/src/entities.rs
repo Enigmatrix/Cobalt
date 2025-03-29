@@ -39,6 +39,7 @@ pub struct App {
 
 /// Unique identity of an [App], outside of the Database (on the FileSystem/Registry)
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
 #[serde(tag = "tag")]
 pub enum AppIdentity {
     /// Win32 App
@@ -146,6 +147,7 @@ pub struct SystemEvent {
 
 /// Target of an [Alert]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 #[serde(tag = "tag")]
 pub enum Target {
     /// [App] Target
@@ -182,6 +184,7 @@ impl Default for Target {
 
 /// How long the monitoring duration should be for an [Alert]
 #[derive(Default, Debug, Clone, PartialEq, Eq, Type, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 #[repr(i64)]
 pub enum TimeFrame {
     #[default]
@@ -195,6 +198,7 @@ pub enum TimeFrame {
 
 /// Action to take once the [Alert]'s Usage Limit has been reached.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 #[serde(tag = "tag")]
 pub enum TriggerAction {
     /// Kill the offending App / App in Tags
@@ -295,6 +299,7 @@ impl Eq for Reminder {}
 
 /// Reason for the [AlertEvent]/[ReminderEvent]
 #[derive(Default, Debug, Clone, PartialEq, Eq, Type, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 #[repr(i64)]
 pub enum Reason {
     #[default]

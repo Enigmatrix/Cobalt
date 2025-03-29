@@ -226,9 +226,9 @@ function LimitStepContent({ form }: { form: UseFormReturn<FormValues> }) {
                   <SelectValue placeholder="Period" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Daily">Daily</SelectItem>
-                  <SelectItem value="Weekly">Weekly</SelectItem>
-                  <SelectItem value="Monthly">Monthly</SelectItem>
+                  <SelectItem value="daily">Daily</SelectItem>
+                  <SelectItem value="weekly">Weekly</SelectItem>
+                  <SelectItem value="monthly">Monthly</SelectItem>
                 </SelectContent>
               </Select>
             </FormControl>
@@ -275,11 +275,11 @@ function ActionStepContent({ form }: { form: UseFormReturn<FormValues> }) {
                 value={field.value?.tag}
                 onValueChange={(v) => {
                   // Reset the form when changing action type
-                  if (v === "Kill") {
+                  if (v === "kill") {
                     field.onChange({ tag: v });
-                  } else if (v === "Dim") {
+                  } else if (v === "dim") {
                     field.onChange({ tag: v, duration: undefined });
-                  } else if (v === "Message") {
+                  } else if (v === "message") {
                     field.onChange({ tag: v, content: "" });
                   }
                 }}
@@ -288,9 +288,9 @@ function ActionStepContent({ form }: { form: UseFormReturn<FormValues> }) {
                   <SelectValue placeholder="Type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Dim">Dim</SelectItem>
-                  <SelectItem value="Message">Message</SelectItem>
-                  <SelectItem value="Kill">Kill</SelectItem>
+                  <SelectItem value="dim">Dim</SelectItem>
+                  <SelectItem value="message">Message</SelectItem>
+                  <SelectItem value="kill">Kill</SelectItem>
                 </SelectContent>
               </Select>
             </FormControl>
@@ -304,7 +304,7 @@ function ActionStepContent({ form }: { form: UseFormReturn<FormValues> }) {
         name="triggerAction"
         render={({ field: { value, onChange, ...field } }) => (
           <>
-            {value?.tag === "Dim" && (
+            {value?.tag === "dim" && (
               <FormItem>
                 <FormLabel>Dim Duration</FormLabel>
                 <FormControl>
@@ -319,7 +319,7 @@ function ActionStepContent({ form }: { form: UseFormReturn<FormValues> }) {
                     }
                     onValueChange={(dur) =>
                       onChange({
-                        tag: "Dim",
+                        tag: "dim",
                         duration:
                           dur === null ? undefined : durationToTicks(dur),
                       })
@@ -338,7 +338,7 @@ function ActionStepContent({ form }: { form: UseFormReturn<FormValues> }) {
         name="triggerAction"
         render={({ field }) => (
           <>
-            {field.value?.tag === "Message" && (
+            {field.value?.tag === "message" && (
               <FormItem>
                 <FormLabel>Message Content</FormLabel>
                 <FormControl>
@@ -347,7 +347,7 @@ function ActionStepContent({ form }: { form: UseFormReturn<FormValues> }) {
                     value={field.value.content ?? ""}
                     onChange={(e) =>
                       field.onChange({
-                        tag: "Message",
+                        tag: "message",
                         content: e.target.value,
                       })
                     }

@@ -181,11 +181,11 @@ export default function App({ params }: Route.ComponentProps) {
               {/* App Identity */}
               <div className="text-sm inline-flex border-border border rounded-lg overflow-hidden max-w-fit min-w-0 bg-muted/30 items-center">
                 <div className="bg-muted px-3 py-1.5 border-r border-border font-medium">
-                  {app.identity.tag === "Uwp" ? "UWP" : "Win32"}
+                  {app.identity.tag === "uwp" ? "UWP" : "Win32"}
                 </div>
 
                 <Text className="font-mono pl-3 pr-1 py-1.5 text-muted-foreground">
-                  {app.identity.tag === "Uwp"
+                  {app.identity.tag === "uwp"
                     ? app.identity.aumid
                     : app.identity.path}
                 </Text>
@@ -194,7 +194,7 @@ export default function App({ params }: Route.ComponentProps) {
                   className="h-auto p-2 rounded-none rounded-r-lg text-muted-foreground"
                   onClick={() =>
                     copy(
-                      app.identity.tag === "Uwp"
+                      app.identity.tag === "uwp"
                         ? app.identity.aumid
                         : app.identity.path,
                     )

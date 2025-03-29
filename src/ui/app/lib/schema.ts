@@ -22,17 +22,17 @@ export const reminderSchema = z.object({
 });
 
 export const triggerActionSchema = z.discriminatedUnion("tag", [
-  z.object({ tag: z.literal("Kill") }),
-  z.object({ tag: z.literal("Dim"), duration: durationSchema }),
+  z.object({ tag: z.literal("kill") }),
+  z.object({ tag: z.literal("dim"), duration: durationSchema }),
   z.object({
-    tag: z.literal("Message"),
+    tag: z.literal("message"),
     content: z.string().min(1, "Message is required"),
   }),
 ]);
 
 export const targetSchema = z.discriminatedUnion("tag", [
-  z.object({ tag: z.literal("App"), id: refSchema<App>() }),
-  z.object({ tag: z.literal("Tag"), id: refSchema<Tag>() }),
+  z.object({ tag: z.literal("app"), id: refSchema<App>() }),
+  z.object({ tag: z.literal("tag"), id: refSchema<Tag>() }),
 ]);
 
 export const alertSchema = z
@@ -40,7 +40,7 @@ export const alertSchema = z
     id: refSchema<Alert>().optional(),
     target: targetSchema,
     usageLimit: durationSchema,
-    timeFrame: z.enum(["Daily", "Weekly", "Monthly"]),
+    timeFrame: z.enum(["daily", "weekly", "monthly"]),
     triggerAction: triggerActionSchema,
     reminders: reminderSchema.array(),
     ignoreTrigger: z.boolean(),

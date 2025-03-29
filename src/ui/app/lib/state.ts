@@ -166,7 +166,7 @@ export const useAppState = create<AppState>((set) => {
           draft.alerts = _.omitBy(
             draft.alerts,
             (alert) =>
-              alert!.target.tag === "Tag" && alert!.target.id === tagId,
+              alert!.target.tag === "tag" && alert!.target.id === tagId,
           );
 
           // remove tag

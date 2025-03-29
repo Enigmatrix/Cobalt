@@ -21,8 +21,8 @@ export interface WithGroupedDuration<T> {
 }
 
 export type AppIdentity =
-  | { tag: "Uwp"; aumid: string }
-  | { tag: "Win32"; path: string };
+  | { tag: "uwp"; aumid: string }
+  | { tag: "win32"; path: string };
 
 export interface ValuePerPeriod<T> {
   today: T;
@@ -65,26 +65,26 @@ export interface Tag {
 }
 
 export type Target =
-  | { tag: "App"; id: Ref<App> }
-  | { tag: "Tag"; id: Ref<Tag> };
+  | { tag: "app"; id: Ref<App> }
+  | { tag: "tag"; id: Ref<Tag> };
 
-export type TimeFrame = "Daily" | "Weekly" | "Monthly";
+export type TimeFrame = "daily" | "weekly" | "monthly";
 
 export function timeFrameToPeriod(timeFrame: TimeFrame): Period {
   switch (timeFrame) {
-    case "Daily":
+    case "daily":
       return "day";
-    case "Weekly":
+    case "weekly":
       return "week";
-    case "Monthly":
+    case "monthly":
       return "month";
   }
 }
 
 export type TriggerAction =
-  | { tag: "Kill" }
-  | { tag: "Dim"; duration: number }
-  | { tag: "Message"; content: string };
+  | { tag: "kill" }
+  | { tag: "dim"; duration: number }
+  | { tag: "message"; content: string };
 
 export type AlertTriggerStatus =
   | { tag: "untriggered" }
