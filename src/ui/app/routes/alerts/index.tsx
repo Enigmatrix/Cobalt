@@ -246,7 +246,7 @@ function AlertListItem({ alert }: { alert: Alert }) {
           usageLimit={alert.usageLimit}
           currentUsage={currentUsage ?? 0}
           reminders={alert.reminders}
-          circleRadius={5}
+          circleRadius={7}
         />
       </div>
     </NavLink>
@@ -277,11 +277,16 @@ function TimeProgressBar({
         style={{ width: `${Math.min(100, percentage)}%` }}
       />
       {reminders.map((reminder, index) => {
+        console.log(reminder.status)
         return (
           <Tooltip key={index}>
             <TooltipTrigger asChild>
               <div
-                className="absolute top-1/2 bg-primary border border-border rounded-full"
+                className={cn("absolute top-1/2 border border-border rounded-full", {
+                  "bg-blue-500": reminder.status.tag == "hit",
+                  "bg-gray-500": reminder.status.tag == "ignored",
+                  "bg-blue-300": reminder.status.tag == "untriggered",
+                })}
                 style={{
                   left: `${reminder.threshold * 100}%`,
                   width: circleRadius * 2,

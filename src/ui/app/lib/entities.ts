@@ -86,14 +86,25 @@ export type TriggerAction =
   | { tag: "Dim"; duration: number }
   | { tag: "Message"; content: string };
 
+export type AlertTriggerStatus =
+  | { tag: "untriggered" }
+  | { tag: "hit"; timestamp: Timestamp }
+  | { tag: "ignored"; timestamp: Timestamp };
+
+export type ReminderTriggerStatus =
+  | { tag: "untriggered" }
+  | { tag: "hit"; timestamp: Timestamp }
+  | { tag: "ignored"; timestamp: Timestamp; ignoredByAlert: boolean };
+
 export interface Alert {
   id: Ref<Alert>;
   target: Target;
   usageLimit: Duration;
   timeFrame: TimeFrame;
   triggerAction: TriggerAction;
-
   reminders: Reminder[];
+
+  status: AlertTriggerStatus;
   events: ValuePerPeriod<number>;
 }
 
@@ -103,6 +114,7 @@ export interface Reminder {
   threshold: number;
   message: string;
 
+  status: ReminderTriggerStatus;
   events: ValuePerPeriod<number>;
 }
 
