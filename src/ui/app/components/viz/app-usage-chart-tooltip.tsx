@@ -19,14 +19,19 @@ function HoverCard({
   app: App;
   usageTicks: number;
   totalUsageTicks?: number;
-  at: DateTime;
+  at: DateTime | undefined;
 }) {
   return (
     <div className="flex items-center gap-2 py-2">
       <AppIcon buffer={app.icon} className="w-6 h-6 shrink-0 ml-2 mr-1" />
       <div className="flex flex-col">
         <Text className="text-base max-w-52">{app.name}</Text>
-        <DateTimeText className="text-xs text-muted-foreground" datetime={at} />
+        {at && (
+          <DateTimeText
+            className="text-xs text-muted-foreground"
+            datetime={at}
+          />
+        )}
       </div>
 
       <div className="flex-1"></div>
@@ -47,7 +52,7 @@ export const AppUsageChartTooltipContent = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<"div"> & {
     payload: EntityMap<App, number>;
-    dt: DateTime;
+    dt?: DateTime;
     hideIndicator?: boolean;
     maximumApps?: number;
     hoveredAppId: Ref<App> | null;

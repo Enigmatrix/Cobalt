@@ -50,6 +50,19 @@ export async function refresh() {
   info("refresh completed");
 }
 
+export const untagged: Tag = {
+  id: -1 as Ref<Tag>,
+  name: "Untagged",
+  color: "#6B7280", // gray-500
+  // below two fields are not really used.
+  apps: [],
+  usages: {
+    today: 0,
+    week: 0,
+    month: 0,
+  },
+};
+
 // Entity store with T|undefined values. This is because
 // the store can be stale.
 export type EntityStore<T> = Record<Ref<T>, T | undefined>;
