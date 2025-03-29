@@ -21,6 +21,7 @@ use util::config::{self, Config};
 use util::error::{Context, Result};
 use util::future::runtime::{Builder, Handle};
 use util::future::sync::Mutex;
+use util::future::time;
 use util::tracing::{error, info, ResultTraceExt};
 use util::Target;
 
@@ -195,9 +196,11 @@ fn processor(
         let sentry_handle = {
             let cache = cache.clone();
             let db_pool = db_pool.clone();
+            let config = config.clone();
             handle.spawn(async move {
                 for attempt in 0.. {
                     if attempt > 0 {
+                        time::sleep(config.alert_duration().into()).await;
                         info!("restarting sentry loop");
                     }
                     sentry_loop(db_pool.clone(), cache.clone(), alert_rx.clone())
@@ -210,6 +213,7 @@ fn processor(
 
         for attempt in 0.. {
             if attempt > 0 {
+                time::sleep(config.poll_duration().into()).await;
                 info!("restarting engine loop");
                 fg = foreground_window_session()?;
                 now = Timestamp::now();
