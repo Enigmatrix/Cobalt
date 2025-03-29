@@ -515,12 +515,11 @@ impl Repository {
         ts: impl TimeSystem,
     ) -> Result<infused::Alert> {
         let mut tx = self.db.transaction().await?;
-        let has_any_alert_events = Self::has_any_alert_events(&mut *tx, &prev.id).await?;
 
-        let should_upgrade_alert = has_any_alert_events
-            && (prev.target != next.target
-                || prev.usage_limit != next.usage_limit
-                || prev.time_frame != next.time_frame);
+        let should_upgrade_alert = (prev.target != next.target
+            || prev.usage_limit != next.usage_limit
+            || prev.time_frame != next.time_frame)
+            && Self::has_any_alert_events(&mut tx, &prev.id).await?;
 
         let prev_reminders: HashMap<_, _> = prev
             .reminders
@@ -711,16 +710,21 @@ impl Repository {
         Ok(next_alert)
     }
 
-    async fn has_any_alert_events<'a, E: SqliteExecutor<'a>>(
-        executor: E,
+    async fn has_any_alert_events(
+        executor: &mut sqlx::SqliteConnection,
         alert_id: &Ref<Alert>,
     ) -> Result<bool> {
         let count: i64 = query("SELECT COUNT(*) FROM alert_events WHERE alert_id = ?")
             .bind(alert_id)
+            .fetch_one(&mut *executor)
+            .await?
+            .get(0);
+        let reminder_count: i64 = query("SELECT COUNT(*) FROM reminders r INNER JOIN reminder_events re ON r.id = re.reminder_id WHERE r.alert_id = ?")
+            .bind(alert_id)
             .fetch_one(executor)
             .await?
             .get(0);
-        Ok(count > 0)
+        Ok(count > 0 || reminder_count > 0)
     }
 
     async fn has_any_reminder_events<'a, E: SqliteExecutor<'a>>(
