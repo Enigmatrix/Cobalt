@@ -15,7 +15,7 @@ import type { App, Ref, Tag } from "@/lib/entities";
 import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
 import { useCallback, useMemo, useState } from "react";
 import { DateTime } from "luxon";
-import { useTag } from "@/hooks/use-refresh";
+import { useAlerts, useTag } from "@/hooks/use-refresh";
 import {
   type Period,
   hour24Formatter,
@@ -81,6 +81,15 @@ export default function Tag({ params }: Route.ComponentProps) {
 
   const yearInitInterval = usePeriodInterval("year");
   const [yearInterval, setYearInterval] = useState(yearInitInterval);
+
+  const alerts = useAlerts();
+  const tagAlerts = useMemo(
+    () =>
+      alerts.filter(
+        (alert) => alert.target.tag === "tag" && alert.target.id === tag.id,
+      ),
+    [alerts, tag],
+  );
 
   const {
     isLoading: isYearDataLoading,
@@ -196,8 +205,11 @@ export default function Tag({ params }: Route.ComponentProps) {
                     <AlertDialogHeader>
                       <AlertDialogTitle>Remove Tag?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        This action cannot be undone. All Apps using this Tag
-                        will be marked as Untagged.
+                        This action cannot be undone.
+                        {tag.apps.length > 0 &&
+                          ` ${tag.apps.length} App${tag.apps.length === 1 ? "" : "s"} using this Tag will be marked as Untagged.`}
+                        {tagAlerts.length > 0 &&
+                          ` ${tagAlerts.length} Alert${tagAlerts.length === 1 ? "" : "s"} using this Tag (and their Reminders and history) will be removed.`}
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
