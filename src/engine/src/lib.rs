@@ -21,9 +21,8 @@ use util::config::{self, Config};
 use util::error::{Context, Result};
 use util::future::runtime::{Builder, Handle};
 use util::future::sync::Mutex;
-use util::future::time;
 use util::tracing::{error, info, ResultTraceExt};
-use util::Target;
+use util::{future, Target};
 
 mod cache;
 mod engine;
@@ -200,7 +199,7 @@ fn processor(
             handle.spawn(async move {
                 for attempt in 0.. {
                     if attempt > 0 {
-                        time::sleep(config.alert_duration().into()).await;
+                        future::time::sleep(config.alert_duration()).await;
                         info!("restarting sentry loop");
                     }
                     sentry_loop(db_pool.clone(), cache.clone(), alert_rx.clone())
@@ -213,7 +212,7 @@ fn processor(
 
         for attempt in 0.. {
             if attempt > 0 {
-                time::sleep(config.poll_duration().into()).await;
+                future::time::sleep(config.poll_duration()).await;
                 info!("restarting engine loop");
                 fg = foreground_window_session()?;
                 now = Timestamp::now();
