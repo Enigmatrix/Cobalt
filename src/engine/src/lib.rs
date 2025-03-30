@@ -268,5 +268,9 @@ fn foreground_window_session() -> Result<WindowSession> {
         if let Some(window) = Window::foreground() {
             return WindowSession::new(window);
         }
+        // This method *MUST* be synchronous, so we use the synchronous version of sleep.
+        // There is no blocking or potential for a race condition here because the
+        // foreground window is a global resource, seperate from the async runtime.
+        std::thread::sleep(std::time::Duration::from_millis(100));
     }
 }
