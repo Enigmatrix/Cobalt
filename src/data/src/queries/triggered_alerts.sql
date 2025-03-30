@@ -42,6 +42,5 @@ SELECT al.*, ae.timestamp, (CASE WHEN al.app_id IS NOT NULL THEN (
     LEFT JOIN alert_events ae
         ON al.id = ae.alert_id
         AND ae.timestamp >= d.range_start
-    WHERE d.dur >= al.usage_limit
+    WHERE d.dur >= al.usage_limit AND al.active <> 0
     GROUP BY al.id
-    HAVING al.active <> 0

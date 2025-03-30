@@ -164,8 +164,8 @@ impl Repository {
                 LEFT JOIN events_today t ON t.id = al.id
                 LEFT JOIN events_week w ON w.id = al.id
                 LEFT JOIN events_month m ON m.id = al.id
-            GROUP BY al.id
-            HAVING al.active <> 0"
+            WHERE al.active <> 0
+            GROUP BY al.id"
         ))
         .bind(ts.day_start(true).to_ticks())
         .bind(ts.week_start(true).to_ticks())
@@ -224,8 +224,8 @@ impl Repository {
                 LEFT JOIN events_today t ON t.id = r.id
                 LEFT JOIN events_week w ON w.id = r.id
                 LEFT JOIN events_month m ON m.id = r.id
-            GROUP BY r.id
-            HAVING r.active <> 0"
+            WHERE r.active <> 0
+            GROUP BY r.id"
         ))
         .bind(ts.day_start(true).to_ticks())
         .bind(ts.week_start(true).to_ticks())
