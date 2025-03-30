@@ -40,13 +40,15 @@ impl ForegroundEventWatcher {
 
     /// Poll for a new [`ForegroundChangedEvent`].
     pub fn poll(&mut self, at: Timestamp) -> Result<Option<ForegroundChangedEvent>> {
-        let window = Window::foreground().unwrap_or_else(Window::desktop);
-        let session = WindowSession::new(window).context("foreground window session")?;
-        if session == self.session {
-            Ok(None)
-        } else {
+        if let Some(fg) = Window::foreground() {
+            let session = WindowSession::new(fg).context("foreground window session")?;
+            if session == self.session {
+                return Ok(None);
+            }
+
             self.session = session.clone();
-            Ok(Some(ForegroundChangedEvent { at, session }))
+            return Ok(Some(ForegroundChangedEvent { at, session }));
         }
+        Ok(None)
     }
 }

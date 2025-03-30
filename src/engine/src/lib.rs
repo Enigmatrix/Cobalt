@@ -22,7 +22,7 @@ use util::error::{Context, Result};
 use util::future::runtime::{Builder, Handle};
 use util::future::sync::Mutex;
 use util::tracing::{error, info, ResultTraceExt};
-use util::Target;
+use util::{future, Target};
 
 mod cache;
 mod engine;
@@ -195,9 +195,11 @@ fn processor(
         let sentry_handle = {
             let cache = cache.clone();
             let db_pool = db_pool.clone();
+            let config = config.clone();
             handle.spawn(async move {
                 for attempt in 0.. {
                     if attempt > 0 {
+                        future::time::sleep(config.alert_duration()).await;
                         info!("restarting sentry loop");
                     }
                     sentry_loop(db_pool.clone(), cache.clone(), alert_rx.clone())
@@ -210,6 +212,7 @@ fn processor(
 
         for attempt in 0.. {
             if attempt > 0 {
+                future::time::sleep(config.poll_duration()).await;
                 info!("restarting engine loop");
                 fg = foreground_window_session()?;
                 now = Timestamp::now();
@@ -260,6 +263,13 @@ async fn update_app_infos(db_pool: DatabasePool, handle: Handle) -> Result<()> {
 
 /// Get the foreground [Window], and makes it into a [WindowSession] blocking until one is present.
 fn foreground_window_session() -> Result<WindowSession> {
-    let window = Window::foreground().unwrap_or_else(Window::desktop);
-    WindowSession::new(window)
+    loop {
+        if let Some(window) = Window::foreground() {
+            return WindowSession::new(window);
+        }
+        // This method *MUST* be synchronous, so we use the synchronous version of sleep.
+        // There is no blocking or potential for a race condition here because the
+        // foreground window is a global resource, seperate from the async runtime.
+        std::thread::sleep(std::time::Duration::from_millis(100));
+    }
 }
