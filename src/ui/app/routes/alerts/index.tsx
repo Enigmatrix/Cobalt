@@ -209,7 +209,13 @@ function AlertListItem({ alert }: { alert: Alert }) {
 
         <div className="flex flex-col items-end ml-auto py-2 ">
           <div className="text-sm flex gap-1 items-center">
-            <span>{alert.triggerAction.tag}</span>
+            <span>
+              {alert.triggerAction.tag === "dim"
+                ? "Dim"
+                : alert.triggerAction.tag === "message"
+                  ? "Message"
+                  : "Kill"}
+            </span>
             {alert.triggerAction.tag === "dim" && (
               <div className="flex items-center">
                 <span>(</span>
@@ -237,7 +243,13 @@ function AlertListItem({ alert }: { alert: Alert }) {
               ticks={alert.usageLimit}
             />
             <span className="mr-1">,</span>
-            <span>{alert.timeFrame}</span>
+            <span>
+              {alert.timeFrame === "daily"
+                ? "Daily"
+                : alert.timeFrame === "weekly"
+                  ? "Weekly"
+                  : "Monthly"}
+            </span>
           </div>
         </div>
       </div>
@@ -277,7 +289,6 @@ function TimeProgressBar({
         style={{ width: `${Math.min(100, percentage)}%` }}
       />
       {reminders.map((reminder, index) => {
-        console.log(reminder.status);
         return (
           <Tooltip key={index}>
             <TooltipTrigger asChild>

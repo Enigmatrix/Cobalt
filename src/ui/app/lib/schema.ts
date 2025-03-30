@@ -48,9 +48,9 @@ export const alertSchema = z
   .refine(
     (data) => {
       const maxDuration: { [key: string]: Duration } = {
-        Daily: Duration.fromObject({ days: 1 }),
-        Weekly: Duration.fromObject({ weeks: 1 }),
-        Monthly: Duration.fromObject({ days: 28 }), // smallest number of days in a month
+        daily: Duration.fromObject({ days: 1 }),
+        weekly: Duration.fromObject({ weeks: 1 }),
+        monthly: Duration.fromObject({ days: 28 }), // smallest number of days in a month
       };
 
       return (

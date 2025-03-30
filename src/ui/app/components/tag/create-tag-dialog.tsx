@@ -24,6 +24,7 @@ import { ColorPicker } from "@/components/color-picker";
 import { tagSchema } from "@/lib/schema";
 import { ChooseMultiApps } from "@/components/app/choose-multi-apps";
 import { randomColor } from "@/lib/color-utils";
+import type { SubmitHandler } from "react-hook-form";
 
 type FormValues = z.infer<typeof tagSchema>;
 
@@ -52,14 +53,14 @@ export function CreateTagDialog({ onSubmit, trigger }: CreateTagDialogProps) {
     [setOpenInner, form],
   );
 
-  const handleSubmit = async (values: FormValues) => {
+  const handleSubmit: SubmitHandler<FormValues> = async (values) => {
     await onSubmit(values);
     setOpen(false);
     form.reset();
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={setOpen} modal>
       <DialogTrigger asChild>
         {trigger || <Button variant="outline">Create Tag</Button>}
       </DialogTrigger>
@@ -72,10 +73,7 @@ export function CreateTagDialog({ onSubmit, trigger }: CreateTagDialogProps) {
         </DialogHeader>
 
         <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(handleSubmit)}
-            className="space-y-4"
-          >
+          <form id="create-tag" className="space-y-4">
             <FormField
               control={form.control}
               name="name"
@@ -129,7 +127,13 @@ export function CreateTagDialog({ onSubmit, trigger }: CreateTagDialogProps) {
             />
 
             <DialogFooter>
-              <Button type="submit">Create</Button>
+              <Button
+                type="button"
+                form="create-tag"
+                onClick={form.handleSubmit(handleSubmit)}
+              >
+                Create
+              </Button>
             </DialogFooter>
           </form>
         </Form>
