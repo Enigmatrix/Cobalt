@@ -277,6 +277,8 @@ pub struct CreateTag {
     pub name: String,
     /// Color
     pub color: String,
+    /// Score
+    pub score: i64,
     /// Apps List
     pub apps: Vec<Ref<super::App>>,
 }
@@ -289,6 +291,8 @@ pub struct UpdatedTag {
     pub id: Ref<super::Tag>,
     /// Name
     pub name: String,
+    /// Score
+    pub score: i64,
     /// Color
     pub color: String,
 }

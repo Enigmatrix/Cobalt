@@ -92,6 +92,8 @@ pub struct Tag {
     pub name: String,
     /// Color
     pub color: Color,
+    /// Score
+    pub score: i64,
     /// Created at
     pub created_at: Timestamp,
     /// Updated at

@@ -308,11 +308,13 @@ impl Repository {
         query(
             "UPDATE tags SET
                     name = ?,
-                    color = ?
+                    color = ?,
+                    score = ?
                 WHERE id = ?",
         )
         .bind(&tag.name)
         .bind(&tag.color)
+        .bind(tag.score)
         .bind(ts.now().to_ticks())
         .bind(&tag.id)
         .execute(self.db.executor())
@@ -353,9 +355,10 @@ impl Repository {
         ts: impl TimeSystem,
     ) -> Result<infused::Tag> {
         let mut tx = self.db.transaction().await?;
-        let res = query("INSERT INTO tags VALUES (NULL, ?, ?, ?, ?)")
+        let res = query("INSERT INTO tags VALUES (NULL, ?, ?, ?, ?, ?)")
             .bind(&tag.name)
             .bind(&tag.color)
+            .bind(tag.score)
             .bind(ts.now().to_ticks())
             .bind(ts.now().to_ticks())
             .execute(&mut *tx)
@@ -376,6 +379,7 @@ impl Repository {
                 id,
                 name: tag.name.clone(),
                 color: tag.color.clone(),
+                score: tag.score,
                 created_at: ts.now().to_ticks(),
                 updated_at: ts.now().to_ticks(),
             },

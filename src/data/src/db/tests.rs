@@ -377,12 +377,14 @@ async fn insert_tag_raw(
     a1: &str,
     a2: i64,
     a3: i64,
+    a4: i64,
 ) -> Result<Ref<Tag>> {
-    let res = query("INSERT INTO tags VALUES (NULL, ?, ?, ?, ?)")
+    let res = query("INSERT INTO tags VALUES (NULL, ?, ?, ?, ?, ?)")
         .bind(a0)
         .bind(a1)
         .bind(a2)
         .bind(a3)
+        .bind(a4)
         .execute(db.executor())
         .await?;
     Ok(Ref::new(res.last_insert_rowid()))
@@ -392,10 +394,10 @@ async fn insert_tag_raw(
 async fn target_apps() -> Result<()> {
     let mut db = test_db().await?;
     {
-        insert_tag_raw(&mut db, "tag_name1", "blue1", 0, 0).await?;
-        insert_tag_raw(&mut db, "tag_name2", "blue2", 0, 0).await?;
-        insert_tag_raw(&mut db, "tag_name3", "blue3", 0, 0).await?;
-        insert_tag_raw(&mut db, "tag_name4", "blue4", 0, 0).await?;
+        insert_tag_raw(&mut db, "tag_name1", "blue1", 0, 0, 0).await?;
+        insert_tag_raw(&mut db, "tag_name2", "blue2", 0, 0, 0).await?;
+        insert_tag_raw(&mut db, "tag_name3", "blue3", 0, 0, 0).await?;
+        insert_tag_raw(&mut db, "tag_name4", "blue4", 0, 0, 0).await?;
 
         insert_app_raw(
             &mut db,
@@ -805,7 +807,15 @@ pub mod arrange {
     // }
 
     pub async fn tag(db: &mut Database, mut tag: Tag) -> Result<Tag> {
-        tag.id = insert_tag_raw(db, &tag.name, &tag.color, tag.created_at, tag.updated_at).await?;
+        tag.id = insert_tag_raw(
+            db,
+            &tag.name,
+            &tag.color,
+            tag.score,
+            tag.created_at,
+            tag.updated_at,
+        )
+        .await?;
         Ok(tag)
     }
 
@@ -1874,6 +1884,7 @@ mod triggered_alerts {
                 id: Ref::default(),
                 name: "tag_name1".to_string(),
                 color: "blue1".to_string(),
+                score: 5,
                 created_at: 0,
                 updated_at: 0,
             },
@@ -1885,6 +1896,7 @@ mod triggered_alerts {
                 id: Ref::default(),
                 name: "tag_name2".to_string(),
                 color: "blue2".to_string(),
+                score: 0,
                 created_at: 0,
                 updated_at: 0,
             },
@@ -1896,6 +1908,7 @@ mod triggered_alerts {
                 id: Ref::default(),
                 name: "emptytag".to_string(),
                 color: "e1".to_string(),
+                score: -5,
                 created_at: 0,
                 updated_at: 0,
             },
