@@ -33,6 +33,9 @@ features = [
     "Win32_System_Power",
     "Win32_System_SystemServices",
     "Win32_System_WindowsProgramming",
+    "Win32_UI_Accessibility",
+    "Win32_System_Com",
+    "Win32_System_Ole",
 
     "Foundation",
     "Foundation_Collections",
