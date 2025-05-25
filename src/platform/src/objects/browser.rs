@@ -1,4 +1,4 @@
-use util::error::Result;
+use util::error::{Context, Result};
 use windows::core::VARIANT;
 use windows::Win32::System::Com::StructuredStorage::{
     PropVariantToStringAlloc, VariantToPropVariant,
@@ -37,7 +37,7 @@ impl BrowserDetector {
     }
 
     /// Get the URL of the [Window], assuming it is a Chromium browser
-    pub fn chromium_url(&self, window: &Window) -> Result<String> {
+    pub fn chromium_url(&self, window: &Window) -> Result<Option<String>> {
         let element = unsafe { self.automation.ElementFromHandle(window.hwnd)? };
 
         let variant: VARIANT = UIA_DocumentControlTypeId.0.into();
@@ -45,7 +45,12 @@ impl BrowserDetector {
             self.automation
                 .CreatePropertyCondition(UIA_ControlTypePropertyId, &variant)?
         };
-        let element = unsafe { element.FindFirst(TreeScope_Descendants, &condition)? };
+        // No matching element is Error with S_OK (wtf??????)
+        let element = match unsafe { element.FindFirst(TreeScope_Descendants, &condition) } {
+            Ok(element) => element,
+            Err(err) if err.code().is_ok() => return Ok(None),
+            Err(err) => return Err(err).context("find first element"),
+        };
 
         let url_prop = unsafe { element.GetCurrentPropertyValue(UIA_ValueValuePropertyId)? };
         let url_prop = unsafe { VariantToPropVariant(&url_prop)? };
@@ -54,6 +59,6 @@ impl BrowserDetector {
         let url = String::from_utf16_lossy(unsafe { url_raw.as_wide() });
         unsafe { CoTaskMemFree(Some(url_raw.as_ptr().cast())) };
 
-        Ok(url)
+        Ok(Some(url))
     }
 }

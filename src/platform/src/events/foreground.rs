@@ -46,7 +46,7 @@ impl ForegroundEventWatcher {
     pub fn poll(&mut self, at: Timestamp) -> Result<Option<ForegroundChangedEvent>> {
         if let Some(fg) = Window::foreground() {
             let url = if self.browser.is_chromium(&fg).warn() {
-                Some(self.browser.chromium_url(&fg)?)
+                self.browser.chromium_url(&fg).context("get chromium url")?
             } else {
                 None
             };

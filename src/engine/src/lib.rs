@@ -272,7 +272,7 @@ fn foreground_window_session() -> Result<WindowSession> {
         if let Some(window) = Window::foreground() {
             let browser = BrowserDetector::new()?;
             let url = if browser.is_chromium(&window).warn() {
-                Some(browser.chromium_url(&window)?)
+                browser.chromium_url(&window).context("get chromium url")?
             } else {
                 None
             };
