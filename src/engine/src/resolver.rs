@@ -1,6 +1,6 @@
 use data::db::{AppUpdater, DatabasePool};
 use data::entities::{App, AppIdentity, Ref};
-use platform::objects::AppInfo;
+use platform::objects::{AppInfo, WebsiteInfo};
 use rand::prelude::SliceRandom;
 use rand::rngs::ThreadRng;
 use util::error::Result;
@@ -15,6 +15,10 @@ impl AppInfoResolver {
         match identity {
             AppIdentity::Win32 { path } => AppInfo::from_win32(path).await,
             AppIdentity::Uwp { aumid } => AppInfo::from_uwp(aumid).await,
+            AppIdentity::Website { base_url } => {
+                let base_url = WebsiteInfo::url_to_base_url(base_url)?;
+                Ok(WebsiteInfo::from_base_url(base_url).await?.into())
+            }
         }
     }
 

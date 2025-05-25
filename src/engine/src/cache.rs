@@ -3,7 +3,7 @@ use std::future::Future;
 
 use data::entities::{App, Ref, Session};
 use platform::events::WindowSession;
-use platform::objects::{ProcessId, Window};
+use platform::objects::{BaseWebsiteUrl, ProcessId, Window};
 use scoped_futures::ScopedBoxFuture;
 use util::error::Result;
 use util::future as tokio;
@@ -18,6 +18,11 @@ pub struct Cache {
     // so another app could be running with the same pid after the first one closed...
     apps: HashMap<ProcessId, AppDetails>,
 
+    // This never gets cleared, but it's ok since it's a small set of urls?
+    websites: HashMap<BaseWebsiteUrl, AppDetails>,
+    // Cache of whether a window is a browser or not.
+    browsers: HashMap<Window, bool>,
+
     // An app can have many processes open representing it.
     // A process can have many windows.
     windows: HashMap<ProcessId, HashSet<Window>>,
@@ -29,12 +34,14 @@ pub struct Cache {
 pub struct SessionDetails {
     pub session: Ref<Session>,
     pub pid: ProcessId,
+    pub is_browser: bool,
 }
 
 /// Details about a [App].
 #[derive(Debug)]
 pub struct AppDetails {
     pub app: Ref<App>,
+    pub is_browser: bool,
 }
 
 impl Cache {
@@ -43,6 +50,8 @@ impl Cache {
         Self {
             sessions: HashMap::new(),
             apps: HashMap::new(),
+            websites: HashMap::new(),
+            browsers: HashMap::new(),
             windows: HashMap::new(),
             processes: HashMap::new(),
         }
@@ -68,6 +77,7 @@ impl Cache {
         self.apps.remove(&process);
         if let Some(windows) = self.windows.remove(&process) {
             self.sessions.retain(|ws, _| !windows.contains(&ws.window));
+            self.browsers.retain(|window, _| !windows.contains(&window));
         }
         self.processes.retain(|_, pids| {
             // remove pid from list, and remove the entry altogether if it's empty
@@ -80,7 +90,7 @@ impl Cache {
     /// to make a new [SessionDetails] if not found.
     pub async fn get_or_insert_session_for_window<'a>(
         &'a mut self,
-        ws: WindowSession,
+        mut ws: WindowSession,
         create: impl for<'b> FnOnce(&'b mut Self) -> ScopedBoxFuture<'a, 'b, Result<SessionDetails>>,
     ) -> Result<&'a mut SessionDetails> {
         // if-let doesn't work since the borrow lasts until end of function,
@@ -94,6 +104,11 @@ impl Cache {
         }
 
         let created = { create(self).await? };
+
+        if !created.is_browser {
+            ws.url = None;
+        }
+        self.browsers.insert(ws.window.clone(), created.is_browser);
 
         self.windows
             .entry(created.pid)
@@ -121,6 +136,25 @@ impl Cache {
             .insert(process);
 
         Ok(self.apps.entry(process).or_insert(created))
+    }
+
+    /// Get or insert a [AppDetails] for a [BaseWebsiteUrl], using the create callback
+    /// to make a new [AppDetails] if not found.
+    pub async fn get_or_insert_website_for_base_url<F: Future<Output = Result<AppDetails>>>(
+        &mut self,
+        base_url: BaseWebsiteUrl,
+        create: impl FnOnce(&mut Self) -> F,
+    ) -> Result<&mut AppDetails> {
+        if self.websites.contains_key(&base_url) {
+            return Ok(self.websites.get_mut(&base_url).unwrap());
+        }
+
+        let created = { create(self).await? };
+        Ok(self.websites.entry(base_url).or_insert(created))
+    }
+
+    pub fn is_browser(&self, window: &Window) -> Option<bool> {
+        self.browsers.get(window).copied()
     }
 
     // pub async fn get_or_insert_session_for_window(&mut self, window: Window, create: impl Future<Output = Result<SessionDetails>>) -> Result<&SessionDetails> {
@@ -170,17 +204,22 @@ async fn inner_mut_compiles() {
             WindowSession {
                 window,
                 title: "".to_string(),
+                url: None,
             },
             |cache| {
                 async move {
                     let _app = cache
                         .get_or_insert_app_for_process(process, |_| async {
-                            Ok(AppDetails { app: Ref::new(1) })
+                            Ok(AppDetails {
+                                app: Ref::new(1),
+                                is_browser: true,
+                            })
                         })
                         .await?;
                     Ok(SessionDetails {
                         session: Ref::new(1),
                         pid: process,
+                        is_browser: true,
                     })
                 }
                 .scope_boxed()
