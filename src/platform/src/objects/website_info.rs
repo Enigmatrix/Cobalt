@@ -1,4 +1,4 @@
-use reqwest::{Client, Url};
+use reqwest::{Client, RequestBuilder, Url};
 use scraper::{Html, Selector};
 use util::error::{Context, Result};
 use util::tracing::ResultTraceExt;
@@ -50,6 +50,10 @@ impl WebsiteInfo {
         })
     }
 
+    fn modify_request(rb: RequestBuilder) -> RequestBuilder {
+        rb.header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/538.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/538.36")
+    }
+
     /// Create a new [WebsiteInfo] from a base URL
     pub async fn from_base_url(base_url: BaseWebsiteUrl) -> Result<Self> {
         let url = match base_url {
@@ -68,7 +72,7 @@ impl WebsiteInfo {
 
         // Get Open Graph tags + Meta information
         let (description, site_name, logo_url) = {
-            let response = client.get(&url).send().await?;
+            let response = Self::modify_request(client.get(&url)).send().await?;
             let html = response.text().await?;
             let document = Html::parse_document(&html);
 
@@ -146,6 +150,22 @@ impl WebsiteInfo {
                 .unwrap_or_default()
                 .to_string());
         }
+        let og_title = document
+            .select(&Selector::parse("meta[property='og:title']").unwrap())
+            .next();
+        if let Some(og_site_name) = og_title {
+            return Ok(og_site_name
+                .value()
+                .attr("content")
+                .unwrap_or_default()
+                .to_string());
+        }
+
+        // let title = document.select(&Selector::parse("title").unwrap()).next();
+        // if let Some(title) = title {
+        //     return Ok(title.text().collect::<String>());
+        // }
+
         return Ok(url.to_string());
     }
 
@@ -163,7 +183,7 @@ impl WebsiteInfo {
 
     /// Get the logo of the website
     pub async fn get_logo(client: &Client, logo_url: Url) -> Result<Vec<u8>> {
-        let response = client.get(logo_url).send().await?;
+        let response = Self::modify_request(client.get(logo_url)).send().await?;
         let bytes = response.bytes().await?;
         Ok(bytes.to_vec())
     }
