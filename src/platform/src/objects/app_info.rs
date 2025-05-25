@@ -1,5 +1,7 @@
 use std::mem::swap;
 
+use rand::rngs::ThreadRng;
+use rand::seq::IndexedMutRandom;
 use util::error::{Context, Result};
 use util::tracing::ResultTraceExt;
 use windows::core::AgileReference;
@@ -19,6 +21,8 @@ pub struct AppInfo {
     pub description: String,
     /// Company
     pub company: String,
+    /// Color
+    pub color: String,
     /// Logo as bytes
     pub logo: Option<Vec<u8>>,
 }
@@ -54,6 +58,7 @@ impl AppInfo {
             name,
             description,
             company: fv.query_value("CompanyName").warn(),
+            color: random_color(),
             logo,
         })
     }
@@ -73,6 +78,7 @@ impl AppInfo {
             name: display_info.DisplayName()?.to_string_lossy(),
             description: display_info.Description()?.to_string_lossy(),
             company: package.PublisherDisplayName()?.to_string_lossy(),
+            color: random_color(),
             logo,
         })
     }
@@ -112,6 +118,21 @@ impl AppInfo {
         reader.ReadBytes(&mut logo)?;
         Ok(logo)
     }
+}
+
+/// Generate a random color
+pub fn random_color() -> String {
+    // ref: https://github.com/catppuccin/catppuccin
+    // Mocha colors
+    let mut rng = ThreadRng::default();
+
+    [
+        "#f5e0dc", "#f2cdcd", "#f5c2e7", "#cba6f7", "#f38ba8", "#eba0ac", "#fab387", "#f9e2af",
+        "#a6e3a1", "#94e2d5", "#89dceb", "#74c7ec", "#89b4fa", "#b4befe", "#cdd6f4", // Text
+    ]
+    .choose_mut(&mut rng)
+    .unwrap()
+    .to_string()
 }
 
 #[cfg(test)]

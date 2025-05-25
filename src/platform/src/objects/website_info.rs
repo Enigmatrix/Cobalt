@@ -3,7 +3,7 @@ use scraper::{Html, Selector};
 use util::error::{Context, Result};
 use util::tracing::ResultTraceExt;
 
-use super::AppInfo;
+use super::{random_color, AppInfo};
 
 /// Information about a Website
 pub struct WebsiteInfo {
@@ -11,6 +11,8 @@ pub struct WebsiteInfo {
     pub name: String,
     /// Description
     pub description: String,
+    /// Color
+    pub color: String,
     /// Logo as bytes
     pub logo: Option<Vec<u8>>,
 }
@@ -56,6 +58,7 @@ impl WebsiteInfo {
                 return Ok(WebsiteInfo {
                     name: url.clone(),
                     description: url,
+                    color: random_color(),
                     logo: None,
                 });
             }
@@ -99,6 +102,7 @@ impl WebsiteInfo {
         Ok(WebsiteInfo {
             name: site_name,
             description,
+            color: random_color(),
             logo,
         })
     }
@@ -172,6 +176,7 @@ impl From<WebsiteInfo> for AppInfo {
             description: website.description,
             // TODO: company name does not exist for websites
             company: "".to_string(),
+            color: website.color,
             logo: website.logo,
         }
     }
