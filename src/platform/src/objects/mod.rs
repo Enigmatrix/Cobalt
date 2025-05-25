@@ -8,6 +8,7 @@ mod timer;
 mod timestamp;
 mod toast;
 mod user;
+mod website_info;
 mod window;
 mod windows_hook;
 
@@ -21,5 +22,6 @@ pub use timer::*;
 pub use timestamp::*;
 pub use toast::*;
 pub use user::*;
+pub use website_info::*;
 pub use window::*;
 pub use windows_hook::*;

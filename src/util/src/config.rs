@@ -104,6 +104,9 @@ fn extract_query_content_connection_string() -> Result<()> {
 #[test]
 fn extract_engine_log_filter() -> Result<()> {
     let config = get_config()?;
-    assert_eq!("Debug", config.engine_log_filter());
+    assert_eq!(
+        "Debug,selectors=info,html5ever=info",
+        config.engine_log_filter()
+    );
     Ok(())
 }
