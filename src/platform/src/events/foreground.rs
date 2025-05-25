@@ -1,10 +1,11 @@
 use util::error::{Context, Result};
+use util::tracing::ResultTraceExt;
 
-use crate::objects::{Timestamp, Window};
-
+use crate::objects::{BrowserDetector, Timestamp, Window};
 /// Watches for foreground window changes, including session (title) changes
 pub struct ForegroundEventWatcher {
     session: WindowSession,
+    browser: BrowserDetector,
 }
 
 /// Foreground window session change event.
@@ -22,26 +23,35 @@ pub struct WindowSession {
     pub window: Window,
     /// Foreground [Window] title
     pub title: String,
+    /// Foreground [Window] URL, if Browser
+    pub url: Option<String>,
 }
 
 impl WindowSession {
     /// Create a new [WindowSession] from a [Window].
-    pub fn new(window: Window) -> Result<Self> {
+    pub fn new(window: Window, url: Option<String>) -> Result<Self> {
         let title = window.title()?;
-        Ok(Self { window, title })
+        Ok(Self { window, title, url })
     }
 }
 
 impl ForegroundEventWatcher {
     /// Create a new [WindowSession] with the starting [WindowSession].
     pub fn new(session: WindowSession) -> Result<Self> {
-        Ok(Self { session })
+        let browser = BrowserDetector::new()?;
+        Ok(Self { session, browser })
     }
 
     /// Poll for a new [`ForegroundChangedEvent`].
     pub fn poll(&mut self, at: Timestamp) -> Result<Option<ForegroundChangedEvent>> {
         if let Some(fg) = Window::foreground() {
-            let session = WindowSession::new(fg).context("foreground window session")?;
+            let url = if self.browser.is_chromium(&fg).warn() {
+                Some(self.browser.chromium_url(&fg)?)
+            } else {
+                None
+            };
+
+            let session = WindowSession::new(fg, url).context("foreground window session")?;
             if session == self.session {
                 return Ok(None);
             }
