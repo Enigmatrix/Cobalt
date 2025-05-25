@@ -45,7 +45,7 @@ async fn insert_new_app() -> Result<()> {
             (
                 r.get("initialized_at"),
                 r.get("created_at"),
-                r.get("identity_path_or_aumid"),
+                r.get("identity_text0"),
             )
         })
         .fetch_all(writer.db.executor())
@@ -89,7 +89,7 @@ async fn found_old_app() -> Result<()> {
             (
                 r.get("initialized_at"),
                 r.get("created_at"),
-                r.get("identity_path_or_aumid"),
+                r.get("identity_text0"),
             )
         })
         .fetch_all(writer.db.executor())
@@ -115,6 +115,7 @@ async fn insert_session() -> Result<()> {
         id: Default::default(),
         app_id: Ref::new(1),
         title: "TITLE".to_string(),
+        url: None,
     };
     writer.insert_session(&mut sess).await?;
 
@@ -142,6 +143,7 @@ async fn insert_usage() -> Result<()> {
         id: Default::default(),
         app_id: Ref::new(1),
         title: "TITLE".to_string(),
+        url: None,
     };
     writer.insert_session(&mut sess).await?;
     let mut usage = Usage {
@@ -175,6 +177,7 @@ async fn update_usage_after_insert_usage() -> Result<()> {
         id: Default::default(),
         app_id: Ref::new(1),
         title: "TITLE".to_string(),
+        url: None,
     };
     writer.insert_session(&mut sess).await?;
     let mut usage = Usage {
@@ -728,6 +731,7 @@ pub mod arrange {
             match &app.identity {
                 AppIdentity::Win32 { path } => path,
                 AppIdentity::Uwp { aumid } => aumid,
+                AppIdentity::Website { base_url } => base_url,
             },
             app.icon.clone(),
             0,
@@ -755,6 +759,7 @@ pub mod arrange {
             match &app.identity {
                 AppIdentity::Win32 { path } => path,
                 AppIdentity::Uwp { aumid } => aumid,
+                AppIdentity::Website { base_url } => base_url,
             },
             app.icon.clone(),
             0,
@@ -766,9 +771,10 @@ pub mod arrange {
     }
 
     pub async fn session(db: &mut Database, mut session: Session) -> Result<Session> {
-        let res = query("INSERT INTO sessions VALUES (NULL, ?, ?)")
+        let res = query("INSERT INTO sessions VALUES (NULL, ?, ?, ?)")
             .bind(session.app_id.clone())
             .bind(session.title.clone())
+            .bind(session.url.clone())
             .execute(db.executor())
             .await?;
         session.id = Ref::new(res.last_insert_rowid());
@@ -983,6 +989,7 @@ mod triggered_alerts {
                 id: Ref::default(),
                 app_id: app.id.clone(),
                 title: "title".to_string(),
+                url: None,
             },
         )
         .await?;
@@ -1046,6 +1053,7 @@ mod triggered_alerts {
                 id: Ref::default(),
                 app_id: app.id.clone(),
                 title: "title".to_string(),
+                url: None,
             },
         )
         .await?;
@@ -1127,6 +1135,7 @@ mod triggered_alerts {
                 id: Ref::default(),
                 app_id: app.id.clone(),
                 title: "title".to_string(),
+                url: None,
             },
         )
         .await?;
@@ -1225,6 +1234,7 @@ mod triggered_alerts {
                 id: Ref::default(),
                 app_id: app.id.clone(),
                 title: "title".to_string(),
+                url: None,
             },
         )
         .await?;
@@ -1324,6 +1334,7 @@ mod triggered_alerts {
                 id: Ref::default(),
                 app_id: app.id.clone(),
                 title: "title".to_string(),
+                url: None,
             },
         )
         .await?;
@@ -1416,6 +1427,7 @@ mod triggered_alerts {
                 id: Ref::default(),
                 app_id: app.id.clone(),
                 title: "title".to_string(),
+                url: None,
             },
         )
         .await?;
@@ -1508,6 +1520,7 @@ mod triggered_alerts {
                 id: Ref::default(),
                 app_id: app.id.clone(),
                 title: "title".to_string(),
+                url: None,
             },
         )
         .await?;
@@ -1589,6 +1602,7 @@ mod triggered_alerts {
                 id: Ref::default(),
                 app_id: app.id.clone(),
                 title: "title".to_string(),
+                url: None,
             },
         )
         .await?;
@@ -1670,6 +1684,7 @@ mod triggered_alerts {
                 id: Ref::default(),
                 app_id: app.id.clone(),
                 title: "title".to_string(),
+                url: None,
             },
         )
         .await?;
@@ -1777,6 +1792,7 @@ mod triggered_alerts {
                 id: Ref::default(),
                 app_id: app.id.clone(),
                 title: "title".to_string(),
+                url: None,
             },
         )
         .await?;
@@ -1973,6 +1989,7 @@ mod triggered_alerts {
                 id: Ref::default(),
                 app_id: app1.id.clone(),
                 title: "title".to_string(),
+                url: None,
             },
         )
         .await?
@@ -1995,6 +2012,7 @@ mod triggered_alerts {
                 id: Ref::default(),
                 app_id: app2.id.clone(),
                 title: "title2".to_string(),
+                url: None,
             },
         )
         .await?
@@ -2017,6 +2035,7 @@ mod triggered_alerts {
                 id: Ref::default(),
                 app_id: app3.id.clone(),
                 title: "title3".to_string(),
+                url: None,
             },
         )
         .await?
@@ -2039,6 +2058,7 @@ mod triggered_alerts {
                 id: Ref::default(),
                 app_id: app4.id.clone(),
                 title: "title4".to_string(),
+                url: None,
             },
         )
         .await?
@@ -2182,6 +2202,7 @@ mod triggered_reminders {
                 id: Ref::default(),
                 app_id: app.id.clone(),
                 title: "title".to_string(),
+                url: None,
             },
         )
         .await?;

@@ -123,7 +123,7 @@ impl UsageWriter {
         let (app_id, found): (Ref<App>, bool) = query_as(
             // We set found=1 to force this query to return a result row regardless of
             // conflict result.
-            "INSERT INTO apps (identity_is_win32, identity_path_or_aumid, created_at, updated_at) VALUES (?, ?, ?, ?) ON CONFLICT
+            "INSERT INTO apps (identity_tag, identity_text0, created_at, updated_at) VALUES (?, ?, ?, ?) ON CONFLICT
                 DO UPDATE SET found = 1 RETURNING id, found",
         )
         .bind(tag)
@@ -142,9 +142,10 @@ impl UsageWriter {
 
     /// Insert a [Session] into the [Database]
     pub async fn insert_session(&mut self, session: &mut Session) -> Result<()> {
-        let res = query("INSERT INTO sessions VALUES (NULL, ?, ?)")
+        let res = query("INSERT INTO sessions VALUES (NULL, ?, ?, ?)")
             .bind(&session.app_id)
             .bind(&session.title)
+            .bind(&session.url)
             .execute(self.db.executor())
             .await?;
         session.id = Ref::new(res.last_insert_rowid());
@@ -198,8 +199,9 @@ impl UsageWriter {
 
     fn destructure_identity(identity: &AppIdentity) -> (i64, &str) {
         match identity {
-            AppIdentity::Win32 { path } => (1, path),
             AppIdentity::Uwp { aumid } => (0, aumid),
+            AppIdentity::Win32 { path } => (1, path),
+            AppIdentity::Website { base_url } => (2, base_url),
         }
     }
 }
@@ -228,7 +230,7 @@ impl AppUpdater {
     /// Get all [App]s that need to be updated
     pub async fn get_apps_to_update(&mut self) -> Result<Vec<UnresolvedApp>> {
         let apps = query_as(
-            "SELECT id, identity_is_win32, identity_path_or_aumid FROM apps WHERE initialized_at IS NULL",
+            "SELECT id, identity_tag, identity_text0 FROM apps WHERE initialized_at IS NULL",
         )
         .fetch_all(self.db.executor())
         .await?;

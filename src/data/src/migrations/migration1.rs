@@ -39,8 +39,8 @@ impl Migration for Migration1 {
                 company                         TEXT,
                 color                           TEXT,
                 tag_id                          INTEGER REFERENCES tags(id) ON DELETE SET NULL,
-                identity_is_win32               INTEGER NOT NULL,
-                identity_path_or_aumid          TEXT NOT NULL,
+                identity_tag                    INTEGER NOT NULL,
+                identity_text0                  TEXT NOT NULL,
                 icon                            BLOB,
                 created_at                      INTEGER NOT NULL,
                 initialized_at                  INTEGER,
@@ -55,7 +55,8 @@ impl Migration for Migration1 {
             "CREATE TABLE sessions (
                 id                              INTEGER PRIMARY KEY NOT NULL,
                 app_id                          INTEGER NOT NULL REFERENCES apps(id),
-                title                           TEXT NOT NULL
+                title                           TEXT NOT NULL,
+                url                             TEXT
             )",
         )
         .await
@@ -160,11 +161,9 @@ impl Migration for Migration1 {
             .await
             .context("create index interaction_period")?;
 
-        tx.execute(
-            "CREATE UNIQUE INDEX app_identity ON apps(identity_is_win32, identity_path_or_aumid)",
-        )
-        .await
-        .context("create unique index app_identity")?;
+        tx.execute("CREATE UNIQUE INDEX app_identity ON apps(identity_tag, identity_text0)")
+            .await
+            .context("create unique index app_identity")?;
 
         tx.commit().await.context("commit transaction")?;
         Ok(())

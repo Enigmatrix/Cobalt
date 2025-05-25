@@ -42,25 +42,31 @@ pub struct App {
 #[serde(rename_all = "camelCase")]
 #[serde(tag = "tag")]
 pub enum AppIdentity {
-    /// Win32 App
-    Win32 {
-        /// Path of the Win32 App
-        path: String,
-    },
     /// UWP App
     Uwp {
         /// AUMID of the UWP App
         aumid: String,
     },
+    /// Win32 App
+    Win32 {
+        /// Path of the Win32 App
+        path: String,
+    },
+    /// Website
+    Website {
+        /// Base URL of the Website
+        base_url: String,
+    },
 }
 
 impl FromRow<'_, SqliteRow> for AppIdentity {
     fn from_row(row: &SqliteRow) -> Result<Self> {
-        let text0 = row.get("identity_path_or_aumid");
-        Ok(if row.get("identity_is_win32") {
-            AppIdentity::Win32 { path: text0 }
-        } else {
-            AppIdentity::Uwp { aumid: text0 }
+        let text0 = row.get("identity_text0");
+        Ok(match row.get("identity_tag") {
+            0 => AppIdentity::Uwp { aumid: text0 },
+            1 => AppIdentity::Win32 { path: text0 },
+            2 => AppIdentity::Website { base_url: text0 },
+            _ => panic!("Unknown identity type"),
         })
     }
 }
@@ -99,6 +105,8 @@ pub struct Session {
     pub app_id: Ref<App>,
     /// Title of Session
     pub title: String,
+    /// URL of Session, if app is a browser
+    pub url: Option<String>,
 }
 
 /// Continuous usage of [App] in a [Session]

@@ -241,6 +241,7 @@ impl Repository {
             session_id: Ref<Session>,
             usage_id: Ref<Usage>,
             session_title: String,
+            session_url: Option<String>,
             start: Timestamp,
             end: Timestamp,
         }
@@ -251,6 +252,7 @@ impl Repository {
                 u.session_id AS session_id,
                 u.id AS usage_id,
                 s.title AS session_title,
+                s.url AS session_url,
                 MAX(u.start, p.start) AS start,
                 MIN(u.end, p.end) AS end
             FROM usages u, (SELECT ? AS start, ? AS end) p
@@ -272,6 +274,7 @@ impl Repository {
                 .or_insert_with(|| infused::Session {
                     id: session_id,
                     title: usage.session_title,
+                    url: usage.session_url,
                     start: usage.start,
                     end: usage.end,
                     usages: Vec::new(),

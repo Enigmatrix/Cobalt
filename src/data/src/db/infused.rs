@@ -371,6 +371,8 @@ pub struct Session {
     pub id: Ref<super::Session>,
     /// Title of Session
     pub title: String,
+    /// URL of Session
+    pub url: Option<String>,
     /// Minimum Usage of Usages
     pub start: Timestamp,
     /// Maximum Usage of Usages
