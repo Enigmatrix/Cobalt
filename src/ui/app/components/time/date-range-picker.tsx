@@ -115,6 +115,7 @@ export function DateRangePicker({
   // normally incredibly dangerous and can lead to infinite loops.
   // but react uses Object.is to check for changes and it's safe here
   useEffect(() => {
+    setError(null);
     setInnerInner(value);
   }, [value]);
 
