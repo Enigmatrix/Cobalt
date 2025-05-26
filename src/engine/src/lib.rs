@@ -13,7 +13,9 @@ use engine::{Engine, Event};
 use platform::events::{
     ForegroundEventWatcher, InteractionWatcher, SystemEventWatcher, WindowSession,
 };
-use platform::objects::{EventLoop, MessageWindow, Timer, Timestamp, User, Window};
+use platform::objects::{
+    BrowserDetector, EventLoop, MessageWindow, Timer, Timestamp, User, Window,
+};
 use resolver::AppInfoResolver;
 use sentry::Sentry;
 use util::channels::{self, Receiver, Sender};
@@ -173,7 +175,10 @@ fn processor(
     event_rx: Receiver<Event>,
     alert_rx: Receiver<Timestamp>,
 ) -> Result<()> {
-    let rt = Builder::new_current_thread().enable_time().build()?;
+    let rt = Builder::new_current_thread()
+        .enable_time()
+        .enable_io()
+        .build()?;
     // let rt = Builder::new_multi_thread().enable_all().build()?;
 
     let cache = Arc::new(Mutex::new(cache::Cache::new()));
@@ -265,7 +270,14 @@ async fn update_app_infos(db_pool: DatabasePool, handle: Handle) -> Result<()> {
 fn foreground_window_session() -> Result<WindowSession> {
     loop {
         if let Some(window) = Window::foreground() {
-            return WindowSession::new(window);
+            let browser = BrowserDetector::new()?;
+            let url = if browser.is_chromium(&window).warn() {
+                browser.chromium_url(&window).context("get chromium url")?
+            } else {
+                None
+            };
+
+            return WindowSession::new(window, url).context("manual foreground window session");
         }
         // This method *MUST* be synchronous, so we use the synchronous version of sleep.
         // There is no blocking or potential for a race condition here because the

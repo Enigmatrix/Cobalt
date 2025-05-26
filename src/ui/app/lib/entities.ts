@@ -22,7 +22,8 @@ export interface WithGroupedDuration<T> {
 
 export type AppIdentity =
   | { tag: "uwp"; aumid: string }
-  | { tag: "win32"; path: string };
+  | { tag: "win32"; path: string }
+  | { tag: "website"; baseUrl: string };
 
 export interface ValuePerPeriod<T> {
   today: T;
@@ -45,6 +46,7 @@ export interface App {
 export interface Session {
   id: Ref<Session>;
   title: string;
+  url?: string;
   start: Timestamp;
   end: Timestamp;
   usages: Usage[];

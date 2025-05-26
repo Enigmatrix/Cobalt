@@ -13,6 +13,5 @@ workspace = true
 [dependencies]
 data = { path = "../data" }
 platform = { path = "../platform" }
-rand = { version = "0.8.5", features = ["std_rng"] }
-scoped-futures = "0.1.4"
 util = { path = "../util" }
+scoped-futures = "0.1.4"

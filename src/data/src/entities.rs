@@ -42,25 +42,34 @@ pub struct App {
 #[serde(rename_all = "camelCase")]
 #[serde(tag = "tag")]
 pub enum AppIdentity {
+    /// UWP App
+    #[serde(rename_all = "camelCase")]
+    Uwp {
+        /// AUMID of the UWP App
+        aumid: String,
+    },
     /// Win32 App
+    #[serde(rename_all = "camelCase")]
     Win32 {
         /// Path of the Win32 App
         path: String,
     },
-    /// UWP App
-    Uwp {
-        /// AUMID of the UWP App
-        aumid: String,
+    /// Website
+    #[serde(rename_all = "camelCase")]
+    Website {
+        /// Base URL of the Website
+        base_url: String,
     },
 }
 
 impl FromRow<'_, SqliteRow> for AppIdentity {
     fn from_row(row: &SqliteRow) -> Result<Self> {
-        let text0 = row.get("identity_path_or_aumid");
-        Ok(if row.get("identity_is_win32") {
-            AppIdentity::Win32 { path: text0 }
-        } else {
-            AppIdentity::Uwp { aumid: text0 }
+        let text0 = row.get("identity_text0");
+        Ok(match row.get("identity_tag") {
+            0 => AppIdentity::Uwp { aumid: text0 },
+            1 => AppIdentity::Win32 { path: text0 },
+            2 => AppIdentity::Website { base_url: text0 },
+            _ => panic!("Unknown identity type"),
         })
     }
 }
@@ -99,6 +108,8 @@ pub struct Session {
     pub app_id: Ref<App>,
     /// Title of Session
     pub title: String,
+    /// URL of Session, if app is a browser
+    pub url: Option<String>,
 }
 
 /// Continuous usage of [App] in a [Session]
@@ -151,11 +162,13 @@ pub struct SystemEvent {
 #[serde(tag = "tag")]
 pub enum Target {
     /// [App] Target
+    #[serde(rename_all = "camelCase")]
     App {
         /// App Identifier
         id: Ref<App>,
     },
     /// [Tag] Target
+    #[serde(rename_all = "camelCase")]
     Tag {
         /// Tag Identifier
         id: Ref<Tag>,
@@ -204,11 +217,13 @@ pub enum TriggerAction {
     /// Kill the offending App / App in Tags
     Kill,
     /// Dim the windows of the offending App / App in Tags
+    #[serde(rename_all = "camelCase")]
     Dim {
         /// Duration to dim over
         duration: Duration,
     },
     /// Send a message to the user as a Toast notification
+    #[serde(rename_all = "camelCase")]
     Message {
         /// Contents of the Message
         content: String,

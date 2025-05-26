@@ -7,8 +7,9 @@ use windows::Win32::System::Com::CoTaskMemFree;
 use windows::Win32::System::Com::StructuredStorage::PropVariantToStringAlloc;
 use windows::Win32::UI::Shell::PropertiesSystem::{IPropertyStore, SHGetPropertyStoreForWindow};
 use windows::Win32::UI::WindowsAndMessaging::{
-    GetForegroundWindow, GetWindowTextLengthW, GetWindowTextW, GetWindowThreadProcessId,
-    SetLayeredWindowAttributes, SetWindowLongW, GWL_EXSTYLE, LWA_ALPHA, WS_EX_LAYERED,
+    GetClassNameW, GetForegroundWindow, GetWindowTextLengthW, GetWindowTextW,
+    GetWindowThreadProcessId, SetLayeredWindowAttributes, SetWindowLongW, GWL_EXSTYLE, LWA_ALPHA,
+    WS_EX_LAYERED,
 };
 
 use crate::buf::{buf, Buffer, WideBuffer};
@@ -26,7 +27,7 @@ use crate::win32;
 /// Representation of a [`Window`] on the user's desktop
 #[derive(Clone, PartialEq, Eq)]
 pub struct Window {
-    hwnd: HWND,
+    pub(crate) hwnd: HWND,
 }
 
 impl std::fmt::Debug for Window {
@@ -84,6 +85,13 @@ impl Window {
             buf.with_length(written as usize).to_string_lossy()
         };
         Ok(title)
+    }
+
+    /// Get the class name of the [Window]
+    pub fn class(&self) -> Result<String> {
+        let mut buf = buf(256);
+        let written = win32!(val: unsafe { GetClassNameW(self.hwnd, buf.as_bytes()) })?;
+        Ok(buf.with_length(written as usize).to_string_lossy())
     }
 
     /// Get the [AUMID](https://learn.microsoft.com/en-us/windows/win32/shell/appids) of the [Window]

@@ -165,10 +165,12 @@ function AlertListItem({ alert }: { alert: Alert }) {
                 {appTag && <MiniTagItem tag={appTag} />}
               </div>
               <span className="inline-flex gap-1 items-center text-xs text-card-foreground/50">
-                <Text className="max-w-48">{app.company}</Text>
+                {app.identity.tag !== "website" && (
+                  <Text className="max-w-48">{app.company}</Text>
+                )}
                 {app.description && (
                   <>
-                    <p>|</p>
+                    {app.identity.tag !== "website" && <p>|</p>}
                     <Text className="max-w-[40rem]">{app.description}</Text>
                   </>
                 )}

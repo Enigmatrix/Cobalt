@@ -597,6 +597,7 @@ async fn usages(db: &mut Database, app_id: Ref<App>, usages: Vec<(i64, i64)>) ->
                 id: Ref::new(0),
                 app_id: app_id.clone(),
                 title: "".to_string(),
+                url: None,
             },
         )
         .await?

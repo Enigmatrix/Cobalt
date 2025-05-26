@@ -7,12 +7,16 @@ pub mod events;
 /// Objects in the Platform
 pub mod objects;
 
-use util::error::Result;
+use util::error::{Context, Result};
+use windows::Win32::System::Com::{CoInitializeEx, COINIT_MULTITHREADED};
 
 use crate::objects::Timestamp;
 
 /// Setup platform for Windows
 pub fn setup() -> Result<()> {
     Timestamp::setup()?;
+    unsafe { CoInitializeEx(None, COINIT_MULTITHREADED) }
+        .ok()
+        .context("com init")?;
     Ok(())
 }

@@ -374,6 +374,11 @@ export function Gantt({
           {hoverUsage?.session && (
             <div className="flex flex-col">
               <Text>{hoverUsage.session.title}</Text>
+              {hoverUsage.session.url && (
+                <Text className="text-muted-foreground text-xs">
+                  {hoverUsage.session.url}
+                </Text>
+              )}
               <div className="flex items-center text-muted-foreground gap-1 text-xs">
                 <DateTimeText ticks={hoverUsage.session.start} /> -
                 <DateTimeText ticks={hoverUsage.session.end} />
@@ -486,9 +491,9 @@ export function Gantt({
                   onClick={() => toggleApp(app.id)}
                 >
                   {expanded[app.id] ? (
-                    <ChevronDown size={20} />
+                    <ChevronDown size={20} className="flex-shrink-0" />
                   ) : (
-                    <ChevronRight size={20} />
+                    <ChevronRight size={20} className="flex-shrink-0" />
                   )}
                   <AppIcon
                     buffer={app.icon}
@@ -503,7 +508,11 @@ export function Gantt({
                       key={session.id}
                       className="p-4 border-t border-r h-[68px]"
                     >
-                      <Text className="text-sm">{session.title}</Text>
+                      <Text className="text-sm">
+                        {session.url
+                          ? `${session.title} - ${session.url}`
+                          : session.title}
+                      </Text>
                       <div className="text-xs text-muted-foreground">
                         {formatTime(
                           ticksToDateTime(session.start),

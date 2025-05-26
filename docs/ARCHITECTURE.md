@@ -142,8 +142,8 @@ erDiagram
         text            company
         text            color
         int_nullable    tag_id FK
-        int             identity_is_win32     UK "UNIQUE(is_win32, path_or_aumid)"
-        text            identity_path_or_aumid   UK "UNIQUE(is_win32, path_or_aumid)"
+        int             identity_tag     UK "UNIQUE(identity_tag, identity_text0)"
+        text            identity_text0   UK "UNIQUE(identity_tag, identity_text0)"
         blob_nullable   icon
         int             created_at
         int_nullable    initialized_at "set if details are set"
@@ -162,6 +162,7 @@ erDiagram
         int             id PK
         int             app_id FK
         text            title
+        text_nullable   url
     }
 
     usages {

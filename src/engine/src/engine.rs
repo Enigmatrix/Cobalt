@@ -7,7 +7,9 @@ use data::entities::{
 use platform::events::{
     ForegroundChangedEvent, InteractionChangedEvent, SystemStateEvent, WindowSession,
 };
-use platform::objects::{Process, ProcessId, Timestamp, Window};
+use platform::objects::{
+    BaseWebsiteUrl, BrowserDetector, Process, ProcessId, Timestamp, WebsiteInfo, Window,
+};
 use scoped_futures::ScopedFutureExt;
 use util::error::{Context, Result};
 use util::future::runtime::Handle;
@@ -184,10 +186,17 @@ impl Engine {
     /// Get the [Session] details for the given [WindowSession]
     async fn get_session_details(
         &mut self,
-        ws: WindowSession,
+        mut ws: WindowSession,
         at: Timestamp,
     ) -> Result<Ref<Session>> {
         let mut cache = self.cache.lock().await;
+
+        // If window is browser (assume true if unknown), then we need the url.
+        // Else set the url to None.
+        if !cache.is_browser(&ws.window).unwrap_or(true) {
+            ws.url = None;
+        }
+
         let session_details = cache
             .get_or_insert_session_for_window(ws.clone(), |cache| {
                 async {
@@ -204,6 +213,9 @@ impl Engine {
                 .scope_boxed()
             })
             .await?;
+        // if !session_details.is_browser {
+        //     ws.url = None;
+        // }
 
         Ok(session_details.session.clone())
     }
@@ -214,28 +226,49 @@ impl Engine {
         db_pool: DatabasePool,
         inserter: &mut UsageWriter,
         spawner: &Handle,
-        ws: WindowSession,
+        mut ws: WindowSession,
         at: Timestamp,
     ) -> Result<SessionDetails> {
         trace!(?ws, "insert session");
 
         let pid = ws.window.pid()?;
-        let AppDetails { app } = cache
-            .get_or_insert_app_for_process(pid, |_| async {
-                Self::create_app_for_process(inserter, db_pool, spawner, pid, &ws.window, at).await
-            })
-            .await?;
+        let (mut app, is_browser) = {
+            let db_pool = db_pool.clone();
+            let AppDetails { app, is_browser } = cache
+                .get_or_insert_app_for_process(pid, |_| async {
+                    Self::create_app_for_process(inserter, db_pool, spawner, pid, &ws.window, at)
+                        .await
+                })
+                .await?;
+            (app.clone(), *is_browser)
+        };
+
+        if !is_browser {
+            ws.url = None;
+        }
+
+        if let Some(url) = &ws.url {
+            let base_url = WebsiteInfo::url_to_base_url(url).context("url to base url")?;
+            let AppDetails { app: web_app, .. } = cache
+                .get_or_insert_website_for_base_url(base_url.clone(), |_| async {
+                    Self::create_app_for_base_url(inserter, db_pool, spawner, base_url, at).await
+                })
+                .await?;
+            app = web_app.clone();
+        }
 
         let mut session = Session {
             id: Default::default(),
-            app_id: app.clone(),
+            app_id: app,
             title: ws.title,
+            url: ws.url,
         };
         inserter.insert_session(&mut session).await?;
 
         Ok(SessionDetails {
             session: session.id,
             pid,
+            is_browser,
         })
     }
 
@@ -251,8 +284,9 @@ impl Engine {
         trace!(?window, ?pid, "create/find app for process");
 
         let process = Process::new(pid)?;
-
         let path = process.path()?;
+        let is_browser = BrowserDetector::is_browser(&path);
+
         let identity = if process.is_uwp(Some(&path))? {
             AppIdentity::Uwp {
                 aumid: window.aumid()?,
@@ -283,6 +317,51 @@ impl Engine {
                 id
             }
         };
-        Ok(AppDetails { app: app_id })
+        Ok(AppDetails {
+            app: app_id,
+            is_browser,
+        })
+    }
+
+    async fn create_app_for_base_url(
+        inserter: &mut UsageWriter,
+        db_pool: DatabasePool,
+        spawner: &Handle,
+        base_url: BaseWebsiteUrl,
+        at: Timestamp,
+    ) -> std::result::Result<AppDetails, util::error::Error> {
+        trace!(?base_url, "create/find app for base url");
+
+        let identity = AppIdentity::Website {
+            base_url: base_url.to_string(),
+        };
+        let found_app = inserter.find_or_insert_app(&identity, at).await?;
+
+        let app_id = match found_app {
+            FoundOrInserted::Found(id) => id,
+            FoundOrInserted::Inserted(id) => {
+                {
+                    info!(?base_url, "inserted app for website");
+
+                    let id = id.clone();
+
+                    spawner.spawn(async move {
+                        AppInfoResolver::update_app(db_pool, id.clone(), identity.clone())
+                            .await
+                            .with_context(|| {
+                                format!("update app({:?}, {:?}) (website) with info", id, identity)
+                            })
+                            .error();
+                    });
+                }
+
+                id
+            }
+        };
+        // this is a website, not a browser
+        Ok(AppDetails {
+            app: app_id,
+            is_browser: false,
+        })
     }
 }

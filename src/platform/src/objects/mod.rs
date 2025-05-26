@@ -1,4 +1,5 @@
 mod app_info;
+mod browser;
 mod event_loop;
 mod file_version_info;
 mod message_window;
@@ -7,10 +8,12 @@ mod timer;
 mod timestamp;
 mod toast;
 mod user;
+mod website_info;
 mod window;
 mod windows_hook;
 
 pub use app_info::*;
+pub use browser::*;
 pub use event_loop::*;
 pub use file_version_info::*;
 pub use message_window::*;
@@ -19,5 +22,6 @@ pub use timer::*;
 pub use timestamp::*;
 pub use toast::*;
 pub use user::*;
+pub use website_info::*;
 pub use window::*;
 pub use windows_hook::*;
