@@ -7,7 +7,7 @@ import {
   PopoverContent,
 } from "@/components/ui/popover";
 import type { ClassValue } from "clsx";
-import { DateTime } from "luxon";
+import { DateTime, Duration } from "luxon";
 import {
   useCallback,
   useEffect,
@@ -27,6 +27,9 @@ type DateRangePickerProps = {
   render?: ReactNode;
   dayGranularity?: boolean;
   className?: ClassValue;
+  min?: DateTime;
+  max?: DateTime;
+  maxRange?: Duration;
 };
 
 type QuickRange = {
@@ -88,17 +91,23 @@ function generateQuickRanges(today: DateTime): QuickRange[] {
   ];
 }
 
+const defaultMaxRange = Duration.fromObject({ years: 100 });
+
 export function DateRangePicker({
   value,
   onChange,
   render,
   dayGranularity = false,
   className,
+  min,
+  max,
+  maxRange = defaultMaxRange,
 }: DateRangePickerProps) {
   const today = useToday();
   const quickRanges = useMemo(() => generateQuickRanges(today), [today]);
 
   const [open, setOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // source of truth for the date range picker's controls
   // value but can be partially-filled
@@ -111,14 +120,40 @@ export function DateRangePicker({
 
   const setInner = useCallback(
     (partial: Partial<Interval> | null) => {
+      setError(null);
+
       setInnerInner(partial);
-      if (partial?.start && partial?.end) {
-        onChange({ start: partial.start, end: partial.end });
-      } else {
+      if (!partial?.start || !partial?.end) {
         onChange(null);
+        return;
       }
+
+      // Validate start < end
+      if (partial.start > partial.end) {
+        setError("Start date must be before end date");
+        return;
+      }
+
+      // Validate min/max constraints
+      if (min && partial.start < min) {
+        setError(`Start date cannot be before ${toHumanDateTime(min)}`);
+        return;
+      }
+      if (max && partial.end > max) {
+        setError(`End date cannot be after ${toHumanDateTime(max)}`);
+        return;
+      }
+
+      // Validate max range
+      const range = partial.end.diff(partial.start);
+      if (range > maxRange) {
+        setError(`Date range cannot exceed ${maxRange.toHuman()}`);
+        return;
+      }
+
+      onChange({ start: partial.start, end: partial.end });
     },
-    [onChange, setInnerInner],
+    [onChange, min, max, maxRange],
   );
 
   const calendarValue = useMemo(
@@ -190,67 +225,84 @@ export function DateRangePicker({
           </Button>
         )}
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0 flex" align="start">
-        <div className="flex flex-col">
-          <div className="flex">
-            <div className="flex-1 p-4">
-              <Label>From</Label>
-              <Input
-                type={dayGranularity ? "date" : "datetime-local"}
-                step={dayGranularity ? undefined : "1"}
-                className="mt-2 [&:not(dark)]:[color-scheme:light] dark:[color-scheme:dark]"
-                value={startStr}
-                onChange={(e) => setStartStr(e.target.value)}
-              />
-            </div>
-            <div className="flex-1 p-4">
-              <Label>To</Label>
-              <Input
-                type={dayGranularity ? "date" : "datetime-local"}
-                step={dayGranularity ? undefined : "1"}
-                className="mt-2 [&:not(dark)]:[color-scheme:light] dark:[color-scheme:dark]"
-                value={endStr}
-                onChange={(e) => setEndStr(e.target.value)}
-              />
-            </div>
+      <PopoverContent className="w-auto p-0 flex-col" align="start">
+        {error && (
+          <div className="p-2 text-sm text-destructive bg-destructive/10">
+            {error}
           </div>
-          <Calendar
-            initialFocus
-            mode="range"
-            defaultMonth={value?.start.toJSDate()}
-            selected={calendarValue}
-            onSelect={setCalendarValue}
-            numberOfMonths={2}
-          />
-        </div>
-        <div className="flex flex-col p-2 gap-2">
-          {quickRanges.map((range) => (
+        )}
+        <div className="flex">
+          <div className="flex flex-col">
+            <div className="flex">
+              <div className="flex-1 p-4">
+                <Label>From</Label>
+                <Input
+                  type={dayGranularity ? "date" : "datetime-local"}
+                  step={dayGranularity ? undefined : "1"}
+                  className="mt-2 [&:not(dark)]:[color-scheme:light] dark:[color-scheme:dark]"
+                  value={startStr}
+                  onChange={(e) => setStartStr(e.target.value)}
+                  min={min ? htmlFormat(min, dayGranularity) : undefined}
+                  max={max ? htmlFormat(max, dayGranularity) : undefined}
+                />
+              </div>
+              <div className="flex-1 p-4">
+                <Label>To</Label>
+                <Input
+                  type={dayGranularity ? "date" : "datetime-local"}
+                  step={dayGranularity ? undefined : "1"}
+                  className="mt-2 [&:not(dark)]:[color-scheme:light] dark:[color-scheme:dark]"
+                  value={endStr}
+                  onChange={(e) => setEndStr(e.target.value)}
+                  min={min ? htmlFormat(min, dayGranularity) : undefined}
+                  max={max ? htmlFormat(max, dayGranularity) : undefined}
+                />
+              </div>
+            </div>
+            <Calendar
+              initialFocus
+              mode="range"
+              defaultMonth={value?.start.toJSDate()}
+              selected={calendarValue}
+              onSelect={setCalendarValue}
+              numberOfMonths={2}
+              disabled={(date) => {
+                const dateTime = DateTime.fromJSDate(date);
+                if (min && dateTime < min) return true;
+                if (max && dateTime > max) return true;
+                return false;
+              }}
+            />
+          </div>
+          <div className="flex flex-col p-2 gap-2">
+            {quickRanges.map((range) => (
+              <Button
+                key={range.label}
+                variant="outline"
+                size="sm"
+                className="w-full justify-end min-w-32"
+                onClick={() => {
+                  setInner({
+                    start: range.start,
+                    end: range.end,
+                  });
+                  setOpen(false);
+                }}
+              >
+                {range.label}
+              </Button>
+            ))}
             <Button
-              key={range.label}
-              variant="outline"
+              variant="destructive"
               size="sm"
-              className="w-full justify-end min-w-32"
               onClick={() => {
-                setInner({
-                  start: range.start,
-                  end: range.end,
-                });
+                setInner(null);
                 setOpen(false);
               }}
             >
-              {range.label}
+              Clear
             </Button>
-          ))}
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={() => {
-              setInner(null);
-              setOpen(false);
-            }}
-          >
-            Clear
-          </Button>
+          </div>
         </div>
       </PopoverContent>
     </Popover>
