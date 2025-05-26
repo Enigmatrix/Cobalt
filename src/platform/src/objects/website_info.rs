@@ -1,3 +1,5 @@
+use std::fmt;
+
 use reqwest::{Client, RequestBuilder, Url};
 use scraper::{Html, Selector};
 use util::error::{Context, Result};
@@ -26,12 +28,11 @@ pub enum BaseWebsiteUrl {
     NonHttp(String),
 }
 
-impl BaseWebsiteUrl {
-    /// Convert a base URL to a string
-    pub fn to_string(&self) -> String {
+impl fmt::Display for BaseWebsiteUrl {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            BaseWebsiteUrl::Http(url) => url.clone(),
-            BaseWebsiteUrl::NonHttp(url) => url.clone(),
+            BaseWebsiteUrl::Http(url) => write!(f, "{}", url),
+            BaseWebsiteUrl::NonHttp(url) => write!(f, "{}", url),
         }
     }
 }
@@ -123,7 +124,7 @@ impl WebsiteInfo {
         let logo = match logo_url {
             Ok(logo_url) => Self::get_logo(&client, logo_url)
                 .await
-                .map(|logo| Some(logo))
+                .map(Option::Some)
                 .context("get logo")
                 .warn(),
             logo_url => {
@@ -206,7 +207,7 @@ impl WebsiteInfo {
             .and_then(|el| el.value().attr("href").map(|s| s.to_string()))
             .unwrap_or_else(|| "/favicon.ico".to_string());
 
-        let logo_url = Url::parse(&url)?.join(&favicon_url)?;
+        let logo_url = Url::parse(url)?.join(&favicon_url)?;
         Ok(logo_url)
     }
 

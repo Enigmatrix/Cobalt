@@ -240,7 +240,7 @@ impl Engine {
                         .await
                 })
                 .await?;
-            (app.clone(), is_browser.clone())
+            (app.clone(), *is_browser)
         };
 
         if !is_browser {

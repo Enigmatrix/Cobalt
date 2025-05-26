@@ -77,7 +77,7 @@ impl Cache {
         self.apps.remove(&process);
         if let Some(windows) = self.windows.remove(&process) {
             self.sessions.retain(|ws, _| !windows.contains(&ws.window));
-            self.browsers.retain(|window, _| !windows.contains(&window));
+            self.browsers.retain(|window, _| !windows.contains(window));
         }
         self.processes.retain(|_, pids| {
             // remove pid from list, and remove the entry altogether if it's empty
