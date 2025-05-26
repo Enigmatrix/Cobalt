@@ -486,9 +486,9 @@ export function Gantt({
                   onClick={() => toggleApp(app.id)}
                 >
                   {expanded[app.id] ? (
-                    <ChevronDown size={20} />
+                    <ChevronDown size={20} className="flex-shrink-0" />
                   ) : (
-                    <ChevronRight size={20} />
+                    <ChevronRight size={20} className="flex-shrink-0" />
                   )}
                   <AppIcon
                     buffer={app.icon}
