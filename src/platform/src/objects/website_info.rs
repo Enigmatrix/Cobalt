@@ -109,8 +109,8 @@ impl WebsiteInfo {
             let mut site_name = Self::get_site_name(&url, &document)
                 .context("get site name")
                 .warn();
-            if site_name == String::default() {
-                site_name = url.to_string();
+            if site_name.is_empty() {
+                site_name = Self::pretty_url_host(&url)?;
             }
 
             let description = Self::get_description(&document)
