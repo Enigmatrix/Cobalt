@@ -27,7 +27,8 @@ impl BrowserDetector {
     /// Check if the path is a browser
     pub fn is_browser(path: &str) -> bool {
         let browsers = ["chrome.exe", "msedge.exe"];
-        browsers.iter().any(|browser| path.ends_with(browser))
+        let path_lower = path.to_lowercase();
+        browsers.iter().any(|browser| path_lower.ends_with(browser))
     }
 
     /// Check if the [Window] is a Chromium browser
