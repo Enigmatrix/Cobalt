@@ -1,6 +1,5 @@
 use std::mem::swap;
 
-use rand::rngs::ThreadRng;
 use rand::seq::IndexedMutRandom;
 use util::error::{Context, Result};
 use util::tracing::ResultTraceExt;
@@ -124,7 +123,7 @@ impl AppInfo {
 pub fn random_color() -> String {
     // ref: https://github.com/catppuccin/catppuccin
     // Mocha colors
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
 
     [
         "#f5e0dc", "#f2cdcd", "#f5c2e7", "#cba6f7", "#f38ba8", "#eba0ac", "#fab387", "#f9e2af",
