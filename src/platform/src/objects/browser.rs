@@ -59,6 +59,10 @@ impl BrowserDetector {
         let url = String::from_utf16_lossy(unsafe { url_raw.as_wide() });
         unsafe { CoTaskMemFree(Some(url_raw.as_ptr().cast())) };
 
-        Ok(Some(url))
+        if url.is_empty() {
+            Ok(None)
+        } else {
+            Ok(Some(url))
+        }
     }
 }
