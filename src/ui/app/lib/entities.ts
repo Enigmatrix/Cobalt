@@ -46,6 +46,7 @@ export interface App {
 export interface Session {
   id: Ref<Session>;
   title: string;
+  url?: string;
   start: Timestamp;
   end: Timestamp;
   usages: Usage[];
