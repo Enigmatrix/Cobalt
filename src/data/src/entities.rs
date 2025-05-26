@@ -43,16 +43,19 @@ pub struct App {
 #[serde(tag = "tag")]
 pub enum AppIdentity {
     /// UWP App
+    #[serde(rename_all = "camelCase")]
     Uwp {
         /// AUMID of the UWP App
         aumid: String,
     },
     /// Win32 App
+    #[serde(rename_all = "camelCase")]
     Win32 {
         /// Path of the Win32 App
         path: String,
     },
     /// Website
+    #[serde(rename_all = "camelCase")]
     Website {
         /// Base URL of the Website
         base_url: String,
@@ -159,11 +162,13 @@ pub struct SystemEvent {
 #[serde(tag = "tag")]
 pub enum Target {
     /// [App] Target
+    #[serde(rename_all = "camelCase")]
     App {
         /// App Identifier
         id: Ref<App>,
     },
     /// [Tag] Target
+    #[serde(rename_all = "camelCase")]
     Tag {
         /// Tag Identifier
         id: Ref<Tag>,
@@ -212,11 +217,13 @@ pub enum TriggerAction {
     /// Kill the offending App / App in Tags
     Kill,
     /// Dim the windows of the offending App / App in Tags
+    #[serde(rename_all = "camelCase")]
     Dim {
         /// Duration to dim over
         duration: Duration,
     },
     /// Send a message to the user as a Toast notification
+    #[serde(rename_all = "camelCase")]
     Message {
         /// Contents of the Message
         content: String,

@@ -156,7 +156,9 @@ export default function App({ params }: Route.ComponentProps) {
                       className="min-w-0"
                     />
                   </div>
-                  <Text className="text-muted-foreground">{app.company}</Text>
+                  {app.identity.tag !== "website" && (
+                    <Text className="text-muted-foreground">{app.company}</Text>
+                  )}
                 </div>
                 <div className="flex-1" />
                 <ColorPicker
@@ -181,13 +183,19 @@ export default function App({ params }: Route.ComponentProps) {
               {/* App Identity */}
               <div className="text-sm inline-flex border-border border rounded-lg overflow-hidden max-w-fit min-w-0 bg-muted/30 items-center">
                 <div className="bg-muted px-3 py-1.5 border-r border-border font-medium">
-                  {app.identity.tag === "uwp" ? "UWP" : "Win32"}
+                  {app.identity.tag === "uwp"
+                    ? "UWP"
+                    : app.identity.tag === "win32"
+                      ? "Win32"
+                      : "Web"}
                 </div>
 
                 <Text className="font-mono pl-3 pr-1 py-1.5 text-muted-foreground">
                   {app.identity.tag === "uwp"
                     ? app.identity.aumid
-                    : app.identity.path}
+                    : app.identity.tag === "win32"
+                      ? app.identity.path
+                      : app.identity.baseUrl}
                 </Text>
                 <Button
                   variant="ghost"
@@ -196,7 +204,9 @@ export default function App({ params }: Route.ComponentProps) {
                     copy(
                       app.identity.tag === "uwp"
                         ? app.identity.aumid
-                        : app.identity.path,
+                        : app.identity.tag === "win32"
+                          ? app.identity.path
+                          : app.identity.baseUrl,
                     )
                   }
                 >

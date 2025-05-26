@@ -135,10 +135,12 @@ pub struct Tag {
 #[serde(tag = "tag")]
 pub enum AlertTriggerStatus {
     /// Hit
+    #[serde(rename_all = "camelCase")]
     Hit {
         /// Timestamp
         timestamp: Timestamp,
     },
+    #[serde(rename_all = "camelCase")]
     /// Ignored
     Ignored {
         /// Timestamp
@@ -166,11 +168,13 @@ impl FromRow<'_, SqliteRow> for AlertTriggerStatus {
 #[serde(tag = "tag")]
 pub enum ReminderTriggerStatus {
     /// Hit
+    #[serde(rename_all = "camelCase")]
     Hit {
         /// Timestamp
         timestamp: Timestamp,
     },
     /// Ignored
+    #[serde(rename_all = "camelCase")]
     Ignored {
         /// Timestamp
         timestamp: Timestamp,
