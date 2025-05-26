@@ -62,6 +62,7 @@ export interface Tag {
   id: Ref<Tag>;
   name: string;
   color: string;
+  score: number;
   apps: Ref<App>[];
   usages: ValuePerPeriod<Duration>;
 }
