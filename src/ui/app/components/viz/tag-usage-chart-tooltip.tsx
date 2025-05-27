@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import { cn } from "@/lib/utils";
 import _ from "lodash";
 import type { Ref, Tag } from "@/lib/entities";
-import { type EntityMap } from "@/lib/state";
+import { untagged, type EntityMap } from "@/lib/state";
 import { DateTime } from "luxon";
 import { DurationText } from "@/components/time/duration-text";
 import { DateTimeText } from "@/components/time/time-text";
@@ -19,7 +19,7 @@ function HoverCard({
   tag: Tag;
   usageTicks: number;
   totalUsageTicks?: number;
-  at: DateTime;
+  at: DateTime | undefined;
 }) {
   return (
     <div className="flex items-center gap-2 py-2">
@@ -29,7 +29,12 @@ function HoverCard({
       />
       <div className="flex flex-col">
         <Text className="text-base max-w-52">{tag.name}</Text>
-        <DateTimeText className="text-xs text-muted-foreground" datetime={at} />
+        {at && (
+          <DateTimeText
+            className="text-xs text-muted-foreground"
+            datetime={at}
+          />
+        )}
       </div>
 
       <div className="flex-1"></div>
@@ -50,7 +55,7 @@ export const TagUsageChartTooltipContent = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<"div"> & {
     payload: EntityMap<Tag, number>;
-    dt: DateTime;
+    dt?: DateTime;
     hideIndicator?: boolean;
     maximumTags?: number;
     hoveredTagId: Ref<Tag> | null;
@@ -79,7 +84,14 @@ export const TagUsageChartTooltipContent = React.forwardRef<
       () => (singleTagId ? undefined : _(payload).values().sum()),
       [singleTagId, payload],
     );
-    const involvedTags = useTags(involvedTagIds);
+    const involvedTagsWithoutUntagged = useTags(involvedTagIds);
+    const involvedTags = useMemo(
+      () => [
+        ...involvedTagsWithoutUntagged,
+        ...(payload[untagged.id] ? [untagged] : []),
+      ],
+      [involvedTagsWithoutUntagged, payload],
+    );
     const involvedTagSorted = useMemo(
       () =>
         _(involvedTags)
