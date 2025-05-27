@@ -5,6 +5,7 @@ import * as SliderPrimitive from "@radix-ui/react-slider";
 
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/components/theme-provider";
+import { Colors } from "@/components/tag/score";
 
 function ScoreSlider({
   className,
@@ -62,20 +63,14 @@ function ScoreSlider({
         data-slot="slider-track"
         className={cn(
           "relative grow overflow-hidden rounded-full data-[orientation=horizontal]:h-1.5 data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-1.5",
-          {
-            "bg-red-300": theme !== "dark",
-            "bg-red-800": theme === "dark",
-          },
+          Colors.worst,
         )}
       >
         <SliderPrimitive.Range
           data-slot="slider-range"
           className={cn(
             "absolute data-[orientation=horizontal]:h-full data-[orientation=vertical]:w-full",
-            {
-              "bg-green-300": theme !== "dark",
-              "bg-green-800": theme === "dark",
-            },
+            Colors.best,
           )}
         />
       </SliderPrimitive.Track>
