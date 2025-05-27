@@ -6,7 +6,7 @@ import {
   BreadcrumbPage,
   BreadcrumbList,
 } from "@/components/ui/breadcrumb";
-import { useMemo, useState } from "react";
+import { useMemo, useState, createContext, useContext } from "react";
 import { DateTime, Duration } from "luxon";
 import { Label } from "@/components/ui/label";
 import { DateRangePicker } from "@/components/time/date-range-picker";
@@ -40,52 +40,110 @@ import { FormItem } from "@/components/ui/form";
 
 type View = "app-usage" | "session-history";
 
+type HistoryContextType = ReturnType<typeof useIntervalControlsWithDefault>;
+const HistoryContext = createContext<HistoryContextType | null>(null);
+
+function useHistoryContext() {
+  const context = useContext(HistoryContext);
+  if (!context) {
+    throw new Error("useHistoryContext must be used within a HistoryProvider");
+  }
+  return context;
+}
+
 export default function History() {
   const [view, setView] = useState<View>("app-usage");
   const fullPage = useMemo(() => view === "session-history", [view]);
+  const { interval, setInterval, canGoNext, goNext, canGoPrev, goPrev } =
+    useIntervalControlsWithDefault("week");
+
+  const historyContextValue = useMemo(
+    () => ({
+      interval,
+      setInterval,
+      canGoNext,
+      goNext,
+      canGoPrev,
+      goPrev,
+    }),
+    [interval, setInterval, canGoNext, goNext, canGoPrev, goPrev],
+  );
 
   return (
-    <div className="flex flex-col bg-background h-screen overflow-hidden">
-      <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-        <SidebarTrigger className="-ml-1" />
-        <Separator orientation="vertical" className="mr-2 h-4" />
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbPage>History</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-        <div className="ml-2">
-          <Select value={view} onValueChange={(v) => setView(v as View)}>
-            <SelectTrigger className="gap-2">
-              <SelectValue placeholder="Select a view" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="app-usage">Grouped Usages</SelectItem>
-              <SelectItem value="session-history">Sessions & Usages</SelectItem>
-            </SelectContent>
-          </Select>
+    <HistoryContext.Provider value={historyContextValue}>
+      <div className="flex flex-col bg-background h-screen overflow-hidden">
+        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+          <SidebarTrigger className="-ml-1" />
+          <Separator orientation="vertical" className="mr-2 h-4" />
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbPage>History</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+          <div className="ml-2">
+            <Select value={view} onValueChange={(v) => setView(v as View)}>
+              <SelectTrigger className="gap-2">
+                <SelectValue placeholder="Select a view" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="app-usage">Grouped Usages</SelectItem>
+                <SelectItem value="session-history">
+                  Sessions & Usages
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex-1" />
+
+          <div className="flex gap-1 items-center">
+            <Button
+              variant="ghost"
+              size="icon"
+              disabled={!canGoPrev}
+              onClick={goPrev}
+            >
+              <ChevronLeftIcon className="size-4" />
+            </Button>
+            <FormItem>
+              <DateRangePicker
+                value={interval}
+                onChange={setInterval}
+                dayGranularity={true}
+                className="w-full min-w-32"
+              />
+            </FormItem>
+            <Button
+              variant="ghost"
+              size="icon"
+              disabled={!canGoNext}
+              onClick={goNext}
+            >
+              <ChevronRightIcon className="size-4" />
+            </Button>
+          </div>
+        </header>
+        <div
+          className={cn("flex flex-col flex-1 gap-6 p-4", {
+            "overflow-hidden": !fullPage,
+            "overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]":
+              fullPage,
+          })}
+        >
+          {view === "app-usage" && <AppUsagePerPeriodHistory />}
+          {view === "session-history" && <SessionHistory />}
         </div>
-      </header>
-      <div
-        className={cn("flex flex-col flex-1 gap-6 p-4", {
-          "overflow-hidden": !fullPage,
-          "overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]":
-            fullPage,
-        })}
-      >
-        {view === "app-usage" && <AppUsagePerPeriodHistory />}
-        {view === "session-history" && <SessionHistory />}
       </div>
-    </div>
+    </HistoryContext.Provider>
   );
 }
 
 function AppUsagePerPeriodHistory() {
   const [period, setPeriod] = useState<Period>("day");
   const { interval, setInterval, canGoNext, goNext, canGoPrev, goPrev } =
-    useIntervalControlsWithDefault("week");
+    useHistoryContext();
 
   const {
     isLoading,
@@ -150,38 +208,6 @@ function AppUsagePerPeriodHistory() {
             </SelectContent>
           </Select>
         </FormItem>
-
-        <div className="flex gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            disabled={!canGoPrev}
-            onClick={goPrev}
-            className="mt-5.5"
-          >
-            <ChevronLeftIcon className="size-4" />
-          </Button>
-          <FormItem>
-            <Label className="font-medium text-muted-foreground place-self-end">
-              Time Range
-            </Label>
-            <DateRangePicker
-              value={interval}
-              onChange={setInterval}
-              dayGranularity={true}
-              className="w-full min-w-32"
-            />
-          </FormItem>
-          <Button
-            variant="ghost"
-            size="icon"
-            disabled={!canGoNext}
-            onClick={goNext}
-            className="mt-5.5"
-          >
-            <ChevronRightIcon className="size-4" />
-          </Button>
-        </div>
       </div>
 
       <div className="flex flex-1 min-h-0 overflow-hidden rounded-lg bg-card shadow-xs border border-border">
@@ -211,7 +237,7 @@ function AppUsagePerPeriodHistory() {
 function SessionHistory() {
   const week = usePeriodInterval("week");
   const { interval, setInterval, canGoNext, goNext, canGoPrev, goPrev } =
-    useIntervalControlsWithDefault("week");
+    useHistoryContext();
 
   const effectiveInterval = interval ?? week;
 
@@ -233,48 +259,6 @@ function SessionHistory() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap gap-6 items-center rounded-lg bg-card border border-border p-4 shadow-xs">
-        {/* <div className="flex flex-col gap-1.5">
-          <Label className="font-medium text-muted-foreground">Usage</Label>
-          <DurationText ticks={totalUsage} className="text-lg font-semibold" />
-        </div> */}
-        {(usagesLoading ||
-          interactionPeriodsLoading ||
-          systemEventsLoading) && <Loader2 className="animate-spin w-4 h-4" />}
-        <div className="flex-1 md:min-w-0" />
-        <div className="flex gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            disabled={!canGoPrev}
-            onClick={goPrev}
-            className="mt-5.5"
-          >
-            <ChevronLeftIcon className="size-4" />
-          </Button>
-          <FormItem>
-            <Label className="font-medium text-muted-foreground place-self-end">
-              Time Range
-            </Label>
-            <DateRangePicker
-              value={interval}
-              onChange={setInterval}
-              dayGranularity={true}
-              className="w-full min-w-32"
-            />
-          </FormItem>
-          <Button
-            variant="ghost"
-            size="icon"
-            disabled={!canGoNext}
-            onClick={goNext}
-            className="mt-5.5"
-          >
-            <ChevronRightIcon className="size-4" />
-          </Button>
-        </div>
-      </div>
-
       <div className="flex flex-1 min-h-0 rounded-lg bg-card shadow-xs border border-border">
         <div className="max-w-full">
           <Gantt
