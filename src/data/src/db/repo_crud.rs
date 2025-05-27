@@ -309,7 +309,8 @@ impl Repository {
             "UPDATE tags SET
                     name = ?,
                     color = ?,
-                    score = ?
+                    score = ?,
+                    updated_at = ?
                 WHERE id = ?",
         )
         .bind(&tag.name)

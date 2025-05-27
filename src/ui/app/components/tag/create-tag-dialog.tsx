@@ -114,10 +114,14 @@ export function CreateTagDialog({ onSubmit, trigger }: CreateTagDialogProps) {
               name="score"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="h-8">
-                    Score -{" "}
-                    <span className="text-sm text-muted-foreground">
+                  <FormLabel className="h-8 text-sm gap-2 flex items-center">
+                    Score
+                    <div>-</div>
+                    <span className="text-sm text-muted-foreground min-w-0 truncate">
                       {getScoreDescription(field.value)}
+                    </span>
+                    <span className="text-sm text-muted-foreground">
+                      ({field.value})
                     </span>
                     {field.value !== 0 && (
                       <Button

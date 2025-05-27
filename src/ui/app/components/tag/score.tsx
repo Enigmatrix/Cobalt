@@ -8,10 +8,18 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { ScoreSlider } from "@/components/tag/score-slider";
+import { FormLabel } from "@/components/ui/form";
+import { Button } from "@/components/ui/button";
 
 export const Colors = {
   best: "bg-green-300 dark:bg-green-800",
-  neutral: "bg-gray-300 dark:bg-gray-800",
+  neutral: "bg-gray-300 dark:bg-gray-600",
   worst: "bg-red-400 dark:bg-red-800",
 };
 
@@ -49,7 +57,7 @@ export function ScoreCircle({
           />
         </TooltipTrigger>
         <TooltipContent>
-          <Text>{getScoreDescription(score)}</Text>
+          <Text>{`${getScoreDescription(score)} (${score})`}</Text>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
@@ -68,18 +76,20 @@ export function ScoreBadge({
   return (
     <div
       className={cn(
-        "pl-1 pr-2 py-0.5 flex items-center gap-1 rounded-full border border-border bg-muted/50 text-xs",
+        "pl-2 pr-1 py-0.5 flex items-center gap-2 rounded-full border border-border bg-muted/50 hover:bg-muted text-xs",
+        "ring-offset-background transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+        "disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none",
         className,
       )}
     >
+      <Text className="text-muted-foreground">
+        {getScoreDescription(score)}
+      </Text>
       <ScoreCircle
         score={score}
         className={cn("size-4", circleClassName)}
         hoverTooltip={false}
       />
-      <Text className="text-muted-foreground">
-        {getScoreDescription(score)}
-      </Text>
     </div>
   );
 }
@@ -123,5 +133,44 @@ export function ScoreWrapper({
       />
       <div className="relative">{children}</div>
     </div>
+  );
+}
+
+export function ScoreEdit({
+  score,
+  onScoreChange,
+  className,
+  children,
+}: {
+  score: number;
+  onScoreChange: (score: number) => void;
+  className?: ClassValue;
+  children?: React.ReactNode;
+}) {
+  return (
+    <Popover>
+      <PopoverTrigger className={cn(className)}>{children}</PopoverTrigger>
+      <PopoverContent align="start" className="p-4">
+        <div className="h-8 mb-3 text-sm gap-2 flex items-center">
+          Score
+          <div>-</div>
+          <span className="text-sm text-muted-foreground min-w-0 truncate">
+            {getScoreDescription(score)}
+          </span>
+          <span className="text-sm text-muted-foreground">({score})</span>
+          {score !== 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="px-2 py-1 h-6 m-0 text-xs"
+              onClick={() => onScoreChange(0)}
+            >
+              Reset
+            </Button>
+          )}
+        </div>
+        <ScoreSlider value={score} onValueChange={onScoreChange} />
+      </PopoverContent>
+    </Popover>
   );
 }
