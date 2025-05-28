@@ -35,6 +35,7 @@ import {
 import type { z } from "zod";
 import type { tagSchema } from "@/lib/schema";
 import { ScoreCircle } from "@/components/tag/score";
+import { MiniTagItem } from "@/components/app/choose-multi-apps";
 
 export function ChooseTarget({
   onValueChanged: onValueChangedInner,
@@ -141,6 +142,7 @@ export function ChooseTarget({
                 >
                   <AppIcon buffer={app.icon} className="w-4 h-4 shrink-0" />
                   <Text>{app.name}</Text>
+                  <MiniTagItem tagId={app.tagId} />
                 </CommandItem>
               ))}
               {allApps.length === 0 && (

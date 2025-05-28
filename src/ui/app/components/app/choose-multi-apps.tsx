@@ -24,7 +24,7 @@ import { Button } from "@/components/ui/button";
 import { ScoreCircle } from "@/components/tag/score";
 import { Badge } from "@/components/ui/badge";
 
-function MiniTagItem({ tagId }: { tagId: Ref<Tag> | null }) {
+export function MiniTagItem({ tagId }: { tagId: Ref<Tag> | null }) {
   const tag = useTag(tagId);
   return (
     tag && (
