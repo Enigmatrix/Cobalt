@@ -251,7 +251,9 @@ export function VerticalLegend({
                           buffer={app.icon}
                           className="h-4 w-4 shrink-0"
                         />
-                        <Text className="text-sm">{app.name}</Text>
+                        <Text className="text-sm text-muted-foreground">
+                          {app.name}
+                        </Text>
                       </div>
                     );
                   })}
