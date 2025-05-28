@@ -4,7 +4,6 @@ import * as React from "react";
 import * as SliderPrimitive from "@radix-ui/react-slider";
 
 import { cn } from "@/lib/utils";
-import { useTheme } from "@/components/theme-provider";
 import { Colors } from "@/components/tag/score";
 
 function ScoreSlider({
@@ -24,7 +23,6 @@ function ScoreSlider({
   value?: number;
   onValueChange?: (value: number) => void;
 }) {
-  const { theme } = useTheme();
   const _values = React.useMemo(
     () =>
       value !== undefined

@@ -14,7 +14,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { ScoreSlider } from "@/components/tag/score-slider";
-import { FormLabel } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 
 export const Colors = {
