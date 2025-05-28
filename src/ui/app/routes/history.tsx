@@ -225,7 +225,7 @@ function AppUsagePerPeriodHistory() {
         />
 
         <VerticalLegend
-          className="max-w-[300px] w-[280px] h-full overflow-y-auto p-2 border-l [scrollbar-gutter:stable]"
+          className="max-w-[300px] w-[280px] h-full overflow-y-auto p-2 border-l"
           uncheckedApps={uncheckedApps}
           setUncheckedApps={setUncheckedApps}
         />
