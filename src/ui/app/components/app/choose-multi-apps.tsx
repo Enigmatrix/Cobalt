@@ -21,21 +21,25 @@ import AppIcon from "@/components/app/app-icon";
 import { AppBadge } from "@/components/app/app-list-item";
 import { PopoverAnchor } from "@radix-ui/react-popover";
 import { Button } from "@/components/ui/button";
+import { ScoreCircle } from "@/components/tag/score";
+import { Badge } from "@/components/ui/badge";
 
-function MiniTagItem({ tagId }: { tagId: Ref<Tag> | null }) {
+export function MiniTagItem({ tagId }: { tagId: Ref<Tag> | null }) {
   const tag = useTag(tagId);
   return (
     tag && (
-      <div
+      <Badge
+        variant="outline"
         style={{
           borderColor: tag.color,
           color: tag.color,
           backgroundColor: "rgba(255, 255, 255, 0.2)",
         }}
-        className="text-xs px-2 py-0.5 -my-0.5 rounded-full border whitespace-nowrap min-w-0 text-muted-foreground ml-1 truncate"
+        className="whitespace-nowrap min-w-0 -my-0.5 px-2 py-0.5 rounded-full border"
       >
-        {tag.name}
-      </div>
+        <Text className="max-w-32">{tag.name}</Text>
+        <ScoreCircle score={tag.score} className="ml-2 -mr-1" />
+      </Badge>
     )
   );
 }

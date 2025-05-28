@@ -45,6 +45,7 @@ import {
 import { usePeriodInterval } from "@/hooks/use-time";
 import { Gantt } from "@/components/viz/gantt";
 import { ChooseTag } from "@/components/tag/choose-tag";
+import { ScoreCircle } from "@/components/tag/score";
 
 export default function App({ params }: Route.ComponentProps) {
   const id = +params.id;
@@ -292,8 +293,9 @@ function TagSelect({
       }}
       className={cn("whitespace-nowrap", className)}
     >
-      <NavLink to={`/tags/${tagId}`} className="min-w-0">
+      <NavLink to={`/tags/${tagId}`} className="min-w-0 flex items-center">
         <Text className="max-w-32">{tag.name}</Text>
+        <ScoreCircle score={tag.score} className="ml-2" />
       </NavLink>
       <ChooseTag
         value={tagId}

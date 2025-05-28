@@ -154,6 +154,7 @@ erDiagram
         int             id PK
         text            name UK
         text            color
+        int             score
         int             created_at
         int             updated_at
     }

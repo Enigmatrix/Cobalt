@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { NoTags, NoTagsFound } from "@/components/empty-states";
 import type { z } from "zod";
 import type { tagSchema } from "@/lib/schema";
+import { ScoreCircle } from "@/components/tag/score";
 
 export function ChooseTag({
   value,
@@ -84,6 +85,7 @@ export function ChooseTag({
                   style={{ color: tag.color }}
                 />
                 <Text>{tag.name}</Text>
+                <ScoreCircle score={tag.score} />
               </CommandItem>
             ))}
 

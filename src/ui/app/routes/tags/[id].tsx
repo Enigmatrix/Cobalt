@@ -15,7 +15,7 @@ import type { App, Ref, Tag } from "@/lib/entities";
 import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
 import { useCallback, useMemo, useState } from "react";
 import { DateTime } from "luxon";
-import { useTag } from "@/hooks/use-refresh";
+import { useAlerts, useTag } from "@/hooks/use-refresh";
 import {
   type Period,
   hour24Formatter,
@@ -52,6 +52,7 @@ import { NavLink, useNavigate } from "react-router";
 import { usePeriodInterval } from "@/hooks/use-time";
 import { Gantt } from "@/components/viz/gantt";
 import { ChooseMultiApps } from "@/components/app/choose-multi-apps";
+import { ScoreBadge, ScoreEdit } from "@/components/tag/score";
 
 export default function Tag({ params }: Route.ComponentProps) {
   const id = +params.id;
@@ -61,8 +62,13 @@ export default function Tag({ params }: Route.ComponentProps) {
   const updateTagApps = useAppState((state) => state.updateTagApps);
 
   const [color, setColorInner] = useState(tag.color);
+  const [score, setScoreInner] = useState(tag.score);
   const debouncedUpdateColor = useDebouncedCallback(async (color: string) => {
     await updateTag({ ...tag, color });
+  }, 500);
+
+  const debouncedUpdateScore = useDebouncedCallback(async (score: number) => {
+    await updateTag({ ...tag, score });
   }, 500);
 
   const setColor = useCallback(
@@ -73,6 +79,14 @@ export default function Tag({ params }: Route.ComponentProps) {
     [setColorInner, debouncedUpdateColor],
   );
 
+  const setScore = useCallback(
+    async (score: number) => {
+      setScoreInner(score);
+      await debouncedUpdateScore(score);
+    },
+    [setScoreInner, debouncedUpdateScore],
+  );
+
   const navigate = useNavigate();
   const remove = useCallback(async () => {
     await navigate("/tags");
@@ -81,6 +95,15 @@ export default function Tag({ params }: Route.ComponentProps) {
 
   const yearInitInterval = usePeriodInterval("year");
   const [yearInterval, setYearInterval] = useState(yearInitInterval);
+
+  const alerts = useAlerts();
+  const tagAlerts = useMemo(
+    () =>
+      alerts.filter(
+        (alert) => alert.target.tag === "tag" && alert.target.id === tag.id,
+      ),
+    [alerts, tag],
+  );
 
   const {
     isLoading: isYearDataLoading,
@@ -168,7 +191,7 @@ export default function Tag({ params }: Route.ComponentProps) {
                   className="w-12 h-12 shrink-0"
                   style={{ color: tag.color }}
                 />
-                <div className="min-w-0 shrink flex flex-col">
+                <div className="min-w-0 shrink flex flex-col gap-2">
                   <div className="min-w-0 flex gap-4">
                     <EditableText
                       text={tag.name}
@@ -179,6 +202,16 @@ export default function Tag({ params }: Route.ComponentProps) {
                       }
                     />
                   </div>
+                  <ScoreEdit
+                    score={score}
+                    onScoreChange={setScore}
+                    className="self-start min-w-0"
+                  >
+                    <ScoreBadge
+                      className="text-sm py-0.5 pl-3 pr-2 min-w-0 rounded-md"
+                      score={score}
+                    />
+                  </ScoreEdit>
                 </div>
                 <div className="flex-1" />
                 <ColorPicker
@@ -196,8 +229,11 @@ export default function Tag({ params }: Route.ComponentProps) {
                     <AlertDialogHeader>
                       <AlertDialogTitle>Remove Tag?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        This action cannot be undone. All Apps using this Tag
-                        will be marked as Untagged.
+                        This action cannot be undone.
+                        {tag.apps.length > 0 &&
+                          ` ${tag.apps.length} App${tag.apps.length === 1 ? "" : "s"} using this Tag will be marked as Untagged.`}
+                        {tagAlerts.length > 0 &&
+                          ` ${tagAlerts.length} Alert${tagAlerts.length === 1 ? "" : "s"} using this Tag (and their Reminders and history) will be removed.`}
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

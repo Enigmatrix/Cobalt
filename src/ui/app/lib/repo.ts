@@ -23,6 +23,7 @@ import { dateTimeToTicks, type Period } from "@/lib/time";
 export interface CreateTag {
   name: string;
   color: string;
+  score: number;
   apps: Ref<App>[];
 }
 
@@ -174,6 +175,7 @@ export async function updateTag(tag: Tag): Promise<void> {
     id: tag.id,
     name: tag.name,
     color: tag.color,
+    score: tag.score,
   };
   return await invoke("update_tag", { tag: updatedTag });
 }

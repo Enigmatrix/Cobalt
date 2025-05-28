@@ -9,6 +9,7 @@ import { DateTimeText } from "@/components/time/time-text";
 import { useTags } from "@/hooks/use-refresh";
 import { TagIcon } from "lucide-react";
 import { Text } from "@/components/ui/text";
+import { ScoreCircle } from "@/components/tag/score";
 
 function HoverCard({
   tag,
@@ -28,7 +29,10 @@ function HoverCard({
         style={{ color: tag.color }}
       />
       <div className="flex flex-col">
-        <Text className="text-base max-w-52">{tag.name}</Text>
+        <div className="flex items-center gap-2">
+          <Text className="text-base max-w-52">{tag.name}</Text>
+          <ScoreCircle score={tag.score} />
+        </div>
         <DateTimeText className="text-xs text-muted-foreground" datetime={at} />
       </div>
 
@@ -144,14 +148,17 @@ export const TagUsageChartTooltipContent = React.forwardRef<
                       )}
                       <div className="flex flex-1 justify-between items-center">
                         <div className="grid gap-1.5">
-                          <Text
-                            className={cn({
-                              "text-muted-foreground":
-                                !highlightedTagIds?.includes(tag.id),
-                            })}
-                          >
-                            {tag.name}
-                          </Text>
+                          <div className="flex items-center gap-2">
+                            <Text
+                              className={cn({
+                                "text-muted-foreground":
+                                  !highlightedTagIds?.includes(tag.id),
+                              })}
+                            >
+                              {tag.name}
+                            </Text>
+                            <ScoreCircle score={tag.score} />
+                          </div>
                         </div>
                         <DurationText
                           className="font-mono font-medium tabular-nums text-foreground ml-2 shrink-0"

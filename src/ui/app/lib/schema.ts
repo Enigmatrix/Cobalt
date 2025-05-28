@@ -13,6 +13,7 @@ export const tagSchema = z.object({
   name: z.string().min(1, "Name is required"),
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Invalid color format"),
   apps: refSchema<App>().array(),
+  score: z.number().min(-100).max(100),
 });
 
 export const reminderSchema = z.object({

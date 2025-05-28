@@ -44,6 +44,7 @@ import { useAppDurationsPerPeriod } from "@/hooks/use-repo";
 import { SortDirection } from "@/hooks/use-sort";
 import { usePeriodInterval } from "@/hooks/use-time";
 import { NoApps, NoAppsFound } from "@/components/empty-states";
+import { ScoreCircle } from "@/components/tag/score";
 
 export function MiniTagItem({
   tag,
@@ -63,6 +64,7 @@ export function MiniTagItem({
       className={cn("whitespace-nowrap min-w-0", className)}
     >
       <Text className="max-w-32">{tag.name}</Text>
+      <ScoreCircle score={tag.score} className="ml-2 -mr-1" />
     </Badge>
   );
 }

@@ -46,6 +46,7 @@ import { Button } from "@/components/ui/button";
 import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
 import { CreateTagDialog } from "@/components/tag/create-tag-dialog";
 import { NoTags, NoTagsFound } from "@/components/empty-states";
+import { ScoreBadge } from "@/components/tag/score";
 
 export function MiniAppItem({
   app,
@@ -157,6 +158,7 @@ export default function Tags() {
               onValueChange={(v) => setSortProperty(v as SortProperty)}
             >
               <DropdownMenuRadioItem value="name">Name</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="score">Score</DropdownMenuRadioItem>
               <DropdownMenuRadioItem value="usages.today">
                 Usage Today
               </DropdownMenuRadioItem>
@@ -264,7 +266,10 @@ function TagListItem({
       />
 
       <div className="flex flex-col min-w-0 gap-1">
-        <Text className="text-lg font-semibold max-w-72">{tag.name}</Text>
+        <div className="flex items-center gap-2">
+          <Text className="text-lg font-semibold max-w-72">{tag.name}</Text>
+          <ScoreBadge score={tag.score} />
+        </div>
         {apps.length !== 0 && (
           <HorizontalOverflowList
             className="gap-1 h-6 -mb-2"

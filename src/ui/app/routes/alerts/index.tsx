@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/tooltip";
 import type { ClassValue } from "clsx";
 import { NoAlerts, NoAlertsFound } from "@/components/empty-states";
+import { ScoreBadge } from "@/components/tag/score";
 
 export default function Alerts() {
   const alerts = useAlerts();
@@ -184,7 +185,12 @@ function AlertListItem({ alert }: { alert: Alert }) {
               style={{ color: tag.color }}
             />
             <div className="flex flex-col min-w-0 gap-1">
-              <Text className="text-lg font-semibold max-w-72">{tag.name}</Text>
+              <div className="flex items-center gap-2">
+                <Text className="text-lg font-semibold max-w-72">
+                  {tag.name}
+                </Text>
+                <ScoreBadge score={tag.score} />
+              </div>
               {tagApps.length !== 0 && (
                 <HorizontalOverflowList
                   className="gap-1 h-6"
