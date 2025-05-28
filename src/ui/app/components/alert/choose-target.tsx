@@ -34,6 +34,7 @@ import {
 } from "@/components/empty-states";
 import type { z } from "zod";
 import type { tagSchema } from "@/lib/schema";
+import { ScoreCircle } from "@/components/tag/score";
 
 export function ChooseTarget({
   onValueChanged: onValueChangedInner,
@@ -103,6 +104,7 @@ export function ChooseTarget({
                     style={{ color: tag.color }}
                   />
                   <Text>{tag.name}</Text>
+                  <ScoreCircle score={tag.score} className="size-3" />
                 </CommandItem>
               ))}
               {allTags.length === 0 && (
@@ -181,6 +183,7 @@ function ChooseTargetTrigger({
         <>
           <TagIcon className="w-5 h-5 shrink-0" style={{ color: tag.color }} />
           <Text>{tag.name}</Text>
+          <ScoreCircle score={tag.score} className="size-3" />
         </>
       ) : (
         (placeholder ?? <Text>Choose Target</Text>)

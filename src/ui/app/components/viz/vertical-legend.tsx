@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import type { CheckedState } from "@radix-ui/react-checkbox";
+import { ScoreCircle } from "@/components/tag/score";
 
 const Untagged = Symbol("untagged");
 export type AppTagId = Ref<Tag> | typeof Untagged;
@@ -177,7 +178,14 @@ export function VerticalLegend({
         {[
           ...tags,
           ...(showUntagged
-            ? [{ id: Untagged, name: "Untagged", color: "#000000" } as const]
+            ? [
+                {
+                  id: Untagged,
+                  name: "Untagged",
+                  color: "#000000",
+                  score: 0,
+                } as const,
+              ]
             : []),
         ].map((tag) => {
           const tagIdStr = tag.id.toString();
@@ -211,6 +219,7 @@ export function VerticalLegend({
                   style={{ color: tag.color }}
                 />
                 <Text className="text-sm">{tag.name}</Text>
+                <ScoreCircle score={tag.score} className="size-3" />
               </div>
 
               {/* Apps under this tag */}

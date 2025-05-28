@@ -52,6 +52,7 @@ import { NavLink, useNavigate } from "react-router";
 import { usePeriodInterval } from "@/hooks/use-time";
 import { Gantt } from "@/components/viz/gantt";
 import { ChooseMultiApps } from "@/components/app/choose-multi-apps";
+import { ScoreBadge, ScoreEdit } from "@/components/tag/score";
 
 export default function Tag({ params }: Route.ComponentProps) {
   const id = +params.id;
@@ -61,8 +62,13 @@ export default function Tag({ params }: Route.ComponentProps) {
   const updateTagApps = useAppState((state) => state.updateTagApps);
 
   const [color, setColorInner] = useState(tag.color);
+  const [score, setScoreInner] = useState(tag.score);
   const debouncedUpdateColor = useDebouncedCallback(async (color: string) => {
     await updateTag({ ...tag, color });
+  }, 500);
+
+  const debouncedUpdateScore = useDebouncedCallback(async (score: number) => {
+    await updateTag({ ...tag, score });
   }, 500);
 
   const setColor = useCallback(
@@ -71,6 +77,14 @@ export default function Tag({ params }: Route.ComponentProps) {
       await debouncedUpdateColor(color);
     },
     [setColorInner, debouncedUpdateColor],
+  );
+
+  const setScore = useCallback(
+    async (score: number) => {
+      setScoreInner(score);
+      await debouncedUpdateScore(score);
+    },
+    [setScoreInner, debouncedUpdateScore],
   );
 
   const navigate = useNavigate();
@@ -177,7 +191,7 @@ export default function Tag({ params }: Route.ComponentProps) {
                   className="w-12 h-12 shrink-0"
                   style={{ color: tag.color }}
                 />
-                <div className="min-w-0 shrink flex flex-col">
+                <div className="min-w-0 shrink flex flex-col gap-2">
                   <div className="min-w-0 flex gap-4">
                     <EditableText
                       text={tag.name}
@@ -188,6 +202,16 @@ export default function Tag({ params }: Route.ComponentProps) {
                       }
                     />
                   </div>
+                  <ScoreEdit
+                    score={score}
+                    onScoreChange={setScore}
+                    className="self-start min-w-0"
+                  >
+                    <ScoreBadge
+                      className="text-sm py-0.5 pl-3 pr-2 min-w-0 rounded-md"
+                      score={score}
+                    />
+                  </ScoreEdit>
                 </div>
                 <div className="flex-1" />
                 <ColorPicker
