@@ -142,8 +142,7 @@ export default function History() {
 
 function AppUsagePerPeriodHistory() {
   const [period, setPeriod] = useState<Period>("day");
-  const { interval, setInterval, canGoNext, goNext, canGoPrev, goPrev } =
-    useHistoryContext();
+  const { interval } = useHistoryContext();
 
   const {
     isLoading,
@@ -236,8 +235,7 @@ function AppUsagePerPeriodHistory() {
 
 function SessionHistory() {
   const week = usePeriodInterval("week");
-  const { interval, setInterval, canGoNext, goNext, canGoPrev, goPrev } =
-    useHistoryContext();
+  const { interval } = useHistoryContext();
 
   const effectiveInterval = interval ?? week;
 

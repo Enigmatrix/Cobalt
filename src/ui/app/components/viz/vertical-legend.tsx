@@ -78,31 +78,40 @@ export function VerticalLegend({
   );
 
   // Toggle expansion state for a tag
-  const toggleExpandTag = (tagId: string) => {
-    setUnexpandedTags((prev) => ({
-      ...prev,
-      [tagId]: !prev[tagId],
-    }));
-  };
+  const toggleExpandTag = useCallback(
+    (tagId: string) => {
+      setUnexpandedTags((prev) => ({
+        ...prev,
+        [tagId]: !prev[tagId],
+      }));
+    },
+    [setUnexpandedTags],
+  );
 
-  const checkApp = (id: Ref<App>, checked: boolean) => {
-    setUncheckedApps((prev) => ({
-      ...prev,
-      [id]: !checked,
-    }));
-  };
+  const checkApp = useCallback(
+    (id: Ref<App>, checked: boolean) => {
+      setUncheckedApps((prev) => ({
+        ...prev,
+        [id]: !checked,
+      }));
+    },
+    [setUncheckedApps],
+  );
 
-  const checkTag = (id: AppTagId, checked: boolean) => {
-    setUncheckedApps((prev) => {
-      const newState = { ...prev };
-      apps
-        .filter((app) => app.tagId === (id === Untagged ? null : +id))
-        .forEach((app) => {
-          newState[app.id] = !checked;
-        });
-      return newState;
-    });
-  };
+  const checkTag = useCallback(
+    (id: AppTagId, checked: boolean) => {
+      setUncheckedApps((prev) => {
+        const newState = { ...prev };
+        apps
+          .filter((app) => app.tagId === (id === Untagged ? null : +id))
+          .forEach((app) => {
+            newState[app.id] = !checked;
+          });
+        return newState;
+      });
+    },
+    [setUncheckedApps],
+  );
 
   const showUntagged = useMemo(() => {
     return filteredApps.some((app) => app.tagId === null);
