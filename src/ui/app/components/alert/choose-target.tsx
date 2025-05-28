@@ -105,7 +105,7 @@ export function ChooseTarget({
                     style={{ color: tag.color }}
                   />
                   <Text>{tag.name}</Text>
-                  <ScoreCircle score={tag.score} className="size-3" />
+                  <ScoreCircle score={tag.score} />
                 </CommandItem>
               ))}
               {allTags.length === 0 && (
@@ -185,7 +185,7 @@ function ChooseTargetTrigger({
         <>
           <TagIcon className="w-5 h-5 shrink-0" style={{ color: tag.color }} />
           <Text>{tag.name}</Text>
-          <ScoreCircle score={tag.score} className="size-3" />
+          <ScoreCircle score={tag.score} />
         </>
       ) : (
         (placeholder ?? <Text>Choose Target</Text>)

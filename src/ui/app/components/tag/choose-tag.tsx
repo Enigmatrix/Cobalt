@@ -85,7 +85,7 @@ export function ChooseTag({
                   style={{ color: tag.color }}
                 />
                 <Text>{tag.name}</Text>
-                <ScoreCircle score={tag.score} className="size-3" />
+                <ScoreCircle score={tag.score} />
               </CommandItem>
             ))}
 

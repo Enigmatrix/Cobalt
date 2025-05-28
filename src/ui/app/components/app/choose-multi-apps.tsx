@@ -38,7 +38,7 @@ export function MiniTagItem({ tagId }: { tagId: Ref<Tag> | null }) {
         className="whitespace-nowrap min-w-0 -my-0.5 px-2 py-0.5 rounded-full border"
       >
         <Text className="max-w-32">{tag.name}</Text>
-        <ScoreCircle score={tag.score} className="ml-2 -mr-1 size-3" />
+        <ScoreCircle score={tag.score} className="ml-2 -mr-1" />
       </Badge>
     )
   );

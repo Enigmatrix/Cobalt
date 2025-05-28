@@ -219,7 +219,7 @@ export function VerticalLegend({
                   style={{ color: tag.color }}
                 />
                 <Text className="text-sm">{tag.name}</Text>
-                <ScoreCircle score={tag.score} className="size-3" />
+                <ScoreCircle score={tag.score} />
               </div>
 
               {/* Apps under this tag */}

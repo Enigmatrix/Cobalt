@@ -157,7 +157,7 @@ export const TagUsageChartTooltipContent = React.forwardRef<
                             >
                               {tag.name}
                             </Text>
-                            <ScoreCircle score={tag.score} className="size-3" />
+                            <ScoreCircle score={tag.score} />
                           </div>
                         </div>
                         <DurationText
