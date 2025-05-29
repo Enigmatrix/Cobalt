@@ -13,9 +13,7 @@ use engine::{Engine, Event};
 use platform::events::{
     ForegroundEventWatcher, InteractionWatcher, SystemEventWatcher, WindowSession,
 };
-use platform::objects::{
-    BrowserDetector, EventLoop, MessageWindow, Timer, Timestamp, User, Window,
-};
+use platform::objects::{BrowserDetector, EventLoop, MessageWindow, Timer, Timestamp, User};
 use resolver::AppInfoResolver;
 use sentry::Sentry;
 use util::channels::{self, Receiver, Sender};
@@ -49,7 +47,7 @@ fn real_main() -> Result<()> {
     let (event_tx, event_rx) = channels::unbounded();
     let (alert_tx, alert_rx) = channels::unbounded();
     let now = Timestamp::now();
-    let fg = foreground_window_session()?;
+    let fg = foreground_window_session(&config)?;
 
     let ev_thread = {
         let config = config.clone();
@@ -82,7 +80,7 @@ fn event_loop(
 
     let message_window = MessageWindow::new()?;
 
-    let mut fg_watcher = ForegroundEventWatcher::new(fg)?;
+    let mut fg_watcher = ForegroundEventWatcher::new(fg, config)?;
     let it_watcher = InteractionWatcher::init(config, now)?;
     let system_event_tx = event_tx.clone();
 
@@ -219,7 +217,7 @@ fn processor(
             if attempt > 0 {
                 future::time::sleep(config.poll_duration()).await;
                 info!("restarting engine loop");
-                fg = foreground_window_session()?;
+                fg = foreground_window_session(config)?;
                 now = Timestamp::now();
             }
             engine_loop(
@@ -267,17 +265,13 @@ async fn update_app_infos(db_pool: DatabasePool, handle: Handle) -> Result<()> {
 }
 
 /// Get the foreground [Window], and makes it into a [WindowSession] blocking until one is present.
-fn foreground_window_session() -> Result<WindowSession> {
+fn foreground_window_session(config: &Config) -> Result<WindowSession> {
+    let browser = BrowserDetector::new()?;
     loop {
-        if let Some(window) = Window::foreground() {
-            let browser = BrowserDetector::new()?;
-            let url = if browser.is_chromium(&window).warn() {
-                browser.chromium_url(&window).context("get chromium url")?
-            } else {
-                None
-            };
-
-            return WindowSession::new(window, url).context("manual foreground window session");
+        let session =
+            ForegroundEventWatcher::foreground_window_session(&browser, config.track_incognito())?;
+        if let Some(session) = session {
+            return Ok(session);
         }
         // This method *MUST* be synchronous, so we use the synchronous version of sleep.
         // There is no blocking or potential for a race condition here because the
