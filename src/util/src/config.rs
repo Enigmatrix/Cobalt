@@ -13,6 +13,9 @@ use crate::error::Result;
 pub struct Config {
     engine_log_filter: String,
     ui_log_filter: String,
+
+    track_incognito: Option<bool>,
+
     max_idle_duration: Duration,
     poll_duration: Duration,
     alert_duration: Duration,
@@ -60,6 +63,11 @@ impl Config {
     /// Engine Log filter (tracing)
     pub fn engine_log_filter(&self) -> &str {
         &self.engine_log_filter
+    }
+
+    /// Whether to track incognito usage
+    pub fn track_incognito(&self) -> bool {
+        self.track_incognito.unwrap_or(false)
     }
 
     /// UI Log filter (tracing)
