@@ -1,5 +1,8 @@
 //! Tauri build script
 
+use util::Target;
+
+mod config;
 mod error;
 mod repo;
 mod state;
@@ -8,6 +11,8 @@ mod tracing;
 /// Tauri run entry point
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    util::set_target(Target::Ui);
+
     #[cfg(debug_assertions)]
     let builder = tauri::Builder::default();
     #[cfg(not(debug_assertions))]
@@ -54,6 +59,8 @@ pub fn run() {
             repo::get_interaction_periods,
             repo::get_system_events,
             tracing::log,
+            config::read_config,
+            config::config_set_track_incognito,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

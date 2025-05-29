@@ -11,6 +11,7 @@ use platform::objects::{
     BaseWebsiteUrl, BrowserDetector, Process, ProcessId, Timestamp, WebsiteInfo, Window,
 };
 use scoped_futures::ScopedFutureExt;
+use util::config;
 use util::error::{Context, Result};
 use util::future::runtime::Handle;
 use util::future::sync::Mutex;
@@ -104,7 +105,8 @@ impl Engine {
                 }
             } else if !prev && self.active {
                 // Restart usage watching.
-                let foreground = foreground_window_session()?;
+                let config = config::get_config()?;
+                let foreground = foreground_window_session(&config)?;
                 self.current_usage = Usage {
                     id: Default::default(),
                     session_id: self.get_session_details(foreground, *now).await?,

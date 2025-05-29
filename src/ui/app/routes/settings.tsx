@@ -9,7 +9,12 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { useTheme } from "@/components/theme-provider";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { Switch } from "@/components/ui/switch";
+import {
+  readConfig,
+  setTrackIncognito as setTrackIncognitoFn,
+} from "@/lib/config";
 
 export function Setting({
   title,
@@ -38,6 +43,20 @@ export function Setting({
 
 export default function Settings() {
   const { theme, setTheme } = useTheme();
+  const [trackIncognito, setTrackIncognitoInner] = useState(false);
+
+  useEffect(() => {
+    readConfig().then((config) => {
+      setTrackIncognitoInner(config.trackIncognito);
+    });
+  }, []);
+
+  function setTrackIncognito(value: boolean) {
+    setTrackIncognitoFn(value).then(() => {
+      setTrackIncognitoInner(value);
+    });
+  }
+
   return (
     <>
       <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
@@ -62,6 +81,23 @@ export default function Settings() {
                 title="Theme"
                 description="Choose a theme for the app"
                 action={<ThemeSwitch value={theme} onValueChange={setTheme} />}
+              />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Privacy</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Setting
+                title="Track Incognito"
+                description="Track incognito windows (title, url) in browsers. If disabled, incognito windows will be tracked as '<Incognito>'."
+                action={
+                  <Switch
+                    checked={trackIncognito}
+                    onCheckedChange={setTrackIncognito}
+                  />
+                }
               />
             </CardContent>
           </Card>

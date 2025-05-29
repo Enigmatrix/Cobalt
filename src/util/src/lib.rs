@@ -31,15 +31,17 @@ pub enum Target {
 static INIT: Once = Once::new();
 static TARGET: LazyLock<Mutex<Target>> = LazyLock::new(|| Mutex::new(Target::default()));
 
+/// Set the target for this application
+pub fn set_target(target: Target) {
+    let mut t = TARGET.lock().unwrap();
+    *t = target;
+}
+
 /// Setup all utils. This function will only run once, all other invocations
 /// will be ignored (vacous success).
-pub fn setup(config: &Config, target: Target) -> Result<()> {
+pub fn setup(config: &Config) -> Result<()> {
     let mut result = Ok(());
     INIT.call_once(|| {
-        {
-            let mut t = TARGET.lock().unwrap();
-            *t = target;
-        }
         fn inner_setup(config: &Config) -> Result<()> {
             error::setup()?;
             tracing::setup(config)?;
