@@ -186,6 +186,7 @@ pub fn get_config() -> Result<Config> {
 
 #[test]
 fn extract_query_content_connection_string() -> Result<()> {
+    std::env::set_current_dir("../../")?;
     let config = get_config()?;
     assert_eq!("main.db", config.connection_string()?);
     Ok(())
@@ -193,6 +194,7 @@ fn extract_query_content_connection_string() -> Result<()> {
 
 #[test]
 fn extract_engine_log_filter() -> Result<()> {
+    std::env::set_current_dir("../../")?;
     let config = get_config()?;
     assert_eq!(
         "Debug,selectors=info,html5ever=info",
