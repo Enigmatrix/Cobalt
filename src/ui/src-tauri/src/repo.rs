@@ -159,7 +159,7 @@ pub async fn copy_from_seed_db(state: State<'_, AppState>) -> AppResult<()> {
 
     remove_db_files()?;
 
-    let to_file = util::config::Config::config_path("main.db")?;
+    let to_file = util::config::Config::config_path("main.db").context("config path")?;
     std::fs::copy("../../../dev/seed.db", to_file).context("copy seed.db")?;
 
     // reinit state (repo)

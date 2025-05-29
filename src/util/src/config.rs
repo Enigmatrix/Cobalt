@@ -1,11 +1,8 @@
+use std::io::Result;
 use std::time::Duration;
 
 pub use dirs::*;
-use figment::providers::{Format, Json};
-use figment::Figment;
 use serde::{Deserialize, Serialize};
-
-use crate::error::Result;
 
 /// [Config] of the Engine
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -52,14 +49,16 @@ impl Config {
         // me.cobalt.enigmatrix is the bundle identifier for the app.
         #[cfg(not(debug_assertions))]
         {
-            use crate::error::{eyre, ContextCompat};
+            use std::io::{Error, ErrorKind};
             dirs::data_local_dir()
-                .context("data local dir")?
+                .ok_or(Error::new(ErrorKind::NotFound, "data local dir"))?
                 .join("me.enigmatrix.cobalt")
                 .join(segment)
                 .into_os_string()
                 .into_string()
-                .map_err(|oss| eyre!("convert path to utf8: {:?}", oss))
+                .map_err(|oss| {
+                    Error::new(ErrorKind::Other, format!("convert path to utf8: {:?}", oss))
+                })
         }
     }
 
@@ -154,15 +153,18 @@ impl Config {
 
 /// Get the configuration from the appsettings.json file
 pub fn get_config() -> Result<Config> {
-    let mut figment = Figment::new();
-    figment = figment.merge(Json::file_exact(Config::config_path("appsettings.json")?));
-    let mut config: Config = match figment.extract() {
-        Ok(config) => config,
-        Err(e) => {
-            // can't log this since logger isn't setup yet.
-            eprintln!("Error loading config: {:?}", e);
-            Config::replace_with_default()?;
-            get_config()?
+    let mut config: Config = loop {
+        match std::fs::read_to_string(Config::config_path("appsettings.json")?)
+            .map_err(|e| e.to_string())
+            .and_then(|s| serde_json::from_str(&s).map_err(|e| e.to_string()))
+        {
+            Ok(config) => break config,
+            Err(e) => {
+                // can't log this since logger isn't setup yet.
+                eprintln!("Error loading config: {:?}", e);
+                Config::replace_with_default()?;
+                // eprintln!("Replaced with default config: {:?}", e);
+            }
         }
     };
     config.validate_or_replace()?;
