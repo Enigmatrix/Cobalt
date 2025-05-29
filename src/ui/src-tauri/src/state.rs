@@ -2,7 +2,7 @@ use data::db::repo::Repository;
 use data::db::DatabasePool;
 use serde::{Deserialize, Serialize};
 use tauri::async_runtime::RwLock;
-use util::config::get_config;
+use util::config::{get_config, Config};
 use util::error::*;
 
 use crate::error::*;
@@ -40,7 +40,7 @@ impl QueryOptions {
 /// The real app state
 pub struct AppStateInner {
     pub db_pool: DatabasePool,
-    // pub config: Config,
+    pub config: Config,
 }
 
 impl AppStateInner {
@@ -49,7 +49,7 @@ impl AppStateInner {
         let config = get_config()?;
         util::setup(&config)?;
         let db_pool = DatabasePool::new(&config).await?;
-        Ok(Self { db_pool })
+        Ok(Self { db_pool, config })
     }
 
     /// Gets the repo with options
