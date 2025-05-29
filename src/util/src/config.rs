@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 /// [Config] of the Engine
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "PascalCase")]
+#[serde(rename_all = "camelCase")]
 pub struct Config {
     engine_log_filter: String,
     ui_log_filter: String,
