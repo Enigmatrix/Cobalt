@@ -46,9 +46,6 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "resources": {
-      "../../../appsettings.json": "appsettings.json"
-    },
     "windows": {
       "wix": {
         "template": "./installer/main.wxs",

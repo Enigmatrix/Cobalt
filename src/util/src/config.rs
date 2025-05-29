@@ -3,12 +3,12 @@ use std::time::Duration;
 pub use dirs::*;
 use figment::providers::{Format, Json};
 use figment::Figment;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::error::Result;
 
 /// [Config] of the Engine
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct Config {
     engine_log_filter: String,
@@ -19,6 +19,19 @@ pub struct Config {
     max_idle_duration: Duration,
     poll_duration: Duration,
     alert_duration: Duration,
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            engine_log_filter: "Info".to_string(),
+            ui_log_filter: "Info".to_string(),
+            track_incognito: Some(false),
+            max_idle_duration: Duration::from_secs(5),
+            poll_duration: Duration::from_secs(1),
+            alert_duration: Duration::from_secs(1),
+        }
+    }
 }
 
 impl Config {
@@ -48,6 +61,54 @@ impl Config {
                 .into_string()
                 .map_err(|oss| eyre!("convert path to utf8: {:?}", oss))
         }
+    }
+
+    /// Validate the config and replace any missing values with defaults
+    pub fn validate_or_replace(&mut self) -> Result<()> {
+        // don't need to validate log filters
+
+        // validate durations
+        let mut replace = false;
+        if self.poll_duration < Duration::from_secs(1) {
+            replace = true;
+        }
+        if self.poll_duration >= Duration::from_secs(10) {
+            replace = true;
+        }
+
+        if self.max_idle_duration < Duration::from_secs(1) {
+            replace = true;
+        }
+        if self.max_idle_duration >= Duration::from_secs(10) {
+            replace = true;
+        }
+
+        if self.alert_duration < Duration::from_secs(1) {
+            replace = true;
+        }
+        if self.alert_duration >= Duration::from_secs(10) {
+            replace = true;
+        }
+
+        if replace {
+            Self::replace_with_default()?;
+            *self = Default::default();
+        }
+        Ok(())
+    }
+
+    /// Replace the config with the default values
+    pub fn replace_with_default() -> Result<()> {
+        let path = &Self::config_path("appsettings.json")?;
+        #[cfg(not(debug_assertions))]
+        let config = Config::default();
+        #[cfg(debug_assertions)]
+        let config: Config = serde_json::from_str(&std::fs::read_to_string(&Self::config_path(
+            "./dev/appsettings.Debug.json",
+        )?)?)?;
+
+        std::fs::write(path, serde_json::to_string_pretty(&config)?)?;
+        Ok(())
     }
 
     /// Returns the connection string to the query context database
@@ -94,12 +155,18 @@ impl Config {
 /// Get the configuration from the appsettings.json file
 pub fn get_config() -> Result<Config> {
     let mut figment = Figment::new();
-    figment = figment.merge(Json::file("appsettings.json"));
-    #[cfg(debug_assertions)]
-    {
-        figment = figment.merge(Json::file("dev/appsettings.Debug.json"));
-    }
-    Ok(figment.extract()?)
+    figment = figment.merge(Json::file_exact(Config::config_path("appsettings.json")?));
+    let mut config: Config = match figment.extract() {
+        Ok(config) => config,
+        Err(e) => {
+            // can't log this since logger isn't setup yet.
+            eprintln!("Error loading config: {:?}", e);
+            Config::replace_with_default()?;
+            get_config()?
+        }
+    };
+    config.validate_or_replace()?;
+    Ok(config)
 }
 
 #[test]
