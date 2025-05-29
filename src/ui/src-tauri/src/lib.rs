@@ -1,5 +1,7 @@
 //! Tauri build script
 
+use util::Target;
+
 mod error;
 mod repo;
 mod state;
@@ -8,6 +10,8 @@ mod tracing;
 /// Tauri run entry point
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    util::set_target(Target::Ui);
+
     #[cfg(debug_assertions)]
     let builder = tauri::Builder::default();
     #[cfg(not(debug_assertions))]

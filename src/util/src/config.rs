@@ -98,15 +98,14 @@ impl Config {
 
     /// Replace the config with the default values
     pub fn replace_with_default() -> Result<()> {
-        let path = &Self::config_path("appsettings.json")?;
         #[cfg(not(debug_assertions))]
         let config = Config::default();
         #[cfg(debug_assertions)]
         let config: Config = serde_json::from_str(&std::fs::read_to_string(&Self::config_path(
-            "./dev/appsettings.Debug.json",
+            "dev/appsettings.Debug.json",
         )?)?)?;
 
-        std::fs::write(path, serde_json::to_string_pretty(&config)?)?;
+        config.write()?;
         Ok(())
     }
 
@@ -130,6 +129,13 @@ impl Config {
         self.track_incognito.unwrap_or(false)
     }
 
+    /// Set the track incognito setting
+    pub fn set_track_incognito(&mut self, value: bool) -> Result<()> {
+        self.track_incognito = Some(value);
+        self.write()?;
+        Ok(())
+    }
+
     /// UI Log filter (tracing)
     pub fn ui_log_filter(&self) -> &str {
         &self.ui_log_filter
@@ -148,6 +154,13 @@ impl Config {
     /// How often the engine should check for alerts firing
     pub fn alert_duration(&self) -> Duration {
         self.alert_duration
+    }
+
+    /// Write the config to the appsettings.json file
+    pub fn write(&self) -> Result<()> {
+        let path = &Self::config_path("appsettings.json")?;
+        std::fs::write(path, serde_json::to_string_pretty(self)?)?;
+        Ok(())
     }
 }
 

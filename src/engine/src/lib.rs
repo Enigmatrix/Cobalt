@@ -38,8 +38,9 @@ pub fn main() {
 }
 
 fn real_main() -> Result<()> {
+    util::set_target(Target::Engine);
     let config = config::get_config()?;
-    util::setup(&config, Target::Engine)?;
+    util::setup(&config)?;
     info!("starting engine");
     platform::setup()?;
     info!("running as {:?}", User::current()?);
