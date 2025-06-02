@@ -3,6 +3,7 @@ import tailwindcss from "@tailwindcss/postcss";
 import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 import path from "path";
+import devToolsJson from "vite-plugin-devtools-json";
 
 const host = process.env.TAURI_DEV_HOST;
 
@@ -32,7 +33,7 @@ export default defineConfig({
       plugins: [tailwindcss()],
     },
   },
-  plugins: [reactRouter(), tsconfigPaths()],
+  plugins: [reactRouter(), tsconfigPaths(), devToolsJson()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./app"),
