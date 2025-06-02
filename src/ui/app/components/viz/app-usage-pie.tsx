@@ -37,8 +37,9 @@ export interface AppUsagePieChartProps {
   animationsEnabled?: boolean;
 
   className?: ClassValue;
-  onHover?: (data?: WithDuration<App>) => void;
-  onTagHover?: (data?: Tag) => void;
+
+  onAppHover?: (data?: Ref<App>) => void;
+  onTagHover?: (data?: Ref<Tag>) => void;
 }
 
 export function AppUsagePieChart({
@@ -48,7 +49,8 @@ export function AppUsagePieChart({
   hideApps,
   animationsEnabled = true,
   className,
-  onHover,
+  onAppHover,
+  onTagHover,
 }: AppUsagePieChartProps) {
   const { theme } = useTheme();
 
@@ -73,11 +75,19 @@ export function AppUsagePieChart({
   // }, [apps, data, hideApps]);
 
   const appPayload = useMemo(() => {
-    return _.mapValues(data, (duration) => duration?.duration ?? 0);
-  }, [data]);
+    return _(data)
+      .filter(
+        (appDur) =>
+          appDur !== undefined && appDur.duration > 0 && !hideApps?.[appDur.id],
+      )
+      .map((appDur) => [appDur!.id, appDur!.duration] as const)
+      .fromPairs()
+      .value();
+  }, [data, hideApps]);
 
   const tagPayload = useMemo(() => {
     return _(apps)
+      .filter((app) => !hideApps?.[app.id])
       .map(
         (app) =>
           [app.tagId ?? untagged.id, data[app.id]?.duration ?? 0] as const,
@@ -85,7 +95,7 @@ export function AppUsagePieChart({
       .groupBy(0)
       .mapValues((x) => x.reduce((sum, [, duration]) => sum + duration, 0))
       .value();
-  }, [apps, data]);
+  }, [apps, data, hideApps]);
 
   const appData = useMemo(() => {
     return _(apps)
@@ -118,14 +128,12 @@ export function AppUsagePieChart({
           .sum(),
       })),
       // Add untagged category if there are untagged apps
-      ...(untaggedDuration > 0
-        ? [
-            {
-              ...untagged,
-              duration: untaggedDuration,
-            },
-          ]
-        : []),
+      ...[
+        {
+          ...untagged,
+          duration: untaggedDuration,
+        },
+      ],
     ].filter((tag) => tag.duration > 0);
 
     return tagData;
@@ -197,6 +205,10 @@ export function AppUsagePieChart({
               name: app.name,
               value: app.duration,
               itemStyle: {
+                opacity:
+                  (highlightedAppIds?.includes(app.id) ?? true)
+                    ? undefined
+                    : unhighlightedAppOpacity,
                 color: app.color,
               },
               label: {
@@ -292,7 +304,7 @@ export function AppUsagePieChart({
       const isInGrid = isInApp || isInTag;
       if (!isInGrid) {
         setHoveredData(null);
-        onHover?.(undefined);
+        onAppHover?.(undefined);
       }
     });
 
@@ -300,6 +312,7 @@ export function AppUsagePieChart({
       if (params.seriesId?.startsWith("app-")) {
         const id = +params.seriesId.slice(4) as Ref<App>;
         setHoveredData({ appId: id });
+        onAppHover?.(id);
       } else if (params.seriesId?.startsWith("tag-")) {
         const idStr = params.seriesId.slice(4);
         let id: Ref<Tag> = untagged.id;
@@ -307,6 +320,7 @@ export function AppUsagePieChart({
           id = +idStr as Ref<Tag>;
         }
         setHoveredData({ tagId: id });
+        onTagHover?.(id);
       }
       // else ignore event
     });
@@ -329,7 +343,8 @@ export function AppUsagePieChart({
     data,
     appData,
     tagData,
-    onHover,
+    onAppHover,
+    onTagHover,
     animationsEnabled,
     highlightedAppIds,
     unhighlightedAppOpacity,
