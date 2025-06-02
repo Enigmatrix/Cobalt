@@ -35,16 +35,12 @@ import type { CheckedState } from "@radix-ui/react-checkbox";
 import { ScoreCircle } from "@/components/tag/score";
 import { VariableSizeList as List } from "react-window";
 import AutoSizer from "react-virtualized-auto-sizer";
-
-const Untagged = Symbol("untagged");
-export type AppTagId = Ref<Tag> | typeof Untagged;
+import { untagged } from "@/lib/state";
 
 type ListItem = {
   id: string;
   type: "tag" | "app" | "spacer";
-  tag?:
-    | Tag
-    | { id: typeof Untagged; name: string; color: string; score: number };
+  tag?: Tag;
   app?: App;
   isExpanded: boolean;
   nestingLevel: number;
@@ -99,18 +95,18 @@ export function VerticalLegend({
   );
 
   const checkTag = useCallback(
-    (id: AppTagId, checked: boolean) => {
+    (id: Ref<Tag>, checked: boolean) => {
       setUncheckedApps((prev) => {
         const newState = { ...prev };
         apps
-          .filter((app) => app.tagId === (id === Untagged ? null : +id))
+          .filter((app) => app.tagId === (id === untagged.id ? null : id))
           .forEach((app) => {
             newState[app.id] = !checked;
           });
         return newState;
       });
     },
-    [setUncheckedApps],
+    [setUncheckedApps, apps],
   );
 
   const showUntagged = useMemo(() => {
@@ -152,12 +148,12 @@ export function VerticalLegend({
   };
 
   const tagStatus = useCallback(
-    (tagId: AppTagId): CheckedState => {
+    (tagId: Ref<Tag>): CheckedState => {
       const allUnchecked = apps
-        .filter((app) => app.tagId === (tagId === Untagged ? null : tagId))
+        .filter((app) => app.tagId === (tagId === untagged.id ? null : tagId))
         .every((app) => !!uncheckedApps[app.id]);
       const allChecked = apps
-        .filter((app) => app.tagId === (tagId === Untagged ? null : tagId))
+        .filter((app) => app.tagId === (tagId === untagged.id ? null : tagId))
         .every((app) => !uncheckedApps[app.id]);
       return allChecked ? true : allUnchecked ? false : "indeterminate";
     },
@@ -169,19 +165,7 @@ export function VerticalLegend({
     const data: ListItem[] = [];
 
     // Add tags
-    [
-      ...tags,
-      ...(showUntagged
-        ? [
-            {
-              id: Untagged,
-              name: "Untagged",
-              color: "#000000",
-              score: 0,
-            } as const,
-          ]
-        : []),
-    ].forEach((tag, index) => {
+    [...tags, ...(showUntagged ? [untagged] : [])].forEach((tag, index) => {
       // Add spacer between tag groups
       if (index > 0) {
         data.push({
@@ -192,7 +176,7 @@ export function VerticalLegend({
         });
       }
 
-      const tagIdStr = tag.id.toString();
+      const tagIdStr = tag.id + "";
       data.push({
         id: `tag-${tagIdStr}`,
         type: "tag",
@@ -204,7 +188,9 @@ export function VerticalLegend({
       // Add apps under this tag if expanded
       if (!unexpandedTags[tagIdStr]) {
         filteredApps
-          .filter((app) => app.tagId === (tag.id === Untagged ? null : tag.id))
+          .filter(
+            (app) => app.tagId === (tag.id === untagged.id ? null : tag.id),
+          )
           .forEach((app) => {
             data.push({
               id: `app-${app.id}`,
@@ -230,7 +216,7 @@ export function VerticalLegend({
       }
       if (item.type === "tag") {
         const tag = item.tag!;
-        const tagIdStr = tag.id.toString();
+        const tagIdStr = tag.id + "";
         return (
           <div
             style={style}
@@ -282,7 +268,15 @@ export function VerticalLegend({
         );
       }
     },
-    [listData, unexpandedTags, tagStatus, checkTag, checkApp, uncheckedApps],
+    [
+      listData,
+      unexpandedTags,
+      tagStatus,
+      checkTag,
+      checkApp,
+      uncheckedApps,
+      toggleExpandTag,
+    ],
   );
 
   // Recalculate item sizes when list data changes
