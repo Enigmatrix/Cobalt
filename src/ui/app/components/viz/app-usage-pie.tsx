@@ -7,10 +7,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import * as echarts from "echarts";
 import _ from "lodash";
 import { Tooltip } from "@/components/viz/tooltip";
-import { AppUsageChartTooltipContent } from "./app-usage-chart-tooltip";
 import { cn } from "@/lib/utils";
-import { DEFAULT_ICON_SVG_URL } from "../app/app-icon";
-import { toDataUrl } from "../app/app-icon";
+import { DEFAULT_ICON_SVG_URL, toDataUrl } from "@/components/app/app-icon";
+import { AppUsageChartTooltipContent } from "@/components/viz/app-usage-chart-tooltip";
+import { TagUsageChartTooltipContent } from "@/components/viz/tag-usage-chart-tooltip";
 
 interface GlobalModel {
   getSeriesByIndex: (index: number) => echarts.SeriesModel;
@@ -66,15 +66,26 @@ export function AppUsagePieChart({
   const apps = useApps(appIds);
   const tags = useTags();
 
-  const totalUsage = useMemo(() => {
-    return _(apps)
-      .filter((app) => !hideApps?.[app.id])
-      .reduce((sum, app) => sum + (data[app.id]?.duration ?? 0), 0);
-  }, [apps, data, hideApps]);
+  // const totalUsage = useMemo(() => {
+  //   return _(apps)
+  //     .filter((app) => !hideApps?.[app.id])
+  //     .reduce((sum, app) => sum + (data[app.id]?.duration ?? 0), 0);
+  // }, [apps, data, hideApps]);
 
   const appPayload = useMemo(() => {
     return _.mapValues(data, (duration) => duration?.duration ?? 0);
   }, [data]);
+
+  const tagPayload = useMemo(() => {
+    return _(apps)
+      .map(
+        (app) =>
+          [app.tagId ?? untagged.id, data[app.id]?.duration ?? 0] as const,
+      )
+      .groupBy(0)
+      .mapValues((x) => x.reduce((sum, [, duration]) => sum + duration, 0))
+      .value();
+  }, [apps, data]);
 
   const appData = useMemo(() => {
     return _(apps)
@@ -326,13 +337,21 @@ export function AppUsagePieChart({
   ]);
 
   return (
-    <div ref={chartRef} className={cn("w-full h-full asdf", className)}>
+    <div ref={chartRef} className={cn("w-full h-full", className)}>
       <Tooltip targetRef={chartRef} show={!!hoveredData?.appId}>
         <AppUsageChartTooltipContent
           hoveredAppId={hoveredData?.appId ?? null}
           payload={appPayload}
           maximumApps={10}
           highlightedAppIds={highlightedAppIds}
+        />
+      </Tooltip>
+      <Tooltip targetRef={chartRef} show={!!hoveredData?.tagId}>
+        <TagUsageChartTooltipContent
+          hoveredTagId={hoveredData?.tagId ?? null}
+          payload={tagPayload}
+          maximumTags={10}
+          // highlightedAppIds={highlightedAppIds}
         />
       </Tooltip>
     </div>

@@ -99,7 +99,7 @@ export function VerticalLegend({
       setUncheckedApps((prev) => {
         const newState = { ...prev };
         apps
-          .filter((app) => app.tagId === id)
+          .filter((app) => app.tagId === (id === untagged.id ? null : id))
           .forEach((app) => {
             newState[app.id] = !checked;
           });
@@ -188,7 +188,9 @@ export function VerticalLegend({
       // Add apps under this tag if expanded
       if (!unexpandedTags[tagIdStr]) {
         filteredApps
-          .filter((app) => app.tagId === tag.id)
+          .filter(
+            (app) => app.tagId === (tag.id === untagged.id ? null : tag.id),
+          )
           .forEach((app) => {
             data.push({
               id: `app-${app.id}`,
