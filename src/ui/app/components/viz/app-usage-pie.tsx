@@ -1,14 +1,13 @@
 import type { App, Tag, Ref, WithDuration } from "@/lib/entities";
-import { untagged, useAppState, type EntityMap } from "@/lib/state";
+import { untagged, type EntityMap } from "@/lib/state";
 import type { ClassValue } from "clsx";
 import { useTheme } from "@/components/theme-provider";
-import { useApps, useRefresh, useTags } from "@/hooks/use-refresh";
+import { useApps, useTags } from "@/hooks/use-refresh";
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as echarts from "echarts";
 import _ from "lodash";
 import { Tooltip } from "@/components/viz/tooltip";
 import { AppUsageChartTooltipContent } from "./app-usage-chart-tooltip";
-import { DateTime } from "luxon";
 import { cn } from "@/lib/utils";
 import { DEFAULT_ICON_SVG_URL } from "../app/app-icon";
 import { toDataUrl } from "../app/app-icon";
@@ -53,9 +52,8 @@ export function AppUsagePieChart({
 }: AppUsagePieChartProps) {
   const { theme } = useTheme();
 
-  const [hoverSeries, setHoverSeries] = useState<EntityMap<App, number>>({});
   const [hoveredData, setHoveredData] = useState<{
-    date: DateTime;
+    tagId?: Ref<Tag>;
     appId?: Ref<App>;
   } | null>(null);
   const chartRef = useRef<HTMLDivElement>(null);
@@ -74,17 +72,9 @@ export function AppUsagePieChart({
       .reduce((sum, app) => sum + (data[app.id]?.duration ?? 0), 0);
   }, [apps, data, hideApps]);
 
-  const payload = useMemo(() => {
+  const appPayload = useMemo(() => {
     return _.mapValues(data, (duration) => duration?.duration ?? 0);
   }, [data]);
-
-  const tagPayload = useMemo(() => {
-    return _(apps)
-      .map((app) => [app.tagId ?? -1, data[app.id]?.duration ?? 0])
-      .groupBy(0)
-      .mapValues((x) => x.reduce((sum, [, duration]) => sum + duration, 0))
-      .value();
-  }, [apps, data]);
 
   const appData = useMemo(() => {
     return _(apps)
@@ -144,6 +134,7 @@ export function AppUsagePieChart({
             type: "bar",
             coordinateSystem: "polar",
             stack: "tags",
+            id: "tag-" + tag.id,
             data: [
               {
                 id: tag.id,
@@ -157,124 +148,157 @@ export function AppUsagePieChart({
           }) satisfies echarts.SeriesOption,
       );
 
-    const appSeries = appData
-      .filter((app) => app.duration)
-      .map(
-        (app) =>
-          ({
-            type: "bar",
-            coordinateSystem: "polar",
-            stack: "apps",
-            labelLayout(params) {
-              const model = (chart["getModel"] as () => GlobalModel)();
-              const series = model.getSeriesByIndex(params.seriesIndex);
-              const radiusAxis = series.getBaseAxis() as unknown as RadiusAxis;
-              const value = series.getRawValue(params.dataIndex!);
-              const radius = radiusAxis.dataToRadius(value as number);
-              const angleAxis = radiusAxis.polar.getAngleAxis();
-              const angle =
-                angleAxis.dataToAngle(0) -
-                angleAxis.dataToAngle(value as number);
+    const appSeries = appData.map(
+      (app) =>
+        ({
+          type: "bar",
+          coordinateSystem: "polar",
+          stack: "apps",
+          id: "app-" + app.id,
+          labelLayout(params) {
+            const model = (chart["getModel"] as () => GlobalModel)();
+            const series = model.getSeriesByIndex(params.seriesIndex);
+            const radiusAxis = series.getBaseAxis() as unknown as RadiusAxis;
+            const value = series.getRawValue(params.dataIndex!);
+            const radius = radiusAxis.dataToRadius(value as number);
+            const angleAxis = radiusAxis.polar.getAngleAxis();
+            const angle =
+              angleAxis.dataToAngle(0) - angleAxis.dataToAngle(value as number);
 
-              // const radiusDiff = outerRadius - innerRadius;
-              const radiusDiff = 0.35 * radius; // TODO use a better way
+            // const radiusDiff = outerRadius - innerRadius;
+            const radiusDiff = 0.35 * radius; // TODO use a better way
 
-              const percent = angle;
+            const percent = angle;
 
-              const angleLengthValue = (percent / 360) * 2 * Math.PI * radius;
-              const maxSize =
-                Math.min(radiusDiff, angleLengthValue) * Math.SQRT1_2;
-              const size = Math.max(Math.min(maxSize * 0.9, 32), 0); // 10% padding
+            const angleLengthValue = (percent / 360) * 2 * Math.PI * radius;
+            const maxSize =
+              Math.min(radiusDiff, angleLengthValue) * Math.SQRT1_2;
+            const size = Math.max(Math.min(maxSize * 0.9, 32), 0); // 10% padding
 
-              console.log(
-                value,
-                radius,
-                angle,
-                angleLengthValue,
-                size,
-                radiusAxis,
-                angleAxis,
-                series,
-              );
-              return {
-                width: size,
-                height: size,
-              };
-            },
-            data: [
-              {
-                id: app.id,
-                name: app.name,
-                value: app.duration,
-                itemStyle: {
-                  color: app.color,
+            return {
+              width: size,
+              height: size,
+            };
+          },
+          data: [
+            {
+              id: app.id,
+              name: app.name,
+              value: app.duration,
+              itemStyle: {
+                color: app.color,
+              },
+              label: {
+                show: true,
+                rotate: 0,
+                position: "middle",
+                backgroundColor: {
+                  image: toDataUrl(app.icon) ?? DEFAULT_ICON_SVG_URL,
                 },
-                label: {
-                  show: true,
-                  rotate: 0,
-                  position: "middle",
-                  backgroundColor: {
-                    image: toDataUrl(app.icon) ?? DEFAULT_ICON_SVG_URL,
-                  },
-                  formatter: () => {
-                    return `{empty|}`;
-                  },
-                  rich: {
-                    empty: {},
-                  },
+                formatter: () => {
+                  return `{empty|}`;
+                },
+                rich: {
+                  empty: {},
                 },
               },
-            ],
-          }) satisfies echarts.SeriesOption,
-      );
+            },
+          ],
+        }) satisfies echarts.SeriesOption,
+    );
 
     const option: echarts.EChartsOption = {
       animation: animationsEnabled,
       // animationDuration: 300,
 
-      angleAxis: {
-        max: "dataMax",
-        show: false,
-      },
-      polar: {
-        radius: ["30%", "90%"],
-      },
-      radiusAxis: {
-        type: "category",
-        data: ["tags"],
-        show: false,
-      },
+      polar: [
+        {
+          radius: ["30%", "50%"],
+          center: ["50%", "50%"],
+        },
+        {
+          radius: ["60%", "90%"],
+          center: ["50%", "50%"],
+        },
+      ],
+      angleAxis: [
+        {
+          max: "dataMax",
+          show: false,
+          polarIndex: 0,
+        },
+        {
+          max: "dataMax",
+          show: false,
+          polarIndex: 1,
+        },
+      ],
+      radiusAxis: [
+        {
+          type: "category",
+          data: ["tags"],
+          show: false,
+          polarIndex: 0,
+        },
+        {
+          type: "category",
+          data: ["apps"],
+          show: false,
+          polarIndex: 1,
+        },
+      ],
       tooltip: {
         trigger: "item",
+        formatter() {
+          // disables echarts tooltip
+          return "";
+        },
       },
-      series: [...tagSeries, ...appSeries],
+      series: [
+        ...tagSeries.map((series) => ({
+          ...series,
+          polarIndex: 0,
+        })),
+        ...appSeries.map((series) => ({
+          ...series,
+          polarIndex: 1,
+        })),
+      ],
     } satisfies echarts.EChartsOption;
 
-    // chart.getZr().on("mousemove", (params) => {
-    //   const pos = [params.offsetX, params.offsetY];
-    //   const isInGrid = chart.containPixel("grid", pos);
-    //   if (isInGrid) {
-    //     const pointerData = chart.convertFromPixel("grid", pos);
-    //     setHoveredData({
-    //       date: ticksToDateTime(xaxisRange[pointerData[0]]),
-    //     });
-    //   } else if (!isInGrid) {
-    //     setHoveredData(null);
-    //     onHover?.(undefined);
-    //   }
-    // });
+    chart.getZr().on("mousemove", (params) => {
+      const pos = [params.offsetX, params.offsetY];
+      type ModelFilter = Parameters<typeof chart.containPixel>[0];
+      // SILLY UNDOCUMENTED BEHAVIOR polarIndex: XX just works!
+      const isInTag = chart.containPixel(
+        { polarIndex: 0 } as unknown as ModelFilter,
+        pos,
+      );
+      const isInApp = chart.containPixel(
+        { polarIndex: 1 } as unknown as ModelFilter,
+        pos,
+      );
+      const isInGrid = isInApp || isInTag;
+      if (!isInGrid) {
+        setHoveredData(null);
+        onHover?.(undefined);
+      }
+    });
 
-    // chart.on("mousemove", (params) => {
-    //   const appId = +(params.seriesId ?? 0) as Ref<App>;
-    //   setHoveredData({ date: ticksToDateTime(+params.name), appId });
-    //   if (onHover) {
-    //     onHover({
-    //       id: appId,
-    //       duration: params.value as number,
-    //       group: params.axisValue as number,
-    //     });
-    //   }
-    // });
+    chart.on("mousemove", (params) => {
+      if (params.seriesId?.startsWith("app-")) {
+        const id = +params.seriesId.slice(4) as Ref<App>;
+        setHoveredData({ appId: id });
+      } else if (params.seriesId?.startsWith("tag-")) {
+        const idStr = params.seriesId.slice(4);
+        let id: Ref<Tag> = untagged.id;
+        if (idStr !== untagged.id + "") {
+          id = +idStr as Ref<Tag>;
+        }
+        setHoveredData({ tagId: id });
+      }
+      // else ignore event
+    });
 
     const resizeObserver = new ResizeObserver(() => {
       requestAnimationFrame(() => chart.resize());
@@ -302,12 +326,11 @@ export function AppUsagePieChart({
   ]);
 
   return (
-    <div ref={chartRef} className={cn("w-full h-full", className)}>
-      <Tooltip targetRef={chartRef} show={!!hoveredData}>
+    <div ref={chartRef} className={cn("w-full h-full asdf", className)}>
+      <Tooltip targetRef={chartRef} show={!!hoveredData?.appId}>
         <AppUsageChartTooltipContent
           hoveredAppId={hoveredData?.appId ?? null}
-          payload={hoverSeries}
-          dt={hoveredData?.date ?? DateTime.fromSeconds(0)}
+          payload={appPayload}
           maximumApps={10}
           highlightedAppIds={highlightedAppIds}
         />
