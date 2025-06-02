@@ -51,7 +51,7 @@ export async function refresh() {
 }
 
 export const untagged: Tag = {
-  id: null as unknown as Ref<Tag>,
+  id: -1 as unknown as Ref<Tag>,
   name: "Untagged",
   color: "#6B7280", // gray-500
   score: 0,
