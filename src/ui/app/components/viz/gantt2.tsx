@@ -14,7 +14,17 @@ type RectLike = {
   height: number;
 };
 
+interface CombinedUsage {
+  type: "combined";
+  start: number;
+  end: number;
+  count: number;
+}
+
+type UsageBar = CombinedUsage | Usage;
+
 const minRenderWidth = 1;
+const maxRenderTimeGap = 1000000000;
 
 function minRenderTimeGap(interval: Interval, width: number, dataZoom: number) {
   const timeGap = interval.end.diff(interval.start).toMillis();
@@ -24,15 +34,24 @@ function minRenderTimeGap(interval: Interval, width: number, dataZoom: number) {
   return Math.max(minRenderTimeGap, 1);
 }
 
-function mergedUsages(usages: Usage[], minRenderTimeGap: number) {
+function mergedUsages(usages: Usage[], minRenderTimeGap: number): UsageBar[] {
   usages.sort((a, b) => a.start - b.start);
-  const mergedUsages = [usages[0]];
+  if (minRenderTimeGap < maxRenderTimeGap) {
+    return usages;
+  }
+  const mergedUsages: UsageBar[] = [{ ...usages[0] }];
   for (const usage of usages) {
-    const lastUsage = mergedUsages[mergedUsages.length - 1];
-    if (lastUsage.end + minRenderTimeGap >= usage.start) {
+    let lastUsage = mergedUsages[mergedUsages.length - 1];
+    if (lastUsage.end + minRenderTimeGap > usage.start) {
+      const lastUsageBar = lastUsage as CombinedUsage;
+      if (lastUsageBar.type !== "combined") {
+        lastUsageBar.type = "combined";
+        lastUsageBar.count = 1;
+      }
       lastUsage.end = usage.end;
+      lastUsageBar.count += 1;
     } else {
-      mergedUsages.push(usage);
+      mergedUsages.push({ ...usage });
     }
   }
   return mergedUsages;
@@ -94,13 +113,14 @@ export function Gantt2({
     });
 
     function appSeriesData(
-      mergedAppUsages: { id: Ref<App>; usages: Usage[] }[],
+      mergedAppUsages: { id: Ref<App>; usages: UsageBar[] }[],
     ) {
       return mergedAppUsages.map((appUsage) => {
         return {
           data: appUsage.usages.map((usage) => [
             ticksToDateTime(usage.start).toMillis(),
             ticksToDateTime(usage.end).toMillis(),
+            (usage as CombinedUsage).count,
           ]),
         } as echarts.CustomSeriesOption;
       });
@@ -154,7 +174,14 @@ export function Gantt2({
       tooltip: {
         trigger: "item",
         formatter: (params) => {
-          return ``;
+          if (!params.data) {
+            return "";
+          }
+          const [start, end, count] = params.data;
+
+          const title = count ? `Multiple Usages: ${count}` : "Single Usage";
+
+          return `${title}<br/>Start: ${ticksToDateTime(start).toFormat("yyyy-MM-dd HH:mm:ss")}<br/>End: ${ticksToDateTime(end).toFormat("yyyy-MM-dd HH:mm:ss")}`;
         },
       },
       grid: {
@@ -178,17 +205,21 @@ export function Gantt2({
           interval: 0,
         },
       },
+      // with filterMode: "filter" or "weakFilter" if the start of the rect goes
+      // before the min of the xAxis, the rect disappears.
+      // There doesn't seem to be a way to do [x0, x1] intersection checks to
+      // detect this case, so we don't bother filtering.
       dataZoom: [
         {
           type: "slider",
           xAxisIndex: [0, 0],
-          filterMode: "weakFilter",
+          filterMode: "none",
           top: 0,
         },
         {
           type: "inside",
           xAxisIndex: [0, 0],
-          filterMode: "weakFilter",
+          filterMode: "none",
           // zoomOnMouseWheel: "shift",
           // moveOnMouseWheel: false,
           // preventDefaultMouseMove: false,
