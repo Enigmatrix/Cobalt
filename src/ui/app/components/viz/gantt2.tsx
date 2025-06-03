@@ -3,9 +3,10 @@ import * as echarts from "echarts";
 import type { App, Ref, Usage } from "@/lib/entities";
 import type { InteractionPeriod, SystemEvent } from "@/lib/entities";
 import type { AppSessionUsages } from "@/lib/repo";
-import { ticksToDateTime, type Interval } from "@/lib/time";
+import { dateTimeToTicks, ticksToDateTime, type Interval } from "@/lib/time";
 import { useWidth } from "@/hooks/use-width";
 import _ from "lodash";
+import { DateTime } from "luxon";
 
 type RectLike = {
   x: number;
@@ -34,7 +35,17 @@ function minRenderTimeGap(interval: Interval, width: number, dataZoom: number) {
   return Math.max(minRenderTimeGap, 1);
 }
 
-function mergedUsages(usages: Usage[], minRenderTimeGap: number): UsageBar[] {
+function mergedUsages(
+  usages: Usage[],
+  minRenderTimeGap: number,
+  start: DateTime,
+  end: DateTime,
+): UsageBar[] {
+  const startTicks = dateTimeToTicks(start);
+  const endTicks = dateTimeToTicks(end);
+  usages = usages.filter(
+    (usage) => usage.end >= startTicks && usage.start <= endTicks,
+  );
   usages.sort((a, b) => a.start - b.start);
   if (minRenderTimeGap < maxRenderTimeGap) {
     return usages;
@@ -108,7 +119,12 @@ export function Gantt2({
     const mergedAppUsages = appUsages.map((appUsage) => {
       return {
         id: appUsage.id,
-        usages: mergedUsages(appUsage.usages, timeGap),
+        usages: mergedUsages(
+          appUsage.usages,
+          timeGap,
+          interval.start,
+          interval.end,
+        ),
       };
     });
 
@@ -232,15 +248,27 @@ export function Gantt2({
 
     const handler = _.debounce((params: any) => {
       let diff = params.end - params.start;
+      let start = params.startValue
+        ? DateTime.fromMillis(params.startValue)
+        : null;
+      let end = params.endValue ? DateTime.fromMillis(params.endValue) : null;
       if (params.batch) {
         const v = params.batch[params.batch.length - 1];
         diff = v.end - v.start;
+        start = interval.start.plus({
+          milliseconds:
+            interval.end.diff(interval.start).toMillis() * (v.start / 100),
+        });
+        end = interval.start.plus({
+          milliseconds:
+            interval.end.diff(interval.start).toMillis() * (v.end / 100),
+        });
       }
       const timeGap = minRenderTimeGap(interval, width, diff);
       const mergedAppUsages = appUsages.map((appUsage) => {
         return {
           id: appUsage.id,
-          usages: mergedUsages(appUsage.usages, timeGap),
+          usages: mergedUsages(appUsage.usages, timeGap, start!, end!),
         };
       });
       const seriesData: echarts.CustomSeriesOption[] =
@@ -248,7 +276,7 @@ export function Gantt2({
       chart.setOption({
         series: seriesData,
       });
-    }, 500);
+    }, 50);
 
     chart.on("datazoom", handler);
 
