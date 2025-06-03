@@ -7,6 +7,13 @@ import { ticksToDateTime, type Interval } from "@/lib/time";
 import { useWidth } from "@/hooks/use-width";
 import _ from "lodash";
 
+type RectLike = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
 const minRenderWidth = 1;
 
 function minRenderTimeGap(interval: Interval, width: number, dataZoom: number) {
@@ -113,25 +120,32 @@ export function Gantt2({
         const start = api.value(0);
         const end = api.value(1);
         const y = api.coord([0, index]);
-        const rowHeight = api.coord([0, index + 1])[1] - y[1];
+        const rowHeight = y[1] - api.coord([0, index + 1])[1];
 
         const x = api.coord([start, 0])[0];
         // minimum 1px width
         const width = Math.max(api.coord([end, 0])[0] - x, 1);
 
         const padding = 0.2;
-        return {
-          type: "rect" as const,
-          shape: {
-            x,
-            y: y[1] - rowHeight * 0.5 + rowHeight * padding,
-            width,
-            height: rowHeight * (1 - padding * 2),
-          },
-          style: {
-            fill: "#1890ff",
-          },
+        const rectShape = {
+          x,
+          y: y[1] + rowHeight * 0.5 + rowHeight * padding,
+          width,
+          height: rowHeight * (1 - padding * 2),
         };
+        const shape = echarts.graphic.clipRectByRect(
+          rectShape,
+          params.coordSys as unknown as RectLike,
+        );
+        return (
+          shape && {
+            type: "rect" as const,
+            shape,
+            style: {
+              fill: "#1890ff",
+            },
+          }
+        );
       },
       ...series,
     }));
