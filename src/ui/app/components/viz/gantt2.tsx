@@ -382,7 +382,7 @@ export function Gantt2({
     <div className="w-full h-full sticky">
       <div
         ref={topRef}
-        className="sticky z-10 w-full border-border border-b bg-card top-0 shadow-xl"
+        className="sticky z-10 w-full border-border border-b bg-card top-0 shadow-md dark:shadow-xl"
         style={{ height: 90 }}
       />
       <div className="relative">
