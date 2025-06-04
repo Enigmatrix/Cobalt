@@ -55,7 +55,6 @@ function mergedUsages(
   usages = usages.filter(
     (usage) => usage.end >= startTicks && usage.start <= endTicks,
   );
-  usages.sort((a, b) => a.start - b.start);
   if (minRenderTimeGap < maxRenderTimeGap) {
     return usages;
   }
@@ -119,9 +118,9 @@ export function Gantt2({
     () =>
       apps.map((app) => ({
         id: app.id,
-        usages: Object.values(usages[app.id]).flatMap(
-          (session) => session.usages,
-        ),
+        usages: Object.values(usages[app.id])
+          .flatMap((session) => session.usages)
+          .sort((a, b) => a.start - b.start),
       })),
     [usages, apps],
   );
