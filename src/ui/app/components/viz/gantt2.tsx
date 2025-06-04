@@ -4,7 +4,6 @@ import type { App, Ref, Usage } from "@/lib/entities";
 import type { InteractionPeriod, SystemEvent } from "@/lib/entities";
 import type { AppSessionUsages } from "@/lib/repo";
 import {
-  dateTimeToTicks,
   ticksToDateTime,
   unixMillisToTicks,
   type Interval,
@@ -16,6 +15,7 @@ import { useApps } from "@/hooks/use-refresh";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import AppIcon from "@/components/app/app-icon";
 import { Text } from "@/components/ui/text";
+import { getVarColorAsHex } from "@/lib/color-utils";
 
 type RectLike = {
   x: number;
@@ -237,6 +237,12 @@ export function Gantt2({
           interval: 0,
           show: false,
         },
+        axisLine: {
+          show: false,
+        },
+        axisTick: {
+          show: false,
+        },
       },
       dataZoom: [
         {
@@ -308,12 +314,25 @@ export function Gantt2({
             showMaxLine: false,
             showMinLine: false,
             lineStyle: {
-              opacity: 0.5,
+              opacity: 0.4,
+              color: getVarColorAsHex("foreground"),
               type: [1, 5],
             },
           },
         },
       ],
+      yAxis: {
+        ...common.yAxis,
+        show: true,
+        splitLine: {
+          show: true,
+          lineStyle: {
+            opacity: 0.5,
+            color: getVarColorAsHex("border"),
+            type: "solid",
+          },
+        },
+      },
       dataZoom: [
         {
           ...common.dataZoom[0],
@@ -396,7 +415,7 @@ export function Gantt2({
           style={{ width: infoGap }}
         >
           {apps.map((app) => (
-            <div key={app.id} className="border-none">
+            <div key={app.id} className="relative">
               <div
                 className="flex items-center p-4 bg-muted/80 hover:bg-muted/60 border-r"
                 style={{ height: appBarHeight }}
@@ -411,6 +430,7 @@ export function Gantt2({
                 <AppIcon buffer={app.icon} className="ml-2 w-6 h-6 shrink-0" />
                 <Text className="font-semibold ml-4">{app.name}</Text>
               </div>
+              <div className="h-px bg-border absolute bottom-[-0.5px] left-0 right-0" />
             </div>
           ))}
         </div>
