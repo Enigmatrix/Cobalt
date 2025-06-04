@@ -7,6 +7,10 @@ import { dateTimeToTicks, ticksToDateTime, type Interval } from "@/lib/time";
 import { useWidth } from "@/hooks/use-width";
 import _ from "lodash";
 import { DateTime } from "luxon";
+import { useApps } from "@/hooks/use-refresh";
+import { ChevronDown, ChevronRight } from "lucide-react";
+import AppIcon from "@/components/app/app-icon";
+import { Text } from "@/components/ui/text";
 
 type RectLike = {
   x: number;
@@ -81,6 +85,7 @@ interface GanttProps {
   defaultExpanded?: Record<Ref<App>, boolean>;
   interval: Interval;
   appBarHeight?: number;
+  infoGap?: number;
 }
 
 export function Gantt2({
@@ -92,22 +97,28 @@ export function Gantt2({
   // systemEventsLoading,
   // defaultExpanded,
   interval,
-  appBarHeight = 44,
+  infoGap = 300,
+  appBarHeight = 52,
 }: GanttProps) {
   const chartRef = useRef<HTMLDivElement>(null);
   const topRef = useRef<HTMLDivElement>(null);
   const chartInstanceRef = useRef<echarts.ECharts | null>(null);
   const topInstanceRef = useRef<echarts.ECharts | null>(null);
 
+  const appIds = useMemo(() => {
+    return Object.keys(usages).map((appId) => +appId as Ref<App>);
+  }, [usages]);
+  const apps = useApps(appIds);
+
   const appUsages = useMemo(
     () =>
-      Object.entries(usages).map(([appId, sessions]) => {
-        return {
-          id: +appId as Ref<App>,
-          usages: Object.values(sessions).flatMap((session) => session.usages),
-        };
-      }),
-    [usages],
+      apps.map((app) => ({
+        id: app.id,
+        usages: Object.values(usages[app.id]).flatMap(
+          (session) => session.usages,
+        ),
+      })),
+    [usages, apps],
   );
 
   // TODO: find width another way
@@ -139,7 +150,7 @@ export function Gantt2({
     function appSeriesData(
       mergedAppUsages: { id: Ref<App>; usages: UsageBar[] }[],
     ) {
-      return mergedAppUsages.map((appUsage) => {
+      return mergedAppUsages.reverse().map((appUsage) => {
         return {
           data: appUsage.usages.map((usage) => [
             ticksToDateTime(usage.start).toMillis(),
@@ -173,7 +184,7 @@ export function Gantt2({
         const padding = 0.2;
         const rectShape = {
           x,
-          y: y[1] + rowHeight * 0.5 + rowHeight * padding,
+          y: y[1] - rowHeight * 0.5 + rowHeight * padding,
           width,
           height: rowHeight * (1 - padding * 2),
         };
@@ -197,7 +208,7 @@ export function Gantt2({
     const common = {
       animation: false,
       grid: {
-        left: 5,
+        left: infoGap,
         right: 5,
         bottom: 0,
         containLabel: true,
@@ -226,7 +237,7 @@ export function Gantt2({
           type: "slider",
           xAxisIndex: [0],
           filterMode: "none",
-          top: 0,
+          top: 5,
         },
         {
           id: "dataZoomInside",
@@ -339,12 +350,15 @@ export function Gantt2({
     chart.on("datazoom", handler);
 
     const resizeObserver = new ResizeObserver(() => {
+      requestAnimationFrame(() => top.resize());
       requestAnimationFrame(() => chart.resize());
     });
 
+    // if chartRef changes, so does topRef
     resizeObserver.observe(chartRef.current);
 
     return () => {
+      top.dispose();
       chart.dispose();
       resizeObserver.disconnect();
     };
@@ -354,14 +368,39 @@ export function Gantt2({
     <div className="w-full h-full sticky">
       <div
         ref={topRef}
-        className="sticky z-10 w-full border-border border-b bg-card top-0"
+        className="sticky z-10 w-full border-border border-b bg-card top-0 shadow-xl"
         style={{ height: 90 }}
       />
-      <div
-        ref={chartRef}
-        className="w-full"
-        style={{ height: appBarHeight * appUsages.length }}
-      />
+      <div className="relative">
+        <div
+          ref={chartRef}
+          className="w-full"
+          style={{ height: appBarHeight * appUsages.length }}
+        />
+        <div
+          className="absolute top-0 left-0 bottom-0"
+          style={{ width: infoGap }}
+        >
+          {apps.map((app) => (
+            <div key={app.id} className="border-none">
+              <div
+                className="flex items-center p-4 bg-muted/80 hover:bg-muted/60 border-r"
+                style={{ height: appBarHeight }}
+                // onClick={() => toggleApp(app.id)}
+              >
+                {/* {expanded[app.id] ? ( */}
+                {true ? (
+                  <ChevronDown size={20} className="flex-shrink-0" />
+                ) : (
+                  <ChevronRight size={20} className="flex-shrink-0" />
+                )}
+                <AppIcon buffer={app.icon} className="ml-2 w-6 h-6 shrink-0" />
+                <Text className="font-semibold ml-4">{app.name}</Text>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
