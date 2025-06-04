@@ -80,6 +80,7 @@ interface GanttProps {
 
   defaultExpanded?: Record<Ref<App>, boolean>;
   interval: Interval;
+  appBarHeight?: number;
 }
 
 export function Gantt2({
@@ -91,9 +92,12 @@ export function Gantt2({
   // systemEventsLoading,
   // defaultExpanded,
   interval,
+  appBarHeight = 44,
 }: GanttProps) {
   const chartRef = useRef<HTMLDivElement>(null);
+  const topRef = useRef<HTMLDivElement>(null);
   const chartInstanceRef = useRef<echarts.ECharts | null>(null);
+  const topInstanceRef = useRef<echarts.ECharts | null>(null);
 
   const appUsages = useMemo(
     () =>
@@ -111,9 +115,13 @@ export function Gantt2({
 
   useEffect(() => {
     if (!chartRef.current) return;
+    if (!topRef.current) return;
 
     const chart = echarts.init(chartRef.current);
     chartInstanceRef.current = chart;
+
+    const top = echarts.init(topRef.current);
+    topInstanceRef.current = top;
 
     const timeGap = minRenderTimeGap(interval, width, 100);
     const mergedAppUsages = appUsages.map((appUsage) => {
@@ -186,28 +194,17 @@ export function Gantt2({
       ...series,
     }));
 
-    const option: echarts.EChartsOption = {
-      tooltip: {
-        trigger: "item",
-        formatter: (params) => {
-          if (!params.data) {
-            return "";
-          }
-          const [start, end, count] = params.data;
-
-          const title = count ? `Multiple Usages: ${count}` : "Single Usage";
-
-          return `${title}<br/>Start: ${ticksToDateTime(start).toFormat("yyyy-MM-dd HH:mm:ss")}<br/>End: ${ticksToDateTime(end).toFormat("yyyy-MM-dd HH:mm:ss")}`;
-        },
-      },
+    const common = {
+      animation: false,
       grid: {
-        left: "3%",
-        right: "4%",
+        left: 5,
+        right: 5,
         bottom: 0,
         containLabel: true,
       },
       xAxis: [
         {
+          id: "timeAxis",
           type: "time",
           position: "top",
           min: interval.start.toMillis(),
@@ -215,36 +212,97 @@ export function Gantt2({
         },
       ],
       yAxis: {
+        show: false,
         type: "category",
         data: appUsages.map((appUsage) => appUsage.id),
         axisLabel: {
           interval: 0,
+          show: false,
         },
       },
-      // with filterMode: "filter" or "weakFilter" if the start of the rect goes
-      // before the min of the xAxis, the rect disappears.
-      // There doesn't seem to be a way to do [x0, x1] intersection checks to
-      // detect this case, so we don't bother filtering.
       dataZoom: [
         {
+          id: "dataZoomSlider",
           type: "slider",
-          xAxisIndex: [0, 0],
+          xAxisIndex: [0],
           filterMode: "none",
           top: 0,
         },
         {
+          id: "dataZoomInside",
           type: "inside",
-          xAxisIndex: [0, 0],
+          xAxisIndex: [0],
           filterMode: "none",
           // zoomOnMouseWheel: "shift",
           // moveOnMouseWheel: false,
           // preventDefaultMouseMove: false,
         },
       ],
+    } satisfies echarts.EChartsOption;
+
+    const optionTop: echarts.EChartsOption = {
+      ...common,
+      xAxis: [
+        {
+          ...common.xAxis[0],
+          show: true,
+          minorTick: {
+            show: true,
+          },
+          axisTick: {
+            show: true,
+          },
+          alignTicks: true,
+        },
+      ],
+    };
+
+    const option: echarts.EChartsOption = {
+      ...common,
+      tooltip: {
+        trigger: "item",
+        formatter: (params) => {
+          if (!params.data) {
+            return "";
+          }
+          const [startMillis, endMillis, count] = params.data;
+          const start = DateTime.fromMillis(startMillis);
+          const end = DateTime.fromMillis(endMillis);
+
+          const title = count ? `Multiple Usages: ${count}` : "Single Usage";
+
+          return `${title}<br/>Start: ${start.toFormat("yyyy-MM-dd HH:mm:ss.SSS")}<br/>End: ${end.toFormat("yyyy-MM-dd HH:mm:ss.SSS")}`;
+        },
+      },
+      grid: {
+        ...common.grid,
+        top: 0,
+      },
+      xAxis: [
+        {
+          ...common.xAxis[0],
+          show: false,
+          axisLabel: {
+            show: false,
+          },
+        },
+      ],
+      dataZoom: [
+        {
+          ...common.dataZoom[0],
+          show: false,
+        },
+        {
+          ...common.dataZoom[1],
+          show: false,
+        },
+      ],
       series: seriesData,
     };
 
     chart.setOption(option);
+    top.setOption(optionTop);
+    echarts.connect([chart, top]);
 
     const handler = _.debounce((params: any) => {
       let diff = params.end - params.start;
@@ -293,8 +351,17 @@ export function Gantt2({
   }, [interval, appUsages]);
 
   return (
-    <div className="w-full h-full">
-      <div ref={chartRef} className="w-full h-full" />
+    <div className="w-full h-full sticky">
+      <div
+        ref={topRef}
+        className="sticky z-10 w-full border-border border-b bg-card top-0"
+        style={{ height: 90 }}
+      />
+      <div
+        ref={chartRef}
+        className="w-full"
+        style={{ height: appBarHeight * appUsages.length }}
+      />
     </div>
   );
 }
