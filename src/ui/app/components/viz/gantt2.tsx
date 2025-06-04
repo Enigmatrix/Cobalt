@@ -270,6 +270,7 @@ export function Gantt2({
           },
           axisTick: {
             show: true,
+            inside: true,
           },
           alignTicks: true,
         },
@@ -300,9 +301,17 @@ export function Gantt2({
       xAxis: [
         {
           ...common.xAxis[0],
-          show: false,
           axisLabel: {
             show: false,
+          },
+          splitLine: {
+            show: true,
+            showMaxLine: false,
+            showMinLine: false,
+            lineStyle: {
+              opacity: 0.5,
+              type: [1, 5],
+            },
           },
         },
       ],
