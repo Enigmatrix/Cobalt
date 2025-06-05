@@ -1,7 +1,7 @@
 use std::collections::{HashMap, HashSet};
 use std::future::Future;
 
-use data::entities::{App, Ref, Session};
+use data::entities::{App, AppIdentity, Ref, Session};
 use platform::events::WindowSession;
 use platform::objects::{BaseWebsiteUrl, ProcessId, ProcessThreadId, Window};
 use scoped_futures::ScopedBoxFuture;
@@ -26,7 +26,14 @@ pub struct Cache {
     // An app can have many processes open representing it.
     // A process can have many windows.
     windows: HashMap<ProcessThreadId, HashSet<Window>>,
-    processes: HashMap<Ref<App>, HashSet<ProcessThreadId>>,
+    processes: HashMap<Ref<App>, AppEntry>,
+}
+
+/// Details about a [App].
+#[derive(Debug, Default)]
+pub struct AppEntry {
+    pub process_threads: HashSet<ProcessThreadId>,
+    pub identity: AppIdentity,
 }
 
 /// Details about a [Session].
@@ -41,6 +48,7 @@ pub struct SessionDetails {
 #[derive(Debug)]
 pub struct AppDetails {
     pub app: Ref<App>,
+    pub identity: AppIdentity,
     pub is_browser: bool,
 }
 
@@ -62,7 +70,7 @@ impl Cache {
         self.processes
             .get(app)
             .into_iter()
-            .flat_map(|i| i.iter().map(|ptid| ptid.pid))
+            .flat_map(|i| i.process_threads.iter().map(|ptid| ptid.pid))
             .collect()
     }
 
@@ -71,7 +79,7 @@ impl Cache {
         self.processes
             .get(app)
             .into_iter()
-            .flat_map(|i| i.iter())
+            .flat_map(|i| i.process_threads.iter())
             .flat_map(|ptid| {
                 self.windows
                     .get(ptid)
@@ -94,10 +102,10 @@ impl Cache {
         self.browsers
             .retain(|window, _| !removed_windows.contains(window));
         self.windows.retain(|ptid, _| ptid.pid != process);
-        self.processes.retain(|_, ptids| {
+        self.processes.retain(|_, entry| {
             // remove pid from list, and remove the entry altogether if it's empty
-            ptids.retain(|ptid| ptid.pid != process);
-            !ptids.is_empty()
+            entry.process_threads.retain(|ptid| ptid.pid != process);
+            !entry.process_threads.is_empty()
         });
     }
 
@@ -145,10 +153,9 @@ impl Cache {
         }
 
         let created = { create(self).await? };
-        self.processes
-            .entry(created.app.clone())
-            .or_default()
-            .insert(ptid);
+        let entry = self.processes.entry(created.app.clone()).or_default();
+        entry.process_threads.insert(ptid);
+        entry.identity = created.identity.clone();
 
         Ok(self.apps.entry(ptid).or_insert(created))
     }
@@ -198,9 +205,11 @@ impl Cache {
             .retain(|ws, _| alive_windows.contains(&ws.window));
         self.apps.retain(|ptid, _| self.windows.contains_key(ptid));
         // retain only app refs for processes that are alive
-        self.processes.retain(|_, ptids| {
-            ptids.retain(|ptid| self.windows.contains_key(ptid));
-            !ptids.is_empty()
+        self.processes.retain(|_, entry| {
+            entry
+                .process_threads
+                .retain(|ptid| self.windows.contains_key(ptid));
+            !entry.process_threads.is_empty()
         });
         Ok(())
     }
@@ -227,6 +236,9 @@ async fn inner_mut_compiles() {
                         .get_or_insert_app_for_ptid(process, |_| async {
                             Ok(AppDetails {
                                 app: Ref::new(1),
+                                identity: AppIdentity::Win32 {
+                                    path: "C:\\yorm.exe".to_string(),
+                                },
                                 is_browser: true,
                             })
                         })
