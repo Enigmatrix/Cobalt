@@ -8,7 +8,7 @@ use platform::events::{
     ForegroundChangedEvent, InteractionChangedEvent, SystemStateEvent, WindowSession,
 };
 use platform::objects::{
-    BaseWebsiteUrl, BrowserDetector, Process, ProcessId, Timestamp, WebsiteInfo, Window,
+    BaseWebsiteUrl, BrowserDetector, Process, ProcessThreadId, Timestamp, WebsiteInfo, Window,
 };
 use scoped_futures::ScopedFutureExt;
 use util::config;
@@ -233,12 +233,12 @@ impl Engine {
     ) -> Result<SessionDetails> {
         trace!(?ws, "insert session");
 
-        let pid = ws.window.pid()?;
+        let ptid = ws.window.ptid()?;
         let (mut app, is_browser) = {
             let db_pool = db_pool.clone();
             let AppDetails { app, is_browser } = cache
-                .get_or_insert_app_for_process(pid, |_| async {
-                    Self::create_app_for_process(inserter, db_pool, spawner, pid, &ws.window, at)
+                .get_or_insert_app_for_ptid(ptid, |_| async {
+                    Self::create_app_for_ptid(inserter, db_pool, spawner, ptid, &ws.window, at)
                         .await
                 })
                 .await?;
@@ -269,23 +269,23 @@ impl Engine {
 
         Ok(SessionDetails {
             session: session.id,
-            pid,
+            ptid,
             is_browser,
         })
     }
 
-    /// Create an [App] for the given [ProcessId] and [Window]
-    async fn create_app_for_process(
+    /// Create an [App] for the given [ProcessThreadId] and [Window]
+    async fn create_app_for_ptid(
         inserter: &mut UsageWriter,
         db_pool: DatabasePool,
         spawner: &Handle,
-        pid: ProcessId,
+        ptid: ProcessThreadId,
         window: &Window,
         at: Timestamp,
     ) -> Result<AppDetails> {
-        trace!(?window, ?pid, "create/find app for process");
+        trace!(?window, ?ptid, "create/find app for process");
 
-        let process = Process::new(pid)?;
+        let process = Process::new(ptid.pid)?;
         let path = process.path()?;
         let is_browser = BrowserDetector::is_browser(&path);
 
@@ -302,7 +302,7 @@ impl Engine {
             FoundOrInserted::Found(id) => id,
             FoundOrInserted::Inserted(id) => {
                 {
-                    info!(?window, ?pid, "inserted app");
+                    info!(?window, ?ptid, "inserted app");
 
                     let id = id.clone();
 

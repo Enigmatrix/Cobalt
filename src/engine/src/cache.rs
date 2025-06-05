@@ -3,7 +3,7 @@ use std::future::Future;
 
 use data::entities::{App, Ref, Session};
 use platform::events::WindowSession;
-use platform::objects::{BaseWebsiteUrl, ProcessId, Window};
+use platform::objects::{BaseWebsiteUrl, ProcessThreadId, Window};
 use scoped_futures::ScopedBoxFuture;
 use util::error::Result;
 use util::future as tokio;
@@ -14,9 +14,9 @@ pub struct Cache {
     // TODO this might be a bad idea, the HWND might be reused by Windows,
     // so another window could be running with the same HWND after the first one closed...
     sessions: HashMap<WindowSession, SessionDetails>,
-    // TODO this might be a bad idea, the ProcessId might be reused by Windows,
-    // so another app could be running with the same pid after the first one closed...
-    apps: HashMap<ProcessId, AppDetails>,
+    // TODO this might be a bad idea, the pid/tid might be reused by Windows,
+    // so another app could be running with the same pid/tid after the first one closed...
+    apps: HashMap<ProcessThreadId, AppDetails>,
 
     // This never gets cleared, but it's ok since it's a small set of urls?
     websites: HashMap<BaseWebsiteUrl, AppDetails>,
@@ -33,7 +33,7 @@ pub struct Cache {
 #[derive(Debug)]
 pub struct SessionDetails {
     pub session: Ref<Session>,
-    pub pid: ProcessId,
+    pub ptid: ProcessThreadId,
     pub is_browser: bool,
 }
 
@@ -111,7 +111,7 @@ impl Cache {
         self.browsers.insert(ws.window.clone(), created.is_browser);
 
         self.windows
-            .entry(created.pid)
+            .entry(created.ptid)
             .or_default()
             .insert(ws.window.clone());
 
@@ -120,22 +120,22 @@ impl Cache {
 
     /// Get or insert a [AppDetails] for a [ProcessId], using the create callback
     /// to make a new [AppDetails] if not found.
-    pub async fn get_or_insert_app_for_process<F: Future<Output = Result<AppDetails>>>(
+    pub async fn get_or_insert_app_for_ptid<F: Future<Output = Result<AppDetails>>>(
         &mut self,
-        process: ProcessId,
+        ptid: ProcessThreadId,
         create: impl FnOnce(&mut Self) -> F,
     ) -> Result<&mut AppDetails> {
-        if self.apps.contains_key(&process) {
-            return Ok(self.apps.get_mut(&process).unwrap());
+        if self.apps.contains_key(&ptid) {
+            return Ok(self.apps.get_mut(&ptid).unwrap());
         }
 
         let created = { create(self).await? };
         self.processes
             .entry(created.app.clone())
             .or_default()
-            .insert(process);
+            .insert(ptid);
 
-        Ok(self.apps.entry(process).or_insert(created))
+        Ok(self.apps.entry(ptid).or_insert(created))
     }
 
     /// Get or insert a [AppDetails] for a [BaseWebsiteUrl], using the create callback
@@ -196,7 +196,7 @@ async fn inner_mut_compiles() {
     use scoped_futures::ScopedFutureExt;
 
     let window: Window = Window::foreground().unwrap();
-    let process: ProcessId = 1;
+    let process = ProcessThreadId { pid: 1, tid: 1 };
     let mut cache = Cache::new();
 
     cache
@@ -209,7 +209,7 @@ async fn inner_mut_compiles() {
             |cache| {
                 async move {
                     let _app = cache
-                        .get_or_insert_app_for_process(process, |_| async {
+                        .get_or_insert_app_for_ptid(process, |_| async {
                             Ok(AppDetails {
                                 app: Ref::new(1),
                                 is_browser: true,
@@ -218,7 +218,7 @@ async fn inner_mut_compiles() {
                         .await?;
                     Ok(SessionDetails {
                         session: Ref::new(1),
-                        pid: process,
+                        ptid: process,
                         is_browser: true,
                     })
                 }

@@ -20,8 +20,19 @@ use crate::adapt_size;
 use crate::buf::WideBuffer;
 use crate::error::IntoResult;
 
-/// Identified of the [Process]. May be recycled.
+/// Identifier of a [Process]. May be recycled.
 pub type ProcessId = u32;
+/// Identifier of a Thread. May be recycled.
+pub type ThreadId = u32;
+
+/// [ProcessId] and [ThreadId] that created the [super::Window]. May be recycled.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct ProcessThreadId {
+    /// [Process] that created the [Window].
+    pub pid: ProcessId,
+    /// [Thread] that created the [Window].
+    pub tid: ThreadId,
+}
 
 const APPLICATION_FRAME_HOST: &str = r"C:\Windows\System32\ApplicationFrameHost.exe";
 
