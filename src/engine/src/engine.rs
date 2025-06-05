@@ -236,7 +236,9 @@ impl Engine {
         let ptid = ws.window.ptid()?;
         let (mut app, is_browser) = {
             let db_pool = db_pool.clone();
-            let AppDetails { app, is_browser } = cache
+            let AppDetails {
+                app, is_browser, ..
+            } = cache
                 .get_or_insert_app_for_ptid(ptid, |_| async {
                     Self::create_app_for_ptid(inserter, db_pool, spawner, ptid, &ws.window, at)
                         .await
@@ -298,6 +300,7 @@ impl Engine {
         };
 
         let found_app = inserter.find_or_insert_app(&identity, at).await?;
+        let _identity = identity.clone();
         let app_id = match found_app {
             FoundOrInserted::Found(id) => id,
             FoundOrInserted::Inserted(id) => {
@@ -307,10 +310,10 @@ impl Engine {
                     let id = id.clone();
 
                     spawner.spawn(async move {
-                        AppInfoResolver::update_app(db_pool, id.clone(), identity.clone())
+                        AppInfoResolver::update_app(db_pool, id.clone(), _identity.clone())
                             .await
                             .with_context(|| {
-                                format!("update app({:?}, {:?}) with info", id, identity)
+                                format!("update app({:?}, {:?}) with info", id, _identity)
                             })
                             .error();
                     });
@@ -321,6 +324,7 @@ impl Engine {
         };
         Ok(AppDetails {
             app: app_id,
+            identity,
             is_browser,
         })
     }
@@ -339,6 +343,7 @@ impl Engine {
         };
         let found_app = inserter.find_or_insert_app(&identity, at).await?;
 
+        let _identity = identity.clone();
         let app_id = match found_app {
             FoundOrInserted::Found(id) => id,
             FoundOrInserted::Inserted(id) => {
@@ -348,10 +353,10 @@ impl Engine {
                     let id = id.clone();
 
                     spawner.spawn(async move {
-                        AppInfoResolver::update_app(db_pool, id.clone(), identity.clone())
+                        AppInfoResolver::update_app(db_pool, id.clone(), _identity.clone())
                             .await
                             .with_context(|| {
-                                format!("update app({:?}, {:?}) (website) with info", id, identity)
+                                format!("update app({:?}, {:?}) (website) with info", id, _identity)
                             })
                             .error();
                     });
@@ -363,6 +368,7 @@ impl Engine {
         // this is a website, not a browser
         Ok(AppDetails {
             app: app_id,
+            identity,
             is_browser: false,
         })
     }

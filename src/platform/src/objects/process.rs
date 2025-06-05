@@ -6,6 +6,8 @@ use std::sync::OnceLock;
 
 use util::error::{bail, Context, Result};
 use util::tracing::ResultTraceExt;
+use windows::core::HSTRING;
+use windows::System::AppDiagnosticInfo;
 use windows::Wdk::System::Threading::{
     NtQueryInformationProcess, ProcessImageFileNameWin32, PROCESSINFOCLASS,
 };
@@ -91,6 +93,20 @@ impl Process {
         let access = PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_TERMINATE;
         let handle = unsafe { OpenProcess(access, false, pid)? };
         Ok(Self { handle })
+    }
+
+    /// Kill a UWP app with the given AUMID
+    pub async fn kill_uwp(aumid: &str) -> Result<()> {
+        let infos = AppDiagnosticInfo::RequestInfoForAppUserModelId(&HSTRING::from(aumid))?.await?;
+        let infos = infos.into_iter().collect::<Vec<_>>();
+        for info in infos {
+            let groups = info.GetResourceGroups()?;
+            let groups = groups.into_iter().collect::<Vec<_>>();
+            for group in groups {
+                group.StartTerminateAsync()?.await?;
+            }
+        }
+        Ok(())
     }
 
     /// Check whether this [Process] is still running
