@@ -71,9 +71,7 @@ impl Sentry {
             .target_apps(target)
             .await?
             .iter()
-            .flat_map(move |app| {
-                cache.processes_for_app(app).cloned().collect::<Vec<_>>() // ew
-            })
+            .flat_map(move |app| cache.processes_for_app(app))
             .collect();
         Ok(processes)
     }
@@ -107,11 +105,11 @@ impl Sentry {
         match &alert.trigger_action {
             TriggerAction::Kill => {
                 let processes = self.processes_for_target(&alert.target).await?;
-                let mut cache = self.cache.lock().await;
                 for pid in processes {
                     info!(?alert, "killing process {:?}", pid);
                     let process = Process::new_killable(pid)?;
                     self.handle_kill_action(&process).warn();
+                    let mut cache = self.cache.lock().await;
                     cache.remove_process(pid);
                 }
             }
