@@ -14,7 +14,7 @@ use windows::Win32::UI::WindowsAndMessaging::{
 
 use crate::buf::{buf, Buffer, WideBuffer};
 use crate::error::Win32Error;
-use crate::objects::ProcessId;
+use crate::objects::ProcessThreadId;
 use crate::win32;
 
 /*
@@ -59,11 +59,11 @@ impl Window {
         }
     }
 
-    /// Get the [ProcessId] of the [Window]
-    pub fn pid(&self) -> Result<ProcessId> {
+    /// Get the [ProcessThreadId] of the [Window]
+    pub fn ptid(&self) -> Result<ProcessThreadId> {
         let mut pid = 0;
-        let _tid = win32!(val: unsafe { GetWindowThreadProcessId(self.hwnd, Some(&mut pid)) })?;
-        Ok(pid)
+        let tid = win32!(val: unsafe { GetWindowThreadProcessId(self.hwnd, Some(&mut pid)) })?;
+        Ok(ProcessThreadId { pid, tid })
     }
 
     /// Get the title of the [Window]
