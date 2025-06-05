@@ -3,7 +3,7 @@ use std::future::Future;
 
 use data::entities::{App, Ref, Session};
 use platform::events::WindowSession;
-use platform::objects::{BaseWebsiteUrl, ProcessThreadId, Window};
+use platform::objects::{BaseWebsiteUrl, ProcessId, ProcessThreadId, Window};
 use scoped_futures::ScopedBoxFuture;
 use util::error::Result;
 use util::future as tokio;
@@ -25,8 +25,8 @@ pub struct Cache {
 
     // An app can have many processes open representing it.
     // A process can have many windows.
-    windows: HashMap<ProcessId, HashSet<Window>>,
-    processes: HashMap<Ref<App>, HashSet<ProcessId>>,
+    windows: HashMap<ProcessThreadId, HashSet<Window>>,
+    processes: HashMap<Ref<App>, HashSet<ProcessThreadId>>,
 }
 
 /// Details about a [Session].
@@ -58,31 +58,46 @@ impl Cache {
     }
 
     /// Get all processes for an [App].
-    pub fn processes_for_app(&self, app: &Ref<App>) -> impl Iterator<Item = &ProcessId> {
-        self.processes.get(app).into_iter().flat_map(|i| i.iter())
+    pub fn processes_for_app(&self, app: &Ref<App>) -> HashSet<ProcessId> {
+        self.processes
+            .get(app)
+            .into_iter()
+            .flat_map(|i| i.iter().map(|ptid| ptid.pid))
+            .collect()
     }
 
     /// Get all windows for an [App].
     pub fn windows_for_app(&self, app: &Ref<App>) -> impl Iterator<Item = &Window> {
-        self.processes_for_app(app).flat_map(|pid| {
-            self.windows
-                .get(pid)
-                .into_iter()
-                .flat_map(|windows| windows.iter())
-        })
+        self.processes
+            .get(app)
+            .into_iter()
+            .flat_map(|i| i.iter())
+            .flat_map(|ptid| {
+                self.windows
+                    .get(ptid)
+                    .into_iter()
+                    .flat_map(|windows| windows.iter())
+            })
     }
 
     /// Remove a process and associated windows from the [Cache].
     pub fn remove_process(&mut self, process: ProcessId) {
-        self.apps.remove(&process);
-        if let Some(windows) = self.windows.remove(&process) {
-            self.sessions.retain(|ws, _| !windows.contains(&ws.window));
-            self.browsers.retain(|window, _| !windows.contains(window));
-        }
-        self.processes.retain(|_, pids| {
+        self.apps.retain(|ptid, _| ptid.pid != process);
+        let removed_windows = self
+            .windows
+            .iter()
+            .filter(|(ptid, _)| ptid.pid == process)
+            .flat_map(|(_, windows)| windows)
+            .collect::<HashSet<_>>();
+        self.sessions
+            .retain(|ws, _| !removed_windows.contains(&ws.window));
+        self.browsers
+            .retain(|window, _| !removed_windows.contains(window));
+        self.windows.retain(|ptid, _| ptid.pid != process);
+        self.processes.retain(|_, ptids| {
             // remove pid from list, and remove the entry altogether if it's empty
-            pids.retain(|pid| *pid != process);
-            !pids.is_empty()
+            ptids.retain(|ptid| ptid.pid != process);
+            !ptids.is_empty()
         });
     }
 
@@ -118,7 +133,7 @@ impl Cache {
         Ok(self.sessions.entry(ws).or_insert(created))
     }
 
-    /// Get or insert a [AppDetails] for a [ProcessId], using the create callback
+    /// Get or insert a [AppDetails] for a [ProcessThreadId], using the create callback
     /// to make a new [AppDetails] if not found.
     pub async fn get_or_insert_app_for_ptid<F: Future<Output = Result<AppDetails>>>(
         &mut self,
@@ -169,11 +184,11 @@ impl Cache {
     /// Retains all process for windows in the list, and removes the rest
     /// of the process and windows not in the list.
     pub fn retain_cache(&mut self) -> Result<()> {
-        self.windows.retain(|pid, windows| {
+        self.windows.retain(|ptid, windows| {
             // check if window is alive by checking if the pid() calls
             // still succeeds and returns the same pid as previously
             // returned to the engine
-            windows.retain(|window| window.pid().ok() == Some(*pid));
+            windows.retain(|window| window.ptid().ok() == Some(*ptid));
             !windows.is_empty()
         });
         let alive_windows = self.windows.values().flatten().collect::<HashSet<_>>();
@@ -181,11 +196,11 @@ impl Cache {
         // retain only sessions and apps for which their windows and apps that are alive
         self.sessions
             .retain(|ws, _| alive_windows.contains(&ws.window));
-        self.apps.retain(|pid, _| self.windows.contains_key(pid));
-        // retain only app refs for procesess that are alive
-        self.processes.retain(|_, pids| {
-            pids.retain(|pid| self.windows.contains_key(pid));
-            !pids.is_empty()
+        self.apps.retain(|ptid, _| self.windows.contains_key(ptid));
+        // retain only app refs for processes that are alive
+        self.processes.retain(|_, ptids| {
+            ptids.retain(|ptid| self.windows.contains_key(ptid));
+            !ptids.is_empty()
         });
         Ok(())
     }
