@@ -52,6 +52,13 @@ pub struct AppDetails {
     pub is_browser: bool,
 }
 
+/// A process that can be killed.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum KillableProcessId {
+    Win32(ProcessId),
+    Aumid(String),
+}
+
 impl Cache {
     /// Create a new [Cache].
     pub fn new() -> Self {
@@ -66,12 +73,26 @@ impl Cache {
     }
 
     /// Get all processes for an [App].
-    pub fn processes_for_app(&self, app: &Ref<App>) -> HashSet<ProcessId> {
-        self.processes
-            .get(app)
-            .into_iter()
-            .flat_map(|i| i.process_threads.iter().map(|ptid| ptid.pid))
-            .collect()
+    pub fn processes_for_app(&self, app: &Ref<App>) -> HashSet<KillableProcessId> {
+        let entry = self.processes.get(app);
+        if let Some(entry) = entry {
+            match &entry.identity {
+                AppIdentity::Uwp { aumid } => [KillableProcessId::Aumid(aumid.clone())]
+                    .into_iter()
+                    .collect(),
+                AppIdentity::Win32 { .. } => entry
+                    .process_threads
+                    .iter()
+                    .map(|ptid| KillableProcessId::Win32(ptid.pid))
+                    .collect(),
+                // TODO handle Website entries
+                _ => {
+                    todo!()
+                }
+            }
+        } else {
+            HashSet::new()
+        }
     }
 
     /// Get all windows for an [App].
@@ -107,6 +128,33 @@ impl Cache {
             entry.process_threads.retain(|ptid| ptid.pid != process);
             !entry.process_threads.is_empty()
         });
+    }
+
+    /// Remove an app and associated processes, windows from the [Cache].
+    pub fn remove_app(&mut self, app: Ref<App>) {
+        let app_entry = self.processes.remove(&app);
+        if let Some(app_entry) = app_entry {
+            let removed_windows = self
+                .windows
+                .iter()
+                .filter(|(ptid, _)| app_entry.process_threads.contains(ptid))
+                .flat_map(|(_, windows)| windows)
+                .collect::<HashSet<_>>();
+            self.sessions
+                .retain(|ws, _| !removed_windows.contains(&ws.window));
+            self.browsers
+                .retain(|window, _| !removed_windows.contains(window));
+            self.windows
+                .retain(|ptid, _| !app_entry.process_threads.contains(ptid));
+
+            self.processes.retain(|_, entry| {
+                // remove pid from list, and remove the entry altogether if it's empty
+                entry
+                    .process_threads
+                    .retain(|ptid| !app_entry.process_threads.contains(ptid));
+                !entry.process_threads.is_empty()
+            });
+        }
     }
 
     /// Get or insert a [SessionDetails] for a [Window], using the create callback

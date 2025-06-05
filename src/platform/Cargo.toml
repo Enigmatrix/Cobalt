@@ -47,6 +47,7 @@ features = [
     "Storage_Streams",
     "Storage_FileProperties",
     "ApplicationModel",
+    "System",
     "UI_Notifications",
     "Data_Xml_Dom",
 ]
