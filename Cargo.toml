@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["src/*", "src/ui/src-tauri"]
+members = ["src/*", "src/ui/src-tauri", "dev/tools"]
 exclude = ["src/ui"]
 
 [workspace.package]
