@@ -134,6 +134,11 @@ impl Cache {
     pub fn remove_app(&mut self, app: Ref<App>) {
         let app_entry = self.processes.remove(&app);
         if let Some(app_entry) = app_entry {
+            for ptid in &app_entry.process_threads {
+                self.windows.remove(ptid);
+                self.apps.remove(ptid);
+            }
+
             let removed_windows = self
                 .windows
                 .iter()
@@ -144,16 +149,6 @@ impl Cache {
                 .retain(|ws, _| !removed_windows.contains(&ws.window));
             self.browsers
                 .retain(|window, _| !removed_windows.contains(window));
-            self.windows
-                .retain(|ptid, _| !app_entry.process_threads.contains(ptid));
-
-            self.processes.retain(|_, entry| {
-                // remove pid from list, and remove the entry altogether if it's empty
-                entry
-                    .process_threads
-                    .retain(|ptid| !app_entry.process_threads.contains(ptid));
-                !entry.process_threads.is_empty()
-            });
         }
     }
 
