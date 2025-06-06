@@ -1,4 +1,4 @@
-use util::error::{Context, Result};
+use util::error::Result;
 use windows::core::VARIANT;
 use windows::Win32::System::Com::StructuredStorage::{
     PropVariantToStringAlloc, VariantToPropVariant,
@@ -71,27 +71,29 @@ impl BrowserDetector {
             self.automation
                 .CreatePropertyCondition(UIA_ControlTypePropertyId, &variant)?
         };
-        // No matching element is Error with S_OK (wtf??????)
-        let document = match unsafe { element.FindFirst(TreeScope_Descendants, &condition) } {
-            Ok(element) => element,
-            Err(err) if err.code().is_ok() => {
-                return Ok(BrowserUrl {
-                    url: None,
-                    incognito,
-                })
-            }
-            Err(err) => return Err(err).context("find first element"),
-        };
+        let documents = unsafe { element.FindAll(TreeScope_Descendants, &condition)? };
+        let len = unsafe { documents.Length()? };
+        for i in 0..len {
+            let document = unsafe { documents.GetElement(i)? };
 
-        let url_prop = unsafe { document.GetCurrentPropertyValue(UIA_ValueValuePropertyId)? };
-        let url_prop = unsafe { VariantToPropVariant(&url_prop)? };
-        let url_raw = unsafe { PropVariantToStringAlloc(&url_prop)? };
-        // This is a copy, so we are free to CoTaskMemFree the url_raw in the next line
-        let url = String::from_utf16_lossy(unsafe { url_raw.as_wide() });
-        unsafe { CoTaskMemFree(Some(url_raw.as_ptr().cast())) };
+            let url_prop = unsafe { document.GetCurrentPropertyValue(UIA_ValueValuePropertyId)? };
+            let url_prop = unsafe { VariantToPropVariant(&url_prop)? };
+            let url_raw = unsafe { PropVariantToStringAlloc(&url_prop)? };
+            // This is a copy, so we are free to CoTaskMemFree the url_raw in the next line
+            let url = String::from_utf16_lossy(unsafe { url_raw.as_wide() });
+            unsafe { CoTaskMemFree(Some(url_raw.as_ptr().cast())) };
+            if url.is_empty() {
+                continue;
+            }
+
+            return Ok(BrowserUrl {
+                url: Some(url),
+                incognito,
+            });
+        }
 
         Ok(BrowserUrl {
-            url: if url.is_empty() { None } else { Some(url) },
+            url: None,
             incognito,
         })
     }
