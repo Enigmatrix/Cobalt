@@ -2,7 +2,7 @@ use data::db::{AppUpdater, DatabasePool};
 use data::entities::{App, AppIdentity, Ref};
 use platform::objects::{AppInfo, WebsiteInfo};
 use util::error::Result;
-use util::tracing::info;
+use util::tracing::{info, warn};
 
 /// Resolves application information asynchronously.
 pub struct AppInfoResolver;
@@ -15,7 +15,13 @@ impl AppInfoResolver {
             AppIdentity::Uwp { aumid } => AppInfo::from_uwp(aumid).await,
             AppIdentity::Website { base_url } => {
                 let base_url = WebsiteInfo::url_to_base_url(base_url)?;
-                Ok(WebsiteInfo::from_base_url(base_url).await?.into())
+                Ok(WebsiteInfo::from_base_url(base_url.clone())
+                    .await
+                    .unwrap_or_else(|e| {
+                        warn!("failed to get website info for {base_url}, using default: {e}");
+                        WebsiteInfo::default_from_url(base_url)
+                    })
+                    .into())
             }
         }
     }
