@@ -26,16 +26,20 @@ struct Args {
     })]
     opacity: f64,
 
-    /// Window handle in hexadecimal
-    #[arg(long, group = "window_identifier", required = true)]
-    handle: Option<String>,
-
     /// Application name to filter by
-    #[arg(long, group = "window_identifier", required = true)]
+    #[arg(long)]
     app: Option<String>,
 
+    /// Process ID to filter by
+    #[arg(long)]
+    pid: Option<ProcessId>,
+
+    /// Window handle in hexadecimal
+    #[arg(long)]
+    handle: Option<String>,
+
     /// Window title text to filter by
-    #[arg(group = "window_identifier", required = true)]
+    #[arg()]
     title: Option<String>,
 }
 
@@ -46,16 +50,16 @@ fn main() -> Result<()> {
     platform::setup()?;
 
     let args = Args::parse();
-    let matches = match_window(&WindowFilter {
-        handle: args.handle,
-        app: args.app,
-        title: args.title,
-    })?;
-
-    if matches.is_empty() {
-        eprintln!("No windows found matching the criteria");
-        return Ok(());
-    }
+    let matches = match_window(
+        &WindowFilter {
+            handle: args.handle,
+            title: args.title,
+        },
+        &ProcessFilter {
+            pid: args.pid,
+            name: args.app,
+        },
+    )?;
 
     if let Some(details) = select_window(&matches)? {
         details.window.dim(args.opacity)?;
@@ -66,15 +70,19 @@ fn main() -> Result<()> {
     Ok(())
 }
 
+/// Filter for a process
+pub struct ProcessFilter {
+    /// Process ID
+    pub pid: Option<ProcessId>,
+    /// Process name to filter by
+    pub name: Option<String>,
+}
+
 /// Filter for a window
 #[derive(Debug, Clone)]
 pub struct WindowFilter {
     /// Window handle in hexadecimal
     pub handle: Option<String>,
-
-    /// Application name to filter by
-    pub app: Option<String>,
-
     /// Window title text to filter by
     pub title: Option<String>,
 }
@@ -137,8 +145,10 @@ fn get_process_details(pid: ProcessId) -> Result<Option<ProcessDetails>> {
     Ok(Some(ProcessDetails { pid, path, name }))
 }
 
-fn match_window(filter: &WindowFilter) -> Result<Vec<ProcessWindowGroup>> {
-    let processes = Process::get_all()?;
+fn match_window(
+    window_filter: &WindowFilter,
+    process_filter: &ProcessFilter,
+) -> Result<Vec<ProcessWindowGroup>> {
     let mut windows = Window::get_all_visible_windows()?
         .into_iter()
         .map(|window| {
@@ -150,7 +160,7 @@ fn match_window(filter: &WindowFilter) -> Result<Vec<ProcessWindowGroup>> {
         })
         .collect::<Result<Vec<WindowDetails>>>()?;
 
-    if let Some(handle_filter) = &filter.handle {
+    if let Some(handle_filter) = &window_filter.handle {
         let handle_filter = handle_filter.to_lowercase();
         windows.retain(|w| {
             format!("{:08x}", w.window.hwnd.0)
@@ -158,7 +168,7 @@ fn match_window(filter: &WindowFilter) -> Result<Vec<ProcessWindowGroup>> {
                 .contains(&handle_filter)
         });
     }
-    if let Some(title_filter) = &filter.title {
+    if let Some(title_filter) = &window_filter.title {
         let title_filter = title_filter.to_lowercase();
         windows.retain(|w| w.title.to_lowercase().contains(&title_filter));
     }
@@ -173,19 +183,20 @@ fn match_window(filter: &WindowFilter) -> Result<Vec<ProcessWindowGroup>> {
 
     let mut matches: Vec<ProcessWindowGroup> = Vec::new();
 
-    for pid in processes {
-        let windows = window_groups.get(&pid).cloned().unwrap_or(Vec::new());
-        if windows.is_empty() {
-            continue;
-        }
-
+    for (pid, windows) in window_groups {
         let process = get_process_details(pid)?;
         if let Some(process) = process {
-            if let Some(app_filter) = &filter.app {
+            if let Some(pid_filter) = &process_filter.pid {
+                if pid != *pid_filter {
+                    continue;
+                }
+            }
+
+            if let Some(name_filter) = &process_filter.name {
                 if !process
                     .name
                     .to_lowercase()
-                    .contains(&app_filter.to_lowercase())
+                    .contains(&name_filter.to_lowercase())
                 {
                     continue;
                 }
