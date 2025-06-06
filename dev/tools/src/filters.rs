@@ -227,8 +227,7 @@ pub fn match_running_aumids(window_filter: &WindowFilter) -> Result<Vec<String>>
     windows.retain(|w| !window_filter.matches(w));
     Ok(windows
         .into_iter()
-        .map(|w| w.aumid)
-        .flatten()
+        .filter_map(|w| w.aumid)
         .filter(|aumid| !aumid.is_empty())
         .collect::<HashSet<_>>()
         .into_iter()

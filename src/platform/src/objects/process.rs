@@ -39,17 +39,6 @@ pub struct ProcessThreadId {
 
 const APPLICATION_FRAME_HOST: &str = r"C:\Windows\System32\ApplicationFrameHost.exe";
 
-/// Information about a process
-#[derive(Debug, Clone)]
-pub struct ProcessInfo {
-    /// Process ID
-    pub pid: ProcessId,
-    /// Process name
-    pub name: String,
-    /// Full path to the process executable
-    pub path: String,
-}
-
 /// Representation of a [Process] on the system, namely its handle
 pub struct Process {
     handle: HANDLE,
