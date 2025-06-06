@@ -174,7 +174,7 @@ pub fn get_config() -> Result<Config> {
             Ok(config) => break config,
             Err(e) => {
                 // can't log this since logger isn't setup yet.
-                eprintln!("Error loading config: {:?}", e);
+                eprintln!("Error loading config: {e:?}");
                 Config::replace_with_default()?;
                 // eprintln!("Replaced with default config: {:?}", e);
             }
