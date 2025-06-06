@@ -31,8 +31,8 @@ pub enum BaseWebsiteUrl {
 impl fmt::Display for BaseWebsiteUrl {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            BaseWebsiteUrl::Http(url) => write!(f, "{}", url),
-            BaseWebsiteUrl::NonHttp(url) => write!(f, "{}", url),
+            BaseWebsiteUrl::Http(url) => write!(f, "{url}"),
+            BaseWebsiteUrl::NonHttp(url) => write!(f, "{url}"),
         }
     }
 }
