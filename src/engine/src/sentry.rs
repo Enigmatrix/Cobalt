@@ -175,7 +175,7 @@ impl Sentry {
 
     /// Message the user with the given [TriggeredAlert]'s name and message.
     pub fn handle_message_action(&self, name: &str, msg: &str) -> Result<()> {
-        ToastManager::show_alert(&format!("Alert: {}", name), msg)?;
+        ToastManager::show_alert(&format!("Alert: {name}"), msg)?;
         Ok(())
     }
 

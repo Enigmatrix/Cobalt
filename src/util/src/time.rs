@@ -38,15 +38,9 @@ pub fn human_duration(d: std::time::Duration) -> String {
 
     match map
         .into_iter()
-        .filter_map(|(n, u)| {
-            if n > 0 {
-                Some(format!("{}{}", n, u))
-            } else {
-                None
-            }
-        })
+        .filter_map(|(n, u)| if n > 0 { Some(format!("{n}{u}")) } else { None })
         .take(2)
-        .reduce(|acc, item| format!("{} {}", acc, item))
+        .reduce(|acc, item| format!("{acc} {item}"))
     {
         Some(val) => val,
         None => "-".to_string(),

@@ -131,7 +131,7 @@ fn check_and_copy_file(dir: &Path, file: &str) -> util::error::Result<()> {
         .map(|f| f.is_file())
         .unwrap_or(false)
     {
-        std::fs::copy(from_file, to_file).context(format!("copy {}", file))?;
+        std::fs::copy(from_file, to_file).context(format!("copy {file}"))?;
     } else {
         warn!("file {} not found", file);
     }

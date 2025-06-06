@@ -312,9 +312,7 @@ impl Engine {
                     spawner.spawn(async move {
                         AppInfoResolver::update_app(db_pool, id.clone(), _identity.clone())
                             .await
-                            .with_context(|| {
-                                format!("update app({:?}, {:?}) with info", id, _identity)
-                            })
+                            .with_context(|| format!("update app({id:?}, {_identity:?}) with info"))
                             .error();
                     });
                 }
@@ -356,7 +354,7 @@ impl Engine {
                         AppInfoResolver::update_app(db_pool, id.clone(), _identity.clone())
                             .await
                             .with_context(|| {
-                                format!("update app({:?}, {:?}) (website) with info", id, _identity)
+                                format!("update app({id:?}, {_identity:?}) (website) with info")
                             })
                             .error();
                     });
