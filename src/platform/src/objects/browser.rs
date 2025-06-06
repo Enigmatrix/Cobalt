@@ -54,11 +54,7 @@ impl BrowserDetector {
         let element = unsafe { self.automation.ElementFromHandle(window.hwnd)? };
 
         let name_prop = unsafe { element.GetCurrentPropertyValue(UIA_NamePropertyId)? };
-        let name_prop = unsafe { VariantToPropVariant(&name_prop)? };
-        let name_raw = unsafe { PropVariantToStringAlloc(&name_prop)? };
-        // This is a copy, so we are free to CoTaskMemFree the name_raw in the next line
-        let name = String::from_utf16_lossy(unsafe { name_raw.as_wide() });
-        unsafe { CoTaskMemFree(Some(name_raw.as_ptr().cast())) };
+        let name = self.variant_to_string(name_prop)?;
 
         // This seems to be the only way to detect incognito mode in Edge
         // Not sure why the \u{200b} is needed, but it works.
@@ -77,11 +73,7 @@ impl BrowserDetector {
             let document = unsafe { documents.GetElement(i)? };
 
             let url_prop = unsafe { document.GetCurrentPropertyValue(UIA_ValueValuePropertyId)? };
-            let url_prop = unsafe { VariantToPropVariant(&url_prop)? };
-            let url_raw = unsafe { PropVariantToStringAlloc(&url_prop)? };
-            // This is a copy, so we are free to CoTaskMemFree the url_raw in the next line
-            let url = String::from_utf16_lossy(unsafe { url_raw.as_wide() });
-            unsafe { CoTaskMemFree(Some(url_raw.as_ptr().cast())) };
+            let url = self.variant_to_string(url_prop)?;
             if url.is_empty() {
                 continue;
             }
@@ -96,5 +88,13 @@ impl BrowserDetector {
             url: None,
             incognito,
         })
+    }
+
+    fn variant_to_string(&self, value: VARIANT) -> Result<String> {
+        let value = unsafe { VariantToPropVariant(&value)? };
+        let value_raw = unsafe { PropVariantToStringAlloc(&value)? };
+        let value = String::from_utf16_lossy(unsafe { value_raw.as_wide() });
+        unsafe { CoTaskMemFree(Some(value_raw.as_ptr().cast())) };
+        Ok(value)
     }
 }
