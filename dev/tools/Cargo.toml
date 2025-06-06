@@ -1,0 +1,25 @@
+[package]
+name = "tools"
+homepage.workspace = true
+authors.workspace = true
+version.workspace = true
+edition.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+clap = { version = "4.4", features = ["derive"] }
+util = { path = "../../src/util" }
+platform = { path = "../../src/platform" }
+windows = { version = "0.56", features = ["Win32_Foundation"] }
+dialoguer = "0.11.0"
+
+[[bin]]
+name = "dim"
+path = "src/bin/dim.rs" 
+
+
+[[bin]]
+name = "kill"
+path = "src/bin/kill.rs" 

@@ -2,17 +2,15 @@ use std::sync::Arc;
 
 use data::db::{AlertManager, Database, TriggeredAlert};
 use data::entities::{
-    AlertEvent, Duration, Reason, ReminderEvent, Target, Timestamp, TriggerAction,
+    AlertEvent, App, Duration, Reason, Ref, ReminderEvent, Target, Timestamp, TriggerAction,
 };
-use platform::objects::{
-    Process, ProcessId, Progress, Timestamp as PlatformTimestamp, ToastManager, Window,
-};
+use platform::objects::{Process, Progress, Timestamp as PlatformTimestamp, ToastManager, Window};
 use util::error::Result;
 use util::future::sync::Mutex;
 use util::time::ToTicks;
 use util::tracing::{debug, info, ResultTraceExt};
 
-use crate::cache::Cache;
+use crate::cache::{Cache, KillableProcessId};
 
 /// Watcher to track [TriggeredAlert]s and [TriggeredReminder]s and take action on them.
 pub struct Sentry {
@@ -64,7 +62,10 @@ impl Sentry {
     }
 
     /// Get the [ProcessId]s for the given [Target].
-    pub async fn processes_for_target(&mut self, target: &Target) -> Result<Vec<ProcessId>> {
+    pub async fn processes_for_target(
+        &mut self,
+        target: &Target,
+    ) -> Result<Vec<(Ref<App>, KillableProcessId)>> {
         let cache = self.cache.lock().await;
         let processes = self
             .mgr
@@ -72,7 +73,10 @@ impl Sentry {
             .await?
             .iter()
             .flat_map(move |app| {
-                cache.processes_for_app(app).cloned().collect::<Vec<_>>() // ew
+                cache
+                    .processes_for_app(app)
+                    .into_iter()
+                    .map(|pid| (app.clone(), pid))
             })
             .collect();
         Ok(processes)
@@ -107,12 +111,23 @@ impl Sentry {
         match &alert.trigger_action {
             TriggerAction::Kill => {
                 let processes = self.processes_for_target(&alert.target).await?;
-                let mut cache = self.cache.lock().await;
-                for pid in processes {
-                    info!(?alert, "killing process {:?}", pid);
-                    let process = Process::new_killable(pid)?;
-                    self.handle_kill_action(&process).warn();
-                    cache.remove_process(pid);
+                for (app, pid) in processes {
+                    info!(?alert, "killing process {:?} for app {:?}", pid, app);
+                    match pid {
+                        KillableProcessId::Win32(pid) => {
+                            let process = Process::new_killable(pid)?;
+                            self.handle_kill_action(&process).warn();
+
+                            let mut cache = self.cache.lock().await;
+                            cache.remove_process(pid);
+                        }
+                        KillableProcessId::Aumid(aumid) => {
+                            Process::kill_uwp(&aumid).await.warn();
+
+                            let mut cache = self.cache.lock().await;
+                            cache.remove_app(app);
+                        }
+                    }
                 }
             }
             TriggerAction::Dim { duration } => {
@@ -160,7 +175,7 @@ impl Sentry {
 
     /// Message the user with the given [TriggeredAlert]'s name and message.
     pub fn handle_message_action(&self, name: &str, msg: &str) -> Result<()> {
-        ToastManager::show_alert(&format!("Alert: {}", name), msg)?;
+        ToastManager::show_alert(&format!("Alert: {name}"), msg)?;
         Ok(())
     }
 

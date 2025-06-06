@@ -6,10 +6,13 @@ use std::sync::OnceLock;
 
 use util::error::{bail, Context, Result};
 use util::tracing::ResultTraceExt;
+use windows::core::HSTRING;
+use windows::System::AppDiagnosticInfo;
 use windows::Wdk::System::Threading::{
     NtQueryInformationProcess, ProcessImageFileNameWin32, PROCESSINFOCLASS,
 };
 use windows::Win32::Foundation::{CloseHandle, HANDLE, UNICODE_STRING, WAIT_TIMEOUT};
+use windows::Win32::System::ProcessStatus::K32EnumProcesses;
 use windows::Win32::System::Threading::{
     IsImmersiveProcess, OpenProcess, TerminateProcess, WaitForSingleObject,
     PROCESS_QUERY_LIMITED_INFORMATION, PROCESS_TERMINATE,
@@ -20,8 +23,19 @@ use crate::adapt_size;
 use crate::buf::WideBuffer;
 use crate::error::IntoResult;
 
-/// Identified of the [Process]. May be recycled.
+/// Identifier of a [Process]. May be recycled.
 pub type ProcessId = u32;
+/// Identifier of a Thread. May be recycled.
+pub type ThreadId = u32;
+
+/// [ProcessId] and [ThreadId] that created the [super::Window]. May be recycled.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct ProcessThreadId {
+    /// [Process] that created the [Window].
+    pub pid: ProcessId,
+    /// [Thread] that created the [Window].
+    pub tid: ThreadId,
+}
 
 const APPLICATION_FRAME_HOST: &str = r"C:\Windows\System32\ApplicationFrameHost.exe";
 
@@ -80,6 +94,20 @@ impl Process {
         let access = PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_TERMINATE;
         let handle = unsafe { OpenProcess(access, false, pid)? };
         Ok(Self { handle })
+    }
+
+    /// Kill a UWP app with the given AUMID
+    pub async fn kill_uwp(aumid: &str) -> Result<()> {
+        let infos = AppDiagnosticInfo::RequestInfoForAppUserModelId(&HSTRING::from(aumid))?.await?;
+        let infos = infos.into_iter().collect::<Vec<_>>();
+        for info in infos {
+            let groups = info.GetResourceGroups()?;
+            let groups = groups.into_iter().collect::<Vec<_>>();
+            for group in groups {
+                group.StartTerminateAsync()?.await?;
+            }
+        }
+        Ok(())
     }
 
     /// Check whether this [Process] is still running
@@ -147,6 +175,32 @@ impl Process {
                 cb(us)
             })
         }, max_size)?)
+    }
+
+    /// List all running processes on the system
+    pub fn get_all() -> Result<Vec<ProcessId>> {
+        let mut pids = vec![0u32; 1024];
+        let mut bytes_returned = 0u32;
+
+        loop {
+            let buffer_size = (pids.len() * mem::size_of::<u32>()) as u32;
+            unsafe {
+                K32EnumProcesses(pids.as_mut_ptr(), buffer_size, &mut bytes_returned).ok()?;
+            }
+
+            // If bytes_returned equals buffer_size, the buffer might be too small
+            if bytes_returned != buffer_size {
+                break;
+            }
+
+            // Double the buffer size and try again
+            pids.resize(pids.len() * 2, 0);
+        }
+
+        let num_processes = bytes_returned as usize / mem::size_of::<u32>();
+        pids.truncate(num_processes);
+        pids.retain(|pid| *pid != 0);
+        Ok(pids)
     }
 }
 

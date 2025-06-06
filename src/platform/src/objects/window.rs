@@ -1,20 +1,20 @@
 use std::hash::{Hash, Hasher};
 
 use util::error::{Context, Result};
-use windows::Win32::Foundation::{COLORREF, HWND};
+use windows::Win32::Foundation::{BOOL, COLORREF, HWND, LPARAM};
 use windows::Win32::Storage::EnhancedStorage::PKEY_AppUserModel_ID;
 use windows::Win32::System::Com::CoTaskMemFree;
 use windows::Win32::System::Com::StructuredStorage::PropVariantToStringAlloc;
 use windows::Win32::UI::Shell::PropertiesSystem::{IPropertyStore, SHGetPropertyStoreForWindow};
 use windows::Win32::UI::WindowsAndMessaging::{
-    GetClassNameW, GetForegroundWindow, GetWindowTextLengthW, GetWindowTextW,
-    GetWindowThreadProcessId, SetLayeredWindowAttributes, SetWindowLongW, GWL_EXSTYLE, LWA_ALPHA,
-    WS_EX_LAYERED,
+    EnumWindows, GetClassNameW, GetForegroundWindow, GetWindowTextLengthW, GetWindowTextW,
+    GetWindowThreadProcessId, IsWindowVisible, SetLayeredWindowAttributes, SetWindowLongW,
+    GWL_EXSTYLE, LWA_ALPHA, WS_EX_LAYERED,
 };
 
 use crate::buf::{buf, Buffer, WideBuffer};
 use crate::error::Win32Error;
-use crate::objects::ProcessId;
+use crate::objects::ProcessThreadId;
 use crate::win32;
 
 /*
@@ -27,7 +27,8 @@ use crate::win32;
 /// Representation of a [`Window`] on the user's desktop
 #[derive(Clone, PartialEq, Eq)]
 pub struct Window {
-    pub(crate) hwnd: HWND,
+    /// The handle to the window
+    pub hwnd: HWND,
 }
 
 impl std::fmt::Debug for Window {
@@ -59,11 +60,11 @@ impl Window {
         }
     }
 
-    /// Get the [ProcessId] of the [Window]
-    pub fn pid(&self) -> Result<ProcessId> {
+    /// Get the [ProcessThreadId] of the [Window]
+    pub fn ptid(&self) -> Result<ProcessThreadId> {
         let mut pid = 0;
-        let _tid = win32!(val: unsafe { GetWindowThreadProcessId(self.hwnd, Some(&mut pid)) })?;
-        Ok(pid)
+        let tid = win32!(val: unsafe { GetWindowThreadProcessId(self.hwnd, Some(&mut pid)) })?;
+        Ok(ProcessThreadId { pid, tid })
     }
 
     /// Get the title of the [Window]
@@ -121,4 +122,27 @@ impl Window {
         };
         Ok(())
     }
+
+    /// Get all visible windows on the desktop
+    pub fn get_all_visible_windows() -> Result<Vec<Self>> {
+        let mut windows = Vec::new();
+        unsafe {
+            EnumWindows(
+                Some(enum_window_callback),
+                LPARAM(&mut windows as *mut _ as isize),
+            )?;
+        }
+        Ok(windows)
+    }
+}
+
+unsafe extern "system" fn enum_window_callback(hwnd: HWND, lparam: LPARAM) -> BOOL {
+    let windows = &mut *(lparam.0 as *mut Vec<Window>);
+
+    // Only add windows that are visible and have a title
+    if unsafe { IsWindowVisible(hwnd).as_bool() } {
+        windows.push(Window::new(hwnd));
+    }
+
+    BOOL(1) // Continue enumeration
 }
