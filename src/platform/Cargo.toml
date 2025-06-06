@@ -14,6 +14,7 @@ workspace = true
 rand = "0.9.1"
 reqwest = "0.12.15"
 scraper = "0.23.1"
+url = "2.5.4"
 util = { path = "../util" }
 
 [dependencies.windows]

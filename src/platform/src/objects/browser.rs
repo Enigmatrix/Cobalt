@@ -1,4 +1,6 @@
-use util::error::Result;
+use reqwest::Url;
+use util::error::{Context, Result};
+use util::tracing::info;
 use windows::core::VARIANT;
 use windows::Win32::System::Com::StructuredStorage::{
     PropVariantToStringAlloc, VariantToPropVariant,
@@ -84,8 +86,52 @@ impl BrowserDetector {
             });
         }
 
+        let condition = unsafe {
+            self.automation
+                .CreatePropertyCondition(UIA_NamePropertyId, &"Address and search bar".into())?
+        };
+        let search_bar = match unsafe { element.FindFirst(TreeScope_Descendants, &condition) } {
+            Ok(search_bar) => search_bar,
+            Err(err) if err.code().is_ok() => {
+                return Ok(BrowserUrl {
+                    url: None,
+                    incognito,
+                })
+            }
+            Err(err) => return Err(err).context("find first element"),
+        };
+
+        let search_value = unsafe { search_bar.GetCurrentPropertyValue(UIA_ValueValuePropertyId)? };
+        let search_value = self.variant_to_string(search_value)?;
+        info!("using omnibox url: {search_value}");
+
+        // Omnibox URL is used when there is a long loading period (so document isn't loaded), or
+        // when an old tab is loaded again from energy saver (so title is set, but no document is loaded).
+
+        // From Omnibox, we get a URL like this:
+        // "www.google.com/search?q=test". note that proto is not shown.
+        // for chrome://, data:XXX and other non http/https links, it's there tho e.g. chrome://newtab.
+
+        let url = match Url::parse(&search_value) {
+            // see if we get no proto error (here it's relative url without base)
+            // if so, add https:// to the front and see if we get a valid url.
+            // if thats finally valid, then we use that url.
+            // in all other cases, use original value
+            Err(url::ParseError::RelativeUrlWithoutBase) => {
+                // The URL could really be http://
+                // There might be way to detect this by checking the button next to the omnibox and seeing if it's lock / not-secure.
+                let url = format!("https://{search_value}");
+                if Url::parse(&url).is_ok() {
+                    url
+                } else {
+                    search_value
+                }
+            }
+            _ => search_value,
+        };
+
         Ok(BrowserUrl {
-            url: None,
+            url: if url.is_empty() { None } else { Some(url) },
             incognito,
         })
     }
