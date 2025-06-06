@@ -1,15 +1,15 @@
 use std::hash::{Hash, Hasher};
 
 use util::error::{Context, Result};
-use windows::Win32::Foundation::{COLORREF, HWND};
+use windows::Win32::Foundation::{BOOL, COLORREF, HWND, LPARAM};
 use windows::Win32::Storage::EnhancedStorage::PKEY_AppUserModel_ID;
 use windows::Win32::System::Com::CoTaskMemFree;
 use windows::Win32::System::Com::StructuredStorage::PropVariantToStringAlloc;
 use windows::Win32::UI::Shell::PropertiesSystem::{IPropertyStore, SHGetPropertyStoreForWindow};
 use windows::Win32::UI::WindowsAndMessaging::{
-    GetClassNameW, GetForegroundWindow, GetWindowTextLengthW, GetWindowTextW,
-    GetWindowThreadProcessId, SetLayeredWindowAttributes, SetWindowLongW, GWL_EXSTYLE, LWA_ALPHA,
-    WS_EX_LAYERED,
+    EnumWindows, GetClassNameW, GetForegroundWindow, GetWindowTextLengthW, GetWindowTextW,
+    GetWindowThreadProcessId, IsWindowVisible, SetLayeredWindowAttributes, SetWindowLongW,
+    GWL_EXSTYLE, LWA_ALPHA, WS_EX_LAYERED,
 };
 
 use crate::buf::{buf, Buffer, WideBuffer};
@@ -121,4 +121,27 @@ impl Window {
         };
         Ok(())
     }
+
+    /// Get all visible windows on the desktop
+    pub fn get_all_visible_windows() -> Result<Vec<Self>> {
+        let mut windows = Vec::new();
+        unsafe {
+            EnumWindows(
+                Some(enum_window_callback),
+                LPARAM(&mut windows as *mut _ as isize),
+            )?;
+        }
+        Ok(windows)
+    }
+}
+
+unsafe extern "system" fn enum_window_callback(hwnd: HWND, lparam: LPARAM) -> BOOL {
+    let windows = &mut *(lparam.0 as *mut Vec<Window>);
+
+    // Only add windows that are visible and have a title
+    if unsafe { IsWindowVisible(hwnd).as_bool() } {
+        windows.push(Window::new(hwnd));
+    }
+
+    BOOL(1) // Continue enumeration
 }
