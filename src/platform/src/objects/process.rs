@@ -12,6 +12,7 @@ use windows::Wdk::System::Threading::{
     NtQueryInformationProcess, ProcessImageFileNameWin32, PROCESSINFOCLASS,
 };
 use windows::Win32::Foundation::{CloseHandle, HANDLE, UNICODE_STRING, WAIT_TIMEOUT};
+use windows::Win32::System::ProcessStatus::K32EnumProcesses;
 use windows::Win32::System::Threading::{
     IsImmersiveProcess, OpenProcess, TerminateProcess, WaitForSingleObject,
     PROCESS_QUERY_LIMITED_INFORMATION, PROCESS_TERMINATE,
@@ -37,6 +38,17 @@ pub struct ProcessThreadId {
 }
 
 const APPLICATION_FRAME_HOST: &str = r"C:\Windows\System32\ApplicationFrameHost.exe";
+
+/// Information about a process
+#[derive(Debug, Clone)]
+pub struct ProcessInfo {
+    /// Process ID
+    pub pid: ProcessId,
+    /// Process name
+    pub name: String,
+    /// Full path to the process executable
+    pub path: String,
+}
 
 /// Representation of a [Process] on the system, namely its handle
 pub struct Process {
@@ -174,6 +186,32 @@ impl Process {
                 cb(us)
             })
         }, max_size)?)
+    }
+
+    /// List all running processes on the system
+    pub fn get_all() -> Result<Vec<ProcessId>> {
+        let mut pids = vec![0u32; 1024];
+        let mut bytes_returned = 0u32;
+
+        loop {
+            let buffer_size = (pids.len() * mem::size_of::<u32>()) as u32;
+            unsafe {
+                K32EnumProcesses(pids.as_mut_ptr(), buffer_size, &mut bytes_returned).ok()?;
+            }
+
+            // If bytes_returned equals buffer_size, the buffer might be too small
+            if bytes_returned != buffer_size {
+                break;
+            }
+
+            // Double the buffer size and try again
+            pids.resize(pids.len() * 2, 0);
+        }
+
+        let num_processes = bytes_returned as usize / mem::size_of::<u32>();
+        pids.truncate(num_processes);
+        pids.retain(|pid| *pid != 0);
+        Ok(pids)
     }
 }
 
