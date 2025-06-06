@@ -18,3 +18,8 @@ dialoguer = "0.11.0"
 [[bin]]
 name = "dim"
 path = "src/bin/dim.rs" 
+
+
+[[bin]]
+name = "kill"
+path = "src/bin/kill.rs" 
