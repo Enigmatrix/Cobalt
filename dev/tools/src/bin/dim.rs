@@ -1,16 +1,14 @@
 //! Dim a window to a given opacity
 
-use std::collections::HashMap;
-use std::path::Path;
-
 use clap::Parser;
 use dialoguer::theme::ColorfulTheme;
 use dialoguer::Select;
-use platform::objects::{FileVersionInfo, Process, ProcessId, ProcessThreadId, Window};
+use platform::objects::ProcessId;
+use tools::filters::{
+    match_running_windows, ProcessFilter, ProcessWindowGroup, WindowDetails, WindowFilter,
+};
 use util::error::Result;
 use util::{config, Target};
-use windows::core::HRESULT;
-use windows::Win32::Foundation::ERROR_ACCESS_DENIED;
 
 #[derive(Parser, Debug, Clone)]
 #[command(author, version, about, long_about = None)]
@@ -54,7 +52,7 @@ fn main() -> Result<()> {
     platform::setup()?;
 
     let args = Args::parse();
-    let matches = match_window(
+    let matches = match_running_windows(
         &WindowFilter {
             handle: args.handle,
             title: args.title,
@@ -73,159 +71,6 @@ fn main() -> Result<()> {
     }
 
     Ok(())
-}
-
-/// Filter for a process
-pub struct ProcessFilter {
-    /// Process ID
-    pub pid: Option<ProcessId>,
-    /// Process name to filter by
-    pub name: Option<String>,
-}
-
-/// Filter for a window
-#[derive(Debug, Clone)]
-pub struct WindowFilter {
-    /// Window handle in hexadecimal
-    pub handle: Option<String>,
-    /// Window title text to filter by
-    pub title: Option<String>,
-    /// Application User Model ID to filter by
-    pub aumid: Option<String>,
-}
-
-#[derive(Clone, Debug)]
-struct ProcessWindowGroup {
-    pub process: ProcessDetails,
-    pub windows: Vec<WindowDetails>,
-}
-
-#[derive(Clone, Debug)]
-
-struct ProcessDetails {
-    pub pid: ProcessId,
-    #[allow(dead_code)]
-    pub path: String,
-    pub name: String,
-}
-
-#[derive(Clone, Debug)]
-struct WindowDetails {
-    pub window: Window,
-    pub title: String,
-    pub aumid: Option<String>,
-    pub ptid: ProcessThreadId,
-}
-
-fn get_process_details(pid: ProcessId) -> Result<Option<ProcessDetails>> {
-    let process = match Process::new(pid) {
-        Ok(process) => process,
-        Err(e) => {
-            if e.downcast_ref::<windows::core::Error>().unwrap().code()
-                == HRESULT::from_win32(ERROR_ACCESS_DENIED.0)
-            {
-                return Ok(None);
-            }
-            return Err(e);
-        }
-    };
-
-    let path = process.path()?;
-    let file_name = Path::new(&path)
-        .file_name()
-        .unwrap()
-        .to_string_lossy()
-        .to_string();
-    let name = FileVersionInfo::new(&path)
-        .and_then(|mut vs| {
-            let mut file_description = vs.query_value("FileDescription")?;
-            if file_description.ends_with(".exe") {
-                let product_name = vs.query_value("ProductName")?;
-                file_description = product_name;
-            }
-            if file_description.is_empty() {
-                file_description = file_name.clone();
-            }
-            Ok(file_description)
-        })
-        .ok()
-        .unwrap_or(file_name);
-    Ok(Some(ProcessDetails { pid, path, name }))
-}
-
-fn match_window(
-    window_filter: &WindowFilter,
-    process_filter: &ProcessFilter,
-) -> Result<Vec<ProcessWindowGroup>> {
-    let mut windows = Window::get_all_visible_windows()?
-        .into_iter()
-        .map(|window| {
-            Ok(WindowDetails {
-                title: window.title()?,
-                ptid: window.ptid()?,
-                aumid: window.aumid().ok(),
-                window,
-            })
-        })
-        .collect::<Result<Vec<WindowDetails>>>()?;
-
-    if let Some(handle_filter) = &window_filter.handle {
-        let handle_filter = handle_filter.to_lowercase();
-        windows.retain(|w| {
-            format!("{:08x}", w.window.hwnd.0)
-                .to_lowercase()
-                .contains(&handle_filter)
-        });
-    }
-    if let Some(aumid_filter) = &window_filter.aumid {
-        let aumid_filter = aumid_filter.to_lowercase();
-        windows.retain(|w| {
-            w.aumid
-                .as_ref()
-                .map(|s| s.as_str())
-                .unwrap_or("")
-                .to_lowercase()
-                .contains(&aumid_filter)
-        });
-    }
-    if let Some(title_filter) = &window_filter.title {
-        let title_filter = title_filter.to_lowercase();
-        windows.retain(|w| w.title.to_lowercase().contains(&title_filter));
-    }
-
-    let mut window_groups = HashMap::new();
-    for window in windows {
-        window_groups
-            .entry(window.ptid.pid)
-            .or_insert(Vec::new())
-            .push(window);
-    }
-
-    let mut matches: Vec<ProcessWindowGroup> = Vec::new();
-
-    for (pid, windows) in window_groups {
-        let process = get_process_details(pid)?;
-        if let Some(process) = process {
-            if let Some(pid_filter) = &process_filter.pid {
-                if pid != *pid_filter {
-                    continue;
-                }
-            }
-
-            if let Some(name_filter) = &process_filter.name {
-                if !process
-                    .name
-                    .to_lowercase()
-                    .contains(&name_filter.to_lowercase())
-                {
-                    continue;
-                }
-            }
-            matches.push(ProcessWindowGroup { process, windows });
-        }
-    }
-
-    Ok(matches)
 }
 
 fn select_window(groups: &[ProcessWindowGroup]) -> Result<Option<&WindowDetails>> {
