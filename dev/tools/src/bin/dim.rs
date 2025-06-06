@@ -38,6 +38,10 @@ struct Args {
     #[arg(long)]
     handle: Option<String>,
 
+    /// Application User Model ID to filter by
+    #[arg(long)]
+    aumid: Option<String>,
+
     /// Window title text to filter by
     #[arg()]
     title: Option<String>,
@@ -54,6 +58,7 @@ fn main() -> Result<()> {
         &WindowFilter {
             handle: args.handle,
             title: args.title,
+            aumid: args.aumid,
         },
         &ProcessFilter {
             pid: args.pid,
@@ -85,6 +90,8 @@ pub struct WindowFilter {
     pub handle: Option<String>,
     /// Window title text to filter by
     pub title: Option<String>,
+    /// Application User Model ID to filter by
+    pub aumid: Option<String>,
 }
 
 #[derive(Clone, Debug)]
@@ -106,6 +113,7 @@ struct ProcessDetails {
 struct WindowDetails {
     pub window: Window,
     pub title: String,
+    pub aumid: Option<String>,
     pub ptid: ProcessThreadId,
 }
 
@@ -155,6 +163,7 @@ fn match_window(
             Ok(WindowDetails {
                 title: window.title()?,
                 ptid: window.ptid()?,
+                aumid: window.aumid().ok(),
                 window,
             })
         })
@@ -166,6 +175,17 @@ fn match_window(
             format!("{:08x}", w.window.hwnd.0)
                 .to_lowercase()
                 .contains(&handle_filter)
+        });
+    }
+    if let Some(aumid_filter) = &window_filter.aumid {
+        let aumid_filter = aumid_filter.to_lowercase();
+        windows.retain(|w| {
+            w.aumid
+                .as_ref()
+                .map(|s| s.as_str())
+                .unwrap_or("")
+                .to_lowercase()
+                .contains(&aumid_filter)
         });
     }
     if let Some(title_filter) = &window_filter.title {
