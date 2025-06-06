@@ -1,6 +1,4 @@
-use std::collections::HashMap;
-use std::path::Path;
-
+use std::collections::{HashMap, HashSet};use std::path::Path;
 use platform::objects::{FileVersionInfo, Process, ProcessId, ProcessThreadId, Window};
 use util::error::Result;
 use windows::core::HRESULT;
@@ -14,6 +12,26 @@ pub struct ProcessFilter {
     pub name: Option<String>,
 }
 
+impl ProcessFilter {
+    /// Check if a process matches the filter
+    pub fn matches(&self, process: &ProcessDetails) -> bool {
+        if let Some(pid_filter) = &self.pid {
+            if process.pid != *pid_filter {
+                return true;
+            }
+        }
+        if let Some(name_filter) = &self.name {
+            if !process
+                .name
+                .to_lowercase()
+                .contains(&name_filter.to_lowercase())
+            {
+                return true;
+            }
+        }
+        false
+    }
+}
 /// Filter for a window
 #[derive(Debug, Clone)]
 pub struct WindowFilter {
@@ -23,6 +41,41 @@ pub struct WindowFilter {
     pub title: Option<String>,
     /// Application User Model ID to filter by
     pub aumid: Option<String>,
+}
+
+impl WindowFilter {
+    /// Check if a window matches the filter
+    pub fn matches(&self, window: &WindowDetails) -> bool {
+        if let Some(handle_filter) = &self.handle {
+            let handle_filter = handle_filter.to_lowercase();
+            if !format!("{:08x}", window.window.hwnd.0)
+                .to_lowercase()
+                .contains(&handle_filter)
+            {
+                return true;
+            }
+        }
+
+        if let Some(aumid_filter) = &self.aumid {
+            let aumid_filter = aumid_filter.to_lowercase();
+            if !window
+                .aumid
+                .as_deref()
+                .unwrap_or_default()
+                .to_lowercase()
+                .contains(&aumid_filter)
+            {
+                return true;
+            }
+        }
+        if let Some(title_filter) = &self.title {
+            let title_filter = title_filter.to_lowercase();
+            if !window.title.to_lowercase().contains(&title_filter) {
+                return true;
+            }
+        }
+        false
+    }
 }
 
 /// A group of windows and their process
@@ -77,35 +130,13 @@ pub fn match_running_windows(
         })
         .collect::<Result<Vec<WindowDetails>>>()?;
 
-    if let Some(handle_filter) = &window_filter.handle {
-        let handle_filter = handle_filter.to_lowercase();
-        windows.retain(|w| {
-            format!("{:08x}", w.window.hwnd.0)
-                .to_lowercase()
-                .contains(&handle_filter)
-        });
-    }
-    if let Some(aumid_filter) = &window_filter.aumid {
-        let aumid_filter = aumid_filter.to_lowercase();
-        windows.retain(|w| {
-            w.aumid
-                .as_ref()
-                .map(|s| s.as_str())
-                .unwrap_or("")
-                .to_lowercase()
-                .contains(&aumid_filter)
-        });
-    }
-    if let Some(title_filter) = &window_filter.title {
-        let title_filter = title_filter.to_lowercase();
-        windows.retain(|w| w.title.to_lowercase().contains(&title_filter));
-    }
+    windows.retain(|w| !window_filter.matches(w));
 
-    let mut window_groups = HashMap::new();
+    let mut window_groups: HashMap<ProcessId, Vec<WindowDetails>> = HashMap::new();
     for window in windows {
         window_groups
             .entry(window.ptid.pid)
-            .or_insert(Vec::new())
+            .or_default()
             .push(window);
     }
 
@@ -114,25 +145,29 @@ pub fn match_running_windows(
     for (pid, windows) in window_groups {
         let process = get_process_details(pid)?;
         if let Some(process) = process {
-            if let Some(pid_filter) = &process_filter.pid {
-                if pid != *pid_filter {
-                    continue;
-                }
+            if !process_filter.matches(&process) {
+                matches.push(ProcessWindowGroup { process, windows });
             }
-
-            if let Some(name_filter) = &process_filter.name {
-                if !process
-                    .name
-                    .to_lowercase()
-                    .contains(&name_filter.to_lowercase())
-                {
-                    continue;
-                }
-            }
-            matches.push(ProcessWindowGroup { process, windows });
         }
     }
 
+    Ok(matches)
+}
+
+/// Match processes based on the filters
+pub fn match_running_processes(process_filter: &ProcessFilter) -> Result<Vec<ProcessDetails>> {
+    let processes = Process::get_all()?;
+    let processes: Vec<_> = processes
+        .into_iter()
+        .filter_map(|pid| get_process_details(pid).ok().flatten())
+        .collect();
+
+    let mut matches: Vec<ProcessDetails> = Vec::new();
+    for process in processes {
+        if !process_filter.matches(&process) {
+            matches.push(process);
+        }
+    }
     Ok(matches)
 }
 
