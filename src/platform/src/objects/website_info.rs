@@ -2,8 +2,8 @@ use std::fmt;
 
 use reqwest::{Client, RequestBuilder, Url};
 use scraper::{Html, Selector};
-use util::error::{Context, Result};
-use util::tracing::{warn, ResultTraceExt};
+use util::error::{bail, Context, Result};
+use util::tracing::ResultTraceExt;
 
 use super::{random_color, AppInfo};
 
@@ -55,12 +55,16 @@ impl WebsiteInfo {
         rb.header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/538.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/538.36")
     }
 
-    fn pretty_url_host(url: &str) -> Result<String> {
+    fn pretty_url_host(url: &str) -> String {
         // Get the host of the URL
         // https://www.google.com -> google.com if http(s), else url
 
-        let url = Url::parse(url)?;
-        Ok(if url.scheme() == "https" || url.scheme() == "http" {
+        let url = match Url::parse(url) {
+            Ok(url) => url,
+            Err(_) => return url.to_string(),
+        };
+
+        if url.scheme() == "https" || url.scheme() == "http" {
             let mut host = url.host_str().expect("host is required");
             if host.starts_with("www.") {
                 host = &host[4..];
@@ -68,20 +72,30 @@ impl WebsiteInfo {
             host.to_string()
         } else {
             url.to_string()
-        })
+        }
+    }
+
+    /// Create a default [WebsiteInfo] from a base URL
+    pub fn default_from_url(base_url: BaseWebsiteUrl) -> Self {
+        let url = match base_url {
+            BaseWebsiteUrl::Http(url) => url,
+            BaseWebsiteUrl::NonHttp(url) => url,
+        };
+
+        Self {
+            name: Self::pretty_url_host(&url),
+            description: url,
+            color: random_color(),
+            logo: None,
+        }
     }
 
     /// Create a new [WebsiteInfo] from a base URL
     pub async fn from_base_url(base_url: BaseWebsiteUrl) -> Result<Self> {
         let url = match base_url {
             BaseWebsiteUrl::Http(url) => url,
-            BaseWebsiteUrl::NonHttp(url) => {
-                return Ok(WebsiteInfo {
-                    name: Self::pretty_url_host(&url)?,
-                    description: url,
-                    color: random_color(),
-                    logo: None,
-                });
+            BaseWebsiteUrl::NonHttp(_) => {
+                return Ok(Self::default_from_url(base_url));
             }
         };
 
@@ -91,17 +105,11 @@ impl WebsiteInfo {
         let (description, site_name, logo_url) = {
             let response = Self::modify_request(client.get(&url)).send().await?;
             if !response.status().is_success() {
-                warn!(
+                bail!(
                     "failed to get website info for {} with status {}",
                     url,
                     response.status()
                 );
-                return Ok(WebsiteInfo {
-                    name: Self::pretty_url_host(&url)?,
-                    description: url,
-                    color: random_color(),
-                    logo: None,
-                });
             }
             let html = response.text().await?;
             let document = Html::parse_document(&html);
@@ -110,7 +118,7 @@ impl WebsiteInfo {
                 .context("get site name")
                 .warn();
             if site_name.is_empty() {
-                site_name = Self::pretty_url_host(&url)?;
+                site_name = Self::pretty_url_host(&url);
             }
 
             let description = Self::get_description(&document)
@@ -196,7 +204,7 @@ impl WebsiteInfo {
             return Ok(title.text().collect::<String>());
         }
 
-        Self::pretty_url_host(url)
+        Ok(Self::pretty_url_host(url))
     }
 
     /// Get the logo URL of the website

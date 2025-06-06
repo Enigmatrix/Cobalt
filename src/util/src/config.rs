@@ -18,6 +18,14 @@ pub struct Config {
     alert_duration: Duration,
 }
 
+/// The name of the config file during tests
+#[cfg(test)]
+pub const CONFIG_FILE: &str = "test.appsettings.json";
+
+/// The name of the config file
+#[cfg(not(test))]
+pub const CONFIG_FILE: &str = "appsettings.json";
+
 impl Default for Config {
     fn default() -> Self {
         Self {
@@ -101,7 +109,7 @@ impl Config {
         #[cfg(not(debug_assertions))]
         let config = Config::default();
         #[cfg(debug_assertions)]
-        let config: Config = serde_json::from_str(&std::fs::read_to_string(&Self::config_path(
+        let config: Config = serde_json::from_str(&std::fs::read_to_string(Self::config_path(
             "dev/appsettings.Debug.json",
         )?)?)?;
 
@@ -158,7 +166,7 @@ impl Config {
 
     /// Write the config to the appsettings.json file
     pub fn write(&self) -> Result<()> {
-        let path = &Self::config_path("appsettings.json")?;
+        let path = &Self::config_path(CONFIG_FILE)?;
         std::fs::write(path, serde_json::to_string_pretty(self)?)?;
         Ok(())
     }
@@ -166,39 +174,42 @@ impl Config {
 
 /// Get the configuration from the appsettings.json file
 pub fn get_config() -> Result<Config> {
+    let path = Config::config_path(CONFIG_FILE)?;
     let mut config: Config = loop {
-        match std::fs::read_to_string(Config::config_path("appsettings.json")?)
+        match std::fs::read_to_string(&path)
             .map_err(|e| e.to_string())
             .and_then(|s| serde_json::from_str(&s).map_err(|e| e.to_string()))
         {
             Ok(config) => break config,
             Err(e) => {
                 // can't log this since logger isn't setup yet.
-                eprintln!("Error loading config: {:?}", e);
-                Config::replace_with_default()?;
+                eprintln!("Error loading config: {e:?}");
+                Config::replace_with_default().expect("failed to replace with default config");
                 // eprintln!("Replaced with default config: {:?}", e);
             }
         }
     };
-    config.validate_or_replace()?;
+    config
+        .validate_or_replace()
+        .expect("failed to validate or replace config");
     Ok(config)
 }
 
 #[test]
-fn extract_query_content_connection_string() -> Result<()> {
+fn combined_extract_fields() -> Result<()> {
     std::env::set_current_dir("../../")?;
     let config = get_config()?;
     assert_eq!("main.db", config.connection_string()?);
-    Ok(())
-}
+    std::fs::remove_file(Config::config_path(CONFIG_FILE)?).expect("failed to remove file");
+    std::env::set_current_dir("src/util")?;
 
-#[test]
-fn extract_engine_log_filter() -> Result<()> {
     std::env::set_current_dir("../../")?;
     let config = get_config()?;
     assert_eq!(
         "Debug,selectors=info,html5ever=info",
         config.engine_log_filter()
     );
+    std::fs::remove_file(Config::config_path(CONFIG_FILE)?).expect("failed to remove file");
+    std::env::set_current_dir("src/util")?;
     Ok(())
 }
