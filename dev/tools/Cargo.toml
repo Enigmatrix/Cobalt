@@ -13,6 +13,7 @@ clap = { version = "4.4", features = ["derive"] }
 util = { path = "../../src/util" }
 platform = { path = "../../src/platform" }
 windows = { version = "0.56", features = ["Win32_Foundation"] }
+dialoguer = "0.11.0"
 
 [[bin]]
 name = "dim"

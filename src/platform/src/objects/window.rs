@@ -27,7 +27,8 @@ use crate::win32;
 /// Representation of a [`Window`] on the user's desktop
 #[derive(Clone, PartialEq, Eq)]
 pub struct Window {
-    pub(crate) hwnd: HWND,
+    /// The handle to the window
+    pub hwnd: HWND,
 }
 
 impl std::fmt::Debug for Window {
