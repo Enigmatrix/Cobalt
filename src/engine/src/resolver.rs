@@ -11,14 +11,19 @@ impl AppInfoResolver {
     /// Resolve the application information for the given [AppIdentity].
     async fn resolve(identity: &AppIdentity) -> Result<AppInfo> {
         match identity {
-            AppIdentity::Win32 { path } => AppInfo::from_win32(path).await,
+            AppIdentity::Win32 { path } => {
+                Ok(AppInfo::from_win32(path).await.unwrap_or_else(|e| {
+                    warn!("failed to get app info for {path}, using default: {e:?}");
+                    AppInfo::default_from_win32_path(path)
+                }))
+            }
             AppIdentity::Uwp { aumid } => AppInfo::from_uwp(aumid).await,
             AppIdentity::Website { base_url } => {
                 let base_url = WebsiteInfo::url_to_base_url(base_url)?;
                 Ok(WebsiteInfo::from_base_url(base_url.clone())
                     .await
                     .unwrap_or_else(|e| {
-                        warn!("failed to get website info for {base_url}, using default: {e}");
+                        warn!("failed to get website info for {base_url}, using default: {e:?}");
                         WebsiteInfo::default_from_url(base_url)
                     })
                     .into())

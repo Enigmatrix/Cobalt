@@ -1,4 +1,5 @@
 use std::mem::swap;
+use std::path::Path;
 
 use rand::seq::IndexedMutRandom;
 use util::error::{Context, Result};
@@ -32,6 +33,19 @@ pub const WIN32_IMAGE_SIZE: u32 = 64;
 pub const UWP_IMAGE_SIZE: f32 = 256.0;
 
 impl AppInfo {
+    /// Create a default [AppInfo] from a Win32 path
+    pub fn default_from_win32_path(path: &str) -> Self {
+        let path = Path::new(path);
+        let file = path.file_name().expect("file name").to_string_lossy();
+        Self {
+            name: file.to_string(),
+            description: file.to_string(),
+            company: "".to_string(),
+            color: random_color(),
+            logo: None,
+        }
+    }
+
     /// Create a new [AppInfo] of a Win32 program from its path
     pub async fn from_win32(path: &str) -> Result<Self> {
         let file = AgileReference::new(&StorageFile::GetFileFromPathAsync(&path.into())?.await?)?;
