@@ -19,6 +19,9 @@ dialoguer = "0.11.0"
 name = "dim"
 path = "src/bin/dim.rs" 
 
+[[bin]]
+name = "browser"
+path = "src/bin/browser.rs" 
 
 [[bin]]
 name = "kill"
