@@ -1,4 +1,6 @@
-use std::collections::{HashMap, HashSet};use std::path::Path;
+use std::collections::{HashMap, HashSet};
+use std::path::Path;
+
 use platform::objects::{FileVersionInfo, Process, ProcessId, ProcessThreadId, Window};
 use util::error::Result;
 use windows::core::HRESULT;
@@ -33,7 +35,7 @@ impl ProcessFilter {
     }
 }
 /// Filter for a window
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct WindowFilter {
     /// Window handle in hexadecimal
     pub handle: Option<String>,
@@ -206,4 +208,29 @@ pub fn get_process_details(pid: ProcessId) -> Result<Option<ProcessDetails>> {
         .ok()
         .unwrap_or(file_name);
     Ok(Some(ProcessDetails { pid, path, name }))
+}
+
+/// Match running Application User Model IDs based on the filtered windows
+pub fn match_running_aumids(window_filter: &WindowFilter) -> Result<Vec<String>> {
+    let mut windows = Window::get_all_visible_windows()?
+        .into_iter()
+        .map(|window| {
+            Ok(WindowDetails {
+                title: window.title()?,
+                ptid: window.ptid()?,
+                aumid: window.aumid().ok(),
+                window,
+            })
+        })
+        .collect::<Result<Vec<WindowDetails>>>()?;
+
+    windows.retain(|w| !window_filter.matches(w));
+    Ok(windows
+        .into_iter()
+        .map(|w| w.aumid)
+        .flatten()
+        .filter(|aumid| !aumid.is_empty())
+        .collect::<HashSet<_>>()
+        .into_iter()
+        .collect())
 }
