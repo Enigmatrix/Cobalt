@@ -5585,6 +5585,7 @@ dependencies = [
  "clap",
  "platform",
  "util",
+ "windows 0.56.0",
 ]
 
 [[package]]
