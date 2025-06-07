@@ -91,7 +91,27 @@ fn main() -> Result<()> {
         browsers.push(browser);
     }
 
-    dbg!(&browsers);
+    // Print out the browsers
+
+    for browser in &browsers {
+        for window in &browser.windows {
+            for tab in &window.tabs {
+                println!("{}", tab_to_string(tab, window, browser));
+            }
+        }
+    }
 
     Ok(())
+}
+
+fn tab_to_string(tab: &TabDetails, window: &BrowserWindow, browser: &Browser) -> String {
+    format!(
+        "{}{} - {} (hwnd: {:08x}) - {} (pid: {})",
+        tab.url.as_deref().unwrap_or("<UNKNOWN>"),
+        if tab.incognito { " [Incognito]" } else { "" },
+        window.window.title,
+        window.window.window.hwnd.0,
+        browser.process.name,
+        browser.process.pid
+    )
 }
