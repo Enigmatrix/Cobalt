@@ -7,6 +7,7 @@ use windows::core::HRESULT;
 use windows::Win32::Foundation::ERROR_ACCESS_DENIED;
 
 /// Filter for a process
+#[derive(Debug, Clone, Default)]
 pub struct ProcessFilter {
     /// Process ID
     pub pid: Option<ProcessId>,
