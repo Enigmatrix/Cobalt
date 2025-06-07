@@ -7,8 +7,9 @@ use windows::Win32::System::Com::StructuredStorage::{
 };
 use windows::Win32::System::Com::{CoCreateInstance, CoTaskMemFree, CLSCTX_ALL};
 use windows::Win32::UI::Accessibility::{
-    CUIAutomation, IUIAutomation, TreeScope_Descendants, UIA_ControlTypePropertyId,
-    UIA_DocumentControlTypeId, UIA_NamePropertyId, UIA_ValueValuePropertyId,
+    CUIAutomation, IUIAutomation, IUIAutomationElement, TreeScope_Descendants,
+    UIA_AutomationIdPropertyId, UIA_ClassNamePropertyId, UIA_NamePropertyId,
+    UIA_ValueValuePropertyId,
 };
 
 use crate::objects::Window;
@@ -55,53 +56,73 @@ impl BrowserDetector {
     pub fn chromium_url(&self, window: &Window) -> Result<BrowserUrl> {
         let element = unsafe { self.automation.ElementFromHandle(window.hwnd)? };
 
-        let name_prop = unsafe { element.GetCurrentPropertyValue(UIA_NamePropertyId)? };
-        let name = self.variant_to_string(name_prop)?;
+        let browser_root_view_cond = unsafe {
+            self.automation
+                .CreatePropertyCondition(UIA_ClassNamePropertyId, &"BrowserRootView".into())?
+        };
+        let browser_root_view = self
+            .uia_find_result(unsafe {
+                element.FindFirst(TreeScope_Descendants, &browser_root_view_cond)
+            })
+            .context("find browser root view")?;
+        let browser_root_view = match browser_root_view {
+            Some(browser_root_view) => browser_root_view,
+            None => {
+                return Ok(BrowserUrl {
+                    url: None,
+                    incognito: false,
+                })
+            }
+        };
+        let name = self.variant_to_string(unsafe {
+            browser_root_view.GetCurrentPropertyValue(UIA_NamePropertyId)?
+        })?;
 
         // This seems to be the only way to detect incognito mode in Edge
         // Not sure why the \u{200b} is needed, but it works.
         // Have not tested with other languages.
-        let incognito = name.ends_with("Google Chrome (Incognito)")
-            || name.ends_with("[InPrivate] - Microsoft\u{200b} Edge");
+        let incognito = name.ends_with("- Google Chrome (Incognito)")
+            || name.ends_with("- Microsoft Edge (InPrivate)");
 
-        let variant: VARIANT = UIA_DocumentControlTypeId.0.into();
-        let condition = unsafe {
+        let root_web_area_cond = unsafe {
             self.automation
-                .CreatePropertyCondition(UIA_ControlTypePropertyId, &variant)?
+                .CreatePropertyCondition(UIA_AutomationIdPropertyId, &"RootWebArea".into())?
         };
-        let documents = unsafe { element.FindAll(TreeScope_Descendants, &condition)? };
-        let len = unsafe { documents.Length()? };
-        for i in 0..len {
-            let document = unsafe { documents.GetElement(i)? };
-
-            let url_prop = unsafe { document.GetCurrentPropertyValue(UIA_ValueValuePropertyId)? };
-            let url = self.variant_to_string(url_prop)?;
-            if url.is_empty() {
-                continue;
+        let root_web_area = self
+            .uia_find_result(unsafe {
+                element.FindFirst(TreeScope_Descendants, &root_web_area_cond)
+            })
+            .context("find root web area")?;
+        if let Some(root_web_area) = root_web_area {
+            let url = self.variant_to_string(unsafe {
+                root_web_area.GetCurrentPropertyValue(UIA_ValueValuePropertyId)?
+            })?;
+            if !url.is_empty() {
+                return Ok(BrowserUrl {
+                    url: Some(url),
+                    incognito,
+                });
             }
-
-            return Ok(BrowserUrl {
-                url: Some(url),
-                incognito,
-            });
         }
 
-        let condition = unsafe {
+        let omnibox_cond = unsafe {
             self.automation
                 .CreatePropertyCondition(UIA_NamePropertyId, &"Address and search bar".into())?
         };
-        let search_bar = match unsafe { element.FindFirst(TreeScope_Descendants, &condition) } {
-            Ok(search_bar) => search_bar,
-            Err(err) if err.code().is_ok() => {
+        let omnibox = self
+            .uia_find_result(unsafe { element.FindFirst(TreeScope_Descendants, &omnibox_cond) })
+            .context("find omnibox")?;
+        let omnibox = match omnibox {
+            Some(omnibox) => omnibox,
+            None => {
                 return Ok(BrowserUrl {
                     url: None,
                     incognito,
                 })
             }
-            Err(err) => return Err(err).context("find first element"),
         };
 
-        let search_value = unsafe { search_bar.GetCurrentPropertyValue(UIA_ValueValuePropertyId)? };
+        let search_value = unsafe { omnibox.GetCurrentPropertyValue(UIA_ValueValuePropertyId)? };
         let search_value = self.variant_to_string(search_value)?;
         info!("using omnibox url: {search_value}");
 
@@ -142,5 +163,16 @@ impl BrowserDetector {
         let value = String::from_utf16_lossy(unsafe { value_raw.as_wide() });
         unsafe { CoTaskMemFree(Some(value_raw.as_ptr().cast())) };
         Ok(value)
+    }
+
+    fn uia_find_result(
+        &self,
+        value: windows::core::Result<IUIAutomationElement>,
+    ) -> windows::core::Result<Option<IUIAutomationElement>> {
+        match value {
+            Ok(value) => Ok(Some(value)),
+            Err(err) if err.code().is_ok() => Ok(None),
+            Err(err) => Err(err),
+        }
     }
 }
