@@ -136,12 +136,16 @@ export function Gantt2({
   );
 
   const seriesKeyToSeries = useCallback(
-    (key: SeriesKey, timeGap: number): echarts.CustomSeriesOption => {
+    (
+      key: SeriesKey,
+      timeGap: number,
+      color: string,
+    ): echarts.CustomSeriesOption => {
       const id = key.type + key.id;
       if (key.type === "app") {
         const usages = mergedUsages(usagesPerApp[key.id], timeGap);
         return {
-          ...appBar(appBarHeight, sessionBarHeight),
+          ...appBar(appBarHeight, sessionBarHeight, color),
           id,
           encode: {
             x: [1, 2],
@@ -162,7 +166,7 @@ export function Gantt2({
           timeGap,
         );
         return {
-          ...appBar(appBarHeight, sessionBarHeight),
+          ...appBar(appBarHeight, sessionBarHeight, color),
           id,
           encode: {
             x: [1, 2],
@@ -183,8 +187,13 @@ export function Gantt2({
   );
 
   useEffect(() => {
+    if (!chartInit) return;
+
     const timeGap = minRenderTimeGap(interval, width, dataZoom);
-    const series = seriesKeys.map((key) => seriesKeyToSeries(key, timeGap));
+    const color = getVarColorAsHex("primary");
+    const series = seriesKeys.map((key) =>
+      seriesKeyToSeries(key, timeGap, color),
+    );
 
     const commonOptions = {
       grid: {
@@ -521,6 +530,7 @@ export function mergedUsages(
 function appBar(
   appBarHeight: number,
   sessionBarHeight: number,
+  color: string,
 ): echarts.CustomSeriesOption {
   return {
     animation: false,
@@ -536,17 +546,17 @@ function appBar(
       const type = api.value(5);
 
       const rowHeight = type === "app" ? appBarHeight : sessionBarHeight;
+      const height = 24;
 
       const [x, y] = api.coord([start, index]);
       // minimum 1px width
       const width = Math.max(api.coord([end, index])[0] - x, 1);
 
-      const padding = 0.2;
       const rectShape = {
         x,
-        y: y + rowHeight * padding,
+        y: y + (rowHeight - height) / 2,
         width,
-        height: rowHeight * (1 - padding * 2),
+        height,
       };
       const shape = echarts.graphic.clipRectByRect(
         rectShape,
@@ -558,7 +568,7 @@ function appBar(
           type: "rect" as const,
           shape,
           style: {
-            fill: "#1890ff",
+            fill: color,
           },
         }
       );
