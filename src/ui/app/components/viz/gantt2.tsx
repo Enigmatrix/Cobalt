@@ -195,6 +195,10 @@ export function Gantt2({
       ...commonOptions,
       series,
     });
+
+    // Force resize now instead of waiting for the next frame
+    topInstanceRef.current?.resize();
+    chartInstanceRef.current?.resize();
   }, [
     seriesKeys,
     seriesKeyToSeries,
