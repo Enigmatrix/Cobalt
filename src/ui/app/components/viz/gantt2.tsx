@@ -30,6 +30,16 @@ interface CombinedUsage {
   count: number;
 }
 
+interface AppSessionUsage {
+  start: number;
+  end: number;
+  usageId: Ref<Usage>;
+  sessionId: Ref<Session>;
+  appId: Ref<App>;
+}
+
+type UsageBar = CombinedUsage | AppSessionUsage;
+
 interface SessionSeriesKey {
   type: "session";
   id: Ref<Session>;
@@ -44,7 +54,6 @@ interface AppSeriesKey {
 }
 
 type SeriesKey = SessionSeriesKey | AppSeriesKey;
-type UsageBar = CombinedUsage | Usage;
 
 interface GanttProps {
   usages: AppSessionUsages;
@@ -95,7 +104,7 @@ export function Gantt2({
   const apps = useApps(appIds);
   const appMap = useAppState((state) => state.apps);
 
-  const usagesPerApp: Record<Ref<App>, Usage[]> = useMemo(
+  const usagesPerApp: Record<Ref<App>, AppSessionUsage[]> = useMemo(
     () =>
       _(apps)
         .map(
@@ -103,7 +112,15 @@ export function Gantt2({
             [
               app.id,
               Object.values(usagesPerAppSession[app.id])
-                .flatMap((session) => session.usages)
+                .flatMap((session) =>
+                  session.usages.map((usage) => ({
+                    start: usage.start,
+                    end: usage.end,
+                    usageId: usage.id,
+                    sessionId: session.id,
+                    appId: app.id,
+                  })),
+                )
                 .sort((a, b) => a.start - b.start),
             ] as const,
         )
@@ -165,14 +182,24 @@ export function Gantt2({
             key.y,
             ticksToUnixMillis(usage.start),
             ticksToUnixMillis(usage.end),
-            (usage as CombinedUsage).count,
-            key.id,
             key.type,
+            key.id,
+            false,
+            (usage as CombinedUsage).count,
+            (usage as AppSessionUsage).usageId,
+            (usage as AppSessionUsage).sessionId,
+            (usage as AppSessionUsage).appId,
           ]),
         } satisfies echarts.CustomSeriesOption;
       } else {
         const usages = mergedUsages(
-          usagesPerAppSession[key.appId][key.id].usages,
+          usagesPerAppSession[key.appId][key.id].usages.map((usage) => ({
+            start: usage.start,
+            end: usage.end,
+            usageId: usage.id,
+            sessionId: key.id,
+            appId: key.appId,
+          })),
           timeGap,
         );
         return {
@@ -186,10 +213,13 @@ export function Gantt2({
             key.y,
             ticksToUnixMillis(usage.start),
             ticksToUnixMillis(usage.end),
-            (usage as CombinedUsage).count,
-            key.id,
             key.type,
+            key.id,
             usagesPerAppSession[key.appId][key.id].url,
+            (usage as CombinedUsage).count,
+            (usage as AppSessionUsage).usageId,
+            (usage as AppSessionUsage).sessionId,
+            (usage as AppSessionUsage).appId,
           ]),
         } satisfies echarts.CustomSeriesOption;
       }
@@ -338,13 +368,14 @@ export function Gantt2({
           if (!params.data) {
             return "";
           }
-          const [id, startMillis, endMillis, count] = params.data;
+          const [, startMillis, endMillis, typ, id, , count] = params.data;
           const start = DateTime.fromMillis(startMillis);
           const end = DateTime.fromMillis(endMillis);
 
           const title = count ? `Multiple Usages: ${count}` : "Single Usage";
+          const tid = typ + id;
 
-          return `${title} - ${id}<br/>Start: ${start.toFormat("yyyy-MM-dd HH:mm:ss.SSS")}<br/>End: ${end.toFormat("yyyy-MM-dd HH:mm:ss.SSS")}`;
+          return `${title} - ${tid}<br/>Start: ${start.toFormat("yyyy-MM-dd HH:mm:ss.SSS")}<br/>End: ${end.toFormat("yyyy-MM-dd HH:mm:ss.SSS")}`;
         },
       },
       grid: {
@@ -524,7 +555,7 @@ export function minRenderTimeGap(
 }
 
 export function mergedUsages(
-  usages: Usage[],
+  usages: AppSessionUsage[],
   minRenderTimeGap: number,
 ): UsageBar[] {
   if (minRenderTimeGap < maxRenderTimeGap) {
@@ -534,12 +565,16 @@ export function mergedUsages(
   for (const usage of usages) {
     const lastUsage = mergedUsages[mergedUsages.length - 1];
     if (lastUsage.end + minRenderTimeGap > usage.start) {
-      const lastUsageBar = lastUsage as CombinedUsage;
+      let lastUsageBar = lastUsage as CombinedUsage;
       if (lastUsageBar.type !== "combined") {
-        lastUsageBar.type = "combined";
-        lastUsageBar.count = 1;
+        lastUsageBar = mergedUsages[mergedUsages.length - 1] = {
+          start: lastUsage.start,
+          end: lastUsage.end,
+          type: "combined",
+          count: 1,
+        };
       }
-      lastUsage.end = usage.end;
+      lastUsageBar.end = usage.end;
       lastUsageBar.count += 1;
     } else {
       mergedUsages.push({ ...usage });
@@ -562,22 +597,22 @@ function appBar(
       params: echarts.CustomSeriesRenderItemParams,
       api: echarts.CustomSeriesRenderItemAPI,
     ): echarts.CustomSeriesRenderItemReturn => {
-      const index = api.value(0);
+      const ytop = api.value(0);
       const start = api.value(1);
       const end = api.value(2);
-      const type = api.value(5);
+      const type = api.value(3);
 
       const rowHeight =
         type === "app"
           ? appBarHeight
-          : api.value(7)
+          : api.value(5)
             ? sessionUrlBarHeight
             : sessionBarHeight;
       const height = 24;
 
-      const [x, y] = api.coord([start, index]);
+      const [x, y] = api.coord([start, ytop]);
       // minimum 1px width
-      const width = Math.max(api.coord([end, index])[0] - x, 1);
+      const width = Math.max(api.coord([end, ytop])[0] - x, 1);
 
       const rectShape = {
         x,
