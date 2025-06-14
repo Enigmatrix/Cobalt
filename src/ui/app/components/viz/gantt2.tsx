@@ -12,6 +12,7 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import AppIcon from "@/components/app/app-icon";
 import { Text } from "@/components/ui/text";
 import { getVarColorAsHex } from "@/lib/color-utils";
+import { useDebounce } from "use-debounce";
 
 type RectLike = {
   x: number;
@@ -79,6 +80,8 @@ export function Gantt2({
   const [expanded, setExpanded] = useState<Record<Ref<App>, boolean>>(
     defaultExpanded ?? {},
   );
+  const [chartInit, setChartInit] = useState(false);
+  const [dataZoom, setDataZoom] = useDebounce(100, 200);
 
   const appIds = useMemo(() => {
     return Object.keys(usagesPerAppSession).map((appId) => +appId as Ref<App>);
@@ -120,22 +123,8 @@ export function Gantt2({
     [expanded, apps, usagesPerAppSession],
   );
 
-  useEffect(() => {
-    if (!chartRef.current) return;
-    if (!topRef.current) return;
-
-    const chart = echarts.init(chartRef.current);
-    chartInstanceRef.current = chart;
-
-    const top = echarts.init(topRef.current);
-    topInstanceRef.current = top;
-
-    const timeGap = minRenderTimeGap(interval, width, 100);
-
-    function seriesKeyToSeries(
-      key: SeriesKey,
-      timeGap: number,
-    ): echarts.CustomSeriesOption {
+  const seriesKeyToSeries = useCallback(
+    (key: SeriesKey, timeGap: number): echarts.CustomSeriesOption => {
       const id = key.type + key.id;
       if (key.type === "app") {
         const usages = mergedUsages(usagesPerApp[key.id], timeGap);
@@ -157,34 +146,71 @@ export function Gantt2({
         // return sessionBar(key.id);
         throw new Error("Not implemented");
       }
-    }
+    },
+    [usagesPerApp],
+  );
 
-    const series: echarts.CustomSeriesOption[] = seriesKeys.map((key) =>
-      seriesKeyToSeries(key, timeGap),
-    );
+  useEffect(() => {
+    const timeGap = minRenderTimeGap(interval, width, dataZoom);
+    const series = seriesKeys.map((key) => seriesKeyToSeries(key, timeGap));
+
+    const commonOptions = {
+      grid: {
+        left: infoGap,
+      },
+      xAxis: {
+        min: interval.start.toMillis(),
+        max: interval.end.toMillis(),
+      },
+      yAxis: {
+        // setting both data and inverse makes it correct order
+        data: seriesKeys.map((key) => key.type + key.id),
+      },
+    } satisfies echarts.EChartsOption;
+
+    topInstanceRef.current?.setOption({
+      ...commonOptions,
+    });
+
+    chartInstanceRef.current?.setOption({
+      ...commonOptions,
+      series,
+    });
+  }, [
+    seriesKeys,
+    seriesKeyToSeries,
+    width,
+    interval,
+    infoGap,
+    chartInit,
+    dataZoom,
+  ]);
+
+  useEffect(() => {
+    if (!chartRef.current) return;
+    if (!topRef.current) return;
+
+    const chart = echarts.init(chartRef.current);
+    chartInstanceRef.current = chart;
+
+    const top = echarts.init(topRef.current);
+    topInstanceRef.current = top;
 
     const common = {
       animation: false,
       grid: {
-        left: infoGap,
         right: 5,
         bottom: 0,
         containLabel: true,
       },
-      xAxis: [
-        {
-          id: "timeAxis",
-          type: "time",
-          position: "top",
-          min: interval.start.toMillis(),
-          max: interval.end.toMillis(),
-        },
-      ],
+      xAxis: {
+        id: "timeAxis",
+        type: "time",
+        position: "top",
+      },
       yAxis: {
         show: false,
         type: "category",
-        // setting both data and inverse makes it correct.
-        data: seriesKeys.map((key) => key.type + key.id),
         inverse: true,
 
         axisLabel: {
@@ -220,20 +246,18 @@ export function Gantt2({
 
     const optionTop: echarts.EChartsOption = {
       ...common,
-      xAxis: [
-        {
-          ...common.xAxis[0],
+      xAxis: {
+        ...common.xAxis,
+        show: true,
+        minorTick: {
           show: true,
-          minorTick: {
-            show: true,
-          },
-          axisTick: {
-            show: true,
-            inside: true,
-          },
-          alignTicks: true,
         },
-      ],
+        axisTick: {
+          show: true,
+          inside: true,
+        },
+        alignTicks: true,
+      },
     };
 
     const option: echarts.EChartsOption = {
@@ -257,24 +281,22 @@ export function Gantt2({
         ...common.grid,
         top: 0,
       },
-      xAxis: [
-        {
-          ...common.xAxis[0],
-          axisLabel: {
-            show: false,
-          },
-          splitLine: {
-            show: true,
-            showMaxLine: false,
-            showMinLine: false,
-            lineStyle: {
-              opacity: 0.4,
-              color: getVarColorAsHex("foreground"),
-              type: [1, 5],
-            },
+      xAxis: {
+        ...common.xAxis,
+        axisLabel: {
+          show: false,
+        },
+        splitLine: {
+          show: true,
+          showMaxLine: false,
+          showMinLine: false,
+          lineStyle: {
+            opacity: 0.4,
+            color: getVarColorAsHex("foreground"),
+            type: [1, 5],
           },
         },
-      ],
+      },
       yAxis: {
         ...common.yAxis,
         show: true,
@@ -297,26 +319,21 @@ export function Gantt2({
           show: false,
         },
       ],
-      series,
     };
 
     chart.setOption(option);
     top.setOption(optionTop);
     echarts.connect([chart, top]);
 
-    const handler = _.debounce((params: any) => {
+    const handler = (params: any) => {
       if (params.batch) {
         params = params.batch[params.batch.length - 1];
       }
 
       // percentage (100)
       const diff = params.end - params.start;
-      const timeGap = minRenderTimeGap(interval, width, diff);
-
-      chart.setOption({
-        series: seriesKeys.map((key) => seriesKeyToSeries(key, timeGap)),
-      });
-    }, 200);
+      setDataZoom(diff);
+    };
 
     chart.on("datazoom", handler);
 
@@ -328,12 +345,14 @@ export function Gantt2({
     // if chartRef changes, so does topRef
     resizeObserver.observe(chartRef.current);
 
+    setChartInit(true);
+
     return () => {
+      resizeObserver.disconnect();
       top.dispose();
       chart.dispose();
-      resizeObserver.disconnect();
     };
-  }, [interval, usagesPerApp]);
+  }, [setDataZoom]);
 
   return (
     <div className="w-full h-full sticky">
