@@ -3,7 +3,11 @@ import * as echarts from "echarts";
 import type { App, Ref, Session, Usage } from "@/lib/entities";
 import type { InteractionPeriod, SystemEvent } from "@/lib/entities";
 import type { AppSessionUsages } from "@/lib/repo";
-import { ticksToUnixMillis, type Interval } from "@/lib/time";
+import {
+  ticksToUnixMillis,
+  unixMillisToTicks,
+  type Interval,
+} from "@/lib/time";
 import { useWidth } from "@/hooks/use-width";
 import _ from "lodash";
 import { DateTime } from "luxon";
@@ -14,7 +18,9 @@ import { Text } from "@/components/ui/text";
 import { getVarColorAsHex } from "@/lib/color-utils";
 import { useDebounce } from "use-debounce";
 import { useAppState } from "@/lib/state";
-import { DateTimeText } from "../time/time-text";
+import { DateTimeText } from "@/components/time/time-text";
+import { Tooltip } from "@/components/viz/tooltip";
+import { DurationText } from "@/components/time/duration-text";
 
 type RectLike = {
   x: number;
@@ -92,6 +98,7 @@ export function Gantt2({
   const chartInstanceRef = useRef<echarts.ECharts | null>(null);
   const topInstanceRef = useRef<echarts.ECharts | null>(null);
 
+  const [hoverData, setHoverData] = useState<UsageBar | null>(null);
   const [expanded, setExpanded] = useState<Record<Ref<App>, boolean>>(
     defaultExpanded ?? {},
   );
@@ -364,19 +371,7 @@ export function Gantt2({
       ...common,
       tooltip: {
         trigger: "item",
-        formatter: (params) => {
-          if (!params.data) {
-            return "";
-          }
-          const [, startMillis, endMillis, typ, id, , count] = params.data;
-          const start = DateTime.fromMillis(startMillis);
-          const end = DateTime.fromMillis(endMillis);
-
-          const title = count ? `Multiple Usages: ${count}` : "Single Usage";
-          const tid = typ + id;
-
-          return `${title} - ${tid}<br/>Start: ${start.toFormat("yyyy-MM-dd HH:mm:ss.SSS")}<br/>End: ${end.toFormat("yyyy-MM-dd HH:mm:ss.SSS")}`;
-        },
+        formatter: () => "",
       },
       grid: {
         ...common.grid,
@@ -441,6 +436,46 @@ export function Gantt2({
 
     chart.on("datazoom", handler);
 
+    chart.getZr().on("mousemove", (params) => {
+      setHoverData(null);
+    });
+
+    chart.on("mousemove", (params) => {
+      const [
+        ,
+        startMillis,
+        endMillis,
+        typ,
+        id,
+        ,
+        count,
+        usageId,
+        sessionId,
+        appId,
+      ] = params.data as number[];
+      const start = unixMillisToTicks(startMillis);
+      const end = unixMillisToTicks(endMillis);
+
+      let usage: UsageBar | null = null;
+      if (count > 1) {
+        usage = {
+          type: "combined",
+          start,
+          end,
+          count,
+        };
+      } else {
+        usage = {
+          start,
+          end,
+          usageId: +usageId as Ref<Usage>,
+          sessionId: +sessionId as Ref<Session>,
+          appId: +appId as Ref<App>,
+        };
+      }
+      setHoverData(usage);
+    });
+
     const resizeObserver = new ResizeObserver(() => {
       requestAnimationFrame(() => top.resize());
       requestAnimationFrame(() => chart.resize());
@@ -472,7 +507,20 @@ export function Gantt2({
           style={{
             height: seriesHeight,
           }}
-        />
+        >
+          <Tooltip show={hoverData !== null} targetRef={chartRef}>
+            <div className="max-w-[800px]">
+              {(hoverData as CombinedUsage)?.type === "combined" ? (
+                <CombinedUsageTooltip usage={hoverData as CombinedUsage} />
+              ) : (
+                <AppSessionUsageTooltip
+                  usage={hoverData as AppSessionUsage}
+                  usagesPerAppSession={usagesPerAppSession}
+                />
+              )}
+            </div>
+          </Tooltip>
+        </div>
         <div
           className="absolute top-0 left-0 bottom-0"
           style={{ width: infoGap }}
@@ -665,4 +713,58 @@ function getSeriesKeys(
     }
   }
   return [seriesKeys, y];
+}
+
+function CombinedUsageTooltip({ usage }: { usage: CombinedUsage }) {
+  return (
+    <div className="flex flex-col">
+      <Text
+        className="text-muted-foreground"
+        children={`${usage.count} Combined Usages. Zoom to see details.`}
+      ></Text>
+      <div className="flex items-center text-muted-foreground gap-1 text-xs">
+        <DateTimeText ticks={usage.start} /> -
+        <DateTimeText ticks={usage.end} />
+        (
+        <DurationText ticks={usage.end - usage.start} />)
+      </div>
+    </div>
+  );
+}
+
+function AppSessionUsageTooltip({
+  usage,
+  usagesPerAppSession,
+}: {
+  usage: AppSessionUsage;
+  usagesPerAppSession: AppSessionUsages;
+}) {
+  const session = usagesPerAppSession[usage.appId][usage.sessionId];
+  return (
+    <div className="flex flex-col">
+      <div className="flex flex-col">
+        <Text>{session.title}</Text>
+        {session.url && (
+          <Text className="text-muted-foreground text-xs">{session.url}</Text>
+        )}
+        <div className="flex items-center text-muted-foreground gap-1 text-xs">
+          <DateTimeText ticks={session.start} /> -
+          <DateTimeText ticks={session.end} />
+          (
+          <DurationText ticks={session.end - session.start} />)
+        </div>
+
+        <Text
+          className="text-muted-foreground border-t mt-2 border-border"
+          children={`Usage: `}
+        ></Text>
+        <div className="flex items-center text-muted-foreground gap-1 text-xs">
+          <DateTimeText ticks={usage.start} /> -
+          <DateTimeText ticks={usage.end} />
+          (
+          <DurationText ticks={usage.end - usage.start} />)
+        </div>
+      </div>
+    </div>
+  );
 }
