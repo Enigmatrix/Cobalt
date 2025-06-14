@@ -1,13 +1,9 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as echarts from "echarts";
-import type { App, Ref, Usage } from "@/lib/entities";
+import type { App, Ref, Session, Usage } from "@/lib/entities";
 import type { InteractionPeriod, SystemEvent } from "@/lib/entities";
 import type { AppSessionUsages } from "@/lib/repo";
-import {
-  ticksToDateTime,
-  unixMillisToTicks,
-  type Interval,
-} from "@/lib/time";
+import { ticksToUnixMillis, type Interval } from "@/lib/time";
 import { useWidth } from "@/hooks/use-width";
 import _ from "lodash";
 import { DateTime } from "luxon";
@@ -31,50 +27,19 @@ interface CombinedUsage {
   count: number;
 }
 
+interface SessionSeriesKey {
+  type: "session";
+  id: Ref<Session>;
+  appId: Ref<App>;
+}
+
+interface AppSeriesKey {
+  type: "app";
+  id: Ref<App>;
+}
+
+type SeriesKey = SessionSeriesKey | AppSeriesKey;
 type UsageBar = CombinedUsage | Usage;
-
-const minRenderWidth = 1;
-const maxRenderTimeGap = 1000000000;
-
-function minRenderTimeGap(interval: Interval, width: number, dataZoom: number) {
-  const timeGap = interval.end.diff(interval.start).toMillis();
-  const zoom = dataZoom / 100;
-  const minRenderTimeGapMillis = ((timeGap * zoom) / width) * minRenderWidth;
-  const minRenderTimeGap = minRenderTimeGapMillis * 10_000;
-  return Math.max(minRenderTimeGap, 1);
-}
-
-function mergedUsages(
-  usages: Usage[],
-  minRenderTimeGap: number,
-  start: number,
-  end: number,
-): UsageBar[] {
-  const startTicks = unixMillisToTicks(start);
-  const endTicks = unixMillisToTicks(end);
-  usages = usages.filter(
-    (usage) => usage.end >= startTicks && usage.start <= endTicks,
-  );
-  if (minRenderTimeGap < maxRenderTimeGap) {
-    return usages;
-  }
-  const mergedUsages: UsageBar[] = [{ ...usages[0] }];
-  for (const usage of usages) {
-    let lastUsage = mergedUsages[mergedUsages.length - 1];
-    if (lastUsage.end + minRenderTimeGap > usage.start) {
-      const lastUsageBar = lastUsage as CombinedUsage;
-      if (lastUsageBar.type !== "combined") {
-        lastUsageBar.type = "combined";
-        lastUsageBar.count = 1;
-      }
-      lastUsage.end = usage.end;
-      lastUsageBar.count += 1;
-    } else {
-      mergedUsages.push({ ...usage });
-    }
-  }
-  return mergedUsages;
-}
 
 interface GanttProps {
   usages: AppSessionUsages;
@@ -89,51 +54,75 @@ interface GanttProps {
   defaultExpanded?: Record<Ref<App>, boolean>;
   interval: Interval;
   appBarHeight?: number;
+  sessionBarHeight?: number;
   infoGap?: number;
 }
 
 export function Gantt2({
-  usages,
+  usages: usagesPerAppSession,
   // usagesLoading,
   // interactionPeriods,
   // interactionPeriodsLoading,
   // systemEvents,
   // systemEventsLoading,
-  // defaultExpanded,
+  defaultExpanded,
   interval,
   infoGap = 300,
   appBarHeight = 52,
+  sessionBarHeight = 52,
 }: GanttProps) {
   const chartRef = useRef<HTMLDivElement>(null);
   const topRef = useRef<HTMLDivElement>(null);
   const chartInstanceRef = useRef<echarts.ECharts | null>(null);
   const topInstanceRef = useRef<echarts.ECharts | null>(null);
 
+  const [expanded, setExpanded] = useState<Record<Ref<App>, boolean>>(
+    defaultExpanded ?? {},
+  );
+
   const appIds = useMemo(() => {
-    return Object.keys(usages).map((appId) => +appId as Ref<App>);
-  }, [usages]);
+    return Object.keys(usagesPerAppSession).map((appId) => +appId as Ref<App>);
+  }, [usagesPerAppSession]);
   const apps = useApps(appIds);
 
-  const appUsages = useMemo(
+  const usagesPerApp: Record<Ref<App>, Usage[]> = useMemo(
     () =>
-      apps.map((app) => ({
-        id: app.id,
-        usages: Object.values(usages[app.id])
-          .flatMap((session) => session.usages)
-          .sort((a, b) => a.start - b.start),
-      })),
-    [usages, apps],
+      _(apps)
+        .map(
+          (app) =>
+            [
+              app.id,
+              Object.values(usagesPerAppSession[app.id])
+                .flatMap((session) => session.usages)
+                .sort((a, b) => a.start - b.start),
+            ] as const,
+        )
+        .fromPairs()
+        .value(),
+    [usagesPerAppSession, apps],
+  );
+
+  const toggleApp = useCallback(
+    (appId: Ref<App>) => {
+      setExpanded((prev) => ({
+        ...prev,
+        [appId]: !prev[appId],
+      }));
+    },
+    [setExpanded],
   );
 
   // TODO: find width another way
   const width = useWidth(chartRef);
 
+  const seriesKeys = useMemo(
+    () => getSeriesKeys(expanded, apps, usagesPerAppSession),
+    [expanded, apps, usagesPerAppSession],
+  );
+
   useEffect(() => {
     if (!chartRef.current) return;
     if (!topRef.current) return;
-
-    const intervalDurationMillis = interval.end.diff(interval.start).toMillis();
-    const intervalStartMillis = interval.start.toMillis();
 
     const chart = echarts.init(chartRef.current);
     chartInstanceRef.current = chart;
@@ -142,75 +131,59 @@ export function Gantt2({
     topInstanceRef.current = top;
 
     const timeGap = minRenderTimeGap(interval, width, 100);
-    const mergedAppUsages = appUsages.map((appUsage) => {
-      return {
-        id: appUsage.id,
-        usages: mergedUsages(
-          appUsage.usages,
-          timeGap,
-          interval.start.toMillis(),
-          interval.end.toMillis(),
-        ),
-      };
-    });
 
-    function appSeriesData(
-      mergedAppUsages: { id: Ref<App>; usages: UsageBar[] }[],
-    ) {
-      return mergedAppUsages.reverse().map((appUsage) => {
+    function seriesKeyToSeries(
+      key: SeriesKey,
+      timeGap: number,
+    ): echarts.CustomSeriesOption {
+      const id = key.type + key.id;
+      if (key.type === "app") {
+        const usages = mergedUsages(usagesPerApp[key.id], timeGap);
         return {
-          data: appUsage.usages.map((usage) => [
-            ticksToDateTime(usage.start).toMillis(),
-            ticksToDateTime(usage.end).toMillis(),
+          ...appBar(),
+          id,
+          encode: {
+            x: [1, 2],
+            y: 0,
+          },
+          data: usages.map((usage) => [
+            id,
+            ticksToUnixMillis(usage.start),
+            ticksToUnixMillis(usage.end),
             (usage as CombinedUsage).count,
           ]),
-        } as echarts.CustomSeriesOption;
-      });
+        } satisfies echarts.CustomSeriesOption;
+      } else {
+        // return sessionBar(key.id);
+        throw new Error("Not implemented");
+      }
     }
 
-    // Create series data for each session
-    const seriesData: echarts.CustomSeriesOption[] = appSeriesData(
-      mergedAppUsages,
-    ).map((series, index) => ({
-      animation: false,
-      type: "custom",
-      progressive: 0,
-      renderItem: (
-        params: echarts.CustomSeriesRenderItemParams,
-        api: echarts.CustomSeriesRenderItemAPI,
-      ): echarts.CustomSeriesRenderItemReturn => {
-        const start = api.value(0);
-        const end = api.value(1);
-        const y = api.coord([0, index]);
-        const rowHeight = y[1] - api.coord([0, index + 1])[1];
+    function seriesKeyToSeriesData(
+      key: SeriesKey,
+      timeGap: number,
+    ): echarts.CustomSeriesOption {
+      const id = key.type + key.id;
+      if (key.type === "app") {
+        const usages = mergedUsages(usagesPerApp[key.id], timeGap);
 
-        const x = api.coord([start, 0])[0];
-        // minimum 1px width
-        const width = Math.max(api.coord([end, 0])[0] - x, 1);
+        return {
+          data: usages.map((usage) => [
+            id,
+            ticksToUnixMillis(usage.start),
+            ticksToUnixMillis(usage.end),
+            (usage as CombinedUsage).count,
+          ]),
+        } satisfies echarts.CustomSeriesOption;
+      } else {
+        // return sessionBar(key.id);
+        throw new Error("Not implemented");
+      }
+    }
 
-        const padding = 0.2;
-        const rectShape = {
-          x,
-          y: y[1] - rowHeight * 0.5 + rowHeight * padding,
-          width,
-          height: rowHeight * (1 - padding * 2),
-        };
-        const shape = echarts.graphic.clipRectByRect(
-          rectShape,
-          params.coordSys as unknown as RectLike,
-        );
-        return (
-          shape && {
-            type: "rect" as const,
-            shape,
-            style: {
-              fill: "#1890ff",
-            },
-          }
-        );
-      },
-      ...series,
-    }));
+    const series: echarts.CustomSeriesOption[] = seriesKeys.map((key) =>
+      seriesKeyToSeries(key, timeGap),
+    );
 
     const common = {
       animation: false,
@@ -232,7 +205,10 @@ export function Gantt2({
       yAxis: {
         show: false,
         type: "category",
-        data: appUsages.map((appUsage) => appUsage.id),
+        // setting both data and inverse makes it correct.
+        data: seriesKeys.map((key) => key.type + key.id),
+        inverse: true,
+
         axisLabel: {
           interval: 0,
           show: false,
@@ -249,14 +225,14 @@ export function Gantt2({
           id: "dataZoomSlider",
           type: "slider",
           xAxisIndex: [0],
-          filterMode: "none",
+          filterMode: "weakFilter",
           top: 5,
         },
         {
           id: "dataZoomInside",
           type: "inside",
           xAxisIndex: [0],
-          filterMode: "none",
+          filterMode: "weakFilter",
           // zoomOnMouseWheel: "shift",
           // moveOnMouseWheel: false,
           // preventDefaultMouseMove: false,
@@ -290,13 +266,13 @@ export function Gantt2({
           if (!params.data) {
             return "";
           }
-          const [startMillis, endMillis, count] = params.data;
+          const [id, startMillis, endMillis, count] = params.data;
           const start = DateTime.fromMillis(startMillis);
           const end = DateTime.fromMillis(endMillis);
 
           const title = count ? `Multiple Usages: ${count}` : "Single Usage";
 
-          return `${title}<br/>Start: ${start.toFormat("yyyy-MM-dd HH:mm:ss.SSS")}<br/>End: ${end.toFormat("yyyy-MM-dd HH:mm:ss.SSS")}`;
+          return `${title} - ${id}<br/>Start: ${start.toFormat("yyyy-MM-dd HH:mm:ss.SSS")}<br/>End: ${end.toFormat("yyyy-MM-dd HH:mm:ss.SSS")}`;
         },
       },
       grid: {
@@ -343,7 +319,7 @@ export function Gantt2({
           show: false,
         },
       ],
-      series: seriesData,
+      series,
     };
 
     chart.setOption(option);
@@ -357,28 +333,12 @@ export function Gantt2({
 
       // percentage (100)
       const diff = params.end - params.start;
-      // in millis
-      const start =
-        params.startValue ??
-        intervalStartMillis + intervalDurationMillis * (params.start / 100);
-      const end =
-        params.endValue ??
-        intervalStartMillis + intervalDurationMillis * (params.end / 100);
-
       const timeGap = minRenderTimeGap(interval, width, diff);
 
-      const mergedAppUsages = appUsages.map((appUsage) => {
-        return {
-          id: appUsage.id,
-          usages: mergedUsages(appUsage.usages, timeGap, start, end),
-        };
-      });
-      const seriesData: echarts.CustomSeriesOption[] =
-        appSeriesData(mergedAppUsages);
       chart.setOption({
-        series: seriesData,
+        series: seriesKeys.map((key) => seriesKeyToSeriesData(key, timeGap)),
       });
-    }, 50);
+    }, 200);
 
     chart.on("datazoom", handler);
 
@@ -395,7 +355,7 @@ export function Gantt2({
       chart.dispose();
       resizeObserver.disconnect();
     };
-  }, [interval, appUsages]);
+  }, [interval, usagesPerApp]);
 
   return (
     <div className="w-full h-full sticky">
@@ -408,7 +368,9 @@ export function Gantt2({
         <div
           ref={chartRef}
           className="w-full"
-          style={{ height: appBarHeight * appUsages.length }}
+          style={{
+            height: getSeriesSize(seriesKeys, appBarHeight, sessionBarHeight),
+          }}
         />
         <div
           className="absolute top-0 left-0 bottom-0"
@@ -419,10 +381,9 @@ export function Gantt2({
               <div
                 className="flex items-center p-4 bg-muted/80 hover:bg-muted/60 border-r"
                 style={{ height: appBarHeight }}
-                // onClick={() => toggleApp(app.id)}
+                onClick={() => toggleApp(app.id)}
               >
-                {/* {expanded[app.id] ? ( */}
-                {true ? (
+                {expanded[app.id] ? (
                   <ChevronDown size={20} className="flex-shrink-0" />
                 ) : (
                   <ChevronRight size={20} className="flex-shrink-0" />
@@ -437,4 +398,118 @@ export function Gantt2({
       </div>
     </div>
   );
+}
+
+export const minRenderWidth = 1;
+export const maxRenderTimeGap = 600_000_000; // 1 minute
+
+export function minRenderTimeGap(
+  interval: Interval,
+  width: number,
+  dataZoom: number,
+) {
+  const timeGap = interval.end.diff(interval.start).toMillis();
+  const zoom = dataZoom / 100;
+  const minRenderTimeGapMillis = ((timeGap * zoom) / width) * minRenderWidth;
+  const minRenderTimeGap = minRenderTimeGapMillis * 10_000;
+  return Math.max(minRenderTimeGap, 1);
+}
+
+export function mergedUsages(
+  usages: Usage[],
+  minRenderTimeGap: number,
+): UsageBar[] {
+  if (minRenderTimeGap < maxRenderTimeGap) {
+    return usages;
+  }
+  const mergedUsages: UsageBar[] = [{ ...usages[0] }];
+  for (const usage of usages) {
+    const lastUsage = mergedUsages[mergedUsages.length - 1];
+    if (lastUsage.end + minRenderTimeGap > usage.start) {
+      const lastUsageBar = lastUsage as CombinedUsage;
+      if (lastUsageBar.type !== "combined") {
+        lastUsageBar.type = "combined";
+        lastUsageBar.count = 1;
+      }
+      lastUsage.end = usage.end;
+      lastUsageBar.count += 1;
+    } else {
+      mergedUsages.push({ ...usage });
+    }
+  }
+  return mergedUsages;
+}
+
+function appBar(): echarts.CustomSeriesOption {
+  return {
+    animation: false,
+    type: "custom",
+    progressive: 0,
+    renderItem: (
+      params: echarts.CustomSeriesRenderItemParams,
+      api: echarts.CustomSeriesRenderItemAPI,
+    ): echarts.CustomSeriesRenderItemReturn => {
+      const index = api.value(0);
+      const start = api.value(1);
+      const end = api.value(2);
+
+      const rowHeight = (api.size!([0, 1]) as number[])[1];
+
+      const [x, y] = api.coord([start, index]);
+      // minimum 1px width
+      const width = Math.max(api.coord([end, index])[0] - x, 1);
+
+      const padding = 0.2;
+      const rectShape = {
+        x,
+        y: y - rowHeight * 0.5 + rowHeight * padding,
+        width,
+        height: rowHeight * (1 - padding * 2),
+      };
+      const shape = echarts.graphic.clipRectByRect(
+        rectShape,
+        params.coordSys as unknown as RectLike,
+      );
+
+      return (
+        shape && {
+          type: "rect" as const,
+          shape,
+          style: {
+            fill: "#1890ff",
+          },
+        }
+      );
+    },
+  };
+}
+
+function getSeriesKeys(
+  expanded: Record<Ref<App>, boolean>,
+  apps: App[],
+  usagesPerAppSession: AppSessionUsages,
+): SeriesKey[] {
+  const seriesKeys: SeriesKey[] = [];
+  for (const app of apps) {
+    if (expanded[app.id]) {
+      for (const sessionId of Object.keys(usagesPerAppSession[app.id])) {
+        const session = +sessionId as Ref<Session>;
+        seriesKeys.push({ type: "session", id: session, appId: app.id });
+      }
+    }
+    seriesKeys.push({ type: "app", id: app.id });
+  }
+  return seriesKeys;
+}
+
+function getSeriesSize(
+  seriesKeys: SeriesKey[],
+  appBarHeight: number,
+  sessionBarHeight: number,
+) {
+  const appSeriesCount = seriesKeys.filter((key) => key.type === "app").length;
+  const sessionSeriesCount = seriesKeys.filter(
+    (key) => key.type === "session",
+  ).length;
+  return appSeriesCount * appBarHeight + sessionSeriesCount * sessionBarHeight;
 }
