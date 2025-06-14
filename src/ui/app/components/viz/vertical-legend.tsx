@@ -286,7 +286,6 @@ export function VerticalLegend({
 
   const itemSize = useCallback(
     (index: number) => {
-      console.log(listData, index, listData[index]);
       const item = listData[index];
       if (item.type === "spacer") {
         return 8;
