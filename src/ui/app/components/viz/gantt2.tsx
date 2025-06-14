@@ -60,6 +60,7 @@ interface GanttProps {
   interval: Interval;
   appBarHeight?: number;
   sessionBarHeight?: number;
+  sessionUrlBarHeight?: number;
   infoGap?: number;
 }
 
@@ -74,7 +75,8 @@ export function Gantt2({
   interval,
   infoGap = 300,
   appBarHeight = 52,
-  sessionBarHeight = 84,
+  sessionBarHeight = 72,
+  sessionUrlBarHeight = 84,
 }: GanttProps) {
   const chartRef = useRef<HTMLDivElement>(null);
   const topRef = useRef<HTMLDivElement>(null);
@@ -131,8 +133,16 @@ export function Gantt2({
         usagesPerAppSession,
         appBarHeight,
         sessionBarHeight,
+        sessionUrlBarHeight,
       ),
-    [expanded, apps, usagesPerAppSession, appBarHeight, sessionBarHeight],
+    [
+      expanded,
+      apps,
+      usagesPerAppSession,
+      appBarHeight,
+      sessionBarHeight,
+      sessionUrlBarHeight,
+    ],
   );
 
   const seriesKeyToSeries = useCallback(
@@ -145,7 +155,7 @@ export function Gantt2({
       if (key.type === "app") {
         const usages = mergedUsages(usagesPerApp[key.id], timeGap);
         return {
-          ...appBar(appBarHeight, sessionBarHeight, color),
+          ...appBar(appBarHeight, sessionBarHeight, sessionUrlBarHeight, color),
           id,
           encode: {
             x: [1, 2],
@@ -166,7 +176,7 @@ export function Gantt2({
           timeGap,
         );
         return {
-          ...appBar(appBarHeight, sessionBarHeight, color),
+          ...appBar(appBarHeight, sessionBarHeight, sessionUrlBarHeight, color),
           id,
           encode: {
             x: [1, 2],
@@ -179,11 +189,18 @@ export function Gantt2({
             (usage as CombinedUsage).count,
             key.id,
             key.type,
+            usagesPerAppSession[key.appId][key.id].url,
           ]),
         } satisfies echarts.CustomSeriesOption;
       }
     },
-    [usagesPerApp, usagesPerAppSession, appBarHeight, sessionBarHeight],
+    [
+      usagesPerApp,
+      usagesPerAppSession,
+      appBarHeight,
+      sessionBarHeight,
+      sessionUrlBarHeight,
+    ],
   );
 
   useEffect(() => {
@@ -455,8 +472,12 @@ export function Gantt2({
             ) : (
               <div className="relative" key={key.type + key.id}>
                 <div
-                  className="p-2 border-t border-r flex flex-col justify-center"
-                  style={{ height: sessionBarHeight }}
+                  className="p-4 border-t border-r flex flex-col justify-center"
+                  style={{
+                    height: usagesPerAppSession[key.appId][key.id].url
+                      ? sessionUrlBarHeight
+                      : sessionBarHeight,
+                  }}
                 >
                   <Text className="text-sm">
                     {usagesPerAppSession[key.appId][key.id].title}
@@ -530,6 +551,7 @@ export function mergedUsages(
 function appBar(
   appBarHeight: number,
   sessionBarHeight: number,
+  sessionUrlBarHeight: number,
   color: string,
 ): echarts.CustomSeriesOption {
   return {
@@ -545,7 +567,12 @@ function appBar(
       const end = api.value(2);
       const type = api.value(5);
 
-      const rowHeight = type === "app" ? appBarHeight : sessionBarHeight;
+      const rowHeight =
+        type === "app"
+          ? appBarHeight
+          : api.value(7)
+            ? sessionUrlBarHeight
+            : sessionBarHeight;
       const height = 24;
 
       const [x, y] = api.coord([start, index]);
@@ -582,6 +609,7 @@ function getSeriesKeys(
   usagesPerAppSession: AppSessionUsages,
   appBarHeight: number,
   sessionBarHeight: number,
+  sessionUrlBarHeight: number,
 ): [SeriesKey[], number] {
   const seriesKeys: SeriesKey[] = [];
   let y = 0;
@@ -593,7 +621,11 @@ function getSeriesKeys(
       for (const sessionId of Object.keys(usagesPerAppSession[app.id])) {
         const session = +sessionId as Ref<Session>;
         seriesKeys.push({ type: "session", id: session, appId: app.id, y });
-        y += sessionBarHeight;
+        if (usagesPerAppSession[app.id][session].url) {
+          y += sessionUrlBarHeight;
+        } else {
+          y += sessionBarHeight;
+        }
       }
     }
   }
