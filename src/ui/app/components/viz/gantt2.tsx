@@ -13,6 +13,8 @@ import AppIcon from "@/components/app/app-icon";
 import { Text } from "@/components/ui/text";
 import { getVarColorAsHex } from "@/lib/color-utils";
 import { useDebounce } from "use-debounce";
+import { useAppState } from "@/lib/state";
+import { DateTimeText } from "../time/time-text";
 
 type RectLike = {
   x: number;
@@ -87,6 +89,7 @@ export function Gantt2({
     return Object.keys(usagesPerAppSession).map((appId) => +appId as Ref<App>);
   }, [usagesPerAppSession]);
   const apps = useApps(appIds);
+  const appMap = useAppState((state) => state.apps);
 
   const usagesPerApp: Record<Ref<App>, Usage[]> = useMemo(
     () =>
@@ -143,11 +146,27 @@ export function Gantt2({
           ]),
         } satisfies echarts.CustomSeriesOption;
       } else {
-        // return sessionBar(key.id);
-        throw new Error("Not implemented");
+        const usages = mergedUsages(
+          usagesPerAppSession[key.appId][key.id].usages,
+          timeGap,
+        );
+        return {
+          ...appBar(),
+          id,
+          encode: {
+            x: [1, 2],
+            y: 0,
+          },
+          data: usages.map((usage) => [
+            id,
+            ticksToUnixMillis(usage.start),
+            ticksToUnixMillis(usage.end),
+            (usage as CombinedUsage).count,
+          ]),
+        } satisfies echarts.CustomSeriesOption;
       }
     },
-    [usagesPerApp],
+    [usagesPerApp, usagesPerAppSession],
   );
 
   useEffect(() => {
@@ -373,24 +392,55 @@ export function Gantt2({
           className="absolute top-0 left-0 bottom-0"
           style={{ width: infoGap }}
         >
-          {apps.map((app) => (
-            <div key={app.id} className="relative">
-              <div
-                className="flex items-center p-4 bg-muted/80 hover:bg-muted/60 border-r"
-                style={{ height: appBarHeight }}
-                onClick={() => toggleApp(app.id)}
-              >
-                {expanded[app.id] ? (
-                  <ChevronDown size={20} className="flex-shrink-0" />
-                ) : (
-                  <ChevronRight size={20} className="flex-shrink-0" />
-                )}
-                <AppIcon buffer={app.icon} className="ml-2 w-6 h-6 shrink-0" />
-                <Text className="font-semibold ml-4">{app.name}</Text>
+          {seriesKeys.map((key) =>
+            key.type === "app" ? (
+              <div key={key.type + key.id} className="relative">
+                <div
+                  className="flex items-center p-4 bg-muted/80 hover:bg-muted/60 border-r"
+                  style={{ height: appBarHeight }}
+                  onClick={() => toggleApp(key.id)}
+                >
+                  {expanded[key.id] ? (
+                    <ChevronDown size={20} className="flex-shrink-0" />
+                  ) : (
+                    <ChevronRight size={20} className="flex-shrink-0" />
+                  )}
+                  <AppIcon
+                    buffer={appMap[key.id]?.icon}
+                    className="ml-2 w-6 h-6 shrink-0"
+                  />
+                  <Text className="font-semibold ml-4">
+                    {appMap[key.id]?.name ?? ""}
+                  </Text>
+                </div>
+                <div className="h-px bg-border absolute bottom-[-0.5px] left-0 right-0" />
               </div>
-              <div className="h-px bg-border absolute bottom-[-0.5px] left-0 right-0" />
-            </div>
-          ))}
+            ) : (
+              <div className="relative" key={key.type + key.id}>
+                <div
+                  className="p-2 border-t border-r"
+                  style={{ height: sessionBarHeight }}
+                >
+                  <Text className="text-sm">
+                    {usagesPerAppSession[key.appId][key.id].url
+                      ? `${usagesPerAppSession[key.appId][key.id].title} - ${usagesPerAppSession[key.appId][key.id].url}`
+                      : usagesPerAppSession[key.appId][key.id].title}
+                  </Text>
+                  <div className="text-xs text-muted-foreground inline-flex gap-1 items-center">
+                    <DateTimeText
+                      ticks={usagesPerAppSession[key.appId][key.id].start}
+                    />
+                    <span className="text-muted-foreground">-</span>
+                    <DateTimeText
+                      ticks={usagesPerAppSession[key.appId][key.id].end}
+                      className="text-xs"
+                    />
+                  </div>
+                </div>
+                <div className="h-px bg-border absolute bottom-[-0.5px] left-0 right-0" />
+              </div>
+            ),
+          )}
         </div>
       </div>
     </div>
