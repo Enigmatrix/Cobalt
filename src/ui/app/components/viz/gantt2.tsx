@@ -159,28 +159,6 @@ export function Gantt2({
       }
     }
 
-    function seriesKeyToSeriesData(
-      key: SeriesKey,
-      timeGap: number,
-    ): echarts.CustomSeriesOption {
-      const id = key.type + key.id;
-      if (key.type === "app") {
-        const usages = mergedUsages(usagesPerApp[key.id], timeGap);
-
-        return {
-          data: usages.map((usage) => [
-            id,
-            ticksToUnixMillis(usage.start),
-            ticksToUnixMillis(usage.end),
-            (usage as CombinedUsage).count,
-          ]),
-        } satisfies echarts.CustomSeriesOption;
-      } else {
-        // return sessionBar(key.id);
-        throw new Error("Not implemented");
-      }
-    }
-
     const series: echarts.CustomSeriesOption[] = seriesKeys.map((key) =>
       seriesKeyToSeries(key, timeGap),
     );
@@ -336,7 +314,7 @@ export function Gantt2({
       const timeGap = minRenderTimeGap(interval, width, diff);
 
       chart.setOption({
-        series: seriesKeys.map((key) => seriesKeyToSeriesData(key, timeGap)),
+        series: seriesKeys.map((key) => seriesKeyToSeries(key, timeGap)),
       });
     }, 200);
 
@@ -491,13 +469,13 @@ function getSeriesKeys(
 ): SeriesKey[] {
   const seriesKeys: SeriesKey[] = [];
   for (const app of apps) {
+    seriesKeys.push({ type: "app", id: app.id });
     if (expanded[app.id]) {
       for (const sessionId of Object.keys(usagesPerAppSession[app.id])) {
         const session = +sessionId as Ref<Session>;
         seriesKeys.push({ type: "session", id: session, appId: app.id });
       }
     }
-    seriesKeys.push({ type: "app", id: app.id });
   }
   return seriesKeys;
 }
