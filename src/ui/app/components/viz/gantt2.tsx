@@ -34,11 +34,13 @@ interface SessionSeriesKey {
   type: "session";
   id: Ref<Session>;
   appId: Ref<App>;
+  y: number;
 }
 
 interface AppSeriesKey {
   type: "app";
   id: Ref<App>;
+  y: number;
 }
 
 type SeriesKey = SessionSeriesKey | AppSeriesKey;
@@ -72,7 +74,7 @@ export function Gantt2({
   interval,
   infoGap = 300,
   appBarHeight = 52,
-  sessionBarHeight = 52,
+  sessionBarHeight = 84,
 }: GanttProps) {
   const chartRef = useRef<HTMLDivElement>(null);
   const topRef = useRef<HTMLDivElement>(null);
@@ -121,9 +123,16 @@ export function Gantt2({
   // TODO: find width another way
   const width = useWidth(chartRef);
 
-  const seriesKeys = useMemo(
-    () => getSeriesKeys(expanded, apps, usagesPerAppSession),
-    [expanded, apps, usagesPerAppSession],
+  const [seriesKeys, seriesHeight] = useMemo(
+    () =>
+      getSeriesKeys(
+        expanded,
+        apps,
+        usagesPerAppSession,
+        appBarHeight,
+        sessionBarHeight,
+      ),
+    [expanded, apps, usagesPerAppSession, appBarHeight, sessionBarHeight],
   );
 
   const seriesKeyToSeries = useCallback(
@@ -132,17 +141,19 @@ export function Gantt2({
       if (key.type === "app") {
         const usages = mergedUsages(usagesPerApp[key.id], timeGap);
         return {
-          ...appBar(),
+          ...appBar(appBarHeight, sessionBarHeight),
           id,
           encode: {
             x: [1, 2],
             y: 0,
           },
           data: usages.map((usage) => [
-            id,
+            key.y,
             ticksToUnixMillis(usage.start),
             ticksToUnixMillis(usage.end),
             (usage as CombinedUsage).count,
+            key.id,
+            key.type,
           ]),
         } satisfies echarts.CustomSeriesOption;
       } else {
@@ -151,22 +162,24 @@ export function Gantt2({
           timeGap,
         );
         return {
-          ...appBar(),
+          ...appBar(appBarHeight, sessionBarHeight),
           id,
           encode: {
             x: [1, 2],
             y: 0,
           },
           data: usages.map((usage) => [
-            id,
+            key.y,
             ticksToUnixMillis(usage.start),
             ticksToUnixMillis(usage.end),
             (usage as CombinedUsage).count,
+            key.id,
+            key.type,
           ]),
         } satisfies echarts.CustomSeriesOption;
       }
     },
-    [usagesPerApp, usagesPerAppSession],
+    [usagesPerApp, usagesPerAppSession, appBarHeight, sessionBarHeight],
   );
 
   useEffect(() => {
@@ -182,8 +195,11 @@ export function Gantt2({
         max: interval.end.toMillis(),
       },
       yAxis: {
-        // setting both data and inverse makes it correct order
-        data: seriesKeys.map((key) => key.type + key.id),
+        min: 0,
+        max: seriesHeight,
+        axisTick: {
+          customValues: seriesKeys.map((key) => key.y).filter((y) => y !== 0), // skip first one
+        },
       },
     } satisfies echarts.EChartsOption;
 
@@ -191,10 +207,15 @@ export function Gantt2({
       ...commonOptions,
     });
 
-    chartInstanceRef.current?.setOption({
-      ...commonOptions,
-      series,
-    });
+    chartInstanceRef.current?.setOption(
+      {
+        ...commonOptions,
+        series,
+      },
+      {
+        replaceMerge: ["series"],
+      },
+    );
 
     // Force resize now instead of waiting for the next frame
     topInstanceRef.current?.resize();
@@ -205,6 +226,7 @@ export function Gantt2({
     width,
     interval,
     infoGap,
+    seriesHeight,
     chartInit,
     dataZoom,
   ]);
@@ -233,11 +255,10 @@ export function Gantt2({
       },
       yAxis: {
         show: false,
-        type: "category",
+        type: "value",
         inverse: true,
-
+        splitLine: { show: false },
         axisLabel: {
-          interval: 0,
           show: false,
         },
         axisLine: {
@@ -306,6 +327,9 @@ export function Gantt2({
       },
       xAxis: {
         ...common.xAxis,
+        axisLine: {
+          show: false,
+        },
         axisLabel: {
           show: false,
         },
@@ -389,7 +413,7 @@ export function Gantt2({
           ref={chartRef}
           className="w-full"
           style={{
-            height: getSeriesSize(seriesKeys, appBarHeight, sessionBarHeight),
+            height: seriesHeight,
           }}
         />
         <div
@@ -422,14 +446,17 @@ export function Gantt2({
             ) : (
               <div className="relative" key={key.type + key.id}>
                 <div
-                  className="p-2 border-t border-r"
+                  className="p-2 border-t border-r flex flex-col justify-center"
                   style={{ height: sessionBarHeight }}
                 >
                   <Text className="text-sm">
-                    {usagesPerAppSession[key.appId][key.id].url
-                      ? `${usagesPerAppSession[key.appId][key.id].title} - ${usagesPerAppSession[key.appId][key.id].url}`
-                      : usagesPerAppSession[key.appId][key.id].title}
+                    {usagesPerAppSession[key.appId][key.id].title}
                   </Text>
+                  {usagesPerAppSession[key.appId][key.id].url && (
+                    <Text className="text-xs font-mono text-muted-foreground">
+                      {usagesPerAppSession[key.appId][key.id].url ?? ""}
+                    </Text>
+                  )}
                   <div className="text-xs text-muted-foreground inline-flex gap-1 items-center">
                     <DateTimeText
                       ticks={usagesPerAppSession[key.appId][key.id].start}
@@ -491,7 +518,10 @@ export function mergedUsages(
   return mergedUsages;
 }
 
-function appBar(): echarts.CustomSeriesOption {
+function appBar(
+  appBarHeight: number,
+  sessionBarHeight: number,
+): echarts.CustomSeriesOption {
   return {
     animation: false,
     type: "custom",
@@ -503,8 +533,9 @@ function appBar(): echarts.CustomSeriesOption {
       const index = api.value(0);
       const start = api.value(1);
       const end = api.value(2);
+      const type = api.value(5);
 
-      const rowHeight = (api.size!([0, 1]) as number[])[1];
+      const rowHeight = type === "app" ? appBarHeight : sessionBarHeight;
 
       const [x, y] = api.coord([start, index]);
       // minimum 1px width
@@ -513,7 +544,7 @@ function appBar(): echarts.CustomSeriesOption {
       const padding = 0.2;
       const rectShape = {
         x,
-        y: y - rowHeight * 0.5 + rowHeight * padding,
+        y: y + rowHeight * padding,
         width,
         height: rowHeight * (1 - padding * 2),
       };
@@ -539,28 +570,22 @@ function getSeriesKeys(
   expanded: Record<Ref<App>, boolean>,
   apps: App[],
   usagesPerAppSession: AppSessionUsages,
-): SeriesKey[] {
+  appBarHeight: number,
+  sessionBarHeight: number,
+): [SeriesKey[], number] {
   const seriesKeys: SeriesKey[] = [];
+  let y = 0;
   for (const app of apps) {
-    seriesKeys.push({ type: "app", id: app.id });
+    seriesKeys.push({ type: "app", id: app.id, y });
+    y += appBarHeight;
+
     if (expanded[app.id]) {
       for (const sessionId of Object.keys(usagesPerAppSession[app.id])) {
         const session = +sessionId as Ref<Session>;
-        seriesKeys.push({ type: "session", id: session, appId: app.id });
+        seriesKeys.push({ type: "session", id: session, appId: app.id, y });
+        y += sessionBarHeight;
       }
     }
   }
-  return seriesKeys;
-}
-
-function getSeriesSize(
-  seriesKeys: SeriesKey[],
-  appBarHeight: number,
-  sessionBarHeight: number,
-) {
-  const appSeriesCount = seriesKeys.filter((key) => key.type === "app").length;
-  const sessionSeriesCount = seriesKeys.filter(
-    (key) => key.type === "session",
-  ).length;
-  return appSeriesCount * appBarHeight + sessionSeriesCount * sessionBarHeight;
+  return [seriesKeys, y];
 }
