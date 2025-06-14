@@ -10,7 +10,6 @@ import {
 } from "@/lib/time";
 import { useWidth } from "@/hooks/use-width";
 import _ from "lodash";
-import { DateTime } from "luxon";
 import { useApps } from "@/hooks/use-refresh";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import AppIcon from "@/components/app/app-icon";
@@ -28,6 +27,14 @@ type RectLike = {
   width: number;
   height: number;
 };
+
+interface DataZoomEvent {
+  batch: DataZoomEvent[];
+  start: number;
+  end: number;
+  startValue: number;
+  endValue: number;
+}
 
 interface CombinedUsage {
   type: "combined";
@@ -424,7 +431,8 @@ export function Gantt2({
     top.setOption(optionTop);
     echarts.connect([chart, top]);
 
-    const handler = (params: any) => {
+    chart.on("datazoom", (arg0) => {
+      let params = arg0 as DataZoomEvent;
       if (params.batch) {
         params = params.batch[params.batch.length - 1];
       }
@@ -432,27 +440,15 @@ export function Gantt2({
       // percentage (100)
       const diff = params.end - params.start;
       setDataZoom(diff);
-    };
+    });
 
-    chart.on("datazoom", handler);
-
-    chart.getZr().on("mousemove", (params) => {
+    chart.getZr().on("mousemove", () => {
       setHoverData(null);
     });
 
     chart.on("mousemove", (params) => {
-      const [
-        ,
-        startMillis,
-        endMillis,
-        typ,
-        id,
-        ,
-        count,
-        usageId,
-        sessionId,
-        appId,
-      ] = params.data as number[];
+      const [, startMillis, endMillis, , , , count, usageId, sessionId, appId] =
+        params.data as number[];
       const start = unixMillisToTicks(startMillis);
       const end = unixMillisToTicks(endMillis);
 
