@@ -816,9 +816,9 @@ function appBar(color: string): echarts.CustomSeriesOption {
       const end = api.value(3);
 
       const [x0, y0] = api.coord([start, top]);
-      // minimum 1px width
       const [x1, y1] = api.coord([end, bottom]);
-      const width = x1 - x0;
+      // minimum 1px width
+      const width = Math.max(x1 - x0, 1);
       const height = y1 - y0;
 
       const rectShape = {
