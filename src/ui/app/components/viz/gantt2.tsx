@@ -21,6 +21,10 @@ import { DateTimeText } from "@/components/time/time-text";
 import { Tooltip } from "@/components/viz/tooltip";
 import { DurationText } from "@/components/time/duration-text";
 
+const DATAZOOM_SLIDER_X = "dataZoomSliderX";
+const DATAZOOM_INSIDE_X = "dataZoomInsideX";
+const DATAZOOM_INSIDE_Y = "dataZoomInsideY";
+
 type RectLike = {
   x: number;
   y: number;
@@ -34,6 +38,8 @@ interface DataZoomEvent {
   end: number;
   startValue: number;
   endValue: number;
+  id?: string;
+  dataZoomId?: string;
 }
 
 interface CombinedUsage {
@@ -84,6 +90,8 @@ interface GanttProps {
   sessionBarHeight?: number;
   sessionUrlBarHeight?: number;
   infoGap?: number;
+  innerHeight?: number;
+  scrollbarWidth?: number;
 }
 
 export function Gantt2({
@@ -99,9 +107,13 @@ export function Gantt2({
   appBarHeight = 52,
   sessionBarHeight = 72,
   sessionUrlBarHeight = 84,
+  innerHeight = 500,
+  scrollbarWidth = 15,
 }: GanttProps) {
   const chartRef = useRef<HTMLDivElement>(null);
   const topRef = useRef<HTMLDivElement>(null);
+  const infoBarsRef = useRef<HTMLDivElement>(null);
+  const scrollbarRef = useRef<HTMLDivElement>(null);
   const chartInstanceRef = useRef<echarts.ECharts | null>(null);
   const topInstanceRef = useRef<echarts.ECharts | null>(null);
 
@@ -256,9 +268,12 @@ export function Gantt2({
       seriesKeyToSeries(key, timeGap, color),
     );
 
+    const startValue = getDataZoomYStartValue(chartInstanceRef.current!);
+
     const commonOptions = {
       grid: {
         left: infoGap,
+        height: innerHeight,
       },
       xAxis: {
         min: interval.start.toMillis(),
@@ -271,6 +286,13 @@ export function Gantt2({
           customValues: seriesKeys.map((key) => key.y).filter((y) => y !== 0), // skip first one
         },
       },
+      dataZoom: [
+        {
+          id: DATAZOOM_INSIDE_Y,
+          startValue,
+          endValue: startValue + innerHeight,
+        },
+      ],
     } satisfies echarts.EChartsOption;
 
     topInstanceRef.current?.setOption({
@@ -299,6 +321,7 @@ export function Gantt2({
     seriesHeight,
     chartInit,
     dataZoom,
+    innerHeight,
   ]);
 
   useEffect(() => {
@@ -314,8 +337,7 @@ export function Gantt2({
     const common = {
       animation: false,
       grid: {
-        right: 5,
-        bottom: 0,
+        right: scrollbarWidth,
         containLabel: true,
       },
       xAxis: {
@@ -340,20 +362,29 @@ export function Gantt2({
       },
       dataZoom: [
         {
-          id: "dataZoomSlider",
+          id: DATAZOOM_SLIDER_X,
           type: "slider",
           xAxisIndex: [0],
           filterMode: "weakFilter",
           top: 5,
         },
         {
-          id: "dataZoomInside",
+          id: DATAZOOM_INSIDE_X,
           type: "inside",
           xAxisIndex: [0],
           filterMode: "weakFilter",
           // zoomOnMouseWheel: "shift",
           // moveOnMouseWheel: false,
           // preventDefaultMouseMove: false,
+        },
+        {
+          id: DATAZOOM_INSIDE_Y,
+          type: "inside",
+          yAxisIndex: [0],
+          zoomLock: true,
+          zoomOnMouseWheel: false,
+          startValue: 0,
+          endValue: innerHeight,
         },
       ],
     } satisfies echarts.EChartsOption;
@@ -424,6 +455,9 @@ export function Gantt2({
           ...common.dataZoom[1],
           show: false,
         },
+        {
+          ...common.dataZoom[2],
+        },
       ],
     };
 
@@ -432,14 +466,29 @@ export function Gantt2({
     echarts.connect([chart, top]);
 
     chart.on("datazoom", (arg0) => {
-      let params = arg0 as DataZoomEvent;
-      if (params.batch) {
-        params = params.batch[params.batch.length - 1];
-      }
+      const params = arg0 as DataZoomEvent;
+      const batch = params.batch ? params.batch : [params];
 
-      // percentage (100)
-      const diff = params.end - params.start;
-      setDataZoom(diff);
+      for (const params of batch) {
+        if (
+          params.id === DATAZOOM_INSIDE_Y ||
+          params.dataZoomId === DATAZOOM_INSIDE_Y
+        ) {
+          // Y-axis changed
+          const startValue = getDataZoomYStartValue(chart);
+          infoBarsRef.current!.scrollTop = startValue;
+          // if scrollbar changed which changed datazoom,
+          // we update the scrollbar again. a bit of waste
+          // (and you can see the jankiness when we scroll near 100%) but meh
+          scrollbarRef.current!.scrollTop = startValue;
+        } else {
+          // X-axis changed
+
+          // percentage (100)
+          const diff = params.end - params.start;
+          setDataZoom(diff);
+        }
+      }
     });
 
     chart.getZr().on("mousemove", () => {
@@ -487,7 +536,20 @@ export function Gantt2({
       top.dispose();
       chart.dispose();
     };
-  }, [setDataZoom]);
+  }, [setDataZoom, innerHeight, scrollbarWidth]);
+
+  const handleScrollbarScroll = useCallback(
+    (event: React.UIEvent<HTMLDivElement, UIEvent>) => {
+      const startValue = event.currentTarget.scrollTop;
+      setDataZoomYWindow(
+        chartInstanceRef.current!,
+        startValue,
+        startValue + innerHeight,
+      );
+      // infoBarsRef.current!.scrollTop = startValue;
+    },
+    [innerHeight],
+  );
 
   return (
     <div className="w-full h-full sticky">
@@ -501,7 +563,7 @@ export function Gantt2({
           ref={chartRef}
           className="w-full"
           style={{
-            height: seriesHeight,
+            height: innerHeight,
           }}
         >
           <Tooltip show={hoverData !== null} targetRef={chartRef}>
@@ -517,8 +579,10 @@ export function Gantt2({
             </div>
           </Tooltip>
         </div>
+        {/* App and Session info bars */}
         <div
-          className="absolute top-0 left-0 bottom-0"
+          ref={infoBarsRef}
+          className="absolute top-0 left-0 bottom-0 overflow-y-hidden"
           style={{ width: infoGap }}
         >
           {seriesKeys.map((key) =>
@@ -577,6 +641,15 @@ export function Gantt2({
               </div>
             ),
           )}
+        </div>
+        {/* Scrollbar */}
+        <div
+          ref={scrollbarRef}
+          className="absolute top-0 right-0 bottom-0 overflow-y-auto"
+          style={{ height: innerHeight, width: scrollbarWidth }}
+          onScroll={handleScrollbarScroll}
+        >
+          <div className="w-px" style={{ height: seriesHeight }} />
         </div>
       </div>
     </div>
@@ -709,6 +782,28 @@ function getSeriesKeys(
     }
   }
   return [seriesKeys, y];
+}
+
+function getDataZoomYStartValue(chart: echarts.ECharts): number {
+  return (
+    ((
+      (chart?.getOption() as echarts.EChartsOption | null)
+        ?.dataZoom as echarts.DataZoomComponentOption[]
+    )[2]?.startValue as number) ?? 0
+  );
+}
+
+function setDataZoomYWindow(
+  chart: echarts.ECharts,
+  startValue: number,
+  endValue: number,
+): void {
+  chart.dispatchAction({
+    type: "dataZoom",
+    dataZoomId: DATAZOOM_INSIDE_Y,
+    startValue,
+    endValue,
+  });
 }
 
 function CombinedUsageTooltip({ usage }: { usage: CombinedUsage }) {
