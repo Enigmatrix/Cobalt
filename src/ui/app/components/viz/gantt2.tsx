@@ -22,6 +22,7 @@ import { Tooltip } from "@/components/viz/tooltip";
 import { DurationText } from "@/components/time/duration-text";
 import type { ClassValue } from "clsx";
 import { cn } from "@/lib/utils";
+import { VariableSizeList as List } from "react-window";
 
 const DATAZOOM_SLIDER_X = "dataZoomSliderX";
 const DATAZOOM_INSIDE_X = "dataZoomInsideX";
@@ -116,7 +117,7 @@ export function Gantt2({
 }: GanttProps) {
   const chartRef = useRef<HTMLDivElement>(null);
   const topRef = useRef<HTMLDivElement>(null);
-  const infoBarsRef = useRef<HTMLDivElement>(null);
+  const infoBarsRef = useRef<List>(null);
   const scrollbarRef = useRef<HTMLDivElement>(null);
   const chartInstanceRef = useRef<echarts.ECharts | null>(null);
   const topInstanceRef = useRef<echarts.ECharts | null>(null);
@@ -310,6 +311,9 @@ export function Gantt2({
       },
     );
 
+    // Force recalculation of item sizes
+    infoBarsRef.current?.resetAfterIndex(0);
+
     // Force resize now instead of waiting for the next frame
     topInstanceRef.current?.resize();
     chartInstanceRef.current?.resize();
@@ -478,7 +482,7 @@ export function Gantt2({
         ) {
           // Y-axis changed
           const startValue = getDataZoomYStartValue(chart);
-          infoBarsRef.current!.scrollTop = startValue;
+          infoBarsRef.current!.scrollTo(startValue);
           // if scrollbar changed which changed datazoom,
           // we update the scrollbar again. a bit of waste
           // (and you can see the jankiness when we scroll near 100%) but meh
@@ -595,30 +599,54 @@ export function Gantt2({
         </div>
         {/* App and Session info bars */}
         <div
-          ref={infoBarsRef}
-          className="absolute top-0 left-0 bottom-0 overflow-y-hidden"
+          className="absolute top-0 left-0 bottom-0"
           style={{ width: infoGap }}
         >
-          {seriesKeys.map((key) =>
-            key.type === "app" ? (
-              <AppInfoBar
-                appInfoBarHeight={appInfoBarHeight}
-                key={key.type + key.id}
-                className="relative"
-                onClick={() => toggleApp(key.id)}
-                expanded={expanded[key.id]}
-                app={appMap[key.id]!}
-              />
-            ) : (
-              <SessionInfoBar
-                session={usagesPerAppSession[key.appId][key.id]}
-                sessionInfoBarHeight={sessionInfoBarHeight}
-                sessionInfoUrlBarHeight={sessionInfoUrlBarHeight}
-                className="relative"
-                key={key.type + key.id}
-              />
-            ),
-          )}
+          <List
+            ref={infoBarsRef}
+            height={innerHeight}
+            width={infoGap}
+            itemCount={seriesKeys.length}
+            style={{ overflow: "hidden" }} // hide scrollbar
+            itemSize={(index) => {
+              const key = seriesKeys[index];
+              return getItemHeight(
+                key,
+                appInfoBarHeight,
+                sessionInfoBarHeight,
+                sessionInfoUrlBarHeight,
+                key.type === "session"
+                  ? usagesPerAppSession[key.appId][key.id]
+                  : undefined,
+              );
+            }}
+          >
+            {({ index, style }) => {
+              const key = seriesKeys[index];
+              return (
+                <div style={style}>
+                  {key.type === "app" ? (
+                    <AppInfoBar
+                      appInfoBarHeight={appInfoBarHeight}
+                      key={key.type + key.id}
+                      // className="relative"
+                      onClick={() => toggleApp(key.id)}
+                      expanded={expanded[key.id]}
+                      app={appMap[key.id]!}
+                    />
+                  ) : (
+                    <SessionInfoBar
+                      session={usagesPerAppSession[key.appId][key.id]}
+                      sessionInfoBarHeight={sessionInfoBarHeight}
+                      sessionInfoUrlBarHeight={sessionInfoUrlBarHeight}
+                      // className="relative"
+                      key={key.type + key.id}
+                    />
+                  )}
+                </div>
+              );
+            }}
+          </List>
         </div>
         {/* Scrollbar */}
         <div
@@ -907,4 +935,19 @@ function setDataZoomYWindow(
     startValue,
     endValue,
   });
+}
+
+function getItemHeight(
+  key: SeriesKey,
+  appInfoBarHeight: number,
+  sessionInfoBarHeight: number,
+  sessionInfoUrlBarHeight: number,
+  session?: Session,
+): number {
+  if (key.type === "app") {
+    return appInfoBarHeight;
+  } else {
+    // For session items, we need to check if it has a URL to determine height
+    return session?.url ? sessionInfoUrlBarHeight : sessionInfoBarHeight;
+  }
 }
