@@ -144,7 +144,7 @@ export function Gantt2({
   appInfoBarHeight = 52,
   sessionInfoBarHeight = 72,
   sessionInfoUrlBarHeight = 84,
-  innerHeight = 500,
+  innerHeight = 1000,
   scrollbarWidth = 15,
 }: GanttProps) {
   const chartRef = useRef<HTMLDivElement>(null);
@@ -304,7 +304,7 @@ export function Gantt2({
           timeGap,
         );
         return {
-          ...interactionBar(color, "orange"),
+          ...interactionBar(color, "#ff6900"),
           id,
           encode: {
             x: [2, 3],
@@ -961,15 +961,9 @@ function CombinedUsageTooltip({ usage }: { usage: CombinedUsage }) {
   return (
     <div className="flex flex-col">
       <Text
-        className="text-muted-foreground"
         children={`${usage.count} Combined Usages. Zoom to see details.`}
       ></Text>
-      <div className="flex items-center text-muted-foreground gap-1 text-xs">
-        <DateTimeText ticks={usage.start} /> -
-        <DateTimeText ticks={usage.end} />
-        (
-        <DurationText ticks={usage.end - usage.start} />)
-      </div>
+      <DateTimeRange start={usage.start} end={usage.end} />
     </div>
   );
 }
@@ -986,26 +980,11 @@ function AppSessionUsageTooltip({
     <div className="flex flex-col">
       <div className="flex flex-col">
         <Text>{session.title}</Text>
-        {session.url && (
-          <Text className="text-muted-foreground text-xs">{session.url}</Text>
-        )}
-        <div className="flex items-center text-muted-foreground gap-1 text-xs">
-          <DateTimeText ticks={session.start} /> -
-          <DateTimeText ticks={session.end} />
-          (
-          <DurationText ticks={session.end - session.start} />)
-        </div>
+        {session.url && <Text className="text-xs">{session.url}</Text>}
+        <DateTimeRange start={usage.start} end={usage.end} />
 
-        <Text
-          className="text-muted-foreground border-t mt-2 border-border"
-          children={`Usage: `}
-        ></Text>
-        <div className="flex items-center text-muted-foreground gap-1 text-xs">
-          <DateTimeText ticks={usage.start} /> -
-          <DateTimeText ticks={usage.end} />
-          (
-          <DurationText ticks={usage.end - usage.start} />)
-        </div>
+        <Text className="border-t mt-2 border-border" children={`Usage`}></Text>
+        <DateTimeRange start={usage.start} end={usage.end} />
       </div>
     </div>
   );
@@ -1029,12 +1008,7 @@ function CombinedInteractionTooltip({
           <MouseIcon size={16} className="ml-2" />
           <div>{interaction.mouseClicks}</div>
         </div>
-        <div className="flex items-center text-muted-foreground gap-1 text-xs">
-          <DateTimeText ticks={interaction.start} /> -
-          <DateTimeText ticks={interaction.end} />
-          (
-          <DurationText ticks={interaction.end - interaction.start} />)
-        </div>
+        <DateTimeRange start={interaction.start} end={interaction.end} />
       </div>
     )
   );
@@ -1055,14 +1029,19 @@ function InteractionTooltip({
           <MouseIcon size={16} className="ml-2" />
           <div>{interaction.mouseClicks}</div>
         </div>
-        <div className="flex items-center text-muted-foreground gap-1 text-xs">
-          <DateTimeText ticks={interaction.start} /> -
-          <DateTimeText ticks={interaction.end} />
-          (
-          <DurationText ticks={interaction.end - interaction.start} />)
-        </div>
+        <DateTimeRange start={interaction.start} end={interaction.end} />
       </div>
     )
+  );
+}
+
+function DateTimeRange({ start, end }: { start: number; end: number }) {
+  return (
+    <div className="flex items-center text-muted-foreground gap-1 text-xs">
+      <DateTimeText ticks={start} /> -
+      <DateTimeText ticks={end} />
+      (<DurationText ticks={end - start} />)
+    </div>
   );
 }
 
@@ -1219,13 +1198,14 @@ function interactionBar(
       // minimum 1px width
       const width = Math.max(x1 - x0, 1);
       const height = y1 - y0;
+      const extra = 6;
 
       // EW manual coding of constants
       const rectShape = {
         x: x0,
-        y: y0 - (isSystemEvent ? 4 : 0),
+        y: y0 - (isSystemEvent ? extra : 0),
         width,
-        height: height + (isSystemEvent ? 2 * 4 : 0),
+        height: height + (isSystemEvent ? 2 * extra : 0),
       };
       const shape = echarts.graphic.clipRectByRect(
         rectShape,
