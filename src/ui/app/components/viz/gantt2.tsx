@@ -11,7 +11,13 @@ import {
 import { useWidth } from "@/hooks/use-width";
 import _ from "lodash";
 import { useApps } from "@/hooks/use-refresh";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  KeyboardIcon,
+  LaptopIcon,
+  MouseIcon,
+} from "lucide-react";
 import AppIcon from "@/components/app/app-icon";
 import { Text } from "@/components/ui/text";
 import { getVarColorAsHex } from "@/lib/color-utils";
@@ -62,6 +68,17 @@ interface AppSessionUsage {
 
 type UsageBar = CombinedUsage | AppSessionUsage;
 
+interface CombinedInteractionPeriod {
+  type: "combined";
+  start: number;
+  end: number;
+  mouseClicks: number;
+  keyStrokes: number;
+  count: number;
+}
+
+type InteractionBar = CombinedInteractionPeriod | InteractionPeriod;
+
 interface SessionSeriesKey {
   type: "session";
   id: Ref<Session>;
@@ -73,7 +90,12 @@ interface AppSeriesKey {
   id: Ref<App>;
 }
 
-type SeriesKey = (SessionSeriesKey | AppSeriesKey) & {
+interface InteractionBarSeriesKey {
+  type: "interactionBar";
+  id: 0;
+}
+
+type SeriesKey = (SessionSeriesKey | AppSeriesKey | InteractionBarSeriesKey) & {
   y: number;
   top: number;
   bottom: number;
@@ -91,6 +113,7 @@ interface GanttProps {
 
   defaultExpanded?: Record<Ref<App>, boolean>;
   interval: Interval;
+  interactionInfoBarHeight?: number;
   appInfoBarHeight?: number;
   sessionInfoBarHeight?: number;
   sessionInfoUrlBarHeight?: number;
@@ -102,13 +125,14 @@ interface GanttProps {
 export function Gantt2({
   usages: usagesPerAppSession,
   // usagesLoading,
-  // interactionPeriods,
+  interactionPeriods,
   // interactionPeriodsLoading,
-  // systemEvents,
+  systemEvents,
   // systemEventsLoading,
   defaultExpanded,
   interval,
   infoGap = 300,
+  interactionInfoBarHeight = 52,
   appInfoBarHeight = 52,
   sessionInfoBarHeight = 72,
   sessionInfoUrlBarHeight = 84,
@@ -123,6 +147,8 @@ export function Gantt2({
   const topInstanceRef = useRef<echarts.ECharts | null>(null);
 
   const [hoverData, setHoverData] = useState<UsageBar | null>(null);
+  const [hoverInteraction, setHoverInteraction] =
+    useState<InteractionBar | null>(null);
   const [expanded, setExpanded] = useState<Record<Ref<App>, boolean>>(
     defaultExpanded ?? {},
   );
@@ -179,6 +205,8 @@ export function Gantt2({
         expanded,
         apps,
         usagesPerAppSession,
+        !!(interactionPeriods || systemEvents),
+        interactionInfoBarHeight,
         appInfoBarHeight,
         sessionInfoBarHeight,
         sessionInfoUrlBarHeight,
@@ -188,6 +216,9 @@ export function Gantt2({
       expanded,
       apps,
       usagesPerAppSession,
+      interactionPeriods,
+      systemEvents,
+      interactionInfoBarHeight,
       appInfoBarHeight,
       sessionInfoBarHeight,
       sessionInfoUrlBarHeight,
@@ -224,7 +255,7 @@ export function Gantt2({
             (usage as AppSessionUsage).appId,
           ]),
         } satisfies echarts.CustomSeriesOption;
-      } else {
+      } else if (key.type === "session") {
         const usages = mergedUsages(
           usagesPerAppSession[key.appId][key.id].usages.map((usage) => ({
             start: usage.start,
@@ -256,9 +287,37 @@ export function Gantt2({
             (usage as AppSessionUsage).appId,
           ]),
         } satisfies echarts.CustomSeriesOption;
+      } else if (key.type === "interactionBar") {
+        const mergedInteractionPeriodsData = mergedInteractionPeriods(
+          interactionPeriods ?? [],
+          timeGap,
+        );
+        return {
+          ...appBar(color),
+          id,
+          encode: {
+            x: [2, 3],
+            y: [0, 1],
+          },
+          data: mergedInteractionPeriodsData.map((interactionPeriod) => [
+            key.top,
+            key.bottom,
+            ticksToUnixMillis(interactionPeriod.start),
+            ticksToUnixMillis(interactionPeriod.end),
+            key.type,
+            key.id,
+            false,
+            (interactionPeriod as CombinedInteractionPeriod).count,
+            (interactionPeriod as InteractionPeriod).id,
+            interactionPeriod.mouseClicks,
+            interactionPeriod.keyStrokes,
+          ]),
+        } satisfies echarts.CustomSeriesOption;
+      } else {
+        throw new Error("Unknown key type: " + JSON.stringify(key));
       }
     },
-    [usagesPerApp, usagesPerAppSession],
+    [usagesPerApp, usagesPerAppSession, interactionPeriods, systemEvents],
   );
 
   useEffect(() => {
@@ -318,6 +377,8 @@ export function Gantt2({
     topInstanceRef.current?.resize();
     chartInstanceRef.current?.resize();
   }, [
+    interactionPeriods,
+    systemEvents,
     seriesKeys,
     seriesKeyToSeries,
     width,
@@ -499,6 +560,7 @@ export function Gantt2({
 
     chart.getZr().on("mousemove", () => {
       setHoverData(null);
+      setHoverInteraction(null);
     });
 
     chart.on("mousemove", (params) => {
@@ -507,7 +569,7 @@ export function Gantt2({
         ,
         startMillis,
         endMillis,
-        ,
+        typeI,
         ,
         ,
         count,
@@ -518,24 +580,54 @@ export function Gantt2({
       const start = unixMillisToTicks(startMillis);
       const end = unixMillisToTicks(endMillis);
 
-      let usage: UsageBar | null = null;
-      if (count > 1) {
-        usage = {
-          type: "combined",
-          start,
-          end,
-          count,
-        };
+      const type = typeI as unknown as SessionSeriesKey["type"];
+      if (type === "session" || type === "app") {
+        let usage: UsageBar | null = null;
+        if (count > 1) {
+          usage = {
+            type: "combined",
+            start,
+            end,
+            count,
+          };
+        } else {
+          usage = {
+            start,
+            end,
+            usageId: +usageId as Ref<Usage>,
+            sessionId: +sessionId as Ref<Session>,
+            appId: +appId as Ref<App>,
+          };
+        }
+        setHoverData(usage);
+        setHoverInteraction(null);
+      } else if (type === "interactionBar") {
+        let interaction: InteractionBar | null = null;
+        const mouseClicks = sessionId;
+        const keyStrokes = appId;
+        if (count > 1) {
+          interaction = {
+            type: "combined",
+            start,
+            end,
+            count,
+            mouseClicks,
+            keyStrokes,
+          };
+        } else {
+          interaction = {
+            start,
+            end,
+            id: +usageId as Ref<InteractionPeriod>,
+            mouseClicks,
+            keyStrokes,
+          };
+        }
+        setHoverInteraction(interaction);
+        setHoverData(null);
       } else {
-        usage = {
-          start,
-          end,
-          usageId: +usageId as Ref<Usage>,
-          sessionId: +sessionId as Ref<Session>,
-          appId: +appId as Ref<App>,
-        };
+        throw new Error("Unknown type: " + type);
       }
-      setHoverData(usage);
     });
 
     const resizeObserver = new ResizeObserver(() => {
@@ -596,8 +688,23 @@ export function Gantt2({
               )}
             </div>
           </Tooltip>
+
+          <Tooltip show={hoverInteraction !== null} targetRef={chartRef}>
+            <div className="max-w-[800px]">
+              {(hoverInteraction as CombinedInteractionPeriod)?.type ===
+              "combined" ? (
+                <CombinedInteractionTooltip
+                  interaction={hoverInteraction as CombinedInteractionPeriod}
+                />
+              ) : (
+                <InteractionTooltip
+                  interaction={hoverInteraction as InteractionPeriod}
+                />
+              )}
+            </div>
+          </Tooltip>
         </div>
-        {/* App and Session info bars */}
+        {/* Info Bars */}
         <div
           className="absolute top-0 left-0 bottom-0"
           style={{ width: infoGap }}
@@ -612,6 +719,7 @@ export function Gantt2({
               const key = seriesKeys[index];
               return getItemHeight(
                 key,
+                interactionInfoBarHeight,
                 appInfoBarHeight,
                 sessionInfoBarHeight,
                 sessionInfoUrlBarHeight,
@@ -625,7 +733,12 @@ export function Gantt2({
               const key = seriesKeys[index];
               return (
                 <div style={style}>
-                  {key.type === "app" ? (
+                  {key.type === "interactionBar" ? (
+                    <InteractionInfoBar
+                      interactionInfoBarHeight={interactionInfoBarHeight}
+                      key={key.type + key.id}
+                    />
+                  ) : key.type === "app" ? (
                     <AppInfoBar
                       appInfoBarHeight={appInfoBarHeight}
                       key={key.type + key.id}
@@ -658,6 +771,31 @@ export function Gantt2({
           <div className="w-px" style={{ height: seriesHeight }} />
         </div>
       </div>
+    </div>
+  );
+}
+
+function InteractionInfoBar({
+  interactionInfoBarHeight,
+  className,
+}: {
+  interactionInfoBarHeight: number;
+  className?: ClassValue;
+}) {
+  return (
+    <div className={cn(className)}>
+      <div
+        className="flex items-center p-4 border-r"
+        style={{ height: interactionInfoBarHeight }}
+      >
+        <LaptopIcon className="w-6 h-6 ml-6" />
+        <Text className="font-semibold ml-4">Interactions</Text>
+        {/* BUG: this loading is as long as the usage loading ..?????
+                {(interactionPeriodsLoading || systemEventsLoading) && (
+                  <Loader2Icon className="animate-spin ml-4" />
+                )} */}
+      </div>
+      <div className="h-px bg-border absolute bottom-[-0.5px] left-0 right-0" />
     </div>
   );
 }
@@ -785,6 +923,61 @@ function AppSessionUsageTooltip({
   );
 }
 
+function CombinedInteractionTooltip({
+  interaction,
+}: {
+  interaction: CombinedInteractionPeriod;
+}) {
+  return (
+    interaction && (
+      <div className={cn("flex flex-col")}>
+        <div className="flex items-center gap-1 text-sm">
+          <Text
+            className="text-base"
+            children={`${interaction.count} Combined Interactions. Zoom to see details.`}
+          ></Text>
+          <KeyboardIcon size={16} className="ml-4" />
+          <div>{interaction.keyStrokes}</div>
+          <MouseIcon size={16} className="ml-2" />
+          <div>{interaction.mouseClicks}</div>
+        </div>
+        <div className="flex items-center text-muted-foreground gap-1 text-xs">
+          <DateTimeText ticks={interaction.start} /> -
+          <DateTimeText ticks={interaction.end} />
+          (
+          <DurationText ticks={interaction.end - interaction.start} />)
+        </div>
+      </div>
+    )
+  );
+}
+
+function InteractionTooltip({
+  interaction,
+}: {
+  interaction: InteractionPeriod;
+}) {
+  return (
+    interaction && (
+      <div className={cn("flex flex-col")}>
+        <div className="flex items-center gap-1 text-sm">
+          <Text className="text-base">Interaction</Text>
+          <KeyboardIcon size={16} className="ml-4" />
+          <div>{interaction.keyStrokes}</div>
+          <MouseIcon size={16} className="ml-2" />
+          <div>{interaction.mouseClicks}</div>
+        </div>
+        <div className="flex items-center text-muted-foreground gap-1 text-xs">
+          <DateTimeText ticks={interaction.start} /> -
+          <DateTimeText ticks={interaction.end} />
+          (
+          <DurationText ticks={interaction.end - interaction.start} />)
+        </div>
+      </div>
+    )
+  );
+}
+
 export const minRenderWidth = 1;
 export const maxRenderTimeGap = 600_000_000; // 1 minute
 
@@ -827,6 +1020,48 @@ export function mergedUsages(
     }
   }
   return mergedUsages;
+}
+
+export function mergedInteractionPeriods(
+  interactionPeriods: InteractionPeriod[],
+  minRenderTimeGap: number,
+): InteractionBar[] {
+  if (minRenderTimeGap < maxRenderTimeGap) {
+    return interactionPeriods;
+  }
+  const mergedInteractionPeriods: InteractionBar[] = [
+    { ...interactionPeriods[0] },
+  ];
+  for (const interactionPeriod of interactionPeriods) {
+    const lastInteractionPeriod =
+      mergedInteractionPeriods[mergedInteractionPeriods.length - 1];
+    if (
+      lastInteractionPeriod.end + minRenderTimeGap >
+      interactionPeriod.start
+    ) {
+      let lastInteractionPeriodBar =
+        lastInteractionPeriod as CombinedInteractionPeriod;
+      if (lastInteractionPeriodBar.type !== "combined") {
+        lastInteractionPeriodBar = mergedInteractionPeriods[
+          mergedInteractionPeriods.length - 1
+        ] = {
+          start: lastInteractionPeriod.start,
+          end: lastInteractionPeriod.end,
+          mouseClicks: lastInteractionPeriod.mouseClicks,
+          keyStrokes: lastInteractionPeriod.keyStrokes,
+          type: "combined",
+          count: 1,
+        };
+      }
+      lastInteractionPeriodBar.end = interactionPeriod.end;
+      lastInteractionPeriodBar.mouseClicks += interactionPeriod.mouseClicks;
+      lastInteractionPeriodBar.keyStrokes += interactionPeriod.keyStrokes;
+      lastInteractionPeriodBar.count += 1;
+    } else {
+      mergedInteractionPeriods.push({ ...interactionPeriod });
+    }
+  }
+  return mergedInteractionPeriods;
 }
 
 function appBar(color: string): echarts.CustomSeriesOption {
@@ -877,6 +1112,8 @@ function getSeriesKeys(
   expanded: Record<Ref<App>, boolean>,
   apps: App[],
   usagesPerAppSession: AppSessionUsages,
+  hasInteractionInfoBar: boolean,
+  interactionInfoBarHeight: number,
   appInfoBarHeight: number,
   sessionInfoBarHeight: number,
   sessionInfoUrlBarHeight: number,
@@ -884,6 +1121,16 @@ function getSeriesKeys(
 ): [SeriesKey[], number] {
   const seriesKeys: SeriesKey[] = [];
   let y = 0;
+  if (hasInteractionInfoBar) {
+    seriesKeys.push({
+      type: "interactionBar",
+      id: 0,
+      y,
+      top: y + interactionInfoBarHeight / 2 - barHeight / 2,
+      bottom: y + interactionInfoBarHeight / 2 + barHeight / 2,
+    });
+    y += interactionInfoBarHeight;
+  }
   for (const app of apps) {
     seriesKeys.push({
       type: "app",
@@ -939,6 +1186,7 @@ function setDataZoomYWindow(
 
 function getItemHeight(
   key: SeriesKey,
+  interactionInfoBarHeight: number,
   appInfoBarHeight: number,
   sessionInfoBarHeight: number,
   sessionInfoUrlBarHeight: number,
@@ -946,8 +1194,11 @@ function getItemHeight(
 ): number {
   if (key.type === "app") {
     return appInfoBarHeight;
-  } else {
+  } else if (key.type === "session") {
     // For session items, we need to check if it has a URL to determine height
     return session?.url ? sessionInfoUrlBarHeight : sessionInfoBarHeight;
+  } else if (key.type === "interactionBar") {
+    return interactionInfoBarHeight;
   }
+  throw new Error("Unknown key type: " + JSON.stringify(key));
 }
