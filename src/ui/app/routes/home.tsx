@@ -23,7 +23,7 @@ import {
 } from "@/lib/time";
 import { DateTime } from "luxon";
 import { useState, useMemo } from "react";
-import { Gantt } from "@/components/viz/gantt";
+import { Gantt } from "@/components/viz/gantt2";
 
 export default function Home() {
   const interval = usePeriodInterval("day");

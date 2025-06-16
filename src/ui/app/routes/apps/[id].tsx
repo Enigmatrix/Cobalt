@@ -43,7 +43,7 @@ import {
   useAppSessionUsages,
 } from "@/hooks/use-repo";
 import { usePeriodInterval } from "@/hooks/use-time";
-import { Gantt } from "@/components/viz/gantt";
+import { Gantt } from "@/components/viz/gantt2";
 import { ChooseTag } from "@/components/tag/choose-tag";
 import { ScoreCircle } from "@/components/tag/score";
 

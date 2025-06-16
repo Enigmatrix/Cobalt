@@ -50,7 +50,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { NavLink, useNavigate } from "react-router";
 import { usePeriodInterval } from "@/hooks/use-time";
-import { Gantt } from "@/components/viz/gantt";
+import { Gantt } from "@/components/viz/gantt2";
 import { ChooseMultiApps } from "@/components/app/choose-multi-apps";
 import { ScoreBadge, ScoreEdit } from "@/components/tag/score";
 

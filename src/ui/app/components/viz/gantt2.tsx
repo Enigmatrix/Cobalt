@@ -130,7 +130,7 @@ interface GanttProps {
   scrollbarWidth?: number;
 }
 
-export function Gantt2({
+export function Gantt({
   usages: usagesPerAppSession,
   usagesLoading,
   interactionPeriods,
@@ -144,7 +144,7 @@ export function Gantt2({
   appInfoBarHeight = 52,
   sessionInfoBarHeight = 72,
   sessionInfoUrlBarHeight = 84,
-  innerHeight = 1000,
+  innerHeight = 750,
   scrollbarWidth = 15,
 }: GanttProps) {
   const chartRef = useRef<HTMLDivElement>(null);
