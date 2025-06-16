@@ -1083,7 +1083,8 @@ export function mergedUsages(
     return usages;
   }
   const mergedUsages: UsageBar[] = [{ ...usages[0] }];
-  for (const usage of usages) {
+  for (let i = 1; i < usages.length; i++) {
+    const usage = usages[i];
     const lastUsage = mergedUsages[mergedUsages.length - 1];
     if (lastUsage.end + minRenderTimeGap > usage.start) {
       let lastUsageBar = lastUsage as CombinedUsage;
@@ -1114,7 +1115,9 @@ export function mergedInteractionPeriods(
   const mergedInteractionPeriods: InteractionBar[] = [
     { ...interactionPeriods[0] },
   ];
-  for (const interactionPeriod of interactionPeriods) {
+  for (let i = 1; i < interactionPeriods.length; i++) {
+    const interactionPeriod = interactionPeriods[i];
+
     const lastInteractionPeriod =
       mergedInteractionPeriods[mergedInteractionPeriods.length - 1];
     if (
