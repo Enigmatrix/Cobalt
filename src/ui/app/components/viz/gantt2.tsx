@@ -359,7 +359,9 @@ export function Gantt2({
     const commonOptions = {
       grid: {
         left: infoGap,
-        height: innerHeight,
+        // yes, innerHeight is the max height of the grid
+        // it's only seriesHeight when we have too few elements to render
+        height: Math.min(innerHeight, seriesHeight),
       },
       xAxis: {
         min: interval.start.toMillis(),
