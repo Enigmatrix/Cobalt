@@ -20,6 +20,8 @@ import { useAppState } from "@/lib/state";
 import { DateTimeText } from "@/components/time/time-text";
 import { Tooltip } from "@/components/viz/tooltip";
 import { DurationText } from "@/components/time/duration-text";
+import type { ClassValue } from "clsx";
+import { cn } from "@/lib/utils";
 
 const DATAZOOM_SLIDER_X = "dataZoomSliderX";
 const DATAZOOM_INSIDE_X = "dataZoomInsideX";
@@ -88,9 +90,9 @@ interface GanttProps {
 
   defaultExpanded?: Record<Ref<App>, boolean>;
   interval: Interval;
-  appBarHeight?: number;
-  sessionBarHeight?: number;
-  sessionUrlBarHeight?: number;
+  appInfoBarHeight?: number;
+  sessionInfoBarHeight?: number;
+  sessionInfoUrlBarHeight?: number;
   infoGap?: number;
   innerHeight?: number;
   scrollbarWidth?: number;
@@ -106,9 +108,9 @@ export function Gantt2({
   defaultExpanded,
   interval,
   infoGap = 300,
-  appBarHeight = 52,
-  sessionBarHeight = 72,
-  sessionUrlBarHeight = 84,
+  appInfoBarHeight = 52,
+  sessionInfoBarHeight = 72,
+  sessionInfoUrlBarHeight = 84,
   innerHeight = 500,
   scrollbarWidth = 15,
 }: GanttProps) {
@@ -176,18 +178,18 @@ export function Gantt2({
         expanded,
         apps,
         usagesPerAppSession,
-        appBarHeight,
-        sessionBarHeight,
-        sessionUrlBarHeight,
+        appInfoBarHeight,
+        sessionInfoBarHeight,
+        sessionInfoUrlBarHeight,
         24,
       ),
     [
       expanded,
       apps,
       usagesPerAppSession,
-      appBarHeight,
-      sessionBarHeight,
-      sessionUrlBarHeight,
+      appInfoBarHeight,
+      sessionInfoBarHeight,
+      sessionInfoUrlBarHeight,
     ],
   );
 
@@ -201,7 +203,7 @@ export function Gantt2({
       if (key.type === "app") {
         const usages = mergedUsages(usagesPerApp[key.id], timeGap);
         return {
-          ...appBar(appBarHeight, sessionBarHeight, sessionUrlBarHeight, color),
+          ...appBar(color),
           id,
           encode: {
             x: [2, 3],
@@ -233,7 +235,7 @@ export function Gantt2({
           timeGap,
         );
         return {
-          ...appBar(appBarHeight, sessionBarHeight, sessionUrlBarHeight, color),
+          ...appBar(color),
           id,
           encode: {
             x: [2, 3],
@@ -255,13 +257,7 @@ export function Gantt2({
         } satisfies echarts.CustomSeriesOption;
       }
     },
-    [
-      usagesPerApp,
-      usagesPerAppSession,
-      appBarHeight,
-      sessionBarHeight,
-      sessionUrlBarHeight,
-    ],
+    [usagesPerApp, usagesPerAppSession],
   );
 
   useEffect(() => {
@@ -570,6 +566,7 @@ export function Gantt2({
 
   return (
     <div className="w-full h-full sticky">
+      {/* Top bar */}
       <div
         ref={topRef}
         className="sticky z-10 w-full border-border border-b bg-card top-0 shadow-md dark:shadow-xl"
@@ -604,58 +601,22 @@ export function Gantt2({
         >
           {seriesKeys.map((key) =>
             key.type === "app" ? (
-              <div key={key.type + key.id} className="relative">
-                <div
-                  className="flex items-center p-4 bg-muted/80 hover:bg-muted/60 border-r"
-                  style={{ height: appBarHeight }}
-                  onClick={() => toggleApp(key.id)}
-                >
-                  {expanded[key.id] ? (
-                    <ChevronDown size={20} className="flex-shrink-0" />
-                  ) : (
-                    <ChevronRight size={20} className="flex-shrink-0" />
-                  )}
-                  <AppIcon
-                    buffer={appMap[key.id]?.icon}
-                    className="ml-2 w-6 h-6 shrink-0"
-                  />
-                  <Text className="font-semibold ml-4">
-                    {appMap[key.id]?.name ?? ""}
-                  </Text>
-                </div>
-                <div className="h-px bg-border absolute bottom-[-0.5px] left-0 right-0" />
-              </div>
+              <AppInfoBar
+                appInfoBarHeight={appInfoBarHeight}
+                key={key.type + key.id}
+                className="relative"
+                onClick={() => toggleApp(key.id)}
+                expanded={expanded[key.id]}
+                app={appMap[key.id]!}
+              />
             ) : (
-              <div className="relative" key={key.type + key.id}>
-                <div
-                  className="p-4 border-t border-r flex flex-col justify-center"
-                  style={{
-                    height: usagesPerAppSession[key.appId][key.id].url
-                      ? sessionUrlBarHeight
-                      : sessionBarHeight,
-                  }}
-                >
-                  <Text className="text-sm">
-                    {usagesPerAppSession[key.appId][key.id].title}
-                  </Text>
-                  {usagesPerAppSession[key.appId][key.id].url && (
-                    <Text className="text-xs font-mono text-muted-foreground">
-                      {usagesPerAppSession[key.appId][key.id].url ?? ""}
-                    </Text>
-                  )}
-                  <div className="text-xs text-muted-foreground inline-flex gap-1 items-center">
-                    <DateTimeText
-                      ticks={usagesPerAppSession[key.appId][key.id].start}
-                    />
-                    <span className="text-muted-foreground">-</span>
-                    <DateTimeText
-                      ticks={usagesPerAppSession[key.appId][key.id].end}
-                      className="text-xs"
-                    />
-                  </div>
-                </div>
-                <div className="h-px bg-border absolute bottom-[-0.5px] left-0 right-0" />
-              </div>
+              <SessionInfoBar
+                session={usagesPerAppSession[key.appId][key.id]}
+                sessionInfoBarHeight={sessionInfoBarHeight}
+                sessionInfoUrlBarHeight={sessionInfoUrlBarHeight}
+                className="relative"
+                key={key.type + key.id}
+              />
             ),
           )}
         </div>
@@ -673,161 +634,73 @@ export function Gantt2({
   );
 }
 
-export const minRenderWidth = 1;
-export const maxRenderTimeGap = 600_000_000; // 1 minute
-
-export function minRenderTimeGap(
-  interval: Interval,
-  width: number,
-  dataZoom: number,
-) {
-  const timeGap = interval.end.diff(interval.start).toMillis();
-  const zoom = dataZoom / 100;
-  const minRenderTimeGapMillis = ((timeGap * zoom) / width) * minRenderWidth;
-  const minRenderTimeGap = minRenderTimeGapMillis * 10_000;
-  return Math.max(minRenderTimeGap, 1);
-}
-
-export function mergedUsages(
-  usages: AppSessionUsage[],
-  minRenderTimeGap: number,
-): UsageBar[] {
-  if (minRenderTimeGap < maxRenderTimeGap) {
-    return usages;
-  }
-  const mergedUsages: UsageBar[] = [{ ...usages[0] }];
-  for (const usage of usages) {
-    const lastUsage = mergedUsages[mergedUsages.length - 1];
-    if (lastUsage.end + minRenderTimeGap > usage.start) {
-      let lastUsageBar = lastUsage as CombinedUsage;
-      if (lastUsageBar.type !== "combined") {
-        lastUsageBar = mergedUsages[mergedUsages.length - 1] = {
-          start: lastUsage.start,
-          end: lastUsage.end,
-          type: "combined",
-          count: 1,
-        };
-      }
-      lastUsageBar.end = usage.end;
-      lastUsageBar.count += 1;
-    } else {
-      mergedUsages.push({ ...usage });
-    }
-  }
-  return mergedUsages;
-}
-
-function appBar(
-  appBarHeight: number,
-  sessionBarHeight: number,
-  sessionUrlBarHeight: number,
-  color: string,
-): echarts.CustomSeriesOption {
-  return {
-    animation: false,
-    type: "custom",
-    progressive: 0,
-    renderItem: (
-      params: echarts.CustomSeriesRenderItemParams,
-      api: echarts.CustomSeriesRenderItemAPI,
-    ): echarts.CustomSeriesRenderItemReturn => {
-      const top = api.value(0);
-      const bottom = api.value(1);
-      const start = api.value(2);
-      const end = api.value(3);
-
-      const [x0, y0] = api.coord([start, top]);
-      // minimum 1px width
-      const [x1, y1] = api.coord([end, bottom]);
-      const width = x1 - x0;
-      const height = y1 - y0;
-
-      const rectShape = {
-        x: x0,
-        y: y0,
-        width,
-        height,
-      };
-      const shape = echarts.graphic.clipRectByRect(
-        rectShape,
-        params.coordSys as unknown as RectLike,
-      );
-
-      return (
-        shape && {
-          type: "rect" as const,
-          shape,
-          style: {
-            fill: color,
-          },
-        }
-      );
-    },
-  };
-}
-
-function getSeriesKeys(
-  expanded: Record<Ref<App>, boolean>,
-  apps: App[],
-  usagesPerAppSession: AppSessionUsages,
-  appBarHeight: number,
-  sessionBarHeight: number,
-  sessionUrlBarHeight: number,
-  barHeight: number,
-): [SeriesKey[], number] {
-  const seriesKeys: SeriesKey[] = [];
-  let y = 0;
-  for (const app of apps) {
-    seriesKeys.push({
-      type: "app",
-      id: app.id,
-      y,
-      top: y + appBarHeight / 2 - barHeight / 2,
-      bottom: y + appBarHeight / 2 + barHeight / 2,
-    });
-    y += appBarHeight;
-
-    if (expanded[app.id]) {
-      for (const sessionId of Object.keys(usagesPerAppSession[app.id])) {
-        const session = +sessionId as Ref<Session>;
-        const relevantHeight = usagesPerAppSession[app.id][session].url
-          ? sessionUrlBarHeight
-          : sessionBarHeight;
-        seriesKeys.push({
-          type: "session",
-          id: session,
-          appId: app.id,
-          y,
-          top: y + relevantHeight / 2 - barHeight / 2,
-          bottom: y + relevantHeight / 2 + barHeight / 2,
-        });
-        y += relevantHeight;
-      }
-    }
-  }
-  return [seriesKeys, y];
-}
-
-function getDataZoomYStartValue(chart: echarts.ECharts): number {
+function AppInfoBar({
+  app,
+  appInfoBarHeight,
+  className,
+  onClick,
+  expanded,
+}: {
+  app: App;
+  appInfoBarHeight: number;
+  className?: ClassValue;
+  onClick: () => void;
+  expanded: boolean;
+}) {
   return (
-    ((
-      (chart?.getOption() as echarts.EChartsOption | null)
-        ?.dataZoom as echarts.DataZoomComponentOption[]
-    )[2]?.startValue as number) ?? 0
+    <div className={cn(className)}>
+      <div
+        className="flex items-center p-4 bg-muted/80 hover:bg-muted/60 border-r"
+        style={{ height: appInfoBarHeight }}
+        onClick={onClick}
+      >
+        {expanded ? (
+          <ChevronDown size={20} className="flex-shrink-0" />
+        ) : (
+          <ChevronRight size={20} className="flex-shrink-0" />
+        )}
+        <AppIcon buffer={app.icon} className="ml-2 w-6 h-6 shrink-0" />
+        <Text className="font-semibold ml-4">{app.name}</Text>
+      </div>
+      <div className="h-px bg-border absolute bottom-[-0.5px] left-0 right-0" />
+    </div>
   );
 }
 
-function setDataZoomYWindow(
-  chart: echarts.ECharts,
-  startValue: number,
-  endValue: number,
-): void {
-  chart.dispatchAction({
-    type: "dataZoom",
-    dataZoomId: DATAZOOM_INSIDE_Y,
-    startValue,
-    endValue,
-  });
+function SessionInfoBar({
+  session,
+  sessionInfoBarHeight,
+  sessionInfoUrlBarHeight,
+  className,
+}: {
+  session: Session;
+  sessionInfoBarHeight: number;
+  sessionInfoUrlBarHeight: number;
+  className?: ClassValue;
+}) {
+  return (
+    <div className={cn(className)}>
+      <div
+        className="p-4 border-t border-r flex flex-col justify-center"
+        style={{
+          height: session.url ? sessionInfoUrlBarHeight : sessionInfoBarHeight,
+        }}
+      >
+        <Text className="text-sm">{session.title}</Text>
+        {session.url && (
+          <Text className="text-xs font-mono text-muted-foreground">
+            {session.url}
+          </Text>
+        )}
+        <div className="text-xs text-muted-foreground inline-flex gap-1 items-center">
+          <DateTimeText ticks={session.start} />
+          <span className="text-muted-foreground">-</span>
+          <DateTimeText ticks={session.end} className="text-xs" />
+        </div>
+      </div>
+      <div className="h-px bg-border absolute bottom-[-0.5px] left-0 right-0" />
+    </div>
+  );
 }
 
 function CombinedUsageTooltip({ usage }: { usage: CombinedUsage }) {
@@ -882,4 +755,156 @@ function AppSessionUsageTooltip({
       </div>
     </div>
   );
+}
+
+export const minRenderWidth = 1;
+export const maxRenderTimeGap = 600_000_000; // 1 minute
+
+export function minRenderTimeGap(
+  interval: Interval,
+  width: number,
+  dataZoom: number,
+) {
+  const timeGap = interval.end.diff(interval.start).toMillis();
+  const zoom = dataZoom / 100;
+  const minRenderTimeGapMillis = ((timeGap * zoom) / width) * minRenderWidth;
+  const minRenderTimeGap = minRenderTimeGapMillis * 10_000;
+  return Math.max(minRenderTimeGap, 1);
+}
+
+export function mergedUsages(
+  usages: AppSessionUsage[],
+  minRenderTimeGap: number,
+): UsageBar[] {
+  if (minRenderTimeGap < maxRenderTimeGap) {
+    return usages;
+  }
+  const mergedUsages: UsageBar[] = [{ ...usages[0] }];
+  for (const usage of usages) {
+    const lastUsage = mergedUsages[mergedUsages.length - 1];
+    if (lastUsage.end + minRenderTimeGap > usage.start) {
+      let lastUsageBar = lastUsage as CombinedUsage;
+      if (lastUsageBar.type !== "combined") {
+        lastUsageBar = mergedUsages[mergedUsages.length - 1] = {
+          start: lastUsage.start,
+          end: lastUsage.end,
+          type: "combined",
+          count: 1,
+        };
+      }
+      lastUsageBar.end = usage.end;
+      lastUsageBar.count += 1;
+    } else {
+      mergedUsages.push({ ...usage });
+    }
+  }
+  return mergedUsages;
+}
+
+function appBar(color: string): echarts.CustomSeriesOption {
+  return {
+    animation: false,
+    type: "custom",
+    progressive: 0,
+    renderItem: (
+      params: echarts.CustomSeriesRenderItemParams,
+      api: echarts.CustomSeriesRenderItemAPI,
+    ): echarts.CustomSeriesRenderItemReturn => {
+      const top = api.value(0);
+      const bottom = api.value(1);
+      const start = api.value(2);
+      const end = api.value(3);
+
+      const [x0, y0] = api.coord([start, top]);
+      // minimum 1px width
+      const [x1, y1] = api.coord([end, bottom]);
+      const width = x1 - x0;
+      const height = y1 - y0;
+
+      const rectShape = {
+        x: x0,
+        y: y0,
+        width,
+        height,
+      };
+      const shape = echarts.graphic.clipRectByRect(
+        rectShape,
+        params.coordSys as unknown as RectLike,
+      );
+
+      return (
+        shape && {
+          type: "rect" as const,
+          shape,
+          style: {
+            fill: color,
+          },
+        }
+      );
+    },
+  };
+}
+
+function getSeriesKeys(
+  expanded: Record<Ref<App>, boolean>,
+  apps: App[],
+  usagesPerAppSession: AppSessionUsages,
+  appInfoBarHeight: number,
+  sessionInfoBarHeight: number,
+  sessionInfoUrlBarHeight: number,
+  barHeight: number,
+): [SeriesKey[], number] {
+  const seriesKeys: SeriesKey[] = [];
+  let y = 0;
+  for (const app of apps) {
+    seriesKeys.push({
+      type: "app",
+      id: app.id,
+      y,
+      top: y + appInfoBarHeight / 2 - barHeight / 2,
+      bottom: y + appInfoBarHeight / 2 + barHeight / 2,
+    });
+    y += appInfoBarHeight;
+
+    if (expanded[app.id]) {
+      for (const sessionId of Object.keys(usagesPerAppSession[app.id])) {
+        const session = +sessionId as Ref<Session>;
+        const relevantHeight = usagesPerAppSession[app.id][session].url
+          ? sessionInfoUrlBarHeight
+          : sessionInfoBarHeight;
+        seriesKeys.push({
+          type: "session",
+          id: session,
+          appId: app.id,
+          y,
+          top: y + relevantHeight / 2 - barHeight / 2,
+          bottom: y + relevantHeight / 2 + barHeight / 2,
+        });
+        y += relevantHeight;
+      }
+    }
+  }
+  return [seriesKeys, y];
+}
+
+function getDataZoomYStartValue(chart: echarts.ECharts): number {
+  return (
+    ((
+      (chart?.getOption() as echarts.EChartsOption | null)
+        ?.dataZoom as echarts.DataZoomComponentOption[]
+    )[2]?.startValue as number) ?? 0
+  );
+}
+
+function setDataZoomYWindow(
+  chart: echarts.ECharts,
+  startValue: number,
+  endValue: number,
+): void {
+  chart.dispatchAction({
+    type: "dataZoom",
+    dataZoomId: DATAZOOM_INSIDE_Y,
+    startValue,
+    endValue,
+  });
 }
