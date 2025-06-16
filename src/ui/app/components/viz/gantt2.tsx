@@ -23,6 +23,7 @@ import {
   ChevronRight,
   KeyboardIcon,
   LaptopIcon,
+  Loader2Icon,
   MouseIcon,
 } from "lucide-react";
 import AppIcon from "@/components/app/app-icon";
@@ -131,11 +132,11 @@ interface GanttProps {
 
 export function Gantt2({
   usages: usagesPerAppSession,
-  // usagesLoading,
+  usagesLoading,
   interactionPeriods,
-  // interactionPeriodsLoading,
+  interactionPeriodsLoading,
   systemEvents,
-  // systemEventsLoading,
+  systemEventsLoading,
   defaultExpanded,
   interval,
   infoGap = 300,
@@ -794,6 +795,9 @@ export function Gantt2({
                 <div style={style}>
                   {key.type === "interactionBar" ? (
                     <InteractionInfoBar
+                      loading={
+                        !!(interactionPeriodsLoading || systemEventsLoading)
+                      }
                       interactionInfoBarHeight={interactionInfoBarHeight}
                       key={key.type + key.id}
                     />
@@ -829,15 +833,43 @@ export function Gantt2({
         >
           <div className="w-px" style={{ height: seriesHeight }} />
         </div>
+
+        {/* Session Empty State Indicator */}
+        {!usagesLoading && apps.length === 0 && (
+          <div className="absolute inset-0">
+            <div className="flex flex-col items-center justify-center p-8 text-muted-foreground h-full">
+              <LaptopIcon className="w-12 h-12 mb-4" />
+              <Text className="text-lg font-semibold mb-2">No Activity</Text>
+              <Text className="text-sm">
+                No application usage data available for this time period
+              </Text>
+            </div>
+          </div>
+        )}
+
+        {/* Session Loading Indicator */}
+        {usagesLoading && (
+          <div className="absolute inset-0">
+            <div className="flex flex-col items-center justify-center p-8 text-muted-foreground h-full">
+              <LaptopIcon className="w-12 h-12 mb-4 animate-pulse" />
+              <Text className="text-lg font-semibold mb-2">Loading...</Text>
+              <Text className="text-sm animate-pulse">
+                Fetching application usage data
+              </Text>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
 function InteractionInfoBar({
+  loading,
   interactionInfoBarHeight,
   className,
 }: {
+  loading: boolean;
   interactionInfoBarHeight: number;
   className?: ClassValue;
 }) {
@@ -849,10 +881,7 @@ function InteractionInfoBar({
       >
         <LaptopIcon className="w-6 h-6 ml-6" />
         <Text className="font-semibold ml-4">Interactions</Text>
-        {/* BUG: this loading is as long as the usage loading ..?????
-                {(interactionPeriodsLoading || systemEventsLoading) && (
-                  <Loader2Icon className="animate-spin ml-4" />
-                )} */}
+        {loading && <Loader2Icon className="animate-spin ml-4" />}
       </div>
       <div className="h-px bg-border absolute bottom-[-0.5px] left-0 right-0" />
     </div>
