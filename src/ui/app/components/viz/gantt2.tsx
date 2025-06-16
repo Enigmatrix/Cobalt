@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import * as echarts from "echarts";
 import {
   systemEventToString,
@@ -585,7 +592,7 @@ export function Gantt({
           params.dataZoomId === DATAZOOM_INSIDE_Y
         ) {
           // Y-axis changed
-          const startValue = getDataZoomYStartValue(chart);
+          const startValue = params.startValue ?? getDataZoomYStartValue(chart);
           infoBarsRef.current!.scrollTo(startValue);
           // if scrollbar changed which changed datazoom,
           // we update the scrollbar again. a bit of waste
@@ -718,6 +725,78 @@ export function Gantt({
     [innerHeight],
   );
 
+  const ListItem = useCallback(
+    ({ index, style }: { index: number; style: CSSProperties }) => {
+      const key = seriesKeys[index];
+
+      return (
+        <div style={style}>
+          {key.type === "interactionBar" ? (
+            <InteractionInfoBar
+              loading={!!(interactionPeriodsLoading || systemEventsLoading)}
+              interactionInfoBarHeight={interactionInfoBarHeight}
+              key={key.type + key.id}
+            />
+          ) : key.type === "app" ? (
+            <AppInfoBar
+              appInfoBarHeight={appInfoBarHeight}
+              key={key.type + key.id}
+              // className="relative"
+              onClick={() => toggleApp(key.id)}
+              expanded={expanded[key.id]}
+              app={appMap[key.id]!}
+            />
+          ) : (
+            <SessionInfoBar
+              session={usagesPerAppSession[key.appId][key.id]}
+              sessionInfoBarHeight={sessionInfoBarHeight}
+              sessionInfoUrlBarHeight={sessionInfoUrlBarHeight}
+              // className="relative"
+              key={key.type + key.id}
+            />
+          )}
+        </div>
+      );
+    },
+    [
+      seriesKeys,
+      usagesPerAppSession,
+      sessionInfoBarHeight,
+      sessionInfoUrlBarHeight,
+      appInfoBarHeight,
+      interactionInfoBarHeight,
+      interactionPeriodsLoading,
+      systemEventsLoading,
+      toggleApp,
+      expanded,
+      appMap,
+    ],
+  );
+
+  const listItemSize = useCallback(
+    (index: number) => {
+      const key = seriesKeys[index];
+      return getItemHeight(
+        key,
+        interactionInfoBarHeight,
+        appInfoBarHeight,
+        sessionInfoBarHeight,
+        sessionInfoUrlBarHeight,
+        key.type === "session"
+          ? usagesPerAppSession[key.appId][key.id]
+          : undefined,
+      );
+    },
+    [
+      seriesKeys,
+      interactionInfoBarHeight,
+      appInfoBarHeight,
+      sessionInfoBarHeight,
+      sessionInfoUrlBarHeight,
+      usagesPerAppSession,
+    ],
+  );
+
   return (
     <div className="w-full h-full sticky">
       {/* Top bar */}
@@ -790,53 +869,9 @@ export function Gantt({
             width={infoGap}
             itemCount={seriesKeys.length}
             style={{ overflow: "hidden" }} // hide scrollbar
-            itemSize={(index) => {
-              const key = seriesKeys[index];
-              return getItemHeight(
-                key,
-                interactionInfoBarHeight,
-                appInfoBarHeight,
-                sessionInfoBarHeight,
-                sessionInfoUrlBarHeight,
-                key.type === "session"
-                  ? usagesPerAppSession[key.appId][key.id]
-                  : undefined,
-              );
-            }}
+            itemSize={listItemSize}
           >
-            {({ index, style }) => {
-              const key = seriesKeys[index];
-              return (
-                <div style={style}>
-                  {key.type === "interactionBar" ? (
-                    <InteractionInfoBar
-                      loading={
-                        !!(interactionPeriodsLoading || systemEventsLoading)
-                      }
-                      interactionInfoBarHeight={interactionInfoBarHeight}
-                      key={key.type + key.id}
-                    />
-                  ) : key.type === "app" ? (
-                    <AppInfoBar
-                      appInfoBarHeight={appInfoBarHeight}
-                      key={key.type + key.id}
-                      // className="relative"
-                      onClick={() => toggleApp(key.id)}
-                      expanded={expanded[key.id]}
-                      app={appMap[key.id]!}
-                    />
-                  ) : (
-                    <SessionInfoBar
-                      session={usagesPerAppSession[key.appId][key.id]}
-                      sessionInfoBarHeight={sessionInfoBarHeight}
-                      sessionInfoUrlBarHeight={sessionInfoUrlBarHeight}
-                      // className="relative"
-                      key={key.type + key.id}
-                    />
-                  )}
-                </div>
-              );
-            }}
+            {ListItem}
           </List>
         </div>
         {/* Scrollbar */}
@@ -1370,7 +1405,7 @@ function getDataZoomYStartValue(chart: echarts.ECharts): number {
     ((
       (chart?.getOption() as echarts.EChartsOption | null)
         ?.dataZoom as echarts.DataZoomComponentOption[]
-    )[2]?.startValue as number) ?? 0
+    )?.[2]?.startValue as number) ?? 0
   );
 }
 
