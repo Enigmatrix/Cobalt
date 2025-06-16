@@ -242,11 +242,19 @@ export function Gantt2({
       timeGap: number,
       color: string,
     ): echarts.CustomSeriesOption => {
+      const backgroundColor = getVarColorAsHex("muted");
+
       const id = key.type + key.id;
       if (key.type === "app") {
         const usages = mergedUsages(usagesPerApp[key.id], timeGap);
         return {
-          ...appBar(color),
+          ...appBar(
+            color,
+            key.y,
+            key.y + appInfoBarHeight,
+            interval,
+            backgroundColor,
+          ),
           id,
           encode: {
             x: [2, 3],
@@ -278,7 +286,7 @@ export function Gantt2({
           timeGap,
         );
         return {
-          ...appBar(color),
+          ...seriesBar(color),
           id,
           encode: {
             x: [2, 3],
@@ -343,7 +351,14 @@ export function Gantt2({
         throw new Error("Unknown key type: " + JSON.stringify(key));
       }
     },
-    [usagesPerApp, usagesPerAppSession, interactionPeriods, systemEvents],
+    [
+      usagesPerApp,
+      usagesPerAppSession,
+      interactionPeriods,
+      systemEvents,
+      appInfoBarHeight,
+      interval,
+    ],
   );
 
   useEffect(() => {
@@ -1131,7 +1146,72 @@ export function mergedInteractionPeriods(
   return mergedInteractionPeriods;
 }
 
-function appBar(color: string): echarts.CustomSeriesOption {
+function appBar(
+  color: string,
+  top: number,
+  bottom: number,
+  interval: Interval,
+  backgroundColor: string,
+): echarts.CustomSeriesOption {
+  return {
+    animation: false,
+    type: "custom",
+    progressive: 0,
+    markArea: {
+      silent: true,
+      z: -1000,
+      zlevel: -1000,
+      itemStyle: {
+        color: backgroundColor,
+        opacity: 0.5,
+      },
+      data: [
+        [
+          { coord: [interval.start.toMillis(), top] },
+          { coord: [interval.end.toMillis(), bottom] },
+        ],
+      ],
+    },
+    renderItem: (
+      params: echarts.CustomSeriesRenderItemParams,
+      api: echarts.CustomSeriesRenderItemAPI,
+    ): echarts.CustomSeriesRenderItemReturn => {
+      const top = api.value(0);
+      const bottom = api.value(1);
+      const start = api.value(2);
+      const end = api.value(3);
+
+      const [x0, y0] = api.coord([start, top]);
+      const [x1, y1] = api.coord([end, bottom]);
+      // minimum 1px width
+      const width = Math.max(x1 - x0, 1);
+      const height = y1 - y0;
+
+      const rectShape = {
+        x: x0,
+        y: y0,
+        width,
+        height,
+      };
+      const shape = echarts.graphic.clipRectByRect(
+        rectShape,
+        params.coordSys as unknown as RectLike,
+      );
+
+      return (
+        shape && {
+          type: "rect" as const,
+          shape,
+          style: {
+            fill: color,
+          },
+        }
+      );
+    },
+  };
+}
+
+function seriesBar(color: string): echarts.CustomSeriesOption {
   return {
     animation: false,
     type: "custom",
