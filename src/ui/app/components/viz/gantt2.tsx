@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as echarts from "echarts";
-import type { App, Ref, Session, Usage } from "@/lib/entities";
+import {
+  systemEventToString,
+  type App,
+  type Ref,
+  type Session,
+  type SystemEventEnum,
+  type Usage,
+} from "@/lib/entities";
 import type { InteractionPeriod, SystemEvent } from "@/lib/entities";
 import type { AppSessionUsages } from "@/lib/repo";
 import {
@@ -146,6 +153,9 @@ export function Gantt2({
   const chartInstanceRef = useRef<echarts.ECharts | null>(null);
   const topInstanceRef = useRef<echarts.ECharts | null>(null);
 
+  const [hoverSystemEvent, setHoverSystemEvent] = useState<SystemEvent | null>(
+    null,
+  );
   const [hoverData, setHoverData] = useState<UsageBar | null>(null);
   const [hoverInteraction, setHoverInteraction] =
     useState<InteractionBar | null>(null);
@@ -293,25 +303,40 @@ export function Gantt2({
           timeGap,
         );
         return {
-          ...appBar(color),
+          ...interactionBar(color, "orange"),
           id,
           encode: {
             x: [2, 3],
             y: [0, 1],
           },
-          data: mergedInteractionPeriodsData.map((interactionPeriod) => [
-            key.top,
-            key.bottom,
-            ticksToUnixMillis(interactionPeriod.start),
-            ticksToUnixMillis(interactionPeriod.end),
-            key.type,
-            key.id,
-            false,
-            (interactionPeriod as CombinedInteractionPeriod).count,
-            (interactionPeriod as InteractionPeriod).id,
-            interactionPeriod.mouseClicks,
-            interactionPeriod.keyStrokes,
-          ]),
+          data: mergedInteractionPeriodsData
+            .map((interactionPeriod) => [
+              key.top,
+              key.bottom,
+              ticksToUnixMillis(interactionPeriod.start),
+              ticksToUnixMillis(interactionPeriod.end),
+              key.type,
+              key.id,
+              false,
+              (interactionPeriod as CombinedInteractionPeriod).count,
+              (interactionPeriod as InteractionPeriod).id,
+              interactionPeriod.mouseClicks,
+              interactionPeriod.keyStrokes,
+            ])
+            .concat(
+              systemEvents?.map((systemEvent) => [
+                key.top,
+                key.bottom,
+                ticksToUnixMillis(systemEvent.timestamp),
+                ticksToUnixMillis(systemEvent.timestamp),
+                key.type,
+                key.id,
+                true, // system event
+                1,
+                systemEvent.id,
+                systemEvent.event,
+              ]) ?? [],
+            ),
         } satisfies echarts.CustomSeriesOption;
       } else {
         throw new Error("Unknown key type: " + JSON.stringify(key));
@@ -561,6 +586,7 @@ export function Gantt2({
     chart.getZr().on("mousemove", () => {
       setHoverData(null);
       setHoverInteraction(null);
+      setHoverSystemEvent(null);
     });
 
     chart.on("mousemove", (params) => {
@@ -571,7 +597,7 @@ export function Gantt2({
         endMillis,
         typeI,
         ,
-        ,
+        boolI,
         count,
         usageId,
         sessionId,
@@ -601,30 +627,44 @@ export function Gantt2({
         }
         setHoverData(usage);
         setHoverInteraction(null);
+        setHoverSystemEvent(null);
       } else if (type === "interactionBar") {
         let interaction: InteractionBar | null = null;
-        const mouseClicks = sessionId;
-        const keyStrokes = appId;
-        if (count > 1) {
-          interaction = {
-            type: "combined",
-            start,
-            end,
-            count,
-            mouseClicks,
-            keyStrokes,
-          };
+        const isSystemEvent = boolI;
+        if (isSystemEvent) {
+          setHoverSystemEvent({
+            id: +usageId as Ref<SystemEvent>,
+            timestamp: start,
+            event: sessionId as unknown as SystemEventEnum,
+          });
+          setHoverData(null);
+          setHoverInteraction(null);
         } else {
-          interaction = {
-            start,
-            end,
-            id: +usageId as Ref<InteractionPeriod>,
-            mouseClicks,
-            keyStrokes,
-          };
+          const mouseClicks = sessionId;
+          const keyStrokes = appId;
+
+          if (count > 1) {
+            interaction = {
+              type: "combined",
+              start,
+              end,
+              count,
+              mouseClicks,
+              keyStrokes,
+            };
+          } else {
+            interaction = {
+              start,
+              end,
+              id: +usageId as Ref<InteractionPeriod>,
+              mouseClicks,
+              keyStrokes,
+            };
+          }
+          setHoverInteraction(interaction);
+          setHoverData(null);
+          setHoverSystemEvent(null);
         }
-        setHoverInteraction(interaction);
-        setHoverData(null);
       } else {
         throw new Error("Unknown type: " + type);
       }
@@ -700,6 +740,23 @@ export function Gantt2({
                 <InteractionTooltip
                   interaction={hoverInteraction as InteractionPeriod}
                 />
+              )}
+            </div>
+          </Tooltip>
+
+          <Tooltip show={hoverSystemEvent !== null} targetRef={chartRef}>
+            <div className="max-w-[800px]">
+              {hoverSystemEvent && (
+                <div className={cn("flex flex-col")}>
+                  <div className="flex items-center gap-1 text-sm">
+                    <Text className="text-base">
+                      {systemEventToString(hoverSystemEvent.event)}
+                    </Text>
+                  </div>
+                  <div className="flex items-center text-muted-foreground gap-1 text-xs">
+                    <DateTimeText ticks={hoverSystemEvent.timestamp} />
+                  </div>
+                </div>
               )}
             </div>
           </Tooltip>
@@ -1101,6 +1158,58 @@ function appBar(color: string): echarts.CustomSeriesOption {
           shape,
           style: {
             fill: color,
+          },
+        }
+      );
+    },
+  };
+}
+
+function interactionBar(
+  color: string,
+  systemEventColor: string,
+): echarts.CustomSeriesOption {
+  return {
+    animation: false,
+    type: "custom",
+    progressive: 0,
+    renderItem: (
+      params: echarts.CustomSeriesRenderItemParams,
+      api: echarts.CustomSeriesRenderItemAPI,
+    ): echarts.CustomSeriesRenderItemReturn => {
+      const top = api.value(0);
+      const bottom = api.value(1);
+      const start = api.value(2);
+      const end = api.value(3);
+      const isSystemEvent = api.value(6);
+
+      const [x0, y0] = api.coord([start, top]);
+      const [x1, y1] = api.coord([end, bottom]);
+      // minimum 1px width
+      const width = Math.max(x1 - x0, 1);
+      const height = y1 - y0;
+
+      // EW manual coding of constants
+      const rectShape = {
+        x: x0,
+        y: y0 - (isSystemEvent ? 4 : 0),
+        width,
+        height: height + (isSystemEvent ? 2 * 4 : 0),
+      };
+      const shape = echarts.graphic.clipRectByRect(
+        rectShape,
+        params.coordSys as unknown as RectLike,
+      );
+
+      return (
+        shape && {
+          type: "rect" as const,
+          zlevel: isSystemEvent ? 0 : 1,
+          z: isSystemEvent ? 0 : 1,
+          z2: isSystemEvent ? 0 : 1,
+          shape,
+          style: {
+            fill: isSystemEvent ? systemEventColor : color,
           },
         }
       );
