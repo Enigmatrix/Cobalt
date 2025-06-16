@@ -63,16 +63,18 @@ interface SessionSeriesKey {
   type: "session";
   id: Ref<Session>;
   appId: Ref<App>;
-  y: number;
 }
 
 interface AppSeriesKey {
   type: "app";
   id: Ref<App>;
-  y: number;
 }
 
-type SeriesKey = SessionSeriesKey | AppSeriesKey;
+type SeriesKey = (SessionSeriesKey | AppSeriesKey) & {
+  y: number;
+  top: number;
+  bottom: number;
+};
 
 interface GanttProps {
   usages: AppSessionUsages;
@@ -177,6 +179,7 @@ export function Gantt2({
         appBarHeight,
         sessionBarHeight,
         sessionUrlBarHeight,
+        24,
       ),
     [
       expanded,
@@ -201,11 +204,12 @@ export function Gantt2({
           ...appBar(appBarHeight, sessionBarHeight, sessionUrlBarHeight, color),
           id,
           encode: {
-            x: [1, 2],
-            y: 0,
+            x: [2, 3],
+            y: [0, 1],
           },
           data: usages.map((usage) => [
-            key.y,
+            key.top,
+            key.bottom,
             ticksToUnixMillis(usage.start),
             ticksToUnixMillis(usage.end),
             key.type,
@@ -232,11 +236,12 @@ export function Gantt2({
           ...appBar(appBarHeight, sessionBarHeight, sessionUrlBarHeight, color),
           id,
           encode: {
-            x: [1, 2],
-            y: 0,
+            x: [2, 3],
+            y: [0, 1],
           },
           data: usages.map((usage) => [
-            key.y,
+            key.top,
+            key.bottom,
             ticksToUnixMillis(usage.start),
             ticksToUnixMillis(usage.end),
             key.type,
@@ -381,6 +386,7 @@ export function Gantt2({
           id: DATAZOOM_INSIDE_Y,
           type: "inside",
           yAxisIndex: [0],
+          filterMode: "weakFilter",
           zoomLock: true,
           zoomOnMouseWheel: false,
           startValue: 0,
@@ -496,8 +502,19 @@ export function Gantt2({
     });
 
     chart.on("mousemove", (params) => {
-      const [, startMillis, endMillis, , , , count, usageId, sessionId, appId] =
-        params.data as number[];
+      const [
+        ,
+        ,
+        startMillis,
+        endMillis,
+        ,
+        ,
+        ,
+        count,
+        usageId,
+        sessionId,
+        appId,
+      ] = params.data as number[];
       const start = unixMillisToTicks(startMillis);
       const end = unixMillisToTicks(endMillis);
 
@@ -714,26 +731,20 @@ function appBar(
       params: echarts.CustomSeriesRenderItemParams,
       api: echarts.CustomSeriesRenderItemAPI,
     ): echarts.CustomSeriesRenderItemReturn => {
-      const ytop = api.value(0);
-      const start = api.value(1);
-      const end = api.value(2);
-      const type = api.value(3);
+      const top = api.value(0);
+      const bottom = api.value(1);
+      const start = api.value(2);
+      const end = api.value(3);
 
-      const rowHeight =
-        type === "app"
-          ? appBarHeight
-          : api.value(5)
-            ? sessionUrlBarHeight
-            : sessionBarHeight;
-      const height = 24;
-
-      const [x, y] = api.coord([start, ytop]);
+      const [x0, y0] = api.coord([start, top]);
       // minimum 1px width
-      const width = Math.max(api.coord([end, ytop])[0] - x, 1);
+      const [x1, y1] = api.coord([end, bottom]);
+      const width = x1 - x0;
+      const height = y1 - y0;
 
       const rectShape = {
-        x,
-        y: y + (rowHeight - height) / 2,
+        x: x0,
+        y: y0,
         width,
         height,
       };
@@ -762,22 +773,35 @@ function getSeriesKeys(
   appBarHeight: number,
   sessionBarHeight: number,
   sessionUrlBarHeight: number,
+  barHeight: number,
 ): [SeriesKey[], number] {
   const seriesKeys: SeriesKey[] = [];
   let y = 0;
   for (const app of apps) {
-    seriesKeys.push({ type: "app", id: app.id, y });
+    seriesKeys.push({
+      type: "app",
+      id: app.id,
+      y,
+      top: y + appBarHeight / 2 - barHeight / 2,
+      bottom: y + appBarHeight / 2 + barHeight / 2,
+    });
     y += appBarHeight;
 
     if (expanded[app.id]) {
       for (const sessionId of Object.keys(usagesPerAppSession[app.id])) {
         const session = +sessionId as Ref<Session>;
-        seriesKeys.push({ type: "session", id: session, appId: app.id, y });
-        if (usagesPerAppSession[app.id][session].url) {
-          y += sessionUrlBarHeight;
-        } else {
-          y += sessionBarHeight;
-        }
+        const relevantHeight = usagesPerAppSession[app.id][session].url
+          ? sessionUrlBarHeight
+          : sessionBarHeight;
+        seriesKeys.push({
+          type: "session",
+          id: session,
+          appId: app.id,
+          y,
+          top: y + relevantHeight / 2 - barHeight / 2,
+          bottom: y + relevantHeight / 2 + barHeight / 2,
+        });
+        y += relevantHeight;
       }
     }
   }
