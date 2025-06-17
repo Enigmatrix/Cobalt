@@ -18,6 +18,8 @@ pub struct Sentry {
     mgr: AlertManager,
 }
 
+const MIN_DIM_LEVEL: f64 = 0.5;
+
 impl Sentry {
     /// Create a new [Sentry] with the given [Cache] and [Database].
     pub fn new(cache: Arc<Mutex<Cache>>, db: Database) -> Result<Self> {
@@ -136,7 +138,7 @@ impl Sentry {
                 let end: Timestamp = now.to_ticks();
                 let progress = (end - start) as f64 / (*duration as f64);
                 for window in windows {
-                    let dim_level = 1.0f64 - progress.min(1.0f64);
+                    let dim_level = 1.0f64 - (progress.min(1.0f64) * (1.0f64 - MIN_DIM_LEVEL));
                     if dim_level == 1.0f64 {
                         info!(?alert, "start dimming window {:?}", window);
                     } else if dim_level == 0.0f64 {
