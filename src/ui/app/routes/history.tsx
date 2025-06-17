@@ -33,7 +33,7 @@ import { DurationText } from "@/components/time/duration-text";
 import type { App, Ref } from "@/lib/entities";
 import type { Period } from "@/lib/time";
 import { ChevronLeftIcon, ChevronRightIcon, Loader2 } from "lucide-react";
-import { Gantt } from "@/components/viz/gantt";
+import { Gantt } from "@/components/viz/gantt2";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { FormItem } from "@/components/ui/form";
@@ -126,14 +126,16 @@ export default function History() {
           </div>
         </header>
         <div
-          className={cn("flex flex-col flex-1 gap-6 p-4", {
+          className={cn("flex flex-col flex-1", {
             "overflow-hidden": !fullPage,
             "overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]":
               fullPage,
           })}
         >
-          {view === "app-usage" && <AppUsagePerPeriodHistory />}
-          {view === "session-history" && <SessionHistory />}
+          <div className="flex flex-col flex-1 gap-6 p-4">
+            {view === "app-usage" && <AppUsagePerPeriodHistory />}
+            {view === "session-history" && <SessionHistory />}
+          </div>
         </div>
       </div>
     </HistoryContext.Provider>
@@ -256,20 +258,16 @@ function SessionHistory() {
   );
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-1 min-h-0 rounded-lg bg-card shadow-xs border border-border">
-        <div className="max-w-full">
-          <Gantt
-            usages={usages}
-            usagesLoading={usagesLoading}
-            interactionPeriods={interactions}
-            interactionPeriodsLoading={interactionPeriodsLoading}
-            systemEvents={systemEvents}
-            systemEventsLoading={systemEventsLoading}
-            interval={effectiveInterval}
-          />
-        </div>
-      </div>
+    <div className="sticky rounded-lg bg-card shadow-xs border border-border overflow-clip">
+      <Gantt
+        usages={usages}
+        usagesLoading={usagesLoading}
+        interactionPeriods={interactions}
+        interactionPeriodsLoading={interactionPeriodsLoading}
+        systemEvents={systemEvents}
+        systemEventsLoading={systemEventsLoading}
+        interval={effectiveInterval}
+      />
     </div>
   );
 }

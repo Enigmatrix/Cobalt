@@ -43,8 +43,16 @@ export function toHumanDurationFull(
       });
 }
 
-export function dateTimeToTicks(ts: DateTime): number {
-  return (ts.toMillis() + 62_135_596_800_000) * 10_000;
+export function dateTimeToTicks(dt: DateTime): number {
+  return unixMillisToTicks(dt.toMillis());
+}
+
+export function unixMillisToTicks(ts: number): number {
+  return (ts + 62_135_596_800_000) * 10_000;
+}
+
+export function ticksToUnixMillis(ticks: number): number {
+  return ticks / 10_000 - 62_135_596_800_000;
 }
 
 export function durationToTicks(ts: Duration): number {

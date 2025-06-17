@@ -43,7 +43,7 @@ import {
   useAppSessionUsages,
 } from "@/hooks/use-repo";
 import { usePeriodInterval } from "@/hooks/use-time";
-import { Gantt } from "@/components/viz/gantt";
+import { Gantt } from "@/components/viz/gantt2";
 import { ChooseTag } from "@/components/tag/choose-tag";
 import { ScoreCircle } from "@/components/tag/score";
 
@@ -258,7 +258,7 @@ export default function App({ params }: Route.ComponentProps) {
             </div>
           </TimePeriodUsageCard>
 
-          <div className="rounded-xl bg-muted/50 overflow-hidden flex flex-col border border-border">
+          <div className="sticky rounded-xl bg-muted/50 border border-border overflow-clip">
             <Gantt
               usages={onlyAppSessionUsages}
               usagesLoading={appSessionUsagesLoading}

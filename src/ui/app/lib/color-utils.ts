@@ -1,5 +1,7 @@
 type RGB = { r: number; g: number; b: number };
+import { useTheme } from "@/components/theme-provider";
 import α from "color-alpha";
+import { useEffect, useState } from "react";
 
 // ref: https://github.com/catppuccin/catppuccin
 // Mocha colors
@@ -42,4 +44,15 @@ export const getVarColorAsHex = (varName: string, a = 1): string => {
   );
 
   return α(varVal, a);
+};
+
+export const useVarColorAsHex = (varName: string, a = 1): string => {
+  const theme = useTheme();
+  const [color, setColor] = useState(getVarColorAsHex(varName, a));
+
+  useEffect(() => {
+    setColor(getVarColorAsHex(varName, a));
+  }, [theme, varName, a]);
+
+  return color;
 };

@@ -50,7 +50,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { NavLink, useNavigate } from "react-router";
 import { usePeriodInterval } from "@/hooks/use-time";
-import { Gantt } from "@/components/viz/gantt";
+import { Gantt } from "@/components/viz/gantt2";
 import { ChooseMultiApps } from "@/components/app/choose-multi-apps";
 import { ScoreBadge, ScoreEdit } from "@/components/tag/score";
 
@@ -294,7 +294,7 @@ export default function Tag({ params }: Route.ComponentProps) {
             </div>
           </TimePeriodUsageCard>
 
-          <div className="rounded-xl bg-muted/50 overflow-hidden flex flex-col border border-border">
+          <div className="sticky rounded-xl bg-muted/50 border border-border overflow-clip">
             <Gantt
               usages={tagAppSessionUsages}
               usagesLoading={appSessionUsagesLoading}
