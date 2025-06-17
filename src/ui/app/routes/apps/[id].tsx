@@ -258,7 +258,7 @@ export default function App({ params }: Route.ComponentProps) {
             </div>
           </TimePeriodUsageCard>
 
-          <div className="rounded-xl bg-muted/50 overflow-hidden flex flex-col border border-border">
+          <div className="sticky rounded-xl bg-muted/50 border border-border overflow-clip">
             <Gantt
               usages={onlyAppSessionUsages}
               usagesLoading={appSessionUsagesLoading}

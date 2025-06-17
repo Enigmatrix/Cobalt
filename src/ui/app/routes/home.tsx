@@ -58,7 +58,7 @@ export default function Home() {
         </Breadcrumb>
       </header>
       <div className="h-0 flex-auto overflow-auto [scrollbar-gutter:stable]">
-        <div className="flex flex-col gap-4 p-4 overflow-y-auto">
+        <div className="flex flex-col gap-4 p-4">
           <div className="grid grid-cols-1 auto-rows-min gap-4 md:grid-cols-3">
             <AppUsageBarChartCard
               timePeriod="day"
@@ -76,7 +76,7 @@ export default function Home() {
               xAxisLabelFormatter={monthDayFormatter}
             />
           </div>
-          <div className="rounded-xl bg-muted/50 overflow-hidden flex flex-col border border-border">
+          <div className="sticky rounded-xl bg-muted/50 border border-border overflow-clip">
             <Gantt
               usages={usages}
               usagesLoading={usagesLoading}

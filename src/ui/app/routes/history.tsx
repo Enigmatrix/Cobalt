@@ -126,14 +126,16 @@ export default function History() {
           </div>
         </header>
         <div
-          className={cn("flex flex-col flex-1 gap-6 p-4", {
+          className={cn("flex flex-col flex-1", {
             "overflow-hidden": !fullPage,
             "overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]":
               fullPage,
           })}
         >
-          {view === "app-usage" && <AppUsagePerPeriodHistory />}
-          {view === "session-history" && <SessionHistory />}
+          <div className="flex flex-col flex-1 gap-6 p-4">
+            {view === "app-usage" && <AppUsagePerPeriodHistory />}
+            {view === "session-history" && <SessionHistory />}
+          </div>
         </div>
       </div>
     </HistoryContext.Provider>
@@ -256,18 +258,16 @@ function SessionHistory() {
   );
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-1 min-h-0 rounded-lg bg-card shadow-xs border border-border">
-        <Gantt
-          usages={usages}
-          usagesLoading={usagesLoading}
-          interactionPeriods={interactions}
-          interactionPeriodsLoading={interactionPeriodsLoading}
-          systemEvents={systemEvents}
-          systemEventsLoading={systemEventsLoading}
-          interval={effectiveInterval}
-        />
-      </div>
+    <div className="sticky rounded-lg bg-card shadow-xs border border-border overflow-clip">
+      <Gantt
+        usages={usages}
+        usagesLoading={usagesLoading}
+        interactionPeriods={interactions}
+        interactionPeriodsLoading={interactionPeriodsLoading}
+        systemEvents={systemEvents}
+        systemEventsLoading={systemEventsLoading}
+        interval={effectiveInterval}
+      />
     </div>
   );
 }
