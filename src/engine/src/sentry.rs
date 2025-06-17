@@ -141,8 +141,9 @@ impl Sentry {
                     let dim_level = 1.0f64 - (progress.min(1.0f64) * (1.0f64 - MIN_DIM_LEVEL));
                     if dim_level == 1.0f64 {
                         info!(?alert, "start dimming window {:?}", window);
-                    } else if dim_level == 0.0f64 {
-                        info!(?alert, "end dimming window {:?}", window);
+                    } else if dim_level == MIN_DIM_LEVEL && progress <= 1.01f64 {
+                        // allow for floating point imprecision. check if we reach ~100% progress
+                        info!(?alert, "max dim window reached for {:?}", window);
                     } else {
                         debug!(?alert, "dimming window {:?} to {}", window, dim_level);
                     }
