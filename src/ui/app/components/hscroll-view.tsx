@@ -7,6 +7,8 @@ interface HScrollViewProps extends React.HTMLAttributes<HTMLDivElement> {
   innerClassName?: ClassValue;
 }
 
+const adjustPadding = 3;
+
 export function HScrollView({
   children,
   className,
@@ -20,8 +22,10 @@ export function HScrollView({
   const checkScroll = () => {
     if (scrollRef.current) {
       const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
-      setShowLeftShadow(scrollLeft > 0);
-      setShowRightShadow(scrollLeft < scrollWidth - clientWidth);
+      setShowLeftShadow(scrollLeft > adjustPadding);
+      setShowRightShadow(
+        scrollLeft < scrollWidth - clientWidth - adjustPadding,
+      );
     }
   };
 
