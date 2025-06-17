@@ -20,8 +20,8 @@ export const PERIODS: Period[] = [
 
 export function toHumanDuration(
   ticks: number,
-  showSymbolForZero: boolean = true,
-  symbolForZero: string = "-",
+  showSymbolForZero = true,
+  symbolForZero = "-",
 ): string {
   return ticks === 0 && showSymbolForZero
     ? symbolForZero
@@ -33,8 +33,8 @@ export function toHumanDuration(
 
 export function toHumanDurationFull(
   ticks: number,
-  showSymbolForZero: boolean = true,
-  symbolForZero: string = "-",
+  showSymbolForZero = true,
+  symbolForZero = "-",
 ): string {
   return ticks === 0 && showSymbolForZero
     ? symbolForZero
