@@ -797,6 +797,13 @@ export function Gantt({
     ],
   );
 
+  // if loading or no apps, show innerHeight to show the empty states
+  // else, fit to content size
+  const innerRelevantHeight =
+    usagesLoading || apps.length === 0
+      ? innerHeight
+      : Math.min(innerHeight, seriesHeight);
+
   return (
     <div className="w-full h-full sticky">
       {/* Top bar */}
@@ -810,7 +817,7 @@ export function Gantt({
           ref={chartRef}
           className="w-full"
           style={{
-            height: innerHeight,
+            height: innerRelevantHeight,
           }}
         >
           <Tooltip show={hoverData !== null} targetRef={chartRef}>
@@ -865,7 +872,7 @@ export function Gantt({
         >
           <List
             ref={infoBarsRef}
-            height={innerHeight}
+            height={innerRelevantHeight}
             width={infoGap}
             itemCount={seriesKeys.length}
             style={{ overflow: "hidden" }} // hide scrollbar
@@ -878,7 +885,7 @@ export function Gantt({
         <div
           ref={scrollbarRef}
           className="absolute top-0 right-0 bottom-0 overflow-y-auto"
-          style={{ height: innerHeight, width: scrollbarWidth }}
+          style={{ height: innerRelevantHeight, width: scrollbarWidth }}
           onScroll={handleScrollbarScroll}
         >
           <div className="w-px" style={{ height: seriesHeight }} />
