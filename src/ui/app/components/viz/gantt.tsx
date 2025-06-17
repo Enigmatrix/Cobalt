@@ -51,15 +51,15 @@ interface GanttProps {
   interval: Interval;
 }
 
-type TimeUnit = {
+interface TimeUnit {
   unit: "minute" | "hour" | "day";
   step: number;
-};
+}
 
-type SessionUsage = {
+interface SessionUsage {
   usage: Usage;
   session: Session;
-};
+}
 
 function getTimeUnits(start: DateTime, end: DateTime): TimeUnit {
   const diff = end.diff(start, ["days", "hours", "minutes"]).toObject();
@@ -469,13 +469,13 @@ export function Gantt({
           </div>
 
           {/* Interaction Periods' + System Events header */}
-          {(interactionPeriods || systemEvents) && (
+          {(interactionPeriods ?? systemEvents) && (
             <div className="border-b">
               <div className="flex items-center p-4 border-r h-[52px]">
                 <LaptopIcon className="w-6 h-6 ml-6" />
                 <Text className="font-semibold ml-4">Interactions</Text>
                 {/* BUG: this loading is as long as the usage loading ..????? */}
-                {(interactionPeriodsLoading || systemEventsLoading) && (
+                {(interactionPeriodsLoading ?? systemEventsLoading) && (
                   <Loader2Icon className="animate-spin ml-4" />
                 )}
               </div>
@@ -570,7 +570,7 @@ export function Gantt({
               </div>
             )}
 
-            {(interactionPeriods || systemEvents) && (
+            {(interactionPeriods ?? systemEvents) && (
               <div className="border-b">
                 {/* Interaction Periods */}
                 <div className="h-[52px] relative">

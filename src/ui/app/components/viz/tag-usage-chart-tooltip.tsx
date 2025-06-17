@@ -107,7 +107,7 @@ export const TagUsageChartTooltipContent = React.forwardRef<
       [involvedTags, payload, highlightedTagIds],
     );
 
-    const highlightedTagId = singleTagId || hoveredTagId;
+    const highlightedTagId = singleTagId ?? hoveredTagId;
     const highlightedTag = involvedTags.find(
       (tag) => tag.id === highlightedTagId,
     );

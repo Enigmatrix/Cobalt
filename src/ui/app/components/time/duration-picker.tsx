@@ -14,12 +14,12 @@ import { durationToTicks, toHumanDurationFull } from "@/lib/time";
 import type { ClassValue } from "clsx";
 import { Separator } from "@/components/ui/separator";
 
-type DurationPickerProps = {
+interface DurationPickerProps {
   className?: ClassValue;
   value: Duration | null;
   onValueChange: (dur: Duration | null) => void;
   showIcon?: boolean;
-};
+}
 
 const QUICK_DURATIONS = [
   { label: "5 mins", duration: Duration.fromObject({ minutes: 5 }) },

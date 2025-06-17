@@ -119,7 +119,7 @@ export default function Tag({ params }: Route.ComponentProps) {
   });
   const yearData = useMemo(() => {
     return new Map(
-      _(yearUsages[tag.id] || [])
+      _(yearUsages[tag.id] ?? [])
         .map(
           (appDur) =>
             [+ticksToDateTime(appDur.group), appDur.duration] as const,

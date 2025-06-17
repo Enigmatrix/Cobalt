@@ -159,7 +159,7 @@ export function systemEventToString(event: SystemEventEnum) {
     case SystemEventEnum.MonitorOff:
       return "Monitor Off";
     default:
-      throw new Error(`Unknown system event: ${event}`);
+      throw new Error(`Unknown system event: ${JSON.stringify(event)}`);
   }
 }
 

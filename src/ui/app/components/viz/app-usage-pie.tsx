@@ -175,6 +175,7 @@ export function AppUsagePieChart({
           stack: "apps",
           id: "app-" + app.id,
           labelLayout(params) {
+            // eslint-disable-next-line @typescript-eslint/dot-notation
             const model = (chart["getModel"] as () => GlobalModel)();
             const series = model.getSeriesByIndex(params.seriesIndex);
             const radiusAxis = series.getBaseAxis() as unknown as RadiusAxis;

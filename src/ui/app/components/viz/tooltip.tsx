@@ -35,8 +35,8 @@ export function Tooltip({
       if (!tooltipRef.current) return;
       const rect = tooltipRef.current.getBoundingClientRect();
       const tooltip = tooltipRef.current;
-      const deltaX = delta?.x || DELTA_X;
-      const deltaY = delta?.y || DELTA_Y;
+      const deltaX = delta?.x ?? DELTA_X;
+      const deltaY = delta?.y ?? DELTA_Y;
 
       let x = positionRef.current.x + deltaX;
       let y = positionRef.current.y + deltaY;

@@ -93,7 +93,7 @@ const Heatmap: React.FC<HeatmapProps> = ({
         date: currentDate,
         day: adjustedDay,
         week,
-        value: data.get(+currentDate) || 0,
+        value: data.get(+currentDate) ?? 0,
       });
     }
 

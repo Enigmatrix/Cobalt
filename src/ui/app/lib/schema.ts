@@ -48,7 +48,7 @@ export const alertSchema = z
   })
   .refine(
     (data) => {
-      const maxDuration: { [key: string]: Duration } = {
+      const maxDuration: Record<"daily" | "weekly" | "monthly", Duration> = {
         daily: Duration.fromObject({ days: 1 }),
         weekly: Duration.fromObject({ weeks: 1 }),
         monthly: Duration.fromObject({ days: 28 }), // smallest number of days in a month

@@ -5,7 +5,7 @@ export function useWidth(
   target: React.RefObject<HTMLElement | null>,
   initWidth?: number,
 ) {
-  const [width, setWidth] = useState(initWidth || 0);
+  const [width, setWidth] = useState(initWidth ?? 0);
 
   useLayoutEffect(() => {
     if (!target?.current) return;

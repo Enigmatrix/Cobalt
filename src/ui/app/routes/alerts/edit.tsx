@@ -65,8 +65,8 @@ export default function EditAlerts({ params }: Route.ComponentProps) {
         });
       }
 
-      updateAlert(alert, object);
-      navigate("/alerts");
+      await updateAlert(alert, object);
+      await navigate("/alerts");
     },
     [updateAlert, navigate, triggerInfo, alert],
   );
