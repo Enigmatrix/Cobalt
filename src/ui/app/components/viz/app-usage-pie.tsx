@@ -8,7 +8,7 @@ import * as echarts from "echarts";
 import _ from "lodash";
 import { Tooltip } from "@/components/viz/tooltip";
 import { cn } from "@/lib/utils";
-import { DEFAULT_ICON_SVG_URL, toDataUrl } from "@/components/app/app-icon";
+import { htmlImgElement } from "@/components/app/app-icon";
 import { AppUsageChartTooltipContent } from "@/components/viz/app-usage-chart-tooltip";
 import { TagUsageChartTooltipContent } from "@/components/viz/tag-usage-chart-tooltip";
 
@@ -217,7 +217,7 @@ export function AppUsagePieChart({
                 rotate: 0,
                 position: "middle",
                 backgroundColor: {
-                  image: toDataUrl(app.id) ?? DEFAULT_ICON_SVG_URL,
+                  image: htmlImgElement(app.id),
                 },
                 formatter: () => {
                   return `{empty|}`;
