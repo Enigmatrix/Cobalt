@@ -11,6 +11,8 @@ export function log(
   col: number,
   args: LogArg,
 ) {
+  // this is a promise, but we pretend it's synchronous
+  // eslint-disable-next-line @typescript-eslint/no-floating-promises
   invoke("log", { level, message, file, line, col, args });
 }
 
