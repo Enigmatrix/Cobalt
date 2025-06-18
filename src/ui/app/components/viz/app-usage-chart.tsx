@@ -132,11 +132,11 @@ export function AppUsageBarChart({
           label: {
             show: false,
             formatter: (params) => {
-              const seriesValues = Object.fromEntries(
-                params.seriesData.map((v) => [
-                  v.seriesId,
-                  (v.value as [number, number])[1],
-                ]),
+              const seriesValues: EntityMap<App, number> = Object.fromEntries(
+                params.seriesData.map(
+                  (v) =>
+                    [+v.seriesId!, (v.value as [number, number])[1]] as const,
+                ),
               );
               setHoverSeries(seriesValues);
               return "";

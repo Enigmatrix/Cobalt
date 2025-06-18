@@ -94,9 +94,15 @@ function AppSidebarItem({ title, url, icon }: (typeof data.navMain)[0]) {
   );
 }
 
+interface ReactRouterState {
+  idx: number;
+  // ...
+}
+
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const navigate = useNavigate();
-  const canGoBack = window.history.state && window.history.state.idx > 0;
+  const state = window.history.state as ReactRouterState | null;
+  const canGoBack = (state && state.idx > 0) ?? false;
 
   return (
     <Sidebar {...props}>

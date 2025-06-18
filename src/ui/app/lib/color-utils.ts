@@ -1,4 +1,8 @@
-type RGB = { r: number; g: number; b: number };
+interface RGB {
+  r: number;
+  g: number;
+  b: number;
+}
 import { useTheme } from "@/components/theme-provider";
 import α from "color-alpha";
 import { useEffect, useState } from "react";

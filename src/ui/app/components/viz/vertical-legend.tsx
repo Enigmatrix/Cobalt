@@ -37,14 +37,14 @@ import { VariableSizeList as List } from "react-window";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { untagged } from "@/lib/state";
 
-type ListItem = {
+interface ListItem {
   id: string;
   type: "tag" | "app" | "spacer";
   tag?: Tag;
   app?: App;
   isExpanded: boolean;
   nestingLevel: number;
-};
+}
 
 export function VerticalLegend({
   appIds,

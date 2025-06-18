@@ -49,7 +49,10 @@ export function ScoreCircle({
   return (
     <TooltipProvider>
       <Tooltip>
-        <TooltipTrigger className={cn(!hoverTooltip && "pointer-events-none")}>
+        <TooltipTrigger
+          asChild={!hoverTooltip}
+          className={cn(!hoverTooltip && "pointer-events-none")}
+        >
           <ScoreWrapper
             score={score}
             className={cn("size-3 rounded-full", className)}

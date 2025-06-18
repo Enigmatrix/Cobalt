@@ -88,7 +88,7 @@ export default function CreateAlerts() {
       }
 
       await createAlert(object);
-      navigate("/alerts");
+      await navigate("/alerts");
     },
     [createAlert, navigate, triggerInfo],
   );

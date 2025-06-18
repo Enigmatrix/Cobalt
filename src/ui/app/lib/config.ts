@@ -1,17 +1,17 @@
 import { invoke } from "@tauri-apps/api/core";
 import { Duration } from "luxon";
 
-export type ConfigDuration = {
+export interface ConfigDuration {
   secs: number;
   nanos: number;
-};
+}
 
-export type RawConfig = {
+export interface RawConfig {
   trackIncognito?: boolean;
   maxIdleDuration: ConfigDuration;
   pollDuration: ConfigDuration;
   alertDuration: ConfigDuration;
-};
+}
 
 export function toDuration(duration: ConfigDuration) {
   return Duration.fromObject({

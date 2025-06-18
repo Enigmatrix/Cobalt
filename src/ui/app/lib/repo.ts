@@ -27,11 +27,7 @@ export interface CreateTag {
   apps: Ref<App>[];
 }
 
-export type AppSessionUsages = {
-  [appId: Ref<App>]: {
-    [sessionId: Ref<Session>]: Session;
-  };
-};
+export type AppSessionUsages = Record<Ref<App>, Record<Ref<Session>, Session>>;
 
 export interface CreateAlert {
   target: Target;
@@ -71,7 +67,7 @@ interface QueryOptions {
 }
 
 function getQueryOptions(queryOptions?: QueryOptions): QueryOptions {
-  return queryOptions || {};
+  return queryOptions ?? {};
 }
 
 export async function getApps({

@@ -119,7 +119,7 @@ export function ChooseMultiApps({
           <CommandList>
             <CommandItem value="-" className="hidden" />
             {filteredApps.map((app) => {
-              const isSelected = value.indexOf(app.id) !== -1;
+              const isSelected = value.includes(app.id);
               return (
                 <CommandItem
                   key={app.id}

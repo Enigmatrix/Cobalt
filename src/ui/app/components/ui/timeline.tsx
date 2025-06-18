@@ -5,10 +5,10 @@ import { Slot } from "@radix-ui/react-slot";
 import * as React from "react";
 
 // Types
-type TimelineContextValue = {
+interface TimelineContextValue {
   activeStep: number;
   setActiveStep: (step: number) => void;
-};
+}
 
 // Context
 const TimelineContext = React.createContext<TimelineContextValue | undefined>(

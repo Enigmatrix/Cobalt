@@ -49,12 +49,12 @@ const DATAZOOM_SLIDER_X = "dataZoomSliderX";
 const DATAZOOM_INSIDE_X = "dataZoomInsideX";
 const DATAZOOM_INSIDE_Y = "dataZoomInsideY";
 
-type RectLike = {
+interface RectLike {
   x: number;
   y: number;
   width: number;
   height: number;
-};
+}
 
 interface DataZoomEvent {
   batch: DataZoomEvent[];
@@ -223,7 +223,7 @@ export function Gantt({
         expanded,
         apps,
         usagesPerAppSession,
-        !!(interactionPeriods || systemEvents),
+        !!(interactionPeriods ?? systemEvents),
         interactionInfoBarHeight,
         appInfoBarHeight,
         sessionInfoBarHeight,
@@ -691,7 +691,7 @@ export function Gantt({
           setHoverSystemEvent(null);
         }
       } else {
-        throw new Error("Unknown type: " + type);
+        throw new Error("Unknown type: " + JSON.stringify(params.data));
       }
     });
 
@@ -733,7 +733,7 @@ export function Gantt({
         <div style={style}>
           {key.type === "interactionBar" ? (
             <InteractionInfoBar
-              loading={!!(interactionPeriodsLoading || systemEventsLoading)}
+              loading={!!(interactionPeriodsLoading ?? systemEventsLoading)}
               interactionInfoBarHeight={interactionInfoBarHeight}
               key={key.type + key.id}
             />

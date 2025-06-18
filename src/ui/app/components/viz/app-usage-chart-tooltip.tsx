@@ -93,7 +93,7 @@ export const AppUsageChartTooltipContent = React.forwardRef<
       [involvedApps, payload, highlightedAppIds],
     );
 
-    const highlightedAppId = singleAppId || hoveredAppId;
+    const highlightedAppId = singleAppId ?? hoveredAppId;
     const highlightedApp = involvedApps.find(
       (app) => app.id === highlightedAppId,
     );

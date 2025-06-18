@@ -69,7 +69,7 @@ export const untagged: Tag = {
 export type EntityStore<T> = Record<Ref<T>, T | undefined>;
 export type EntityMap<T, V> = Record<Ref<T>, V | undefined>;
 
-type AppState = {
+interface AppState {
   lastRefresh: DateTime;
   apps: EntityStore<App>;
   tags: EntityStore<Tag>;
@@ -82,7 +82,7 @@ type AppState = {
   createAlert: (tag: CreateAlert) => Promise<Ref<Alert>>;
   updateAlert: (prev: Alert, next: UpdatedAlert) => Promise<void>;
   removeAlert: (tagId: Ref<Alert>) => Promise<void>;
-};
+}
 
 export const useAppState = create<AppState>((set) => {
   return {

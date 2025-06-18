@@ -11,8 +11,8 @@
     "typecheck": "react-router typegen && tsc",
     "format": "prettier --check .",
     "format:fix": "prettier --write .",
-    "lint": "eslint app/**",
-    "lint:fix": "eslint --fix app/**"
+    "lint": "eslint",
+    "lint:fix": "eslint --fix"
   },
   "dependencies": {
     "@hookform/resolvers": "^4.1.3",

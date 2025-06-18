@@ -3,14 +3,14 @@ import { setTheme as setTauriTheme } from "@tauri-apps/api/app";
 
 export type Theme = "dark" | "light" | "system";
 
-type ThemeProviderProps = {
+interface ThemeProviderProps {
   children: React.ReactNode;
-};
+}
 
-type ThemeProviderState = {
+interface ThemeProviderState {
   theme: Theme;
   setTheme: (theme: Theme) => void;
-};
+}
 
 const initialState: ThemeProviderState = {
   theme: "system",
@@ -47,7 +47,7 @@ export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
     theme,
     setTheme: (theme: Theme) => {
       localStorage.setItem(storageKey, theme);
-      setTauriTheme(theme === "system" ? null : theme); // this is async but we ignore the result
+      void setTauriTheme(theme === "system" ? null : theme); // this is async but we ignore the result
       setTheme(theme);
     },
   };

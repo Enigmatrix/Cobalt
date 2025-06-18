@@ -72,8 +72,8 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   errorLog("caught at ErrorBoundary", {
     error,
     str: error?.toString(),
-    message: (error as unknown as Record<string, unknown>)?.message,
-    stack: (error as unknown as Record<string, unknown>)?.stack,
+    message: (error as Record<string, unknown>)?.message,
+    stack: (error as Record<string, unknown>)?.stack,
   });
 
   const isDev = import.meta.env.DEV;

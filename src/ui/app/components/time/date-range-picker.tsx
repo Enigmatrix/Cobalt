@@ -21,7 +21,7 @@ import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import type { DateRange } from "react-day-picker";
 
-type DateRangePickerProps = {
+interface DateRangePickerProps {
   value: Interval | null;
   onChange: (value: Interval | null) => void;
   render?: ReactNode;
@@ -30,13 +30,13 @@ type DateRangePickerProps = {
   min?: DateTime;
   max?: DateTime;
   maxRange?: Duration;
-};
+}
 
-type QuickRange = {
+interface QuickRange {
   label: string;
   start: DateTime;
   end: DateTime;
-};
+}
 
 function generateQuickRanges(today: DateTime): QuickRange[] {
   return [
@@ -212,7 +212,7 @@ export function DateRangePicker({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        {render || (
+        {render ?? (
           <Button
             id="date"
             variant={"outline"}

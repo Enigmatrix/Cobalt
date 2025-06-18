@@ -46,7 +46,7 @@ export function HorizontalOverflowList<T>({
         (item as HTMLElement).offsetTop !== offsetTop,
     );
     setOverflowIndex(overflowIndex);
-  }, [width, ref]);
+  }, [width]);
   const [overflowIndex, setOverflowIndex] = useState(0);
   const overflowItems = useMemo(
     () => items.slice(overflowIndex),

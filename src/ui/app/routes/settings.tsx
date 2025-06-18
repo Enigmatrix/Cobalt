@@ -15,6 +15,7 @@ import {
   readConfig,
   setTrackIncognito as setTrackIncognitoFn,
 } from "@/lib/config";
+import { error } from "@/lib/log";
 
 export function Setting({
   title,
@@ -46,15 +47,23 @@ export default function Settings() {
   const [trackIncognito, setTrackIncognitoInner] = useState(false);
 
   useEffect(() => {
-    readConfig().then((config) => {
-      setTrackIncognitoInner(config.trackIncognito);
-    });
+    readConfig()
+      .then((config) => {
+        setTrackIncognitoInner(config.trackIncognito);
+      })
+      .catch((err) => {
+        error("Failed to read config", err);
+      });
   }, []);
 
   function setTrackIncognito(value: boolean) {
-    setTrackIncognitoFn(value).then(() => {
-      setTrackIncognitoInner(value);
-    });
+    setTrackIncognitoFn(value)
+      .then(() => {
+        setTrackIncognitoInner(value);
+      })
+      .catch((err) => {
+        error("Failed to set track incognito", err);
+      });
   }
 
   return (
