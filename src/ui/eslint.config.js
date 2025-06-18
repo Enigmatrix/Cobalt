@@ -8,12 +8,19 @@ const compat = new FlatCompat();
 
 /** @type {import('eslint').Linter.Config[]} */
 export default [
-  { files: ["app/**/*.{js,mjs,cjs,ts,jsx,tsx}"] },
+  {
+    ignores: ["src-tauri", "build", ".react-router", "app/components/ui"],
+  },
+  {
+    files: ["app/**/*.{js,mjs,cjs,ts,jsx,tsx}"],
+  },
   {
     languageOptions: {
       globals: globals.browser,
       parserOptions: {
-        projectService: true,
+        projectService: {
+          allowDefaultProject: ["*.js"],
+        },
         tsconfigRootDir: import.meta.dirname,
       },
     },

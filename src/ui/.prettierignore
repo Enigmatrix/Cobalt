@@ -1,3 +1,4 @@
 src-tauri
 build
 .react-router
+app/components/ui
