@@ -26,15 +26,22 @@ import {
 import { useAppState } from "@/lib/state";
 import { useCallback } from "react";
 import type { Alert, Ref } from "@/lib/entities";
+import { useAlert } from "@/hooks/use-refresh";
 
-export default function Alert({ params }: Route.ComponentProps) {
+export default function Page({ params }: Route.ComponentProps) {
   const id = +params.id as Ref<Alert>;
+  const alert = useAlert(id);
+  if (!alert) return;
+  return <AlertPage alert={alert} />;
+}
+
+function AlertPage({ alert }: { alert: Alert }) {
   const removeAlert = useAppState((state) => state.removeAlert);
   const navigate = useNavigate();
   const remove = useCallback(async () => {
     await navigate("/alerts");
-    await removeAlert(id);
-  }, [removeAlert, navigate, id]);
+    await removeAlert(alert.id);
+  }, [removeAlert, navigate, alert.id]);
 
   return (
     <>
@@ -50,7 +57,7 @@ export default function Alert({ params }: Route.ComponentProps) {
             </BreadcrumbItem>
             <BreadcrumbSeparator className="hidden md:block" />
             <BreadcrumbItem>
-              <BreadcrumbPage>Alert ID {id}</BreadcrumbPage>
+              <BreadcrumbPage>Alert ID {alert.id}</BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
@@ -64,7 +71,7 @@ export default function Alert({ params }: Route.ComponentProps) {
               <div className="flex items-center gap-4">
                 <div className="flex-1" />
                 <Button variant="outline" size="icon" asChild>
-                  <NavLink to={`/alerts/edit/${id}`}>
+                  <NavLink to={`/alerts/edit/${alert.id}`}>
                     <Edit2Icon />
                   </NavLink>
                 </Button>

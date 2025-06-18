@@ -47,9 +47,14 @@ import { Gantt } from "@/components/viz/gantt2";
 import { ChooseTag } from "@/components/tag/choose-tag";
 import { ScoreCircle } from "@/components/tag/score";
 
-export default function App({ params }: Route.ComponentProps) {
-  const id = +params.id;
-  const app = useApp(id as Ref<App>)!;
+export default function Page({ params }: Route.ComponentProps) {
+  const id = +params.id as Ref<App>;
+  const app = useApp(id);
+  if (!app) return;
+  return <AppPage app={app} />;
+}
+
+function AppPage({ app }: { app: App }) {
   const updateApp = useAppState((state) => state.updateApp);
   const [color, setColorInner] = useState(app.color);
   const debouncedUpdateColor = useDebouncedCallback(async (color: string) => {

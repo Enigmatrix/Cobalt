@@ -54,9 +54,14 @@ import { Gantt } from "@/components/viz/gantt2";
 import { ChooseMultiApps } from "@/components/app/choose-multi-apps";
 import { ScoreBadge, ScoreEdit } from "@/components/tag/score";
 
-export default function Tag({ params }: Route.ComponentProps) {
-  const id = +params.id;
-  const tag = useTag(id as Ref<Tag>)!;
+export default function Page({ params }: Route.ComponentProps) {
+  const id = +params.id as Ref<Tag>;
+  const tag = useTag(id);
+  if (!tag) return;
+  return <TagPage tag={tag} />;
+}
+
+function TagPage({ tag }: { tag: Tag }) {
   const updateTag = useAppState((state) => state.updateTag);
   const removeTag = useAppState((state) => state.removeTag);
   const updateTagApps = useAppState((state) => state.updateTagApps);
