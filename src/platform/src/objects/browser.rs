@@ -130,7 +130,7 @@ impl BrowserDetector {
         // when an old tab is loaded again from energy saver (so title is set, but no document is loaded).
 
         // From Omnibox, we get a URL like this:
-        // "www.google.com/search?q=test". note that proto is not shown.
+        // "google.com/search?q=test". note that proto is not shown.
         // for chrome://, data:XXX and other non http/https links, it's there tho e.g. chrome://newtab.
 
         let url = match Url::parse(&search_value) {

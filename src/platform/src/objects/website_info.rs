@@ -38,12 +38,28 @@ impl fmt::Display for BaseWebsiteUrl {
 }
 
 impl WebsiteInfo {
-    /// Convert a URL to a base URL
+    /// Convert a URL to a base URL. If http/https, remove www. from the host.
+    /// else, if a valid url, try to make it as 'basic' as possible.
     pub fn url_to_base_url(url: &str) -> Result<BaseWebsiteUrl> {
-        Ok(if let Ok(url) = Url::parse(url) {
+        Ok(if let Ok(mut url) = Url::parse(url) {
+            // if password is present, remove it
+            if url.password().is_some() {
+                // ignore any error that pops out
+                let _ = url.set_password(Some("<password>"));
+            }
+
             if url.scheme() == "https" || url.scheme() == "http" {
-                BaseWebsiteUrl::Http(url.origin().unicode_serialization())
+                if let Some(host) = url.host_str() {
+                    let host = host.to_string();
+                    if let Some(host) = host.strip_prefix("www.") {
+                        url.set_host(Some(host))?;
+                    }
+                }
+                let origin = url.origin().unicode_serialization();
+                BaseWebsiteUrl::Http(origin)
             } else {
+                url.set_fragment(None);
+                url.set_query(None);
                 BaseWebsiteUrl::NonHttp(url.to_string())
             }
         } else {
