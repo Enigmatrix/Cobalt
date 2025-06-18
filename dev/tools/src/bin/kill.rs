@@ -3,12 +3,13 @@
 use clap::{ArgGroup, Parser};
 use dialoguer::theme::ColorfulTheme;
 use dialoguer::Select;
-use platform::objects::{Process, ProcessId};
+use platform::objects::{Process, ProcessId, Window};
 use tools::filters::{
     match_running_aumids, match_running_processes, ProcessDetails, ProcessFilter, WindowFilter,
 };
 use util::error::Result;
 use util::{config, future as tokio, Target};
+use windows::Win32::Foundation::HWND;
 
 #[derive(Parser, Debug, Clone)]
 #[command(author, version, about, long_about = None)]
@@ -28,6 +29,10 @@ struct Args {
     /// Application User Model ID to filter by
     #[arg(long, conflicts_with = "process_filter")]
     aumid: Option<Option<String>>,
+
+    /// Window handle in hexadecimal
+    #[arg(long)]
+    handle: Option<String>,
 }
 
 #[tokio::main(flavor = "current_thread")]
@@ -38,6 +43,14 @@ async fn main() -> Result<()> {
     platform::setup()?;
 
     let args = Args::parse();
+    if let Some(handle) = args.handle {
+        let handle = u32::from_str_radix(&handle, 16)?;
+        let window = Window::new(HWND(handle as _));
+
+        let ptid = window.ptid()?;
+        Process::new_killable(ptid.pid)?.kill(None)?;
+        return Ok(());
+    }
     if let Some(aumid) = args.aumid {
         let aumids = match_running_aumids(&WindowFilter {
             aumid,
