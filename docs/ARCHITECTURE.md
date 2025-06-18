@@ -121,7 +121,7 @@ The React-based UI for visualizing usage info and configuring the system.
 
 The SQLite database stores all tracked data and configuration. Key entities are:
 
-- **App**: An actual app on the system. Uniquely identified by its AppIdentity, but we use an Id as the Primary Key for performance reasons. Icons are stored as blobs. Notably, when an App is inserted not all fields might be initialized, there will be a slight delay where the Engine finds the actual details to fill in using Resolver. But the insertion happens first since we need to insert the session and usage as well.
+- **App**: An actual app on the system. Uniquely identified by its AppIdentity, but we use an Id as the Primary Key for performance reasons. Icons are stored in the filesystem, in `%LOCALAPPDATA%\me.enigmatrix.cobalt\icons\*` in release mode and `.\icons\*` in debug mode. Notably, when an App is inserted not all fields might be initialized, there will be a slight delay where the Engine finds the actual details to fill in using Resolver. But the insertion happens first since we need to insert the session and usage as well.
 - **Session**: To keep track of an app and its window titles. A session can be reset if the app is closed or system shutdown. Titles are not unique.
 - **Usage**: A single, continuous usage of an app during a session. Idling might occur, but that is kept track separately using interaction periods.
 - **InteractionPeriod**: A period of interaction (mouse clicks / keystrokes). Once the user spends time idle, an entry is made that ends when the idle begins.
@@ -144,7 +144,6 @@ erDiagram
         int_nullable    tag_id FK
         int             identity_tag     UK "UNIQUE(identity_tag, identity_text0)"
         text            identity_text0   UK "UNIQUE(identity_tag, identity_text0)"
-        blob_nullable   icon
         int             created_at
         int_nullable    initialized_at "set if details are set"
         int             updated_at
