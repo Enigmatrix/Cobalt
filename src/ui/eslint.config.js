@@ -24,4 +24,9 @@ export default [
   ...tseslint.configs.stylisticTypeChecked,
   pluginReact.configs.flat["jsx-runtime"],
   ...compat.extends("plugin:react-hooks/recommended"),
+  {
+    rules: {
+      "@typescript-eslint/no-misused-promises": "off",
+    },
+  },
 ];
