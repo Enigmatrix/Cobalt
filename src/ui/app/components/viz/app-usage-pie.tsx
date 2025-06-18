@@ -217,7 +217,7 @@ export function AppUsagePieChart({
                 rotate: 0,
                 position: "middle",
                 backgroundColor: {
-                  image: toDataUrl(app.icon) ?? DEFAULT_ICON_SVG_URL,
+                  image: toDataUrl(app.id) ?? DEFAULT_ICON_SVG_URL,
                 },
                 formatter: () => {
                   return `{empty|}`;

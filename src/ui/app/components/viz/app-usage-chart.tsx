@@ -244,7 +244,7 @@ export function AppUsageBarChart({
             show: !singleAppId,
             position: "inside",
             backgroundColor: {
-              image: toDataUrl(app.icon) ?? DEFAULT_ICON_SVG_URL,
+              image: toDataUrl(app.id) ?? DEFAULT_ICON_SVG_URL,
             },
             formatter: () => {
               return `{empty|}`;

@@ -248,7 +248,7 @@ function AppListItem({
         "bg-card text-card-foreground hover:bg-muted/75 border-border border",
       )}
     >
-      <AppIcon buffer={app.icon} className="mx-2 h-10 w-10 shrink-0" />
+      <AppIcon id={app.id} className="mx-2 h-10 w-10 shrink-0" />
 
       <div className="flex flex-col min-w-0">
         <div className="inline-flex items-center gap-2">
