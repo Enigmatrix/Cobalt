@@ -302,7 +302,7 @@ function TagListItem({
             start={start}
             end={end}
             period="hour"
-            className="w-48 flex-none aspect-none h-20 max-lg:hidden"
+            className="w-48 flex-none aspect-none h-20"
           />
 
           <div className="flex py-2 rounded-md lg:min-w-20">
