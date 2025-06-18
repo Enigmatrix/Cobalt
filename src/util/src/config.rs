@@ -127,6 +127,16 @@ impl Config {
         Self::config_path("logs")
     }
 
+    /// Returns the path to the icons directory
+    pub fn icons_dir() -> Result<String> {
+        let path = Self::config_path("icons")?;
+        let path = std::path::Path::new(&path);
+        if !path.exists() {
+            std::fs::create_dir(path)?;
+        }
+        Ok(std::path::absolute(path)?.to_string_lossy().to_string())
+    }
+
     /// Engine Log filter (tracing)
     pub fn engine_log_filter(&self) -> &str {
         &self.engine_log_filter

@@ -24,8 +24,6 @@ pub struct App {
     #[sqlx(flatten)]
     /// Unique identity of an [App]
     pub identity: AppIdentity,
-    /// Icon, in bytes
-    pub icon: Option<Vec<u8>>,
     /// Link to [Tag]
     pub tag_id: Option<Ref<Tag>>,
     /// Created at
