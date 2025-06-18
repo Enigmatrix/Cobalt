@@ -29,7 +29,7 @@ We use cargo workspaces to manage the project. However, instead of declaring the
 
 1. Install Rust toolchain (nightly channel using [rustup](https://rustup.rs/))
 2. Install Bun (for UI development, see [Bun](https://bun.sh/))
-4. Install Visual Studio Build Tools with Windows SDK (for Win32 development - see Rust docs)
+3. Install Visual Studio Build Tools with Windows SDK (for Win32 development - see Rust docs)
 
 ### Development Commands
 
@@ -59,7 +59,6 @@ The data inside is old, you will need to use `Update Last Usage to Now` and then
 
 You can also use this page to test new features and UI changes before merging them into the main branch.
 
-
 Format and Lint code periodically to keep the codebase clean:
 
 ```bash
@@ -80,10 +79,8 @@ Log levels can be configured in `appsettings.json` and `dev/appsettings.Debug.js
 {
   "EngineLogFilter": "Info",
   "UiLogFilter": "Info",
-
    ...
 }
-
 ```
 
 Available levels: `Trace`, `Debug`, `Info`, `Warn`, `Error`.
@@ -143,7 +140,6 @@ The Cobalt application is bundled using Tauri's bundler, which creates MSI insta
 
 Configuration is in `src/ui/src-tauri/tauri.conf.json` and `src/ui/src-tauri/tauri.conf.release.json`:
 
-
 To build distribution packages:
 ```bash
 bun build
@@ -157,7 +153,6 @@ Output locations:
 The Windows installer is built using WiX Toolset, which is integrated with Tauri.
 We mostly use the template Tauri uses, but modify some of it. Additional files (like WiX fragments)
 are in `src/ui/src-tauri/installer/`.
-
 
 ### Installation Process
 

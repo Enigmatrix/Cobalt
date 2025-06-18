@@ -81,7 +81,6 @@ Key responsibilities:
 
 Platform-specific objects are defined in [platform/src/objects/mod.rs](/src/platform/src/objects/mod.rs), like `Window`, `Process` and `Timestamp`. There is liberal use of `unsafe` here, as we are interfacing with the OS and need to handle pointers and memory allocation. 
 
-
 ### Objects
 
 Platform-specific objects like Windows, Processes, and Timestamps are defined in `src/platform/src/objects/mod.rs`.
@@ -97,7 +96,6 @@ We have our own [Buffer](/src/platform/src/buf.rs) trait that boils down to a `&
 
 Errors are defined in [/src/platform/src/errors.rs](/src/platform/src/error.rs) and are used throughout the platform layer.
 There are two types of errors: `Win32Error` and `NtError` (Win32 `GetLastError` and `NTSTATUS` error codes, respectively). We don't need to represent `HRESULT` errors as they are already handled by `windows-rs`. We also have `win32!` macros to handle Win32 operations and `adapt_size!` when we need to repeat operations until the size is correct.
-
 
 ## Data Layer
 
