@@ -294,18 +294,14 @@ function TagSelect({
       className={cn("whitespace-nowrap", className)}
     >
       <NavLink to={`/tags/${tagId}`} className="min-w-0 flex items-center">
-        <Text className="max-w-32">{tag.name}</Text>
+        <Text className="max-w-32 ml-1">{tag.name}</Text>
         <ScoreCircle score={tag.score} className="ml-2" />
       </NavLink>
       <ChooseTag
         value={tagId}
         onValueChanged={setTagId}
         render={() => (
-          <Button
-            size="icon"
-            variant="ghost"
-            className="p-1 ml-2 w-auto h-auto"
-          >
+          <Button size="icon" variant="ghost" className="p-1 w-auto h-auto">
             <ChevronsUpDown />
           </Button>
         )}

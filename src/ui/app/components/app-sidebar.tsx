@@ -75,7 +75,7 @@ function AppSidebarItem({ title, url, icon }: (typeof data.navMain)[0]) {
   const isActive = url === pathname;
   return (
     <SidebarMenuItem key={title}>
-      <SidebarMenuButton asChild isActive={isActive} className="py-2 px-0">
+      <SidebarMenuButton asChild isActive={isActive} className="px-0">
         <NavLink
           to={url}
           className="text-lg inline-flex items-center rounded-none"
