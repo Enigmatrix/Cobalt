@@ -138,7 +138,7 @@ export function ChooseMultiApps({
                     <CheckIcon className="h-4 w-4" />
                   </div>
                   <AppIcon
-                    buffer={app.icon}
+                    appIcon={app.icon}
                     className="mr-2 h-4 w-4 text-muted-foreground"
                   />
                   <Text>{app.name}</Text>

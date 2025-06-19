@@ -156,7 +156,7 @@ function AlertListItem({ alert }: { alert: Alert }) {
       <div className="h-20 flex items-center gap-2 p-4 @container">
         {alert.target.tag === "app" && app ? (
           <>
-            <AppIcon buffer={app.icon} className="mx-2 h-10 w-10 shrink-0" />
+            <AppIcon appIcon={app.icon} className="mx-2 h-10 w-10 shrink-0" />
 
             <div className="flex flex-col min-w-0">
               <div className="inline-flex items-center gap-2">

@@ -1,36 +1,51 @@
 import { cn } from "@/lib/utils";
 import { CircleHelp } from "lucide-react";
-import { useMemo } from "react";
-import { Buffer } from "buffer";
+import { useMemo, useState } from "react";
 import type { ClassValue } from "clsx";
 import { CircleHelp as CircleHelpStatic } from "lucide-static";
+import { convertFileSrc } from "@tauri-apps/api/core";
+import { iconsDir } from "@/lib/state";
+import normalize from "path-normalize";
 
 export const DEFAULT_ICON_SVG_URL = "data:image/svg+xml," + CircleHelpStatic;
 
-export function toDataUrl(buffer?: Buffer) {
-  return buffer
-    ? "data:;base64," + Buffer.from(buffer).toString("base64")
-    : undefined;
+function appIconUrl(appIcon?: string) {
+  if (!appIcon) return null;
+  const fileName = normalize(appIcon);
+  return convertFileSrc(`${iconsDir}/${fileName}`);
+}
+
+export function htmlImgElement(appIcon?: string): HTMLImageElement {
+  const img = new Image();
+  img.src = appIconUrl(appIcon) ?? DEFAULT_ICON_SVG_URL;
+  img.onerror = () => {
+    img.src = DEFAULT_ICON_SVG_URL;
+    img.onerror = null;
+  };
+  return img;
 }
 
 export default function AppIcon({
-  buffer,
+  appIcon,
   className,
 }: {
-  buffer?: Buffer;
+  appIcon: string;
   className?: ClassValue;
 }) {
+  const [hasError, setHasError] = useState(false);
   const icon = useMemo(() => {
-    const dataUrl = toDataUrl(buffer);
-    return dataUrl ? `url(${dataUrl})` : undefined;
-  }, [buffer]);
+    return appIconUrl(appIcon);
+  }, [appIcon]);
 
-  return icon ? (
-    <div
-      className={cn("bg-no-repeat bg-center bg-cover", className)}
-      style={{ backgroundImage: icon }}
+  if (!icon || hasError) {
+    return <CircleHelp className={cn(className)} />;
+  }
+
+  return (
+    <img
+      className={cn(className)}
+      src={icon}
+      onError={() => setHasError(true)}
     />
-  ) : (
-    <CircleHelp className={cn(className)} />
   );
 }

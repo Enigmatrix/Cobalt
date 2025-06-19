@@ -254,7 +254,7 @@ impl AppUpdater {
         .bind(&app.description)
         .bind(&app.company)
         .bind(&app.color)
-        .bind(app.icon.as_ref())
+        .bind(&app.icon)
         .bind(ts.now().to_ticks())
         .bind(ts.now().to_ticks())
         .bind(&app.id)

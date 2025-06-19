@@ -245,7 +245,7 @@ async fn update_app() -> Result<()> {
         .await?;
 
     let mut updater = AppUpdater::new(writer.db)?;
-    let icon = [42, 233].repeat(50); // 50 * 2 = 100 bytes length
+    let icon = "icon1".to_string();
     let mut app = App {
         id: Ref::new(1),
         name: "name".to_string(),
@@ -272,7 +272,6 @@ async fn update_app() -> Result<()> {
     struct Res {
         #[sqlx(flatten)]
         app: App,
-        icon: Vec<u8>,
     }
 
     let res: Vec<Res> = query_as("SELECT * FROM apps")
@@ -280,35 +279,35 @@ async fn update_app() -> Result<()> {
         .await?;
 
     app.updated_at = 500;
-    assert_eq!(vec![Res { app, icon }], res);
+    assert_eq!(vec![Res { app }], res);
     Ok(())
 }
 
 async fn insert_app_raw(
     db: &mut Database,
-    a1: bool,
-    a2: &str,
-    a3: &str,
-    a4: &str,
-    a5: &str,
-    atag: Option<i64>,
-    a6: u32,
-    a7: &str,
-    a8: Option<Vec<u8>>,
+    found: bool,
+    name: &str,
+    description: &str,
+    company: &str,
+    color: &str,
+    tag_id: Option<i64>,
+    identity_tag: u32,
+    identity_text0: &str,
+    icon: Option<String>,
     created_at: i64,
     initialized_at: Option<i64>,
     updated_at: i64,
 ) -> Result<Ref<App>> {
     let res = query("INSERT INTO apps VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
-        .bind(a1)
-        .bind(a2)
-        .bind(a3)
-        .bind(a4)
-        .bind(a5)
-        .bind(atag)
-        .bind(a6)
-        .bind(a7)
-        .bind(a8)
+        .bind(found)
+        .bind(name)
+        .bind(description)
+        .bind(company)
+        .bind(color)
+        .bind(icon)
+        .bind(tag_id)
+        .bind(identity_tag)
+        .bind(identity_text0)
         .bind(created_at)
         .bind(initialized_at)
         .bind(updated_at)

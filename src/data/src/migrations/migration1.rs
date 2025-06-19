@@ -39,10 +39,10 @@ impl Migration for Migration1 {
                 description                     TEXT,
                 company                         TEXT,
                 color                           TEXT,
+                icon                            TEXT,
                 tag_id                          INTEGER REFERENCES tags(id) ON DELETE SET NULL,
                 identity_tag                    INTEGER NOT NULL,
                 identity_text0                  TEXT NOT NULL,
-                icon                            BLOB,
                 created_at                      INTEGER NOT NULL,
                 initialized_at                  INTEGER,
                 updated_at                      INTEGER NOT NULL

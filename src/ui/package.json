@@ -50,6 +50,7 @@
     "lucide-static": "^0.477.0",
     "luxon": "^3.5.0",
     "parse-duration": "^2.1.2",
+    "path-normalize": "^6.0.13",
     "pretty-ms": "^9.2.0",
     "react": "^19.0.0",
     "react-colorful": "^5.6.1",

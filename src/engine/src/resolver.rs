@@ -1,7 +1,11 @@
+use std::path::Path;
+
 use data::db::{AppUpdater, DatabasePool};
 use data::entities::{App, AppIdentity, Ref};
 use platform::objects::{AppInfo, WebsiteInfo};
+use util::config::Config;
 use util::error::Result;
+use util::future::fs;
 use util::tracing::{info, warn};
 
 /// Resolves application information asynchronously.
@@ -43,17 +47,31 @@ impl AppInfoResolver {
         let db = db_pool.get_db().await?;
         let mut updater = AppUpdater::new(db)?;
 
+        // Store icon in filesystem if present
+        let icon = if let Some(icon) = app_info.icon {
+            let icons_dir = Config::icons_dir()?;
+            let id = app.0.to_string();
+            let ext = icon.deduce_ext();
+            let file_name = format!("{}.{}", id, ext.unwrap_or("bin".to_string()));
+            let icon_path = Path::new(&icons_dir).join(&file_name);
+            fs::write(&icon_path, icon.data).await?;
+            Some(file_name)
+        } else {
+            None
+        };
+
         let app = App {
             id: app,
             name: app_info.name,
             description: app_info.description,
             company: app_info.company,
             color: app_info.color,
+            icon,
             identity,
             tag_id: None,
-            icon: app_info.logo,
             ..Default::default()
         };
+
         let now = platform::objects::Timestamp::now();
         updater.update_app(&app, now).await?;
         Ok(())

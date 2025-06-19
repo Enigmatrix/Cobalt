@@ -262,7 +262,7 @@ export function VerticalLegend({
               className="w-1 h-4 shrink-0 rounded-sm"
               style={{ backgroundColor: app.color }}
             />
-            <AppIcon buffer={app.icon} className="h-4 w-4 shrink-0" />
+            <AppIcon appIcon={app.icon} className="h-4 w-4 shrink-0" />
             <Text className="text-sm text-muted-foreground">{app.name}</Text>
           </div>
         );

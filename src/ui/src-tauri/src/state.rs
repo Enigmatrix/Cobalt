@@ -2,14 +2,17 @@ use data::db::repo::Repository;
 use data::db::DatabasePool;
 use serde::{Deserialize, Serialize};
 use tauri::async_runtime::RwLock;
+use tauri::State;
 use util::config::{get_config, Config};
-use util::error::*;
+use util::error::Result;
+use util::tracing;
 
-use crate::error::*;
+use crate::error::AppResult;
 
-#[tauri::command]
 /// Initialize the app state. Should only be called once
-pub async fn init_state(state: tauri::State<'_, AppState>) -> AppResult<()> {
+#[tauri::command]
+#[tracing::instrument(err, skip(state))]
+pub async fn init_state(state: State<'_, AppState>) -> AppResult<()> {
     let mut state = state.write().await;
     if let &Initable::Init(_) = &*state {
         // do not reinit
@@ -55,7 +58,7 @@ impl AppStateInner {
     /// Gets the repo with options
     pub async fn get_repo(&self) -> Result<Repository> {
         let db = self.db_pool.get_db().await?;
-        Ok(Repository::new(db)?)
+        Repository::new(db)
     }
 
     /// Shutdown the app state

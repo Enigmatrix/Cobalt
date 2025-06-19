@@ -970,7 +970,7 @@ function AppInfoBar({
         ) : (
           <ChevronRight size={20} className="flex-shrink-0" />
         )}
-        <AppIcon buffer={app.icon} className="ml-2 w-6 h-6 shrink-0" />
+        <AppIcon appIcon={app.icon} className="ml-2 w-6 h-6 shrink-0" />
         <Text className="font-semibold ml-4">{app.name}</Text>
       </div>
       <div className="h-px bg-border absolute bottom-[-0.5px] left-0 right-0" />

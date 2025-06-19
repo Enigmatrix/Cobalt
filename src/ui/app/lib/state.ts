@@ -25,18 +25,25 @@ import { info } from "@/lib/log";
 import { produce } from "immer";
 import _ from "lodash";
 import { getTheme } from "@/components/theme-provider";
+import { getIconsDir } from "@/lib/config";
 
 export async function initState() {
   const theme = getTheme();
-  await setTheme(theme === "system" ? null : theme);
 
-  // init rust-side state
-  await invoke("init_state");
-  await refresh();
+  await Promise.all([
+    setTheme(theme === "system" ? null : theme),
+    invoke("init_state"), // init rust-side state
+  ]);
+
+  const [iconsDirOut] = await Promise.all([getIconsDir(), refresh()]);
+  iconsDir = iconsDirOut;
+
   if (import.meta.env.PROD) {
     checkForUpdatesBackground();
   }
 }
+
+export let iconsDir: string;
 
 export async function refresh() {
   const now = DateTime.now();
