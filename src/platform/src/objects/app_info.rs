@@ -23,8 +23,8 @@ pub struct AppInfo {
     pub company: String,
     /// Color
     pub color: String,
-    /// Logo as bytes
-    pub logo: Option<Vec<u8>>,
+    /// Icon as bytes
+    pub icon: Option<Vec<u8>>,
 }
 
 /// Image size for Win32 apps
@@ -42,7 +42,7 @@ impl AppInfo {
             description: file.to_string(),
             company: "".to_string(),
             color: random_color(),
-            logo: None,
+            icon: None,
         }
     }
 
@@ -52,10 +52,10 @@ impl AppInfo {
 
         let mut fv = FileVersionInfo::new(path)?;
 
-        let logo = Self::win32_logo(&file)
+        let icon = Self::win32_icon(&file)
             .await
             .map(Some)
-            .with_context(|| format!("get win32 logo for {path:?}"))
+            .with_context(|| format!("get win32 icon for {path:?}"))
             .warn();
 
         // yes, this is swapper, this is surprisingly more accurate.
@@ -72,7 +72,7 @@ impl AppInfo {
             description,
             company: fv.query_value("CompanyName").warn(),
             color: random_color(),
-            logo,
+            icon,
         })
     }
 
@@ -81,10 +81,10 @@ impl AppInfo {
         let app_info = UWPAppInfo::GetFromAppUserModelId(&aumid.into())?;
         let display_info = app_info.DisplayInfo()?;
         let package = app_info.Package()?;
-        let logo = Self::uwp_logo(&display_info)
+        let icon = Self::uwp_icon(&display_info)
             .await
             .map(Some)
-            .with_context(|| format!("get uwp logo for {aumid:?}"))
+            .with_context(|| format!("get uwp icon for {aumid:?}"))
             .warn();
 
         Ok(AppInfo {
@@ -92,44 +92,44 @@ impl AppInfo {
             description: display_info.Description()?.to_string_lossy(),
             company: package.PublisherDisplayName()?.to_string_lossy(),
             color: random_color(),
-            logo,
+            icon,
         })
     }
 
-    async fn win32_logo(file: &AgileReference<StorageFile>) -> Result<Vec<u8>> {
-        let logo = file
+    async fn win32_icon(file: &AgileReference<StorageFile>) -> Result<Vec<u8>> {
+        let icon = file
             .resolve()?
             .GetThumbnailAsyncOverloadDefaultOptions(ThumbnailMode::SingleItem, WIN32_IMAGE_SIZE)?;
         let (size, reader) = {
-            let logo = logo.await?;
-            let size = logo.Size()? as usize;
-            let reader = DataReader::CreateDataReader(&logo)?;
+            let icon = icon.await?;
+            let size = icon.Size()? as usize;
+            let reader = DataReader::CreateDataReader(&icon)?;
             (size, reader)
         };
         reader.LoadAsync(size as u32)?.await?;
-        let mut logo = vec![0u8; size];
-        reader.ReadBytes(&mut logo)?;
-        Ok(logo)
+        let mut icon = vec![0u8; size];
+        reader.ReadBytes(&mut icon)?;
+        Ok(icon)
     }
 
-    async fn uwp_logo(display_info: &AppDisplayInfo) -> Result<Vec<u8>> {
+    async fn uwp_icon(display_info: &AppDisplayInfo) -> Result<Vec<u8>> {
         let (size, reader) = {
-            let logo = display_info
+            let icon = display_info
                 .GetLogo(Size {
                     Width: UWP_IMAGE_SIZE,
                     Height: UWP_IMAGE_SIZE,
                 })?
                 .OpenReadAsync()?
                 .await?;
-            let size = logo.Size()? as usize;
-            let reader = DataReader::CreateDataReader(&logo)?;
+            let size = icon.Size()? as usize;
+            let reader = DataReader::CreateDataReader(&icon)?;
             (size, reader)
         };
 
         reader.LoadAsync(size as u32)?.await?;
-        let mut logo = vec![0u8; size];
-        reader.ReadBytes(&mut logo)?;
-        Ok(logo)
+        let mut icon = vec![0u8; size];
+        reader.ReadBytes(&mut icon)?;
+        Ok(icon)
     }
 }
 
@@ -162,7 +162,7 @@ mod tests {
         assert_eq!("Notepad", app_info.name);
         assert_eq!("Microsoft® Windows® Operating System", app_info.description);
         assert_eq!("Microsoft Corporation", app_info.company);
-        assert_ne!(0, app_info.logo.unwrap().len());
+        assert_ne!(0, app_info.icon.unwrap().len());
         Ok(())
     }
 
@@ -173,7 +173,7 @@ mod tests {
         assert_eq!("Narrator", app_info.name);
         assert_eq!("Narrator Home", app_info.description);
         assert_eq!("Microsoft", app_info.company);
-        assert_ne!(0, app_info.logo.unwrap().len());
+        assert_ne!(0, app_info.icon.unwrap().len());
         Ok(())
     }
 }
