@@ -18,6 +18,9 @@ export const PERIODS: Period[] = [
   "year",
 ] as const;
 
+export const TICKS_PER_MILLISECOND = 10_000;
+export const TICKS_EPOCH_DIFF = 62_135_596_800 * 1_000; // 01-01-0001 00:00:00 to 1970-01-01 00:00:00 in milliseconds
+
 export function toHumanDuration(
   ticks: number,
   showSymbolForZero = true,
@@ -25,7 +28,7 @@ export function toHumanDuration(
 ): string {
   return ticks === 0 && showSymbolForZero
     ? symbolForZero
-    : humanizeDuration(ticks / 10_000, {
+    : humanizeDuration(ticks / TICKS_PER_MILLISECOND, {
         unitCount: 2,
         hideYear: true,
       });
@@ -38,7 +41,7 @@ export function toHumanDurationFull(
 ): string {
   return ticks === 0 && showSymbolForZero
     ? symbolForZero
-    : humanizeDuration(ticks / 10_000, {
+    : humanizeDuration(ticks / TICKS_PER_MILLISECOND, {
         hideYear: true,
       });
 }
@@ -48,23 +51,23 @@ export function dateTimeToTicks(dt: DateTime): number {
 }
 
 export function unixMillisToTicks(ts: number): number {
-  return (ts + 62_135_596_800_000) * 10_000;
+  return (ts + TICKS_EPOCH_DIFF) * TICKS_PER_MILLISECOND;
 }
 
 export function ticksToUnixMillis(ticks: number): number {
-  return ticks / 10_000 - 62_135_596_800_000;
+  return ticks / TICKS_PER_MILLISECOND - TICKS_EPOCH_DIFF;
 }
 
 export function durationToTicks(ts: Duration): number {
-  return ts.toMillis() * 10_000;
+  return ts.toMillis() * TICKS_PER_MILLISECOND;
 }
 
 export function ticksToDuration(ts: number): Duration {
-  return Duration.fromMillis(ts / 10_000);
+  return Duration.fromMillis(ts / TICKS_PER_MILLISECOND);
 }
 
 export function ticksToDateTime(ticks: number): DateTime {
-  return DateTime.fromMillis(ticks / 10_000 - 62_135_596_800_000);
+  return DateTime.fromMillis(ticks / TICKS_PER_MILLISECOND - TICKS_EPOCH_DIFF);
 }
 
 export function periodToDuration(period: Period): Duration {
