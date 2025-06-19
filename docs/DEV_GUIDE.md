@@ -85,8 +85,8 @@ Log levels can be configured in `appsettings.json` and `dev/appsettings.Debug.js
 
 Available levels: `Trace`, `Debug`, `Info`, `Warn`, `Error`.
 
-Logs are output to the console and log files during development. Log files are stored in `src/ui/src-tauri/logs/` directory for UI, and
-the current directory + `logs/` for Engine. In prod it's output to `%LOCALAPPDATA%/me.enigmatrix.cobalt/logs/`.
+Logs are output to the console and log files during development. Log files are stored in
+the current directory + `logs/` for Engine in dev mode. In prod it's output to `%LOCALAPPDATA%/me.enigmatrix.cobalt/logs/`.
 
 ### Utils
 

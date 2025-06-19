@@ -133,6 +133,6 @@ export async function getSystemEvents({
 
 1. Use the Developer Tools in the application (accessible via `F12` in development mode) to inspect network requests, console output, and React component state.
 
-1. Logs are at `src/ui/src-tauri/logs/` for dev.
+1. Logs are at `logs/` for dev.
 
 1. Console output is not piped into logs, so use the Developer Tools for that.
