@@ -5,7 +5,7 @@ use scraper::{Html, Selector};
 use util::error::{bail, Context, Result};
 use util::tracing::ResultTraceExt;
 
-use super::{random_color, AppInfo};
+use super::{random_color, AppInfo, Icon};
 
 /// Information about a Website
 pub struct WebsiteInfo {
@@ -15,8 +15,8 @@ pub struct WebsiteInfo {
     pub description: String,
     /// Color
     pub color: String,
-    /// Icon as bytes
-    pub icon: Option<Vec<u8>>,
+    /// Icon
+    pub icon: Option<Icon>,
 }
 
 /// Website URL down to origin
@@ -236,10 +236,37 @@ impl WebsiteInfo {
     }
 
     /// Get the icon of the website
-    pub async fn get_icon(client: &Client, icon_url: Url) -> Result<Vec<u8>> {
-        let response = Self::modify_request(client.get(icon_url)).send().await?;
+    pub async fn get_icon(client: &Client, icon_url: Url) -> Result<Icon> {
+        let ext = Self::get_icon_ext(&icon_url);
+
+        let response = Self::modify_request(client.get(icon_url.clone()))
+            .send()
+            .await?;
+        if !response.status().is_success() {
+            bail!(
+                "failed to get website icon for {} with status {}",
+                icon_url,
+                response.status()
+            );
+        }
+
+        let mime = response.headers().get("Content-Type").cloned();
         let bytes = response.bytes().await?;
-        Ok(bytes.to_vec())
+
+        let icon = Icon {
+            data: bytes.to_vec(),
+            ext,
+            mime: mime.and_then(|s| s.to_str().ok().map(|s| s.to_string())),
+        };
+        Ok(icon)
+    }
+
+    /// Get the extension of the icon
+    pub fn get_icon_ext(icon_url: &Url) -> Option<String> {
+        let file_name = icon_url.path_segments()?.next_back()?; // last segment
+        let file_path = std::path::Path::new(file_name);
+        let ext = file_path.extension()?;
+        Some(ext.to_string_lossy().to_string())
     }
 }
 

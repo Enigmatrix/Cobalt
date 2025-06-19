@@ -48,10 +48,10 @@ impl AppInfoResolver {
         let mut updater = AppUpdater::new(db)?;
 
         // Store icon in filesystem if present
-        let icon = if let Some(icon_data) = app_info.icon {
+        let icon = if let Some(icon) = app_info.icon {
             let icons_dir = Config::icons_dir()?;
             let icon_path = Path::new(&icons_dir).join(app.0.to_string());
-            fs::write(&icon_path, icon_data).await?;
+            fs::write(&icon_path, icon.data).await?;
             Some(icon_path.to_string_lossy().to_string())
         } else {
             None

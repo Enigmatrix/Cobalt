@@ -23,8 +23,18 @@ pub struct AppInfo {
     pub company: String,
     /// Color
     pub color: String,
+    /// Icon
+    pub icon: Option<Icon>,
+}
+
+/// Icon data
+pub struct Icon {
     /// Icon as bytes
-    pub icon: Option<Vec<u8>>,
+    pub data: Vec<u8>,
+    /// File extension
+    pub ext: Option<String>,
+    /// Content type (mime type)
+    pub mime: Option<String>,
 }
 
 /// Image size for Win32 apps
@@ -96,24 +106,29 @@ impl AppInfo {
         })
     }
 
-    async fn win32_icon(file: &AgileReference<StorageFile>) -> Result<Vec<u8>> {
+    async fn win32_icon(file: &AgileReference<StorageFile>) -> Result<Icon> {
         let icon = file
             .resolve()?
             .GetThumbnailAsyncOverloadDefaultOptions(ThumbnailMode::SingleItem, WIN32_IMAGE_SIZE)?;
-        let (size, reader) = {
+        let (content_type, size, reader) = {
             let icon = icon.await?;
+            let content_type = icon.ContentType()?.to_string_lossy();
             let size = icon.Size()? as usize;
             let reader = DataReader::CreateDataReader(&icon)?;
-            (size, reader)
+            (content_type, size, reader)
         };
         reader.LoadAsync(size as u32)?.await?;
-        let mut icon = vec![0u8; size];
-        reader.ReadBytes(&mut icon)?;
-        Ok(icon)
+        let mut data = vec![0u8; size];
+        reader.ReadBytes(&mut data)?;
+        Ok(Icon {
+            data,
+            ext: None,
+            mime: Some(content_type.to_string()),
+        })
     }
 
-    async fn uwp_icon(display_info: &AppDisplayInfo) -> Result<Vec<u8>> {
-        let (size, reader) = {
+    async fn uwp_icon(display_info: &AppDisplayInfo) -> Result<Icon> {
+        let (content_type, size, reader) = {
             let icon = display_info
                 .GetLogo(Size {
                     Width: UWP_IMAGE_SIZE,
@@ -121,15 +136,19 @@ impl AppInfo {
                 })?
                 .OpenReadAsync()?
                 .await?;
+            let content_type = icon.ContentType()?.to_string_lossy();
             let size = icon.Size()? as usize;
             let reader = DataReader::CreateDataReader(&icon)?;
-            (size, reader)
+            (content_type, size, reader)
         };
-
         reader.LoadAsync(size as u32)?.await?;
-        let mut icon = vec![0u8; size];
-        reader.ReadBytes(&mut icon)?;
-        Ok(icon)
+        let mut data = vec![0u8; size];
+        reader.ReadBytes(&mut data)?;
+        Ok(Icon {
+            data,
+            ext: None,
+            mime: Some(content_type.to_string()),
+        })
     }
 }
 
@@ -162,7 +181,7 @@ mod tests {
         assert_eq!("Notepad", app_info.name);
         assert_eq!("Microsoft® Windows® Operating System", app_info.description);
         assert_eq!("Microsoft Corporation", app_info.company);
-        assert_ne!(0, app_info.icon.unwrap().len());
+        assert_ne!(0, app_info.icon.unwrap().data.len());
         Ok(())
     }
 
@@ -173,7 +192,7 @@ mod tests {
         assert_eq!("Narrator", app_info.name);
         assert_eq!("Narrator Home", app_info.description);
         assert_eq!("Microsoft", app_info.company);
-        assert_ne!(0, app_info.icon.unwrap().len());
+        assert_ne!(0, app_info.icon.unwrap().data.len());
         Ok(())
     }
 }
