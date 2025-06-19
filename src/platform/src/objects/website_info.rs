@@ -5,7 +5,7 @@ use scraper::{Html, Selector};
 use util::error::{bail, Context, Result};
 use util::tracing::ResultTraceExt;
 
-use super::{random_color, AppInfo};
+use super::{random_color, AppInfo, Icon};
 
 /// Information about a Website
 pub struct WebsiteInfo {
@@ -15,8 +15,8 @@ pub struct WebsiteInfo {
     pub description: String,
     /// Color
     pub color: String,
-    /// Logo as bytes
-    pub logo: Option<Vec<u8>>,
+    /// Icon
+    pub icon: Option<Icon>,
 }
 
 /// Website URL down to origin
@@ -102,7 +102,7 @@ impl WebsiteInfo {
             name: Self::pretty_url_host(&url),
             description: url,
             color: random_color(),
-            logo: None,
+            icon: None,
         }
     }
 
@@ -118,7 +118,7 @@ impl WebsiteInfo {
         let client = Client::new();
 
         // Get Open Graph tags + Meta information
-        let (description, site_name, logo_url) = {
+        let (description, site_name, icon_url) = {
             let response = Self::modify_request(client.get(&url)).send().await?;
             if !response.status().is_success() {
                 bail!(
@@ -140,19 +140,19 @@ impl WebsiteInfo {
             let description = Self::get_description(&document)
                 .context("get description")
                 .warn();
-            let logo_url = Self::get_logo_url(&url, &document).context("get logo url");
-            (description, site_name, logo_url)
+            let icon_url = Self::get_icon_url(&url, &document).context("get icon url");
+            (description, site_name, icon_url)
         };
 
-        // Get logo. If it fails, then logo is None.
-        let logo = match logo_url {
-            Ok(logo_url) => Self::get_logo(&client, logo_url)
+        // Get icon. If it fails, then icon is None.
+        let icon = match icon_url {
+            Ok(icon_url) => Self::get_icon(&client, icon_url)
                 .await
                 .map(Option::Some)
-                .context("get logo")
+                .context("get icon")
                 .warn(),
-            logo_url => {
-                logo_url.map(|_| "").warn();
+            icon_url => {
+                icon_url.map(|_| "").warn();
                 None
             }
         };
@@ -161,7 +161,7 @@ impl WebsiteInfo {
             name: site_name,
             description,
             color: random_color(),
-            logo,
+            icon,
         })
     }
 
@@ -223,23 +223,50 @@ impl WebsiteInfo {
         Ok(Self::pretty_url_host(url))
     }
 
-    /// Get the logo URL of the website
-    pub fn get_logo_url(url: &str, document: &Html) -> Result<Url> {
+    /// Get the icon URL of the website
+    pub fn get_icon_url(url: &str, document: &Html) -> Result<Url> {
         let favicon_url = document
             .select(&Selector::parse("link[rel='icon'], link[rel='shortcut icon']").unwrap())
             .next()
             .and_then(|el| el.value().attr("href").map(|s| s.to_string()))
             .unwrap_or_else(|| "/favicon.ico".to_string());
 
-        let logo_url = Url::parse(url)?.join(&favicon_url)?;
-        Ok(logo_url)
+        let icon_url = Url::parse(url)?.join(&favicon_url)?;
+        Ok(icon_url)
     }
 
-    /// Get the logo of the website
-    pub async fn get_logo(client: &Client, logo_url: Url) -> Result<Vec<u8>> {
-        let response = Self::modify_request(client.get(logo_url)).send().await?;
+    /// Get the icon of the website
+    pub async fn get_icon(client: &Client, icon_url: Url) -> Result<Icon> {
+        let ext = Self::get_icon_ext(&icon_url);
+
+        let response = Self::modify_request(client.get(icon_url.clone()))
+            .send()
+            .await?;
+        if !response.status().is_success() {
+            bail!(
+                "failed to get website icon for {} with status {}",
+                icon_url,
+                response.status()
+            );
+        }
+
+        let mime = response.headers().get("Content-Type").cloned();
         let bytes = response.bytes().await?;
-        Ok(bytes.to_vec())
+
+        let icon = Icon {
+            data: bytes.to_vec(),
+            ext,
+            mime: mime.and_then(|s| s.to_str().ok().map(|s| s.to_string())),
+        };
+        Ok(icon)
+    }
+
+    /// Get the extension of the icon
+    pub fn get_icon_ext(icon_url: &Url) -> Option<String> {
+        let file_name = icon_url.path_segments()?.next_back()?; // last segment
+        let file_path = std::path::Path::new(file_name);
+        let ext = file_path.extension()?;
+        Some(ext.to_string_lossy().to_string())
     }
 }
 
@@ -251,7 +278,7 @@ impl From<WebsiteInfo> for AppInfo {
             // TODO: company name does not exist for websites
             company: "".to_string(),
             color: website.color,
-            logo: website.logo,
+            icon: website.icon,
         }
     }
 }

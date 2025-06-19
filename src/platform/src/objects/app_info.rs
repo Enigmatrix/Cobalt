@@ -23,8 +23,42 @@ pub struct AppInfo {
     pub company: String,
     /// Color
     pub color: String,
-    /// Logo as bytes
-    pub logo: Option<Vec<u8>>,
+    /// Icon
+    pub icon: Option<Icon>,
+}
+
+/// Icon data
+pub struct Icon {
+    /// Icon as bytes
+    pub data: Vec<u8>,
+    /// File extension
+    pub ext: Option<String>,
+    /// Content type (mime type)
+    pub mime: Option<String>,
+}
+
+impl Icon {
+    /// Deduce the extension of the icon from the mime type or file magic bytes
+    pub fn deduce_ext(&self) -> Option<String> {
+        // First try explicit extension if available
+        if let Some(ext) = &self.ext {
+            return Some(ext.clone());
+        }
+
+        // Then try MIME type if available
+        if let Some(mime) = &self.mime {
+            if let Some(ext) = mime2ext::mime2ext(mime) {
+                return Some(ext.to_string());
+            }
+        }
+
+        // Finally try magic bytes detection
+        if let Some(kind) = infer::get(&self.data) {
+            return Some(kind.extension().to_string());
+        }
+
+        None
+    }
 }
 
 /// Image size for Win32 apps
@@ -42,7 +76,7 @@ impl AppInfo {
             description: file.to_string(),
             company: "".to_string(),
             color: random_color(),
-            logo: None,
+            icon: None,
         }
     }
 
@@ -52,10 +86,10 @@ impl AppInfo {
 
         let mut fv = FileVersionInfo::new(path)?;
 
-        let logo = Self::win32_logo(&file)
+        let icon = Self::win32_icon(&file)
             .await
             .map(Some)
-            .with_context(|| format!("get win32 logo for {path:?}"))
+            .with_context(|| format!("get win32 icon for {path:?}"))
             .warn();
 
         // yes, this is swapper, this is surprisingly more accurate.
@@ -72,7 +106,7 @@ impl AppInfo {
             description,
             company: fv.query_value("CompanyName").warn(),
             color: random_color(),
-            logo,
+            icon,
         })
     }
 
@@ -81,10 +115,10 @@ impl AppInfo {
         let app_info = UWPAppInfo::GetFromAppUserModelId(&aumid.into())?;
         let display_info = app_info.DisplayInfo()?;
         let package = app_info.Package()?;
-        let logo = Self::uwp_logo(&display_info)
+        let icon = Self::uwp_icon(&display_info)
             .await
             .map(Some)
-            .with_context(|| format!("get uwp logo for {aumid:?}"))
+            .with_context(|| format!("get uwp icon for {aumid:?}"))
             .warn();
 
         Ok(AppInfo {
@@ -92,44 +126,53 @@ impl AppInfo {
             description: display_info.Description()?.to_string_lossy(),
             company: package.PublisherDisplayName()?.to_string_lossy(),
             color: random_color(),
-            logo,
+            icon,
         })
     }
 
-    async fn win32_logo(file: &AgileReference<StorageFile>) -> Result<Vec<u8>> {
-        let logo = file
+    async fn win32_icon(file: &AgileReference<StorageFile>) -> Result<Icon> {
+        let icon = file
             .resolve()?
             .GetThumbnailAsyncOverloadDefaultOptions(ThumbnailMode::SingleItem, WIN32_IMAGE_SIZE)?;
-        let (size, reader) = {
-            let logo = logo.await?;
-            let size = logo.Size()? as usize;
-            let reader = DataReader::CreateDataReader(&logo)?;
-            (size, reader)
+        let (content_type, size, reader) = {
+            let icon = icon.await?;
+            let content_type = icon.ContentType()?.to_string_lossy();
+            let size = icon.Size()? as usize;
+            let reader = DataReader::CreateDataReader(&icon)?;
+            (content_type, size, reader)
         };
         reader.LoadAsync(size as u32)?.await?;
-        let mut logo = vec![0u8; size];
-        reader.ReadBytes(&mut logo)?;
-        Ok(logo)
+        let mut data = vec![0u8; size];
+        reader.ReadBytes(&mut data)?;
+        Ok(Icon {
+            data,
+            ext: None,
+            mime: Some(content_type.to_string()),
+        })
     }
 
-    async fn uwp_logo(display_info: &AppDisplayInfo) -> Result<Vec<u8>> {
-        let (size, reader) = {
-            let logo = display_info
+    async fn uwp_icon(display_info: &AppDisplayInfo) -> Result<Icon> {
+        let (content_type, size, reader) = {
+            let icon = display_info
                 .GetLogo(Size {
                     Width: UWP_IMAGE_SIZE,
                     Height: UWP_IMAGE_SIZE,
                 })?
                 .OpenReadAsync()?
                 .await?;
-            let size = logo.Size()? as usize;
-            let reader = DataReader::CreateDataReader(&logo)?;
-            (size, reader)
+            let content_type = icon.ContentType()?.to_string_lossy();
+            let size = icon.Size()? as usize;
+            let reader = DataReader::CreateDataReader(&icon)?;
+            (content_type, size, reader)
         };
-
         reader.LoadAsync(size as u32)?.await?;
-        let mut logo = vec![0u8; size];
-        reader.ReadBytes(&mut logo)?;
-        Ok(logo)
+        let mut data = vec![0u8; size];
+        reader.ReadBytes(&mut data)?;
+        Ok(Icon {
+            data,
+            ext: None,
+            mime: Some(content_type.to_string()),
+        })
     }
 }
 
@@ -162,7 +205,7 @@ mod tests {
         assert_eq!("Notepad", app_info.name);
         assert_eq!("Microsoft® Windows® Operating System", app_info.description);
         assert_eq!("Microsoft Corporation", app_info.company);
-        assert_ne!(0, app_info.logo.unwrap().len());
+        assert_ne!(0, app_info.icon.unwrap().data.len());
         Ok(())
     }
 
@@ -173,7 +216,7 @@ mod tests {
         assert_eq!("Narrator", app_info.name);
         assert_eq!("Narrator Home", app_info.description);
         assert_eq!("Microsoft", app_info.company);
-        assert_ne!(0, app_info.logo.unwrap().len());
+        assert_ne!(0, app_info.icon.unwrap().data.len());
         Ok(())
     }
 }

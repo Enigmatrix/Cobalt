@@ -217,7 +217,7 @@ export function AppUsagePieChart({
                 rotate: 0,
                 position: "middle",
                 backgroundColor: {
-                  image: htmlImgElement(app.id),
+                  image: htmlImgElement(app.icon),
                 },
                 formatter: () => {
                   return `{empty|}`;
