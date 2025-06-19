@@ -245,7 +245,6 @@ async fn update_app() -> Result<()> {
         .await?;
 
     let mut updater = AppUpdater::new(writer.db)?;
-    let icon = [42, 233].repeat(50); // 50 * 2 = 100 bytes length
     let mut app = App {
         id: Ref::new(1),
         name: "name".to_string(),
@@ -253,7 +252,6 @@ async fn update_app() -> Result<()> {
         company: "comp".to_string(),
         color: "red".to_string(),
         identity: identity.clone(), // ignored by query
-        icon: Some(icon.clone()),
         tag_id: None,
         created_at: 400,
         updated_at: 400,
@@ -272,7 +270,6 @@ async fn update_app() -> Result<()> {
     struct Res {
         #[sqlx(flatten)]
         app: App,
-        icon: Vec<u8>,
     }
 
     let res: Vec<Res> = query_as("SELECT * FROM apps")
@@ -280,7 +277,7 @@ async fn update_app() -> Result<()> {
         .await?;
 
     app.updated_at = 500;
-    assert_eq!(vec![Res { app, icon }], res);
+    assert_eq!(vec![Res { app }], res);
     Ok(())
 }
 
@@ -294,12 +291,11 @@ async fn insert_app_raw(
     atag: Option<i64>,
     a6: u32,
     a7: &str,
-    a8: Option<Vec<u8>>,
     created_at: i64,
     initialized_at: Option<i64>,
     updated_at: i64,
 ) -> Result<Ref<App>> {
-    let res = query("INSERT INTO apps VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+    let res = query("INSERT INTO apps VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
         .bind(a1)
         .bind(a2)
         .bind(a3)
@@ -308,7 +304,6 @@ async fn insert_app_raw(
         .bind(atag)
         .bind(a6)
         .bind(a7)
-        .bind(a8)
         .bind(created_at)
         .bind(initialized_at)
         .bind(updated_at)
@@ -409,7 +404,6 @@ async fn target_apps() -> Result<()> {
             None,
             1,
             "path1",
-            None,
             0,
             Some(0),
             0,
@@ -425,7 +419,6 @@ async fn target_apps() -> Result<()> {
             Some(2),
             0,
             "aumid2",
-            None,
             0,
             Some(0),
             0,
@@ -441,7 +434,6 @@ async fn target_apps() -> Result<()> {
             Some(3),
             1,
             "path3",
-            None,
             0,
             Some(0),
             0,
@@ -457,7 +449,6 @@ async fn target_apps() -> Result<()> {
             Some(2),
             1,
             "path4",
-            None,
             0,
             Some(0),
             0,
@@ -477,7 +468,6 @@ async fn target_apps() -> Result<()> {
             path: "path1".to_string(),
         },
         tag_id: None,
-        icon: None,
         created_at: 0,
         updated_at: 0,
     };
@@ -491,7 +481,6 @@ async fn target_apps() -> Result<()> {
             aumid: "aumid2".to_string(),
         },
         tag_id: Some(Ref::new(2)),
-        icon: None,
         created_at: 0,
         updated_at: 0,
     };
@@ -505,7 +494,6 @@ async fn target_apps() -> Result<()> {
             path: "path3".to_string(),
         },
         tag_id: Some(Ref::new(3)),
-        icon: None,
         created_at: 0,
         updated_at: 0,
     };
@@ -519,7 +507,6 @@ async fn target_apps() -> Result<()> {
             path: "path4".to_string(),
         },
         tag_id: Some(Ref::new(2)),
-        icon: None,
         created_at: 0,
         updated_at: 0,
     };
@@ -578,7 +565,6 @@ async fn insert_alert_event() -> Result<()> {
             None,
             1,
             "path1",
-            None,
             0,
             Some(0),
             0,
@@ -628,7 +614,6 @@ async fn insert_reminder_event() -> Result<()> {
             None,
             1,
             "path1",
-            None,
             0,
             Some(0),
             0,
@@ -735,7 +720,6 @@ pub mod arrange {
                 AppIdentity::Uwp { aumid } => aumid,
                 AppIdentity::Website { base_url } => base_url,
             },
-            app.icon.clone(),
             0,
             Some(0),
             0,
@@ -763,7 +747,6 @@ pub mod arrange {
                 AppIdentity::Uwp { aumid } => aumid,
                 AppIdentity::Website { base_url } => base_url,
             },
-            app.icon.clone(),
             0,
             None,
             0,
@@ -933,7 +916,6 @@ mod triggered_alerts {
                     path: "path".to_string(),
                 },
                 tag_id: None,
-                icon: None,
                 created_at: 0,
                 updated_at: 0,
             },
@@ -986,7 +968,6 @@ mod triggered_alerts {
                     path: "path".to_string(),
                 },
                 tag_id: None,
-                icon: None,
                 created_at: 0,
                 updated_at: 0,
             },
@@ -1050,7 +1031,6 @@ mod triggered_alerts {
                     path: "path".to_string(),
                 },
                 tag_id: None,
-                icon: None,
                 created_at: 0,
                 updated_at: 0,
             },
@@ -1132,7 +1112,6 @@ mod triggered_alerts {
                     path: "path".to_string(),
                 },
                 tag_id: None,
-                icon: None,
                 created_at: 0,
                 updated_at: 0,
             },
@@ -1231,7 +1210,6 @@ mod triggered_alerts {
                     path: "path".to_string(),
                 },
                 tag_id: None,
-                icon: None,
                 created_at: 0,
                 updated_at: 0,
             },
@@ -1331,7 +1309,6 @@ mod triggered_alerts {
                     path: "path".to_string(),
                 },
                 tag_id: None,
-                icon: None,
                 created_at: 0,
                 updated_at: 0,
             },
@@ -1424,7 +1401,6 @@ mod triggered_alerts {
                     path: "path".to_string(),
                 },
                 tag_id: None,
-                icon: None,
                 created_at: 0,
                 updated_at: 0,
             },
@@ -1517,7 +1493,6 @@ mod triggered_alerts {
                     path: "path".to_string(),
                 },
                 tag_id: None,
-                icon: None,
                 created_at: 0,
                 updated_at: 0,
             },
@@ -1599,7 +1574,6 @@ mod triggered_alerts {
                     path: "path".to_string(),
                 },
                 tag_id: None,
-                icon: None,
                 created_at: 0,
                 updated_at: 0,
             },
@@ -1681,7 +1655,6 @@ mod triggered_alerts {
                     path: "path".to_string(),
                 },
                 tag_id: None,
-                icon: None,
                 created_at: 0,
                 updated_at: 0,
             },
@@ -1789,7 +1762,6 @@ mod triggered_alerts {
                     path: "path".to_string(),
                 },
                 tag_id: None,
-                icon: None,
                 created_at: 0,
                 updated_at: 0,
             },
@@ -1927,7 +1899,6 @@ mod triggered_alerts {
                     path: "path".to_string(),
                 },
                 tag_id: None,
-                icon: None,
                 created_at: 0,
                 updated_at: 0,
             },
@@ -1946,7 +1917,6 @@ mod triggered_alerts {
                     aumid: "aumid2".to_string(),
                 },
                 tag_id: Some(Ref::new(1)),
-                icon: None,
                 created_at: 0,
                 updated_at: 0,
             },
@@ -1965,7 +1935,6 @@ mod triggered_alerts {
                     aumid: "aumid3".to_string(),
                 },
                 tag_id: Some(Ref::new(2)),
-                icon: None,
                 created_at: 0,
                 updated_at: 0,
             },
@@ -1984,7 +1953,6 @@ mod triggered_alerts {
                     aumid: "aumid4".to_string(),
                 },
                 tag_id: Some(Ref::new(1)),
-                icon: None,
                 created_at: 0,
                 updated_at: 0,
             },
@@ -2202,7 +2170,6 @@ mod triggered_reminders {
                     path: "path".to_string(),
                 },
                 tag_id: None,
-                icon: None,
                 created_at: 0,
                 updated_at: 0,
             },
