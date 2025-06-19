@@ -22,7 +22,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self' ipc: https://ipc.localhost; img-src 'self' asset: https://asset.localhost; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https: http: ws: wss: data: tauri:; frame-src 'self' https: http: blob: data:; worker-src 'self' blob: data:; require-trusted-types-for 'script'",
+      "csp": "default-src 'self' ipc: https://ipc.localhost; img-src 'self' asset: https://asset.localhost; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https: http: ws: wss: data: tauri:; frame-src 'self' https: http: blob: data:; worker-src 'self' blob: data:",
       "assetProtocol": {
         "enable": true,
         "scope": ["**/icons/*"]
