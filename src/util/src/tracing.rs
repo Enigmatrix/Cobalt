@@ -1,5 +1,5 @@
 pub use tracing::*;
-use tracing_appender::rolling::daily;
+use tracing_appender::rolling::{RollingFileAppender, Rotation};
 use tracing_subscriber::fmt::format::FmtSpan;
 pub use tracing_subscriber::prelude::*;
 use tracing_subscriber::{fmt, registry, EnvFilter};
@@ -60,11 +60,16 @@ impl<T: Default> ResultTraceExt<T> for Result<T> {
 pub fn setup(config: &Config) -> Result<()> {
     let target = TARGET.lock().unwrap().clone();
     let (filter_directives, log_file) = match target {
-        Target::Ui => (config.ui_log_filter(), "Cobalt.Ui.log"),
-        Target::Engine => (config.engine_log_filter(), "Cobalt.Engine.log"),
+        Target::Ui => (config.ui_log_filter(), "Cobalt.Ui"),
+        Target::Engine => (config.engine_log_filter(), "Cobalt.Engine"),
     };
 
-    let rolling = daily(config.logs_dir()?, log_file);
+    let rolling = RollingFileAppender::builder()
+        .rotation(Rotation::DAILY)
+        .filename_prefix(log_file)
+        .filename_suffix(".log")
+        .max_log_files(50)
+        .build(config.logs_dir()?)?;
 
     // Create a non-colored layer for file output
     let file_layer = fmt::layer()
