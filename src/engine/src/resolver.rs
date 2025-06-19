@@ -50,9 +50,12 @@ impl AppInfoResolver {
         // Store icon in filesystem if present
         let icon = if let Some(icon) = app_info.icon {
             let icons_dir = Config::icons_dir()?;
-            let icon_path = Path::new(&icons_dir).join(app.0.to_string());
+            let id = app.0.to_string();
+            let ext = icon.deduce_ext();
+            let file_name = format!("{}.{}", id, ext.unwrap_or("bin".to_string()));
+            let icon_path = Path::new(&icons_dir).join(&file_name);
             fs::write(&icon_path, icon.data).await?;
-            Some(icon_path.to_string_lossy().to_string())
+            Some(file_name)
         } else {
             None
         };

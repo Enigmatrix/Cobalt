@@ -37,6 +37,30 @@ pub struct Icon {
     pub mime: Option<String>,
 }
 
+impl Icon {
+    /// Deduce the extension of the icon from the mime type or file magic bytes
+    pub fn deduce_ext(&self) -> Option<String> {
+        // First try explicit extension if available
+        if let Some(ext) = &self.ext {
+            return Some(ext.clone());
+        }
+
+        // Then try MIME type if available
+        if let Some(mime) = &self.mime {
+            if let Some(ext) = mime2ext::mime2ext(mime) {
+                return Some(ext.to_string());
+            }
+        }
+
+        // Finally try magic bytes detection
+        if let Some(kind) = infer::get(&self.data) {
+            return Some(kind.extension().to_string());
+        }
+
+        None
+    }
+}
+
 /// Image size for Win32 apps
 pub const WIN32_IMAGE_SIZE: u32 = 64;
 /// Image size for UWP apps
