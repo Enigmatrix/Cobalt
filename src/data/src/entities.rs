@@ -21,6 +21,8 @@ pub struct App {
     pub company: String,
     /// Color
     pub color: Color,
+    /// File name of the app's icon (with extension)
+    pub icon: Option<String>,
     #[sqlx(flatten)]
     /// Unique identity of an [App]
     pub identity: AppIdentity,

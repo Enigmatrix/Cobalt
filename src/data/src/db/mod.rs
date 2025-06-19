@@ -245,6 +245,7 @@ impl AppUpdater {
                     description = ?,
                     company = ?,
                     color = ?,
+                    icon = ?,
                     updated_at = ?,
                     initialized_at = ?
                 WHERE id = ?",
@@ -253,6 +254,7 @@ impl AppUpdater {
         .bind(&app.description)
         .bind(&app.company)
         .bind(&app.color)
+        .bind(&app.icon)
         .bind(ts.now().to_ticks())
         .bind(ts.now().to_ticks())
         .bind(&app.id)
