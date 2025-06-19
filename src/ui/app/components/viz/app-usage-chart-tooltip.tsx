@@ -23,7 +23,7 @@ function HoverCard({
 }) {
   return (
     <div className="flex items-center gap-2 py-2">
-      <AppIcon id={app.id} className="w-6 h-6 shrink-0 ml-2 mr-1" />
+      <AppIcon appIcon={app.icon} className="w-6 h-6 shrink-0 ml-2 mr-1" />
       <div className="flex flex-col">
         <Text className="text-base max-w-52">{app.name}</Text>
         {at && (
@@ -139,7 +139,10 @@ export const AppUsageChartTooltipContent = React.forwardRef<
                   >
                     <>
                       {!hideIndicator && (
-                        <AppIcon id={app.id} className="w-4 h-4 shrink-0" />
+                        <AppIcon
+                          appIcon={app.icon}
+                          className="w-4 h-4 shrink-0"
+                        />
                       )}
                       <div className="flex flex-1 justify-between items-center">
                         <div className="grid gap-1.5">

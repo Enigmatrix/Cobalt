@@ -8,13 +8,13 @@ import { iconsDir } from "@/lib/state";
 
 export const DEFAULT_ICON_SVG_URL = "data:image/svg+xml," + CircleHelpStatic;
 
-export function toDataUrl(appId: number) {
-  return convertFileSrc(`${iconsDir}/${appId}`);
+function appIconUrl(appIcon: string) {
+  return convertFileSrc(`${iconsDir}/${appIcon}`);
 }
 
-export function htmlImgElement(appId: number): HTMLImageElement {
+export function htmlImgElement(appIcon: string): HTMLImageElement {
   const img = new Image();
-  img.src = toDataUrl(appId);
+  img.src = appIconUrl(appIcon);
   img.onerror = () => {
     img.src = DEFAULT_ICON_SVG_URL;
     img.onerror = null;
@@ -23,16 +23,16 @@ export function htmlImgElement(appId: number): HTMLImageElement {
 }
 
 export default function AppIcon({
-  id,
+  appIcon,
   className,
 }: {
-  id: number;
+  appIcon: string;
   className?: ClassValue;
 }) {
   const [hasError, setHasError] = useState(false);
   const icon = useMemo(() => {
-    return toDataUrl(id);
-  }, [id]);
+    return appIconUrl(appIcon);
+  }, [appIcon]);
 
   if (!icon || hasError) {
     return <CircleHelp className={cn(className)} />;

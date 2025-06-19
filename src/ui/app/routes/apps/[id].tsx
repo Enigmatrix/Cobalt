@@ -123,7 +123,7 @@ export default function App({ params }: Route.ComponentProps) {
             <BreadcrumbSeparator className="hidden md:block" />
             <BreadcrumbItem>
               <BreadcrumbPage className="inline-flex items-center">
-                <AppIcon id={app.id} className="w-5 h-5 mr-2" />
+                <AppIcon appIcon={app.icon} className="w-5 h-5 mr-2" />
                 <Text>{app.name}</Text>
               </BreadcrumbPage>
             </BreadcrumbItem>
@@ -138,7 +138,7 @@ export default function App({ params }: Route.ComponentProps) {
             <div className="flex flex-col gap-4">
               {/* Header with name and icon */}
               <div className="flex items-center gap-4">
-                <AppIcon id={app.id} className="w-12 h-12 shrink-0" />
+                <AppIcon appIcon={app.icon} className="w-12 h-12 shrink-0" />
                 <div className="min-w-0 shrink flex flex-col">
                   <div className="min-w-0 flex gap-4">
                     <EditableText
