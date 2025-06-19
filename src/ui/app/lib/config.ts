@@ -51,3 +51,7 @@ export async function readConfig() {
 export async function setTrackIncognito(value: boolean) {
   return await invoke("config_set_track_incognito", { value });
 }
+
+export async function getIconsDir(): Promise<string> {
+  return await invoke("get_icons_dir");
+}

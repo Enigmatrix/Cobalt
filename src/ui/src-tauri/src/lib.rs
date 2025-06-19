@@ -61,6 +61,7 @@ pub fn run() {
             tracing::log,
             config::read_config,
             config::config_set_track_incognito,
+            config::get_icons_dir,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

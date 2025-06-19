@@ -25,6 +25,7 @@ import { info } from "@/lib/log";
 import { produce } from "immer";
 import _ from "lodash";
 import { getTheme } from "@/components/theme-provider";
+import { getIconsDir } from "@/lib/config";
 
 export async function initState() {
   const theme = getTheme();
@@ -38,14 +39,18 @@ export async function initState() {
   }
 }
 
+export let iconsDir: string;
+
 export async function refresh() {
   const now = DateTime.now();
   const options = { now: dateTimeToTicks(now) };
-  const [apps, tags, alerts] = await Promise.all([
+  const [apps, tags, alerts, iconsDirOut] = await Promise.all([
     getApps({ options }),
     getTags({ options }),
     getAlerts({ options }),
+    getIconsDir(),
   ]);
+  iconsDir = iconsDirOut;
   useAppState.setState({ apps, tags, alerts, lastRefresh: now });
   info("refresh completed");
 }
