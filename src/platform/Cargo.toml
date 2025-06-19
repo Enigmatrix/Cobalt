@@ -16,6 +16,8 @@ reqwest = "0.12.15"
 scraper = "0.23.1"
 url = "2.5.4"
 util = { path = "../util" }
+mime2ext = "0.1.52"
+infer = "0.15.0"
 
 [dependencies.windows]
 version = "0.56"
