@@ -33,7 +33,7 @@ export const scaleColor = (color: string, scale: number): string => {
 export const getVarColorAsHex = (varName: string, a = 1): string => {
   const varVal = getComputedStyle(document.documentElement).getPropertyValue(
     "--" + varName,
-  );
+  ).trim();
 
   return scaleColor(varVal, a);
 };
