@@ -26,31 +26,40 @@ import {
 import { useAppState } from "@/lib/state";
 import { useCallback } from "react";
 import type { Alert, Ref } from "@/lib/entities";
+import { useAlert } from "@/hooks/use-refresh";
 
-export default function Alert({ params }: Route.ComponentProps) {
+export default function Page({ params }: Route.ComponentProps) {
   const id = +params.id as Ref<Alert>;
+  const alert = useAlert(id);
+  if (!alert) return null;
+  return <AlertPage alert={alert} />;
+}
+
+function AlertPage({ alert }: { alert: Alert }) {
   const removeAlert = useAppState((state) => state.removeAlert);
   const navigate = useNavigate();
   const remove = useCallback(async () => {
     await navigate("/alerts");
-    await removeAlert(id);
-  }, [removeAlert, navigate, id]);
+    await removeAlert(alert.id);
+  }, [removeAlert, navigate, alert.id]);
 
   return (
     <>
       <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
         <SidebarTrigger className="-ml-1" />
         <Separator orientation="vertical" className="mr-2 h-4" />
-        <Breadcrumb>
-          <BreadcrumbList>
+        <Breadcrumb className="overflow-hidden">
+          <BreadcrumbList className="flex-nowrap overflow-hidden">
             <BreadcrumbItem className="hidden md:block">
               <BreadcrumbLink asChild>
                 <NavLink to="/alerts">Alerts</NavLink>
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator className="hidden md:block" />
-            <BreadcrumbItem>
-              <BreadcrumbPage>Alert ID {id}</BreadcrumbPage>
+            <BreadcrumbItem className="overflow-hidden">
+              <BreadcrumbPage className="inline-flex items-center overflow-hidden">
+                Alert ID {alert.id}
+              </BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
@@ -64,7 +73,7 @@ export default function Alert({ params }: Route.ComponentProps) {
               <div className="flex items-center gap-4">
                 <div className="flex-1" />
                 <Button variant="outline" size="icon" asChild>
-                  <NavLink to={`/alerts/edit/${id}`}>
+                  <NavLink to={`/alerts/edit/${alert.id}`}>
                     <Edit2Icon />
                   </NavLink>
                 </Button>

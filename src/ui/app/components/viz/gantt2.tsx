@@ -18,6 +18,7 @@ import {
 import type { InteractionPeriod, SystemEvent } from "@/lib/entities";
 import type { AppSessionUsages } from "@/lib/repo";
 import {
+  TICKS_PER_MILLISECOND,
   ticksToUnixMillis,
   unixMillisToTicks,
   type Interval,
@@ -1113,7 +1114,7 @@ export function minRenderTimeGap(
   const timeGap = interval.end.diff(interval.start).toMillis();
   const zoom = dataZoom / 100;
   const minRenderTimeGapMillis = ((timeGap * zoom) / width) * minRenderWidth;
-  const minRenderTimeGap = minRenderTimeGapMillis * 10_000;
+  const minRenderTimeGap = minRenderTimeGapMillis * TICKS_PER_MILLISECOND;
   return Math.max(minRenderTimeGap, 1);
 }
 

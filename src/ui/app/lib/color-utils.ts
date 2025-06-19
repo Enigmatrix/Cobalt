@@ -1,8 +1,3 @@
-interface RGB {
-  r: number;
-  g: number;
-  b: number;
-}
 import { useTheme } from "@/components/theme-provider";
 import α from "color-alpha";
 import { useEffect, useState } from "react";
@@ -31,23 +26,16 @@ export const randomColor = () => {
   return COLORS[Math.floor(Math.random() * COLORS.length)];
 };
 
-export const hexToRgb = (hex: string): RGB | null => {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  return result
-    ? {
-        r: Number.parseInt(result[1], 16),
-        g: Number.parseInt(result[2], 16),
-        b: Number.parseInt(result[3], 16),
-      }
-    : null;
+export const scaleColor = (color: string, scale: number): string => {
+  return α(color, scale);
 };
 
 export const getVarColorAsHex = (varName: string, a = 1): string => {
-  const varVal = getComputedStyle(document.documentElement).getPropertyValue(
-    "--" + varName,
-  );
+  const varVal = getComputedStyle(document.documentElement)
+    .getPropertyValue("--" + varName)
+    .trim();
 
-  return α(varVal, a);
+  return scaleColor(varVal, a);
 };
 
 export const useVarColorAsHex = (varName: string, a = 1): string => {

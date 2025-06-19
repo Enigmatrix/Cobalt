@@ -3,7 +3,7 @@ import { useMemo, useRef, useState } from "react";
 import { DateTime, Interval } from "luxon";
 import type { ClassValue } from "clsx";
 import { cn } from "@/lib/utils";
-import { hexToRgb } from "@/lib/color-utils";
+import { scaleColor } from "@/lib/color-utils";
 import { HScrollView } from "@/components/hscroll-view";
 import { Tooltip } from "@/components/viz/tooltip";
 import { AppUsageChartTooltipContent } from "@/components/viz/app-usage-chart-tooltip";
@@ -107,11 +107,10 @@ const Heatmap: React.FC<HeatmapProps> = ({
   const renderCells = () => {
     return heatmapData.map((entry, index) => {
       const intensity = scaling(entry.value);
-      const { r, g, b } = hexToRgb(fullCellColorRgb)!;
       const fill =
         entry.value === 0
           ? emptyCellColorRgb
-          : `rgba(${r} ${g} ${b}/ ${intensity})`;
+          : scaleColor(fullCellColorRgb, intensity);
       const cellDate = entry.date;
       const isFirstDayOfMonth = cellDate.day === 1;
 
