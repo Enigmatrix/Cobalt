@@ -3,12 +3,13 @@
 use clap::Parser;
 use dialoguer::theme::ColorfulTheme;
 use dialoguer::Select;
-use platform::objects::ProcessId;
+use platform::objects::{ProcessId, Window};
 use tools::filters::{
     match_running_windows, ProcessFilter, ProcessWindowGroup, WindowDetails, WindowFilter,
 };
 use util::error::Result;
 use util::{config, Target};
+use windows::Win32::Foundation::HWND;
 
 #[derive(Parser, Debug, Clone)]
 #[command(author, version, about, long_about = None)]
@@ -52,6 +53,12 @@ fn main() -> Result<()> {
     platform::setup()?;
 
     let args = Args::parse();
+    if let Some(handle) = args.handle {
+        let handle = u32::from_str_radix(&handle, 16)?;
+        let window = Window::new(HWND(handle as _));
+        window.dim(args.opacity)?;
+        return Ok(());
+    }
     let matches = match_running_windows(
         &WindowFilter {
             handle: args.handle,
