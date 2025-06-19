@@ -5,16 +5,19 @@ import type { ClassValue } from "clsx";
 import { CircleHelp as CircleHelpStatic } from "lucide-static";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { iconsDir } from "@/lib/state";
+import normalize from "path-normalize";
 
 export const DEFAULT_ICON_SVG_URL = "data:image/svg+xml," + CircleHelpStatic;
 
-function appIconUrl(appIcon: string) {
-  return convertFileSrc(`${iconsDir}/${appIcon}`);
+function appIconUrl(appIcon?: string) {
+  if (!appIcon) return null;
+  const fileName = normalize(appIcon);
+  return convertFileSrc(`${iconsDir}/${fileName}`);
 }
 
-export function htmlImgElement(appIcon: string): HTMLImageElement {
+export function htmlImgElement(appIcon?: string): HTMLImageElement {
   const img = new Image();
-  img.src = appIconUrl(appIcon);
+  img.src = appIconUrl(appIcon) ?? DEFAULT_ICON_SVG_URL;
   img.onerror = () => {
     img.src = DEFAULT_ICON_SVG_URL;
     img.onerror = null;
