@@ -57,7 +57,7 @@ import { ScoreBadge, ScoreEdit } from "@/components/tag/score";
 export default function Page({ params }: Route.ComponentProps) {
   const id = +params.id as Ref<Tag>;
   const tag = useTag(id);
-  if (!tag) return;
+  if (!tag) return null;
   return <TagPage tag={tag} />;
 }
 

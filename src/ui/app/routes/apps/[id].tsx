@@ -50,7 +50,7 @@ import { ScoreCircle } from "@/components/tag/score";
 export default function Page({ params }: Route.ComponentProps) {
   const id = +params.id as Ref<App>;
   const app = useApp(id);
-  if (!app) return;
+  if (!app) return null;
   return <AppPage app={app} />;
 }
 

@@ -31,7 +31,7 @@ import { useAlert } from "@/hooks/use-refresh";
 export default function Page({ params }: Route.ComponentProps) {
   const id = +params.id as Ref<Alert>;
   const alert = useAlert(id);
-  if (!alert) return;
+  if (!alert) return null;
   return <AlertPage alert={alert} />;
 }
 
