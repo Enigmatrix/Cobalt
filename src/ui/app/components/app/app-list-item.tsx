@@ -15,7 +15,7 @@ export function AppBadge({ app, remove }: { app: App; remove?: () => void }) {
       <AppIcon appIcon={app.icon} className="h-5 w-5 mr-2" />
       <Text className="text-base">{app.name}</Text>
       {remove && (
-        <button>
+        <button type="button">
           <XIcon
             className="ml-2 h-4 w-4 shrink-0"
             onClick={(event) => {
