@@ -38,7 +38,6 @@ export interface App {
   company: string;
   color: Color;
   identity: AppIdentity;
-  icon: Buffer;
   tagId: Ref<Tag> | null;
   usages: ValuePerPeriod<Duration>;
 }
