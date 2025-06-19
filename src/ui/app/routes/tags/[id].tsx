@@ -164,18 +164,18 @@ function TagPage({ tag }: { tag: Tag }) {
       <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
         <SidebarTrigger className="-ml-1" />
         <Separator orientation="vertical" className="mr-2 h-4" />
-        <Breadcrumb>
-          <BreadcrumbList>
+        <Breadcrumb className="overflow-hidden">
+          <BreadcrumbList className="flex-nowrap overflow-hidden">
             <BreadcrumbItem className="hidden md:block">
               <BreadcrumbLink asChild>
                 <NavLink to="/tags">Tags</NavLink>
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator className="hidden md:block" />
-            <BreadcrumbItem>
-              <BreadcrumbPage className="inline-flex items-center">
+            <BreadcrumbItem className="overflow-hidden">
+              <BreadcrumbPage className="inline-flex items-center overflow-hidden">
                 <TagIcon
-                  className="w-5 h-5 mr-2"
+                  className="w-5 h-5 mr-2 shrink-0"
                   style={{ color: tag.color }}
                 />
                 <Text>{tag.name}</Text>
