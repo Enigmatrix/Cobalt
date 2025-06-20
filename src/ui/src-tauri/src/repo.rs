@@ -221,8 +221,8 @@ pub async fn copy_from_seed_db(state: State<'_, AppState>) -> AppResult<()> {
     init_state(state.clone()).await?;
 
     {
-        let mut state = state.write().await;
-        let mut repo = state.assume_init_mut().get_repo().await?;
+        let state = state.write().await;
+        let mut repo = state.assume_init().get_repo().await?;
         repo.extract_seed_db_icons().await?;
     }
 
@@ -272,9 +272,9 @@ pub async fn copy_from_install_db(state: State<'_, AppState>) -> AppResult<()> {
 #[tracing::instrument(err, skip(state))]
 pub async fn update_usages_end(state: State<'_, AppState>) -> AppResult<()> {
     let now = platform::objects::Timestamp::now();
-    let mut state = state.write().await;
+    let state = state.read().await;
     state
-        .assume_init_mut()
+        .assume_init()
         .get_repo()
         .await?
         .update_usages_set_last(now.to_ticks())
@@ -287,8 +287,8 @@ pub async fn update_usages_end(state: State<'_, AppState>) -> AppResult<()> {
 pub async fn update_app(state: State<'_, AppState>, app: infused::UpdatedApp) -> AppResult<()> {
     let now = platform::objects::Timestamp::now();
     let mut repo = {
-        let mut state = state.write().await;
-        state.assume_init_mut().get_repo().await?
+        let state = state.read().await;
+        state.assume_init().get_repo().await?
     };
     repo.update_app(&app, now).await?;
     Ok(())
@@ -299,8 +299,8 @@ pub async fn update_app(state: State<'_, AppState>, app: infused::UpdatedApp) ->
 pub async fn update_tag(state: State<'_, AppState>, tag: infused::UpdatedTag) -> AppResult<()> {
     let now = platform::objects::Timestamp::now();
     let mut repo = {
-        let mut state = state.write().await;
-        state.assume_init_mut().get_repo().await?
+        let state = state.read().await;
+        state.assume_init().get_repo().await?
     };
     repo.update_tag(&tag, now).await?;
     Ok(())
@@ -316,8 +316,8 @@ pub async fn update_tag_apps(
 ) -> AppResult<()> {
     let now = platform::objects::Timestamp::now();
     let mut repo = {
-        let mut state = state.write().await;
-        state.assume_init_mut().get_repo().await?
+        let state = state.read().await;
+        state.assume_init().get_repo().await?
     };
     repo.update_tag_apps(tag_id, removed_apps, added_apps, now)
         .await?;
@@ -332,8 +332,8 @@ pub async fn create_tag(
 ) -> AppResult<infused::Tag> {
     let now = platform::objects::Timestamp::now();
     let mut repo = {
-        let mut state = state.write().await;
-        state.assume_init_mut().get_repo().await?
+        let state = state.read().await;
+        state.assume_init().get_repo().await?
     };
     Ok(repo.create_tag(&tag, now).await?)
 }
@@ -342,8 +342,8 @@ pub async fn create_tag(
 #[tracing::instrument(err, skip(state))]
 pub async fn remove_tag(state: State<'_, AppState>, tag_id: Ref<Tag>) -> AppResult<()> {
     let mut repo = {
-        let mut state = state.write().await;
-        state.assume_init_mut().get_repo().await?
+        let state = state.read().await;
+        state.assume_init().get_repo().await?
     };
     Ok(repo.remove_tag(tag_id).await?)
 }
@@ -356,8 +356,8 @@ pub async fn create_alert(
 ) -> AppResult<infused::Alert> {
     let now = platform::objects::Timestamp::now();
     let mut repo = {
-        let mut state = state.write().await;
-        state.assume_init_mut().get_repo().await?
+        let state = state.read().await;
+        state.assume_init().get_repo().await?
     };
     Ok(repo.create_alert(alert, now).await?)
 }
@@ -371,8 +371,8 @@ pub async fn update_alert(
 ) -> AppResult<infused::Alert> {
     let now = platform::objects::Timestamp::now();
     let mut repo = {
-        let mut state = state.write().await;
-        state.assume_init_mut().get_repo().await?
+        let state = state.read().await;
+        state.assume_init().get_repo().await?
     };
     Ok(repo.update_alert(prev, next, now).await?)
 }
@@ -381,8 +381,8 @@ pub async fn update_alert(
 #[tracing::instrument(err, skip(state))]
 pub async fn remove_alert(state: State<'_, AppState>, alert_id: Ref<Alert>) -> AppResult<()> {
     let mut repo = {
-        let mut state = state.write().await;
-        state.assume_init_mut().get_repo().await?
+        let state = state.read().await;
+        state.assume_init().get_repo().await?
     };
     Ok(repo.remove_alert(alert_id).await?)
 }
@@ -395,8 +395,8 @@ pub async fn create_alert_event_ignore(
     timestamp: Timestamp,
 ) -> AppResult<()> {
     let mut repo = {
-        let mut state = state.write().await;
-        state.assume_init_mut().get_repo().await?
+        let state = state.read().await;
+        state.assume_init().get_repo().await?
     };
     Ok(repo.create_alert_event_ignore(alert_id, timestamp).await?)
 }
@@ -409,8 +409,8 @@ pub async fn get_app_session_usages(
     end: Timestamp,
 ) -> AppResult<infused::AppSessionUsages> {
     let mut repo = {
-        let mut state = state.write().await;
-        state.assume_init_mut().get_repo().await?
+        let state = state.read().await;
+        state.assume_init().get_repo().await?
     };
     Ok(repo.get_app_session_usages(start, end).await?)
 }
@@ -423,8 +423,8 @@ pub async fn get_interaction_periods(
     end: Timestamp,
 ) -> AppResult<Vec<InteractionPeriod>> {
     let mut repo = {
-        let mut state = state.write().await;
-        state.assume_init_mut().get_repo().await?
+        let state = state.read().await;
+        state.assume_init().get_repo().await?
     };
     Ok(repo.get_interaction_periods(start, end).await?)
 }
@@ -437,8 +437,8 @@ pub async fn get_system_events(
     end: Timestamp,
 ) -> AppResult<Vec<SystemEvent>> {
     let mut repo = {
-        let mut state = state.write().await;
-        state.assume_init_mut().get_repo().await?
+        let state = state.read().await;
+        state.assume_init().get_repo().await?
     };
     Ok(repo.get_system_events(start, end).await?)
 }
