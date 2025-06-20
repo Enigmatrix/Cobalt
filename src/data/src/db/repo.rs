@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::path::Path;
 
 use super::repo_crud::APP_DUR;
 use super::*;
@@ -290,5 +291,34 @@ impl Repository {
         }
 
         Ok(usages)
+    }
+
+    /// Extracts icons from the seed db and saves them to the icons folder
+    pub async fn extract_seed_db_icons(&mut self) -> Result<()> {
+        #[derive(FromRow)]
+        struct Icon {
+            icon: String,
+            icon_blob: Vec<u8>,
+        }
+
+        let icons: Vec<Icon> = query_as(
+            "SELECT icon, icon_blob FROM apps WHERE icon_blob IS NOT NULL AND icon IS NOT NULL",
+        )
+        .fetch_all(self.db.executor())
+        .await?;
+
+        query("ALTER TABLE apps DROP COLUMN icon_blob")
+            .execute(self.db.executor())
+            .await?;
+
+        let dir_path = Config::icons_dir()?;
+        let dir = Path::new(&dir_path);
+
+        for icon in icons {
+            let path = dir.join(icon.icon);
+            std::fs::write(path, icon.icon_blob).context("write icon")?;
+        }
+
+        Ok(())
     }
 }

@@ -211,13 +211,30 @@ pub async fn copy_from_seed_db(state: State<'_, AppState>) -> AppResult<()> {
         *state = Initable::Uninit;
     }
 
+    remove_icon_files()?;
     remove_db_files()?;
 
     let to_file = util::config::Config::config_path("main.db").context("config path")?;
     std::fs::copy("../../../dev/seed.db", to_file).context("copy seed.db")?;
 
-    // reinit state (repo)
-    init_state(state).await?;
+    // reinit state for the sake of repo
+    init_state(state.clone()).await?;
+
+    {
+        let mut state = state.write().await;
+        let mut repo = state.assume_init_mut().get_repo().await?;
+        repo.extract_seed_db_icons().await?;
+    }
+
+    // shutdown state again, lose the cached type info for sqlx
+    {
+        let mut state = state.write().await;
+        state.assume_init().shutdown().await?;
+        *state = Initable::Uninit;
+    }
+    // reinit state
+    init_state(state.clone()).await?;
+
     Ok(())
 }
 
