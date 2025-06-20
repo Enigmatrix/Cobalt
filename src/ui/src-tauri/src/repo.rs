@@ -124,6 +124,16 @@ fn check_and_remove_file(file: &str) -> util::error::Result<()> {
     Ok(())
 }
 
+fn check_and_remove_dir(dir: &str) -> util::error::Result<()> {
+    let dir = util::config::Config::config_path(dir)?;
+    if std::fs::metadata(&dir).map(|f| f.is_dir()).unwrap_or(false) {
+        std::fs::remove_dir_all(&dir).context(format!("remove {}", &dir))?;
+    } else {
+        warn!("dir {} not found", dir);
+    }
+    Ok(())
+}
+
 fn check_and_copy_file(dir: &Path, file: &str) -> util::error::Result<()> {
     let from_file = dir.join(file);
     let to_file = util::config::Config::config_path(file)?;
@@ -138,12 +148,56 @@ fn check_and_copy_file(dir: &Path, file: &str) -> util::error::Result<()> {
     Ok(())
 }
 
+fn check_and_copy_dir(dir: &Path, file: &str) -> util::error::Result<()> {
+    let from_dir = dir.join(file);
+    let to_dir = util::config::Config::config_path(file)?;
+    if std::fs::metadata(&from_dir)
+        .map(|f| f.is_dir())
+        .unwrap_or(false)
+    {
+        let to_dir = Path::new(&to_dir);
+        // Create destination directory if it doesn't exist
+        if !to_dir.exists() {
+            std::fs::create_dir_all(to_dir).context(format!("create dir {}", to_dir.display()))?;
+        }
+
+        // Copy all files from source directory to destination directory
+        for entry in
+            std::fs::read_dir(&from_dir).context(format!("read dir {}", from_dir.display()))?
+        {
+            let entry = entry.context("read dir entry")?;
+            let entry_path = entry.path();
+            let file_name = entry_path.file_name().unwrap();
+            let dest_path = to_dir.join(file_name);
+
+            if entry_path.is_file() {
+                std::fs::copy(&entry_path, &dest_path).context(format!(
+                    "copy file {} to {}",
+                    entry_path.display(),
+                    dest_path.display()
+                ))?;
+            } else if entry_path.is_dir() {
+                // Recursively copy subdirectories
+                check_and_copy_dir(&from_dir, file_name.to_str().unwrap())?;
+            }
+        }
+    } else {
+        warn!("dir {} not found", file);
+    }
+    Ok(())
+}
+
 fn remove_db_files() -> util::error::Result<()> {
     // remove previous files (especially the non-main.db files)
     check_and_remove_file("main.db")?;
     check_and_remove_file("main.db-journal")?;
     check_and_remove_file("main.db-shm")?;
     check_and_remove_file("main.db-wal")?;
+    Ok(())
+}
+
+fn remove_icon_files() -> util::error::Result<()> {
+    check_and_remove_dir("icons")?;
     Ok(())
 }
 
@@ -179,12 +233,14 @@ pub async fn copy_from_install_db(state: State<'_, AppState>) -> AppResult<()> {
         *state = Initable::Uninit;
     }
 
+    remove_icon_files()?;
     remove_db_files()?;
 
     let install_dir = util::config::data_local_dir()
         .context("data local dir")?
         .join("me.enigmatrix.cobalt");
 
+    check_and_copy_dir(&install_dir, "icons")?;
     check_and_copy_file(&install_dir, "main.db")?;
     check_and_copy_file(&install_dir, "main.db-journal")?;
     check_and_copy_file(&install_dir, "main.db-shm")?;
