@@ -18,8 +18,8 @@ import { useAlert } from "@/hooks/use-refresh";
 import type { Ref, Alert as AlertEntity } from "@/lib/entities";
 
 export default function EditAlerts({ params }: Route.ComponentProps) {
-  const id = +params.id;
-  const alert = useAlert(id as Ref<AlertEntity>);
+  const id = +params.id as Ref<AlertEntity>;
+  const alert = useAlert(id);
   if (!alert) throw new Error("Alert not found");
 
   const form = useZodForm({
@@ -66,7 +66,7 @@ export default function EditAlerts({ params }: Route.ComponentProps) {
       }
 
       await updateAlert(alert, object);
-      await navigate("/alerts");
+      await navigate(`/alerts/${alert.id}`);
     },
     [updateAlert, navigate, triggerInfo, alert],
   );
