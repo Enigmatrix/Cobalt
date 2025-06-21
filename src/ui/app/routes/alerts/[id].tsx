@@ -30,6 +30,9 @@ import { useAlert } from "@/hooks/use-refresh";
 
 export default function Page({ params }: Route.ComponentProps) {
   const id = +params.id as Ref<Alert>;
+  if (isNaN(id)) {
+    throw new Error(`Invalid alert ID: ${params.id}`);
+  }
   const alert = useAlert(id);
   if (!alert) return null;
   return <AlertPage alert={alert} />;

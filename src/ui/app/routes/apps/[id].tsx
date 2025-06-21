@@ -49,6 +49,9 @@ import { ScoreCircle } from "@/components/tag/score";
 
 export default function Page({ params }: Route.ComponentProps) {
   const id = +params.id as Ref<App>;
+  if (isNaN(id)) {
+    throw new Error(`Invalid app ID: ${params.id}`);
+  }
   const app = useApp(id);
   if (!app) return null;
   return <AppPage app={app} />;

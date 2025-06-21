@@ -19,6 +19,9 @@ import type { Ref, Alert as AlertEntity } from "@/lib/entities";
 
 export default function EditAlerts({ params }: Route.ComponentProps) {
   const id = +params.id;
+  if (isNaN(id)) {
+    throw new Error(`Invalid alert ID: ${params.id}`);
+  }
   const alert = useAlert(id as Ref<AlertEntity>);
   if (!alert) throw new Error("Alert not found");
 

@@ -56,6 +56,9 @@ import { ScoreBadge, ScoreEdit } from "@/components/tag/score";
 
 export default function Page({ params }: Route.ComponentProps) {
   const id = +params.id as Ref<Tag>;
+  if (isNaN(id)) {
+    throw new Error(`Invalid tag ID: ${params.id}`);
+  }
   const tag = useTag(id);
   if (!tag) return null;
   return <TagPage tag={tag} />;
