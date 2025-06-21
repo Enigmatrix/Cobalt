@@ -1,20 +1,16 @@
 import type { Alert, App, Tag } from "@/lib/entities";
-import fuzzysort from "fuzzysort";
-import _ from "lodash";
+import { matchSorter, type KeyOption } from "match-sorter";
 import { useMemo, useState } from "react";
-import { type Path } from "react-hook-form";
 import { useAppState } from "@/lib/state";
 
-export function useSearch<T>(items: T[], paths: Path<T>[]) {
+export function useSearch<T>(items: T[], paths: KeyOption<T>[]) {
   const [query, setQuery] = useState("");
 
   const filtered = useMemo(() => {
     if (query) {
-      const results = fuzzysort.go(query, items, {
+      return matchSorter(items, query, {
         keys: paths,
       });
-      // ignore fuzzy-search sorting.
-      return _.map(results, "obj");
     } else {
       return items;
     }

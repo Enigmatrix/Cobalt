@@ -67,7 +67,7 @@ pub fn setup(config: &Config) -> Result<()> {
     let rolling = RollingFileAppender::builder()
         .rotation(Rotation::DAILY)
         .filename_prefix(log_file)
-        .filename_suffix(".log")
+        .filename_suffix("log")
         .max_log_files(50)
         .build(config.logs_dir()?)?;
 

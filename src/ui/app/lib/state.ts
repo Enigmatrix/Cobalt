@@ -87,7 +87,7 @@ interface AppState {
   createTag: (tag: CreateTag) => Promise<Ref<Tag>>;
   removeTag: (tagId: Ref<Tag>) => Promise<void>;
   createAlert: (tag: CreateAlert) => Promise<Ref<Alert>>;
-  updateAlert: (prev: Alert, next: UpdatedAlert) => Promise<void>;
+  updateAlert: (prev: Alert, next: UpdatedAlert) => Promise<Ref<Alert>>;
   removeAlert: (tagId: Ref<Alert>) => Promise<void>;
 }
 
@@ -212,6 +212,7 @@ export const useAppState = create<AppState>((set) => {
           draft.alerts[newAlert.id] = newAlert;
         })(state),
       );
+      return newAlert.id;
     },
     removeAlert: async (alertId) => {
       await removeAlert(alertId);
