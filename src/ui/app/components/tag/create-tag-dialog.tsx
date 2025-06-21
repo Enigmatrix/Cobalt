@@ -67,7 +67,7 @@ export function CreateTagDialog({ onSubmit, trigger }: CreateTagDialogProps) {
       <DialogTrigger asChild>
         {trigger ?? <Button variant="outline">Create Tag</Button>}
       </DialogTrigger>
-      <DialogContent className="flex flex-col sm:max-w-[425px]">
+      <DialogContent className="flex flex-col max-h-[calc(100vh-6rem)] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create Tag</DialogTitle>
           <DialogDescription>
