@@ -1,7 +1,7 @@
 use reqwest::Url;
 use util::error::{Context, Result};
 use util::tracing::info;
-use windows::core::VARIANT;
+use windows::core::{AgileReference, VARIANT};
 use windows::Win32::System::Com::StructuredStorage::{
     PropVariantToStringAlloc, VariantToPropVariant,
 };
@@ -16,7 +16,7 @@ use crate::objects::Window;
 
 /// Detects browser usage information
 pub struct BrowserDetector {
-    automation: IUIAutomation,
+    automation: AgileReference<IUIAutomation>,
 }
 
 /// Detected browser URL with extra information
@@ -33,7 +33,9 @@ impl BrowserDetector {
     pub fn new() -> Result<Self> {
         let automation: IUIAutomation =
             unsafe { CoCreateInstance(&CUIAutomation, None, CLSCTX_ALL)? };
-        Ok(Self { automation })
+        Ok(Self {
+            automation: AgileReference::new(&automation)?,
+        })
     }
 
     /// Check if the path is a browser. Not meant to be super-accurate, but should be good enough.
@@ -54,10 +56,11 @@ impl BrowserDetector {
     /// Notably, this only works for Chrome and Edge right now.
     /// This might break in the future if Chrome/Edge team changes the UI.
     pub fn chromium_url(&self, window: &Window) -> Result<BrowserUrl> {
-        let element = unsafe { self.automation.ElementFromHandle(window.hwnd)? };
+        let element = unsafe { self.automation.resolve()?.ElementFromHandle(window.hwnd)? };
 
         let browser_root_view_cond = unsafe {
             self.automation
+                .resolve()?
                 .CreatePropertyCondition(UIA_ClassNamePropertyId, &"BrowserRootView".into())?
         };
         let browser_root_view = self
@@ -86,6 +89,7 @@ impl BrowserDetector {
 
         let root_web_area_cond = unsafe {
             self.automation
+                .resolve()?
                 .CreatePropertyCondition(UIA_AutomationIdPropertyId, &"RootWebArea".into())?
         };
         let root_web_area = self
@@ -107,6 +111,7 @@ impl BrowserDetector {
 
         let omnibox_cond = unsafe {
             self.automation
+                .resolve()?
                 .CreatePropertyCondition(UIA_NamePropertyId, &"Address and search bar".into())?
         };
         let omnibox = self
