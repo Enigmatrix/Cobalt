@@ -41,7 +41,7 @@ pub struct BrowserDetector {
 }
 
 /// Detected browser URL with extra information
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct BrowserUrl {
     /// The URL
     pub url: Option<String>,

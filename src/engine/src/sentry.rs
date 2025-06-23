@@ -1,10 +1,13 @@
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
 use data::db::{AlertManager, Database, TriggeredAlert};
 use data::entities::{
     AlertEvent, App, Duration, Reason, Ref, ReminderEvent, Target, Timestamp, TriggerAction,
 };
+use platform::events::TabChange;
 use platform::objects::{Process, Progress, Timestamp as PlatformTimestamp, ToastManager, Window};
+use platform::web::{BaseWebsiteUrl, BrowserDetector, WebsiteInfo};
 use util::error::Result;
 use util::future::sync::Mutex;
 use util::time::ToTicks;
@@ -16,6 +19,9 @@ use crate::cache::{Cache, KillableProcessId};
 pub struct Sentry {
     cache: Arc<Mutex<Cache>>,
     mgr: AlertManager,
+    // Invariant: the dimmed_websites map is *wholly* updated. That is, run() executes
+    // and updates this after clearing it with *all* alerts' websites.
+    dimmed_websites: HashMap<String, f64>,
 }
 
 const MIN_DIM_LEVEL: f64 = 0.5;
@@ -24,7 +30,41 @@ impl Sentry {
     /// Create a new [Sentry] with the given [Cache] and [Database].
     pub fn new(cache: Arc<Mutex<Cache>>, db: Database) -> Result<Self> {
         let mgr = AlertManager::new(db)?;
-        Ok(Self { cache, mgr })
+        Ok(Self {
+            cache,
+            mgr,
+            dimmed_websites: HashMap::new(),
+        })
+    }
+
+    /// Dim the browser windows matching the given [TabUpdate].
+    pub async fn dim_alerted_browser_windows_matching_tab_change(
+        &mut self,
+        tab_change: TabChange,
+    ) -> Result<()> {
+        let browser_detect = BrowserDetector::new()?;
+
+        let changed_browser_windows = match tab_change {
+            TabChange::Tab { window } => HashSet::from_iter(vec![window]),
+            TabChange::Tick => {
+                let cache = self.cache.lock().await;
+                cache.browser_windows().await
+            }
+        };
+
+        for window in changed_browser_windows {
+            let browser_url = browser_detect.chromium_url(&window).unwrap_or_default();
+            let url = browser_url.url.unwrap_or_default();
+            let url = WebsiteInfo::url_to_base_url(&url)?.to_string();
+
+            if let Some(dim_level) = self.dimmed_websites.get(&url) {
+                self.handle_dim_action(&window, *dim_level).warn();
+            } else {
+                self.handle_dim_action(&window, 1.0f64).warn();
+            }
+        }
+
+        Ok(())
     }
 
     /// Run the [Sentry] to check for triggered alerts and reminders and take action on them.
@@ -35,6 +75,9 @@ impl Sentry {
             let mut cache = self.cache.lock().await;
             cache.retain_cache().await?;
         }
+
+        self.dimmed_websites.clear();
+
         let alerts_hits = self.mgr.triggered_alerts(&now).await?;
         for triggered_alert in alerts_hits {
             self.handle_alert(&triggered_alert, now).await?;
@@ -63,8 +106,8 @@ impl Sentry {
         Ok(())
     }
 
-    /// Get the [ProcessId]s for the given [Target].
-    pub async fn processes_for_target(
+    /// Get the apps and processes for the given [Target], those that are platform-based, rather than websites.
+    pub async fn processes_for_platform_target(
         &mut self,
         target: &Target,
     ) -> Result<Vec<(Ref<App>, KillableProcessId)>> {
@@ -76,7 +119,7 @@ impl Sentry {
             .iter()
             .flat_map(move |app| {
                 cache
-                    .processes_for_app(app)
+                    .platform_processes_for_app(app)
                     .into_iter()
                     .map(|pid| (app.clone(), pid))
             })
@@ -84,19 +127,31 @@ impl Sentry {
         Ok(processes)
     }
 
-    /// Get the [Window]s for the given [Target].
-    pub async fn windows_for_target(&mut self, target: &Target) -> Result<Vec<Window>> {
+    /// Get the [Window]s and websites for the given [Target].
+    pub async fn windows_and_websites_for_target(
+        &mut self,
+        target: &Target,
+    ) -> Result<(Vec<Window>, Vec<BaseWebsiteUrl>)> {
+        let target_apps = self.mgr.target_apps(target).await?;
+
         let cache = self.cache.lock().await;
-        let window = self
-            .mgr
-            .target_apps(target)
-            .await?
+        let windows = target_apps
             .iter()
             .flat_map(move |app| {
-                cache.windows_for_app(app).cloned().collect::<Vec<_>>() // ew
+                cache
+                    .platform_windows_for_app(app)
+                    .cloned()
+                    .collect::<Vec<_>>() // ew
             })
             .collect();
-        Ok(window)
+
+        // yes, we lock twice here ...
+        let cache = self.cache.lock().await;
+        let websites = target_apps
+            .iter()
+            .flat_map(move |app| cache.websites_for_app(app).cloned().collect::<Vec<_>>())
+            .collect();
+        Ok((windows, websites))
     }
 
     /// Handle the given [TriggeredAlert] and take action on it.
@@ -112,7 +167,8 @@ impl Sentry {
         } = triggered_alert;
         match &alert.trigger_action {
             TriggerAction::Kill => {
-                let processes = self.processes_for_target(&alert.target).await?;
+                // TODO: kill websites too
+                let processes = self.processes_for_platform_target(&alert.target).await?;
                 for (app, pid) in processes {
                     info!(?alert, "killing process {:?} for app {:?}", pid, app);
                     match pid {
@@ -133,12 +189,17 @@ impl Sentry {
                 }
             }
             TriggerAction::Dim { duration } => {
-                let windows = self.windows_for_target(&alert.target).await?;
+                let (windows, websites) =
+                    self.windows_and_websites_for_target(&alert.target).await?;
                 let start = timestamp.unwrap_or(now.to_ticks());
                 let end: Timestamp = now.to_ticks();
                 let progress = (end - start) as f64 / (*duration as f64);
+                let dim_level = 1.0f64 - (progress.min(1.0f64) * (1.0f64 - MIN_DIM_LEVEL));
+
+                self.dimmed_websites
+                    .extend(websites.into_iter().map(|url| (url.to_string(), dim_level)));
+
                 for window in windows {
-                    let dim_level = 1.0f64 - (progress.min(1.0f64) * (1.0f64 - MIN_DIM_LEVEL));
                     if dim_level == 1.0f64 {
                         info!(?alert, "start dimming window {:?}", window);
                     } else if dim_level == MIN_DIM_LEVEL && progress <= 1.01f64 {
