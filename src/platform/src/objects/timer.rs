@@ -1,62 +1,57 @@
-use std::ffi::c_void;
+use std::cell::RefCell;
+use std::collections::HashMap;
 
 use util::error::*;
 use util::tracing::ResultTraceExt;
-use windows::Win32::Foundation::{BOOLEAN, HANDLE};
-use windows::Win32::System::Threading::{
-    CreateTimerQueueTimer, DeleteTimerQueueTimer, WORKER_THREAD_FLAGS,
-};
+use windows::Win32::Foundation::HWND;
+use windows::Win32::UI::WindowsAndMessaging::{KillTimer, SetTimer};
 
 use crate::objects::Duration;
 
 type Callback = Box<dyn FnMut() -> Result<()>>;
 
+thread_local! {
+    static TIMER_CALLBACKS: RefCell<HashMap<usize, Callback>> = RefCell::new(HashMap::new());
+}
+
 /// Win32-based [Timer]. Needs to be scheduled onto a [EventLoop].
 pub struct Timer {
-    handle: HANDLE,
-    _cb: Box<Callback>,
+    hwnd: HWND,
+    timer_id: usize,
 }
 
 impl Timer {
     /// Create a new [Timer] which calls the callback with the specified due and period.
-    pub fn new(due: Duration, period: Duration, cb: Callback) -> Result<Timer> {
-        let mut handle = HANDLE::default();
-        // Need to double box (Callback is also boxed) - cb.as_mut() on Callback
-        // will return a vtable+data rather than just one pointer. Double boxing
-        // will give us a single pointer but we pay for an additional indirection.
-        let mut cb = Box::new(cb);
-
-        unsafe {
-            CreateTimerQueueTimer(
-                &mut handle,
-                HANDLE::default(),
-                Some(Self::trampoline),
-                Some(cb.as_mut() as *mut _ as *mut _),
-                due.millis(),
-                period.millis(),
-                WORKER_THREAD_FLAGS::default(), // use different flags to change priority
-            )
-        }
-        .context("create native timer")?;
-
-        Ok(Timer { handle, _cb: cb })
+    pub fn new(period: Duration, cb: Callback) -> Result<Timer> {
+        // Store the callback in the thread-local map
+        // Set the timer (due is initial delay, period is interval)
+        let interval = period.millis();
+        let hwnd = HWND::default();
+        let timer_id = unsafe { SetTimer(hwnd, 0, interval, Some(Self::callback)) };
+        TIMER_CALLBACKS.with(|map| {
+            map.borrow_mut().insert(timer_id, cb);
+        });
+        Ok(Timer { hwnd, timer_id })
     }
 
-    unsafe extern "system" fn trampoline(ctx: *mut c_void, _: BOOLEAN) {
-        ctx.cast::<Callback>().as_mut().unwrap()()
-            .context("timer callback")
-            .error();
+    unsafe extern "system" fn callback(_hwnd: HWND, _msg: u32, id_timer: usize, _dw_time: u32) {
+        TIMER_CALLBACKS.with_borrow_mut(|map| {
+            if let Some(cb) = map.get_mut(&id_timer) {
+                cb().context("timer callback").error();
+            }
+        });
     }
 }
 
 impl Drop for Timer {
     fn drop(&mut self) {
         unsafe {
-            // INVALID handle for completionevent means that we are waiting for
-            // this deletion to finish execution (esp when we have a running callback in timer)
-            DeleteTimerQueueTimer(HANDLE(0), self.handle, HANDLE(-1))
+            KillTimer(self.hwnd, self.timer_id)
+                .context("kill timer")
+                .error();
         }
-        .context("drop timer")
-        .warn();
+        TIMER_CALLBACKS.with(|map| {
+            map.borrow_mut().remove(&self.timer_id);
+        });
     }
 }

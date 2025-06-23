@@ -104,7 +104,6 @@ fn event_loop(
 
     let _poll_timer = Timer::new(
         poll_dur,
-        poll_dur,
         Box::new(move || {
             let now = Timestamp::now();
             // if there is a switch event, process it. otherwise, tick to update the usage.
@@ -121,7 +120,6 @@ fn event_loop(
     )?;
 
     let _alert_timer = Timer::new(
-        alert_dur,
         alert_dur,
         Box::new(move || {
             let now = Timestamp::now();
