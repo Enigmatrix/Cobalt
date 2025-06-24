@@ -93,7 +93,8 @@ fn event_loop(
         let now = Timestamp::now();
         info!("system state event: {:?}, {:?}", event, now);
         let last_interaction = _it_watcher
-            .lock()
+            .borrow_mut()
+            .as_mut()
             .unwrap()
             .short_circuit(event.state.is_active(), now);
         system_event_tx
@@ -115,7 +116,7 @@ fn event_loop(
             } else {
                 event_tx.send(Event::Tick(now))?;
             }
-            if let Some(event) = it_watcher.lock().unwrap().poll(now)? {
+            if let Some(event) = it_watcher.borrow_mut().as_mut().unwrap().poll(now)? {
                 event_tx.send(Event::InteractionChanged(event))?;
             }
             Ok(())

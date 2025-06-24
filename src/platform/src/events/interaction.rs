@@ -1,6 +1,7 @@
+use std::cell::RefCell;
 use std::ffi::c_void;
+use std::rc::Rc;
 use std::sync::atomic::{AtomicI64, Ordering};
-use std::sync::{Arc, Mutex, OnceLock};
 
 use util::config::Config;
 use util::error::{bail, Context, Result};
@@ -18,8 +19,9 @@ static INTERACTION_LAST_INTERACTION: AtomicI64 = AtomicI64::new(0);
 static INTERACTION_MOUSE_CLICKS: AtomicI64 = AtomicI64::new(0);
 static INTERACTION_KEY_STROKES: AtomicI64 = AtomicI64::new(0);
 
-// Thread-safe instance container using OnceLock
-static INTERACTION_INSTANCE: OnceLock<Arc<Mutex<InteractionWatcher>>> = OnceLock::new();
+thread_local! {
+    static INTERACTION_INSTANCE: Rc<RefCell<Option<InteractionWatcher>>> = Rc::new(RefCell::new(None));
+}
 
 /// Watches for user interaction and notifies when the user becomes idle or active,
 /// including counting mouse_clicks and key_presses.
@@ -50,9 +52,9 @@ pub struct InteractionChangedEvent {
 
 impl InteractionWatcher {
     /// Create a new [InteractionWatcher] with the specified [Config] and current [Timestamp].
-    pub fn init(config: &Config, at: Timestamp) -> Result<Arc<Mutex<Self>>> {
+    pub fn init(config: &Config, at: Timestamp) -> Result<Rc<RefCell<Option<Self>>>> {
         // Check if already initialized
-        if INTERACTION_INSTANCE.get().is_some() {
+        if INTERACTION_INSTANCE.with(|instance| instance.borrow().is_some()) {
             bail!("InteractionWatcher already initialized");
         }
 
@@ -65,12 +67,12 @@ impl InteractionWatcher {
         };
 
         // Initialize the global instance if not already done
-        let instance_container = INTERACTION_INSTANCE.get_or_init(|| {
+        let instance = INTERACTION_INSTANCE.with(|ginstance| {
             INTERACTION_LAST_INTERACTION.store(at.to_ticks(), Ordering::Relaxed);
-            Arc::new(Mutex::new(instance))
+            *ginstance.borrow_mut() = Some(instance);
+            ginstance.clone()
         });
-
-        Ok(instance_container.clone())
+        Ok(instance)
     }
 
     /// Short-circuit the interaction watcher if the user is active.
