@@ -1,11 +1,12 @@
 use reqwest::Url;
 use util::error::{Context, Result};
 use util::tracing::{debug, info};
-use windows::core::{AgileReference, Interface, VARIANT};
+use windows::core::{AgileReference, Interface};
 use windows::Win32::System::Com::StructuredStorage::{
     PropVariantToStringAlloc, VariantToPropVariant,
 };
 use windows::Win32::System::Com::{CoCreateInstance, CoTaskMemFree, CLSCTX_ALL};
+use windows::Win32::System::Variant::VARIANT;
 use windows::Win32::UI::Accessibility::{
     AutomationElementMode_None, CUIAutomation, IUIAutomation, IUIAutomationCacheRequest,
     IUIAutomationCondition, IUIAutomationElement, IUIAutomationElement9, TreeScope_Descendants,

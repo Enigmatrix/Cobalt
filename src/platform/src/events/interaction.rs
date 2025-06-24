@@ -32,6 +32,10 @@ pub struct InteractionWatcher {
     _keyboard_hook: WindowsHook<KeyboardLL>,
 }
 
+// THIS IS WRONG!
+unsafe impl Send for InteractionWatcher {}
+unsafe impl Sync for InteractionWatcher {}
+
 /// Active Period Event
 pub struct InteractionChangedEvent {
     /// Start of active period

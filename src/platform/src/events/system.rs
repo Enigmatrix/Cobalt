@@ -1,5 +1,6 @@
 use util::error::{Context, Result};
 use util::tracing::{info, ResultTraceExt};
+use windows::Win32::Foundation::HANDLE;
 use windows::Win32::System::Power::{
     RegisterPowerSettingNotification, UnregisterPowerSettingNotification, HPOWERNOTIFY,
     POWERBROADCAST_SETTING,
@@ -122,7 +123,8 @@ impl<'a> SystemEventWatcher<'a> {
 
         let monitor_power_notification = unsafe {
             RegisterPowerSettingNotification(
-                hwnd,
+                // yes, we are casting to HANDLE for this method, the documentation says its correct
+                HANDLE(hwnd.0),
                 &GUID_MONITOR_POWER_ON,
                 DEVICE_NOTIFY_WINDOW_HANDLE,
             )

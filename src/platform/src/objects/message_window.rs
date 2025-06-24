@@ -67,15 +67,11 @@ impl MessageWindow {
                 CW_USEDEFAULT,
                 CW_USEDEFAULT,
                 CW_USEDEFAULT,
-                HWND_DESKTOP,
+                Some(HWND_DESKTOP),
                 None,
                 None,
                 None,
-            );
-
-            if hwnd == HWND::default() {
-                return Err(Error::from_win32()).context("Failed to create MessageWindow");
-            }
+            )?;
 
             let callbacks = Box::leak(Box::new(Rc::new(RefCell::new(Vec::new()))));
 

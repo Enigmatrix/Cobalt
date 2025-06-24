@@ -122,7 +122,7 @@ fn tab_to_string(tab: &TabDetails, window: &BrowserWindow, browser: &Browser) ->
         tab.url.as_deref().unwrap_or("<UNKNOWN>"),
         if tab.incognito { " [Incognito]" } else { "" },
         // window.window.title,
-        window.window.window.hwnd.0,
+        window.window.window.hwnd.0 as usize,
         browser.process.name,
         browser.process.pid,
         tab.name

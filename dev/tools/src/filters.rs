@@ -51,7 +51,7 @@ impl WindowFilter {
     pub fn matches(&self, window: &WindowDetails) -> bool {
         if let Some(handle_filter) = &self.handle {
             let handle_filter = handle_filter.to_lowercase();
-            if !format!("{:08x}", window.window.hwnd.0)
+            if !format!("{:08x}", window.window.hwnd.0 as usize)
                 .to_lowercase()
                 .contains(&handle_filter)
             {

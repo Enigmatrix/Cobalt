@@ -16,7 +16,7 @@ thread_local! {
 
 /// Win32-based [Timer]. Needs to be scheduled onto a [EventLoop].
 pub struct Timer {
-    hwnd: HWND,
+    hwnd: Option<HWND>,
     timer_id: usize,
 }
 
@@ -26,8 +26,8 @@ impl Timer {
         // Store the callback in the thread-local map
         // Set the timer (due is initial delay, period is interval)
         let interval = period.millis();
-        let hwnd = HWND::default();
-        let timer_id = unsafe { SetTimer(hwnd, 0, interval, Some(Self::callback)) };
+        let hwnd = None;
+        let timer_id = unsafe { SetTimer(hwnd, 0, interval, Some(Some(Self::callback))) };
         TIMER_CALLBACKS.with(|map| {
             map.borrow_mut().insert(timer_id, cb);
         });

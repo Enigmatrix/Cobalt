@@ -19,7 +19,7 @@ impl User {
     pub fn current() -> Result<Self> {
         let mut buffer = [0u16; MAX_PATH as usize];
         let mut size = MAX_PATH;
-        unsafe { GetUserNameW(PWSTR(buffer.as_mut_ptr()), &mut size)? };
+        unsafe { GetUserNameW(Some(PWSTR(buffer.as_mut_ptr())), &mut size)? };
         let username = String::from_utf16_lossy(&buffer[..size as usize - 1]);
         let is_admin = unsafe { IsUserAnAdmin().as_bool() };
         Ok(Self { username, is_admin })

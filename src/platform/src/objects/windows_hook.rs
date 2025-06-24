@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 
 use util::error::{Context, Result};
 use util::tracing::ResultTraceExt;
-use windows::Win32::Foundation::{HMODULE, LPARAM, LRESULT, WPARAM};
+use windows::Win32::Foundation::{LPARAM, LRESULT, WPARAM};
 use windows::Win32::UI::WindowsAndMessaging::{
     CallNextHookEx, SetWindowsHookExW, UnhookWindowsHookEx, HHOOK, WINDOWS_HOOK_ID,
 };
@@ -25,7 +25,7 @@ impl<T: WindowsHookType> WindowsHook<T> {
     /// Global hook for the given hook type.
     pub fn global() -> Result<WindowsHook<T>> {
         let hook = unsafe {
-            SetWindowsHookExW(T::id(), Some(Self::trampoline), HMODULE::default(), 0)
+            SetWindowsHookExW(T::id(), Some(Self::trampoline), None, 0)
                 .context("create global windows hook")?
         };
         Ok(WindowsHook {
@@ -36,7 +36,7 @@ impl<T: WindowsHookType> WindowsHook<T> {
 
     unsafe extern "system" fn trampoline(ncode: i32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
         T::callback(ncode, wparam, lparam);
-        CallNextHookEx(HHOOK::default(), ncode, wparam, lparam)
+        CallNextHookEx(None, ncode, wparam, lparam)
     }
 }
 
