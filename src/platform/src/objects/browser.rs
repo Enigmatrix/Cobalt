@@ -1,6 +1,6 @@
 use reqwest::Url;
 use util::error::{Context, Result};
-use util::tracing::info;
+use util::tracing::{debug, info};
 use windows::core::{AgileReference, Interface, VARIANT};
 use windows::Win32::System::Com::StructuredStorage::{
     PropVariantToStringAlloc, VariantToPropVariant,
@@ -14,6 +14,14 @@ use windows::Win32::UI::Accessibility::{
 };
 
 use crate::objects::Window;
+
+fn perf<T>(f: impl FnOnce() -> T, name: &str) -> T {
+    let start = std::time::Instant::now();
+    let result = f();
+    let elapsed = start.elapsed();
+    debug!("{elapsed:?} for {name}");
+    result
+}
 
 /// Detects browser usage information
 pub struct BrowserDetector {
@@ -83,17 +91,24 @@ impl BrowserDetector {
     /// Notably, this only works for Chrome and Edge right now.
     /// This might break in the future if Chrome/Edge team changes the UI.
     pub fn chromium_url(&self, window: &Window) -> Result<BrowserUrl> {
-        let element: IUIAutomationElement9 =
-            unsafe { self.automation.resolve()?.ElementFromHandle(window.hwnd) }?.cast()?;
+        let element: IUIAutomationElement9 = perf(
+            || unsafe { self.automation.resolve()?.ElementFromHandle(window.hwnd) }?.cast(),
+            "ElementFromHandle",
+        )?;
 
         let browser_root_view = self
-            .uia_find_result(unsafe {
-                element.FindFirstBuildCache(
-                    TreeScope_Descendants,
-                    &self.browser_root_view_cond.resolve()?,
-                    &self.cache_request.resolve()?,
-                )
-            })
+            .uia_find_result(perf(
+                || unsafe {
+                    element.FindFirstWithOptionsBuildCache(
+                        TreeScope_Descendants,
+                        &self.browser_root_view_cond.resolve()?,
+                        &self.cache_request.resolve()?,
+                        TreeTraversalOptions_LastToFirstOrder,
+                        &element,
+                    )
+                },
+                "browser_root_view - FindFirstWithOptionsBuildCache",
+            ))
             .context("find browser root view")?;
         let browser_root_view = match browser_root_view {
             Some(browser_root_view) => browser_root_view,
@@ -104,9 +119,14 @@ impl BrowserDetector {
                 })
             }
         };
-        let name = self.variant_to_string(unsafe {
-            browser_root_view.GetCachedPropertyValue(UIA_NamePropertyId)?
-        })?;
+        let name = perf(
+            || {
+                self.variant_to_string(unsafe {
+                    browser_root_view.GetCachedPropertyValue(UIA_NamePropertyId)?
+                })
+            },
+            "browser_root_view - GetCachedPropertyValue(UIA_NamePropertyId)",
+        )?;
 
         // This seems to be the only way to detect incognito mode in Edge
         // Not sure why the \u{200b} is needed, but it works.
@@ -115,20 +135,28 @@ impl BrowserDetector {
             || name.ends_with("- Microsoft Edge (InPrivate)");
 
         let root_web_area = self
-            .uia_find_result(unsafe {
-                element.FindFirstWithOptionsBuildCache(
-                    TreeScope_Descendants,
-                    &self.root_web_area_cond.resolve()?,
-                    &self.cache_request.resolve()?,
-                    TreeTraversalOptions_LastToFirstOrder,
-                    &element,
-                )
-            })
+            .uia_find_result(perf(
+                || unsafe {
+                    element.FindFirstWithOptionsBuildCache(
+                        TreeScope_Descendants,
+                        &self.root_web_area_cond.resolve()?,
+                        &self.cache_request.resolve()?,
+                        TreeTraversalOptions_LastToFirstOrder,
+                        &element,
+                    )
+                },
+                "root_web_area - FindFirstWithOptionsBuildCache",
+            ))
             .context("find root web area")?;
         if let Some(root_web_area) = root_web_area {
-            let url = self.variant_to_string(unsafe {
-                root_web_area.GetCachedPropertyValue(UIA_ValueValuePropertyId)?
-            })?;
+            let url = perf(
+                || {
+                    self.variant_to_string(unsafe {
+                        root_web_area.GetCachedPropertyValue(UIA_ValueValuePropertyId)?
+                    })
+                },
+                "root_web_area - GetCachedPropertyValue(UIA_ValueValuePropertyId)",
+            )?;
             if !url.is_empty() {
                 return Ok(BrowserUrl {
                     url: Some(url),
@@ -138,13 +166,16 @@ impl BrowserDetector {
         }
 
         let omnibox = self
-            .uia_find_result(unsafe {
-                element.FindFirstBuildCache(
-                    TreeScope_Descendants,
-                    &self.omnibox_cond.resolve()?,
-                    &self.cache_request.resolve()?,
-                )
-            })
+            .uia_find_result(perf(
+                || unsafe {
+                    element.FindFirstBuildCache(
+                        TreeScope_Descendants,
+                        &self.omnibox_cond.resolve()?,
+                        &self.cache_request.resolve()?,
+                    )
+                },
+                "omnibox - FindFirstBuildCache",
+            ))
             .context("find omnibox")?;
         let omnibox = match omnibox {
             Some(omnibox) => omnibox,
@@ -156,7 +187,10 @@ impl BrowserDetector {
             }
         };
 
-        let search_value = unsafe { omnibox.GetCachedPropertyValue(UIA_ValueValuePropertyId)? };
+        let search_value = perf(
+            || unsafe { omnibox.GetCachedPropertyValue(UIA_ValueValuePropertyId) },
+            "omnibox - GetCachedPropertyValue(UIA_ValueValuePropertyId)",
+        )?;
         let search_value = self.variant_to_string(search_value)?;
         info!("using omnibox url: {search_value}");
 
