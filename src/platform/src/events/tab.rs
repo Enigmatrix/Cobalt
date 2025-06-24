@@ -42,7 +42,7 @@ impl BrowserTabWatcher {
 
         // Add any new browsers to the list, watch them for title changes
         for pid in pids {
-            if !self.browser_pids.contains_key(&pid) {
+            if !self.browser_pids.contains_key(pid) {
                 let tab_change_tx = self.tab_change_tx.clone();
                 let callback = Box::new(move |window: Window| {
                     tab_change_tx.send(TabChange::Tab { window })?;
