@@ -1,16 +1,16 @@
 use reqwest::Url;
 use util::error::{Context, Result};
 use util::tracing::info;
-use windows::core::{AgileReference, VARIANT};
+use windows::core::{AgileReference, Interface, VARIANT};
 use windows::Win32::System::Com::StructuredStorage::{
     PropVariantToStringAlloc, VariantToPropVariant,
 };
 use windows::Win32::System::Com::{CoCreateInstance, CoTaskMemFree, CLSCTX_ALL};
 use windows::Win32::UI::Accessibility::{
     AutomationElementMode_None, CUIAutomation, IUIAutomation, IUIAutomationCacheRequest,
-    IUIAutomationCondition, IUIAutomationElement, TreeScope_Descendants,
-    UIA_AutomationIdPropertyId, UIA_ClassNamePropertyId, UIA_NamePropertyId,
-    UIA_ValueValuePropertyId,
+    IUIAutomationCondition, IUIAutomationElement, IUIAutomationElement9, TreeScope_Descendants,
+    TreeTraversalOptions_LastToFirstOrder, UIA_AutomationIdPropertyId, UIA_ClassNamePropertyId,
+    UIA_NamePropertyId, UIA_ValueValuePropertyId,
 };
 
 use crate::objects::Window;
@@ -83,7 +83,8 @@ impl BrowserDetector {
     /// Notably, this only works for Chrome and Edge right now.
     /// This might break in the future if Chrome/Edge team changes the UI.
     pub fn chromium_url(&self, window: &Window) -> Result<BrowserUrl> {
-        let element = unsafe { self.automation.resolve()?.ElementFromHandle(window.hwnd)? };
+        let element: IUIAutomationElement9 =
+            unsafe { self.automation.resolve()?.ElementFromHandle(window.hwnd) }?.cast()?;
 
         let browser_root_view = self
             .uia_find_result(unsafe {
@@ -115,10 +116,12 @@ impl BrowserDetector {
 
         let root_web_area = self
             .uia_find_result(unsafe {
-                element.FindFirstBuildCache(
+                element.FindFirstWithOptionsBuildCache(
                     TreeScope_Descendants,
                     &self.root_web_area_cond.resolve()?,
                     &self.cache_request.resolve()?,
+                    TreeTraversalOptions_LastToFirstOrder,
+                    &element,
                 )
             })
             .context("find root web area")?;
@@ -199,9 +202,9 @@ impl BrowserDetector {
     fn uia_find_result(
         &self,
         value: windows::core::Result<IUIAutomationElement>,
-    ) -> windows::core::Result<Option<IUIAutomationElement>> {
+    ) -> windows::core::Result<Option<IUIAutomationElement9>> {
         match value {
-            Ok(value) => Ok(Some(value)),
+            Ok(value) => Ok(Some(value.cast()?)),
             Err(err) if err.code().is_ok() => Ok(None),
             Err(err) => Err(err),
         }
