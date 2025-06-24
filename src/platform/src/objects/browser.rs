@@ -7,8 +7,9 @@ use windows::Win32::System::Com::StructuredStorage::{
 };
 use windows::Win32::System::Com::{CoCreateInstance, CoTaskMemFree, CLSCTX_ALL};
 use windows::Win32::UI::Accessibility::{
-    CUIAutomation, IUIAutomation, IUIAutomationCondition, IUIAutomationElement,
-    TreeScope_Descendants, UIA_AutomationIdPropertyId, UIA_ClassNamePropertyId, UIA_NamePropertyId,
+    AutomationElementMode_None, CUIAutomation, IUIAutomation, IUIAutomationCacheRequest,
+    IUIAutomationCondition, IUIAutomationElement, TreeScope_Descendants,
+    UIA_AutomationIdPropertyId, UIA_ClassNamePropertyId, UIA_NamePropertyId,
     UIA_ValueValuePropertyId,
 };
 
@@ -20,6 +21,7 @@ pub struct BrowserDetector {
     browser_root_view_cond: AgileReference<IUIAutomationCondition>,
     root_web_area_cond: AgileReference<IUIAutomationCondition>,
     omnibox_cond: AgileReference<IUIAutomationCondition>,
+    cache_request: AgileReference<IUIAutomationCacheRequest>,
 }
 
 /// Detected browser URL with extra information
@@ -47,11 +49,19 @@ impl BrowserDetector {
             automation
                 .CreatePropertyCondition(UIA_NamePropertyId, &"Address and search bar".into())?
         };
+        let cache_request = unsafe {
+            let cache_requesst = automation.CreateCacheRequest()?;
+            cache_requesst.SetAutomationElementMode(AutomationElementMode_None)?;
+            cache_requesst.AddProperty(UIA_NamePropertyId)?;
+            cache_requesst.AddProperty(UIA_ValueValuePropertyId)?;
+            cache_requesst
+        };
         Ok(Self {
             automation: AgileReference::new(&automation)?,
             browser_root_view_cond: AgileReference::new(&browser_root_view_cond)?,
             root_web_area_cond: AgileReference::new(&root_web_area_cond)?,
             omnibox_cond: AgileReference::new(&omnibox_cond)?,
+            cache_request: AgileReference::new(&cache_request)?,
         })
     }
 
@@ -77,9 +87,10 @@ impl BrowserDetector {
 
         let browser_root_view = self
             .uia_find_result(unsafe {
-                element.FindFirst(
+                element.FindFirstBuildCache(
                     TreeScope_Descendants,
                     &self.browser_root_view_cond.resolve()?,
+                    &self.cache_request.resolve()?,
                 )
             })
             .context("find browser root view")?;
@@ -93,7 +104,7 @@ impl BrowserDetector {
             }
         };
         let name = self.variant_to_string(unsafe {
-            browser_root_view.GetCurrentPropertyValue(UIA_NamePropertyId)?
+            browser_root_view.GetCachedPropertyValue(UIA_NamePropertyId)?
         })?;
 
         // This seems to be the only way to detect incognito mode in Edge
@@ -104,12 +115,16 @@ impl BrowserDetector {
 
         let root_web_area = self
             .uia_find_result(unsafe {
-                element.FindFirst(TreeScope_Descendants, &self.root_web_area_cond.resolve()?)
+                element.FindFirstBuildCache(
+                    TreeScope_Descendants,
+                    &self.root_web_area_cond.resolve()?,
+                    &self.cache_request.resolve()?,
+                )
             })
             .context("find root web area")?;
         if let Some(root_web_area) = root_web_area {
             let url = self.variant_to_string(unsafe {
-                root_web_area.GetCurrentPropertyValue(UIA_ValueValuePropertyId)?
+                root_web_area.GetCachedPropertyValue(UIA_ValueValuePropertyId)?
             })?;
             if !url.is_empty() {
                 return Ok(BrowserUrl {
@@ -121,7 +136,11 @@ impl BrowserDetector {
 
         let omnibox = self
             .uia_find_result(unsafe {
-                element.FindFirst(TreeScope_Descendants, &self.omnibox_cond.resolve()?)
+                element.FindFirstBuildCache(
+                    TreeScope_Descendants,
+                    &self.omnibox_cond.resolve()?,
+                    &self.cache_request.resolve()?,
+                )
             })
             .context("find omnibox")?;
         let omnibox = match omnibox {
@@ -134,7 +153,7 @@ impl BrowserDetector {
             }
         };
 
-        let search_value = unsafe { omnibox.GetCurrentPropertyValue(UIA_ValueValuePropertyId)? };
+        let search_value = unsafe { omnibox.GetCachedPropertyValue(UIA_ValueValuePropertyId)? };
         let search_value = self.variant_to_string(search_value)?;
         info!("using omnibox url: {search_value}");
 
