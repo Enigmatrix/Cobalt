@@ -7,8 +7,8 @@ use windows::Win32::System::Com::StructuredStorage::{
 };
 use windows::Win32::System::Com::{CoCreateInstance, CoTaskMemFree, CLSCTX_ALL};
 use windows::Win32::UI::Accessibility::{
-    CUIAutomation, IUIAutomation, IUIAutomationElement, TreeScope_Descendants,
-    UIA_AutomationIdPropertyId, UIA_ClassNamePropertyId, UIA_NamePropertyId,
+    CUIAutomation, IUIAutomation, IUIAutomationCondition, IUIAutomationElement,
+    TreeScope_Descendants, UIA_AutomationIdPropertyId, UIA_ClassNamePropertyId, UIA_NamePropertyId,
     UIA_ValueValuePropertyId,
 };
 
@@ -17,6 +17,9 @@ use crate::objects::Window;
 /// Detects browser usage information
 pub struct BrowserDetector {
     automation: AgileReference<IUIAutomation>,
+    browser_root_view_cond: AgileReference<IUIAutomationCondition>,
+    root_web_area_cond: AgileReference<IUIAutomationCondition>,
+    omnibox_cond: AgileReference<IUIAutomationCondition>,
 }
 
 /// Detected browser URL with extra information
@@ -33,8 +36,22 @@ impl BrowserDetector {
     pub fn new() -> Result<Self> {
         let automation: IUIAutomation =
             unsafe { CoCreateInstance(&CUIAutomation, None, CLSCTX_ALL)? };
+        let browser_root_view_cond = unsafe {
+            automation
+                .CreatePropertyCondition(UIA_ClassNamePropertyId, &"BrowserRootView".into())?
+        };
+        let root_web_area_cond = unsafe {
+            automation.CreatePropertyCondition(UIA_AutomationIdPropertyId, &"RootWebArea".into())?
+        };
+        let omnibox_cond = unsafe {
+            automation
+                .CreatePropertyCondition(UIA_NamePropertyId, &"Address and search bar".into())?
+        };
         Ok(Self {
             automation: AgileReference::new(&automation)?,
+            browser_root_view_cond: AgileReference::new(&browser_root_view_cond)?,
+            root_web_area_cond: AgileReference::new(&root_web_area_cond)?,
+            omnibox_cond: AgileReference::new(&omnibox_cond)?,
         })
     }
 
@@ -58,14 +75,12 @@ impl BrowserDetector {
     pub fn chromium_url(&self, window: &Window) -> Result<BrowserUrl> {
         let element = unsafe { self.automation.resolve()?.ElementFromHandle(window.hwnd)? };
 
-        let browser_root_view_cond = unsafe {
-            self.automation
-                .resolve()?
-                .CreatePropertyCondition(UIA_ClassNamePropertyId, &"BrowserRootView".into())?
-        };
         let browser_root_view = self
             .uia_find_result(unsafe {
-                element.FindFirst(TreeScope_Descendants, &browser_root_view_cond)
+                element.FindFirst(
+                    TreeScope_Descendants,
+                    &self.browser_root_view_cond.resolve()?,
+                )
             })
             .context("find browser root view")?;
         let browser_root_view = match browser_root_view {
@@ -87,14 +102,9 @@ impl BrowserDetector {
         let incognito = name.ends_with("- Google Chrome (Incognito)")
             || name.ends_with("- Microsoft Edge (InPrivate)");
 
-        let root_web_area_cond = unsafe {
-            self.automation
-                .resolve()?
-                .CreatePropertyCondition(UIA_AutomationIdPropertyId, &"RootWebArea".into())?
-        };
         let root_web_area = self
             .uia_find_result(unsafe {
-                element.FindFirst(TreeScope_Descendants, &root_web_area_cond)
+                element.FindFirst(TreeScope_Descendants, &self.root_web_area_cond.resolve()?)
             })
             .context("find root web area")?;
         if let Some(root_web_area) = root_web_area {
@@ -109,13 +119,10 @@ impl BrowserDetector {
             }
         }
 
-        let omnibox_cond = unsafe {
-            self.automation
-                .resolve()?
-                .CreatePropertyCondition(UIA_NamePropertyId, &"Address and search bar".into())?
-        };
         let omnibox = self
-            .uia_find_result(unsafe { element.FindFirst(TreeScope_Descendants, &omnibox_cond) })
+            .uia_find_result(unsafe {
+                element.FindFirst(TreeScope_Descendants, &self.omnibox_cond.resolve()?)
+            })
             .context("find omnibox")?;
         let omnibox = match omnibox {
             Some(omnibox) => omnibox,
