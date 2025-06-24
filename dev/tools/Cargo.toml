@@ -12,8 +12,22 @@ workspace = true
 clap = { version = "4.4", features = ["derive"] }
 util = { path = "../../src/util" }
 platform = { path = "../../src/platform" }
-windows = { version = "0.59", features = ["Win32_Foundation"] }
 dialoguer = "0.11.0"
+
+[dependencies.windows-core]
+version = "0.59"
+
+[dependencies.windows]
+version = "0.59"
+features = [
+    "Win32_Foundation",
+    "Win32_System_Variant",
+    "Win32_System_Com",
+    "Win32_System_Ole",
+    "Win32_System_Com_StructuredStorage", 
+    "Win32_UI_Accessibility",
+    "UI_UIAutomation",
+]
 
 [[bin]]
 name = "dim"
@@ -26,3 +40,7 @@ path = "src/bin/browser.rs"
 [[bin]]
 name = "kill"
 path = "src/bin/kill.rs" 
+
+[[bin]]
+name = "tab_switch"
+path = "src/bin/tab_switch.rs" 
