@@ -31,9 +31,14 @@ pub struct Window {
     pub hwnd: HWND,
 }
 
+// Needed because HWND is not Send/Sync - but it really should be
+// since it's just a number
+unsafe impl Send for Window {}
+unsafe impl Sync for Window {}
+
 impl std::fmt::Debug for Window {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Window({:x})", self.hwnd.0)
+        write!(f, "Window({:x})", self.hwnd.0 as usize)
     }
 }
 
@@ -140,7 +145,7 @@ impl Window {
         let mut children = Vec::new();
         unsafe {
             EnumChildWindows(
-                self.hwnd,
+                Some(self.hwnd),
                 Some(push_window_callback),
                 LPARAM(&mut children as *mut _ as isize),
             )

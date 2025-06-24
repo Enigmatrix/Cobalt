@@ -20,7 +20,7 @@ mime2ext = "0.1.52"
 infer = "0.15.0"
 
 [dependencies.windows]
-version = "0.56"
+version = "0.59"
 features = [
     "Win32_Foundation",
     "Win32_UI_WindowsAndMessaging",
@@ -43,6 +43,7 @@ features = [
     "Win32_System_Com",
     "Win32_System_Ole",
     "Win32_System_ProcessStatus",
+    "Win32_System_Variant",
 
     "Foundation",
     "Foundation_Collections",

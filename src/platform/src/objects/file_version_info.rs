@@ -36,8 +36,14 @@ impl FileVersionInfo {
 
         let mut buffer = Box::new_uninit_slice(size as usize);
         unsafe {
-            GetFileVersionInfoExW(flags, path_ref, _hdl, size, buffer.as_mut_ptr().cast())
-                .context("get file version info")?
+            GetFileVersionInfoExW(
+                flags,
+                path_ref,
+                Some(_hdl),
+                size,
+                buffer.as_mut_ptr().cast(),
+            )
+            .context("get file version info")?
         }
 
         let langid = Self::raw_query_value::<u16>(&mut buffer, TRANSLATION_CODEPAGE)

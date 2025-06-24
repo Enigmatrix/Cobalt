@@ -44,6 +44,11 @@ pub struct Process {
     handle: HANDLE,
 }
 
+// Needed because HANDLE is not Send/Sync - but it really should be
+// since it's just a number
+unsafe impl Send for Process {}
+unsafe impl Sync for Process {}
+
 static BLACKLIST: OnceLock<Vec<OsString>> = OnceLock::new();
 
 /// Check if a path is in the blacklist

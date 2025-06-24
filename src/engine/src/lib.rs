@@ -67,6 +67,9 @@ fn real_main() -> Result<()> {
 }
 
 /// Win32 [EventLoop] thread to poll for events.
+/// All the callback and functioons used in this
+/// function run on the _same_ thread - so thread-safety
+/// is not an issue.
 fn event_loop(
     config: &Config,
     event_tx: Sender<Event>,
@@ -90,7 +93,8 @@ fn event_loop(
         let now = Timestamp::now();
         info!("system state event: {:?}, {:?}", event, now);
         let last_interaction = _it_watcher
-            .lock()
+            .borrow_mut()
+            .as_mut()
             .unwrap()
             .short_circuit(event.state.is_active(), now);
         system_event_tx
@@ -104,7 +108,6 @@ fn event_loop(
 
     let _poll_timer = Timer::new(
         poll_dur,
-        poll_dur,
         Box::new(move || {
             let now = Timestamp::now();
             // if there is a switch event, process it. otherwise, tick to update the usage.
@@ -113,7 +116,7 @@ fn event_loop(
             } else {
                 event_tx.send(Event::Tick(now))?;
             }
-            if let Some(event) = it_watcher.lock().unwrap().poll(now)? {
+            if let Some(event) = it_watcher.borrow_mut().as_mut().unwrap().poll(now)? {
                 event_tx.send(Event::InteractionChanged(event))?;
             }
             Ok(())
@@ -121,7 +124,6 @@ fn event_loop(
     )?;
 
     let _alert_timer = Timer::new(
-        alert_dur,
         alert_dur,
         Box::new(move || {
             let now = Timestamp::now();

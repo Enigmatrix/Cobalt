@@ -107,7 +107,7 @@ fn select_window(groups: &[ProcessWindowGroup]) -> Result<Option<&WindowDetails>
         .map(|(group, window)| {
             format!(
                 "{} (pid: {}) - \"{}\" (hwnd: {:08x})",
-                group.process.name, group.process.pid, window.title, window.window.hwnd.0
+                group.process.name, group.process.pid, window.title, window.window.hwnd.0 as usize
             )
         })
         .collect();
