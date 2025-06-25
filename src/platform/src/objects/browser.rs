@@ -1,6 +1,6 @@
 use reqwest::Url;
 use util::error::{Context, Result};
-use util::tracing::{debug, info};
+use util::tracing::{debug, info, warn};
 use windows::core::{AgileReference, Interface};
 use windows::Win32::System::Com::StructuredStorage::{
     PropVariantToStringAlloc, VariantToPropVariant,
@@ -16,11 +16,18 @@ use windows::Win32::UI::Accessibility::{
 
 use crate::objects::Window;
 
+const DEBUG_LIMIT: std::time::Duration = std::time::Duration::from_millis(10);
+const WARN_LIMIT: std::time::Duration = std::time::Duration::from_millis(100);
+
 fn perf<T>(f: impl FnOnce() -> T, name: &str) -> T {
     let start = std::time::Instant::now();
     let result = f();
     let elapsed = start.elapsed();
-    debug!("{elapsed:?} for {name}");
+    if elapsed > WARN_LIMIT {
+        warn!("slow: {elapsed:?} for {name}");
+    } else if elapsed > DEBUG_LIMIT {
+        debug!("slow: {elapsed:?} for {name}");
+    }
     result
 }
 
