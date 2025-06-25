@@ -207,7 +207,7 @@ async fn sentry_loop(
     // TODO: these two loops must die if the other one dies.
 
     let _sentry = sentry.clone();
-    let join: JoinHandle<Result<()>> = spawner.spawn(async move {
+    let join1: JoinHandle<Result<()>> = spawner.spawn(async move {
         loop {
             let tab_change = tab_change_rx.recv_async().await?;
             let mut sentry = _sentry.lock().await;
@@ -215,16 +215,31 @@ async fn sentry_loop(
                 .dim_alerted_browser_windows_matching_tab_change(tab_change)
                 .await?;
         }
-        Ok(())
     });
 
-    loop {
-        let at = alert_rx.recv_async().await?;
-        let mut sentry = sentry.lock().await;
-        sentry.run(at).await?;
-    }
-    // if the main sentry loop ends, we need to abort the browser dim updater
-    join.abort();
+    let join2: JoinHandle<Result<()>> = spawner.spawn(async move {
+        loop {
+            let at = alert_rx.recv_async().await?;
+            let mut sentry = sentry.lock().await;
+            sentry.run(at).await?;
+        }
+    });
+    let join1_handle = join1.abort_handle();
+    let join2_handle = join2.abort_handle();
+
+    // Wait for either join handle to finish, then cancel the other
+    let res = future::select! {
+        result1 = join1 => {
+            join2_handle.abort();
+            result1?
+        }
+        result2 = join2 => {
+            join1_handle.abort();
+            result2?
+        }
+    };
+
+    res
 }
 
 /// Runs the [Engine] and [Sentry] loops in an asynchronous executor.
