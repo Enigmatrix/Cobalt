@@ -51,15 +51,13 @@ impl ForegroundEventWatcher {
         track_incognito: bool,
     ) -> Result<Option<WindowSession>> {
         if let Some(fg) = Window::foreground() {
-            let title = fg.title()?;
-
             let maybe_browser = {
                 let is_browser = browser_state
                     .blocking_read()
                     .browser_windows
                     .get(&fg)
                     .cloned();
-                // Either we definitevly know it's a browser, or we try to make an educated guess using browser.is_chromium
+                // Either we definitely know it's a browser, or we try to make an educated guess using browser.is_chromium
                 if let Some(is_browser) = is_browser {
                     is_browser
                 } else {
@@ -74,10 +72,10 @@ impl ForegroundEventWatcher {
                 if url.incognito && !track_incognito {
                     ("<Incognito>".to_string(), None)
                 } else {
-                    (title, url.url)
+                    (fg.title()?, url.url)
                 }
             } else {
-                (title, None)
+                (fg.title()?, None)
             };
 
             let session = WindowSession {
