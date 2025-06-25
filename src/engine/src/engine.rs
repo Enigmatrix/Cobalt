@@ -13,7 +13,7 @@ use scoped_futures::ScopedFutureExt;
 use util::config::Config;
 use util::error::{Context, Result};
 use util::future::runtime::Handle;
-use util::future::sync::Mutex;
+use util::future::sync::{Mutex, RwLock};
 use util::time::ToTicks;
 use util::tracing::{debug, info, trace, ResultTraceExt};
 
@@ -28,7 +28,7 @@ pub struct Engine {
     db_pool: DatabasePool,
     inserter: UsageWriter,
     spawner: Handle,
-    browser: BrowserDetector,
+    browser: Arc<RwLock<BrowserDetector>>,
     config: Config,
     active: bool,
 }
@@ -64,7 +64,7 @@ impl Engine {
             // set a default value, then update it right after
             current_usage: Default::default(),
             active: true,
-            browser: BrowserDetector::new()?,
+            browser: Arc::new(RwLock::new(BrowserDetector::new()?)),
             config,
             spawner,
         };
@@ -205,15 +205,14 @@ impl Engine {
                 // We only arrive here is the window is indeed a browser window e.g. Chrome, Edge, etc.
                 // Or if the window is Chromium-based (e.g. VSCode) and we have not yet determined if it's one of the above.
                 // When we determine it, it will be ~the second time we arrive here.
-                self.browser.is_chromium(&ws.window).warn()
+                self.browser.read().await.is_chromium(&ws.window).warn()
             }
         };
 
         if maybe_browser {
-            let browser_url = self
-                .browser
-                .chromium_url(&ws.window)
-                .context("get chromium url")?;
+            let browser_url =
+                BrowserDetector::chromium_url_async(self.browser.clone(), ws.window.clone())
+                    .await?;
 
             if browser_url.incognito && !self.config.track_incognito() {
                 ws.title = "<Incognito>".to_string();

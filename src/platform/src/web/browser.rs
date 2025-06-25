@@ -1,5 +1,9 @@
+use std::sync::Arc;
+
 use reqwest::Url;
 use util::error::{Context, Result};
+use util::future::sync::RwLock;
+use util::future::task::spawn_blocking;
 use util::tracing::{debug, info, warn};
 use windows::core::{AgileReference, Interface};
 use windows::Win32::System::Com::StructuredStorage::{
@@ -92,6 +96,18 @@ impl BrowserDetector {
     pub fn is_chromium(&self, window: &Window) -> Result<bool> {
         let class = window.class()?;
         Ok(class == "Chrome_WidgetWin_1")
+    }
+
+    /// Get the URL of the [Window], assuming it is a Chromium browser asynchronously
+    pub async fn chromium_url_async(
+        _self: Arc<RwLock<Self>>,
+        window: Window,
+    ) -> Result<BrowserUrl> {
+        spawn_blocking(move || {
+            let browser = _self.blocking_read();
+            browser.chromium_url(&window).context("get chromium url")
+        })
+        .await?
     }
 
     /// Get the URL of the [Window], assuming it is a Chromium browser
