@@ -1,16 +1,9 @@
-use util::config::Config;
-use util::error::{Context, Result};
-use util::tracing::ResultTraceExt;
+use util::error::Result;
 
 use crate::objects::{Timestamp, Window};
-use crate::web::{BrowserDetector, State, StateInner};
-
 /// Watches for foreground window changes, including session (title) changes
 pub struct ForegroundEventWatcher {
     session: WindowSession,
-    browser: BrowserDetector,
-    track_incognito: bool,
-    browser_state: State,
 }
 
 /// Foreground window session change event.
@@ -28,56 +21,26 @@ pub struct WindowSession {
     pub window: Window,
     /// Foreground [Window] title
     pub title: String,
-    /// Foreground [Window] URL, if Browser
+    /// Foreground [Window] url, if browser
     pub url: Option<String>,
 }
 
 impl ForegroundEventWatcher {
     /// Create a new [WindowSession] with the starting [WindowSession].
-    pub fn new(session: WindowSession, config: &Config, browser_state: State) -> Result<Self> {
-        let browser = BrowserDetector::new()?;
-        Ok(Self {
-            session,
-            browser,
-            track_incognito: config.track_incognito(),
-            browser_state,
-        })
+    pub fn new(session: WindowSession) -> Result<Self> {
+        Ok(Self { session })
     }
 
     /// Get the foreground window session.
-    pub fn foreground_window_session(
-        browser: &BrowserDetector,
-        browser_state: &StateInner,
-        track_incognito: bool,
-    ) -> Result<Option<WindowSession>> {
+    pub fn foreground_window_session() -> Result<Option<WindowSession>> {
         if let Some(fg) = Window::foreground() {
-            let maybe_browser = {
-                let is_browser = browser_state.browser_windows.get(&fg).cloned();
-                // Either we definitely know it's a browser, or we try to make an educated guess using browser.is_chromium
-                if let Some(is_browser) = is_browser {
-                    is_browser
-                } else {
-                    // Educated guess. Note that VSCode will pass this check since it's a chromium app.
-                    // However, we shouldn't arrive here more than once since we're using the cache.
-                    browser.is_chromium(&fg).warn()
-                }
-            };
+            let title = fg.title()?;
 
-            let (title, url) = if maybe_browser {
-                let url = browser.chromium_url(&fg).context("get chromium url")?;
-                if url.incognito && !track_incognito {
-                    ("<Incognito>".to_string(), None)
-                } else {
-                    (fg.title()?, url.url)
-                }
-            } else {
-                (fg.title()?, None)
-            };
-
+            // we don't know the url yet, so we set it to None
             let session = WindowSession {
                 title,
-                url,
                 window: fg,
+                url: None,
             };
             return Ok(Some(session));
         }
@@ -86,10 +49,7 @@ impl ForegroundEventWatcher {
 
     /// Poll for a new [`ForegroundChangedEvent`].
     pub fn poll(&mut self, at: Timestamp) -> Result<Option<ForegroundChangedEvent>> {
-        let state = self.browser_state.blocking_read();
-        if let Some(session) =
-            Self::foreground_window_session(&self.browser, &state, self.track_incognito)?
-        {
+        if let Some(session) = Self::foreground_window_session()? {
             if session == self.session {
                 return Ok(None);
             }

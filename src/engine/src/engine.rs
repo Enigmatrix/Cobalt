@@ -8,9 +8,9 @@ use platform::events::{
     ForegroundChangedEvent, InteractionChangedEvent, SystemStateEvent, WindowSession,
 };
 use platform::objects::{Process, ProcessThreadId, Timestamp, Window};
-use platform::web::{self, BaseWebsiteUrl, BrowserDetector, WebsiteInfo};
+use platform::web::{BaseWebsiteUrl, BrowserDetector, WebsiteInfo};
 use scoped_futures::ScopedFutureExt;
-use util::config;
+use util::config::Config;
 use util::error::{Context, Result};
 use util::future::runtime::Handle;
 use util::future::sync::Mutex;
@@ -24,11 +24,12 @@ use crate::resolver::AppInfoResolver;
 /// The main [Engine] that processes [Event]s and updates the [Database] with new [Usage]s, [Session]s and [App]s.
 pub struct Engine {
     cache: Arc<Mutex<Cache>>,
-    browser_state: web::State,
     current_usage: Usage,
     db_pool: DatabasePool,
     inserter: UsageWriter,
     spawner: Handle,
+    browser: BrowserDetector,
+    config: Config,
     active: bool,
 }
 
@@ -48,22 +49,23 @@ impl Engine {
     /// Create a new [Engine], which initializes it's first [Usage]
     pub async fn new(
         cache: Arc<Mutex<Cache>>,
-        browser_state: web::State,
         db_pool: DatabasePool,
         foreground: WindowSession,
         start: Timestamp,
         db: Database,
         spawner: Handle,
+        config: Config,
     ) -> Result<Self> {
         let inserter = UsageWriter::new(db)?;
         let mut ret = Self {
             cache,
-            browser_state,
             db_pool,
             inserter,
             // set a default value, then update it right after
             current_usage: Default::default(),
             active: true,
+            browser: BrowserDetector::new()?,
+            config,
             spawner,
         };
 
@@ -107,9 +109,7 @@ impl Engine {
                 }
             } else if !prev && self.active {
                 // Restart usage watching.
-                let config = config::get_config()?;
-                let foreground =
-                    foreground_window_session(&config, &*self.browser_state.read().await)?;
+                let foreground = foreground_window_session()?;
                 self.current_usage = Usage {
                     id: Default::default(),
                     session_id: self.get_session_details(foreground, *now).await?,
@@ -136,8 +136,6 @@ impl Engine {
             // handled above
             Event::System { .. } => unreachable!(),
             Event::ForegroundChanged(ForegroundChangedEvent { at, session }) => {
-                debug!("fg switch: {:?}", session);
-
                 self.current_usage.end = at.to_ticks();
                 self.inserter
                     .insert_or_update_usage(&mut self.current_usage)
@@ -194,13 +192,37 @@ impl Engine {
         mut ws: WindowSession,
         at: Timestamp,
     ) -> Result<Ref<Session>> {
+        ws.url = None;
+
         let mut cache = self.cache.lock().await;
 
-        // If window is browser (assume true if unknown), then we need the url.
-        // Else set the url to None.
-        if !cache.is_browser(&ws.window).await.unwrap_or(true) {
-            ws.url = None;
+        let maybe_browser = {
+            let is_browser = cache.is_browser(&ws.window).await;
+            // Either we definitevly know it's a browser, or we try to make an educated guess using browser.is_chromium
+            if let Some(is_browser) = is_browser {
+                is_browser
+            } else {
+                // We only arrive here is the window is indeed a browser window e.g. Chrome, Edge, etc.
+                // Or if the window is Chromium-based (e.g. VSCode) and we have not yet determined if it's one of the above.
+                // When we determine it, it will be ~the second time we arrive here.
+                self.browser.is_chromium(&ws.window).warn()
+            }
+        };
+
+        if maybe_browser {
+            let browser_url = self
+                .browser
+                .chromium_url(&ws.window)
+                .context("get chromium url")?;
+
+            if browser_url.incognito && !self.config.track_incognito() {
+                ws.title = "<Incognito>".to_string();
+            } else {
+                ws.url = browser_url.url;
+            }
         }
+
+        debug!("prelim session details: {:?}", ws);
 
         let session_details = cache
             .get_or_insert_session_for_window(ws.clone(), |cache| {

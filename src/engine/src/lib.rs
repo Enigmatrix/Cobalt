@@ -14,7 +14,7 @@ use platform::events::{
     ForegroundEventWatcher, InteractionWatcher, SystemEventWatcher, WindowSession,
 };
 use platform::objects::{EventLoop, MessageWindow, Timer, Timestamp, User};
-use platform::web::{self, BrowserDetector};
+use platform::web;
 use resolver::AppInfoResolver;
 use sentry::Sentry;
 use util::channels::{self, Receiver, Sender};
@@ -50,14 +50,13 @@ fn real_main() -> Result<()> {
     let (event_tx, event_rx) = channels::unbounded();
     let (alert_tx, alert_rx) = channels::unbounded();
     let now = Timestamp::now();
-    let fg = foreground_window_session(&config, &browser_state.blocking_read())?;
+    let fg = foreground_window_session()?;
 
     let ev_thread = {
         let config = config.clone();
         let fg = fg.clone();
-        let browser_state = browser_state.clone();
         thread::spawn(move || {
-            event_loop(&config, browser_state, event_tx, alert_tx, fg, now)
+            event_loop(&config, event_tx, alert_tx, fg, now)
                 .context("event loop")
                 .error();
         })
@@ -75,7 +74,6 @@ fn real_main() -> Result<()> {
 /// is not an issue.
 fn event_loop(
     config: &Config,
-    browser_state: web::State,
     event_tx: Sender<Event>,
     alert_tx: Sender<Timestamp>,
     fg: WindowSession,
@@ -88,7 +86,7 @@ fn event_loop(
 
     let message_window = MessageWindow::new()?;
 
-    let mut fg_watcher = ForegroundEventWatcher::new(fg, config, browser_state)?;
+    let mut fg_watcher = ForegroundEventWatcher::new(fg)?;
     let it_watcher = InteractionWatcher::init(config, now)?;
     let system_event_tx = event_tx.clone();
 
@@ -145,14 +143,14 @@ fn event_loop(
 async fn engine_loop(
     db_pool: DatabasePool,
     cache: Arc<Mutex<cache::Cache>>,
-    browser_state: web::State,
     rx: Receiver<Event>,
     spawner: Handle,
+    config: Config,
     fg: WindowSession,
     now: Timestamp,
 ) -> Result<()> {
     let db = db_pool.get_db().await?;
-    let mut engine = Engine::new(cache, browser_state, db_pool, fg, now, db, spawner).await?;
+    let mut engine = Engine::new(cache, db_pool, fg, now, db, spawner, config).await?;
     loop {
         let ev = rx.recv_async().await?;
         engine.handle(ev).await?;
@@ -226,15 +224,15 @@ fn processor(
             if attempt > 0 {
                 future::time::sleep(config.poll_duration()).await;
                 info!("restarting engine loop");
-                fg = foreground_window_session(config, &*browser_state.read().await)?;
+                fg = foreground_window_session()?;
                 now = Timestamp::now();
             }
             engine_loop(
                 db_pool.clone(),
                 cache.clone(),
-                browser_state.clone(),
                 event_rx.clone(),
                 handle.clone(),
+                config.clone(),
                 fg.clone(),
                 now,
             )
@@ -275,17 +273,9 @@ async fn update_app_infos(db_pool: DatabasePool, handle: Handle) -> Result<()> {
 }
 
 /// Get the foreground [Window], and makes it into a [WindowSession] blocking until one is present.
-fn foreground_window_session(
-    config: &Config,
-    browser_state: &web::StateInner,
-) -> Result<WindowSession> {
-    let browser = BrowserDetector::new()?;
+fn foreground_window_session() -> Result<WindowSession> {
     loop {
-        let session = ForegroundEventWatcher::foreground_window_session(
-            &browser,
-            browser_state,
-            config.track_incognito(),
-        )?;
+        let session = ForegroundEventWatcher::foreground_window_session()?;
         if let Some(session) = session {
             return Ok(session);
         }
