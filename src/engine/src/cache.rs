@@ -4,7 +4,7 @@ use std::future::Future;
 use data::entities::{App, AppIdentity, Ref, Session};
 use platform::events::WindowSession;
 use platform::objects::{ProcessId, ProcessThreadId, Window};
-use platform::web::BaseWebsiteUrl;
+use platform::web::{self, BaseWebsiteUrl};
 use scoped_futures::ScopedBoxFuture;
 use util::error::Result;
 use util::future as tokio;
@@ -33,8 +33,8 @@ pub struct Store {
 pub struct WebsiteCache {
     // This never gets cleared, but it's ok since it's a small set of urls?
     websites: HashMap<BaseWebsiteUrl, AppDetails>,
-    // Cache of whether a window is a browser or not.
-    browsers: HashMap<Window, bool>,
+    // Web state
+    state: web::State,
 }
 
 /// Cache for storing information about windows and processes
@@ -78,7 +78,7 @@ pub enum KillableProcessId {
 
 impl Cache {
     /// Create a new [Cache].
-    pub fn new() -> Self {
+    pub fn new(browser_state: web::State) -> Self {
         Self {
             store: Store {
                 sessions: HashMap::new(),
@@ -86,7 +86,7 @@ impl Cache {
             },
             web: WebsiteCache {
                 websites: HashMap::new(),
-                browsers: HashMap::new(),
+                state: browser_state,
             },
             platform: PlatformCache {
                 windows: HashMap::new(),
@@ -135,7 +135,7 @@ impl Cache {
     }
 
     /// Remove a process and associated windows from the [Cache].
-    pub fn remove_process(&mut self, process: ProcessId) {
+    pub async fn remove_process(&mut self, process: ProcessId) {
         self.store.apps.retain(|ptid, _| ptid.pid != process);
         let removed_windows = self
             .platform
@@ -147,9 +147,13 @@ impl Cache {
         self.store
             .sessions
             .retain(|ws, _| !removed_windows.contains(&ws.window));
-        self.web
-            .browsers
-            .retain(|window, _| !removed_windows.contains(window));
+        {
+            let mut state = self.web.state.write().await;
+            state.browser_processes.remove(&process);
+            state
+                .browser_windows
+                .retain(|window, _| !removed_windows.contains(window));
+        }
         self.platform.windows.retain(|ptid, _| ptid.pid != process);
         self.platform.processes.retain(|_, entry| {
             // remove pid from list, and remove the entry altogether if it's empty
@@ -159,12 +163,16 @@ impl Cache {
     }
 
     /// Remove an app and associated processes, windows from the [Cache].
-    pub fn remove_app(&mut self, app: Ref<App>) {
+    pub async fn remove_app(&mut self, app: Ref<App>) {
         let app_entry = self.platform.processes.remove(&app);
         if let Some(app_entry) = app_entry {
             for ptid in &app_entry.process_threads {
                 self.platform.windows.remove(ptid);
                 self.store.apps.remove(ptid);
+                {
+                    let mut state = self.web.state.write().await;
+                    state.browser_processes.remove(&ptid.pid);
+                }
             }
 
             let removed_windows = self
@@ -177,9 +185,12 @@ impl Cache {
             self.store
                 .sessions
                 .retain(|ws, _| !removed_windows.contains(&ws.window));
-            self.web
-                .browsers
-                .retain(|window, _| !removed_windows.contains(window));
+            {
+                let mut state = self.web.state.write().await;
+                state
+                    .browser_windows
+                    .retain(|window, _| !removed_windows.contains(window));
+            }
         }
     }
 
@@ -205,9 +216,13 @@ impl Cache {
         if !created.is_browser {
             ws.url = None;
         }
-        self.web
-            .browsers
-            .insert(ws.window.clone(), created.is_browser);
+
+        {
+            let mut state = self.web.state.write().await;
+            state
+                .browser_windows
+                .insert(ws.window.clone(), created.is_browser);
+        }
 
         self.platform
             .windows
@@ -238,6 +253,11 @@ impl Cache {
         entry.process_threads.insert(ptid);
         entry.identity = created.identity.clone();
 
+        if created.is_browser {
+            let mut state = self.web.state.write().await;
+            state.browser_processes.insert(ptid.pid);
+        }
+
         Ok(self.store.apps.entry(ptid).or_insert(created))
     }
 
@@ -256,8 +276,9 @@ impl Cache {
         Ok(self.web.websites.entry(base_url).or_insert(created))
     }
 
-    pub fn is_browser(&self, window: &Window) -> Option<bool> {
-        self.web.browsers.get(window).copied()
+    pub async fn is_browser(&self, window: &Window) -> Option<bool> {
+        let state = self.web.state.read().await;
+        state.browser_windows.get(window).copied()
     }
 
     // pub async fn get_or_insert_session_for_window(&mut self, window: Window, create: impl Future<Output = Result<SessionDetails>>) -> Result<&SessionDetails> {
@@ -271,7 +292,7 @@ impl Cache {
 
     /// Retains all process for windows in the list, and removes the rest
     /// of the process and windows not in the list.
-    pub fn retain_cache(&mut self) -> Result<()> {
+    pub async fn retain_cache(&mut self) -> Result<()> {
         self.platform.windows.retain(|ptid, windows| {
             // check if window is alive by checking if the pid() calls
             // still succeeds and returns the same pid as previously
@@ -279,12 +300,29 @@ impl Cache {
             windows.retain(|window| window.ptid().ok() == Some(*ptid));
             !windows.is_empty()
         });
+        let alive_processes = self
+            .platform
+            .windows
+            .keys()
+            .map(|ptid| ptid.pid)
+            .collect::<HashSet<_>>();
+
         let alive_windows = self
             .platform
             .windows
             .values()
             .flatten()
             .collect::<HashSet<_>>();
+
+        {
+            let mut state = self.web.state.write().await;
+            state
+                .browser_windows
+                .retain(|window, _| alive_windows.contains(window));
+            state
+                .browser_processes
+                .retain(|process| alive_processes.contains(process));
+        }
 
         // retain only sessions and apps for which their windows and apps that are alive
         self.store
@@ -310,7 +348,8 @@ async fn inner_mut_compiles() {
 
     let window: Window = Window::foreground().unwrap();
     let process = ProcessThreadId { pid: 1, tid: 1 };
-    let mut cache = Cache::new();
+    let browser_state = web::default_state();
+    let mut cache = Cache::new(browser_state);
 
     cache
         .get_or_insert_session_for_window(

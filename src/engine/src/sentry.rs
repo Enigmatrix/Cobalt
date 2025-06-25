@@ -33,7 +33,7 @@ impl Sentry {
         // - avoids dimming dead windows / killing dead processes
         {
             let mut cache = self.cache.lock().await;
-            cache.retain_cache()?;
+            cache.retain_cache().await?;
         }
         let alerts_hits = self.mgr.triggered_alerts(&now).await?;
         for triggered_alert in alerts_hits {
@@ -121,13 +121,13 @@ impl Sentry {
                             self.handle_kill_action(&process).warn();
 
                             let mut cache = self.cache.lock().await;
-                            cache.remove_process(pid);
+                            cache.remove_process(pid).await;
                         }
                         KillableProcessId::Aumid(aumid) => {
                             Process::kill_uwp(&aumid).await.warn();
 
                             let mut cache = self.cache.lock().await;
-                            cache.remove_app(app);
+                            cache.remove_app(app).await;
                         }
                     }
                 }
