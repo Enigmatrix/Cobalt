@@ -6,6 +6,8 @@ mod error;
 pub mod events;
 /// Objects in the Platform
 pub mod objects;
+/// Website/Browser Platform
+pub mod web;
 
 use util::error::{Context, Result};
 use windows::Win32::System::Com::{CoInitializeEx, COINIT_MULTITHREADED};

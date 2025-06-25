@@ -2,7 +2,8 @@
 
 use std::io::stdin;
 
-use platform::objects::{BrowserDetector, Window};
+use platform::objects::Window;
+use platform::web::BrowserDetector;
 use tools::filters::{match_running_windows, ProcessFilter, WindowFilter};
 use util::error::Result;
 use util::tracing::info;
@@ -104,7 +105,7 @@ impl TabSelectionEventHandler {
     }
 }
 
-#[tokio::main(flavor = "current_thread")]
+#[tokio::main]
 async fn main() -> Result<()> {
     util::set_target(UtilTarget::Engine);
     let config = config::get_config()?;

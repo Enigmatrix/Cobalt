@@ -2,7 +2,8 @@ use std::path::Path;
 
 use data::db::{AppUpdater, DatabasePool};
 use data::entities::{App, AppIdentity, Ref};
-use platform::objects::{AppInfo, WebsiteInfo};
+use platform::objects::AppInfo;
+use platform::web::WebsiteInfo;
 use util::config::Config;
 use util::error::Result;
 use util::future::fs;

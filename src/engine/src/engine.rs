@@ -7,9 +7,8 @@ use data::entities::{
 use platform::events::{
     ForegroundChangedEvent, InteractionChangedEvent, SystemStateEvent, WindowSession,
 };
-use platform::objects::{
-    BaseWebsiteUrl, BrowserDetector, Process, ProcessThreadId, Timestamp, WebsiteInfo, Window,
-};
+use platform::objects::{Process, ProcessThreadId, Timestamp, Window};
+use platform::web::{self, BaseWebsiteUrl, BrowserDetector, WebsiteInfo};
 use scoped_futures::ScopedFutureExt;
 use util::config;
 use util::error::{Context, Result};
@@ -25,6 +24,7 @@ use crate::resolver::AppInfoResolver;
 /// The main [Engine] that processes [Event]s and updates the [Database] with new [Usage]s, [Session]s and [App]s.
 pub struct Engine {
     cache: Arc<Mutex<Cache>>,
+    browser_state: web::State,
     current_usage: Usage,
     db_pool: DatabasePool,
     inserter: UsageWriter,
@@ -48,6 +48,7 @@ impl Engine {
     /// Create a new [Engine], which initializes it's first [Usage]
     pub async fn new(
         cache: Arc<Mutex<Cache>>,
+        browser_state: web::State,
         db_pool: DatabasePool,
         foreground: WindowSession,
         start: Timestamp,
@@ -57,6 +58,7 @@ impl Engine {
         let inserter = UsageWriter::new(db)?;
         let mut ret = Self {
             cache,
+            browser_state,
             db_pool,
             inserter,
             // set a default value, then update it right after
@@ -106,7 +108,7 @@ impl Engine {
             } else if !prev && self.active {
                 // Restart usage watching.
                 let config = config::get_config()?;
-                let foreground = foreground_window_session(&config)?;
+                let foreground = foreground_window_session(&config, self.browser_state.clone())?;
                 self.current_usage = Usage {
                     id: Default::default(),
                     session_id: self.get_session_details(foreground, *now).await?,
@@ -195,7 +197,7 @@ impl Engine {
 
         // If window is browser (assume true if unknown), then we need the url.
         // Else set the url to None.
-        if !cache.is_browser(&ws.window).unwrap_or(true) {
+        if !cache.is_browser(&ws.window).await.unwrap_or(true) {
             ws.url = None;
         }
 

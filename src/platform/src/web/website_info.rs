@@ -5,7 +5,7 @@ use scraper::{Html, Selector};
 use util::error::{bail, Context, Result};
 use util::tracing::ResultTraceExt;
 
-use super::{random_color, AppInfo, Icon};
+use crate::objects::{random_color, AppInfo, Icon};
 
 /// Information about a Website
 pub struct WebsiteInfo {
