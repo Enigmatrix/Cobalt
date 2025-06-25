@@ -104,7 +104,7 @@ impl TabSelectionEventHandler {
     }
 }
 
-#[tokio::main(flavor = "current_thread")]
+#[tokio::main]
 async fn main() -> Result<()> {
     util::set_target(UtilTarget::Engine);
     let config = config::get_config()?;

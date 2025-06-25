@@ -40,7 +40,7 @@ struct TabDetails {
     pub description: Option<String>,
 }
 
-#[tokio::main(flavor = "current_thread")]
+#[tokio::main]
 async fn main() -> Result<()> {
     util::set_target(Target::Engine);
     let config = config::get_config()?;

@@ -176,7 +176,7 @@ fn processor(
     event_rx: Receiver<Event>,
     alert_rx: Receiver<Timestamp>,
 ) -> Result<()> {
-    let rt = Builder::new_current_thread()
+    let rt = Builder::new_multi_thread()
         .enable_time()
         .enable_io()
         .build()?;
