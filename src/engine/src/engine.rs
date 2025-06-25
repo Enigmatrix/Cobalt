@@ -7,9 +7,8 @@ use data::entities::{
 use platform::events::{
     ForegroundChangedEvent, InteractionChangedEvent, SystemStateEvent, WindowSession,
 };
-use platform::objects::{
-    BaseWebsiteUrl, BrowserDetector, Process, ProcessThreadId, Timestamp, WebsiteInfo, Window,
-};
+use platform::objects::{Process, ProcessThreadId, Timestamp, Window};
+use platform::web::{BaseWebsiteUrl, BrowserDetector, WebsiteInfo};
 use scoped_futures::ScopedFutureExt;
 use util::config;
 use util::error::{Context, Result};

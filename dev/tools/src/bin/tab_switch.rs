@@ -2,7 +2,8 @@
 
 use std::io::stdin;
 
-use platform::objects::{BrowserDetector, Window};
+use platform::objects::Window;
+use platform::web::BrowserDetector;
 use tools::filters::{match_running_windows, ProcessFilter, WindowFilter};
 use util::error::Result;
 use util::tracing::info;

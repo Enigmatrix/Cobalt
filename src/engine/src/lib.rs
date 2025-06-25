@@ -13,7 +13,8 @@ use engine::{Engine, Event};
 use platform::events::{
     ForegroundEventWatcher, InteractionWatcher, SystemEventWatcher, WindowSession,
 };
-use platform::objects::{BrowserDetector, EventLoop, MessageWindow, Timer, Timestamp, User};
+use platform::objects::{EventLoop, MessageWindow, Timer, Timestamp, User};
+use platform::web::BrowserDetector;
 use resolver::AppInfoResolver;
 use sentry::Sentry;
 use util::channels::{self, Receiver, Sender};

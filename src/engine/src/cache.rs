@@ -3,7 +3,8 @@ use std::future::Future;
 
 use data::entities::{App, AppIdentity, Ref, Session};
 use platform::events::WindowSession;
-use platform::objects::{BaseWebsiteUrl, ProcessId, ProcessThreadId, Window};
+use platform::objects::{ProcessId, ProcessThreadId, Window};
+use platform::web::BaseWebsiteUrl;
 use scoped_futures::ScopedBoxFuture;
 use util::error::Result;
 use util::future as tokio;

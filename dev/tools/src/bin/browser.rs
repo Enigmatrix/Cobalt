@@ -1,7 +1,7 @@
 //! List out browser information
 
 use clap::Parser;
-use platform::objects::{BrowserDetector, WebsiteInfo};
+use platform::web::{BrowserDetector, WebsiteInfo};
 use tools::filters::{
     match_running_windows, ProcessDetails, ProcessFilter, WindowDetails, WindowFilter,
 };

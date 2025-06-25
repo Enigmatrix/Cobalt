@@ -2,7 +2,9 @@ use util::config::Config;
 use util::error::{Context, Result};
 use util::tracing::ResultTraceExt;
 
-use crate::objects::{BrowserDetector, Timestamp, Window};
+use crate::objects::{Timestamp, Window};
+use crate::web::BrowserDetector;
+
 /// Watches for foreground window changes, including session (title) changes
 pub struct ForegroundEventWatcher {
     session: WindowSession,
