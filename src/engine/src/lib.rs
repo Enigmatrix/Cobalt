@@ -211,9 +211,7 @@ async fn sentry_loop(
         loop {
             let tab_change = tab_change_rx.recv_async().await?;
             let mut sentry = _sentry.lock().await;
-            sentry
-                .dim_alerted_browser_windows_matching_tab_change(tab_change)
-                .await?;
+            sentry.handle_tab_change(tab_change).await?;
         }
     });
 

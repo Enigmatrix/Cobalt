@@ -19,9 +19,10 @@ use crate::cache::{Cache, KillableProcessId};
 pub struct Sentry {
     cache: Arc<Mutex<Cache>>,
     mgr: AlertManager,
-    // Invariant: the dimmed_websites map is *wholly* updated. That is, run() executes
+    // Invariant: the dimmed_websites, killed_websites map is *wholly* updated. That is, run() executes
     // and updates this after clearing it with *all* alerts' websites.
     dimmed_websites: HashMap<String, f64>,
+    killed_websites: HashMap<String, ()>, // TODO: add stuff
 }
 
 const MIN_DIM_LEVEL: f64 = 0.5;
@@ -34,14 +35,12 @@ impl Sentry {
             cache,
             mgr,
             dimmed_websites: HashMap::new(),
+            killed_websites: HashMap::new(),
         })
     }
 
     /// Dim the browser windows matching the given [TabUpdate].
-    pub async fn dim_alerted_browser_windows_matching_tab_change(
-        &mut self,
-        tab_change: TabChange,
-    ) -> Result<()> {
+    pub async fn handle_tab_change(&mut self, tab_change: TabChange) -> Result<()> {
         let browser_detect = BrowserDetector::new()?;
 
         let changed_browser_windows = match tab_change {
@@ -57,9 +56,12 @@ impl Sentry {
             let url = browser_url.url.unwrap_or_default();
             let url = WebsiteInfo::url_to_base_url(&url)?.to_string();
 
-            if let Some(dim_level) = self.dimmed_websites.get(&url) {
+            if self.killed_websites.contains_key(&url) {
+                browser_detect.close_current_tab(&window).warn();
+            } else if let Some(dim_level) = self.dimmed_websites.get(&url) {
                 self.handle_dim_action(&window, *dim_level).warn();
             } else {
+                // no action taken, so we dim to back to full
                 self.handle_dim_action(&window, 1.0f64).warn();
             }
         }
@@ -77,6 +79,7 @@ impl Sentry {
         }
 
         self.dimmed_websites.clear();
+        self.killed_websites.clear();
 
         let alerts_hits = self.mgr.triggered_alerts(&now).await?;
         for triggered_alert in alerts_hits {
@@ -107,15 +110,14 @@ impl Sentry {
     }
 
     /// Get the apps and processes for the given [Target], those that are platform-based, rather than websites.
-    pub async fn processes_for_platform_target(
+    pub async fn processes_and_websites_for_target(
         &mut self,
         target: &Target,
-    ) -> Result<Vec<(Ref<App>, KillableProcessId)>> {
+    ) -> Result<(Vec<(Ref<App>, KillableProcessId)>, Vec<BaseWebsiteUrl>)> {
+        let target_apps = self.mgr.target_apps(target).await?;
+
         let cache = self.cache.lock().await;
-        let processes = self
-            .mgr
-            .target_apps(target)
-            .await?
+        let processes = target_apps
             .iter()
             .flat_map(move |app| {
                 cache
@@ -124,7 +126,14 @@ impl Sentry {
                     .map(|pid| (app.clone(), pid))
             })
             .collect();
-        Ok(processes)
+
+        // yes, we lock twice here ...
+        let cache = self.cache.lock().await;
+        let websites = target_apps
+            .iter()
+            .flat_map(move |app| cache.websites_for_app(app).cloned().collect::<Vec<_>>())
+            .collect();
+        Ok((processes, websites))
     }
 
     /// Get the [Window]s and websites for the given [Target].
@@ -167,8 +176,13 @@ impl Sentry {
         } = triggered_alert;
         match &alert.trigger_action {
             TriggerAction::Kill => {
-                // TODO: kill websites too
-                let processes = self.processes_for_platform_target(&alert.target).await?;
+                let (processes, websites) = self
+                    .processes_and_websites_for_target(&alert.target)
+                    .await?;
+
+                self.killed_websites
+                    .extend(websites.into_iter().map(|url| (url.to_string(), ())));
+
                 for (app, pid) in processes {
                     info!(?alert, "killing process {:?} for app {:?}", pid, app);
                     match pid {

@@ -111,9 +111,11 @@ impl Cache {
                     .iter()
                     .map(|ptid| KillableProcessId::Win32(ptid.pid))
                     .collect(),
-                // TODO handle Website entries
                 _ => {
-                    todo!()
+                    panic!(
+                        "unsupported app identity for `platform_processes_for_app`: {:?}",
+                        entry.identity
+                    );
                 }
             }
         } else {
