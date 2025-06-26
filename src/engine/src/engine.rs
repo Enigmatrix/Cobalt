@@ -108,7 +108,8 @@ impl Engine {
             } else if !prev && self.active {
                 // Restart usage watching.
                 let config = config::get_config()?;
-                let foreground = foreground_window_session(&config, self.browser_state.clone())?;
+                let foreground =
+                    foreground_window_session(&config, &*self.browser_state.read().await)?;
                 self.current_usage = Usage {
                     id: Default::default(),
                     session_id: self.get_session_details(foreground, *now).await?,
