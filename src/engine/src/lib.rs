@@ -50,7 +50,7 @@ fn real_main() -> Result<()> {
     let (event_tx, event_rx) = channels::unbounded();
     let (alert_tx, alert_rx) = channels::unbounded();
     let now = Timestamp::now();
-    let fg = foreground_window_session(&config, browser_state.clone())?;
+    let fg = foreground_window_session(&config, &browser_state.blocking_read())?;
 
     let ev_thread = {
         let config = config.clone();
@@ -226,7 +226,7 @@ fn processor(
             if attempt > 0 {
                 future::time::sleep(config.poll_duration()).await;
                 info!("restarting engine loop");
-                fg = foreground_window_session(config, browser_state.clone())?;
+                fg = foreground_window_session(config, &*browser_state.read().await)?;
                 now = Timestamp::now();
             }
             engine_loop(
@@ -275,12 +275,15 @@ async fn update_app_infos(db_pool: DatabasePool, handle: Handle) -> Result<()> {
 }
 
 /// Get the foreground [Window], and makes it into a [WindowSession] blocking until one is present.
-fn foreground_window_session(config: &Config, browser_state: web::State) -> Result<WindowSession> {
+fn foreground_window_session(
+    config: &Config,
+    browser_state: &web::StateInner,
+) -> Result<WindowSession> {
     let browser = BrowserDetector::new()?;
     loop {
         let session = ForegroundEventWatcher::foreground_window_session(
             &browser,
-            browser_state.clone(),
+            browser_state,
             config.track_incognito(),
         )?;
         if let Some(session) = session {
