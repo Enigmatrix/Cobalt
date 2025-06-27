@@ -4,7 +4,6 @@ on:
   push:
     branches: [ "main" ]
   pull_request:
-    branches: [ "main" ]
 
 env:
   CARGO_TERM_COLOR: always
@@ -94,6 +93,13 @@ jobs:
         with:
           args: -- --locked
           tauriScript: bun tauri
+      - name: Upload PR Build Artifacts
+        if: github.ref != 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Cobalt-${{ github.run_number }}
+          path: target/release/bundle/msi/*.msi
+          if-no-files-found: error
       - name: Build Tauri App (nightly)
         if: github.ref == 'refs/heads/main'
         uses: tauri-apps/tauri-action@v0
