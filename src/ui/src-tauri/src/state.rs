@@ -1,9 +1,9 @@
-use data::db::repo::Repository;
 use data::db::DatabasePool;
+use data::db::repo::Repository;
 use serde::{Deserialize, Serialize};
-use tauri::async_runtime::RwLock;
 use tauri::State;
-use util::config::{get_config, Config};
+use tauri::async_runtime::RwLock;
+use util::config::{Config, get_config};
 use util::error::Result;
 use util::tracing;
 

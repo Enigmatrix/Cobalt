@@ -7,12 +7,12 @@ use windows::Win32::System::Com::CoTaskMemFree;
 use windows::Win32::System::Com::StructuredStorage::PropVariantToStringAlloc;
 use windows::Win32::UI::Shell::PropertiesSystem::{IPropertyStore, SHGetPropertyStoreForWindow};
 use windows::Win32::UI::WindowsAndMessaging::{
-    EnumChildWindows, EnumWindows, GetClassNameW, GetForegroundWindow, GetWindowTextLengthW,
-    GetWindowTextW, GetWindowThreadProcessId, IsWindowVisible, SetLayeredWindowAttributes,
-    SetWindowLongW, GWL_EXSTYLE, LWA_ALPHA, WS_EX_LAYERED,
+    EnumChildWindows, EnumWindows, GWL_EXSTYLE, GetClassNameW, GetForegroundWindow,
+    GetWindowTextLengthW, GetWindowTextW, GetWindowThreadProcessId, IsWindowVisible, LWA_ALPHA,
+    SetLayeredWindowAttributes, SetWindowLongW, WS_EX_LAYERED,
 };
 
-use crate::buf::{buf, Buffer, WideBuffer};
+use crate::buf::{Buffer, WideBuffer, buf};
 use crate::error::Win32Error;
 use crate::objects::ProcessThreadId;
 use crate::win32;
@@ -156,7 +156,7 @@ impl Window {
 }
 
 unsafe extern "system" fn push_visible_window_callback(hwnd: HWND, lparam: LPARAM) -> BOOL {
-    let windows = &mut *(lparam.0 as *mut Vec<Window>);
+    let windows = unsafe { &mut *(lparam.0 as *mut Vec<Window>) };
 
     // Only add windows that are visible
     if unsafe { IsWindowVisible(hwnd).as_bool() } {
@@ -167,7 +167,7 @@ unsafe extern "system" fn push_visible_window_callback(hwnd: HWND, lparam: LPARA
 }
 
 unsafe extern "system" fn push_window_callback(hwnd: HWND, lparam: LPARAM) -> BOOL {
-    let windows = &mut *(lparam.0 as *mut Vec<Window>);
+    let windows = unsafe { &mut *(lparam.0 as *mut Vec<Window>) };
     windows.push(Window::new(hwnd));
 
     BOOL(1) // Continue enumeration

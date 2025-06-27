@@ -10,7 +10,7 @@ pub mod objects;
 pub mod web;
 
 use util::error::{Context, Result};
-use windows::Win32::System::Com::{CoInitializeEx, COINIT_MULTITHREADED};
+use windows::Win32::System::Com::{COINIT_MULTITHREADED, CoInitializeEx};
 
 use crate::objects::Timestamp;
 

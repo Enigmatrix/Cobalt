@@ -1,14 +1,14 @@
 //! Dim a window to a given opacity
 
 use clap::Parser;
-use dialoguer::theme::ColorfulTheme;
 use dialoguer::Select;
+use dialoguer::theme::ColorfulTheme;
 use platform::objects::{ProcessId, Window};
 use tools::filters::{
-    match_running_windows, ProcessFilter, ProcessWindowGroup, WindowDetails, WindowFilter,
+    ProcessFilter, ProcessWindowGroup, WindowDetails, WindowFilter, match_running_windows,
 };
 use util::error::Result;
-use util::{config, Target};
+use util::{Target, config};
 use windows::Win32::Foundation::HWND;
 
 #[derive(Parser, Debug, Clone)]

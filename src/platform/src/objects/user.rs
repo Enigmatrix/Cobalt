@@ -1,8 +1,8 @@
 use util::error::*;
-use windows::core::PWSTR;
 use windows::Win32::Foundation::MAX_PATH;
 use windows::Win32::System::WindowsProgramming::GetUserNameW;
 use windows::Win32::UI::Shell::IsUserAnAdmin;
+use windows::core::PWSTR;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 /// Represents the current user of the system.

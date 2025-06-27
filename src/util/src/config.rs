@@ -44,7 +44,7 @@ impl Config {
     pub fn config_path(segment: &str) -> Result<String> {
         #[cfg(debug_assertions)]
         {
-            use crate::{Target, TARGET};
+            use crate::{TARGET, Target};
 
             let target = TARGET.lock().unwrap().clone();
             match target {

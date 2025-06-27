@@ -1,5 +1,5 @@
 use sqlx::prelude::FromRow;
-use sqlx::{query, Row};
+use sqlx::{Row, query};
 use util::future as tokio;
 
 use super::*;

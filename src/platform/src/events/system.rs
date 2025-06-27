@@ -1,12 +1,12 @@
 use util::error::{Context, Result};
-use util::tracing::{info, ResultTraceExt};
+use util::tracing::{ResultTraceExt, info};
 use windows::Win32::Foundation::HANDLE;
 use windows::Win32::System::Power::{
-    RegisterPowerSettingNotification, UnregisterPowerSettingNotification, HPOWERNOTIFY,
-    POWERBROADCAST_SETTING,
+    HPOWERNOTIFY, POWERBROADCAST_SETTING, RegisterPowerSettingNotification,
+    UnregisterPowerSettingNotification,
 };
 use windows::Win32::System::RemoteDesktop::{
-    WTSRegisterSessionNotification, WTSUnRegisterSessionNotification, NOTIFY_FOR_THIS_SESSION,
+    NOTIFY_FOR_THIS_SESSION, WTSRegisterSessionNotification, WTSUnRegisterSessionNotification,
 };
 use windows::Win32::System::SystemServices::GUID_MONITOR_POWER_ON;
 use windows::Win32::UI::WindowsAndMessaging::{

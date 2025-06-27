@@ -2,11 +2,11 @@ pub use tracing::*;
 use tracing_appender::rolling::{RollingFileAppender, Rotation};
 use tracing_subscriber::fmt::format::FmtSpan;
 pub use tracing_subscriber::prelude::*;
-use tracing_subscriber::{fmt, registry, EnvFilter};
+use tracing_subscriber::{EnvFilter, fmt, registry};
 
 use crate::config::Config;
 use crate::error::*;
-use crate::{Target, TARGET};
+use crate::{TARGET, Target};
 
 /// Extension trait for [Result] to log the error, warn, info, debug,
 /// or trace straight to the log.

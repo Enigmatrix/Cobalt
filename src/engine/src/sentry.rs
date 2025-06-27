@@ -8,7 +8,7 @@ use platform::objects::{Process, Progress, Timestamp as PlatformTimestamp, Toast
 use util::error::Result;
 use util::future::sync::Mutex;
 use util::time::ToTicks;
-use util::tracing::{debug, info, ResultTraceExt};
+use util::tracing::{ResultTraceExt, debug, info};
 
 use crate::cache::{Cache, KillableProcessId};
 

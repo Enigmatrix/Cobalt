@@ -4,12 +4,12 @@ use std::path::Path;
 use rand::seq::IndexedMutRandom;
 use util::error::{Context, Result};
 use util::tracing::ResultTraceExt;
-use windows::core::AgileReference;
 use windows::ApplicationModel::{AppDisplayInfo, AppInfo as UWPAppInfo};
 use windows::Foundation::Size;
 use windows::Storage::FileProperties::ThumbnailMode;
 use windows::Storage::StorageFile;
 use windows::Storage::Streams::DataReader;
+use windows::core::AgileReference;
 
 use crate::objects::FileVersionInfo;
 
@@ -46,10 +46,10 @@ impl Icon {
         }
 
         // Then try MIME type if available
-        if let Some(mime) = &self.mime {
-            if let Some(ext) = mime2ext::mime2ext(mime) {
-                return Some(ext.to_string());
-            }
+        if let Some(mime) = &self.mime
+            && let Some(ext) = mime2ext::mime2ext(mime)
+        {
+            return Some(ext.to_string());
         }
 
         // Finally try magic bytes detection

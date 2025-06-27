@@ -4,7 +4,7 @@ use std::rc::Rc;
 use std::sync::atomic::{AtomicI64, Ordering};
 
 use util::config::Config;
-use util::error::{bail, Context, Result};
+use util::error::{Context, Result, bail};
 use util::time::ToTicks;
 use util::tracing::debug;
 use windows::Win32::Foundation::{LPARAM, WPARAM};

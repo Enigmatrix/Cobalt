@@ -2,10 +2,10 @@ use std::fmt;
 
 use reqwest::{Client, RequestBuilder, Url};
 use scraper::{Html, Selector};
-use util::error::{bail, Context, Result};
+use util::error::{Context, Result, bail};
 use util::tracing::ResultTraceExt;
 
-use crate::objects::{random_color, AppInfo, Icon};
+use crate::objects::{AppInfo, Icon, random_color};
 
 /// Information about a Website
 pub struct WebsiteInfo {

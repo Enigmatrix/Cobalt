@@ -15,7 +15,7 @@ use util::error::{Context, Result};
 use util::future::runtime::Handle;
 use util::future::sync::Mutex;
 use util::time::ToTicks;
-use util::tracing::{debug, info, trace, ResultTraceExt};
+use util::tracing::{ResultTraceExt, debug, info, trace};
 
 use crate::cache::{AppDetails, Cache, SessionDetails};
 use crate::foreground_window_session;

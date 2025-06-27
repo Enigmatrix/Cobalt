@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use sqlx::Executor;
-use util::error::{bail, Context, Result};
+use util::error::{Context, Result, bail};
 
 use super::Migration;
 use crate::db::Database;

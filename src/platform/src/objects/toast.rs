@@ -1,7 +1,7 @@
 use util::error::Result;
-use windows::core::Interface;
 use windows::Data::Xml::Dom::{XmlDocument, XmlElement};
 use windows::UI::Notifications::{ToastNotification, ToastNotificationManager};
+use windows::core::Interface;
 
 // Once we get registration settled, we can move away from a singleton pattern.
 

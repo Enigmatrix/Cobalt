@@ -4,7 +4,7 @@ use sqlx::pool::PoolConnection;
 use sqlx::prelude::FromRow;
 use sqlx::sqlite::{SqliteConnectOptions, SqliteJournalMode, SqliteRow};
 use sqlx::{
-    query, query_as, ConnectOptions, Connection, Executor, Row, Sqlite, SqlitePool, Transaction,
+    ConnectOptions, Connection, Executor, Row, Sqlite, SqlitePool, Transaction, query, query_as,
 };
 use util::config::Config;
 use util::error::{Context, Result};

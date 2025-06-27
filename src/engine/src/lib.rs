@@ -22,8 +22,8 @@ use util::config::{self, Config};
 use util::error::{Context, Result};
 use util::future::runtime::{Builder, Handle};
 use util::future::sync::Mutex;
-use util::tracing::{error, info, ResultTraceExt};
-use util::{future, Target};
+use util::tracing::{ResultTraceExt, error, info};
+use util::{Target, future};
 
 mod cache;
 mod engine;
