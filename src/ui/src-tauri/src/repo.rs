@@ -10,7 +10,7 @@ use util::tracing;
 use util::tracing::log::warn;
 
 use crate::error::AppResult;
-use crate::state::{init_state, AppState, Initable, QueryOptions};
+use crate::state::{AppState, Initable, QueryOptions, init_state};
 
 #[tauri::command]
 #[tracing::instrument(err, skip(state))]

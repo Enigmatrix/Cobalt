@@ -1,5 +1,5 @@
 use windows::Win32::UI::WindowsAndMessaging::{
-    DispatchMessageW, GetMessageW, TranslateMessage, MSG,
+    DispatchMessageW, GetMessageW, MSG, TranslateMessage,
 };
 
 /// Representation of the Win32 [EventLoop]

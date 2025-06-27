@@ -1,11 +1,10 @@
 use reqwest::Url;
 use util::error::{Context, Result};
 use util::tracing::{debug, info, warn};
-use windows::core::{AgileReference, Interface};
 use windows::Win32::System::Com::StructuredStorage::{
     PropVariantToStringAlloc, VariantToPropVariant,
 };
-use windows::Win32::System::Com::{CoCreateInstance, CoTaskMemFree, CLSCTX_ALL};
+use windows::Win32::System::Com::{CLSCTX_ALL, CoCreateInstance, CoTaskMemFree};
 use windows::Win32::System::Variant::VARIANT;
 use windows::Win32::UI::Accessibility::{
     AutomationElementMode_None, CUIAutomation, IUIAutomation, IUIAutomationCacheRequest,
@@ -13,6 +12,7 @@ use windows::Win32::UI::Accessibility::{
     TreeTraversalOptions_LastToFirstOrder, UIA_AutomationIdPropertyId, UIA_ClassNamePropertyId,
     UIA_NamePropertyId, UIA_ValueValuePropertyId,
 };
+use windows::core::{AgileReference, Interface};
 
 use crate::objects::Window;
 
@@ -124,7 +124,7 @@ impl BrowserDetector {
                 return Ok(BrowserUrl {
                     url: None,
                     incognito: false,
-                })
+                });
             }
         };
         let name = perf(
@@ -191,7 +191,7 @@ impl BrowserDetector {
                 return Ok(BrowserUrl {
                     url: None,
                     incognito,
-                })
+                });
             }
         };
 

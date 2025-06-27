@@ -4,7 +4,7 @@ use util::error::{Context, Result};
 use util::tracing::ResultTraceExt;
 use windows::Win32::Foundation::{LPARAM, LRESULT, WPARAM};
 use windows::Win32::UI::WindowsAndMessaging::{
-    CallNextHookEx, SetWindowsHookExW, UnhookWindowsHookEx, HHOOK, WINDOWS_HOOK_ID,
+    CallNextHookEx, HHOOK, SetWindowsHookExW, UnhookWindowsHookEx, WINDOWS_HOOK_ID,
 };
 
 /// Instance of a Windows hook attached to a [WindowsHookType].
@@ -36,7 +36,7 @@ impl<T: WindowsHookType> WindowsHook<T> {
 
     unsafe extern "system" fn trampoline(ncode: i32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
         T::callback(ncode, wparam, lparam);
-        CallNextHookEx(None, ncode, wparam, lparam)
+        unsafe { CallNextHookEx(None, ncode, wparam, lparam) }
     }
 }
 

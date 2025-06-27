@@ -3,8 +3,8 @@ use std::path::Path;
 
 use platform::objects::{FileVersionInfo, Process, ProcessId, ProcessThreadId, Window};
 use util::error::Result;
-use windows::core::HRESULT;
 use windows::Win32::Foundation::ERROR_ACCESS_DENIED;
+use windows::core::HRESULT;
 
 /// Filter for a process
 #[derive(Debug, Clone, Default)]
@@ -18,19 +18,18 @@ pub struct ProcessFilter {
 impl ProcessFilter {
     /// Check if a process matches the filter
     pub fn matches(&self, process: &ProcessDetails) -> bool {
-        if let Some(pid_filter) = &self.pid {
-            if process.pid != *pid_filter {
-                return true;
-            }
+        if let Some(pid_filter) = &self.pid
+            && process.pid != *pid_filter
+        {
+            return true;
         }
-        if let Some(name_filter) = &self.name {
-            if !process
+        if let Some(name_filter) = &self.name
+            && !process
                 .name
                 .to_lowercase()
                 .contains(&name_filter.to_lowercase())
-            {
-                return true;
-            }
+        {
+            return true;
         }
         false
     }
@@ -147,10 +146,10 @@ pub fn match_running_windows(
 
     for (pid, windows) in window_groups {
         let process = get_process_details(pid)?;
-        if let Some(process) = process {
-            if !process_filter.matches(&process) {
-                matches.push(ProcessWindowGroup { process, windows });
-            }
+        if let Some(process) = process
+            && !process_filter.matches(&process)
+        {
+            matches.push(ProcessWindowGroup { process, windows });
         }
     }
 

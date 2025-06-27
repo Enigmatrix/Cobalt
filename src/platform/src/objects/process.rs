@@ -4,20 +4,20 @@ use std::os::windows::ffi::OsStringExt;
 use std::path::PathBuf;
 use std::sync::OnceLock;
 
-use util::error::{bail, Context, Result};
+use util::error::{Context, Result, bail};
 use util::tracing::ResultTraceExt;
-use windows::core::HSTRING;
 use windows::System::AppDiagnosticInfo;
 use windows::Wdk::System::Threading::{
-    NtQueryInformationProcess, ProcessImageFileNameWin32, PROCESSINFOCLASS,
+    NtQueryInformationProcess, PROCESSINFOCLASS, ProcessImageFileNameWin32,
 };
 use windows::Win32::Foundation::{CloseHandle, HANDLE, UNICODE_STRING, WAIT_TIMEOUT};
 use windows::Win32::System::ProcessStatus::K32EnumProcesses;
 use windows::Win32::System::Threading::{
-    IsImmersiveProcess, OpenProcess, TerminateProcess, WaitForSingleObject,
-    PROCESS_QUERY_LIMITED_INFORMATION, PROCESS_TERMINATE,
+    IsImmersiveProcess, OpenProcess, PROCESS_QUERY_LIMITED_INFORMATION, PROCESS_TERMINATE,
+    TerminateProcess, WaitForSingleObject,
 };
 use windows::Win32::UI::Shell::DoEnvironmentSubstW;
+use windows::core::HSTRING;
 
 use crate::adapt_size;
 use crate::buf::WideBuffer;
@@ -63,8 +63,7 @@ fn is_path_in_blacklist(path: impl Into<PathBuf>) -> bool {
 /// Get the blacklist for killing processes
 fn kill_blacklist() -> Vec<OsString> {
     let blacklist_str = include_str!("../data/kill_blacklist.txt");
-    let blacklist = blacklist_str.lines().map(expand_env_str).collect();
-    blacklist
+    blacklist_str.lines().map(expand_env_str).collect()
 }
 
 /// Expand environment variables in a string

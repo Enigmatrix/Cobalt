@@ -64,24 +64,38 @@ impl Repository {
     fn sql_period_start_end(expr: &str, period: &Period) -> (String, String) {
         match period {
             Period::Hour => (
-                format!("unixepoch((unixepoch({expr}, 'unixepoch', 'localtime')/3600) * 3600, 'unixepoch', 'utc')"),
-                format!("unixepoch((unixepoch({expr}, 'unixepoch', 'localtime')/3600) * 3600 + 3600, 'unixepoch', 'utc')"),
+                format!(
+                    "unixepoch((unixepoch({expr}, 'unixepoch', 'localtime')/3600) * 3600, 'unixepoch', 'utc')"
+                ),
+                format!(
+                    "unixepoch((unixepoch({expr}, 'unixepoch', 'localtime')/3600) * 3600 + 3600, 'unixepoch', 'utc')"
+                ),
             ),
             Period::Day => (
                 format!("unixepoch({expr}, 'unixepoch', 'localtime', 'start of day', 'utc')"),
-                format!("unixepoch({expr}, 'unixepoch', 'localtime', 'start of day', '+1 day', 'utc')"),
+                format!(
+                    "unixepoch({expr}, 'unixepoch', 'localtime', 'start of day', '+1 day', 'utc')"
+                ),
             ),
             Period::Week => (
-                format!("unixepoch({expr}, 'unixepoch', 'localtime', 'start of day', 'weekday 0', '-6 days', 'utc')"),
-                format!("unixepoch({expr}, 'unixepoch', 'localtime', 'start of day', 'weekday 0', '+1 day', 'utc')"),
+                format!(
+                    "unixepoch({expr}, 'unixepoch', 'localtime', 'start of day', 'weekday 0', '-6 days', 'utc')"
+                ),
+                format!(
+                    "unixepoch({expr}, 'unixepoch', 'localtime', 'start of day', 'weekday 0', '+1 day', 'utc')"
+                ),
             ),
             Period::Month => (
                 format!("unixepoch({expr}, 'unixepoch', 'localtime', 'start of month', 'utc')"),
-                format!("unixepoch({expr}, 'unixepoch', 'localtime', 'start of month', '+1 month', 'utc')"),
+                format!(
+                    "unixepoch({expr}, 'unixepoch', 'localtime', 'start of month', '+1 month', 'utc')"
+                ),
             ),
             Period::Year => (
                 format!("unixepoch({expr}, 'unixepoch', 'localtime', 'start of year', 'utc')"),
-                format!("unixepoch({expr}, 'unixepoch', 'localtime', 'start of year', '+1 year', 'utc')"),
+                format!(
+                    "unixepoch({expr}, 'unixepoch', 'localtime', 'start of year', '+1 year', 'utc')"
+                ),
             ),
         }
     }

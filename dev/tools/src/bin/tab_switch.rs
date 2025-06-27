@@ -4,17 +4,17 @@ use std::io::stdin;
 
 use platform::objects::Window;
 use platform::web::BrowserDetector;
-use tools::filters::{match_running_windows, ProcessFilter, WindowFilter};
+use tools::filters::{ProcessFilter, WindowFilter, match_running_windows};
 use util::error::Result;
 use util::tracing::info;
-use util::{config, future as tokio, Target as UtilTarget};
-use windows::core::{implement, AgileReference};
-use windows::Win32::System::Com::{CoCreateInstance, CLSCTX_ALL};
+use util::{Target as UtilTarget, config, future as tokio};
+use windows::Win32::System::Com::{CLSCTX_ALL, CoCreateInstance};
 use windows::Win32::UI::Accessibility::{
     CUIAutomation, IUIAutomation, IUIAutomationElement, IUIAutomationEventHandler,
-    IUIAutomationEventHandler_Impl, TreeScope_Descendants, UIA_ClassNamePropertyId,
-    UIA_SelectionItem_ElementSelectedEventId, UIA_EVENT_ID,
+    IUIAutomationEventHandler_Impl, TreeScope_Descendants, UIA_ClassNamePropertyId, UIA_EVENT_ID,
+    UIA_SelectionItem_ElementSelectedEventId,
 };
+use windows::core::{AgileReference, implement};
 
 mod tab_track_handler {
 
@@ -47,10 +47,10 @@ mod tab_track_handler {
                 .expect("Failed to get Chromium URL");
 
             let mut dim = false;
-            if let Some(url) = &url.url {
-                if !url.contains("youtube.com") {
-                    dim = true;
-                }
+            if let Some(url) = &url.url
+                && !url.contains("youtube.com")
+            {
+                dim = true;
             }
             if dim {
                 self.window.dim(0.5).unwrap();

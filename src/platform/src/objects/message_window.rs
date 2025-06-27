@@ -3,13 +3,13 @@ use std::rc::Rc;
 
 use util::error::{Context, Result};
 use util::tracing::ResultTraceExt;
-use windows::core::{Error, HSTRING, PCWSTR};
 use windows::Win32::Foundation::{HINSTANCE, HWND, LPARAM, LRESULT, WPARAM};
 use windows::Win32::UI::WindowsAndMessaging::{
-    CreateWindowExW, DefWindowProcW, DestroyWindow, GetWindowLongPtrW, RegisterClassW,
-    SetWindowLongPtrW, UnregisterClassW, CW_USEDEFAULT, GWLP_USERDATA, HWND_DESKTOP, WINDOW_STYLE,
-    WNDCLASSW, WS_EX_NOACTIVATE,
+    CW_USEDEFAULT, CreateWindowExW, DefWindowProcW, DestroyWindow, GWLP_USERDATA,
+    GetWindowLongPtrW, HWND_DESKTOP, RegisterClassW, SetWindowLongPtrW, UnregisterClassW,
+    WINDOW_STYLE, WNDCLASSW, WS_EX_NOACTIVATE,
 };
+use windows::core::{Error, HSTRING, PCWSTR};
 
 unsafe extern "system" fn window_proc(
     hwnd: HWND,
@@ -18,8 +18,9 @@ unsafe extern "system" fn window_proc(
     lparam: LPARAM,
 ) -> LRESULT {
     {
-        let callbacks = GetWindowLongPtrW(hwnd, GWLP_USERDATA) as *const Rc<RefCell<Vec<Callback>>>;
-        if let Some(callbacks) = callbacks.as_ref() {
+        let callbacks =
+            unsafe { GetWindowLongPtrW(hwnd, GWLP_USERDATA) as *const Rc<RefCell<Vec<Callback>>> };
+        if let Some(callbacks) = unsafe { callbacks.as_ref() } {
             let mut callbacks = callbacks.borrow_mut();
             for cb in callbacks.iter_mut() {
                 if let Some(ret) = cb(hwnd, msg, wparam, lparam) {
@@ -28,7 +29,7 @@ unsafe extern "system" fn window_proc(
             }
         }
     }
-    DefWindowProcW(hwnd, msg, wparam, lparam)
+    unsafe { DefWindowProcW(hwnd, msg, wparam, lparam) }
 }
 
 type Callback = Box<dyn FnMut(HWND, u32, WPARAM, LPARAM) -> Option<LRESULT>>;

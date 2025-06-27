@@ -3,10 +3,10 @@
 use clap::Parser;
 use platform::web::{BrowserDetector, WebsiteInfo};
 use tools::filters::{
-    match_running_windows, ProcessDetails, ProcessFilter, WindowDetails, WindowFilter,
+    ProcessDetails, ProcessFilter, WindowDetails, WindowFilter, match_running_windows,
 };
 use util::error::Result;
-use util::{config, future as tokio, Target};
+use util::{Target, config, future as tokio};
 
 #[derive(Parser, Debug, Clone)]
 #[command(author, version, about, long_about = None)]
