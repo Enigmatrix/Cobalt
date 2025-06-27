@@ -33,6 +33,8 @@ pub struct Store {
 pub struct WebsiteCache {
     // This never gets cleared, but it's ok since it's a small set of urls?
     websites: HashMap<BaseWebsiteUrl, AppDetails>,
+    // This never gets cleared, but it's ok since it's a small set of apps?
+    apps: HashMap<Ref<App>, BaseWebsiteUrl>,
     // Web state
     state: web::State,
 }
@@ -86,6 +88,7 @@ impl Cache {
             },
             web: WebsiteCache {
                 websites: HashMap::new(),
+                apps: HashMap::new(),
                 state: browser_state,
             },
             platform: PlatformCache {
@@ -95,8 +98,8 @@ impl Cache {
         }
     }
 
-    /// Get all processes for an [App].
-    pub fn processes_for_app(&self, app: &Ref<App>) -> HashSet<KillableProcessId> {
+    /// Get all processes for an [App]. Will return nothing for websites.
+    pub fn platform_processes_for_app(&self, app: &Ref<App>) -> HashSet<KillableProcessId> {
         let entry = self.platform.processes.get(app);
         if let Some(entry) = entry {
             match &entry.identity {
@@ -108,9 +111,11 @@ impl Cache {
                     .iter()
                     .map(|ptid| KillableProcessId::Win32(ptid.pid))
                     .collect(),
-                // TODO handle Website entries
                 _ => {
-                    todo!()
+                    panic!(
+                        "unsupported app identity for `platform_processes_for_app`: {:?}",
+                        entry.identity
+                    );
                 }
             }
         } else {
@@ -118,8 +123,8 @@ impl Cache {
         }
     }
 
-    /// Get all windows for an [App].
-    pub fn windows_for_app(&self, app: &Ref<App>) -> impl Iterator<Item = &Window> {
+    /// Get all windows for an [App]. Will return nothing for websites.
+    pub fn platform_windows_for_app(&self, app: &Ref<App>) -> impl Iterator<Item = &Window> {
         self.platform
             .processes
             .get(app)
@@ -132,6 +137,11 @@ impl Cache {
                     .into_iter()
                     .flat_map(|windows| windows.iter())
             })
+    }
+
+    /// Get the websites for an [App]. If the app is not a website, will return nothing.
+    pub fn websites_for_app(&self, app: &Ref<App>) -> impl Iterator<Item = &BaseWebsiteUrl> {
+        self.web.apps.get(app).into_iter()
     }
 
     /// Remove a process and associated windows from the [Cache].
@@ -277,12 +287,28 @@ impl Cache {
         }
 
         let created = { create(self).await? };
+        self.web.apps.insert(created.app.clone(), base_url.clone());
         Ok(self.web.websites.entry(base_url).or_insert(created))
     }
 
     pub async fn is_browser(&self, window: &Window) -> Option<bool> {
         let state = self.web.state.read().await;
         state.browser_windows.get(window).copied()
+    }
+
+    /// Get all browser windows.
+    pub async fn browser_windows(&self) -> HashSet<Window> {
+        let state = self.web.state.read().await;
+        state
+            .browser_windows
+            .iter()
+            .filter_map(
+                |(window, is_browser)| {
+                    if *is_browser { Some(window) } else { None }
+                },
+            )
+            .cloned()
+            .collect()
     }
 
     // pub async fn get_or_insert_session_for_window(&mut self, window: Window, create: impl Future<Output = Result<SessionDetails>>) -> Result<&SessionDetails> {

@@ -7,6 +7,7 @@ mod timer;
 mod timestamp;
 mod toast;
 mod user;
+mod win_event_hook;
 mod window;
 mod windows_hook;
 
@@ -19,5 +20,6 @@ pub use timer::*;
 pub use timestamp::*;
 pub use toast::*;
 pub use user::*;
+pub use win_event_hook::*;
 pub use window::*;
 pub use windows_hook::*;

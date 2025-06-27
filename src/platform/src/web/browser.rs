@@ -8,9 +8,11 @@ use windows::Win32::System::Com::{CLSCTX_ALL, CoCreateInstance, CoTaskMemFree};
 use windows::Win32::System::Variant::VARIANT;
 use windows::Win32::UI::Accessibility::{
     AutomationElementMode_None, CUIAutomation, IUIAutomation, IUIAutomationCacheRequest,
-    IUIAutomationCondition, IUIAutomationElement, IUIAutomationElement9, TreeScope_Descendants,
-    TreeTraversalOptions_LastToFirstOrder, UIA_AutomationIdPropertyId, UIA_ClassNamePropertyId,
-    UIA_NamePropertyId, UIA_ValueValuePropertyId,
+    IUIAutomationCondition, IUIAutomationElement, IUIAutomationElement9,
+    IUIAutomationInvokePattern, TreeScope_Children, TreeScope_Descendants,
+    TreeTraversalOptions_LastToFirstOrder, UIA_AutomationIdPropertyId, UIA_ButtonControlTypeId,
+    UIA_ClassNamePropertyId, UIA_ControlTypePropertyId, UIA_InvokePatternId, UIA_NamePropertyId,
+    UIA_SelectionItemIsSelectedPropertyId, UIA_TabItemControlTypeId, UIA_ValueValuePropertyId,
 };
 use windows::core::{AgileReference, Interface};
 
@@ -41,7 +43,7 @@ pub struct BrowserDetector {
 }
 
 /// Detected browser URL with extra information
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct BrowserUrl {
     /// The URL
     pub url: Option<String>,
@@ -231,6 +233,85 @@ impl BrowserDetector {
             url: if url.is_empty() { None } else { Some(url) },
             incognito,
         })
+    }
+
+    /// Close the current tab in the given [Window]
+    pub fn close_current_tab(&self, window: &Window) -> Result<()> {
+        let element: IUIAutomationElement9 = perf(
+            || unsafe { self.automation.resolve()?.ElementFromHandle(window.hwnd) }?.cast(),
+            "ElementFromHandle",
+        )?;
+
+        let tab_condition = unsafe {
+            let is_tab = self.automation.resolve()?.CreatePropertyCondition(
+                UIA_ControlTypePropertyId,
+                &UIA_TabItemControlTypeId.0.into(),
+            )?;
+            let is_selected = self
+                .automation
+                .resolve()?
+                .CreatePropertyCondition(UIA_SelectionItemIsSelectedPropertyId, &true.into())?;
+            self.automation
+                .resolve()?
+                .CreateAndCondition(&is_tab, &is_selected)?
+        };
+
+        let tab = self.uia_find_result(perf(
+            || unsafe { element.FindFirst(TreeScope_Descendants, &tab_condition) },
+            "tab - FindFirst",
+        ))?;
+
+        let tab = match tab {
+            Some(tab) => tab,
+            None => {
+                return Ok(());
+            }
+        };
+
+        let close_button_condition = unsafe {
+            self.automation.resolve()?.CreatePropertyCondition(
+                UIA_ControlTypePropertyId,
+                &UIA_ButtonControlTypeId.0.into(),
+            )
+        }?;
+
+        let close_buttons = perf(
+            || unsafe { tab.FindAll(TreeScope_Children, &close_button_condition) },
+            "close_button - FindFirst",
+        )?;
+
+        let mut close_button = None;
+        let len = unsafe { close_buttons.Length()? };
+        for i in 0..len {
+            let button: IUIAutomationElement9 = unsafe { close_buttons.GetElement(i)?.cast()? };
+            let class_name = self.variant_to_string(perf(
+                || unsafe { button.GetCurrentPropertyValue(UIA_ClassNamePropertyId) },
+                "button - GetCurrentPropertyValue(UIA_ClassNamePropertyId)",
+            )?)?;
+            if class_name.contains("CloseButton") {
+                close_button = Some(button);
+                break;
+            }
+        }
+
+        let close_button = match close_button {
+            Some(close_button) => close_button,
+            None => {
+                return Ok(());
+            }
+        };
+
+        // Click the close button
+        let invoke_pattern: IUIAutomationInvokePattern = perf(
+            || unsafe { close_button.GetCurrentPatternAs(UIA_InvokePatternId) },
+            "close_button - GetCurrentPatternAs(UIA_InvokePatternId)",
+        )?;
+        perf(
+            || unsafe { invoke_pattern.Invoke() },
+            "invoke_pattern - Invoke",
+        )?;
+
+        Ok(())
     }
 
     fn variant_to_string(&self, value: VARIANT) -> Result<String> {
