@@ -136,17 +136,24 @@ impl Cache {
 
     /// Remove a process and associated windows from the [Cache].
     pub async fn remove_process(&mut self, process: ProcessId) {
-        self.store.apps.retain(|ptid, _| ptid.pid != process);
         let removed_windows = self
             .platform
             .windows
-            .iter()
-            .filter(|(ptid, _)| ptid.pid == process)
+            .extract_if(|ptid, _| ptid.pid == process)
             .flat_map(|(_, windows)| windows)
             .collect::<HashSet<_>>();
+
+        self.platform.processes.retain(|_, entry| {
+            // remove pid from list, and remove the entry altogether if it's empty
+            entry.process_threads.retain(|ptid| ptid.pid != process);
+            !entry.process_threads.is_empty()
+        });
+
+        self.store.apps.retain(|ptid, _| ptid.pid != process);
         self.store
             .sessions
             .retain(|ws, _| !removed_windows.contains(&ws.window));
+
         {
             let mut state = self.web.state.write().await;
             state.browser_processes.remove(&process);
@@ -154,39 +161,36 @@ impl Cache {
                 .browser_windows
                 .retain(|window, _| !removed_windows.contains(window));
         }
-        self.platform.windows.retain(|ptid, _| ptid.pid != process);
-        self.platform.processes.retain(|_, entry| {
-            // remove pid from list, and remove the entry altogether if it's empty
-            entry.process_threads.retain(|ptid| ptid.pid != process);
-            !entry.process_threads.is_empty()
-        });
     }
 
     /// Remove an app and associated processes, windows from the [Cache].
     pub async fn remove_app(&mut self, app: Ref<App>) {
         let app_entry = self.platform.processes.remove(&app);
         if let Some(app_entry) = app_entry {
-            for ptid in &app_entry.process_threads {
-                self.platform.windows.remove(ptid);
-                self.store.apps.remove(ptid);
-                {
-                    let mut state = self.web.state.write().await;
-                    state.browser_processes.remove(&ptid.pid);
-                }
-            }
-
             let removed_windows = self
                 .platform
                 .windows
-                .iter()
-                .filter(|(ptid, _)| app_entry.process_threads.contains(ptid))
+                .extract_if(|ptid, _| app_entry.process_threads.contains(ptid))
                 .flat_map(|(_, windows)| windows)
                 .collect::<HashSet<_>>();
+
+            self.store
+                .apps
+                .retain(|ptid, _| !app_entry.process_threads.contains(ptid));
             self.store
                 .sessions
                 .retain(|ws, _| !removed_windows.contains(&ws.window));
+
+            let removed_pids = app_entry
+                .process_threads
+                .iter()
+                .map(|ptid| ptid.pid)
+                .collect::<HashSet<_>>();
             {
                 let mut state = self.web.state.write().await;
+                state
+                    .browser_processes
+                    .retain(|pid| !removed_pids.contains(pid));
                 state
                     .browser_windows
                     .retain(|window, _| !removed_windows.contains(window));
@@ -293,44 +297,19 @@ impl Cache {
     /// Retains all process for windows in the list, and removes the rest
     /// of the process and windows not in the list.
     pub async fn retain_cache(&mut self) -> Result<()> {
-        self.platform.windows.retain(|ptid, windows| {
-            // check if window is alive by checking if the pid() calls
-            // still succeeds and returns the same pid as previously
-            // returned to the engine
-            windows.retain(|window| window.ptid().ok() == Some(*ptid));
-            !windows.is_empty()
-        });
-        let alive_processes = self
+        let removed_windows = self
             .platform
             .windows
-            .keys()
-            .map(|ptid| ptid.pid)
+            .extract_if(|ptid, windows| {
+                // check if window is alive by checking if the pid() calls
+                // still succeeds and returns the same pid as previously
+                // returned to the engine
+                windows.retain(|window| window.ptid().ok() == Some(*ptid));
+                windows.is_empty()
+            })
+            .flat_map(|(_, windows)| windows)
             .collect::<HashSet<_>>();
 
-        let alive_windows = self
-            .platform
-            .windows
-            .values()
-            .flatten()
-            .collect::<HashSet<_>>();
-
-        {
-            let mut state = self.web.state.write().await;
-            state
-                .browser_windows
-                .retain(|window, _| alive_windows.contains(window));
-            state
-                .browser_processes
-                .retain(|process| alive_processes.contains(process));
-        }
-
-        // retain only sessions and apps for which their windows and apps that are alive
-        self.store
-            .sessions
-            .retain(|ws, _| alive_windows.contains(&ws.window));
-        self.store
-            .apps
-            .retain(|ptid, _| self.platform.windows.contains_key(ptid));
         // retain only app refs for processes that are alive
         self.platform.processes.retain(|_, entry| {
             entry
@@ -338,6 +317,30 @@ impl Cache {
                 .retain(|ptid| self.platform.windows.contains_key(ptid));
             !entry.process_threads.is_empty()
         });
+
+        // retain only sessions and apps for which their windows and apps that are alive
+        self.store
+            .sessions
+            .retain(|ws, _| !removed_windows.contains(&ws.window));
+        self.store
+            .apps
+            .retain(|ptid, _| self.platform.windows.contains_key(ptid));
+
+        let alive_pids = self
+            .platform
+            .windows
+            .keys()
+            .map(|ptid| ptid.pid)
+            .collect::<HashSet<_>>();
+        {
+            let mut state = self.web.state.write().await;
+            state
+                .browser_processes
+                .retain(|process| alive_pids.contains(process));
+            state
+                .browser_windows
+                .retain(|window, _| !removed_windows.contains(window));
+        }
         Ok(())
     }
 }
