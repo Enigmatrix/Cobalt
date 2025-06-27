@@ -4,6 +4,8 @@
 pub mod channels;
 /// Configuration module
 pub mod config;
+/// Data structures used throughout the application
+pub mod ds;
 /// Error base
 pub mod error;
 /// Async base
