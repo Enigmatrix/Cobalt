@@ -60,7 +60,7 @@ impl Repository {
             .collect())
     }
 
-    fn sql_period_start_end(expr: &str, period: &Period) -> (String, String) {
+    pub(crate) fn sql_period_start_end(expr: &str, period: &Period) -> (String, String) {
         match period {
             Period::Hour => (
                 format!(
@@ -99,7 +99,7 @@ impl Repository {
         }
     }
 
-    fn sql_period_next(expr: &str, period: &Period) -> String {
+    pub(crate) fn sql_period_next(expr: &str, period: &Period) -> String {
         match period {
             Period::Hour => format!("(({expr}) + 3600)"),
             Period::Day => format!("unixepoch({expr}, 'unixepoch', '+1 day')"),
@@ -109,11 +109,11 @@ impl Repository {
         }
     }
 
-    fn sql_ticks_to_unix(expr: &str) -> String {
+    pub(crate) fn sql_ticks_to_unix(expr: &str) -> String {
         format!("((({expr}) / 10000 - 62135596800000)/1000)")
     }
 
-    fn sql_unix_to_ticks(expr: &str) -> String {
+    pub(crate) fn sql_unix_to_ticks(expr: &str) -> String {
         format!("((({expr}) * 1000 + 62135596800000)*10000)")
     }
 
