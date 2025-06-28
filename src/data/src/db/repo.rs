@@ -138,13 +138,12 @@ impl Repository {
         let query = format!("WITH RECURSIVE
             params(start, end) AS (SELECT ?, ?),
             period_intervals AS (
-                SELECT a.id AS id,
+                SELECT s.app_id AS id,
                     {period_start} AS period_start,
                     {period_end} AS period_end,
                     u.start AS usage_start,
                     u.end AS usage_end
-                FROM apps a, params p
-                INNER JOIN sessions s ON a.id = s.app_id
+                FROM sessions s, params p
                 INNER JOIN usages u ON s.id = u.session_id
                 WHERE u.end > p.start AND u.start <= p.end
 
