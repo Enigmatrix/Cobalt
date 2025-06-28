@@ -1,28 +1,28 @@
-import { useCallback, useState, type ReactNode } from "react";
-import {
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-} from "@/components/ui/popover";
+import { NoTags, NoTagsFound } from "@/components/empty-states";
+import { CreateTagDialog } from "@/components/tag/create-tag-dialog";
+import { ScoreCircle } from "@/components/tag/score";
+import { Button } from "@/components/ui/button";
 import {
   Command,
   CommandInput,
-  CommandList,
   CommandItem,
+  CommandList,
 } from "@/components/ui/command";
-import { useTags } from "@/hooks/use-refresh";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Text } from "@/components/ui/text";
-import { Plus, TagIcon } from "lucide-react";
+import { useTags } from "@/hooks/use-refresh";
 import { useTagsSearch } from "@/hooks/use-search";
-import { CreateTagDialog } from "@/components/tag/create-tag-dialog";
-import { Button } from "@/components/ui/button";
 import type { Ref, Tag } from "@/lib/entities";
+import type { tagSchema } from "@/lib/schema";
 import { useAppState } from "@/lib/state";
 import { cn } from "@/lib/utils";
-import { NoTags, NoTagsFound } from "@/components/empty-states";
+import { Plus, TagIcon } from "lucide-react";
+import { useCallback, useState, type ReactNode } from "react";
 import type { z } from "zod";
-import type { tagSchema } from "@/lib/schema";
-import { ScoreCircle } from "@/components/tag/score";
 
 export function ChooseTag({
   value,

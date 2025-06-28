@@ -1,21 +1,21 @@
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Separator } from "@/components/ui/separator";
+import { useTheme } from "@/components/theme-provider";
+import { ThemeSwitch } from "@/components/theme-switch";
 import {
   Breadcrumb,
   BreadcrumbItem,
-  BreadcrumbPage,
   BreadcrumbList,
+  BreadcrumbPage,
 } from "@/components/ui/breadcrumb";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ThemeSwitch } from "@/components/theme-switch";
-import { useTheme } from "@/components/theme-provider";
-import { useEffect, useState, type ReactNode } from "react";
+import { Separator } from "@/components/ui/separator";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Switch } from "@/components/ui/switch";
 import {
   readConfig,
   setTrackIncognito as setTrackIncognitoFn,
 } from "@/lib/config";
 import { error } from "@/lib/log";
+import { useEffect, useState, type ReactNode } from "react";
 
 export function Setting({
   title,

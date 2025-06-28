@@ -1,14 +1,14 @@
-import React, { useMemo } from "react";
-import { cn } from "@/lib/utils";
-import _ from "lodash";
-import type { App, Ref } from "@/lib/entities";
 import AppIcon from "@/components/app/app-icon";
-import { type EntityMap } from "@/lib/state";
-import { DateTime } from "luxon";
 import { DurationText } from "@/components/time/duration-text";
 import { DateTimeText } from "@/components/time/time-text";
-import { useApps } from "@/hooks/use-refresh";
 import { Text } from "@/components/ui/text";
+import { useApps } from "@/hooks/use-refresh";
+import type { App, Ref } from "@/lib/entities";
+import { type EntityMap } from "@/lib/state";
+import { cn } from "@/lib/utils";
+import _ from "lodash";
+import { DateTime } from "luxon";
+import React, { useMemo } from "react";
 
 function HoverCard({
   app,

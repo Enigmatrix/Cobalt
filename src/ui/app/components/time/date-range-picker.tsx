@@ -1,11 +1,15 @@
-import { useToday } from "@/hooks/use-time";
-import { type Interval, toHumanDateTime } from "@/lib/time";
-import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Popover,
-  PopoverTrigger,
   PopoverContent,
+  PopoverTrigger,
 } from "@/components/ui/popover";
+import { useToday } from "@/hooks/use-time";
+import { toHumanDateTime, type Interval } from "@/lib/time";
+import { cn } from "@/lib/utils";
 import type { ClassValue } from "clsx";
 import { DateTime, Duration } from "luxon";
 import {
@@ -15,10 +19,6 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Calendar } from "@/components/ui/calendar";
 import type { DateRange } from "react-day-picker";
 
 interface DateRangePickerProps {

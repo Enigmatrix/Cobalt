@@ -1,5 +1,5 @@
 import useResizeObserver from "@react-hook/resize-observer";
-import { useState, useLayoutEffect } from "react";
+import { useLayoutEffect, useState } from "react";
 
 export function useWidth(
   target: React.RefObject<HTMLElement | null>,

@@ -1,6 +1,6 @@
-import humanizeDuration from "pretty-ms";
-import { DateTime, Duration } from "luxon";
 import type { EntityPeriod } from "@/lib/entities";
+import { DateTime, Duration } from "luxon";
+import humanizeDuration from "pretty-ms";
 
 // Like Luxon's Interval type, but not half-open.
 export interface Interval {

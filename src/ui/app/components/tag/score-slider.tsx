@@ -1,8 +1,7 @@
-import * as React from "react";
-import * as SliderPrimitive from "@radix-ui/react-slider";
-
-import { cn } from "@/lib/utils";
 import { Colors } from "@/components/tag/score";
+import { cn } from "@/lib/utils";
+import * as SliderPrimitive from "@radix-ui/react-slider";
+import * as React from "react";
 
 function ScoreSlider({
   className,

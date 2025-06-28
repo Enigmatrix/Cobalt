@@ -37,6 +37,19 @@ pub struct Icon {
     pub mime: Option<String>,
 }
 
+// https://developer.mozilla.org/en-US/docs/Web/Media/Guides/Formats/Image_types#common_image_file_types
+const IMAGE_EXTS: &[&str] = &[
+    "png", "apng", // PNG variants
+    "avif", // AVIF
+    "gif",  // GIF variants
+    "jpg", "jpeg", "jfif", "pjpeg", "pjp",  // JPEG variants
+    "svg",  // SVG
+    "webp", // WebP
+    "bmp",  // BMP
+    "ico", "cur", // ICO variants
+    "tiff", "tif", // TIFF variants
+];
+
 impl Icon {
     /// Deduce the extension of the icon from the mime type or file magic bytes
     pub fn deduce_ext(&self) -> Option<String> {
@@ -49,15 +62,23 @@ impl Icon {
         if let Some(mime) = &self.mime
             && let Some(ext) = mime2ext::mime2ext(mime)
         {
-            return Some(ext.to_string());
+            return Self::to_valid_image_ext(ext);
         }
 
         // Finally try magic bytes detection
         if let Some(kind) = infer::get(&self.data) {
-            return Some(kind.extension().to_string());
+            return Self::to_valid_image_ext(kind.extension());
         }
 
         None
+    }
+
+    fn to_valid_image_ext(ext: &str) -> Option<String> {
+        if IMAGE_EXTS.contains(&ext) {
+            Some(ext.to_string())
+        } else {
+            None
+        }
     }
 }
 

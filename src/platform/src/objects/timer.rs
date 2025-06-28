@@ -1,6 +1,6 @@
 use std::cell::RefCell;
-use std::collections::HashMap;
 
+use util::ds::SmallHashMap;
 use util::error::*;
 use util::tracing::ResultTraceExt;
 use windows::Win32::Foundation::HWND;
@@ -11,7 +11,7 @@ use crate::objects::Duration;
 type Callback = Box<dyn FnMut() -> Result<()>>;
 
 thread_local! {
-    static TIMER_CALLBACKS: RefCell<HashMap<usize, Callback>> = RefCell::new(HashMap::new());
+    static TIMER_CALLBACKS: RefCell<SmallHashMap<usize, Callback>> = RefCell::new(SmallHashMap::new());
 }
 
 /// Win32-based [Timer]. Needs to be scheduled onto a [EventLoop].

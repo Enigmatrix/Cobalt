@@ -1,24 +1,24 @@
 import type {
-  Timestamp,
-  WithDuration,
-  WithGroupedDuration,
-  Duration as DataDuration,
-  App,
-  Session,
-  Tag,
-  Ref,
-  InteractionPeriod,
-  SystemEvent,
   Alert,
+  App,
+  Duration as DataDuration,
+  InteractionPeriod,
+  Ref,
+  Reminder,
+  Session,
+  SystemEvent,
+  Tag,
   Target,
   TimeFrame,
+  Timestamp,
   TriggerAction,
-  Reminder,
+  WithDuration,
+  WithGroupedDuration,
 } from "@/lib/entities";
-import { invoke } from "@tauri-apps/api/core";
 import type { EntityMap, EntityStore } from "@/lib/state";
-import { DateTime } from "luxon";
 import { dateTimeToTicks, type Period } from "@/lib/time";
+import { invoke } from "@tauri-apps/api/core";
+import { DateTime } from "luxon";
 
 export interface CreateTag {
   name: string;

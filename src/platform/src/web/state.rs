@@ -1,6 +1,6 @@
-use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
+use util::ds::{SmallHashMap, SmallHashSet};
 use util::future::sync::RwLock;
 
 use crate::objects::{ProcessId, Window};
@@ -10,9 +10,9 @@ use crate::objects::{ProcessId, Window};
 pub struct StateInner {
     /// Cache of whether a window is a browser or not.
     /// Not present means that we don't know if it's a browser or not.
-    pub browser_windows: HashMap<Window, bool>,
+    pub browser_windows: SmallHashMap<Window, bool>,
     /// Processes that are known to be browsers.
-    pub browser_processes: HashSet<ProcessId>,
+    pub browser_processes: SmallHashSet<ProcessId>,
 }
 
 /// Shared state of browsers and websites seen in the desktop

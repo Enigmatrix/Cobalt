@@ -1,7 +1,7 @@
 use std::cell::RefCell;
-use std::collections::HashMap;
 use std::ffi::c_void;
 
+use util::ds::SmallHashMap;
 use util::error::{Context, Result};
 use util::tracing::ResultTraceExt;
 use windows::Win32::Foundation::HWND;
@@ -35,7 +35,7 @@ pub enum Target {
 type Callback = Box<dyn Fn(HWINEVENTHOOK, u32, HWND, i32, i32, u32, u32) + Send + Sync>;
 
 thread_local! {
-    static CALLBACKS: RefCell<HashMap<*mut c_void, Callback>> = RefCell::new(HashMap::new());
+    static CALLBACKS: RefCell<SmallHashMap<*mut c_void, Callback>> = RefCell::new(SmallHashMap::new());
 }
 
 impl WinEventHook {

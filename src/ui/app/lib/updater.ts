@@ -1,5 +1,5 @@
-import { check } from "@tauri-apps/plugin-updater";
 import { error } from "@/lib/log";
+import { check } from "@tauri-apps/plugin-updater";
 import { toast } from "sonner";
 
 export function checkForUpdatesBackground() {

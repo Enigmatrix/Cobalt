@@ -1,16 +1,16 @@
-import type { App, Tag, Ref, WithDuration } from "@/lib/entities";
-import { untagged, type EntityMap } from "@/lib/state";
-import type { ClassValue } from "clsx";
-import { useTheme } from "@/components/theme-provider";
-import { useApps, useTags } from "@/hooks/use-refresh";
-import { useEffect, useMemo, useRef, useState } from "react";
-import * as echarts from "echarts";
-import _ from "lodash";
-import { Tooltip } from "@/components/viz/tooltip";
-import { cn } from "@/lib/utils";
 import { htmlImgElement } from "@/components/app/app-icon";
+import { useTheme } from "@/components/theme-provider";
 import { AppUsageChartTooltipContent } from "@/components/viz/app-usage-chart-tooltip";
 import { TagUsageChartTooltipContent } from "@/components/viz/tag-usage-chart-tooltip";
+import { Tooltip } from "@/components/viz/tooltip";
+import { useApps, useTags } from "@/hooks/use-refresh";
+import type { App, Ref, Tag, WithDuration } from "@/lib/entities";
+import { untagged, type EntityMap } from "@/lib/state";
+import { cn } from "@/lib/utils";
+import type { ClassValue } from "clsx";
+import * as echarts from "echarts";
+import _ from "lodash";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 interface GlobalModel {
   getSeriesByIndex: (index: number) => echarts.SeriesModel;

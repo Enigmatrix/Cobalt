@@ -1,6 +1,8 @@
-import * as React from "react";
-import { z } from "zod";
-import { useZodForm } from "@/hooks/use-form";
+import { ChooseMultiApps } from "@/components/app/choose-multi-apps";
+import { ColorPicker } from "@/components/color-picker";
+import { getScoreDescription } from "@/components/tag/score";
+import { ScoreSlider } from "@/components/tag/score-slider";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -10,7 +12,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
@@ -20,13 +21,12 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { ColorPicker } from "@/components/color-picker";
-import { tagSchema } from "@/lib/schema";
-import { ChooseMultiApps } from "@/components/app/choose-multi-apps";
+import { useZodForm } from "@/hooks/use-form";
 import { randomColor } from "@/lib/color-utils";
+import { tagSchema } from "@/lib/schema";
+import * as React from "react";
 import type { SubmitHandler } from "react-hook-form";
-import { ScoreSlider } from "@/components/tag/score-slider";
-import { getScoreDescription } from "@/components/tag/score";
+import { z } from "zod";
 
 type FormValues = z.infer<typeof tagSchema>;
 

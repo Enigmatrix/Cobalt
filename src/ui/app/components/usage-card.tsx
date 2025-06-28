@@ -1,11 +1,10 @@
+import { DurationText } from "@/components/time/duration-text";
+import { Button } from "@/components/ui/button";
+import { useToday } from "@/hooks/use-time";
+import type { Interval, Period } from "@/lib/time";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { DateTime } from "luxon";
 import { useCallback, useMemo } from "react";
-import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { DurationText } from "@/components/time/duration-text";
-import { useToday } from "@/hooks/use-time";
-import type { Interval } from "@/lib/time";
-import type { Period } from "@/lib/time";
 
 export function UsageCard({
   interval,

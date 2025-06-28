@@ -1,15 +1,15 @@
-import React, { useMemo } from "react";
-import { cn } from "@/lib/utils";
-import _ from "lodash";
-import type { Ref, Tag } from "@/lib/entities";
-import { untagged, type EntityMap } from "@/lib/state";
-import { DateTime } from "luxon";
+import { ScoreCircle } from "@/components/tag/score";
 import { DurationText } from "@/components/time/duration-text";
 import { DateTimeText } from "@/components/time/time-text";
-import { useTags } from "@/hooks/use-refresh";
-import { TagIcon } from "lucide-react";
 import { Text } from "@/components/ui/text";
-import { ScoreCircle } from "@/components/tag/score";
+import { useTags } from "@/hooks/use-refresh";
+import type { Ref, Tag } from "@/lib/entities";
+import { untagged, type EntityMap } from "@/lib/state";
+import { cn } from "@/lib/utils";
+import _ from "lodash";
+import { TagIcon } from "lucide-react";
+import { DateTime } from "luxon";
+import React, { useMemo } from "react";
 
 function HoverCard({
   tag,

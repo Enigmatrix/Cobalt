@@ -1,26 +1,26 @@
-import React, { useMemo, useRef, useState } from "react";
-import * as echarts from "echarts";
-import { DateTime, Duration } from "luxon";
-import _ from "lodash";
-import { useAppState, type EntityMap } from "@/lib/state";
+import { htmlImgElement } from "@/components/app/app-icon";
+import { useTheme } from "@/components/theme-provider";
+import { AppUsageChartTooltipContent } from "@/components/viz/app-usage-chart-tooltip";
+import { Tooltip } from "@/components/viz/tooltip";
 import { useRefresh } from "@/hooks/use-refresh";
+import { getVarColorAsHex } from "@/lib/color-utils";
+import type { App, Ref, WithGroupedDuration } from "@/lib/entities";
+import { useAppState, type EntityMap } from "@/lib/state";
 import {
-  type Period,
   dateTimeToTicks,
   durationToTicks,
   periodToDuration,
   ticksToDateTime,
   toHumanDateTime,
   toHumanDuration,
+  type Period,
 } from "@/lib/time";
-import { htmlImgElement } from "@/components/app/app-icon";
-import type { App, Ref, WithGroupedDuration } from "@/lib/entities";
-import type { ClassValue } from "clsx";
 import { cn } from "@/lib/utils";
-import { Tooltip } from "@/components/viz/tooltip";
-import { AppUsageChartTooltipContent } from "@/components/viz/app-usage-chart-tooltip";
-import { useTheme } from "@/components/theme-provider";
-import { getVarColorAsHex } from "@/lib/color-utils";
+import type { ClassValue } from "clsx";
+import * as echarts from "echarts";
+import _ from "lodash";
+import { DateTime, Duration } from "luxon";
+import React, { useMemo, useRef, useState } from "react";
 
 export interface AppUsageBarChartProps {
   data: EntityMap<App, WithGroupedDuration<App>[]>;

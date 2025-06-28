@@ -1,6 +1,5 @@
-use std::collections::{HashMap, HashSet};
-
 use util::channels::Sender;
+use util::ds::{SmallHashMap, SmallHashSet};
 use util::error::Result;
 
 use crate::events::WindowTitleWatcher;
@@ -9,7 +8,7 @@ use crate::web;
 
 /// Watches a browser (by PID) for tab changes. Changes should be reported as fast as possible.
 pub struct BrowserTabWatcher {
-    browser_pids: HashMap<ProcessId, WindowTitleWatcher>,
+    browser_pids: SmallHashMap<ProcessId, WindowTitleWatcher>,
     browser_state: web::State,
     tab_change_tx: Sender<TabChange>,
 }
@@ -30,13 +29,13 @@ impl BrowserTabWatcher {
     /// Create a new [BrowserTabWatcher]
     pub fn new(tab_change_tx: Sender<TabChange>, browser_state: web::State) -> Result<Self> {
         Ok(Self {
-            browser_pids: HashMap::new(),
+            browser_pids: SmallHashMap::new(),
             browser_state,
             tab_change_tx,
         })
     }
 
-    fn update_browsers(&mut self, pids: &HashSet<ProcessId>) -> Result<()> {
+    fn update_browsers(&mut self, pids: &SmallHashSet<ProcessId>) -> Result<()> {
         // Remove any browsers that are no longer in the list
         self.browser_pids.retain(|pid, _| pids.contains(pid));
 

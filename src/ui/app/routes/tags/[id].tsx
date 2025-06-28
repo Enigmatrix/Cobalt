@@ -1,42 +1,7 @@
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import type { Route } from "../tags/+types/[id]";
-import { Separator } from "@/components/ui/separator";
-import { useDebouncedCallback } from "use-debounce";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbPage,
-  BreadcrumbList,
-  BreadcrumbLink,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import { useAppState } from "@/lib/state";
-import type { App, Ref, Tag } from "@/lib/entities";
-import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
-import { useCallback, useMemo, useState } from "react";
-import { DateTime } from "luxon";
-import { useAlerts, useTag } from "@/hooks/use-refresh";
-import {
-  type Period,
-  hour24Formatter,
-  monthDayFormatter,
-  ticksToDateTime,
-  ticksToDuration,
-  weekDayFormatter,
-} from "@/lib/time";
-import { Text } from "@/components/ui/text";
-import { TagIcon, TrashIcon } from "lucide-react";
-import { EditableText } from "@/components/editable-text";
+import { ChooseMultiApps } from "@/components/app/choose-multi-apps";
 import { ColorPicker } from "@/components/color-picker";
-import _ from "lodash";
-import { TimePeriodUsageCard } from "@/components/usage-card";
-import Heatmap from "@/components/viz/heatmap";
-import {
-  useAppDurationsPerPeriod,
-  useAppSessionUsages,
-  useTagDurationsPerPeriod,
-} from "@/hooks/use-repo";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { EditableText } from "@/components/editable-text";
+import { ScoreBadge, ScoreEdit } from "@/components/tag/score";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -48,11 +13,46 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { NavLink, useNavigate } from "react-router";
-import { usePeriodInterval } from "@/hooks/use-time";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Text } from "@/components/ui/text";
+import { TimePeriodUsageCard } from "@/components/usage-card";
+import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
 import { Gantt } from "@/components/viz/gantt2";
-import { ChooseMultiApps } from "@/components/app/choose-multi-apps";
-import { ScoreBadge, ScoreEdit } from "@/components/tag/score";
+import Heatmap from "@/components/viz/heatmap";
+import { useAlerts, useTag } from "@/hooks/use-refresh";
+import {
+  useAppDurationsPerPeriod,
+  useAppSessionUsages,
+  useTagDurationsPerPeriod,
+} from "@/hooks/use-repo";
+import { usePeriodInterval } from "@/hooks/use-time";
+import type { App, Ref, Tag } from "@/lib/entities";
+import { useAppState } from "@/lib/state";
+import {
+  hour24Formatter,
+  monthDayFormatter,
+  ticksToDateTime,
+  ticksToDuration,
+  weekDayFormatter,
+  type Period,
+} from "@/lib/time";
+import _ from "lodash";
+import { TagIcon, TrashIcon } from "lucide-react";
+import { DateTime } from "luxon";
+import { useCallback, useMemo, useState } from "react";
+import { NavLink, useNavigate } from "react-router";
+import { useDebouncedCallback } from "use-debounce";
+import type { Route } from "../tags/+types/[id]";
 
 export default function Page({ params }: Route.ComponentProps) {
   const id = +params.id as Ref<Tag>;

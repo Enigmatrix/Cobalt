@@ -1,5 +1,3 @@
-import * as React from "react";
-import { useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
 import {
   Sidebar,
@@ -12,8 +10,8 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { NavLink, useLocation } from "react-router";
 import {
+  ArrowLeftIcon,
   Bell,
   FlaskConical,
   History,
@@ -21,8 +19,9 @@ import {
   List,
   Settings,
   Tag,
-  ArrowLeftIcon,
 } from "lucide-react";
+import * as React from "react";
+import { NavLink, useLocation, useNavigate } from "react-router";
 
 const data = {
   footer: [

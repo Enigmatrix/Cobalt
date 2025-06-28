@@ -1,8 +1,8 @@
-import globals from "globals";
-import pluginJs from "@eslint/js";
-import tseslint from "typescript-eslint";
-import pluginReact from "eslint-plugin-react";
 import { FlatCompat } from "@eslint/eslintrc";
+import pluginJs from "@eslint/js";
+import pluginReact from "eslint-plugin-react";
+import globals from "globals";
+import tseslint from "typescript-eslint";
 
 const compat = new FlatCompat();
 

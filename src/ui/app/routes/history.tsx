@@ -1,42 +1,42 @@
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Separator } from "@/components/ui/separator";
+import { DateRangePicker } from "@/components/time/date-range-picker";
+import { DurationText } from "@/components/time/duration-text";
 import {
   Breadcrumb,
   BreadcrumbItem,
-  BreadcrumbPage,
   BreadcrumbList,
+  BreadcrumbPage,
 } from "@/components/ui/breadcrumb";
-import { useMemo, useState, createContext, useContext } from "react";
-import { DateTime, Duration } from "luxon";
+import { Button } from "@/components/ui/button";
+import { FormItem } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
-import { DateRangePicker } from "@/components/time/date-range-picker";
-import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
-import {
-  useAppDurationsPerPeriod,
-  useInteractionPeriods,
-  useSystemEvents,
-  useAppSessionUsages,
-} from "@/hooks/use-repo";
 import {
   Select,
-  SelectItem,
   SelectContent,
-  SelectValue,
+  SelectItem,
   SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { SidebarTrigger } from "@/components/ui/sidebar";
+import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
+import { Gantt } from "@/components/viz/gantt2";
+import { VerticalLegend } from "@/components/viz/vertical-legend";
+import {
+  useAppDurationsPerPeriod,
+  useAppSessionUsages,
+  useInteractionPeriods,
+  useSystemEvents,
+} from "@/hooks/use-repo";
 import {
   useIntervalControlsWithDefault,
   usePeriodInterval,
 } from "@/hooks/use-time";
-import { VerticalLegend } from "@/components/viz/vertical-legend";
-import { DurationText } from "@/components/time/duration-text";
 import type { App, Ref } from "@/lib/entities";
 import type { Period } from "@/lib/time";
-import { ChevronLeftIcon, ChevronRightIcon, Loader2 } from "lucide-react";
-import { Gantt } from "@/components/viz/gantt2";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { FormItem } from "@/components/ui/form";
+import { ChevronLeftIcon, ChevronRightIcon, Loader2 } from "lucide-react";
+import { DateTime, Duration } from "luxon";
+import { createContext, useContext, useMemo, useState } from "react";
 
 type View = "app-usage" | "session-history";
 

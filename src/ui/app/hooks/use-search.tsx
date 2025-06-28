@@ -1,7 +1,7 @@
 import type { Alert, App, Tag } from "@/lib/entities";
+import { useAppState } from "@/lib/state";
 import { matchSorter, type KeyOption } from "match-sorter";
 import { useMemo, useState } from "react";
-import { useAppState } from "@/lib/state";
 
 export function useSearch<T>(items: T[], paths: KeyOption<T>[]) {
   const [query, setQuery] = useState("");

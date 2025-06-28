@@ -1,8 +1,8 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Edit2, Check } from "lucide-react";
-import type { ClassValue } from "clsx";
 import { cn } from "@/lib/utils";
+import type { ClassValue } from "clsx";
+import { Check, Edit2 } from "lucide-react";
+import { useState } from "react";
 
 export function EditableText({
   text,

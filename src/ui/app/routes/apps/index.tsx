@@ -1,27 +1,16 @@
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Separator } from "@/components/ui/separator";
+import AppIcon from "@/components/app/app-icon";
+import { NoApps, NoAppsFound } from "@/components/empty-states";
+import { SearchBar } from "@/components/search-bar";
+import { ScoreCircle } from "@/components/tag/score";
+import { DurationText } from "@/components/time/duration-text";
+import { Badge } from "@/components/ui/badge";
 import {
   Breadcrumb,
   BreadcrumbItem,
-  BreadcrumbPage,
   BreadcrumbList,
+  BreadcrumbPage,
 } from "@/components/ui/breadcrumb";
-import type { EntityMap } from "@/lib/state";
-import type { App, Tag, WithGroupedDuration } from "@/lib/entities";
-import {
-  memo,
-  useMemo,
-  useState,
-  type CSSProperties,
-  type ReactNode,
-} from "react";
-import { Badge } from "@/components/ui/badge";
-import { FixedSizeList as List } from "react-window";
-import AutoSizer from "react-virtualized-auto-sizer";
-import { cn } from "@/lib/utils";
-import { NavLink } from "react-router";
-import AppIcon from "@/components/app/app-icon";
-import { SearchBar } from "@/components/search-bar";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,21 +19,32 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
-import { ArrowDownUp, SortAsc, SortDesc } from "lucide-react";
-import _ from "lodash";
+import { Separator } from "@/components/ui/separator";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Text } from "@/components/ui/text";
-import { DateTime } from "luxon";
 import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
 import { useApps, useTag } from "@/hooks/use-refresh";
-import { useAppsSearch } from "@/hooks/use-search";
-import { DurationText } from "@/components/time/duration-text";
-import type { ClassValue } from "clsx";
 import { useAppDurationsPerPeriod } from "@/hooks/use-repo";
+import { useAppsSearch } from "@/hooks/use-search";
 import { SortDirection } from "@/hooks/use-sort";
 import { usePeriodInterval } from "@/hooks/use-time";
-import { NoApps, NoAppsFound } from "@/components/empty-states";
-import { ScoreCircle } from "@/components/tag/score";
+import type { App, Tag, WithGroupedDuration } from "@/lib/entities";
+import type { EntityMap } from "@/lib/state";
+import { cn } from "@/lib/utils";
+import type { ClassValue } from "clsx";
+import _ from "lodash";
+import { ArrowDownUp, SortAsc, SortDesc } from "lucide-react";
+import { DateTime } from "luxon";
+import {
+  memo,
+  useMemo,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
+import { NavLink } from "react-router";
+import AutoSizer from "react-virtualized-auto-sizer";
+import { FixedSizeList as List } from "react-window";
 
 export function MiniTagItem({
   tag,

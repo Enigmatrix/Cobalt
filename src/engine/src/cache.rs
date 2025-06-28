@@ -6,6 +6,7 @@ use platform::events::WindowSession;
 use platform::objects::{ProcessId, ProcessThreadId, Window};
 use platform::web::{self, BaseWebsiteUrl};
 use scoped_futures::ScopedBoxFuture;
+use util::ds::{SmallHashMap, SmallHashSet};
 use util::error::Result;
 use util::future as tokio;
 
@@ -22,10 +23,10 @@ pub struct Cache {
 pub struct Store {
     // TODO this might be a bad idea, the HWND might be reused by Windows,
     // so another window could be running with the same HWND after the first one closed...
-    sessions: HashMap<WindowSession, SessionDetails>,
+    sessions: SmallHashMap<WindowSession, SessionDetails>,
     // TODO this might be a bad idea, the pid/tid might be reused by Windows,
     // so another app could be running with the same pid/tid after the first one closed...
-    apps: HashMap<ProcessThreadId, AppDetails>,
+    apps: SmallHashMap<ProcessThreadId, AppDetails>,
 }
 
 /// Cache for storing information about websites and browsers
@@ -44,14 +45,14 @@ pub struct WebsiteCache {
 pub struct PlatformCache {
     // An app can have many processes open representing it.
     // A process can have many windows.
-    windows: HashMap<ProcessThreadId, HashSet<Window>>,
-    processes: HashMap<Ref<App>, AppEntry>,
+    windows: SmallHashMap<ProcessThreadId, HashSet<Window>>,
+    processes: SmallHashMap<Ref<App>, AppEntry>,
 }
 
 /// Details about a [App].
 #[derive(Debug, Default)]
 pub struct AppEntry {
-    pub process_threads: HashSet<ProcessThreadId>,
+    pub process_threads: SmallHashSet<ProcessThreadId>,
     pub identity: AppIdentity,
 }
 
@@ -99,7 +100,7 @@ impl Cache {
     }
 
     /// Get all processes for an [App]. Will return nothing for websites.
-    pub fn platform_processes_for_app(&self, app: &Ref<App>) -> HashSet<KillableProcessId> {
+    pub fn platform_processes_for_app(&self, app: &Ref<App>) -> SmallHashSet<KillableProcessId> {
         let entry = self.platform.processes.get(app);
         if let Some(entry) = entry {
             match &entry.identity {
@@ -119,7 +120,7 @@ impl Cache {
                 }
             }
         } else {
-            HashSet::new()
+            SmallHashSet::new()
         }
     }
 
@@ -151,7 +152,7 @@ impl Cache {
             .windows
             .extract_if(|ptid, _| ptid.pid == process)
             .flat_map(|(_, windows)| windows)
-            .collect::<HashSet<_>>();
+            .collect::<SmallHashSet<_>>();
 
         self.platform.processes.retain(|_, entry| {
             // remove pid from list, and remove the entry altogether if it's empty
@@ -182,7 +183,7 @@ impl Cache {
                 .windows
                 .extract_if(|ptid, _| app_entry.process_threads.contains(ptid))
                 .flat_map(|(_, windows)| windows)
-                .collect::<HashSet<_>>();
+                .collect::<SmallHashSet<_>>();
 
             self.store
                 .apps
@@ -195,7 +196,7 @@ impl Cache {
                 .process_threads
                 .iter()
                 .map(|ptid| ptid.pid)
-                .collect::<HashSet<_>>();
+                .collect::<SmallHashSet<_>>();
             {
                 let mut state = self.web.state.write().await;
                 state
@@ -297,7 +298,7 @@ impl Cache {
     }
 
     /// Get all browser windows.
-    pub async fn browser_windows(&self) -> HashSet<Window> {
+    pub async fn browser_windows(&self) -> SmallHashSet<Window> {
         let state = self.web.state.read().await;
         state
             .browser_windows
@@ -334,7 +335,7 @@ impl Cache {
                 windows.is_empty()
             })
             .flat_map(|(_, windows)| windows)
-            .collect::<HashSet<_>>();
+            .collect::<SmallHashSet<_>>();
 
         // retain only app refs for processes that are alive
         self.platform.processes.retain(|_, entry| {
@@ -357,7 +358,7 @@ impl Cache {
             .windows
             .keys()
             .map(|ptid| ptid.pid)
-            .collect::<HashSet<_>>();
+            .collect::<SmallHashSet<_>>();
         {
             let mut state = self.web.state.write().await;
             state

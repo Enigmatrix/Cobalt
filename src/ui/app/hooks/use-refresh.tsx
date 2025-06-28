@@ -1,5 +1,5 @@
-import type { App, Tag, Alert, Ref, Target } from "@/lib/entities";
-import { useAppState, refresh } from "@/lib/state";
+import type { Alert, App, Ref, Tag, Target } from "@/lib/entities";
+import { refresh, useAppState } from "@/lib/state";
 import { useCallback, useMemo } from "react";
 
 export function useRefresh() {

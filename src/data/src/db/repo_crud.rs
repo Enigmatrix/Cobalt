@@ -7,13 +7,12 @@ use super::*;
 use crate::entities::{Reason, TriggerAction};
 
 /// SQL expression for getting the duration of all apps in day, week, month range.
-pub const APP_DUR: &str = "SELECT a.id AS id,
+pub const APP_DUR: &str = "SELECT s.app_id AS id,
                 COALESCE(SUM(MIN(u.end, p.end) - MAX(u.start, p.start)), 0) AS duration
-            FROM apps a, (SELECT ? AS start, ? AS end) p
-            INNER JOIN sessions s ON a.id = s.app_id
+            FROM sessions s, (SELECT ? AS start, ? AS end) p
             INNER JOIN usages u ON s.id = u.session_id
             WHERE u.end > p.start AND u.start <= p.end
-            GROUP BY a.id";
+            GROUP BY s.app_id";
 
 const TAG_DUR: &str = "SELECT a.tag_id AS id,
                 COALESCE(SUM(MIN(u.end, p.end) - MAX(u.start, p.start)), 0) AS duration

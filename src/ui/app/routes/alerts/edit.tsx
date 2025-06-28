@@ -1,21 +1,20 @@
-import { useZodForm } from "@/hooks/use-form";
-import { alertSchema } from "@/lib/schema";
-import { useCallback } from "react";
-import { useAppState } from "@/lib/state";
-import { useNavigate } from "react-router";
-import { Tabs, TabsContent } from "@/components/ui/tabs";
-import { TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { InfoIcon } from "lucide-react";
-import { useFieldArray } from "react-hook-form";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import type { UpdatedAlert } from "@/lib/repo";
-import { DurationText } from "@/components/time/duration-text";
-import { useTriggerInfo } from "@/hooks/use-trigger-info";
 import { AlertForm, type FormValues } from "@/components/alert/alert-form";
-import { AppUsageBarChartView, TimeProgressBar } from "@/routes/alerts/create";
-import type { Route } from "../alerts/+types/edit";
+import { DurationText } from "@/components/time/duration-text";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useZodForm } from "@/hooks/use-form";
 import { useAlert } from "@/hooks/use-refresh";
-import type { Ref, Alert as AlertEntity } from "@/lib/entities";
+import { useTriggerInfo } from "@/hooks/use-trigger-info";
+import type { Alert as AlertEntity, Ref } from "@/lib/entities";
+import type { UpdatedAlert } from "@/lib/repo";
+import { alertSchema } from "@/lib/schema";
+import { useAppState } from "@/lib/state";
+import { AppUsageBarChartView, TimeProgressBar } from "@/routes/alerts/create";
+import { InfoIcon } from "lucide-react";
+import { useCallback } from "react";
+import { useFieldArray } from "react-hook-form";
+import { useNavigate } from "react-router";
+import type { Route } from "../alerts/+types/edit";
 
 export default function EditAlerts({ params }: Route.ComponentProps) {
   const id = +params.id as Ref<AlertEntity>;

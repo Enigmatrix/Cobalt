@@ -1,20 +1,20 @@
+import { ScoreSlider } from "@/components/tag/score-slider";
 import { useTheme } from "@/components/theme-provider";
+import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Text } from "@/components/ui/text";
-import { cn } from "@/lib/utils";
-import type { ClassValue } from "clsx";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { ScoreSlider } from "@/components/tag/score-slider";
-import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import type { ClassValue } from "clsx";
 
 export const Colors = {
   best: "bg-green-300 dark:bg-green-800",

@@ -1,15 +1,14 @@
-import * as React from "react";
-import * as SwitchPrimitives from "@radix-ui/react-switch";
-
-import { cn } from "@/lib/utils";
-import { Moon, Sun } from "lucide-react";
+import type { Theme } from "@/components/theme-provider";
 import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
+import * as SwitchPrimitives from "@radix-ui/react-switch";
 import { Tooltip } from "@radix-ui/react-tooltip";
-import type { Theme } from "@/components/theme-provider";
+import { Moon, Sun } from "lucide-react";
+import * as React from "react";
 
 type ThemeSwitchProps = Omit<
   React.ComponentProps<typeof SwitchPrimitives.Root>,
