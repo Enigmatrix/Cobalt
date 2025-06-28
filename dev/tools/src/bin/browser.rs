@@ -71,7 +71,9 @@ async fn main() -> Result<()> {
             let info = detect.chromium_url(&window.window)?;
             let (name, description) = if let Some(url) = &info.url {
                 let base_url = WebsiteInfo::url_to_base_url(url)?;
-                let website_info = WebsiteInfo::from_base_url(base_url).await?;
+                let website_info = WebsiteInfo::from_base_url(base_url.clone())
+                    .await
+                    .unwrap_or(WebsiteInfo::default_from_url(base_url));
                 (Some(website_info.name), Some(website_info.description))
             } else {
                 (None, None)
