@@ -27,6 +27,8 @@ use util::future::task::JoinHandle;
 use util::tracing::{ResultTraceExt, error, info};
 use util::{Target, future};
 
+use crate::engine::EngineOptions;
+
 mod cache;
 mod engine;
 mod resolver;
@@ -177,17 +179,8 @@ fn event_loop(
 }
 
 /// Processing loop for the [Engine].
-async fn engine_loop(
-    db_pool: DatabasePool,
-    cache: Arc<Mutex<cache::Cache>>,
-    browser_state: web::State,
-    rx: Receiver<Event>,
-    spawner: Handle,
-    fg: WindowSession,
-    now: Timestamp,
-) -> Result<()> {
-    let db = db_pool.get_db().await?;
-    let mut engine = Engine::new(cache, browser_state, db_pool, fg, now, db, spawner).await?;
+async fn engine_loop(options: EngineOptions, rx: Receiver<Event>) -> Result<()> {
+    let mut engine = Engine::new(options).await?;
     loop {
         let ev = rx.recv_async().await?;
         engine.handle(ev).await?;
@@ -304,18 +297,19 @@ fn processor(
                 fg = foreground_window_session(config, &*browser_state.read().await)?;
                 now = Timestamp::now();
             }
-            engine_loop(
-                db_pool.clone(),
-                cache.clone(),
-                browser_state.clone(),
-                event_rx.clone(),
-                handle.clone(),
-                fg.clone(),
-                now,
-            )
-            .await
-            .context("engine loop")
-            .error();
+            let options = EngineOptions {
+                cache: cache.clone(),
+                config: config.clone(),
+                browser_state: browser_state.clone(),
+                db_pool: db_pool.clone(),
+                foreground: fg.clone(),
+                start: now,
+                spawner: handle.clone(),
+            };
+            engine_loop(options, event_rx.clone())
+                .await
+                .context("engine loop")
+                .error();
         }
 
         sentry_handle.await?;

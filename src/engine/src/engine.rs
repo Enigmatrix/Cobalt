@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use data::db::{Database, DatabasePool, FoundOrInserted, UsageWriter};
+use data::db::{DatabasePool, FoundOrInserted, UsageWriter};
 use data::entities::{
     AppIdentity, InteractionPeriod, Ref, Session, SystemEvent as DataSystemEvent, Usage,
 };
@@ -10,7 +10,7 @@ use platform::events::{
 use platform::objects::{Process, ProcessThreadId, Timestamp, Window};
 use platform::web::{self, BaseWebsiteUrl, BrowserDetector, WebsiteInfo};
 use scoped_futures::ScopedFutureExt;
-use util::config;
+use util::config::Config;
 use util::error::{Context, Result};
 use util::future::runtime::Handle;
 use util::future::sync::Mutex;
@@ -24,6 +24,7 @@ use crate::resolver::AppInfoResolver;
 /// The main [Engine] that processes [Event]s and updates the [Database] with new [Usage]s, [Session]s and [App]s.
 pub struct Engine {
     cache: Arc<Mutex<Cache>>,
+    config: Config,
     browser_state: web::State,
     current_usage: Usage,
     db_pool: DatabasePool,
@@ -44,34 +45,41 @@ pub enum Event {
     Tick(Timestamp),
 }
 
+/// Options for creating a new [Engine].
+pub struct EngineOptions {
+    pub cache: Arc<Mutex<Cache>>,
+    pub config: Config,
+    pub browser_state: web::State,
+    pub db_pool: DatabasePool,
+    pub foreground: WindowSession,
+    pub start: Timestamp,
+    pub spawner: Handle,
+}
+
 impl Engine {
     /// Create a new [Engine], which initializes it's first [Usage]
-    pub async fn new(
-        cache: Arc<Mutex<Cache>>,
-        browser_state: web::State,
-        db_pool: DatabasePool,
-        foreground: WindowSession,
-        start: Timestamp,
-        db: Database,
-        spawner: Handle,
-    ) -> Result<Self> {
+    pub async fn new(options: EngineOptions) -> Result<Self> {
+        let db = options.db_pool.get_db().await?;
         let inserter = UsageWriter::new(db)?;
         let mut ret = Self {
-            cache,
-            browser_state,
-            db_pool,
+            cache: options.cache,
+            config: options.config,
+            browser_state: options.browser_state,
+            db_pool: options.db_pool,
             inserter,
             // set a default value, then update it right after
             current_usage: Default::default(),
             active: true,
-            spawner,
+            spawner: options.spawner,
         };
 
         ret.current_usage = Usage {
             id: Default::default(),
-            session_id: ret.get_session_details(foreground, start).await?,
-            start: start.to_ticks(),
-            end: start.to_ticks(),
+            session_id: ret
+                .get_session_details(options.foreground, options.start)
+                .await?,
+            start: options.start.to_ticks(),
+            end: options.start.to_ticks(),
         };
 
         Ok(ret)
@@ -106,10 +114,8 @@ impl Engine {
                         .await?;
                 }
             } else if !prev && self.active {
-                // Restart usage watching.
-                let config = config::get_config()?;
                 let foreground =
-                    foreground_window_session(&config, &*self.browser_state.read().await)?;
+                    foreground_window_session(&self.config, &*self.browser_state.read().await)?;
                 self.current_usage = Usage {
                     id: Default::default(),
                     session_id: self.get_session_details(foreground, *now).await?,
