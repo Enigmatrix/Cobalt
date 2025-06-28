@@ -1,9 +1,7 @@
-import { setTheme } from "@tauri-apps/api/app";
-import { invoke } from "@tauri-apps/api/core";
-import { create } from "zustand";
+import { getTheme } from "@/components/theme-provider";
+import { getIconsDir } from "@/lib/config";
 import type { Alert, App, Ref, Tag } from "@/lib/entities";
-import { DateTime } from "luxon";
-import { dateTimeToTicks } from "@/lib/time";
+import { info } from "@/lib/log";
 import {
   createAlert,
   createTag,
@@ -20,12 +18,14 @@ import {
   type CreateTag,
   type UpdatedAlert,
 } from "@/lib/repo";
+import { dateTimeToTicks } from "@/lib/time";
 import { checkForUpdatesBackground } from "@/lib/updater";
-import { info } from "@/lib/log";
+import { setTheme } from "@tauri-apps/api/app";
+import { invoke } from "@tauri-apps/api/core";
 import { produce } from "immer";
 import _ from "lodash";
-import { getTheme } from "@/components/theme-provider";
-import { getIconsDir } from "@/lib/config";
+import { DateTime } from "luxon";
+import { create } from "zustand";
 
 export async function initState() {
   const theme = getTheme();

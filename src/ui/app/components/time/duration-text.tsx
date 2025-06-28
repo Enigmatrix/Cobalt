@@ -1,17 +1,17 @@
-import type { Duration } from "luxon";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   durationToTicks,
   toHumanDuration,
   toHumanDurationFull,
 } from "@/lib/time";
 import { cn } from "@/lib/utils";
-import {
-  TooltipProvider,
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
-} from "@/components/ui/tooltip";
 import type { ClassValue } from "clsx";
+import type { Duration } from "luxon";
 
 export function DurationText({
   ticks,

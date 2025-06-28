@@ -1,7 +1,7 @@
+import { cn } from "@/lib/utils";
 import type { ClassValue } from "clsx";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { cn } from "@/lib/utils";
 
 interface TooltipProps {
   children: React.ReactNode;

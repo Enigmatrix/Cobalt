@@ -1,6 +1,6 @@
-import * as React from "react";
 import { cn } from "@/lib/utils";
 import type { ClassValue } from "clsx";
+import * as React from "react";
 
 interface HScrollViewProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;

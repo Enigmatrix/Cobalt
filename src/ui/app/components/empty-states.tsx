@@ -1,7 +1,7 @@
-import React from "react";
-import { cn } from "@/lib/utils";
-import { Tag, AppWindow, BellRing, SearchX, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { AppWindow, BellRing, Plus, SearchX, Tag } from "lucide-react";
+import React from "react";
 
 type EmptyStateType =
   | "tags"

@@ -1,6 +1,10 @@
-import { useZodForm } from "@/hooks/use-form";
-import { alertSchema } from "@/lib/schema";
+import { AlertForm, type FormValues } from "@/components/alert/alert-form";
+import { DateRangePicker } from "@/components/time/date-range-picker";
+import { DurationText } from "@/components/time/duration-text";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import { FormItem } from "@/components/ui/form";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -8,41 +12,35 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import {
-  useCallback,
-  useMemo,
-  useState,
-  useRef,
-  useEffect,
-  Fragment,
-} from "react";
-import { useAppState } from "@/lib/state";
-import { useNavigate } from "react-router";
-import { Duration } from "luxon";
-import { useIntervalControlsWithDefault } from "@/hooks/use-time";
-import { timeFrameToPeriod, type Target, type TimeFrame } from "@/lib/entities";
-import { DateTime } from "luxon";
-import { useAppDurationsPerPeriod } from "@/hooks/use-repo";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
-import { Tabs, TabsContent } from "@/components/ui/tabs";
-import { TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Label } from "@/components/ui/label";
-import { DateRangePicker } from "@/components/time/date-range-picker";
+import { useZodForm } from "@/hooks/use-form";
 import { useTargetApps } from "@/hooks/use-refresh";
+import { useAppDurationsPerPeriod } from "@/hooks/use-repo";
+import { useIntervalControlsWithDefault } from "@/hooks/use-time";
+import { useTriggerInfo } from "@/hooks/use-trigger-info";
+import { timeFrameToPeriod, type Target, type TimeFrame } from "@/lib/entities";
+import type { CreateAlert } from "@/lib/repo";
+import { alertSchema } from "@/lib/schema";
+import { useAppState } from "@/lib/state";
+import type { Period } from "@/lib/time";
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
   InfoIcon,
   PlusIcon,
 } from "lucide-react";
+import { DateTime, Duration } from "luxon";
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useFieldArray } from "react-hook-form";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import type { CreateAlert } from "@/lib/repo";
-import { DurationText } from "@/components/time/duration-text";
-import { useTriggerInfo } from "@/hooks/use-trigger-info";
-import { AlertForm, type FormValues } from "@/components/alert/alert-form";
-import type { Period } from "@/lib/time";
+import { useNavigate } from "react-router";
 
 export default function CreateAlerts() {
   const form = useZodForm({

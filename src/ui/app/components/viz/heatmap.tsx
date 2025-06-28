@@ -1,14 +1,14 @@
-import type React from "react";
-import { useMemo, useRef, useState } from "react";
-import { DateTime, Interval } from "luxon";
-import type { ClassValue } from "clsx";
-import { cn } from "@/lib/utils";
-import { scaleColor } from "@/lib/color-utils";
 import { HScrollView } from "@/components/hscroll-view";
-import { Tooltip } from "@/components/viz/tooltip";
 import { AppUsageChartTooltipContent } from "@/components/viz/app-usage-chart-tooltip";
 import { TagUsageChartTooltipContent } from "@/components/viz/tag-usage-chart-tooltip";
+import { Tooltip } from "@/components/viz/tooltip";
+import { scaleColor } from "@/lib/color-utils";
 import type { App, Ref, Tag } from "@/lib/entities";
+import { cn } from "@/lib/utils";
+import type { ClassValue } from "clsx";
+import { DateTime, Interval } from "luxon";
+import type React from "react";
+import { useMemo, useRef, useState } from "react";
 
 function rotateArray<T>(arr: T[], n: number) {
   return arr.slice(n).concat(arr.slice(0, n));

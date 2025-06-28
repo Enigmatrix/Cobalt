@@ -1,17 +1,3 @@
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import type { Route } from "../alerts/+types/[id]";
-import { Separator } from "@/components/ui/separator";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbPage,
-  BreadcrumbList,
-  BreadcrumbLink,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import { NavLink, useNavigate } from "react-router";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { Edit2Icon, TrashIcon } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,10 +9,24 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { useAppState } from "@/lib/state";
-import { useCallback } from "react";
-import type { Alert, Ref } from "@/lib/entities";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useAlert } from "@/hooks/use-refresh";
+import type { Alert, Ref } from "@/lib/entities";
+import { useAppState } from "@/lib/state";
+import { Edit2Icon, TrashIcon } from "lucide-react";
+import { useCallback } from "react";
+import { NavLink, useNavigate } from "react-router";
+import type { Route } from "../alerts/+types/[id]";
 
 export default function Page({ params }: Route.ComponentProps) {
   const id = +params.id as Ref<Alert>;

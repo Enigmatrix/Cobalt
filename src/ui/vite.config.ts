@@ -1,9 +1,9 @@
+import path from "path";
 import { reactRouter } from "@react-router/dev/vite";
 import tailwindcss from "@tailwindcss/postcss";
 import { defineConfig } from "vite";
-import tsconfigPaths from "vite-tsconfig-paths";
-import path from "path";
 import devToolsJson from "vite-plugin-devtools-json";
+import tsconfigPaths from "vite-tsconfig-paths";
 
 const host = process.env.TAURI_DEV_HOST;
 

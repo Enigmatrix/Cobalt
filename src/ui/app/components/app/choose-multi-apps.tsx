@@ -1,28 +1,28 @@
-import { useCallback, useState, type ReactNode } from "react";
-import {
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-} from "@/components/ui/popover";
+import AppIcon from "@/components/app/app-icon";
+import { AppBadge } from "@/components/app/app-list-item";
+import { NoApps, NoAppsFound } from "@/components/empty-states";
+import { ScoreCircle } from "@/components/tag/score";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Command,
   CommandInput,
-  CommandList,
   CommandItem,
+  CommandList,
 } from "@/components/ui/command";
-import { useApps, useTag } from "@/hooks/use-refresh";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Text } from "@/components/ui/text";
-import { CheckIcon, PlusIcon } from "lucide-react";
+import { useApps, useTag } from "@/hooks/use-refresh";
 import { useAppsSearch } from "@/hooks/use-search";
 import type { App, Ref, Tag } from "@/lib/entities";
 import { cn } from "@/lib/utils";
-import { NoApps, NoAppsFound } from "@/components/empty-states";
-import AppIcon from "@/components/app/app-icon";
-import { AppBadge } from "@/components/app/app-list-item";
 import { PopoverAnchor } from "@radix-ui/react-popover";
-import { Button } from "@/components/ui/button";
-import { ScoreCircle } from "@/components/tag/score";
-import { Badge } from "@/components/ui/badge";
+import { CheckIcon, PlusIcon } from "lucide-react";
+import { useCallback, useState, type ReactNode } from "react";
 
 export function MiniTagItem({ tagId }: { tagId: Ref<Tag> | null }) {
   const tag = useTag(tagId);

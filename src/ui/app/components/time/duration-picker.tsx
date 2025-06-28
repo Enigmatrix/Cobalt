@@ -1,18 +1,18 @@
-import * as React from "react";
-import { Hourglass } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Duration } from "luxon";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { durationToTicks, toHumanDurationFull } from "@/lib/time";
-import type { ClassValue } from "clsx";
 import { Separator } from "@/components/ui/separator";
+import { durationToTicks, toHumanDurationFull } from "@/lib/time";
+import { cn } from "@/lib/utils";
+import type { ClassValue } from "clsx";
+import { Hourglass } from "lucide-react";
+import { Duration } from "luxon";
+import * as React from "react";
 
 interface DurationPickerProps {
   className?: ClassValue;

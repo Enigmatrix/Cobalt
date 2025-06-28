@@ -1,8 +1,8 @@
-import { useMemo } from "react";
+import { useTargetApps } from "@/hooks/use-refresh";
+import { useAppDurations } from "@/hooks/use-repo";
 import { usePeriodInterval } from "@/hooks/use-time";
 import { timeFrameToPeriod, type Target, type TimeFrame } from "@/lib/entities";
-import { useAppDurations } from "@/hooks/use-repo";
-import { useTargetApps } from "@/hooks/use-refresh";
+import { useMemo } from "react";
 
 export interface TriggerInfo {
   currentUsage: number;

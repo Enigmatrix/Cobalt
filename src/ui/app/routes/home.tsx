@@ -1,13 +1,14 @@
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Separator } from "@/components/ui/separator";
 import {
   Breadcrumb,
   BreadcrumbItem,
-  BreadcrumbPage,
   BreadcrumbList,
+  BreadcrumbPage,
 } from "@/components/ui/breadcrumb";
+import { Separator } from "@/components/ui/separator";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import { TimePeriodUsageCard } from "@/components/usage-card";
 import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
+import { Gantt } from "@/components/viz/gantt2";
 import {
   useAppDurationsPerPeriod,
   useAppSessionUsages,
@@ -16,14 +17,13 @@ import {
 } from "@/hooks/use-repo";
 import { usePeriodInterval } from "@/hooks/use-time";
 import {
-  type Period,
   hour24Formatter,
-  weekDayFormatter,
   monthDayFormatter,
+  weekDayFormatter,
+  type Period,
 } from "@/lib/time";
 import { DateTime } from "luxon";
-import { useState, useMemo } from "react";
-import { Gantt } from "@/components/viz/gantt2";
+import { useMemo, useState } from "react";
 
 export default function Home() {
   const interval = usePeriodInterval("day");

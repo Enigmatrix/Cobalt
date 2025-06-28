@@ -1,7 +1,7 @@
-import { z } from "zod";
-import type { Ref, App, Tag, Reminder, Alert } from "@/lib/entities";
-import { Duration } from "luxon";
+import type { Alert, App, Ref, Reminder, Tag } from "@/lib/entities";
 import { ticksToDuration } from "@/lib/time";
+import { Duration } from "luxon";
+import { z } from "zod";
 
 export function refSchema<T>() {
   return z.number().int() as unknown as z.ZodType<Ref<T>>;

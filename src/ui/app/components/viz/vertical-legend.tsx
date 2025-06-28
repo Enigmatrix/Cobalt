@@ -1,41 +1,41 @@
-import { useApps, useTags } from "@/hooks/use-refresh";
-import type { App, Ref, Tag } from "@/lib/entities";
-import {
-  useCallback,
-  useMemo,
-  useState,
-  type Dispatch,
-  type SetStateAction,
-  type CSSProperties,
-  useEffect,
-  useRef,
-} from "react";
-import {
-  TagIcon,
-  ChevronDown,
-  ChevronRight,
-  EllipsisVertical,
-} from "lucide-react";
-import { Text } from "@/components/ui/text";
-import { cn } from "@/lib/utils";
 import AppIcon from "@/components/app/app-icon";
-import _ from "lodash";
-import { Checkbox } from "@/components/ui/checkbox";
-import type { ClassValue } from "clsx";
 import { SearchBar } from "@/components/search-bar";
-import { useAppsSearch } from "@/hooks/use-search";
+import { ScoreCircle } from "@/components/tag/score";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
-import type { CheckedState } from "@radix-ui/react-checkbox";
-import { ScoreCircle } from "@/components/tag/score";
-import { VariableSizeList as List } from "react-window";
-import AutoSizer from "react-virtualized-auto-sizer";
+import { Text } from "@/components/ui/text";
+import { useApps, useTags } from "@/hooks/use-refresh";
+import { useAppsSearch } from "@/hooks/use-search";
+import type { App, Ref, Tag } from "@/lib/entities";
 import { untagged } from "@/lib/state";
+import { cn } from "@/lib/utils";
+import type { CheckedState } from "@radix-ui/react-checkbox";
+import type { ClassValue } from "clsx";
+import _ from "lodash";
+import {
+  ChevronDown,
+  ChevronRight,
+  EllipsisVertical,
+  TagIcon,
+} from "lucide-react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
+import AutoSizer from "react-virtualized-auto-sizer";
+import { VariableSizeList as List } from "react-window";
 
 interface ListItem {
   id: string;

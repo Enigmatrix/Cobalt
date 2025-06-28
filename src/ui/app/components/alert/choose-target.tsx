@@ -1,41 +1,41 @@
-import {
-  useCallback,
-  useState,
-  type ComponentProps,
-  type ReactNode,
-} from "react";
-import {
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-} from "@/components/ui/popover";
-import {
-  Command,
-  CommandInput,
-  CommandList,
-  CommandItem,
-  CommandGroup,
-} from "@/components/ui/command";
-import { useApp, useApps, useTag, useTags } from "@/hooks/use-refresh";
-import { Text } from "@/components/ui/text";
-import { ChevronDown, ChevronRight, Plus, TagIcon } from "lucide-react";
 import AppIcon from "@/components/app/app-icon";
-import { useTargetsSearch } from "@/hooks/use-search";
-import { CreateTagDialog } from "@/components/tag/create-tag-dialog";
-import { Button } from "@/components/ui/button";
-import type { Target } from "@/lib/entities";
-import { useAppState } from "@/lib/state";
-import { cn } from "@/lib/utils";
+import { MiniTagItem } from "@/components/app/choose-multi-apps";
 import {
   NoApps,
   NoAppsFound,
   NoTags,
   NoTagsFound,
 } from "@/components/empty-states";
-import type { z } from "zod";
-import type { tagSchema } from "@/lib/schema";
+import { CreateTagDialog } from "@/components/tag/create-tag-dialog";
 import { ScoreCircle } from "@/components/tag/score";
-import { MiniTagItem } from "@/components/app/choose-multi-apps";
+import { Button } from "@/components/ui/button";
+import {
+  Command,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Text } from "@/components/ui/text";
+import { useApp, useApps, useTag, useTags } from "@/hooks/use-refresh";
+import { useTargetsSearch } from "@/hooks/use-search";
+import type { Target } from "@/lib/entities";
+import type { tagSchema } from "@/lib/schema";
+import { useAppState } from "@/lib/state";
+import { cn } from "@/lib/utils";
+import { ChevronDown, ChevronRight, Plus, TagIcon } from "lucide-react";
+import {
+  useCallback,
+  useState,
+  type ComponentProps,
+  type ReactNode,
+} from "react";
+import type { z } from "zod";
 
 export function ChooseTarget({
   onValueChanged: onValueChangedInner,

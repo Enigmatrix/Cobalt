@@ -1,6 +1,6 @@
+import AppIcon from "@/components/app/app-icon";
 import { Badge } from "@/components/ui/badge";
 import { Text } from "@/components/ui/text";
-import AppIcon from "@/components/app/app-icon";
 import type { App } from "@/lib/entities";
 import { XIcon } from "lucide-react";
 

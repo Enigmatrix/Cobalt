@@ -1,37 +1,37 @@
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Separator } from "@/components/ui/separator";
+import AppIcon from "@/components/app/app-icon";
+import { NoAlerts, NoAlertsFound } from "@/components/empty-states";
+import { HorizontalOverflowList } from "@/components/overflow-list";
+import { SearchBar } from "@/components/search-bar";
+import { ScoreBadge } from "@/components/tag/score";
+import { DurationText } from "@/components/time/duration-text";
+import { Badge } from "@/components/ui/badge";
 import {
   Breadcrumb,
   BreadcrumbItem,
-  BreadcrumbPage,
   BreadcrumbList,
+  BreadcrumbPage,
 } from "@/components/ui/breadcrumb";
-import type { Alert, Reminder } from "@/lib/entities";
-import { Text } from "@/components/ui/text";
-import { cn } from "@/lib/utils";
-import AppIcon from "@/components/app/app-icon";
-import { memo, useMemo, type CSSProperties, type ReactNode } from "react";
-import { DurationText } from "@/components/time/duration-text";
-import { useApps, useAlerts, useApp, useTag } from "@/hooks/use-refresh";
-import { NavLink } from "react-router";
-import { Plus, TagIcon } from "lucide-react";
-import AutoSizer from "react-virtualized-auto-sizer";
-import { FixedSizeList as List } from "react-window";
-import { HorizontalOverflowList } from "@/components/overflow-list";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MiniAppItem } from "@/routes/tags";
-import { MiniTagItem } from "@/routes/apps";
-import { useAlertsSearch } from "@/hooks/use-search";
-import { SearchBar } from "@/components/search-bar";
+import { Separator } from "@/components/ui/separator";
+import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Text } from "@/components/ui/text";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useAlerts, useApp, useApps, useTag } from "@/hooks/use-refresh";
+import { useAlertsSearch } from "@/hooks/use-search";
+import type { Alert, Reminder } from "@/lib/entities";
+import { cn } from "@/lib/utils";
+import { MiniTagItem } from "@/routes/apps";
+import { MiniAppItem } from "@/routes/tags";
 import type { ClassValue } from "clsx";
-import { NoAlerts, NoAlertsFound } from "@/components/empty-states";
-import { ScoreBadge } from "@/components/tag/score";
+import { Plus, TagIcon } from "lucide-react";
+import { memo, useMemo, type CSSProperties, type ReactNode } from "react";
+import { NavLink } from "react-router";
+import AutoSizer from "react-virtualized-auto-sizer";
+import { FixedSizeList as List } from "react-window";
 
 export default function Alerts() {
   const alerts = useAlerts();

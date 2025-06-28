@@ -1,11 +1,11 @@
-import { cn } from "@/lib/utils";
-import { CircleHelp } from "lucide-react";
-import { useMemo, useState } from "react";
-import type { ClassValue } from "clsx";
-import { CircleHelp as CircleHelpStatic } from "lucide-static";
-import { convertFileSrc } from "@tauri-apps/api/core";
 import { iconsDir } from "@/lib/state";
+import { cn } from "@/lib/utils";
+import { convertFileSrc } from "@tauri-apps/api/core";
+import type { ClassValue } from "clsx";
+import { CircleHelp } from "lucide-react";
+import { CircleHelp as CircleHelpStatic } from "lucide-static";
 import normalize from "path-normalize";
+import { useMemo, useState } from "react";
 
 export const DEFAULT_ICON_SVG_URL = "data:image/svg+xml," + CircleHelpStatic;
 

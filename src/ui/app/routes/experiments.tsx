@@ -1,18 +1,18 @@
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Separator } from "@/components/ui/separator";
 import {
   Breadcrumb,
   BreadcrumbItem,
-  BreadcrumbPage,
   BreadcrumbList,
+  BreadcrumbPage,
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
-import { invoke } from "@tauri-apps/api/core";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import { refresh } from "@/lib/state";
-import { useTransition, type ComponentProps } from "react";
-import { LoaderIcon } from "lucide-react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Setting } from "@/routes/settings";
+import { invoke } from "@tauri-apps/api/core";
+import { LoaderIcon } from "lucide-react";
+import { useTransition, type ComponentProps } from "react";
 
 async function copySeedDb() {
   await invoke("copy_from_seed_db");

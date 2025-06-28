@@ -1,17 +1,42 @@
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Separator } from "@/components/ui/separator";
+import AppIcon from "@/components/app/app-icon";
+import { NoTags, NoTagsFound } from "@/components/empty-states";
+import { HorizontalOverflowList } from "@/components/overflow-list";
+import { SearchBar } from "@/components/search-bar";
+import { CreateTagDialog } from "@/components/tag/create-tag-dialog";
+import { ScoreBadge } from "@/components/tag/score";
+import { DurationText } from "@/components/time/duration-text";
+import { Badge } from "@/components/ui/badge";
 import {
   Breadcrumb,
   BreadcrumbItem,
-  BreadcrumbPage,
   BreadcrumbList,
+  BreadcrumbPage,
 } from "@/components/ui/breadcrumb";
-import type { Tag, App, WithGroupedDuration } from "@/lib/entities";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Separator } from "@/components/ui/separator";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Text } from "@/components/ui/text";
+import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
+import { useApps, useTags } from "@/hooks/use-refresh";
+import { useAppDurationsPerPeriod } from "@/hooks/use-repo";
+import { useTagsSearch } from "@/hooks/use-search";
+import { SortDirection } from "@/hooks/use-sort";
+import { usePeriodInterval } from "@/hooks/use-time";
+import type { App, Tag, WithGroupedDuration } from "@/lib/entities";
+import { useAppState, type EntityMap } from "@/lib/state";
 import { cn } from "@/lib/utils";
 import type { ClassValue } from "clsx";
+import _ from "lodash";
+import { ArrowDownUp, Plus, SortAsc, SortDesc, TagIcon } from "lucide-react";
 import { DateTime } from "luxon";
-import AppIcon from "@/components/app/app-icon";
 import {
   memo,
   useMemo,
@@ -19,34 +44,9 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react";
-import { DurationText } from "@/components/time/duration-text";
-import { useApps, useTags } from "@/hooks/use-refresh";
-import { useAppState, type EntityMap } from "@/lib/state";
 import { NavLink } from "react-router";
-import { ArrowDownUp, Plus, SortAsc, SortDesc, TagIcon } from "lucide-react";
-import { useAppDurationsPerPeriod } from "@/hooks/use-repo";
-import { useTagsSearch } from "@/hooks/use-search";
-import { usePeriodInterval } from "@/hooks/use-time";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { FixedSizeList as List } from "react-window";
-import { SearchBar } from "@/components/search-bar";
-import { HorizontalOverflowList } from "@/components/overflow-list";
-import { Badge } from "@/components/ui/badge";
-import { SortDirection } from "@/hooks/use-sort";
-import _ from "lodash";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
-import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
-import { CreateTagDialog } from "@/components/tag/create-tag-dialog";
-import { NoTags, NoTagsFound } from "@/components/empty-states";
-import { ScoreBadge } from "@/components/tag/score";
 
 export function MiniAppItem({
   app,

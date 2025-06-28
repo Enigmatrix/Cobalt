@@ -1,12 +1,11 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type CSSProperties,
-} from "react";
-import * as echarts from "echarts";
+import AppIcon from "@/components/app/app-icon";
+import { DurationText } from "@/components/time/duration-text";
+import { DateTimeText } from "@/components/time/time-text";
+import { Text } from "@/components/ui/text";
+import { Tooltip } from "@/components/viz/tooltip";
+import { useApps } from "@/hooks/use-refresh";
+import { useWidth } from "@/hooks/use-width";
+import { getVarColorAsHex } from "@/lib/color-utils";
 import {
   systemEventToString,
   type App,
@@ -17,15 +16,17 @@ import {
 } from "@/lib/entities";
 import type { InteractionPeriod, SystemEvent } from "@/lib/entities";
 import type { AppSessionUsages } from "@/lib/repo";
+import { useAppState } from "@/lib/state";
 import {
   TICKS_PER_MILLISECOND,
   ticksToUnixMillis,
   unixMillisToTicks,
   type Interval,
 } from "@/lib/time";
-import { useWidth } from "@/hooks/use-width";
+import { cn } from "@/lib/utils";
+import type { ClassValue } from "clsx";
+import * as echarts from "echarts";
 import _ from "lodash";
-import { useApps } from "@/hooks/use-refresh";
 import {
   ChevronDown,
   ChevronRight,
@@ -34,17 +35,16 @@ import {
   Loader2Icon,
   MouseIcon,
 } from "lucide-react";
-import AppIcon from "@/components/app/app-icon";
-import { Text } from "@/components/ui/text";
-import { getVarColorAsHex } from "@/lib/color-utils";
-import { useDebounce } from "use-debounce";
-import { useAppState } from "@/lib/state";
-import { DateTimeText } from "@/components/time/time-text";
-import { Tooltip } from "@/components/viz/tooltip";
-import { DurationText } from "@/components/time/duration-text";
-import type { ClassValue } from "clsx";
-import { cn } from "@/lib/utils";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import { VariableSizeList as List } from "react-window";
+import { useDebounce } from "use-debounce";
 
 const DATAZOOM_SLIDER_X = "dataZoomSliderX";
 const DATAZOOM_INSIDE_X = "dataZoomInsideX";

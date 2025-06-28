@@ -1,51 +1,51 @@
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import type { Route } from "../apps/+types/[id]";
-import { Separator } from "@/components/ui/separator";
-import { useDebouncedCallback } from "use-debounce";
+import AppIcon from "@/components/app/app-icon";
+import { ColorPicker } from "@/components/color-picker";
+import { EditableText } from "@/components/editable-text";
+import { ChooseTag } from "@/components/tag/choose-tag";
+import { ScoreCircle } from "@/components/tag/score";
+import { Badge } from "@/components/ui/badge";
 import {
   Breadcrumb,
   BreadcrumbItem,
-  BreadcrumbPage,
-  BreadcrumbList,
   BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { useAppState } from "@/lib/state";
-import { type App, type Ref, type Tag } from "@/lib/entities";
-import AppIcon from "@/components/app/app-icon";
-import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
-import { useCallback, useMemo, useState } from "react";
-import { DateTime } from "luxon";
-import { useApp, useTag } from "@/hooks/use-refresh";
-import {
-  type Period,
-  hour24Formatter,
-  monthDayFormatter,
-  ticksToDateTime,
-  ticksToDuration,
-  weekDayFormatter,
-} from "@/lib/time";
-import { Text } from "@/components/ui/text";
 import { Button } from "@/components/ui/button";
-import { Check, ChevronsUpDown, Copy } from "lucide-react";
-import { useClipboard } from "@/hooks/use-clipboard";
-import { EditableText } from "@/components/editable-text";
-import { ColorPicker } from "@/components/color-picker";
-import _ from "lodash";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-import type { ClassValue } from "clsx";
-import { NavLink } from "react-router";
+import { Separator } from "@/components/ui/separator";
+import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Text } from "@/components/ui/text";
 import { TimePeriodUsageCard } from "@/components/usage-card";
+import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
+import { Gantt } from "@/components/viz/gantt2";
 import Heatmap from "@/components/viz/heatmap";
+import { useClipboard } from "@/hooks/use-clipboard";
+import { useApp, useTag } from "@/hooks/use-refresh";
 import {
   useAppDurationsPerPeriod,
   useAppSessionUsages,
 } from "@/hooks/use-repo";
 import { usePeriodInterval } from "@/hooks/use-time";
-import { Gantt } from "@/components/viz/gantt2";
-import { ChooseTag } from "@/components/tag/choose-tag";
-import { ScoreCircle } from "@/components/tag/score";
+import { type App, type Ref, type Tag } from "@/lib/entities";
+import { useAppState } from "@/lib/state";
+import {
+  hour24Formatter,
+  monthDayFormatter,
+  ticksToDateTime,
+  ticksToDuration,
+  weekDayFormatter,
+  type Period,
+} from "@/lib/time";
+import { cn } from "@/lib/utils";
+import type { ClassValue } from "clsx";
+import _ from "lodash";
+import { Check, ChevronsUpDown, Copy } from "lucide-react";
+import { DateTime } from "luxon";
+import { useCallback, useMemo, useState } from "react";
+import { NavLink } from "react-router";
+import { useDebouncedCallback } from "use-debounce";
+import type { Route } from "../apps/+types/[id]";
 
 export default function Page({ params }: Route.ComponentProps) {
   const id = +params.id as Ref<App>;

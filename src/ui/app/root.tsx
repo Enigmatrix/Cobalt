@@ -1,3 +1,12 @@
+import { AppSidebar } from "@/components/app-sidebar";
+import { ThemeProvider } from "@/components/theme-provider";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { Toaster } from "@/components/ui/sonner";
+import { error as errorLog, info } from "@/lib/log";
+import { initState } from "@/lib/state";
+import { SplashScreen } from "@/splashscreen";
+import { openUrl as open } from "@tauri-apps/plugin-opener";
+import { Suspense, useEffect, useMemo } from "react";
 import {
   Await,
   isRouteErrorResponse,
@@ -8,18 +17,8 @@ import {
   ScrollRestoration,
   useLocation,
 } from "react-router";
-
 import type { Route } from "./+types/root";
 import stylesheet from "./app.css?url";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/app-sidebar";
-import { ThemeProvider } from "@/components/theme-provider";
-import { Suspense, useEffect, useMemo } from "react";
-import { initState } from "@/lib/state";
-import { Toaster } from "@/components/ui/sonner";
-import { info, error as errorLog } from "@/lib/log";
-import { openUrl as open } from "@tauri-apps/plugin-opener";
-import { SplashScreen } from "@/splashscreen";
 
 export const links: Route.LinksFunction = () => [
   { rel: "stylesheet", href: stylesheet },

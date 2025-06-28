@@ -1,5 +1,5 @@
+import { useRefresh } from "@/hooks/use-refresh";
 import type { App, Ref, Tag, WithGroupedDuration } from "@/lib/entities";
-import type { Period } from "@/lib/time";
 import {
   getAppDurations,
   getAppDurationsPerPeriod,
@@ -9,10 +9,10 @@ import {
   getTagDurationsPerPeriod,
 } from "@/lib/repo";
 import type { EntityMap } from "@/lib/state";
+import type { Period } from "@/lib/time";
 import _ from "lodash";
 import type { DateTime } from "luxon";
-import { useEffect, useState, useTransition, useRef } from "react";
-import { useRefresh } from "@/hooks/use-refresh";
+import { useEffect, useRef, useState, useTransition } from "react";
 
 export function useRepo<T, Arg extends object>(
   fn: (args: Arg) => Promise<T>,

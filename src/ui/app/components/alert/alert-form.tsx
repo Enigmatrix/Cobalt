@@ -1,4 +1,9 @@
-import { alertSchema } from "@/lib/schema";
+import { ChooseTarget } from "@/components/alert/choose-target";
+import { DurationPicker } from "@/components/time/duration-picker";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
   FormControl,
@@ -7,10 +12,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import type { z } from "zod";
-import { ChooseTarget } from "@/components/alert/choose-target";
-import { DurationPicker } from "@/components/time/duration-picker";
-import { durationToTicks, ticksToDuration } from "@/lib/time";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -18,23 +20,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import {
   Timeline,
   TimelineContent,
-  TimelineIndicator,
-  TimelineTitle,
-  TimelineSeparator,
   TimelineHeader,
+  TimelineIndicator,
   TimelineItem,
+  TimelineSeparator,
+  TimelineTitle,
 } from "@/components/ui/timeline";
-import { Button } from "@/components/ui/button";
-import type { FieldArrayWithId, UseFormReturn } from "react-hook-form";
-import { TriangleAlertIcon } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Badge } from "@/components/ui/badge";
 import type { TriggerInfo } from "@/hooks/use-trigger-info";
+import { alertSchema } from "@/lib/schema";
+import { durationToTicks, ticksToDuration } from "@/lib/time";
+import { TriangleAlertIcon } from "lucide-react";
+import type { FieldArrayWithId, UseFormReturn } from "react-hook-form";
+import type { z } from "zod";
 
 export type FormValues = z.infer<typeof alertSchema>;
 

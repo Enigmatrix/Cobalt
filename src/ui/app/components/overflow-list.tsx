@@ -1,19 +1,19 @@
-import { useWidth } from "@/hooks/use-width";
-import { cn } from "@/lib/utils";
 import {
+  Tooltip,
+  TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-  TooltipContent,
-  Tooltip,
 } from "@/components/ui/tooltip";
+import { useWidth } from "@/hooks/use-width";
+import { cn } from "@/lib/utils";
 import type { ClassValue } from "clsx";
 import _ from "lodash";
 import {
-  type ReactNode,
-  useRef,
   useLayoutEffect,
-  useState,
   useMemo,
+  useRef,
+  useState,
+  type ReactNode,
 } from "react";
 
 // Assumes rendered items are same height. Height of this container
