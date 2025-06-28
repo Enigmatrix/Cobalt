@@ -20,13 +20,14 @@ src/
 │   │   ├── engine.rs    # Core state machine
 │   │   ├── sentry.rs    # Alert manager
 │   │   ├── resolver.rs  # App information resolver
-│   │   ├── cache.rs     # In-memory cache
+│   │   ├── cache.rs     # In-memory cache - state of the Desktop
 │   │   ├── ...
 │   └── Cargo.toml
 ├── platform/            # Platform-specific abstractions
 │   ├── src/
 │   │   ├── objects/     # Window, Process, Timestamp abstractions
 │   │   ├── events/      # Event watchers
+│   │   ├── web/         # Web browser abstractions
 │   │   ├── ...
 │   │   └── error.rs     # Error handling
 │   └── Cargo.toml
@@ -84,6 +85,10 @@ Platform-specific objects are defined in [platform/src/objects/mod.rs](/src/plat
 ### Objects
 
 Platform-specific objects like Windows, Processes, and Timestamps are defined in `src/platform/src/objects/mod.rs`.
+
+### Web
+
+Web browser abstractions are defined in `src/platform/src/web/mod.rs`. Communication with Edge and Chrome through UI Automation.
 
 ### Events
 

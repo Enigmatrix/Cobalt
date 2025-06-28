@@ -77,6 +77,7 @@ The Platform layer provides abstractions over Win32 platform-specific APIs.
 - **Directory**: `src/platform/src/`
 - **Key Components**:
   - **Objects** (`objects/mod.rs`): Windows, processes, and timestamp abstractions
+  - **Web** (`web/mod.rs`): Web browser abstractions
   - **Events** (`events/mod.rs`): Watchers for system interaction and foreground events
   - **Errors** (`error.rs`): Platform-specific error handling
   - Other helpers and utilities
@@ -93,7 +94,7 @@ The Data layer manages database operations and provides an interface for both th
   - **Database** (`db/mod.rs`): SQLite connection and query execution
     - There are also helpers for inserting and querying data for specific components .e.g. UsageWriter.
   - **Migrations** (`migrations/mod.rs`): Database schema versioning
-  - **Repository** (`db/repo.rs`): Complex queries used by the UI
+  - **Repository** (`db/repo{,_*}.rs`): Complex queries used by the UI
 
 ### UI Layer
 
@@ -153,7 +154,7 @@ erDiagram
         int             id PK
         text            name UK
         text            color
-        int             score
+        int             score "CHECK(score >= -100 AND score <= 100)"
         int             created_at
         int             updated_at
     }

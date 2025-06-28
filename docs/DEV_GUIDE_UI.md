@@ -26,6 +26,8 @@ We currently have routes for the following:
     - Tag: [/src/ui/app/routes/tags/[id].tsx](/src/ui/app/routes/tags/[id].tsx)
 - Alerts: [/src/ui/app/routes/alerts/index.tsx](/src/ui/app/routes/alerts/index.tsx)
     - Alert: [/src/ui/app/routes/alerts/[id].tsx](/src/ui/app/routes/alerts/[id].tsx)
+    - Edit Alert: [/src/ui/app/routes/alerts/edit.tsx](/src/ui/app/routes/alerts/edit.tsx)
+    - Create Alert: [/src/ui/app/routes/alerts/create.tsx](/src/ui/app/routes/alerts/create.tsx)
 - History: [/src/ui/app/routes/history.tsx](/src/ui/app/routes/history.tsx)
 - Experiments (only in `dev`): [/src/ui/app/routes/experiments.tsx](/src/ui/app/routes/experiments.tsx)
 - Settings: [/src/ui/app/routes/settings.tsx](/src/ui/app/routes/settings.tsx)
@@ -36,32 +38,42 @@ We currently have routes for the following:
 src/ui/
 ├── app/                    # React application code
 │   ├── components/         # Reusable UI components
-│   │   └── ui/             # Shadcn components
+│   │   ├── ui/             # Shadcn components
+│   │   ├── viz/            # Visualization components
+│   │   └── ...             # Other components
 │   ├── hooks/              # Utility functions and hooks
-│   │   ├── use-refresh.ts  # Refresh state hook
-│   │   └── use-repo.ts     # Wrappers over Tauri repo operations, in hook form
 │   ├── lib/                # Utility functions and hooks
-│   │   ├── repo.ts         # Wrappers over Tauri repo operations
+│   │   ├── repo.ts         # Wrappers over Tauri repo commands
+│   │   ├── schema.ts       # Zod Form Schemas
+│   │   ├── entities.ts     # Entity definitions
+│   │   ├── time.ts         # Time utilities
 │   │   └── state.ts        # Global state management
 │   ├── routes/             # Route components for each page
 │   └── routes.ts           # Route definitions
 ├── public/                 # Static assets
 ├── src-tauri/              # Tauri backend code
 │   ├── src/                # Rust source code
-│   │   └── lib.rs          # Command registrations and API
+│   │   │── bin/engine.rs   # Engine backend - this lets it be embedded in the installer
+│   │   │── repo.rs         # Tauri repo commands
+│   │   │── state.rs        # Global state management
+│   │   │── lib.rs          # Command registrations and API
+│   │   └── ...
 │   ├── Cargo.toml          # Rust dependencies
 │   └── tauri.conf.json     # Tauri configuration
 ├── package.json            # Frontend dependencies
-└── vite.config.ts          # Vite configuration
+├── vite.config.ts          # Vite configuration
+├── tsconfig.json           # TypeScript configuration
+├── eslint.config.js        # ESLint configuration
+├── prettier.config.js      # Prettier configuration
+└── ...
 ```
 
 ## Development Workflow
 
 ### Local Development
 
-1. Navigate to `src/ui`
-2. Run `bun i`
-3. Start the development server: `bun run dev`
+1. Run `bun i`
+1. Start the development server: `bun dev`
 
 The development server includes:
 - Hot-reloading for React components
@@ -78,7 +90,7 @@ The development server includes:
 ## UI Architecture
 
 ### Components
-We put all Shadcn components in [/src/ui/app/components/ui](/src/ui/app/components/ui). Components that are not Shadcn components are put in [/src/ui/app/components](/src/ui/app/components), in appropriate subdirectories e.g. apps, tags, etc.
+We put all Shadcn components in [/src/ui/app/components/ui](/src/ui/app/components/ui). Components that are not Shadcn components are put in [/src/ui/app/components](/src/ui/app/components), in appropriate subdirectories e.g. viz, apps, tags, etc.
 
 ### State Management
 
@@ -133,6 +145,6 @@ export async function getSystemEvents({
 
 1. Use the Developer Tools in the application (accessible via `F12` in development mode) to inspect network requests, console output, and React component state.
 
-1. Logs are at `logs/` for dev.
+1. Logs are at `./logs/` for dev.
 
 1. Console output is not piped into logs, so use the Developer Tools for that.

@@ -7,21 +7,25 @@ View usage statistics of all your apps. Track and determine where you are wastin
 > This branch is for the next version of Cobalt.
 
 ## Docs
-See the [ARCHITECTURE.md](./docs/ARCHITECTURE.md) for more information, and the more detailed developer guides 
-(general [DEV_GUIDE.md](./docs/DEV_GUIDE.md), then [Engine](./docs/DEV_GUIDE_Engine.md) and [UI](./docs/DEV_GUIDE_UI.md)) for specifics.
+See the [ARCHITECTURE.md](./docs/ARCHITECTURE.md) for an overview of the project.
+
+More detailed developer guides:
+- General: [DEV_GUIDE.md](./docs/DEV_GUIDE.md)
+- Engine: [DEV_GUIDE_Engine.md](./docs/DEV_GUIDE_Engine.md)
+- UI: [DEV_GUIDE_UI.md](./docs/DEV_GUIDE_UI.md)
 
 ## Running
 
 ```bash
-# Build all
-cargo build
 # Install UI dependencies
 bun i
+# Build all
+cargo build
 
-# Run the Engine
-cargo run --bin engine
 # Run the UI
 bun dev
+# Run the Engine
+cargo run --bin engine
 
 # Test
 cargo test

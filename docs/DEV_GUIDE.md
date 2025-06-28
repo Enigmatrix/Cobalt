@@ -34,15 +34,15 @@ We use cargo workspaces to manage the project. However, instead of declaring the
 ### Development Commands
 
 ```bash
-# Build all
-cargo build
 # Install UI dependencies
 bun i
+# Build all
+cargo build
 
-# Run the Engine
-cargo run --bin engine
 # Run the UI
 bun dev
+# Run the Engine
+cargo run --bin engine
 
 # Test
 cargo test
@@ -73,25 +73,23 @@ bun lint # Lint code
 
 ### Logging
 
-Log levels can be configured in `appsettings.json` and `dev/appsettings.Debug.json` (but the `appsettings.json` file needs to be deleted first) in dev mode:
+Log levels can be configured in `./appsettings.json` in dev mode after the first run:
 
 ```json
 {
-  "EngineLogFilter": "Info",
-  "UiLogFilter": "Info",
+  "engineLogFilter": "Debug",
+  "uiLogFilter": "Debug",
    ...
 }
 ```
 
-Available levels: `Trace`, `Debug`, `Info`, `Warn`, `Error`.
+Available levels: `Trace`, `Debug`, `Info`, `Warn`, `Error`. Supports the `tracing-rs` crate's fitler syntax.
 
-Logs are output to the console and log files during development. Log files are stored in
-the current directory + `logs/` for Engine in dev mode. In prod it's output to `%LOCALAPPDATA%/me.enigmatrix.cobalt/logs/`.
+Logs are output to the console and log files during development. Log files are in `./logs/` in dev mode. In prod it's output to `%LOCALAPPDATA%/me.enigmatrix.cobalt/logs/`.
 
 ### Utils
 
-We use utils to import common libraries. We use `flume` for channels, 
-`config-rs` for configuration (read from `appsettings.json`, same as the Viewer), `color-eyre` for errors, `future-rs` for futures and `tracing / tracing-subscriber` for tracing. We also define our own time system (well, its traits at least) to be implemented by the `platform::objects::Timestamp`.
+We use utils to import common libraries. We use `flume` for channels, `color-eyre` for errors, `tokio` for async, `tracing-rs` / `tracing-subscriber` for tracing. We also define our own time system (well, its traits at least) to be implemented by the `platform::objects::Timestamp`.
 
 ## Release Process
 
@@ -123,9 +121,13 @@ The project uses GitHub Actions for continuous integration and delivery:
    - Runs the tests
    - Runs the formatter, linter
 
-1. **Nightly Build**: Run on every pull request / Commits to main
-   - Same as above
+1. **Nightly Build**: Commits to main / Merge to main
+   - Same as **Built, Test, Lint**
    - Also builds the bundle and modifies nightly release with the assets
+
+1. **PR Build**: Commits to PR
+   - Same as **Built, Test, Lint**
+   - Also builds the bundle and uploads the assets (MSI installer) to the job's artifact
 
 2. **Release Build**: Triggered on tag creation
    - Builds the bundle and creates a release in the GitHub UI
@@ -142,7 +144,7 @@ Configuration is in `src/ui/src-tauri/tauri.conf.json` and `src/ui/src-tauri/tau
 
 To build distribution packages:
 ```bash
-bun build
+bun run build
 ```
 
 Output locations:
