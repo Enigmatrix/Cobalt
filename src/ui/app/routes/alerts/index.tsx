@@ -20,6 +20,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useHistoryRef } from "@/hooks/use-history-state";
 import { useAlerts, useApp, useApps, useTag } from "@/hooks/use-refresh";
 import { useAlertsSearch } from "@/hooks/use-search";
 import type { Alert, Reminder } from "@/lib/entities";
@@ -28,15 +29,33 @@ import { MiniTagItem } from "@/routes/apps";
 import { MiniAppItem } from "@/routes/tags";
 import type { ClassValue } from "clsx";
 import { Plus, TagIcon } from "lucide-react";
-import { memo, useMemo, type CSSProperties, type ReactNode } from "react";
+import {
+  memo,
+  useCallback,
+  useMemo,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 import { NavLink } from "react-router";
 import AutoSizer from "react-virtualized-auto-sizer";
-import { FixedSizeList as List } from "react-window";
+import { FixedSizeList as List, type ListOnScrollProps } from "react-window";
 
 export default function Alerts() {
   const alerts = useAlerts();
-  const [search, setSearch, alertsFiltered] = useAlertsSearch(alerts);
+  const [search, setSearch, alertsFiltered] = useAlertsSearch(alerts, "query");
   const alertsSorted = alertsFiltered; // TODO: sort
+
+  const [scrollOffset, setScrollOffset] = useHistoryRef<number>(
+    0,
+    "scrollOffset",
+  );
+
+  const setScrollOffsetFromEvent = useCallback(
+    (e: ListOnScrollProps) => {
+      setScrollOffset(e.scrollOffset);
+    },
+    [setScrollOffset],
+  );
 
   const ListItem = memo(
     ({ index, style }: { index: number; style: CSSProperties }) => (
@@ -80,6 +99,8 @@ export default function Alerts() {
         <AutoSizer>
           {({ height, width }) => (
             <List
+              initialScrollOffset={scrollOffset}
+              onScroll={setScrollOffsetFromEvent}
               itemData={alertsSorted} // this is to trigger a rerender on sort/filter
               height={height}
               width={width}

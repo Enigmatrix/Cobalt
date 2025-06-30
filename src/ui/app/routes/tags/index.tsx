@@ -25,6 +25,7 @@ import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Text } from "@/components/ui/text";
 import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
+import { useHistoryRef, useHistoryState } from "@/hooks/use-history-state";
 import { useApps, useTags } from "@/hooks/use-refresh";
 import { useAppDurationsPerPeriod } from "@/hooks/use-repo";
 import { useTagsSearch } from "@/hooks/use-search";
@@ -39,14 +40,14 @@ import { ArrowDownUp, Plus, SortAsc, SortDesc, TagIcon } from "lucide-react";
 import { DateTime } from "luxon";
 import {
   memo,
+  useCallback,
   useMemo,
-  useState,
   type CSSProperties,
   type ReactNode,
 } from "react";
 import { NavLink } from "react-router";
 import AutoSizer from "react-virtualized-auto-sizer";
-import { FixedSizeList as List } from "react-window";
+import { FixedSizeList as List, type ListOnScrollProps } from "react-window";
 
 export function MiniAppItem({
   app,
@@ -77,12 +78,15 @@ export default function Tags() {
   const tags = useTags();
   const createTag = useAppState((state) => state.createTag);
 
-  const [sortDirection, setSortDirection] = useState<SortDirection>(
+  const [sortDirection, setSortDirection] = useHistoryState<SortDirection>(
     SortDirection.Descending,
+    "sortDirection",
   );
-  const [sortProperty, setSortProperty] =
-    useState<SortProperty>("usages.today");
-  const [search, setSearch, tagsFiltered] = useTagsSearch(tags);
+  const [sortProperty, setSortProperty] = useHistoryState<SortProperty>(
+    "usages.today",
+    "sortProperty",
+  );
+  const [search, setSearch, tagsFiltered] = useTagsSearch(tags, "query");
   const tagsSorted = useMemo(() => {
     return _(tagsFiltered).orderBy([sortProperty], [sortDirection]).value();
   }, [tagsFiltered, sortDirection, sortProperty]);
@@ -104,6 +108,18 @@ export default function Tags() {
         />
       </VirtualListItem>
     ),
+  );
+
+  const [scrollOffset, setScrollOffset] = useHistoryRef<number>(
+    0,
+    "scrollOffset",
+  );
+
+  const setScrollOffsetFromEvent = useCallback(
+    (e: ListOnScrollProps) => {
+      setScrollOffset(e.scrollOffset);
+    },
+    [setScrollOffset],
   );
 
   return (
@@ -189,6 +205,8 @@ export default function Tags() {
         <AutoSizer>
           {({ height, width }) => (
             <List
+              initialScrollOffset={scrollOffset}
+              onScroll={setScrollOffsetFromEvent}
               itemData={tagsSorted} // this is to trigger a rerender on sort/filter
               height={height}
               width={width}

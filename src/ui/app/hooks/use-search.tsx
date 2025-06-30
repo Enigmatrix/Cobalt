@@ -1,10 +1,15 @@
+import { useHistoryState } from "@/hooks/use-history-state";
 import type { Alert, App, Tag } from "@/lib/entities";
 import { useAppState } from "@/lib/state";
 import { matchSorter, type KeyOption } from "match-sorter";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 
-export function useSearch<T>(items: T[], paths: KeyOption<T>[]) {
-  const [query, setQuery] = useState("");
+export function useSearch<T>(
+  items: T[],
+  paths: KeyOption<T>[],
+  key: string | undefined,
+) {
+  const [query, setQuery] = useHistoryState<string>("", key);
 
   const filtered = useMemo(() => {
     if (query) {
@@ -21,17 +26,21 @@ export function useSearch<T>(items: T[], paths: KeyOption<T>[]) {
   return [query, setQuery, filtered] as const;
 }
 
-export function useAppsSearch(apps: App[]) {
-  return useSearch(apps, ["name", "company", "description"]);
+export function useAppsSearch(apps: App[], key: string | undefined) {
+  return useSearch(apps, ["name", "company", "description"], key);
 }
 
-export function useTagsSearch(tags: Tag[]) {
-  return useSearch(tags, ["name"]);
+export function useTagsSearch(tags: Tag[], key: string | undefined) {
+  return useSearch(tags, ["name"], key);
 }
 
-export function useTargetsSearch(apps: App[], tags: Tag[]) {
-  const [query, setAppQuery, filteredApps] = useAppsSearch(apps);
-  const [, setTagQuery, filteredTags] = useTagsSearch(tags);
+export function useTargetsSearch(
+  apps: App[],
+  tags: Tag[],
+  key: string | undefined,
+) {
+  const [query, setAppQuery, filteredApps] = useAppsSearch(apps, key + "-app");
+  const [, setTagQuery, filteredTags] = useTagsSearch(tags, key + "-tag");
   function setQuery(query: string) {
     setAppQuery(query);
     setTagQuery(query);
@@ -39,7 +48,7 @@ export function useTargetsSearch(apps: App[], tags: Tag[]) {
   return [query, setQuery, filteredApps, filteredTags] as const;
 }
 
-export function useAlertsSearch(alerts: Alert[]) {
+export function useAlertsSearch(alerts: Alert[], key: string | undefined) {
   const allApps = useAppState((state) => state.apps);
   const allTags = useAppState((state) => state.tags);
   const infusedAlerts = useMemo(() => {
@@ -52,12 +61,11 @@ export function useAlertsSearch(alerts: Alert[]) {
       };
     });
   }, [alerts, allApps, allTags]);
-  const [query, setQuery, filteredAlerts] = useSearch(infusedAlerts, [
-    "app.name",
-    "app.company",
-    "app.description",
-    "tag.name",
-  ]);
+  const [query, setQuery, filteredAlerts] = useSearch(
+    infusedAlerts,
+    ["app.name", "app.company", "app.description", "tag.name"],
+    key,
+  );
   const filteredAlertsInner = useMemo(
     () => filteredAlerts.map(({ alert }) => alert),
     [filteredAlerts],

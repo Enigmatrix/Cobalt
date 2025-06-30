@@ -51,6 +51,7 @@ export function ChooseTarget({
   const [, setQuery, filteredApps, filteredTags] = useTargetsSearch(
     allApps,
     allTags,
+    undefined,
   );
   const setOpen = useCallback(
     (open: boolean) => {
