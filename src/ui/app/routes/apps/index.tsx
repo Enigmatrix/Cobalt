@@ -23,6 +23,7 @@ import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Text } from "@/components/ui/text";
 import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
+import { useHistoryRef, useHistoryState } from "@/hooks/use-history-state";
 import { useApps, useTag } from "@/hooks/use-refresh";
 import { useAppDurationsPerPeriod } from "@/hooks/use-repo";
 import { useAppsSearch } from "@/hooks/use-search";
@@ -37,14 +38,14 @@ import { ArrowDownUp, SortAsc, SortDesc } from "lucide-react";
 import { DateTime } from "luxon";
 import {
   memo,
+  useCallback,
   useMemo,
-  useState,
   type CSSProperties,
   type ReactNode,
 } from "react";
 import { NavLink } from "react-router";
 import AutoSizer from "react-virtualized-auto-sizer";
-import { FixedSizeList as List } from "react-window";
+import { FixedSizeList as List, type ListOnScrollProps } from "react-window";
 
 export function MiniTagItem({
   tag,
@@ -79,13 +80,16 @@ type SortProperty =
 export default function Apps() {
   const apps = useApps();
 
-  const [sortDirection, setSortDirection] = useState<SortDirection>(
+  const [sortDirection, setSortDirection] = useHistoryState<SortDirection>(
     SortDirection.Descending,
+    "sortDirection",
   );
-  const [sortProperty, setSortProperty] =
-    useState<SortProperty>("usages.today");
+  const [sortProperty, setSortProperty] = useHistoryState<SortProperty>(
+    "usages.today",
+    "sortProperty",
+  );
 
-  const [search, setSearch, appsFiltered] = useAppsSearch(apps);
+  const [search, setSearch, appsFiltered] = useAppsSearch(apps, "query");
   const appsSorted = useMemo(() => {
     return _(appsFiltered).orderBy([sortProperty], [sortDirection]).value();
   }, [appsFiltered, sortDirection, sortProperty]);
@@ -96,6 +100,18 @@ export default function Apps() {
     start: loadStart,
     end: loadEnd,
   } = useAppDurationsPerPeriod({ ...interval, period: "hour" });
+
+  const [scrollOffset, setScrollOffset] = useHistoryRef<number>(
+    0,
+    "scrollOffset",
+  );
+
+  const setScrollOffsetFromEvent = useCallback(
+    (e: ListOnScrollProps) => {
+      setScrollOffset(e.scrollOffset);
+    },
+    [setScrollOffset],
+  );
 
   const ListItem = memo(
     ({ index, style }: { index: number; style: CSSProperties }) => (
@@ -183,6 +199,8 @@ export default function Apps() {
         <AutoSizer>
           {({ height, width }) => (
             <List
+              initialScrollOffset={scrollOffset}
+              onScroll={setScrollOffsetFromEvent}
               itemData={appsSorted} // this is to trigger a rerender on sort/filter
               height={height}
               width={width}
