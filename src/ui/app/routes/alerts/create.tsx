@@ -15,6 +15,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
 import { useZodForm } from "@/hooks/use-form";
+import { useHistoryRef } from "@/hooks/use-history-state";
 import { useTargetApps } from "@/hooks/use-refresh";
 import { useAppDurationsPerPeriod } from "@/hooks/use-repo";
 import { useIntervalControlsWithDefault } from "@/hooks/use-time";
@@ -42,14 +43,27 @@ import {
 import { useFieldArray } from "react-hook-form";
 import { useNavigate } from "react-router";
 
+const defaultFormValues = {
+  ignoreTrigger: false,
+  reminders: [],
+} as unknown as FormValues;
+
 export default function CreateAlerts() {
+  const [savedFormValues, setSavedFormValues] = useHistoryRef<FormValues>(
+    defaultFormValues,
+    "formState",
+  );
   const form = useZodForm({
     schema: alertSchema,
-    defaultValues: {
-      ignoreTrigger: false,
-      reminders: [],
-    },
+    defaultValues: savedFormValues,
   });
+
+  // Persist form values to history
+  const formValues = form.watch();
+  useEffect(() => {
+    setSavedFormValues(formValues);
+  }, [formValues, setSavedFormValues]);
+
   const createAlert = useAppState((state) => state.createAlert);
   const navigate = useNavigate();
   const target = form.watch("target");

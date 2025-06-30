@@ -3,6 +3,7 @@ import { DurationText } from "@/components/time/duration-text";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useZodForm } from "@/hooks/use-form";
+import { useHistoryRef } from "@/hooks/use-history-state";
 import { useAlert } from "@/hooks/use-refresh";
 import { useTriggerInfo } from "@/hooks/use-trigger-info";
 import type { Alert as AlertEntity, Ref } from "@/lib/entities";
@@ -11,7 +12,7 @@ import { alertSchema } from "@/lib/schema";
 import { useAppState } from "@/lib/state";
 import { AppUsageBarChartView, TimeProgressBar } from "@/routes/alerts/create";
 import { InfoIcon } from "lucide-react";
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { useFieldArray } from "react-hook-form";
 import { useNavigate } from "react-router";
 import type { Route } from "../alerts/+types/edit";
@@ -21,13 +22,25 @@ export default function EditAlerts({ params }: Route.ComponentProps) {
   const alert = useAlert(id);
   if (!alert) throw new Error("Alert not found");
 
+  const defaultFormValues = {
+    ...alert,
+    ignoreTrigger: false,
+  } as unknown as FormValues;
+  const [savedFormValues, setSavedFormValues] = useHistoryRef<FormValues>(
+    defaultFormValues,
+    "formState",
+  );
   const form = useZodForm({
     schema: alertSchema,
-    defaultValues: {
-      ...alert,
-      ignoreTrigger: false,
-    },
+    defaultValues: savedFormValues,
   });
+
+  // Persist form values to history
+  const formValues = form.watch();
+  useEffect(() => {
+    setSavedFormValues(formValues);
+  }, [formValues, setSavedFormValues]);
+
   const updateAlert = useAppState((state) => state.updateAlert);
   const navigate = useNavigate();
   const target = form.watch("target");
