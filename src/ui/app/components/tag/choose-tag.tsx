@@ -37,7 +37,7 @@ export function ChooseTag({
   const createTag = useAppState((state) => state.createTag);
   const allTags = useTags();
 
-  const [, setQuery, filteredTags] = useTagsSearch(allTags);
+  const [, setQuery, filteredTags] = useTagsSearch(allTags, undefined);
   const setOpen = useCallback(
     (open: boolean) => {
       setOpenInner(open);

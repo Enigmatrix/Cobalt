@@ -57,7 +57,7 @@ export function ChooseMultiApps({
   const allApps = useApps();
   const valueApps = useApps(value);
 
-  const [, setQuery, filteredApps] = useAppsSearch(allApps);
+  const [, setQuery, filteredApps] = useAppsSearch(allApps, undefined);
   const setOpen = useCallback(
     (open: boolean) => {
       setOpenInner(open);

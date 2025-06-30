@@ -58,7 +58,7 @@ export function VerticalLegend({
   className?: ClassValue;
 }) {
   const apps = useApps(appIds);
-  const [query, setQuery, filteredApps] = useAppsSearch(apps);
+  const [query, setQuery, filteredApps] = useAppsSearch(apps, undefined);
   const tagIds = useMemo(() => {
     return _(filteredApps)
       .map((app) => app.tagId)
