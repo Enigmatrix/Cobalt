@@ -94,14 +94,14 @@ impl Sentry {
         };
 
         for window in changed_browser_windows {
+            // skip if window is dead or minimized
+            if window.ptid().is_err() || window.is_minimized() {
+                continue;
+            }
+
             let browser_url = browser_detect.chromium_url(&window).unwrap_or_default();
             let url = browser_url.url.unwrap_or_default();
             let url = WebsiteInfo::url_to_base_url(&url)?.to_string();
-
-            // skip if window is dead
-            if window.ptid().is_err() {
-                continue;
-            }
 
             if let Some(action) = self.website_actions.get(&url) {
                 match action {
