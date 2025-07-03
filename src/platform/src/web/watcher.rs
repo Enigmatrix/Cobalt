@@ -58,6 +58,7 @@ impl UrlWatcher {
         for (window, info) in windows {
             if !self.watchers.contains_key(window) {
                 // Send initial URL if available.
+                debug!("url inited for new {:?}: {:?}", window, info.url);
                 self.sender.send(UrlChanged {
                     window: window.clone(),
                     url: info.url.clone().unwrap_or_default(), // TODO unwrap properly

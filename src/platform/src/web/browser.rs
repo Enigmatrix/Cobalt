@@ -187,7 +187,7 @@ impl BrowserDetector {
                 return Ok(None);
             };
             let omnibox_text = perf(
-                || unsafe { omnibox.GetCachedPropertyValue(UIA_ValueValuePropertyId) },
+                || unsafe { omnibox.GetCurrentPropertyValue(UIA_ValueValuePropertyId) },
                 "omnibox - GetCachedPropertyValue(UIA_ValueValuePropertyId)",
             )?
             .to_string();

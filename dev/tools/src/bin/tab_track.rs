@@ -2,13 +2,15 @@
 
 use std::sync::Mutex;
 
-use platform::events::WindowTitleWatcher;
-use platform::objects::{EventLoop, Target, Window};
+use platform::objects::{EventLoop, Target, WinEventHook, Window};
 use platform::web::BrowserDetector;
 use tools::filters::{ProcessFilter, WindowFilter, match_running_windows};
 use util::error::Result;
 // use util::tracing::info;
 use util::{Target as UtilTarget, config, future as tokio};
+use windows::Win32::Foundation::HWND;
+use windows::Win32::UI::Accessibility::HWINEVENTHOOK;
+use windows::Win32::UI::WindowsAndMessaging::{EVENT_OBJECT_NAMECHANGE, OBJID_WINDOW};
 
 // fn perf<T>(f: impl Fn() -> T, act: &str) -> T {
 //     let start = std::time::Instant::now();
@@ -58,32 +60,46 @@ async fn main() -> Result<()> {
 
     let m = Mutex::new(());
 
-    let _h = WindowTitleWatcher::new(
+    let _hook = WinEventHook::new(
+        platform::objects::WinEvent::Event(EVENT_OBJECT_NAMECHANGE),
         Target::Id(chrome.process.pid),
-        Box::new(move |window| {
-            let start = std::time::Instant::now();
-            let _guard = m.lock().unwrap();
-
-            let url = browser.chromium_url(&window)?;
-
-            let dimset = if let Some(url) = url {
-                if !url.contains("youtube") {
-                    window.dim(0.5f64)?;
-                } else {
-                    window.dim(1.0f64)?;
+        Target::All,
+        Box::new(
+            move |_hwineventhook: HWINEVENTHOOK,
+                  _event: u32,
+                  hwnd: HWND,
+                  id_object: i32,
+                  _id_child: i32,
+                  _id_event_thread: u32,
+                  _dwms_event_time: u32| {
+                let guard = m.lock().expect("reentrancy lock");
+                if id_object != OBJID_WINDOW.0 {
+                    return;
                 }
-                Some(url)
-            } else {
-                None
-            };
-            println!(
-                "{:08x}:{:?}, {:?}",
-                window.hwnd.0 as usize,
-                dimset,
-                start.elapsed()
-            );
-            Ok(())
-        }),
+                let start = std::time::Instant::now();
+                let window = Window::new(hwnd);
+                let url = browser.chromium_url(&window).expect("chromium_url");
+
+                let dimset = if let Some(url) = url {
+                    if !url.contains("youtube") {
+                        window.dim(0.5f64).expect("dim");
+                    } else {
+                        window.dim(1.0f64).expect("dim");
+                    }
+                    Some(url)
+                } else {
+                    None
+                };
+                println!(
+                    "{:08x}:{:?}, {:?}",
+                    window.hwnd.0 as usize,
+                    dimset,
+                    start.elapsed()
+                );
+
+                drop(guard);
+            },
+        ),
     )?;
 
     EventLoop::new().run();
