@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use util::channels::Sender;
-use util::ds::SmallHashSet;
+use util::ds::SmallHashMap;
 use util::error::{ContextCompat, Result};
 use util::future::sync::Mutex;
 use util::tracing::{ResultTraceExt, debug};
@@ -13,7 +13,7 @@ use windows::Win32::UI::Accessibility::{
 use windows::core::{AgileReference, Ref, implement};
 
 use crate::objects::Window;
-use crate::web::{self, BrowserDetector};
+use crate::web::{self, BrowserDetector, BrowserWindowInfo};
 
 /// Event sent when the URL of a browser window changes.
 #[derive(Debug, Clone)]
@@ -49,13 +49,20 @@ impl UrlWatcher {
         })
     }
 
-    fn update_browsers(&mut self, windows: &SmallHashSet<Window>) -> Result<()> {
+    fn update_browsers(&mut self, windows: &SmallHashMap<Window, BrowserWindowInfo>) -> Result<()> {
         // Remove any browsers that are no longer in the list
-        self.watchers.retain(|window, _| windows.contains(window));
+        self.watchers
+            .retain(|window, _| windows.contains_key(window));
 
         // Add any new browsers to the list, watch them for title changes
-        for window in windows {
+        for (window, info) in windows {
             if !self.watchers.contains_key(window) {
+                // Send initial URL if available.
+                self.sender.send(UrlChanged {
+                    window: window.clone(),
+                    url: info.url.clone().unwrap_or_default(), // TODO unwrap properly
+                })?;
+
                 self.watchers.insert(
                     window.clone(),
                     WindowUrlWatcher::new(
@@ -79,8 +86,8 @@ impl UrlWatcher {
                 .browser_windows
                 .iter()
                 .filter_map(|(window, info)| {
-                    if info.is_some() {
-                        Some(window.clone())
+                    if let Some(info) = info {
+                        Some((window.clone(), info.clone()))
                     } else {
                         None
                     }
@@ -128,7 +135,6 @@ impl WindowUrlWatcher {
 
 impl Drop for WindowUrlWatcher {
     fn drop(&mut self) {
-        // TODO test drop
         self.detect
             .remove_omnibox_text_edit_handler(
                 &self.element,
