@@ -8,7 +8,7 @@ use windows::Win32::UI::Accessibility::{
     IUIAutomationInvokePattern, IUIAutomationPropertyChangedEventHandler, TreeScope_Children,
     TreeScope_Descendants, TreeScope_Element, TreeTraversalOptions_LastToFirstOrder,
     UIA_AutomationIdPropertyId, UIA_ButtonControlTypeId, UIA_ClassNamePropertyId,
-    UIA_ControlTypePropertyId, UIA_InvokePatternId, UIA_NamePropertyId,
+    UIA_ControlTypePropertyId, UIA_DocumentControlTypeId, UIA_InvokePatternId, UIA_NamePropertyId,
     UIA_SelectionItemIsSelectedPropertyId, UIA_TabItemControlTypeId, UIA_ValueValuePropertyId,
 };
 use windows::core::{AgileReference, Interface};
@@ -50,18 +50,24 @@ impl BrowserDetector {
                 .CreatePropertyCondition(UIA_ClassNamePropertyId, &"BrowserRootView".into())?
         };
         let root_web_area_cond = unsafe {
-            automation.CreatePropertyCondition(UIA_AutomationIdPropertyId, &"RootWebArea".into())?
+            let doc_cond = automation.CreatePropertyCondition(
+                UIA_ControlTypePropertyId,
+                &UIA_DocumentControlTypeId.0.into(),
+            )?;
+            let root_cond = automation
+                .CreatePropertyCondition(UIA_AutomationIdPropertyId, &"RootWebArea".into())?;
+            automation.CreateAndCondition(&doc_cond, &root_cond)?
         };
         let omnibox_cond = unsafe {
             automation
                 .CreatePropertyCondition(UIA_NamePropertyId, &"Address and search bar".into())?
         };
         let cache_request = unsafe {
-            let cache_requesst = automation.CreateCacheRequest()?;
-            cache_requesst.SetAutomationElementMode(AutomationElementMode_None)?;
-            cache_requesst.AddProperty(UIA_NamePropertyId)?;
-            cache_requesst.AddProperty(UIA_ValueValuePropertyId)?;
-            cache_requesst
+            let cache_request = automation.CreateCacheRequest()?;
+            cache_request.SetAutomationElementMode(AutomationElementMode_None)?;
+            cache_request.AddProperty(UIA_NamePropertyId)?;
+            cache_request.AddProperty(UIA_ValueValuePropertyId)?;
+            cache_request
         };
         Ok(Self {
             automation: AgileReference::new(&automation)?,

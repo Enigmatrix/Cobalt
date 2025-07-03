@@ -86,11 +86,7 @@ impl UrlWatcher {
                 .browser_windows
                 .iter()
                 .filter_map(|(window, info)| {
-                    if let Some(info) = info {
-                        Some((window.clone(), info.clone()))
-                    } else {
-                        None
-                    }
+                    info.as_ref().map(|info| (window.clone(), info.clone()))
                 })
                 .collect()
         };
@@ -114,9 +110,17 @@ impl WindowUrlWatcher {
         sender: UrlChangedSender,
         detect: BrowserDetector,
     ) -> Result<Self> {
-        let handler =
-            OmniboxTextEditHandler::new(window.clone(), sender, detect.clone(), browser_state)
-                .into();
+        let element = detect.get_chromium_element(&window)?;
+        let element = AgileReference::new(&element)?;
+
+        let handler = OmniboxTextEditHandler::new(
+            window.clone(),
+            element,
+            sender,
+            detect.clone(),
+            browser_state,
+        )
+        .into();
         let handler = AgileReference::new(&handler)?;
 
         let window_element = detect.get_chromium_element(&window)?;
@@ -154,6 +158,7 @@ mod value_changed_handler {
     /// Text edit change event handler for omnibox
     pub(crate) struct OmniboxTextEditHandler {
         window: Window,
+        element: AgileReference<IUIAutomationElement9>,
         sender: UrlChangedSender,
         detect: BrowserDetector,
         browser_state: web::State,
@@ -164,12 +169,14 @@ mod value_changed_handler {
         /// Create a new omnibox text edit event handler
         pub fn new(
             window: Window,
+            element: AgileReference<IUIAutomationElement9>,
             sender: UrlChangedSender,
             detect: BrowserDetector,
             browser_state: web::State,
         ) -> Self {
             Self {
                 window,
+                element,
                 sender,
                 detect,
                 browser_state,
@@ -181,8 +188,9 @@ mod value_changed_handler {
             // TODO use a thread pool instead of this scoping?
             let url = std::thread::scope(|s| -> Result<Option<String>> {
                 s.spawn(|| -> Result<Option<String>> {
-                    let element = self.detect.get_chromium_element(&self.window)?;
-                    let url = self.detect.chromium_url(&element, Some(omnibox_text))?;
+                    let url = self
+                        .detect
+                        .chromium_url(&self.element.resolve()?, Some(omnibox_text))?;
                     Ok(url)
                 })
                 .join()
