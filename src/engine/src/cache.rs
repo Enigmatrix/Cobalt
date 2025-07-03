@@ -274,11 +274,6 @@ impl Cache {
         Ok(self.web.websites.entry(base_url).or_insert(created))
     }
 
-    pub async fn is_browser(&self, window: &Window) -> Option<bool> {
-        let state = self.web.state.read().await;
-        state.browser_windows.get(window).copied()
-    }
-
     // pub async fn get_or_insert_session_for_window(&mut self, window: Window, create: impl Future<Output = Result<SessionDetails>>) -> Result<&SessionDetails> {
 
     //     unimplemented!()
