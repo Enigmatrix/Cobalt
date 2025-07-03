@@ -60,6 +60,7 @@ impl UrlWatcher {
                     window.clone(),
                     WindowUrlWatcher::new(
                         window.clone(),
+                        self.browser_state.clone(),
                         self.sender.clone(),
                         self.detect.clone(),
                     )?,
@@ -100,8 +101,15 @@ pub struct WindowUrlWatcher {
 
 impl WindowUrlWatcher {
     /// Creates a new [ChromiumWindowUrlWatcher] for the given window.
-    pub fn new(window: Window, sender: UrlChangedSender, detect: BrowserDetector) -> Result<Self> {
-        let handler = OmniboxTextEditHandler::new(window.clone(), sender, detect.clone()).into();
+    pub fn new(
+        window: Window,
+        browser_state: web::State,
+        sender: UrlChangedSender,
+        detect: BrowserDetector,
+    ) -> Result<Self> {
+        let handler =
+            OmniboxTextEditHandler::new(window.clone(), sender, detect.clone(), browser_state)
+                .into();
         let handler = AgileReference::new(&handler)?;
 
         let window_element = detect.get_chromium_element(&window)?;
@@ -142,16 +150,23 @@ mod value_changed_handler {
         window: Window,
         sender: UrlChangedSender,
         detect: BrowserDetector,
+        browser_state: web::State,
         reentrant_lock: Mutex<()>,
     }
 
     impl OmniboxTextEditHandler {
         /// Create a new omnibox text edit event handler
-        pub fn new(window: Window, sender: UrlChangedSender, detect: BrowserDetector) -> Self {
+        pub fn new(
+            window: Window,
+            sender: UrlChangedSender,
+            detect: BrowserDetector,
+            browser_state: web::State,
+        ) -> Self {
             Self {
                 window,
                 sender,
                 detect,
+                browser_state,
                 reentrant_lock: Mutex::new(()),
             }
         }
@@ -168,6 +183,15 @@ mod value_changed_handler {
                 .expect("join")
             })?;
             debug!("url changed for {:?}: {:?}", self.window, url);
+
+            {
+                let mut browser_state = self.browser_state.blocking_write();
+                let info = browser_state
+                    .browser_windows
+                    .get_mut(&self.window)
+                    .expect("browser window entry to be present");
+                info.as_mut().expect("browser window info to be Some").url = url.clone();
+            }
 
             self.sender.send(UrlChanged {
                 window: self.window.clone(),

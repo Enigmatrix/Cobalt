@@ -98,7 +98,17 @@ impl ForegroundEventWatcher {
                             Duration::from_secs(3),
                         )?;
 
-                        Some(BrowserWindowInfo { is_incognito })
+                        let url = if is_incognito && !track_incognito {
+                            None
+                        } else {
+                            let element = browser.get_chromium_element(&fg)?;
+                            let url = browser
+                                .chromium_url(&element, None)
+                                .context("get chromium url")?;
+                            url
+                        };
+
+                        Some(BrowserWindowInfo { is_incognito, url })
                     } else {
                         None
                     };
@@ -116,12 +126,8 @@ impl ForegroundEventWatcher {
                 if browser_window_info.is_incognito && !track_incognito {
                     ("<Incognito>".to_string(), None)
                 } else {
-                    let element = browser.get_chromium_element(&fg)?;
-                    let url = browser
-                        .chromium_url(&element, None)
-                        .context("get chromium url")?;
                     let title = fg.title()?;
-                    (title, url)
+                    (title, browser_window_info.url)
                 }
             } else {
                 (fg.title()?, None)
