@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use util::config::Config;
 use util::error::{Context, Result, eyre};
-use util::tracing::{ResultTraceExt, debug, info};
+use util::tracing::{ResultTraceExt, info};
 
 use crate::objects::{Process, Timestamp, Window};
 use crate::web::{BrowserDetector, BrowserWindowInfo, State, WriteLockedState};
@@ -56,7 +56,6 @@ impl ForegroundEventWatcher {
     ) -> Result<(Option<BrowserWindowInfo>, Option<String>)> {
         let browser_window_info = browser_state.browser_windows.get(fg).cloned();
         if let Some(browser_window_info) = browser_window_info {
-            debug!("window {fg:?} has entry in window states");
             // We know already if it's a browser or not
             return Ok((browser_window_info, None));
         }
