@@ -198,16 +198,10 @@ impl Engine {
     /// Get the [Session] details for the given [WindowSession]
     async fn get_session_details(
         &mut self,
-        mut ws: WindowSession,
+        ws: WindowSession,
         at: Timestamp,
     ) -> Result<Ref<Session>> {
         let mut cache = self.cache.lock().await;
-
-        // If window is browser (assume true if unknown), then we need the url.
-        // Else set the url to None.
-        if !cache.is_browser(&ws.window).await.unwrap_or(true) {
-            ws.url = None;
-        }
 
         let session_details = cache
             .get_or_insert_session_for_window(ws.clone(), |cache| {
@@ -225,9 +219,6 @@ impl Engine {
                 .scope_boxed()
             })
             .await?;
-        // if !session_details.is_browser {
-        //     ws.url = None;
-        // }
 
         Ok(session_details.session.clone())
     }
@@ -263,6 +254,7 @@ impl Engine {
             app.clone()
         };
 
+        // This is a browser window session, so get the session for the website
         if let Some(url) = &ws.url {
             let base_url = WebsiteInfo::url_to_base_url(url).context("url to base url")?;
             let AppDetails { app: web_app, .. } = cache
