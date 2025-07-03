@@ -61,7 +61,6 @@ pub struct AppEntry {
 pub struct SessionDetails {
     pub session: Ref<Session>,
     pub ptid: ProcessThreadId,
-    pub is_browser: bool,
 }
 
 /// Details about a [App].
@@ -69,7 +68,6 @@ pub struct SessionDetails {
 pub struct AppDetails {
     pub app: Ref<App>,
     pub identity: AppIdentity,
-    pub is_browser: bool,
 }
 
 /// A process that can be killed.
@@ -213,7 +211,7 @@ impl Cache {
     /// to make a new [SessionDetails] if not found.
     pub async fn get_or_insert_session_for_window<'a>(
         &'a mut self,
-        mut ws: WindowSession,
+        ws: WindowSession,
         create: impl for<'b> FnOnce(&'b mut Self) -> ScopedBoxFuture<'a, 'b, Result<SessionDetails>>,
     ) -> Result<&'a mut SessionDetails> {
         // if-let doesn't work since the borrow lasts until end of function,
@@ -227,17 +225,6 @@ impl Cache {
         }
 
         let created = { create(self).await? };
-
-        if !created.is_browser {
-            ws.url = None;
-        }
-
-        {
-            let mut state = self.web.state.write().await;
-            state
-                .browser_windows
-                .insert(ws.window.clone(), created.is_browser);
-        }
 
         self.platform
             .windows
@@ -267,11 +254,6 @@ impl Cache {
             .or_default();
         entry.process_threads.insert(ptid);
         entry.identity = created.identity.clone();
-
-        if created.is_browser {
-            let mut state = self.web.state.write().await;
-            state.browser_processes.insert(ptid.pid);
-        }
 
         Ok(self.store.apps.entry(ptid).or_insert(created))
     }
@@ -398,14 +380,12 @@ async fn inner_mut_compiles() {
                                 identity: AppIdentity::Win32 {
                                     path: "C:\\yorm.exe".to_string(),
                                 },
-                                is_browser: true,
                             })
                         })
                         .await?;
                     Ok(SessionDetails {
                         session: Ref::new(1),
                         ptid: process,
-                        is_browser: true,
                     })
                 }
                 .scope_boxed()

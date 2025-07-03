@@ -49,7 +49,7 @@ impl ForegroundEventWatcher {
     /// Get the foreground window session.
     pub fn foreground_window_session(
         browser: &BrowserDetector,
-        browser_state: &StateInner,
+        browser_state: &mut StateInner,
         track_incognito: bool,
     ) -> Result<Option<WindowSession>> {
         if let Some(fg) = Window::foreground() {
@@ -62,7 +62,7 @@ impl ForegroundEventWatcher {
                     // Educated guess. Note that VSCode will pass this check since it's a chromium app.
                     let maybe_browser = browser.is_maybe_chromium_window(&fg).warn();
                     // So we further check if it's a chromium process
-                    if maybe_browser {
+                    let (is_browser, fetched_path) = if maybe_browser {
                         let ptid = fg.ptid().context("get ptid")?;
                         if browser_state.browser_processes.contains(&ptid.pid) {
                             (true, None)
@@ -70,11 +70,18 @@ impl ForegroundEventWatcher {
                             let process = Process::new(ptid.pid).context("get process")?;
                             let path = process.path().context("get process path")?;
                             let is_browser = BrowserDetector::is_maybe_chromium_exe(&path);
+                            if is_browser {
+                                browser_state.browser_processes.insert(ptid.pid);
+                            }
                             (is_browser, Some(path))
                         }
                     } else {
                         (false, None)
-                    }
+                    };
+
+                    browser_state.browser_windows.insert(fg.clone(), is_browser);
+
+                    (is_browser, fetched_path)
                 }
             };
 
@@ -110,9 +117,9 @@ impl ForegroundEventWatcher {
 
     /// Poll for a new [`ForegroundChangedEvent`].
     pub fn poll(&mut self, at: Timestamp) -> Result<Option<ForegroundChangedEvent>> {
-        let state = self.browser_state.blocking_read();
+        let mut state = self.browser_state.blocking_write();
         if let Some(session) =
-            Self::foreground_window_session(&self.browser, &state, self.track_incognito)?
+            Self::foreground_window_session(&self.browser, &mut state, self.track_incognito)?
         {
             if session == self.session {
                 return Ok(None);
