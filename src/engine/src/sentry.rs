@@ -101,7 +101,9 @@ impl Sentry {
 
             // TODO check if incognito?
             let element = browser_detect.get_chromium_element(&window)?;
-            let url = browser_detect.chromium_url(&element).unwrap_or_default();
+            let url = browser_detect
+                .chromium_url(&element, None)
+                .unwrap_or_default();
             let base_url = WebsiteInfo::url_to_base_url(&url.unwrap_or_default())?.to_string();
 
             if let Some(action) = self.website_actions.get(&base_url) {

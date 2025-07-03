@@ -129,7 +129,11 @@ impl BrowserDetector {
     /// This uses UI Automation to get the URL, which is a bit of a hack.
     /// Notably, this only works for Chrome and Edge right now.
     /// This might break in the future if Chrome/Edge team changes the UI.
-    pub fn chromium_url(&self, element: &IUIAutomationElement9) -> Result<Option<String>> {
+    pub fn chromium_url(
+        &self,
+        element: &IUIAutomationElement9,
+        omnibox_text: Option<String>,
+    ) -> Result<Option<String>> {
         let root_web_area = uia_find_result(perf(
             || unsafe {
                 element.FindFirstWithOptionsBuildCache(
@@ -154,27 +158,33 @@ impl BrowserDetector {
             }
         }
 
-        let omnibox = uia_find_result(perf(
-            || unsafe {
-                element.FindFirstBuildCache(
-                    TreeScope_Descendants,
-                    &self.omnibox_cond.resolve()?,
-                    &self.cache_request.resolve()?,
-                )
-            },
-            "omnibox - FindFirstBuildCache",
-        ))
-        .context("find omnibox")?;
-        let Some(omnibox) = omnibox else {
-            return Ok(None);
-        };
+        let omnibox_text = if let Some(omnibox_text) = omnibox_text {
+            info!("using provided omnibox: {omnibox_text}");
+            omnibox_text
+        } else {
+            let omnibox = uia_find_result(perf(
+                || unsafe {
+                    element.FindFirstBuildCache(
+                        TreeScope_Descendants,
+                        &self.omnibox_cond.resolve()?,
+                        &self.cache_request.resolve()?,
+                    )
+                },
+                "omnibox - FindFirstBuildCache",
+            ))
+            .context("find omnibox")?;
+            let Some(omnibox) = omnibox else {
+                return Ok(None);
+            };
 
-        let search_value = perf(
-            || unsafe { omnibox.GetCachedPropertyValue(UIA_ValueValuePropertyId) },
-            "omnibox - GetCachedPropertyValue(UIA_ValueValuePropertyId)",
-        )?
-        .to_string();
-        info!("using omnibox url: {search_value}");
+            let omnibox_text = perf(
+                || unsafe { omnibox.GetCachedPropertyValue(UIA_ValueValuePropertyId) },
+                "omnibox - GetCachedPropertyValue(UIA_ValueValuePropertyId)",
+            )?
+            .to_string();
+            info!("using browser omnibox: {omnibox_text}");
+            omnibox_text
+        };
 
         // Omnibox URL is used when there is a long loading period (so document isn't loaded), or
         // when an old tab is loaded again from energy saver (so title is set, but no document is loaded).
@@ -183,7 +193,7 @@ impl BrowserDetector {
         // "google.com/search?q=test". note that proto is not shown.
         // for chrome://, data:XXX and other non http/https links, it's there tho e.g. chrome://newtab.
 
-        let url = match Url::parse(&search_value) {
+        let url = match Url::parse(&omnibox_text) {
             // see if we get no proto error (here it's relative url without base)
             // if so, add https:// to the front and see if we get a valid url.
             // if thats finally valid, then we use that url.
@@ -191,14 +201,14 @@ impl BrowserDetector {
             Err(url::ParseError::RelativeUrlWithoutBase) => {
                 // The URL could really be http://
                 // There might be way to detect this by checking the button next to the omnibox and seeing if it's lock / not-secure.
-                let url = format!("https://{search_value}");
+                let url = format!("https://{omnibox_text}");
                 if Url::parse(&url).is_ok() {
                     url
                 } else {
-                    search_value
+                    omnibox_text
                 }
             }
-            _ => search_value,
+            _ => omnibox_text,
         };
 
         Ok(if url.is_empty() { None } else { Some(url) })

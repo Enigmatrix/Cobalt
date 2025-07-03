@@ -69,7 +69,7 @@ async fn main() -> Result<()> {
                 continue;
             }
             let element = detect.get_chromium_element(&window.window)?;
-            let url = detect.chromium_url(&element)?;
+            let url = detect.chromium_url(&element, None)?;
             let incognito = detect.chromium_incognito(&element)?;
             let (name, description) = if let Some(url) = &url {
                 let base_url = WebsiteInfo::url_to_base_url(url)?;
