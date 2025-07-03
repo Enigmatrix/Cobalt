@@ -279,21 +279,6 @@ impl Cache {
         state.browser_windows.get(window).copied()
     }
 
-    /// Get all browser windows.
-    pub async fn browser_windows(&self) -> SmallHashSet<Window> {
-        let state = self.web.state.read().await;
-        state
-            .browser_windows
-            .iter()
-            .filter_map(
-                |(window, is_browser)| {
-                    if *is_browser { Some(window) } else { None }
-                },
-            )
-            .cloned()
-            .collect()
-    }
-
     // pub async fn get_or_insert_session_for_window(&mut self, window: Window, create: impl Future<Output = Result<SessionDetails>>) -> Result<&SessionDetails> {
 
     //     unimplemented!()

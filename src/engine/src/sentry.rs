@@ -1,13 +1,12 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::sync::Arc;
 
 use data::db::{AlertManager, Database, TriggeredAlert};
 use data::entities::{
     AlertEvent, App, Duration, Reason, Ref, ReminderEvent, Target, Timestamp, TriggerAction,
 };
-use platform::events::TabChange;
 use platform::objects::{Process, Progress, Timestamp as PlatformTimestamp, ToastManager, Window};
-use platform::web::{BaseWebsiteUrl, BrowserDetector, WebsiteInfo};
+use platform::web::{BaseWebsiteUrl, BrowserDetector, UrlChanged, WebsiteInfo};
 use util::error::Result;
 use util::future::sync::Mutex;
 use util::time::ToTicks;
@@ -81,44 +80,32 @@ impl Sentry {
         })
     }
 
-    /// Dim the browser windows matching the given [TabUpdate].
-    pub async fn handle_tab_change(&mut self, tab_change: TabChange) -> Result<()> {
-        let browser_detect = BrowserDetector::new()?;
+    /// Dim the browser windows matching the given [UrlChanged].
+    pub async fn handle_url_change(&mut self, url_change: UrlChanged) -> Result<()> {
+        let UrlChanged { window, url } = url_change;
 
-        let changed_browser_windows = match tab_change {
-            TabChange::Tab { window } => HashSet::from_iter(vec![window]),
-            TabChange::Tick => {
-                let cache = self.cache.lock().await;
-                cache.browser_windows().await
-            }
-        };
+        // skip if window is dead or minimized
+        if window.ptid().is_err() || window.is_minimized() {
+            return Ok(());
+        }
 
-        for window in changed_browser_windows {
-            // skip if window is dead or minimized
-            if window.ptid().is_err() || window.is_minimized() {
-                continue;
-            }
+        // TODO check if incognito?
+        let base_url = WebsiteInfo::url_to_base_url(&url)?.to_string();
 
-            // TODO check if incognito?
-            let element = browser_detect.get_chromium_element(&window)?;
-            let url = browser_detect
-                .chromium_url(&element, None)
-                .unwrap_or_default();
-            let base_url = WebsiteInfo::url_to_base_url(&url.unwrap_or_default())?.to_string();
-
-            if let Some(action) = self.website_actions.get(&base_url) {
-                match action {
-                    WebsiteAction::Dim(dim_level) => {
-                        self.handle_dim_action(&window, *dim_level).warn();
-                    }
-                    WebsiteAction::Kill => {
-                        browser_detect.close_current_tab(&element).warn();
-                    }
+        if let Some(action) = self.website_actions.get(&base_url) {
+            match action {
+                WebsiteAction::Dim(dim_level) => {
+                    self.handle_dim_action(&window, *dim_level).warn();
                 }
-            } else {
-                // no action taken, so we dim to back to full
-                self.handle_dim_action(&window, 1.0f64).warn();
+                WebsiteAction::Kill => {
+                    let browser_detect = BrowserDetector::new()?;
+                    let element = browser_detect.get_chromium_element(&window)?;
+                    browser_detect.close_current_tab(&element).warn();
+                }
             }
+        } else {
+            // no action taken, so we dim to back to full
+            self.handle_dim_action(&window, 1.0f64).warn();
         }
 
         Ok(())
