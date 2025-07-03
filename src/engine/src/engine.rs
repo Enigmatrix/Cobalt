@@ -298,7 +298,7 @@ impl Engine {
 
         let process = Process::new(ptid.pid)?;
         let path = process.path()?;
-        let is_browser = BrowserDetector::is_browser(&path);
+        let is_browser = BrowserDetector::is_maybe_chromium_exe(&path);
 
         let identity = if process.is_uwp(Some(&path))? {
             AppIdentity::Uwp {

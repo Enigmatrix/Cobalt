@@ -65,7 +65,7 @@ async fn main() -> Result<()> {
     for window_group in window_group {
         let mut browser_windows = vec![];
         for window in window_group.windows {
-            if !detect.is_chromium(&window.window)? {
+            if !detect.is_maybe_chromium_window(&window.window)? {
                 continue;
             }
             let info = detect.chromium_url(&window.window)?;
@@ -94,7 +94,7 @@ async fn main() -> Result<()> {
         if browser_windows.is_empty() {
             continue;
         }
-        if !BrowserDetector::is_browser(&window_group.process.path) {
+        if !BrowserDetector::is_maybe_chromium_exe(&window_group.process.path) {
             continue;
         }
 

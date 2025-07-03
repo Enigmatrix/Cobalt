@@ -59,7 +59,7 @@ impl ForegroundEventWatcher {
                 } else {
                     // Educated guess. Note that VSCode will pass this check since it's a chromium app.
                     // However, we shouldn't arrive here more than once since we're using the cache.
-                    browser.is_chromium(&fg).warn()
+                    browser.is_maybe_chromium_window(&fg).warn()
                 }
             };
 

@@ -34,6 +34,7 @@ fn perf<T>(f: impl FnOnce() -> T, name: &str) -> T {
 }
 
 /// Detects browser usage information
+#[derive(Clone)]
 pub struct BrowserDetector {
     automation: AgileReference<IUIAutomation>,
     browser_root_view_cond: AgileReference<IUIAutomationCondition>,
@@ -84,14 +85,14 @@ impl BrowserDetector {
     }
 
     /// Check if the path is a browser. Not meant to be super-accurate, but should be good enough.
-    pub fn is_browser(path: &str) -> bool {
+    pub fn is_maybe_chromium_exe(path: &str) -> bool {
         let browsers = ["chrome.exe", "msedge.exe"];
         let path_lower = path.to_lowercase();
         browsers.iter().any(|browser| path_lower.ends_with(browser))
     }
 
     /// Check if the [Window] is a Chromium browser
-    pub fn is_chromium(&self, window: &Window) -> Result<bool> {
+    pub fn is_maybe_chromium_window(&self, window: &Window) -> Result<bool> {
         let class = window.class()?;
         Ok(class == "Chrome_WidgetWin_1")
     }
