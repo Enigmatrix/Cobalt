@@ -99,7 +99,8 @@ impl Sentry {
                 continue;
             }
 
-            let browser_url = browser_detect.chromium_url(&window).unwrap_or_default();
+            let element = browser_detect.get_chromium_element(&window)?;
+            let browser_url = browser_detect.chromium_url(&element).unwrap_or_default();
             let url = browser_url.url.unwrap_or_default();
             let url = WebsiteInfo::url_to_base_url(&url)?.to_string();
 
@@ -109,7 +110,7 @@ impl Sentry {
                         self.handle_dim_action(&window, *dim_level).warn();
                     }
                     WebsiteAction::Kill => {
-                        browser_detect.close_current_tab(&window).warn();
+                        browser_detect.close_current_tab(&element).warn();
                     }
                 }
             } else {

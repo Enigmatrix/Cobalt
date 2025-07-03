@@ -93,16 +93,20 @@ impl BrowserDetector {
         Ok(class == "Chrome_WidgetWin_1")
     }
 
-    /// Get the URL of the [Window], assuming it is a Chromium browser
-    /// This uses UI Automation to get the URL, which is a bit of a hack.
-    /// Notably, this only works for Chrome and Edge right now.
-    /// This might break in the future if Chrome/Edge team changes the UI.
-    pub fn chromium_url(&self, window: &Window) -> Result<BrowserUrl> {
+    /// Get the UI Automation element for the [Window]
+    pub fn get_chromium_element(&self, window: &Window) -> Result<IUIAutomationElement9> {
         let element: IUIAutomationElement9 = perf(
             || unsafe { self.automation.resolve()?.ElementFromHandle(window.hwnd) }?.cast(),
             "ElementFromHandle",
         )?;
+        Ok(element)
+    }
 
+    /// Get the URL of the [Window], assuming it is a Chromium browser
+    /// This uses UI Automation to get the URL, which is a bit of a hack.
+    /// Notably, this only works for Chrome and Edge right now.
+    /// This might break in the future if Chrome/Edge team changes the UI.
+    pub fn chromium_url(&self, element: &IUIAutomationElement9) -> Result<BrowserUrl> {
         let browser_root_view = uia_find_result(perf(
             || unsafe {
                 element.FindFirstWithOptionsBuildCache(
@@ -110,7 +114,7 @@ impl BrowserDetector {
                     &self.browser_root_view_cond.resolve()?,
                     &self.cache_request.resolve()?,
                     TreeTraversalOptions_LastToFirstOrder,
-                    &element,
+                    element,
                 )
             },
             "browser_root_view - FindFirstWithOptionsBuildCache",
@@ -141,7 +145,7 @@ impl BrowserDetector {
                     &self.root_web_area_cond.resolve()?,
                     &self.cache_request.resolve()?,
                     TreeTraversalOptions_LastToFirstOrder,
-                    &element,
+                    element,
                 )
             },
             "root_web_area - FindFirstWithOptionsBuildCache",
@@ -218,12 +222,7 @@ impl BrowserDetector {
     }
 
     /// Close the current tab in the given [Window]
-    pub fn close_current_tab(&self, window: &Window) -> Result<()> {
-        let element: IUIAutomationElement9 = perf(
-            || unsafe { self.automation.resolve()?.ElementFromHandle(window.hwnd) }?.cast(),
-            "ElementFromHandle",
-        )?;
-
+    pub fn close_current_tab(&self, element: &IUIAutomationElement9) -> Result<()> {
         let tab_condition = unsafe {
             let is_tab = self.automation.resolve()?.CreatePropertyCondition(
                 UIA_ControlTypePropertyId,

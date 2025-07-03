@@ -28,7 +28,8 @@ impl UnsafeSyncSendBrowserDetect {
     }
 
     pub fn chromium_url(&self, window: &Window) -> Result<BrowserUrl> {
-        self.browser.chromium_url(window)
+        let element = self.browser.get_chromium_element(window)?;
+        self.browser.chromium_url(&element)
     }
 }
 

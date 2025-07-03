@@ -42,8 +42,11 @@ mod tab_track_handler {
             _eventid: UIA_EVENT_ID,
         ) -> windows::core::Result<()> {
             let detect = BrowserDetector::new().expect("Failed to create browser detector");
+            let element = detect
+                .get_chromium_element(&self.window)
+                .expect("Failed to get Chromium element");
             let url = detect
-                .chromium_url(&self.window)
+                .chromium_url(&element)
                 .expect("Failed to get Chromium URL");
 
             let mut dim = false;
