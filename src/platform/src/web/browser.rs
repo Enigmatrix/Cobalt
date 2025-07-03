@@ -93,6 +93,25 @@ impl BrowserDetector {
         Ok(element)
     }
 
+    /// Get the omnibox element for the [Window]
+    pub fn get_chromium_omnibox(
+        &self,
+        element: &IUIAutomationElement9,
+    ) -> Result<Option<IUIAutomationElement9>> {
+        let omnibox = uia_find_result(perf(
+            || unsafe {
+                element.FindFirstBuildCache(
+                    TreeScope_Descendants,
+                    &self.omnibox_cond.resolve()?,
+                    &self.cache_request.resolve()?,
+                )
+            },
+            "omnibox - FindFirstBuildCache",
+        ))
+        .context("find omnibox")?;
+        Ok(omnibox)
+    }
+
     /// Check if the [Window] is in incognito mode
     pub fn chromium_incognito(&self, element: &IUIAutomationElement9) -> Result<Option<bool>> {
         let browser_root_view = uia_find_result(perf(
@@ -162,21 +181,10 @@ impl BrowserDetector {
             info!("using provided omnibox: {omnibox_text}");
             omnibox_text
         } else {
-            let omnibox = uia_find_result(perf(
-                || unsafe {
-                    element.FindFirstBuildCache(
-                        TreeScope_Descendants,
-                        &self.omnibox_cond.resolve()?,
-                        &self.cache_request.resolve()?,
-                    )
-                },
-                "omnibox - FindFirstBuildCache",
-            ))
-            .context("find omnibox")?;
+            let omnibox = self.get_chromium_omnibox(element)?;
             let Some(omnibox) = omnibox else {
                 return Ok(None);
             };
-
             let omnibox_text = perf(
                 || unsafe { omnibox.GetCachedPropertyValue(UIA_ValueValuePropertyId) },
                 "omnibox - GetCachedPropertyValue(UIA_ValueValuePropertyId)",
