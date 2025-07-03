@@ -5,9 +5,10 @@ use windows::Win32::System::Com::{CLSCTX_ALL, CoCreateInstance};
 use windows::Win32::UI::Accessibility::{
     AutomationElementMode_None, CUIAutomation, IUIAutomation, IUIAutomationCacheRequest,
     IUIAutomationCondition, IUIAutomationElement, IUIAutomationElement9,
-    IUIAutomationInvokePattern, TreeScope_Children, TreeScope_Descendants,
-    TreeTraversalOptions_LastToFirstOrder, UIA_AutomationIdPropertyId, UIA_ButtonControlTypeId,
-    UIA_ClassNamePropertyId, UIA_ControlTypePropertyId, UIA_InvokePatternId, UIA_NamePropertyId,
+    IUIAutomationInvokePattern, IUIAutomationPropertyChangedEventHandler, TreeScope_Children,
+    TreeScope_Descendants, TreeScope_Element, TreeTraversalOptions_LastToFirstOrder,
+    UIA_AutomationIdPropertyId, UIA_ButtonControlTypeId, UIA_ClassNamePropertyId,
+    UIA_ControlTypePropertyId, UIA_InvokePatternId, UIA_NamePropertyId,
     UIA_SelectionItemIsSelectedPropertyId, UIA_TabItemControlTypeId, UIA_ValueValuePropertyId,
 };
 use windows::core::{AgileReference, Interface};
@@ -99,13 +100,7 @@ impl BrowserDetector {
         element: &IUIAutomationElement9,
     ) -> Result<Option<IUIAutomationElement9>> {
         let omnibox = uia_find_result(perf(
-            || unsafe {
-                element.FindFirstBuildCache(
-                    TreeScope_Descendants,
-                    &self.omnibox_cond.resolve()?,
-                    &self.cache_request.resolve()?,
-                )
-            },
+            || unsafe { element.FindFirst(TreeScope_Descendants, &self.omnibox_cond.resolve()?) },
             "omnibox - FindFirstBuildCache",
         ))
         .context("find omnibox")?;
@@ -288,6 +283,40 @@ impl BrowserDetector {
             "invoke_pattern - Invoke",
         )?;
 
+        Ok(())
+    }
+
+    /// Add a handler to the omnibox text edit event for a given Chromium browser window
+    pub fn add_omnibox_text_edit_handler(
+        &self,
+        omnibox: &IUIAutomationElement9,
+        handler: &IUIAutomationPropertyChangedEventHandler,
+    ) -> Result<()> {
+        unsafe {
+            self.automation
+                .resolve()?
+                .AddPropertyChangedEventHandlerNativeArray(
+                    omnibox,
+                    TreeScope_Element,
+                    &self.cache_request.resolve()?,
+                    handler,
+                    &[UIA_ValueValuePropertyId],
+                )?;
+        };
+        Ok(())
+    }
+
+    /// Remove a handler to the omnibox text edit event for a given Chromium browser window
+    pub fn remove_omnibox_text_edit_handler(
+        &self,
+        omnibox: &IUIAutomationElement9,
+        handler: &IUIAutomationPropertyChangedEventHandler,
+    ) -> Result<()> {
+        unsafe {
+            self.automation
+                .resolve()?
+                .RemovePropertyChangedEventHandler(omnibox, handler)?;
+        };
         Ok(())
     }
 }

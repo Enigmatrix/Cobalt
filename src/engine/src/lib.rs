@@ -11,11 +11,10 @@ use std::thread;
 use data::db::{AppUpdater, DatabasePool};
 use engine::{Engine, Event};
 use platform::events::{
-    BrowserTabWatcher, ForegroundEventWatcher, InteractionWatcher, SystemEventWatcher, TabChange,
-    WindowSession,
+    ForegroundEventWatcher, InteractionWatcher, SystemEventWatcher, WindowSession,
 };
 use platform::objects::{Duration, EventLoop, MessageWindow, Timer, Timestamp, User};
-use platform::web::{self, BrowserDetector};
+use platform::web::{self, BrowserDetector, UrlChanged};
 use resolver::AppInfoResolver;
 use sentry::Sentry;
 use util::channels::{self, Receiver, Sender};
@@ -53,7 +52,7 @@ fn real_main() -> Result<()> {
     let browser_state = web::default_state();
     let (event_tx, event_rx) = channels::unbounded();
     let (alert_tx, alert_rx) = channels::unbounded();
-    let (tab_change_tx, tab_change_rx) = channels::unbounded();
+    let (url_change_tx, url_change_rx) = channels::unbounded();
 
     let now = Timestamp::now();
     let fg = foreground_window_session(&config, browser_state.clone())?;
@@ -68,7 +67,7 @@ fn real_main() -> Result<()> {
                 browser_state,
                 event_tx,
                 alert_tx,
-                tab_change_tx,
+                url_change_tx,
                 fg,
                 now,
             )
@@ -84,7 +83,7 @@ fn real_main() -> Result<()> {
         now,
         event_rx,
         alert_rx,
-        tab_change_rx,
+        url_change_rx,
     )?;
     // can't turn this to util::error::Result :/
     ev_thread.join().expect("event loop thread");
@@ -100,7 +99,7 @@ fn event_loop(
     browser_state: web::State,
     event_tx: Sender<Event>,
     alert_tx: Sender<Timestamp>,
-    tab_change_tx: Sender<TabChange>,
+    url_change_tx: Sender<UrlChanged>,
     fg: WindowSession,
     now: Timestamp,
 ) -> Result<()> {
@@ -159,16 +158,14 @@ fn event_loop(
         }),
     )?;
 
-    let mut browser_tab_watcher = BrowserTabWatcher::new(tab_change_tx.clone(), browser_state)?;
+    let browser = BrowserDetector::new()?;
+    let mut url_watcher = web::UrlWatcher::new(browser_state, url_change_tx.clone(), browser)?;
 
-    let dim_tick = Duration::from_millis(1000);
-    let _browser_tab_tick_timer = Timer::new(
-        dim_tick,
+    let url_watcher_tick = Duration::from_millis(1000);
+    let _url_watcher_timer = Timer::new(
+        url_watcher_tick,
         Box::new(move || {
-            browser_tab_watcher
-                .tick()
-                .context("browser tab watcher tick")?;
-
+            url_watcher.tick().context("url watcher tick")?;
             Ok(())
         }),
     )?;
@@ -193,7 +190,7 @@ async fn sentry_loop(
     cache: Arc<Mutex<cache::Cache>>,
     spawner: Handle,
     alert_rx: Receiver<Timestamp>,
-    tab_change_rx: Receiver<TabChange>,
+    url_change_rx: Receiver<UrlChanged>,
 ) -> Result<()> {
     let db = db_pool.get_db().await?;
     let sentry = Arc::new(Mutex::new(Sentry::new(cache, db)?));
@@ -202,9 +199,9 @@ async fn sentry_loop(
     let _sentry = sentry.clone();
     let join1: JoinHandle<Result<()>> = spawner.spawn(async move {
         loop {
-            let tab_change = tab_change_rx.recv_async().await?;
+            let url_change = url_change_rx.recv_async().await?;
             let mut sentry = _sentry.lock().await;
-            sentry.handle_tab_change(tab_change).await?;
+            sentry.handle_url_change(url_change).await?;
         }
     });
 
@@ -241,7 +238,7 @@ fn processor(
     mut now: Timestamp,
     event_rx: Receiver<Event>,
     alert_rx: Receiver<Timestamp>,
-    tab_change_rx: Receiver<TabChange>,
+    url_change_rx: Receiver<UrlChanged>,
 ) -> Result<()> {
     let rt = Builder::new_multi_thread()
         .enable_time()
@@ -281,7 +278,7 @@ fn processor(
                         cache.clone(),
                         spawner.clone(),
                         alert_rx.clone(),
-                        tab_change_rx.clone(),
+                        url_change_rx.clone(),
                     )
                     .await
                     .context("sentry loop")
