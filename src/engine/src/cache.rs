@@ -387,6 +387,7 @@ async fn inner_mut_compiles() {
                 window,
                 title: "".to_string(),
                 url: None,
+                fetched_path: None,
             },
             |cache| {
                 async move {

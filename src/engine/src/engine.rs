@@ -249,8 +249,16 @@ impl Engine {
                 app, is_browser, ..
             } = cache
                 .get_or_insert_app_for_ptid(ptid, |_| async {
-                    Self::create_app_for_ptid(inserter, db_pool, spawner, ptid, &ws.window, at)
-                        .await
+                    Self::create_app_for_ptid(
+                        inserter,
+                        db_pool,
+                        spawner,
+                        ptid,
+                        &ws.window,
+                        ws.fetched_path,
+                        at,
+                    )
+                    .await
                 })
                 .await?;
             (app.clone(), *is_browser)
@@ -292,12 +300,17 @@ impl Engine {
         spawner: &Handle,
         ptid: ProcessThreadId,
         window: &Window,
+        fetched_path: Option<String>,
         at: Timestamp,
     ) -> Result<AppDetails> {
         trace!(?window, ?ptid, "create/find app for process");
 
         let process = Process::new(ptid.pid)?;
-        let path = process.path()?;
+        let path = if let Some(fetched_path) = fetched_path {
+            fetched_path
+        } else {
+            process.path()?
+        };
         let is_browser = BrowserDetector::is_maybe_chromium_exe(&path);
 
         let identity = if process.is_uwp(Some(&path))? {
