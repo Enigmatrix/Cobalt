@@ -8,8 +8,8 @@ use windows::Win32::System::Com::StructuredStorage::PropVariantToStringAlloc;
 use windows::Win32::UI::Shell::PropertiesSystem::{IPropertyStore, SHGetPropertyStoreForWindow};
 use windows::Win32::UI::WindowsAndMessaging::{
     EnumChildWindows, EnumWindows, GWL_EXSTYLE, GetClassNameW, GetForegroundWindow,
-    GetWindowTextLengthW, GetWindowTextW, GetWindowThreadProcessId, IsWindowVisible, LWA_ALPHA,
-    SetLayeredWindowAttributes, SetWindowLongW, WS_EX_LAYERED,
+    GetWindowTextLengthW, GetWindowTextW, GetWindowThreadProcessId, IsIconic, IsWindowVisible,
+    LWA_ALPHA, SetLayeredWindowAttributes, SetWindowLongW, WS_EX_LAYERED,
 };
 
 use crate::buf::{Buffer, WideBuffer, buf};
@@ -126,6 +126,11 @@ impl Window {
             )?
         };
         Ok(())
+    }
+
+    /// Check if the [Window] is minimized
+    pub fn is_minimized(&self) -> bool {
+        unsafe { IsIconic(self.hwnd).as_bool() }
     }
 
     /// Get all visible windows on the desktop

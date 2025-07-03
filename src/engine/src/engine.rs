@@ -8,7 +8,7 @@ use platform::events::{
     ForegroundChangedEvent, InteractionChangedEvent, SystemStateEvent, WindowSession,
 };
 use platform::objects::{Process, ProcessThreadId, Timestamp, Window};
-use platform::web::{self, BaseWebsiteUrl, BrowserDetector, WebsiteInfo};
+use platform::web::{self, BaseWebsiteUrl, WebsiteInfo};
 use scoped_futures::ScopedFutureExt;
 use util::config::Config;
 use util::error::{Context, Result};
@@ -115,7 +115,7 @@ impl Engine {
                 }
             } else if !prev && self.active {
                 let foreground =
-                    foreground_window_session(&self.config, &*self.browser_state.read().await)?;
+                    foreground_window_session(&self.config, self.browser_state.clone())?;
                 self.current_usage = Usage {
                     id: Default::default(),
                     session_id: self.get_session_details(foreground, *now).await?,
@@ -237,28 +237,30 @@ impl Engine {
         db_pool: DatabasePool,
         inserter: &mut UsageWriter,
         spawner: &Handle,
-        mut ws: WindowSession,
+        ws: WindowSession,
         at: Timestamp,
     ) -> Result<SessionDetails> {
         trace!(?ws, "insert session");
 
         let ptid = ws.window.ptid()?;
-        let (mut app, is_browser) = {
+        let mut app = {
             let db_pool = db_pool.clone();
-            let AppDetails {
-                app, is_browser, ..
-            } = cache
+            let AppDetails { app, .. } = cache
                 .get_or_insert_app_for_ptid(ptid, |_| async {
-                    Self::create_app_for_ptid(inserter, db_pool, spawner, ptid, &ws.window, at)
-                        .await
+                    Self::create_app_for_ptid(
+                        inserter,
+                        db_pool,
+                        spawner,
+                        ptid,
+                        &ws.window,
+                        ws.fetched_path,
+                        at,
+                    )
+                    .await
                 })
                 .await?;
-            (app.clone(), *is_browser)
+            app.clone()
         };
-
-        if !is_browser {
-            ws.url = None;
-        }
 
         if let Some(url) = &ws.url {
             let base_url = WebsiteInfo::url_to_base_url(url).context("url to base url")?;
@@ -281,7 +283,6 @@ impl Engine {
         Ok(SessionDetails {
             session: session.id,
             ptid,
-            is_browser,
         })
     }
 
@@ -292,13 +293,17 @@ impl Engine {
         spawner: &Handle,
         ptid: ProcessThreadId,
         window: &Window,
+        fetched_path: Option<String>,
         at: Timestamp,
     ) -> Result<AppDetails> {
         trace!(?window, ?ptid, "create/find app for process");
 
         let process = Process::new(ptid.pid)?;
-        let path = process.path()?;
-        let is_browser = BrowserDetector::is_browser(&path);
+        let path = if let Some(fetched_path) = fetched_path {
+            fetched_path
+        } else {
+            process.path()?
+        };
 
         let identity = if process.is_uwp(Some(&path))? {
             AppIdentity::Uwp {
@@ -332,7 +337,6 @@ impl Engine {
         Ok(AppDetails {
             app: app_id,
             identity,
-            is_browser,
         })
     }
 
@@ -376,7 +380,6 @@ impl Engine {
         Ok(AppDetails {
             app: app_id,
             identity,
-            is_browser: false,
         })
     }
 }

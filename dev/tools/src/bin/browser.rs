@@ -35,7 +35,7 @@ struct BrowserWindow {
 #[derive(Debug, Clone)]
 struct TabDetails {
     pub url: Option<String>,
-    pub incognito: bool,
+    pub incognito: Option<bool>,
     pub name: Option<String>,
     pub description: Option<String>,
 }
@@ -65,11 +65,13 @@ async fn main() -> Result<()> {
     for window_group in window_group {
         let mut browser_windows = vec![];
         for window in window_group.windows {
-            if !detect.is_chromium(&window.window)? {
+            if !detect.is_maybe_chromium_window(&window.window)? {
                 continue;
             }
-            let info = detect.chromium_url(&window.window)?;
-            let (name, description) = if let Some(url) = &info.url {
+            let element = detect.get_chromium_element(&window.window)?;
+            let url = detect.chromium_url(&element)?;
+            let incognito = detect.chromium_incognito(&element)?;
+            let (name, description) = if let Some(url) = &url {
                 let base_url = WebsiteInfo::url_to_base_url(url)?;
                 let website_info = WebsiteInfo::from_base_url(base_url.clone())
                     .await
@@ -82,8 +84,8 @@ async fn main() -> Result<()> {
             let browser_window = BrowserWindow {
                 window,
                 tabs: vec![TabDetails {
-                    url: info.url,
-                    incognito: info.incognito,
+                    url,
+                    incognito,
                     name,
                     description,
                 }],
@@ -94,7 +96,7 @@ async fn main() -> Result<()> {
         if browser_windows.is_empty() {
             continue;
         }
-        if !BrowserDetector::is_browser(&window_group.process.path) {
+        if !BrowserDetector::is_maybe_chromium_exe(&window_group.process.path) {
             continue;
         }
 
@@ -122,7 +124,11 @@ fn tab_to_string(tab: &TabDetails, window: &BrowserWindow, browser: &Browser) ->
     format!(
         "{}{} - (hwnd: {:08x}) - {} (pid: {}){}{}\n",
         tab.url.as_deref().unwrap_or("<UNKNOWN>"),
-        if tab.incognito { " [Incognito]" } else { "" },
+        if tab.incognito.unwrap_or(false) {
+            " [Incognito]"
+        } else {
+            ""
+        },
         // window.window.title,
         window.window.window.hwnd.0 as usize,
         browser.process.name,

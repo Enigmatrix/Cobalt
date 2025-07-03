@@ -38,7 +38,8 @@ fn main() -> Result<()> {
 
     let browser = BrowserDetector::new()?;
     if let Some(details) = select_window(&matches)? {
-        browser.close_current_tab(&details.window)?;
+        let element = browser.get_chromium_element(&details.window)?;
+        browser.close_current_tab(&element)?;
     } else {
         eprintln!("No windows found matching the criteria");
     }

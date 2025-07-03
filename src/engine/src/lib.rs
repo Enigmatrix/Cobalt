@@ -56,7 +56,7 @@ fn real_main() -> Result<()> {
     let (tab_change_tx, tab_change_rx) = channels::unbounded();
 
     let now = Timestamp::now();
-    let fg = foreground_window_session(&config, &browser_state.blocking_read())?;
+    let fg = foreground_window_session(&config, browser_state.clone())?;
 
     let ev_thread = {
         let config = config.clone();
@@ -294,7 +294,7 @@ fn processor(
             if attempt > 0 {
                 future::time::sleep(config.poll_duration()).await;
                 info!("restarting engine loop");
-                fg = foreground_window_session(config, &*browser_state.read().await)?;
+                fg = foreground_window_session_async(config, browser_state.clone()).await?;
                 now = Timestamp::now();
             }
             let options = EngineOptions {
@@ -344,15 +344,12 @@ async fn update_app_infos(db_pool: DatabasePool, handle: Handle) -> Result<()> {
 }
 
 /// Get the foreground [Window], and makes it into a [WindowSession] blocking until one is present.
-fn foreground_window_session(
-    config: &Config,
-    browser_state: &web::StateInner,
-) -> Result<WindowSession> {
+fn foreground_window_session(config: &Config, browser_state: web::State) -> Result<WindowSession> {
     let browser = BrowserDetector::new()?;
     loop {
         let session = ForegroundEventWatcher::foreground_window_session(
             &browser,
-            browser_state,
+            browser_state.blocking_write(),
             config.track_incognito(),
         )?;
         if let Some(session) = session {
@@ -362,5 +359,26 @@ fn foreground_window_session(
         // There is no blocking or potential for a race condition here because the
         // foreground window is a global resource, seperate from the async runtime.
         std::thread::sleep(std::time::Duration::from_millis(100));
+    }
+}
+
+/// Get the foreground [Window], and makes it into a [WindowSession] blocking until one is present.
+async fn foreground_window_session_async(
+    config: &Config,
+    browser_state: web::State,
+) -> Result<WindowSession> {
+    let browser = BrowserDetector::new()?;
+    loop {
+        let session = ForegroundEventWatcher::foreground_window_session(
+            &browser,
+            browser_state.write().await,
+            config.track_incognito(),
+        )?;
+        if let Some(session) = session {
+            return Ok(session);
+        }
+        // There is no blocking or potential for a race condition here because the
+        // foreground window is a global resource, seperate from the async runtime.
+        future::time::sleep(std::time::Duration::from_millis(100)).await;
     }
 }

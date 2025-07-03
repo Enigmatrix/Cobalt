@@ -94,22 +94,23 @@ impl Sentry {
         };
 
         for window in changed_browser_windows {
-            let browser_url = browser_detect.chromium_url(&window).unwrap_or_default();
-            let url = browser_url.url.unwrap_or_default();
-            let url = WebsiteInfo::url_to_base_url(&url)?.to_string();
-
-            // skip if window is dead
-            if window.ptid().is_err() {
+            // skip if window is dead or minimized
+            if window.ptid().is_err() || window.is_minimized() {
                 continue;
             }
 
-            if let Some(action) = self.website_actions.get(&url) {
+            // TODO check if incognito?
+            let element = browser_detect.get_chromium_element(&window)?;
+            let url = browser_detect.chromium_url(&element).unwrap_or_default();
+            let base_url = WebsiteInfo::url_to_base_url(&url.unwrap_or_default())?.to_string();
+
+            if let Some(action) = self.website_actions.get(&base_url) {
                 match action {
                     WebsiteAction::Dim(dim_level) => {
                         self.handle_dim_action(&window, *dim_level).warn();
                     }
                     WebsiteAction::Kill => {
-                        browser_detect.close_current_tab(&window).warn();
+                        browser_detect.close_current_tab(&element).warn();
                     }
                 }
             } else {
