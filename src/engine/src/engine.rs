@@ -18,7 +18,7 @@ use util::time::ToTicks;
 use util::tracing::{ResultTraceExt, debug, info, trace};
 
 use crate::cache::{AppDetails, Cache, SessionDetails};
-use crate::foreground_window_session;
+use crate::foreground_window_session_async;
 use crate::resolver::AppInfoResolver;
 
 /// The main [Engine] that processes [Event]s and updates the [Database] with new [Usage]s, [Session]s and [App]s.
@@ -115,7 +115,8 @@ impl Engine {
                 }
             } else if !prev && self.active {
                 let foreground =
-                    foreground_window_session(&self.config, self.browser_state.clone())?;
+                    foreground_window_session_async(&self.config, self.browser_state.clone())
+                        .await?;
                 self.current_usage = Usage {
                     id: Default::default(),
                     session_id: self.get_session_details(foreground, *now).await?,
