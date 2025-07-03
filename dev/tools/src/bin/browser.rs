@@ -69,8 +69,9 @@ async fn main() -> Result<()> {
                 continue;
             }
             let element = detect.get_chromium_element(&window.window)?;
-            let info = detect.chromium_url(&element)?;
-            let (name, description) = if let Some(url) = &info.url {
+            let url = detect.chromium_url(&element)?;
+            let incognito = false; // TODO: get incognito from element
+            let (name, description) = if let Some(url) = &url {
                 let base_url = WebsiteInfo::url_to_base_url(url)?;
                 let website_info = WebsiteInfo::from_base_url(base_url.clone())
                     .await
@@ -83,8 +84,8 @@ async fn main() -> Result<()> {
             let browser_window = BrowserWindow {
                 window,
                 tabs: vec![TabDetails {
-                    url: info.url,
-                    incognito: info.incognito,
+                    url,
+                    incognito,
                     name,
                     description,
                 }],

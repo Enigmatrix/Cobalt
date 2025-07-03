@@ -4,7 +4,7 @@ use std::sync::Mutex;
 
 use platform::events::WindowTitleWatcher;
 use platform::objects::{EventLoop, Target, Window};
-use platform::web::{BrowserDetector, BrowserUrl};
+use platform::web::{BrowserDetector};
 use tools::filters::{ProcessFilter, WindowFilter, match_running_windows};
 use util::error::Result;
 // use util::tracing::info;
@@ -27,7 +27,7 @@ impl UnsafeSyncSendBrowserDetect {
         Ok(Self { browser })
     }
 
-    pub fn chromium_url(&self, window: &Window) -> Result<BrowserUrl> {
+    pub fn chromium_url(&self, window: &Window) -> Result<Option<String>> {
         let element = self.browser.get_chromium_element(window)?;
         self.browser.chromium_url(&element)
     }
@@ -64,9 +64,9 @@ async fn main() -> Result<()> {
             let start = std::time::Instant::now();
             let _guard = m.lock().unwrap();
 
-            let browser_info = browser.chromium_url(&window)?;
+            let url = browser.chromium_url(&window)?;
 
-            let dimset = if let Some(url) = browser_info.url {
+            let dimset = if let Some(url) = url {
                 if !url.contains("youtube") {
                     window.dim(0.5f64)?;
                 } else {

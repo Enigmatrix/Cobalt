@@ -39,15 +39,6 @@ pub struct BrowserDetector {
     cache_request: AgileReference<IUIAutomationCacheRequest>,
 }
 
-/// Detected browser URL with extra information
-#[derive(Debug, Clone, Default)]
-pub struct BrowserUrl {
-    /// The URL
-    pub url: Option<String>,
-    /// Whether the browser is in incognito mode
-    pub incognito: bool,
-}
-
 impl BrowserDetector {
     /// Create a new [BrowserDetector]
     pub fn new() -> Result<Self> {
@@ -106,38 +97,7 @@ impl BrowserDetector {
     /// This uses UI Automation to get the URL, which is a bit of a hack.
     /// Notably, this only works for Chrome and Edge right now.
     /// This might break in the future if Chrome/Edge team changes the UI.
-    pub fn chromium_url(&self, element: &IUIAutomationElement9) -> Result<BrowserUrl> {
-        let browser_root_view = uia_find_result(perf(
-            || unsafe {
-                element.FindFirstWithOptionsBuildCache(
-                    TreeScope_Descendants,
-                    &self.browser_root_view_cond.resolve()?,
-                    &self.cache_request.resolve()?,
-                    TreeTraversalOptions_LastToFirstOrder,
-                    element,
-                )
-            },
-            "browser_root_view - FindFirstWithOptionsBuildCache",
-        ))
-        .context("find browser root view")?;
-        let Some(browser_root_view) = browser_root_view else {
-            return Ok(BrowserUrl {
-                url: None,
-                incognito: false,
-            });
-        };
-        let name = perf(
-            || unsafe { browser_root_view.GetCachedPropertyValue(UIA_NamePropertyId) },
-            "browser_root_view - GetCachedPropertyValue(UIA_NamePropertyId)",
-        )?
-        .to_string();
-
-        // This seems to be the only way to detect incognito mode in Edge
-        // Not sure why the \u{200b} is needed, but it works.
-        // Have not tested with other languages.
-        let incognito = name.ends_with("- Google Chrome (Incognito)")
-            || name.ends_with("- Microsoft Edge (InPrivate)");
-
+    pub fn chromium_url(&self, element: &IUIAutomationElement9) -> Result<Option<String>> {
         let root_web_area = uia_find_result(perf(
             || unsafe {
                 element.FindFirstWithOptionsBuildCache(
@@ -158,10 +118,7 @@ impl BrowserDetector {
             )?
             .to_string();
             if !url.is_empty() {
-                return Ok(BrowserUrl {
-                    url: Some(url),
-                    incognito,
-                });
+                return Ok(Some(url));
             }
         }
 
@@ -177,10 +134,7 @@ impl BrowserDetector {
         ))
         .context("find omnibox")?;
         let Some(omnibox) = omnibox else {
-            return Ok(BrowserUrl {
-                url: None,
-                incognito,
-            });
+            return Ok(None);
         };
 
         let search_value = perf(
@@ -215,10 +169,7 @@ impl BrowserDetector {
             _ => search_value,
         };
 
-        Ok(BrowserUrl {
-            url: if url.is_empty() { None } else { Some(url) },
-            incognito,
-        })
+        Ok(if url.is_empty() { None } else { Some(url) })
     }
 
     /// Close the current tab in the given [Window]

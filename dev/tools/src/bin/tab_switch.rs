@@ -50,7 +50,7 @@ mod tab_track_handler {
                 .expect("Failed to get Chromium URL");
 
             let mut dim = false;
-            if let Some(url) = &url.url
+            if let Some(url) = &url
                 && !url.contains("youtube.com")
             {
                 dim = true;

@@ -66,10 +66,11 @@ impl ForegroundEventWatcher {
             let (title, url) = if maybe_browser {
                 let element = browser.get_chromium_element(&fg)?;
                 let url = browser.chromium_url(&element).context("get chromium url")?;
-                if url.incognito && !track_incognito {
+                let incognito = false; // TODO: get incognito from element
+                if incognito && !track_incognito {
                     ("<Incognito>".to_string(), None)
                 } else {
-                    (fg.title()?, url.url)
+                    (fg.title()?, url)
                 }
             } else {
                 (fg.title()?, None)
