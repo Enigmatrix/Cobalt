@@ -10,6 +10,8 @@ use crate::objects::{ProcessId, Window};
 pub struct BrowserWindowInfo {
     /// Whether the browser window is in incognito mode
     pub is_incognito: bool,
+    /// URL of the browser window
+    pub url: Option<String>,
 }
 
 /// Shared inner state of browsers and websites seen in the desktop
