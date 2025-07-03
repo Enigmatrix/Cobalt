@@ -93,6 +93,38 @@ impl BrowserDetector {
         Ok(element)
     }
 
+    /// Check if the [Window] is in incognito mode
+    pub fn chromium_incognito(&self, element: &IUIAutomationElement9) -> Result<Option<bool>> {
+        let browser_root_view = uia_find_result(perf(
+            || unsafe {
+                element.FindFirstWithOptionsBuildCache(
+                    TreeScope_Descendants,
+                    &self.browser_root_view_cond.resolve()?,
+                    &self.cache_request.resolve()?,
+                    TreeTraversalOptions_LastToFirstOrder,
+                    element,
+                )
+            },
+            "browser_root_view - FindFirstWithOptionsBuildCache",
+        ))
+        .context("find browser root view")?;
+        let Some(browser_root_view) = browser_root_view else {
+            return Ok(None);
+        };
+        let name = perf(
+            || unsafe { browser_root_view.GetCachedPropertyValue(UIA_NamePropertyId) },
+            "browser_root_view - GetCachedPropertyValue(UIA_NamePropertyId)",
+        )?
+        .to_string();
+
+        // This seems to be the only way to detect incognito mode in Edge
+        // Have not tested with other languages.
+        let incognito = name.ends_with("- Google Chrome (Incognito)")
+            || name.ends_with("- Microsoft Edge (InPrivate)");
+
+        Ok(Some(incognito))
+    }
+
     /// Get the URL of the [Window], assuming it is a Chromium browser
     /// This uses UI Automation to get the URL, which is a bit of a hack.
     /// Notably, this only works for Chrome and Edge right now.

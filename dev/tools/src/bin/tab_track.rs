@@ -4,7 +4,7 @@ use std::sync::Mutex;
 
 use platform::events::WindowTitleWatcher;
 use platform::objects::{EventLoop, Target, Window};
-use platform::web::{BrowserDetector};
+use platform::web::BrowserDetector;
 use tools::filters::{ProcessFilter, WindowFilter, match_running_windows};
 use util::error::Result;
 // use util::tracing::info;

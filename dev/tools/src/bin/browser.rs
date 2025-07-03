@@ -35,7 +35,7 @@ struct BrowserWindow {
 #[derive(Debug, Clone)]
 struct TabDetails {
     pub url: Option<String>,
-    pub incognito: bool,
+    pub incognito: Option<bool>,
     pub name: Option<String>,
     pub description: Option<String>,
 }
@@ -70,7 +70,7 @@ async fn main() -> Result<()> {
             }
             let element = detect.get_chromium_element(&window.window)?;
             let url = detect.chromium_url(&element)?;
-            let incognito = false; // TODO: get incognito from element
+            let incognito = detect.chromium_incognito(&element)?;
             let (name, description) = if let Some(url) = &url {
                 let base_url = WebsiteInfo::url_to_base_url(url)?;
                 let website_info = WebsiteInfo::from_base_url(base_url.clone())
@@ -124,7 +124,11 @@ fn tab_to_string(tab: &TabDetails, window: &BrowserWindow, browser: &Browser) ->
     format!(
         "{}{} - (hwnd: {:08x}) - {} (pid: {}){}{}\n",
         tab.url.as_deref().unwrap_or("<UNKNOWN>"),
-        if tab.incognito { " [Incognito]" } else { "" },
+        if tab.incognito.unwrap_or(false) {
+            " [Incognito]"
+        } else {
+            ""
+        },
         // window.window.title,
         window.window.window.hwnd.0 as usize,
         browser.process.name,
