@@ -77,7 +77,13 @@ impl UrlWatcher {
             state
                 .browser_windows
                 .iter()
-                .filter_map(|(window, info)| if *info { Some(window.clone()) } else { None })
+                .filter_map(|(window, info)| {
+                    if info.is_some() {
+                        Some(window.clone())
+                    } else {
+                        None
+                    }
+                })
                 .collect()
         };
         self.update_browsers(&windows)?;

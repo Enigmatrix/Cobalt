@@ -1,9 +1,11 @@
+use std::time::Duration;
+
 use util::config::Config;
-use util::error::{Context, Result};
+use util::error::{Context, Result, eyre};
 use util::tracing::ResultTraceExt;
 
 use crate::objects::{Process, Timestamp, Window};
-use crate::web::{BrowserDetector, State, WriteLockedState};
+use crate::web::{BrowserDetector, BrowserWindowInfo, State, WriteLockedState};
 
 /// Watches for foreground window changes, including session (title) changes
 pub struct ForegroundEventWatcher {
@@ -53,11 +55,11 @@ impl ForegroundEventWatcher {
         track_incognito: bool,
     ) -> Result<Option<WindowSession>> {
         if let Some(fg) = Window::foreground() {
-            let (is_browser, fetched_path) = {
-                let is_browser = browser_state.browser_windows.get(&fg).cloned();
-                if let Some(is_browser) = is_browser {
+            let (browser_window_info, fetched_path) = {
+                let browser_window_info = browser_state.browser_windows.get(&fg).cloned();
+                if let Some(browser_window_info) = browser_window_info {
                     // We know already if it's a browser or not
-                    (is_browser, None)
+                    (browser_window_info, None)
                 } else {
                     // Educated guess. Note that VSCode will pass this check since it's a chromium app.
                     let maybe_browser = browser.is_maybe_chromium_window(&fg).warn();
@@ -79,24 +81,42 @@ impl ForegroundEventWatcher {
                         (false, None)
                     };
 
-                    browser_state.browser_windows.insert(fg.clone(), is_browser);
+                    let browser_window_info = if is_browser {
+                        let element = browser.get_chromium_element(&fg)?;
 
-                    (is_browser, fetched_path)
+                        // Loop until we get a valid incognito state. Invalid states are when the broser is loading
+                        // from memory save, for example - the browser is not fully loaded at that time. Max timeout is 3 seconds.
+                        let is_incognito = loop_until_valid(
+                            || {
+                                let incognito = browser
+                                    .chromium_incognito(&element)
+                                    .context("get chromium incognito")?;
+
+                                Ok(incognito)
+                            },
+                            Duration::from_millis(100),
+                            Duration::from_secs(3),
+                        )?;
+
+                        Some(BrowserWindowInfo { is_incognito })
+                    } else {
+                        None
+                    };
+
+                    browser_state
+                        .browser_windows
+                        .insert(fg.clone(), browser_window_info.clone());
+
+                    (browser_window_info, fetched_path)
                 }
             };
             drop(browser_state);
 
-            let (title, url) = if is_browser {
-                let element = browser.get_chromium_element(&fg)?;
-                let incognito = browser
-                    .chromium_incognito(&element)
-                    .context("get chromium incognito")?;
-                if let Some(incognito) = incognito
-                    && incognito
-                    && !track_incognito
-                {
+            let (title, url) = if let Some(browser_window_info) = browser_window_info {
+                if browser_window_info.is_incognito && !track_incognito {
                     ("<Incognito>".to_string(), None)
                 } else {
+                    let element = browser.get_chromium_element(&fg)?;
                     let url = browser
                         .chromium_url(&element, None)
                         .context("get chromium url")?;
@@ -131,5 +151,23 @@ impl ForegroundEventWatcher {
             return Ok(Some(ForegroundChangedEvent { at, session }));
         }
         Ok(None)
+    }
+}
+
+fn loop_until_valid<T>(
+    f: impl Fn() -> Result<Option<T>>,
+    sleep_duration: Duration,
+    timeout: Duration,
+) -> Result<T> {
+    let start = std::time::Instant::now();
+    loop {
+        let result = f()?;
+        if let Some(result) = result {
+            return Ok(result);
+        }
+        if start.elapsed() > timeout {
+            return Err(eyre!("Timeout while waiting for valid result"));
+        }
+        std::thread::sleep(sleep_duration);
     }
 }
