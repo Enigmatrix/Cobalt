@@ -3,7 +3,7 @@ use util::error::{Context, Result};
 use util::tracing::ResultTraceExt;
 
 use crate::objects::{Process, Timestamp, Window};
-use crate::web::{BrowserDetector, State, StateInner};
+use crate::web::{BrowserDetector, State, WriteLockedState};
 
 /// Watches for foreground window changes, including session (title) changes
 pub struct ForegroundEventWatcher {
@@ -49,7 +49,7 @@ impl ForegroundEventWatcher {
     /// Get the foreground window session.
     pub fn foreground_window_session(
         browser: &BrowserDetector,
-        browser_state: &mut StateInner,
+        mut browser_state: WriteLockedState<'_>,
         track_incognito: bool,
     ) -> Result<Option<WindowSession>> {
         if let Some(fg) = Window::foreground() {
@@ -84,6 +84,7 @@ impl ForegroundEventWatcher {
                     (is_browser, fetched_path)
                 }
             };
+            drop(browser_state);
 
             let (title, url) = if is_browser {
                 let element = browser.get_chromium_element(&fg)?;
@@ -117,9 +118,9 @@ impl ForegroundEventWatcher {
 
     /// Poll for a new [`ForegroundChangedEvent`].
     pub fn poll(&mut self, at: Timestamp) -> Result<Option<ForegroundChangedEvent>> {
-        let mut state = self.browser_state.blocking_write();
+        let state = self.browser_state.blocking_write();
         if let Some(session) =
-            Self::foreground_window_session(&self.browser, &mut state, self.track_incognito)?
+            Self::foreground_window_session(&self.browser, state, self.track_incognito)?
         {
             if session == self.session {
                 return Ok(None);

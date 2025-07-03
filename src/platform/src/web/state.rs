@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use util::ds::{SmallHashMap, SmallHashSet};
-use util::future::sync::RwLock;
+use util::future::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 use crate::objects::{ProcessId, Window};
 
@@ -17,6 +17,11 @@ pub struct StateInner {
 
 /// Shared state of browsers and websites seen in the desktop
 pub type State = Arc<RwLock<StateInner>>;
+
+/// Write locked state of [State]
+pub type WriteLockedState<'a> = RwLockWriteGuard<'a, StateInner>;
+/// Read locked state of [State]
+pub type ReadLockedState<'a> = RwLockReadGuard<'a, StateInner>;
 
 /// Default state of [State]
 pub fn default_state() -> State {

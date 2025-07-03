@@ -114,10 +114,8 @@ impl Engine {
                         .await?;
                 }
             } else if !prev && self.active {
-                let foreground = foreground_window_session(
-                    &self.config,
-                    &mut *self.browser_state.write().await,
-                )?;
+                let foreground =
+                    foreground_window_session(&self.config, self.browser_state.clone())?;
                 self.current_usage = Usage {
                     id: Default::default(),
                     session_id: self.get_session_details(foreground, *now).await?,
