@@ -98,7 +98,7 @@ impl UrlWatcher {
 
 /// Watches the URL of a browser window and emits events when the URL changes.
 pub struct WindowUrlWatcher {
-    element: IUIAutomationElement9,
+    omnibox: IUIAutomationElement9,
     detect: BrowserDetector,
     handler: AgileReference<IUIAutomationPropertyChangedEventHandler>,
 }
@@ -111,12 +111,12 @@ impl WindowUrlWatcher {
         sender: UrlChangedSender,
         detect: BrowserDetector,
     ) -> Result<Self> {
-        let element = detect.get_chromium_element(&window)?;
-        let element = AgileReference::new(&element)?;
+        let window_element = detect.get_chromium_element(&window)?;
+        let window_element_ref = AgileReference::new(&window_element)?;
 
         let handler = OmniboxTextEditHandler::new(
             window.clone(),
-            element,
+            window_element_ref,
             sender,
             detect.clone(),
             browser_state,
@@ -124,14 +124,13 @@ impl WindowUrlWatcher {
         .into();
         let handler = AgileReference::new(&handler)?;
 
-        let window_element = detect.get_chromium_element(&window)?;
-        let element = detect
+        let omnibox = detect
             .get_chromium_omnibox(&window_element)?
             .with_context(|| format!("no omnibox for window: {window:?}"))?;
-        detect.add_omnibox_text_edit_handler(&element, &handler.resolve()?)?;
+        detect.add_omnibox_text_edit_handler(&omnibox, &handler.resolve()?)?;
 
         Ok(Self {
-            element,
+            omnibox,
             detect,
             handler,
         })
@@ -142,7 +141,7 @@ impl Drop for WindowUrlWatcher {
     fn drop(&mut self) {
         self.detect
             .remove_omnibox_text_edit_handler(
-                &self.element,
+                &self.omnibox,
                 &self.handler.resolve().expect("handler non-null"),
             )
             .warn();
