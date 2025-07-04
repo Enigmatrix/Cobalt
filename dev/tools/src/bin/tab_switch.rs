@@ -46,7 +46,7 @@ mod tab_track_handler {
                 .get_chromium_element(&self.window)
                 .expect("Failed to get Chromium element");
             let url = detect
-                .chromium_url(&element)
+                .chromium_url(&element, None)
                 .expect("Failed to get Chromium URL");
 
             let mut dim = false;

@@ -5,9 +5,10 @@ use windows::Win32::System::Com::{CLSCTX_ALL, CoCreateInstance};
 use windows::Win32::UI::Accessibility::{
     AutomationElementMode_None, CUIAutomation, IUIAutomation, IUIAutomationCacheRequest,
     IUIAutomationCondition, IUIAutomationElement, IUIAutomationElement9,
-    IUIAutomationInvokePattern, TreeScope_Children, TreeScope_Descendants,
-    TreeTraversalOptions_LastToFirstOrder, UIA_AutomationIdPropertyId, UIA_ButtonControlTypeId,
-    UIA_ClassNamePropertyId, UIA_ControlTypePropertyId, UIA_InvokePatternId, UIA_NamePropertyId,
+    IUIAutomationInvokePattern, IUIAutomationPropertyChangedEventHandler, TreeScope_Children,
+    TreeScope_Descendants, TreeScope_Element, TreeTraversalOptions_LastToFirstOrder,
+    UIA_AutomationIdPropertyId, UIA_ButtonControlTypeId, UIA_ClassNamePropertyId,
+    UIA_ControlTypePropertyId, UIA_DocumentControlTypeId, UIA_InvokePatternId, UIA_NamePropertyId,
     UIA_SelectionItemIsSelectedPropertyId, UIA_TabItemControlTypeId, UIA_ValueValuePropertyId,
 };
 use windows::core::{AgileReference, Interface};
@@ -49,18 +50,24 @@ impl BrowserDetector {
                 .CreatePropertyCondition(UIA_ClassNamePropertyId, &"BrowserRootView".into())?
         };
         let root_web_area_cond = unsafe {
-            automation.CreatePropertyCondition(UIA_AutomationIdPropertyId, &"RootWebArea".into())?
+            let doc_cond = automation.CreatePropertyCondition(
+                UIA_ControlTypePropertyId,
+                &UIA_DocumentControlTypeId.0.into(),
+            )?;
+            let root_cond = automation
+                .CreatePropertyCondition(UIA_AutomationIdPropertyId, &"RootWebArea".into())?;
+            automation.CreateAndCondition(&doc_cond, &root_cond)?
         };
         let omnibox_cond = unsafe {
             automation
                 .CreatePropertyCondition(UIA_NamePropertyId, &"Address and search bar".into())?
         };
         let cache_request = unsafe {
-            let cache_requesst = automation.CreateCacheRequest()?;
-            cache_requesst.SetAutomationElementMode(AutomationElementMode_None)?;
-            cache_requesst.AddProperty(UIA_NamePropertyId)?;
-            cache_requesst.AddProperty(UIA_ValueValuePropertyId)?;
-            cache_requesst
+            let cache_request = automation.CreateCacheRequest()?;
+            cache_request.SetAutomationElementMode(AutomationElementMode_None)?;
+            cache_request.AddProperty(UIA_NamePropertyId)?;
+            cache_request.AddProperty(UIA_ValueValuePropertyId)?;
+            cache_request
         };
         Ok(Self {
             automation: AgileReference::new(&automation)?,
@@ -91,6 +98,19 @@ impl BrowserDetector {
             "ElementFromHandle",
         )?;
         Ok(element)
+    }
+
+    /// Get the omnibox element for the [Window]
+    pub fn get_chromium_omnibox(
+        &self,
+        element: &IUIAutomationElement9,
+    ) -> Result<Option<IUIAutomationElement9>> {
+        let omnibox = uia_find_result(perf(
+            || unsafe { element.FindFirst(TreeScope_Descendants, &self.omnibox_cond.resolve()?) },
+            "omnibox - FindFirstBuildCache",
+        ))
+        .context("find omnibox")?;
+        Ok(omnibox)
     }
 
     /// Check if the [Window] is in incognito mode
@@ -129,7 +149,11 @@ impl BrowserDetector {
     /// This uses UI Automation to get the URL, which is a bit of a hack.
     /// Notably, this only works for Chrome and Edge right now.
     /// This might break in the future if Chrome/Edge team changes the UI.
-    pub fn chromium_url(&self, element: &IUIAutomationElement9) -> Result<Option<String>> {
+    pub fn chromium_url(
+        &self,
+        element: &IUIAutomationElement9,
+        omnibox_text: Option<String>,
+    ) -> Result<Option<String>> {
         let root_web_area = uia_find_result(perf(
             || unsafe {
                 element.FindFirstWithOptionsBuildCache(
@@ -154,27 +178,22 @@ impl BrowserDetector {
             }
         }
 
-        let omnibox = uia_find_result(perf(
-            || unsafe {
-                element.FindFirstBuildCache(
-                    TreeScope_Descendants,
-                    &self.omnibox_cond.resolve()?,
-                    &self.cache_request.resolve()?,
-                )
-            },
-            "omnibox - FindFirstBuildCache",
-        ))
-        .context("find omnibox")?;
-        let Some(omnibox) = omnibox else {
-            return Ok(None);
+        let omnibox_text = if let Some(omnibox_text) = omnibox_text {
+            info!("using provided omnibox: {omnibox_text}");
+            omnibox_text
+        } else {
+            let omnibox = self.get_chromium_omnibox(element)?;
+            let Some(omnibox) = omnibox else {
+                return Ok(None);
+            };
+            let omnibox_text = perf(
+                || unsafe { omnibox.GetCurrentPropertyValue(UIA_ValueValuePropertyId) },
+                "omnibox - GetCachedPropertyValue(UIA_ValueValuePropertyId)",
+            )?
+            .to_string();
+            info!("using browser omnibox: {omnibox_text}");
+            omnibox_text
         };
-
-        let search_value = perf(
-            || unsafe { omnibox.GetCachedPropertyValue(UIA_ValueValuePropertyId) },
-            "omnibox - GetCachedPropertyValue(UIA_ValueValuePropertyId)",
-        )?
-        .to_string();
-        info!("using omnibox url: {search_value}");
 
         // Omnibox URL is used when there is a long loading period (so document isn't loaded), or
         // when an old tab is loaded again from energy saver (so title is set, but no document is loaded).
@@ -183,7 +202,7 @@ impl BrowserDetector {
         // "google.com/search?q=test". note that proto is not shown.
         // for chrome://, data:XXX and other non http/https links, it's there tho e.g. chrome://newtab.
 
-        let url = match Url::parse(&search_value) {
+        let url = match Url::parse(&omnibox_text) {
             // see if we get no proto error (here it's relative url without base)
             // if so, add https:// to the front and see if we get a valid url.
             // if thats finally valid, then we use that url.
@@ -191,14 +210,14 @@ impl BrowserDetector {
             Err(url::ParseError::RelativeUrlWithoutBase) => {
                 // The URL could really be http://
                 // There might be way to detect this by checking the button next to the omnibox and seeing if it's lock / not-secure.
-                let url = format!("https://{search_value}");
+                let url = format!("https://{omnibox_text}");
                 if Url::parse(&url).is_ok() {
                     url
                 } else {
-                    search_value
+                    omnibox_text
                 }
             }
-            _ => search_value,
+            _ => omnibox_text,
         };
 
         Ok(if url.is_empty() { None } else { Some(url) })
@@ -270,6 +289,40 @@ impl BrowserDetector {
             "invoke_pattern - Invoke",
         )?;
 
+        Ok(())
+    }
+
+    /// Add a handler to the omnibox text edit event for a given Chromium browser window
+    pub fn add_omnibox_text_edit_handler(
+        &self,
+        omnibox: &IUIAutomationElement9,
+        handler: &IUIAutomationPropertyChangedEventHandler,
+    ) -> Result<()> {
+        unsafe {
+            self.automation
+                .resolve()?
+                .AddPropertyChangedEventHandlerNativeArray(
+                    omnibox,
+                    TreeScope_Element,
+                    &self.cache_request.resolve()?,
+                    handler,
+                    &[UIA_ValueValuePropertyId],
+                )?;
+        };
+        Ok(())
+    }
+
+    /// Remove a handler to the omnibox text edit event for a given Chromium browser window
+    pub fn remove_omnibox_text_edit_handler(
+        &self,
+        omnibox: &IUIAutomationElement9,
+        handler: &IUIAutomationPropertyChangedEventHandler,
+    ) -> Result<()> {
+        unsafe {
+            self.automation
+                .resolve()?
+                .RemovePropertyChangedEventHandler(omnibox, handler)?;
+        };
         Ok(())
     }
 }
