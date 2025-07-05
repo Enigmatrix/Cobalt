@@ -341,7 +341,7 @@ export function UsageChart({
         axisPointer: {
           type: "shadow",
 
-          // TODO: Tooltip
+          // TODO: Hover
           // label: {
           //   show: false,
           //   formatter: (params) => {
@@ -415,24 +415,24 @@ export function UsageChart({
       },
       series: [
         ...series,
-        // TODO: Marker Lines
-        // ...((markerLines ?? []).map((line) => ({
-        //   type: "line",
-        //   markLine: {
-        //     silent: true,
-        //     symbol: "none",
-        //     data: [
-        //       {
-        //         yAxis: line.yAxis,
-        //         lineStyle: {
-        //           color: line.color ?? getVarColorAsHex("muted-foreground"),
-        //           type: line.type,
-        //         },
-        //       },
-        //     ],
-        //   },
-        //   data: [],
-        // })) satisfies echarts.SeriesOption[]),
+        // Marker Lines
+        ...((markerLines ?? []).map((line) => ({
+          type: "line",
+          markLine: {
+            silent: true,
+            symbol: "none",
+            data: [
+              {
+                yAxis: line.yAxis,
+                lineStyle: {
+                  color: line.color ?? getVarColorAsHex("muted-foreground"),
+                  type: line.type,
+                },
+              },
+            ],
+          },
+          data: [],
+        })) satisfies echarts.SeriesOption[]),
       ],
     } satisfies echarts.EChartsOption;
 
@@ -496,7 +496,7 @@ export function UsageChart({
 
   return (
     <div ref={chartRef} className={cn("w-full h-full", className)}>
-      {/* TODO: Tooltip 
+      {/* TODO: Hover 
       <Tooltip targetRef={chartRef} show={!!hoveredData}>
         <AppUsageChartTooltipContent
           hoveredAppId={hoveredData?.appId ?? null}
