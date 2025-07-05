@@ -3,11 +3,15 @@ import { cn } from "@/lib/utils";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import type { ClassValue } from "clsx";
 import { CircleHelp } from "lucide-react";
-import { CircleHelp as CircleHelpStatic } from "lucide-static";
+import {
+  CircleHelp as CircleHelpStatic,
+  Tag as TagStatic,
+} from "lucide-static";
 import normalize from "path-normalize";
 import { useMemo, useState } from "react";
 
 export const DEFAULT_ICON_SVG_URL = "data:image/svg+xml," + CircleHelpStatic;
+export const TAG_ICON_URL = "data:image/svg+xml," + TagStatic;
 
 function appIconUrl(appIcon?: string) {
   if (!appIcon) return null;
@@ -23,6 +27,14 @@ export function htmlImgElement(appIcon?: string): HTMLImageElement {
     img.onerror = null;
   };
   return img;
+}
+
+// A little hack to make the tag icon color dynamic - relies on Lucide Static using currentColor for the color
+export function tagIconUrlStatic(color?: string) {
+  return TAG_ICON_URL.replaceAll(
+    "currentColor",
+    color ? encodeURIComponent(color) : "currentColor",
+  );
 }
 
 export default function AppIcon({

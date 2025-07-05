@@ -1,4 +1,8 @@
-import { htmlImgElement } from "@/components/app/app-icon";
+import {
+  htmlImgElement,
+  TAG_ICON_URL,
+  tagIconUrlStatic,
+} from "@/components/app/app-icon";
 import { useRefresh } from "@/hooks/use-refresh";
 import { getVarColorAsHex, scaleColor } from "@/lib/color-utils";
 import type { App, Ref, Tag, WithGroupedDuration } from "@/lib/entities";
@@ -293,7 +297,12 @@ export function UsageChart({
           show: !onlyShowOneAppId,
           position: "inside",
           backgroundColor: {
-            image: kv.key === "app" ? htmlImgElement(kv.app.icon) : undefined, // TODO: Tag Icon
+            image:
+              kv.key === "app"
+                ? htmlImgElement(kv.app.icon)
+                : tagIconUrlStatic(
+                    `color-mix(in srgb, ${kv.tag.color} 65%, black)`,
+                  ),
           },
           formatter: () => {
             return `{empty|}`;
