@@ -117,7 +117,7 @@ export function UsageChart({
   /// Highlighting / Hiding
   highlightedApps,
   highlightedTags,
-  unhighlightedOpacity,
+  unhighlightedOpacity = 0.3,
   // Apps/Tags to hide if true
   hiddenApps,
   hiddenTags,
@@ -128,14 +128,14 @@ export function UsageChart({
   onlyShowOneAppId,
 
   /// Chart Options
-  animationsEnabled,
-  hideXAxis,
-  hideYAxis,
-  gradientBars,
+  animationsEnabled = true,
+  hideXAxis = false,
+  hideYAxis = false,
+  gradientBars = false,
   barRadius,
   xAxisFormatter,
   // Whether the Y-axis maximum should equal the period duration
-  maxYIsPeriod,
+  maxYIsPeriod = false,
   // The interval between Y-axis ticks
   yAxisInterval,
 
@@ -339,7 +339,7 @@ export function UsageChart({
     const chart = echarts.init(chartRef.current, undefined, {});
     chartInstanceRef.current = chart;
 
-    // X-axis Gap
+    // Period ticks
     const periodTicks = durationToTicks(periodToDuration(period));
 
     const option: echarts.EChartsOption = {
