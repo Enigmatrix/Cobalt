@@ -1,8 +1,4 @@
-import {
-  htmlImgElement,
-  TAG_ICON_URL,
-  tagIconUrlStatic,
-} from "@/components/app/app-icon";
+import { htmlImgElement, tagIconUrlStatic } from "@/components/app/app-icon";
 import { useRefresh } from "@/hooks/use-refresh";
 import { getVarColorAsHex, scaleColor } from "@/lib/color-utils";
 import type { App, Ref, Tag, WithGroupedDuration } from "@/lib/entities";
@@ -88,6 +84,9 @@ interface TagFullKey {
 type FullKey = AppFullKey | TagFullKey;
 
 type FullValues<T> = FullKey & { values: T };
+
+// group tick index, duration
+type DataItem = [number, number];
 
 // Get range of datetimes for the period, and convert to ticks
 function getDateTimeRangePerPeriod(
@@ -175,7 +174,7 @@ export function UsageChart({
         ...key,
         values: usages[key.app.id]!.map(
           (usage) =>
-            [xAxisTickToIndexLookup[usage.group], usage.duration] as const,
+            [xAxisTickToIndexLookup[usage.group], usage.duration] as DataItem,
         ),
       }));
 
@@ -187,40 +186,38 @@ export function UsageChart({
     return (
       appKeys
         .groupBy((key) => key.app.tagId)
-        .mapValues(
-          (apps, tagIdStr): FullValues<(readonly [number, number])[]>[] => {
-            const tagId = tagIdStr === "null" ? null : (+tagIdStr as Ref<Tag>);
+        .mapValues((apps, tagIdStr): FullValues<DataItem[]>[] => {
+          const tagId = tagIdStr === "null" ? null : (+tagIdStr as Ref<Tag>);
 
-            // If we're showing untagged as apps, return the apps
-            if (tagId === null && groupBy === "tag-show-untagged") {
-              return apps;
-            }
+          // If we're showing untagged as apps, return the apps
+          if (tagId === null && groupBy === "tag-show-untagged") {
+            return apps;
+          }
 
-            // Group usages by group for all apps in the tag, then sum the durations
-            const values = _(apps)
-              .map("values")
-              .flatten()
-              .groupBy(([group]) => group)
-              .map(
-                (durations, group) =>
-                  [
-                    +group,
-                    durations.reduce((acc, [, duration]) => acc + duration, 0),
-                  ] as const,
-              )
-              .value();
+          // Group usages by group for all apps in the tag, then sum the durations
+          const values = _(apps)
+            .map("values")
+            .flatten()
+            .groupBy(([group]) => group)
+            .map(
+              (durations, group) =>
+                [
+                  +group,
+                  durations.reduce((acc, [, duration]) => acc + duration, 0),
+                ] as DataItem,
+            )
+            .value();
 
-            const tag = tagId ? tags[tagId] : untagged;
-            return (
-              _([tag])
-                .thru(handleStaleTags)
-                // Remove hidden tags
-                .filter((tag) => !hiddenTags?.[tag.id])
-                .map((tag) => ({ key: "tag" as const, tag, values }))
-                .value()
-            );
-          },
-        )
+          const tag = tagId ? tags[tagId] : untagged;
+          return (
+            _([tag])
+              .thru(handleStaleTags)
+              // Remove hidden tags
+              .filter((tag) => !hiddenTags?.[tag.id])
+              .map((tag) => ({ key: "tag" as const, tag, values }))
+              .value()
+          );
+        })
         .values()
         .flatten()
         // Sort tags. If the key is an app, we place it at the end, but don't change the sort order of the apps (stable sort)
@@ -244,15 +241,17 @@ export function UsageChart({
     handleStaleTags,
     xAxisTickToIndexLookup,
   ]);
-  
+
   const fullKeyValuesWithHighlighted = useMemo(() => {
-    return _(fullKeyValues).orderBy((kv) => {
-      const isHighlighted =
-        kv.key === "app"
-          ? highlightedApps?.[kv.app.id]
-          : highlightedTags?.[kv.tag.id];
-      return isHighlighted ? 0 : 1;
-    }).value();
+    return _(fullKeyValues)
+      .orderBy((kv) => {
+        const isHighlighted =
+          kv.key === "app"
+            ? highlightedApps?.[kv.app.id]
+            : highlightedTags?.[kv.tag.id];
+        return isHighlighted ? 0 : 1;
+      })
+      .value();
   }, [fullKeyValues, highlightedApps, highlightedTags]);
 
   const series = useMemo(() => {
