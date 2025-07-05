@@ -244,9 +244,19 @@ export function UsageChart({
     handleStaleTags,
     xAxisTickToIndexLookup,
   ]);
+  
+  const fullKeyValuesWithHighlighted = useMemo(() => {
+    return _(fullKeyValues).orderBy((kv) => {
+      const isHighlighted =
+        kv.key === "app"
+          ? highlightedApps?.[kv.app.id]
+          : highlightedTags?.[kv.tag.id];
+      return isHighlighted ? 0 : 1;
+    }).value();
+  }, [fullKeyValues, highlightedApps, highlightedTags]);
 
   const series = useMemo(() => {
-    return fullKeyValues.map((kv) => {
+    return fullKeyValuesWithHighlighted.map((kv) => {
       const id = kv.key === "app" ? "app-" + kv.app.id : "tag-" + kv.tag.id;
       const name = kv.key === "app" ? kv.app.name : kv.tag.name;
       const color = kv.key === "app" ? kv.app.color : kv.tag.color;
@@ -314,7 +324,7 @@ export function UsageChart({
       } as echarts.SeriesOption;
     });
   }, [
-    fullKeyValues,
+    fullKeyValuesWithHighlighted,
     highlightedApps,
     highlightedTags,
     unhighlightedOpacity,
