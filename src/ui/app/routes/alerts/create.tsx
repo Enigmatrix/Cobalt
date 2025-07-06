@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
+import { UsageChart } from "@/components/viz/usage-chart";
 import { useZodForm } from "@/hooks/use-form";
 import { useHistoryRef } from "@/hooks/use-history-state";
 import { useTargetApps } from "@/hooks/use-refresh";
@@ -282,6 +282,9 @@ export function AppUsageBarChartView({
   }, [loadPeriod]);
 
   const targetApps = useTargetApps(target);
+  const highlightedApps = useMemo(() => {
+    return Object.fromEntries(targetApps?.map((app) => [app.id, true]) ?? []);
+  }, [targetApps]);
 
   return (
     <div className="flex flex-1">
@@ -341,9 +344,9 @@ export function AppUsageBarChartView({
           </div>
         </div>
         <div className="aspect-video ">
-          <AppUsageBarChart
-            data={appUsages}
-            highlightedAppIds={targetApps?.map((app) => app.id) ?? undefined}
+          <UsageChart
+            usages={appUsages}
+            highlightedApps={highlightedApps}
             markerLines={
               scaledUsageLimit
                 ? [
@@ -359,7 +362,7 @@ export function AppUsageBarChartView({
             end={end ?? interval?.end ?? DateTime.now()}
             className="w-full h-full"
             maxYIsPeriod={maxYIsPeriod}
-            interval={yAxisInterval}
+            yAxisInterval={yAxisInterval}
             animationsEnabled={false}
             barRadius={3}
           />

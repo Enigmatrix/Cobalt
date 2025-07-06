@@ -30,6 +30,14 @@ export function UsageTooltipContent({
   highlightedTags?: Record<Ref<Tag>, boolean>;
   className?: ClassValue;
 }) {
+  const hasAnyHighlighted = useMemo(() => {
+    if (!highlightedApps && !highlightedTags) return false;
+    return (
+      Object.values(highlightedApps ?? {}).some((v) => v) ||
+      Object.values(highlightedTags ?? {}).some((v) => v)
+    );
+  }, [highlightedApps, highlightedTags]);
+
   const totalUsageTicks = useMemo(() => {
     return data?.reduce((acc, curr) => acc + curr.duration, 0) ?? 0;
   }, [data]);
@@ -93,12 +101,16 @@ export function UsageTooltipContent({
                 {d.key === "app" ? (
                   <AppRow
                     app={d.app}
-                    isHighlighted={highlightedApps?.[d.app.id] ?? true}
+                    isHighlighted={
+                      highlightedApps?.[d.app.id] ?? !hasAnyHighlighted
+                    }
                   />
                 ) : (
                   <TagRow
                     tag={d.tag}
-                    isHighlighted={highlightedTags?.[d.tag.id] ?? true}
+                    isHighlighted={
+                      highlightedTags?.[d.tag.id] ?? !hasAnyHighlighted
+                    }
                   />
                 )}
                 <DurationText

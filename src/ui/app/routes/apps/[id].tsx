@@ -17,9 +17,9 @@ import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Text } from "@/components/ui/text";
 import { TimePeriodUsageCard } from "@/components/usage-card";
-import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
 import { Gantt } from "@/components/viz/gantt2";
 import Heatmap from "@/components/viz/heatmap";
+import { UsageChart } from "@/components/viz/usage-chart";
 import { useClipboard } from "@/hooks/use-clipboard";
 import { useApp, useTag } from "@/hooks/use-refresh";
 import {
@@ -357,15 +357,19 @@ function AppUsageBarChartCard({
       appId,
     });
 
+  const appUsages = useMemo(() => {
+    return { [appId]: usages[appId] ?? [] };
+  }, [usages, appId]);
+
   const children = useMemo(
     () => (
       <div className="aspect-video flex-1 mx-1 max-w-full">
-        <AppUsageBarChart
-          data={usages}
-          singleAppId={appId}
+        <UsageChart
+          usages={appUsages}
+          onlyShowOneAppId
           start={start ?? interval.start}
           end={end ?? interval.end}
-          dateTimeFormatter={xAxisLabelFormatter}
+          xAxisFormatter={xAxisLabelFormatter}
           period={period}
           gradientBars
           className="aspect-none"
@@ -373,7 +377,7 @@ function AppUsageBarChartCard({
         />
       </div>
     ),
-    [usages, period, xAxisLabelFormatter, interval, start, end, appId],
+    [appUsages, period, xAxisLabelFormatter, interval, start, end],
   );
 
   return (

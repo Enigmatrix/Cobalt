@@ -26,9 +26,9 @@ import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Text } from "@/components/ui/text";
 import { TimePeriodUsageCard } from "@/components/usage-card";
-import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
 import { Gantt } from "@/components/viz/gantt2";
 import Heatmap from "@/components/viz/heatmap";
+import { UsageChart } from "@/components/viz/usage-chart";
 import { useAlerts, useTag } from "@/hooks/use-refresh";
 import {
   useAppDurationsPerPeriod,
@@ -339,7 +339,7 @@ function TagUsageBarChartCard({
   });
   const { usages, tagUsage } = useMemo(() => {
     const usages = _(tag.apps)
-      .map((appId) => [appId, appUsages[appId]])
+      .map((appId) => [appId, appUsages[appId] ?? []])
       .fromPairs()
       .value();
     const tagUsage = _(usages).values().flatten().sumBy("duration") ?? 0;
@@ -349,12 +349,12 @@ function TagUsageBarChartCard({
   const children = useMemo(
     () => (
       <div className="aspect-video flex-1 mx-1 max-w-full">
-        <AppUsageBarChart
-          data={usages}
+        <UsageChart
+          usages={usages}
           period={period}
           start={start ?? interval.start}
           end={end ?? interval.end}
-          dateTimeFormatter={xAxisLabelFormatter}
+          xAxisFormatter={xAxisLabelFormatter}
           className="aspect-none"
           maxYIsPeriod
           barRadius={2}

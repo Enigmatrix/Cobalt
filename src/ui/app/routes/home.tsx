@@ -7,8 +7,8 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { TimePeriodUsageCard } from "@/components/usage-card";
-import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
 import { Gantt } from "@/components/viz/gantt2";
+import { UsageChart } from "@/components/viz/usage-chart";
 import {
   useAppDurationsPerPeriod,
   useAppSessionUsages,
@@ -115,12 +115,12 @@ function AppUsageBarChartCard({
   const children = useMemo(
     () => (
       <div className="aspect-video flex-1 mx-1 max-w-full">
-        <AppUsageBarChart
-          data={usages}
+        <UsageChart
+          usages={usages}
           period={period}
           start={start ?? interval.start}
           end={end ?? interval.end}
-          dateTimeFormatter={xAxisLabelFormatter}
+          xAxisFormatter={xAxisLabelFormatter}
           className="aspect-none"
           maxYIsPeriod
           animationsEnabled={false}

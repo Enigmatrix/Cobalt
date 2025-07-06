@@ -24,7 +24,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Text } from "@/components/ui/text";
-import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
+import { UsageChart } from "@/components/viz/usage-chart";
 import { useHistoryRef, useHistoryState } from "@/hooks/use-history-state";
 import { useApps, useTags } from "@/hooks/use-refresh";
 import { useAppDurationsPerPeriod } from "@/hooks/use-repo";
@@ -263,7 +263,7 @@ function TagListItem({
   const apps = useApps(tag.apps);
   const usagesFiltered = useMemo(() => {
     return _(apps)
-      .map((app) => [app.id, usages[app.id]])
+      .map((app) => [app.id, usages[app.id] ?? []])
       .fromPairs()
       .value();
   }, [usages, apps]);
@@ -311,12 +311,12 @@ function TagListItem({
 
       {tag.usages.today > 0 ? (
         <>
-          <AppUsageBarChart
+          <UsageChart
             hideXAxis
             hideYAxis
             gradientBars
             maxYIsPeriod
-            data={usagesFiltered}
+            usages={usagesFiltered}
             start={start}
             end={end}
             period="hour"

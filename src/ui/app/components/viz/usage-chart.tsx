@@ -178,6 +178,14 @@ export function UsageChart({
   const tags = useAppState((state) => state.tags);
   const { handleStaleApps, handleStaleTags } = useRefresh();
 
+  const hasAnyHighlighted = useMemo(() => {
+    if (!highlightedApps && !highlightedTags) return false;
+    return (
+      Object.values(highlightedApps ?? {}).some((v) => v) ||
+      Object.values(highlightedTags ?? {}).some((v) => v)
+    );
+  }, [highlightedApps, highlightedTags]);
+
   // Get the x-axis values and a lookup from datetime tick to index
   const [xAxisValues, xAxisTickToIndexLookup] = useMemo(() => {
     const xAxisValues = getDateTimeRangePerPeriod(start, end, period);
@@ -299,7 +307,10 @@ export function UsageChart({
         data: kv.values,
 
         itemStyle: {
-          opacity: (isHighlighted ?? true) ? undefined : unhighlightedOpacity,
+          opacity:
+            (isHighlighted ?? !hasAnyHighlighted)
+              ? undefined
+              : unhighlightedOpacity,
           borderRadius: barRadius ?? 2,
           color: !gradientBars
             ? color
@@ -357,6 +368,7 @@ export function UsageChart({
     barRadius,
     gradientBars,
     onlyShowOneAppId,
+    hasAnyHighlighted,
   ]);
 
   useEffect(() => {

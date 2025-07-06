@@ -18,8 +18,8 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
 import { Gantt } from "@/components/viz/gantt2";
+import { UsageChart } from "@/components/viz/usage-chart";
 import { VerticalLegend } from "@/components/viz/vertical-legend";
 import {
   useAppDurationsPerPeriod,
@@ -212,16 +212,16 @@ function AppUsagePerPeriodHistory() {
       </div>
 
       <div className="flex flex-1 min-h-0 overflow-hidden rounded-lg bg-card shadow-xs border border-border">
-        <AppUsageBarChart
-          data={appUsages}
+        <UsageChart
+          usages={appUsages}
           period={loadPeriod ?? period}
           start={start ?? interval?.start ?? DateTime.now()}
           end={end ?? interval?.end ?? DateTime.now()}
           className="flex-1 h-full min-w-[400px] p-2"
           maxYIsPeriod={maxYIsPeriod}
-          interval={yAxisInterval}
+          yAxisInterval={yAxisInterval}
           animationsEnabled={false}
-          hideApps={uncheckedApps}
+          hiddenApps={uncheckedApps}
           barRadius={3}
         />
 
