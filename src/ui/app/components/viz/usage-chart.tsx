@@ -7,7 +7,12 @@ import { UsageTooltipContent } from "@/components/viz/usage-tooltip";
 import { useRefresh } from "@/hooks/use-refresh";
 import { getVarColorAsHex, scaleColor } from "@/lib/color-utils";
 import type { App, Ref, Tag, WithGroupedDuration } from "@/lib/entities";
-import { untagged, useAppState, type EntityMap } from "@/lib/state";
+import {
+  untagged,
+  untaggedIdMarker,
+  useAppState,
+  type EntityMap,
+} from "@/lib/state";
 import {
   dateTimeToTicks,
   durationToTicks,
@@ -32,7 +37,7 @@ interface UsageChartProps {
   end: DateTime;
   period: Period;
   // Group apps by tag
-  groupBy?: "tag" | "tag-show-untagged";
+  groupBy?: GroupBy;
 
   /**
    * Highlighting / Hiding / Sorting.
@@ -77,6 +82,8 @@ interface UsageMarkerLine {
   color?: string;
   type?: "dashed" | "solid";
 }
+
+export type GroupBy = "app" | "tag" | "tag-show-untagged";
 
 export interface AppFullKey {
   key: "app";
@@ -133,7 +140,7 @@ export function UsageChart({
   end,
   period,
   // Group apps by tag
-  groupBy,
+  groupBy = "app",
 
   /// Highlighting / Hiding
   highlightedApps,
@@ -214,7 +221,7 @@ export function UsageChart({
       }));
 
     // Default grouping is none - just return the apps
-    if (!groupBy) {
+    if (groupBy === "app") {
       return appKeys.value();
     }
 
@@ -396,13 +403,17 @@ export function UsageChart({
               const data: FullValue<{ duration: number }>[] =
                 params.seriesData.map((series) => {
                   const duration = (series.data as DataItem)[1];
-                  const [key, idStr] = series.seriesId!.split("-");
+                  const [key, idStr] = series.seriesId!.split("-", 2);
                   if (key === "app") {
                     const id = +idStr as Ref<App>;
                     return { key, app: apps[id]!, duration };
                   } else if (key === "tag") {
                     const id = +idStr as Ref<Tag>;
-                    return { key, tag: tags[id]!, duration };
+                    const tag =
+                      series.seriesId === untaggedIdMarker
+                        ? untagged
+                        : tags[id]!;
+                    return { key, tag, duration };
                   } else {
                     throw new Error("Invalid key: " + key);
                   }
@@ -511,7 +522,7 @@ export function UsageChart({
     });
 
     chart.on("mousemove", (params) => {
-      const [keyStr, idStr] = params.seriesId!.split("-");
+      const [keyStr, idStr] = params.seriesId!.split("-", 2);
       const ticks = +params.name;
       const at = ticksToDateTime(ticks);
 
@@ -520,7 +531,10 @@ export function UsageChart({
         const id = +idStr as Ref<App>;
         key = { key: "app", id };
       } else if (keyStr === "tag") {
-        const id = +idStr as Ref<Tag>;
+        const id =
+          params.seriesId === untaggedIdMarker
+            ? untagged.id
+            : (+idStr as Ref<Tag>);
         key = { key: "tag", id };
       }
       setHoveredData((hoverData) => ({

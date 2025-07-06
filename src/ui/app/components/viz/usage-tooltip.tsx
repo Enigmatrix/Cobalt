@@ -11,7 +11,7 @@ import type { ClassValue } from "clsx";
 import _ from "lodash";
 import { TagIcon } from "lucide-react";
 import type { DateTime } from "luxon";
-import { useMemo } from "react";
+import React, { useMemo } from "react";
 
 export function UsageTooltipContent({
   at,
@@ -97,7 +97,9 @@ export function UsageTooltipContent({
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 pt-1.5 border-t border-border">
           {fullData.slice(0, maximum).map((d) => {
             return (
-              <>
+              <React.Fragment
+                key={d.key === "app" ? "app-" + d.app.id : "tag-" + d.tag.id}
+              >
                 {d.key === "app" ? (
                   <AppRow
                     app={d.app}
@@ -117,7 +119,7 @@ export function UsageTooltipContent({
                   className="font-mono text-right font-medium tabular-nums text-muted-foreground shrink-0 min-w-fit"
                   ticks={d.duration}
                 />
-              </>
+              </React.Fragment>
             );
           })}
         </div>
