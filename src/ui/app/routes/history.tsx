@@ -210,7 +210,7 @@ function AppUsagePerPeriodHistory() {
               <SelectItem value={"app" as GroupBy}>Apps</SelectItem>
               <SelectItem value={"tag" as GroupBy}>Tags</SelectItem>
               <SelectItem value={"tag-show-untagged" as GroupBy}>
-                Tags (untagged seperate)
+                Tags (untagged separate)
               </SelectItem>
             </SelectContent>
           </Select>

@@ -165,94 +165,11 @@ export function UsageChart({
   // App/Tag State
   const apps = useAppState((state) => state.apps);
   const tags = useAppState((state) => state.tags);
-  const { handleStaleApps, handleStaleTags } = useRefresh();
 
-  const hasAnyHighlighted = useMemo(() => {
-    if (!highlightedApps && !highlightedTags) return false;
-    return (
-      Object.values(highlightedApps ?? {}).some((v) => v) ||
-      Object.values(highlightedTags ?? {}).some((v) => v)
-    );
-  }, [highlightedApps, highlightedTags]);
-
-  // Get the x-axis values and a lookup from datetime tick to index
-  const [xAxisValues, xAxisTickToIndexLookup] = useMemo(() => {
-    const xAxisValues = getDateTimeRangePerPeriod(start, end, period);
-    const xAxisTickToIndexLookup = Object.fromEntries(
-      xAxisValues.map((tick, index) => [tick, index]),
-    );
-    return [xAxisValues, xAxisTickToIndexLookup];
-  }, [start, end, period]);
-
-  const fullKeyValues = useMemo(() => {
-    const appKeys = _(Object.keys(usages))
-      // Map to apps
-      .map((id) => apps[id as unknown as Ref<App>])
-      .thru(handleStaleApps)
-      // Remove hidden apps
-      .filter((app) => !hiddenApps?.[app.id])
-      .map((app) => ({ key: "app", app }) as AppFullKey)
-      // Sort apps
-      .orderBy((key) => sortedApps?.indexOf(key.app.id) ?? -1, "desc")
-      .map((key) => ({
-        ...key,
-        values: usages[key.app.id]!.map(
-          (usage) =>
-            [xAxisTickToIndexLookup[usage.group], usage.duration] as DataItem,
-        ),
-      }));
-
-    // Default grouping is none - just return the apps
-    if (groupBy === "app") {
-      return appKeys.value();
-    }
-
-    return (
-      appKeys
-        .groupBy((key) => key.app.tagId)
-        .mapValues((apps, tagIdStr): FullKeyWith<{ values: DataItem[] }>[] => {
-          const tagId = tagIdStr === "null" ? null : (+tagIdStr as Ref<Tag>);
-
-          // If we're showing untagged as apps, return the apps
-          if (tagId === null && groupBy === "tag-show-untagged") {
-            return apps;
-          }
-
-          // Group usages by group for all apps in the tag, then sum the durations
-          const values = _(apps)
-            .map("values")
-            .flatten()
-            .groupBy(([group]) => group)
-            .map(
-              (durations, group) =>
-                [
-                  +group,
-                  durations.reduce((acc, [, duration]) => acc + duration, 0),
-                ] as DataItem,
-            )
-            .value();
-
-          const tag = tagId ? tags[tagId] : untagged;
-          return (
-            _([tag])
-              .thru(handleStaleTags)
-              // Remove hidden tags
-              .filter((tag) => !hiddenTags?.[tag.id])
-              .map((tag) => ({ key: "tag" as const, tag, values }))
-              .value()
-          );
-        })
-        .values()
-        .flatten()
-        // Sort tags. If the key is an app, we place it at the end, but don't change the sort order of the apps (stable sort)
-        .orderBy(
-          (key) =>
-            key.key === "tag" ? (sortedTags?.indexOf(key.tag.id) ?? -1) : -1,
-          "desc",
-        )
-        .value()
-    );
-  }, [
+  const { xAxisValues, data: fullKeyValues } = useUsageChartData({
+    start,
+    end,
+    period,
     usages,
     hiddenApps,
     hiddenTags,
@@ -261,10 +178,15 @@ export function UsageChart({
     groupBy,
     apps,
     tags,
-    handleStaleApps,
-    handleStaleTags,
-    xAxisTickToIndexLookup,
-  ]);
+  });
+
+  const hasAnyHighlighted = useMemo(() => {
+    if (!highlightedApps && !highlightedTags) return false;
+    return (
+      Object.values(highlightedApps ?? {}).some((v) => v) ||
+      Object.values(highlightedTags ?? {}).some((v) => v)
+    );
+  }, [highlightedApps, highlightedTags]);
 
   const fullKeyValuesWithHighlighted = useMemo(() => {
     return _(fullKeyValues)
@@ -555,4 +477,124 @@ export function UsageChart({
       </Tooltip>
     </div>
   );
+}
+
+function useUsageChartData({
+  start,
+  end,
+  period,
+  usages,
+  hiddenApps,
+  hiddenTags,
+  sortedApps,
+  sortedTags,
+  groupBy,
+  apps,
+  tags,
+}: {
+  start: DateTime;
+  end: DateTime;
+  period: Period;
+  usages: EntityMap<App, WithGroupedDuration<App>[]>;
+  hiddenApps?: Record<Ref<App>, boolean>;
+  hiddenTags?: Record<Ref<Tag>, boolean>;
+  sortedApps?: Ref<App>[];
+  sortedTags?: Ref<Tag>[];
+  groupBy: GroupBy;
+  apps: EntityMap<App, App>;
+  tags: EntityMap<Tag, Tag>;
+}) {
+  const { handleStaleApps, handleStaleTags } = useRefresh();
+
+  // Get the x-axis values and a lookup from datetime tick to index
+  const [xAxisValues, xAxisTickToIndexLookup] = useMemo(() => {
+    const xAxisValues = getDateTimeRangePerPeriod(start, end, period);
+    const xAxisTickToIndexLookup = Object.fromEntries(
+      xAxisValues.map((tick, index) => [tick, index]),
+    );
+    return [xAxisValues, xAxisTickToIndexLookup];
+  }, [start, end, period]);
+
+  const fullKeyValues = useMemo(() => {
+    const appKeys = _(Object.keys(usages))
+      // Map to apps
+      .map((id) => apps[id as unknown as Ref<App>])
+      .thru(handleStaleApps)
+      // Remove hidden apps
+      .filter((app) => !hiddenApps?.[app.id])
+      .map((app) => ({ key: "app", app }) as AppFullKey)
+      // Sort apps
+      .orderBy((key) => sortedApps?.indexOf(key.app.id) ?? -1, "desc")
+      .map((key) => ({
+        ...key,
+        values: usages[key.app.id]!.map(
+          (usage) =>
+            [xAxisTickToIndexLookup[usage.group], usage.duration] as DataItem,
+        ),
+      }));
+
+    // Default grouping is none - just return the apps
+    if (groupBy === "app") {
+      return appKeys.value();
+    }
+
+    return (
+      appKeys
+        .groupBy((key) => key.app.tagId)
+        .mapValues((apps, tagIdStr): FullKeyWith<{ values: DataItem[] }>[] => {
+          const tagId = tagIdStr === "null" ? null : (+tagIdStr as Ref<Tag>);
+
+          // If we're showing untagged as apps, return the apps
+          if (tagId === null && groupBy === "tag-show-untagged") {
+            return apps;
+          }
+
+          // Group usages by group for all apps in the tag, then sum the durations
+          const values = _(apps)
+            .map("values")
+            .flatten()
+            .groupBy(([group]) => group)
+            .map(
+              (durations, group) =>
+                [
+                  +group,
+                  durations.reduce((acc, [, duration]) => acc + duration, 0),
+                ] as DataItem,
+            )
+            .value();
+
+          const tag = tagId ? tags[tagId] : untagged;
+          return (
+            _([tag])
+              .thru(handleStaleTags)
+              // Remove hidden tags
+              .filter((tag) => !hiddenTags?.[tag.id])
+              .map((tag) => ({ key: "tag" as const, tag, values }))
+              .value()
+          );
+        })
+        .values()
+        .flatten()
+        // Sort tags. If the key is an app, we place it at the end, but don't change the sort order of the apps (stable sort)
+        .orderBy(
+          (key) =>
+            key.key === "tag" ? (sortedTags?.indexOf(key.tag.id) ?? -1) : -1,
+          "desc",
+        )
+        .value()
+    );
+  }, [
+    usages,
+    hiddenApps,
+    hiddenTags,
+    sortedApps,
+    sortedTags,
+    groupBy,
+    apps,
+    tags,
+    handleStaleApps,
+    handleStaleTags,
+    xAxisTickToIndexLookup,
+  ]);
+  return { xAxisValues, xAxisTickToIndexLookup, data: fullKeyValues };
 }
