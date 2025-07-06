@@ -155,7 +155,7 @@ type DataItem = [number, number];
 
 interface HoverData {
   at: DateTime;
-  hovered?: Key;
+  hovered?: FullValue<{ duration: number }>;
   data?: FullValue<{ duration: number }>[];
 }
 
@@ -554,18 +554,19 @@ export function UsageChart({
     chart.on("mousemove", (params) => {
       const ticks = +params.name;
       const at = ticksToDateTime(ticks);
-      const key = stringToKey(params.seriesId!);
+      const duration = (params.data as DataItem)[1];
+      const key = stringToFullKey(params.seriesId!, apps, tags);
 
       setHoveredData((hoverData) => ({
         ...hoverData,
         at,
-        hovered: key,
+        hovered: { ...key, duration },
       }));
 
       onHover?.({
-        key,
+        key: stringToKey(params.seriesId!),
         group: ticks,
-        duration: (params.value as DataItem)[1],
+        duration,
       });
     });
 
