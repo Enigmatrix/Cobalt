@@ -1,5 +1,6 @@
 import { htmlImgElement, tagIconUrlStatic } from "@/components/app/app-icon";
 import { Tooltip } from "@/components/viz/tooltip";
+import { UsageTooltipContent } from "@/components/viz/usage-tooltip";
 import { useRefresh } from "@/hooks/use-refresh";
 import { getVarColorAsHex, scaleColor } from "@/lib/color-utils";
 import type { App, Ref, Tag, WithGroupedDuration } from "@/lib/entities";
@@ -536,6 +537,8 @@ export function UsageChart({
     };
   }, [
     series,
+    apps,
+    tags,
     xAxisValues,
     animationsEnabled,
     hideXAxis,
@@ -551,15 +554,14 @@ export function UsageChart({
   return (
     <div ref={chartRef} className={cn("w-full h-full", className)}>
       <Tooltip targetRef={chartRef} show={!!hoveredData}>
-        <div>{JSON.stringify(hoveredData)}</div>
-        {/* <AppUsageChartTooltipContent
-          hoveredAppId={hoveredData?.hoveredApp ?? null}
-          singleAppId={onlyShowOneAppId}
-          payload={hoveredData?.data ?? []}
-          dt={hoveredData?.at ?? DateTime.fromSeconds(0)}
-          maximumApps={10}
-          highlightedAppIds={highlightedApps}
-        /> */}
+        <UsageTooltipContent
+          at={hoveredData?.at ?? undefined}
+          data={hoveredData?.data ?? undefined}
+          hovered={hoveredData?.hovered ?? undefined}
+          maximum={10}
+          highlightedApps={highlightedApps}
+          highlightedTags={highlightedTags}
+        />
       </Tooltip>
     </div>
   );
