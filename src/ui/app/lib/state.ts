@@ -71,6 +71,8 @@ export const untagged: Tag = {
   },
 };
 
+export const untaggedIdMarker = "tag-" + untagged.id;
+
 // Entity store with T|undefined values. This is because
 // the store can be stale.
 export type EntityStore<T> = Record<Ref<T>, T | undefined>;

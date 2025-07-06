@@ -22,7 +22,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Text } from "@/components/ui/text";
-import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
+import { UsageChart } from "@/components/viz/usage-chart";
 import { useHistoryRef, useHistoryState } from "@/hooks/use-history-state";
 import { useApps, useTag } from "@/hooks/use-refresh";
 import { useAppDurationsPerPeriod } from "@/hooks/use-repo";
@@ -256,6 +256,10 @@ function AppListItem({
 }) {
   const tag = useTag(app.tagId);
 
+  const appUsages = useMemo(() => {
+    return { [app.id]: usages[app.id] ?? [] };
+  }, [usages, app.id]);
+
   return (
     <NavLink
       to={`/apps/${app.id}`}
@@ -290,14 +294,14 @@ function AppListItem({
 
       {app.usages.today > 0 ? (
         <>
-          <AppUsageBarChart
+          <UsageChart
             hideXAxis
             hideYAxis
             gradientBars
             maxYIsPeriod
-            data={usages}
+            usages={appUsages}
             period="hour"
-            singleAppId={app.id}
+            onlyShowOneAppId
             start={start}
             end={end}
             className="w-48 flex-none aspect-none h-20"

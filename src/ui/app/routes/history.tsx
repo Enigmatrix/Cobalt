@@ -18,8 +18,8 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { AppUsageBarChart } from "@/components/viz/app-usage-chart";
 import { Gantt } from "@/components/viz/gantt2";
+import { UsageChart, type GroupBy } from "@/components/viz/usage-chart";
 import { VerticalLegend } from "@/components/viz/vertical-legend";
 import {
   useAppDurationsPerPeriod,
@@ -184,6 +184,8 @@ function AppUsagePerPeriodHistory() {
     {},
   );
 
+  const [groupBy, setGroupBy] = useState<GroupBy>("app");
+
   return (
     <div className="flex flex-col flex-1 gap-6 overflow-hidden">
       <div className="flex flex-wrap gap-6 items-center rounded-lg bg-card border border-border p-4 shadow-xs">
@@ -193,6 +195,26 @@ function AppUsagePerPeriodHistory() {
         </div>
         {isLoading && <Loader2 className="animate-spin w-4 h-4" />}
         <div className="flex-1 md:min-w-0" />
+        <FormItem>
+          <Label className="font-medium text-muted-foreground place-self-end">
+            View
+          </Label>
+          <Select
+            value={groupBy}
+            onValueChange={(s) => setGroupBy(s as GroupBy)}
+          >
+            <SelectTrigger className="min-w-32 font-medium">
+              <SelectValue placeholder="Select a view" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={"app" as GroupBy}>Apps</SelectItem>
+              <SelectItem value={"tag" as GroupBy}>Tags</SelectItem>
+              <SelectItem value={"tag-show-untagged" as GroupBy}>
+                Tags (untagged separate)
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </FormItem>
         <FormItem>
           <Label className="font-medium text-muted-foreground place-self-end">
             Period
@@ -212,16 +234,17 @@ function AppUsagePerPeriodHistory() {
       </div>
 
       <div className="flex flex-1 min-h-0 overflow-hidden rounded-lg bg-card shadow-xs border border-border">
-        <AppUsageBarChart
-          data={appUsages}
+        <UsageChart
+          usages={appUsages}
           period={loadPeriod ?? period}
           start={start ?? interval?.start ?? DateTime.now()}
           end={end ?? interval?.end ?? DateTime.now()}
           className="flex-1 h-full min-w-[400px] p-2"
           maxYIsPeriod={maxYIsPeriod}
-          interval={yAxisInterval}
+          yAxisInterval={yAxisInterval}
           animationsEnabled={false}
-          hideApps={uncheckedApps}
+          hiddenApps={uncheckedApps}
+          groupBy={groupBy}
           barRadius={3}
         />
 
