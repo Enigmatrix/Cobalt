@@ -1,13 +1,13 @@
 import AppIcon from "@/components/app/app-icon";
 import { ScoreCircle } from "@/components/tag/score";
-import { DurationText } from "@/components/time/duration-text";
-import { DateTimeText } from "@/components/time/time-text";
-import { Text } from "@/components/ui/text";
 import {
   fullKeyToString,
   type FullKey,
-  type FullValue,
-} from "@/components/viz/usage-chart";
+  type FullKeyWithDuration,
+} from "@/components/target-keys";
+import { DurationText } from "@/components/time/duration-text";
+import { DateTimeText } from "@/components/time/time-text";
+import { Text } from "@/components/ui/text";
 import type { App, Ref, Tag } from "@/lib/entities";
 import { cn } from "@/lib/utils";
 import type { ClassValue } from "clsx";
@@ -26,8 +26,8 @@ export function UsageTooltipContent({
   className,
 }: {
   at?: DateTime;
-  data?: FullValue<{ duration: number }>[];
-  hovered?: FullValue<{ duration: number }>;
+  data?: FullKeyWithDuration[];
+  hovered?: FullKeyWithDuration;
   maximum: number;
   highlightedApps?: Record<Ref<App>, boolean>;
   highlightedTags?: Record<Ref<Tag>, boolean>;

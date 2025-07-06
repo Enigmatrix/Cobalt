@@ -2,18 +2,21 @@ import {
   appIconHtmlImgElement,
   tagIconUrlStatic,
 } from "@/components/app/app-icon";
+import {
+  fullKeyToString,
+  stringToFullKey,
+  stringToKey,
+  type AppFullKey,
+  type FullKeyWith,
+  type FullKeyWithDuration,
+  type KeyWith,
+} from "@/components/target-keys";
 import { Tooltip } from "@/components/viz/tooltip";
 import { UsageTooltipContent } from "@/components/viz/usage-tooltip";
 import { useRefresh } from "@/hooks/use-refresh";
 import { getVarColorAsHex, scaleColor } from "@/lib/color-utils";
 import type { App, Ref, Tag, WithGroupedDuration } from "@/lib/entities";
-import {
-  untagged,
-  untaggedIdMarker,
-  useAppState,
-  type EntityMap,
-  type EntityStore,
-} from "@/lib/state";
+import { untagged, useAppState, type EntityMap } from "@/lib/state";
 import {
   dateTimeToTicks,
   durationToTicks,
@@ -76,7 +79,7 @@ interface UsageChartProps {
   markerLines?: UsageMarkerLine[];
 
   /// Callbacks
-  onHover?: (data?: { key: Key; group: number; duration: number }) => void;
+  onHover?: (data?: KeyWith<{ group: number; duration: number }>) => void;
 }
 
 interface UsageMarkerLine {
@@ -87,76 +90,13 @@ interface UsageMarkerLine {
 
 export type GroupBy = "app" | "tag" | "tag-show-untagged";
 
-export interface AppFullKey {
-  key: "app";
-  app: App;
-}
-export interface TagFullKey {
-  key: "tag";
-  tag: Tag;
-}
-export type FullKey = AppFullKey | TagFullKey;
-
-export interface AppKey {
-  key: "app";
-  id: Ref<App>;
-}
-export interface TagKey {
-  key: "tag";
-  id: Ref<Tag>;
-}
-export type Key = AppKey | TagKey;
-
-export function keyToString(key: Key) {
-  return key.key === "app" ? "app-" + key.id : "tag-" + key.id;
-}
-
-export function fullKeyToString(key: FullKey) {
-  return key.key === "app" ? "app-" + key.app.id : "tag-" + key.tag.id;
-}
-
-export function stringToKey(str: string): Key {
-  const [key, idStr] = str.split("-", 2);
-  if (key === "app") {
-    return { key: "app", id: +idStr as Ref<App> };
-  } else if (key === "tag") {
-    if (str === untaggedIdMarker) {
-      return { key: "tag", id: untagged.id };
-    } else {
-      return { key: "tag", id: +idStr as Ref<Tag> };
-    }
-  }
-  throw new Error("Invalid key: " + str);
-}
-
-export function stringToFullKey(
-  str: string,
-  apps: EntityStore<App>,
-  tags: EntityStore<Tag>,
-): FullKey {
-  const [key, idStr] = str.split("-", 2);
-  if (key === "app") {
-    return { key: "app", app: apps[+idStr as Ref<App>]! };
-  } else if (key === "tag") {
-    if (str === untaggedIdMarker) {
-      return { key: "tag", tag: untagged };
-    } else {
-      return { key: "tag", tag: tags[+idStr as Ref<Tag>]! };
-    }
-  }
-  throw new Error("Invalid key: " + str);
-}
-
-export type FullValue<T> = FullKey & T;
-export type Value<T> = Key & T;
-
 // group tick index, duration
 type DataItem = [number, number];
 
 interface HoverData {
   at: DateTime;
-  hovered?: FullValue<{ duration: number }>;
-  data?: FullValue<{ duration: number }>[];
+  hovered?: FullKeyWithDuration;
+  data?: FullKeyWithDuration[];
 }
 
 // Get range of datetimes for the period, and convert to ticks
@@ -270,7 +210,7 @@ export function UsageChart({
     return (
       appKeys
         .groupBy((key) => key.app.tagId)
-        .mapValues((apps, tagIdStr): FullValue<{ values: DataItem[] }>[] => {
+        .mapValues((apps, tagIdStr): FullKeyWith<{ values: DataItem[] }>[] => {
           const tagId = tagIdStr === "null" ? null : (+tagIdStr as Ref<Tag>);
 
           // If we're showing untagged as apps, return the apps
@@ -442,12 +382,13 @@ export function UsageChart({
             show: false,
             formatter: (params) => {
               const at = ticksToDateTime(+params.value);
-              const data: FullValue<{ duration: number }>[] =
-                params.seriesData.map((series) => {
+              const data: FullKeyWithDuration[] = params.seriesData.map(
+                (series) => {
                   const duration = (series.data as DataItem)[1];
                   const key = stringToFullKey(series.seriesId!, apps, tags);
                   return { ...key, duration };
-                });
+                },
+              );
               setHoveredData((hoverData) => ({
                 ...(hoverData ?? {}),
                 at,
@@ -564,7 +505,7 @@ export function UsageChart({
       }));
 
       onHover?.({
-        key: stringToKey(params.seriesId!),
+        ...stringToKey(params.seriesId!),
         group: ticks,
         duration,
       });
