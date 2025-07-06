@@ -1,4 +1,4 @@
-import { htmlImgElement } from "@/components/app/app-icon";
+import { appIconHtmlImgElement } from "@/components/app/app-icon";
 import { useTheme } from "@/components/theme-provider";
 import { AppUsageChartTooltipContent } from "@/components/viz/app-usage-chart-tooltip";
 import { Tooltip } from "@/components/viz/tooltip";
@@ -244,7 +244,7 @@ export function AppUsageBarChart({
             show: !singleAppId,
             position: "inside",
             backgroundColor: {
-              image: htmlImgElement(app.icon),
+              image: appIconHtmlImgElement(app.icon),
             },
             formatter: () => {
               return `{empty|}`;

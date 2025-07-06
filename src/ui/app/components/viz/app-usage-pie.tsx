@@ -1,4 +1,4 @@
-import { htmlImgElement } from "@/components/app/app-icon";
+import { appIconHtmlImgElement } from "@/components/app/app-icon";
 import { useTheme } from "@/components/theme-provider";
 import { AppUsageChartTooltipContent } from "@/components/viz/app-usage-chart-tooltip";
 import { TagUsageChartTooltipContent } from "@/components/viz/tag-usage-chart-tooltip";
@@ -217,7 +217,7 @@ export function AppUsagePieChart({
                 rotate: 0,
                 position: "middle",
                 backgroundColor: {
-                  image: htmlImgElement(app.icon),
+                  image: appIconHtmlImgElement(app.icon),
                 },
                 formatter: () => {
                   return `{empty|}`;

@@ -19,7 +19,7 @@ function appIconUrl(appIcon?: string) {
   return convertFileSrc(`${iconsDir}/${fileName}`);
 }
 
-export function htmlImgElement(appIcon?: string): HTMLImageElement {
+export function appIconHtmlImgElement(appIcon?: string): HTMLImageElement {
   const img = new Image();
   img.src = appIconUrl(appIcon) ?? DEFAULT_ICON_SVG_URL;
   img.onerror = () => {

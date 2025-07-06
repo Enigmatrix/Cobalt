@@ -1,4 +1,7 @@
-import { htmlImgElement, tagIconUrlStatic } from "@/components/app/app-icon";
+import {
+  appIconHtmlImgElement,
+  tagIconUrlStatic,
+} from "@/components/app/app-icon";
 import { Tooltip } from "@/components/viz/tooltip";
 import { UsageTooltipContent } from "@/components/viz/usage-tooltip";
 import { useRefresh } from "@/hooks/use-refresh";
@@ -332,7 +335,7 @@ export function UsageChart({
           backgroundColor: {
             image:
               kv.key === "app"
-                ? htmlImgElement(kv.app.icon)
+                ? appIconHtmlImgElement(kv.app.icon)
                 : tagIconUrlStatic(
                     `color-mix(in srgb, ${kv.tag.color} 65%, black)`,
                   ),
