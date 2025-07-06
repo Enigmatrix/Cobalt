@@ -3,9 +3,14 @@ import { ScoreCircle } from "@/components/tag/score";
 import { DurationText } from "@/components/time/duration-text";
 import { DateTimeText } from "@/components/time/time-text";
 import { Text } from "@/components/ui/text";
-import type { FullValue, Key } from "@/components/viz/usage-chart";
+import {
+  fullKeyToString,
+  type FullValue,
+  type Key,
+} from "@/components/viz/usage-chart";
 import { useApp, useTag } from "@/hooks/use-refresh";
 import type { App, Ref, Tag } from "@/lib/entities";
+import { untagged } from "@/lib/state";
 import { cn } from "@/lib/utils";
 import type { ClassValue } from "clsx";
 import _ from "lodash";
@@ -61,13 +66,13 @@ export function UsageTooltipContent({
   const fullData = useMemo(() => {
     return _(data)
       .orderBy("duration", "desc")
-      .orderBy(
-        (d) =>
-          d.key === "app"
-            ? (highlightedApps?.[d.app.id] ?? true)
-            : (highlightedTags?.[d.tag.id] ?? true),
-        "desc",
-      )
+      .orderBy((kv) => {
+        const isHighlighted =
+          kv.key === "app"
+            ? highlightedApps?.[kv.app.id]
+            : highlightedTags?.[kv.tag.id];
+        return isHighlighted ? 0 : 1;
+      })
       .value();
   }, [data, highlightedApps, highlightedTags]);
 
@@ -97,9 +102,7 @@ export function UsageTooltipContent({
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 pt-1.5 border-t border-border">
           {fullData.slice(0, maximum).map((d) => {
             return (
-              <React.Fragment
-                key={d.key === "app" ? "app-" + d.app.id : "tag-" + d.tag.id}
-              >
+              <React.Fragment key={fullKeyToString(d)}>
                 {d.key === "app" ? (
                   <AppRow
                     app={d.app}
@@ -236,7 +239,10 @@ function TagDisplay({
   className?: ClassValue;
   at?: DateTime;
 }) {
-  const tag = useTag(id);
+  let tag = useTag(id);
+  if (id === untagged.id) {
+    tag = untagged;
+  }
   if (!tag) return null;
 
   return (

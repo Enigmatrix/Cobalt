@@ -12,6 +12,7 @@ import {
   untaggedIdMarker,
   useAppState,
   type EntityMap,
+  type EntityStore,
 } from "@/lib/state";
 import {
   dateTimeToTicks,
@@ -105,6 +106,46 @@ export interface TagKey {
   id: Ref<Tag>;
 }
 export type Key = AppKey | TagKey;
+
+export function keyToString(key: Key) {
+  return key.key === "app" ? "app-" + key.id : "tag-" + key.id;
+}
+
+export function fullKeyToString(key: FullKey) {
+  return key.key === "app" ? "app-" + key.app.id : "tag-" + key.tag.id;
+}
+
+export function stringToKey(str: string): Key {
+  const [key, idStr] = str.split("-", 2);
+  if (key === "app") {
+    return { key: "app", id: +idStr as Ref<App> };
+  } else if (key === "tag") {
+    if (str === untaggedIdMarker) {
+      return { key: "tag", id: untagged.id };
+    } else {
+      return { key: "tag", id: +idStr as Ref<Tag> };
+    }
+  }
+  throw new Error("Invalid key: " + str);
+}
+
+export function stringToFullKey(
+  str: string,
+  apps: EntityStore<App>,
+  tags: EntityStore<Tag>,
+): FullKey {
+  const [key, idStr] = str.split("-", 2);
+  if (key === "app") {
+    return { key: "app", app: apps[+idStr as Ref<App>]! };
+  } else if (key === "tag") {
+    if (str === untaggedIdMarker) {
+      return { key: "tag", tag: untagged };
+    } else {
+      return { key: "tag", tag: tags[+idStr as Ref<Tag>]! };
+    }
+  }
+  throw new Error("Invalid key: " + str);
+}
 
 export type FullValue<T> = FullKey & T;
 export type Value<T> = Key & T;
@@ -299,7 +340,7 @@ export function UsageChart({
 
   const series = useMemo(() => {
     return fullKeyValuesWithHighlighted.map((kv) => {
-      const id = kv.key === "app" ? "app-" + kv.app.id : "tag-" + kv.tag.id;
+      const id = fullKeyToString(kv);
       const name = kv.key === "app" ? kv.app.name : kv.tag.name;
       const color = kv.key === "app" ? kv.app.color : kv.tag.color;
       const isHighlighted =
@@ -404,20 +445,8 @@ export function UsageChart({
               const data: FullValue<{ duration: number }>[] =
                 params.seriesData.map((series) => {
                   const duration = (series.data as DataItem)[1];
-                  const [key, idStr] = series.seriesId!.split("-", 2);
-                  if (key === "app") {
-                    const id = +idStr as Ref<App>;
-                    return { key, app: apps[id]!, duration };
-                  } else if (key === "tag") {
-                    const id = +idStr as Ref<Tag>;
-                    const tag =
-                      series.seriesId === untaggedIdMarker
-                        ? untagged
-                        : tags[id]!;
-                    return { key, tag, duration };
-                  } else {
-                    throw new Error("Invalid key: " + key);
-                  }
+                  const key = stringToFullKey(series.seriesId!, apps, tags);
+                  return { ...key, duration };
                 });
               setHoveredData((hoverData) => ({
                 ...(hoverData ?? {}),
@@ -523,21 +552,10 @@ export function UsageChart({
     });
 
     chart.on("mousemove", (params) => {
-      const [keyStr, idStr] = params.seriesId!.split("-", 2);
       const ticks = +params.name;
       const at = ticksToDateTime(ticks);
+      const key = stringToKey(params.seriesId!);
 
-      let key: Key | undefined;
-      if (keyStr === "app") {
-        const id = +idStr as Ref<App>;
-        key = { key: "app", id };
-      } else if (keyStr === "tag") {
-        const id =
-          params.seriesId === untaggedIdMarker
-            ? untagged.id
-            : (+idStr as Ref<Tag>);
-        key = { key: "tag", id };
-      }
       setHoveredData((hoverData) => ({
         ...hoverData,
         at,
@@ -545,7 +563,7 @@ export function UsageChart({
       }));
 
       onHover?.({
-        key: key!,
+        key,
         group: ticks,
         duration: (params.value as DataItem)[1],
       });
