@@ -94,8 +94,8 @@ export interface TagKey {
 }
 export type Key = AppKey | TagKey;
 
-export type FullValues<T> = FullKey & T;
-export type Values<T> = Key & T;
+export type FullValue<T> = FullKey & T;
+export type Value<T> = Key & T;
 
 // group tick index, duration
 type DataItem = [number, number];
@@ -103,7 +103,7 @@ type DataItem = [number, number];
 interface HoverData {
   at: DateTime;
   hovered?: Key;
-  data?: Values<{ duration: number }>[];
+  data?: FullValue<{ duration: number }>[];
 }
 
 // Get range of datetimes for the period, and convert to ticks
@@ -209,7 +209,7 @@ export function UsageChart({
     return (
       appKeys
         .groupBy((key) => key.app.tagId)
-        .mapValues((apps, tagIdStr): FullValues<{ values: DataItem[] }>[] => {
+        .mapValues((apps, tagIdStr): FullValue<{ values: DataItem[] }>[] => {
           const tagId = tagIdStr === "null" ? null : (+tagIdStr as Ref<Tag>);
 
           // If we're showing untagged as apps, return the apps
@@ -377,16 +377,16 @@ export function UsageChart({
             show: false,
             formatter: (params) => {
               const at = ticksToDateTime(+params.value);
-              const data: Values<{ duration: number }>[] =
+              const data: FullValue<{ duration: number }>[] =
                 params.seriesData.map((series) => {
                   const duration = (series.data as DataItem)[1];
                   const [key, idStr] = series.seriesId!.split("-");
                   if (key === "app") {
                     const id = +idStr as Ref<App>;
-                    return { key, id, duration };
+                    return { key, app: apps[id]!, duration };
                   } else if (key === "tag") {
                     const id = +idStr as Ref<Tag>;
-                    return { key, id, duration };
+                    return { key, tag: tags[id]!, duration };
                   } else {
                     throw new Error("Invalid key: " + key);
                   }
