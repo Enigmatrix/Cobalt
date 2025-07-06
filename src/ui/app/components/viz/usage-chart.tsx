@@ -1,4 +1,5 @@
 import { htmlImgElement, tagIconUrlStatic } from "@/components/app/app-icon";
+import { Tooltip } from "@/components/viz/tooltip";
 import { useRefresh } from "@/hooks/use-refresh";
 import { getVarColorAsHex, scaleColor } from "@/lib/color-utils";
 import type { App, Ref, Tag, WithGroupedDuration } from "@/lib/entities";
@@ -15,8 +16,8 @@ import { cn } from "@/lib/utils";
 import type { ClassValue } from "clsx";
 import * as echarts from "echarts";
 import _ from "lodash";
-import type { DateTime, Duration } from "luxon";
-import { useEffect, useMemo, useRef } from "react";
+import { DateTime, type Duration } from "luxon";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 interface UsageChartProps {
   className?: ClassValue;
@@ -64,7 +65,7 @@ interface UsageChartProps {
   markerLines?: UsageMarkerLine[];
 
   /// Callbacks
-  onHover?: (data?: WithGroupedDuration<FullKey>) => void;
+  onHover?: (data?: { key: Key; group: number; duration: number }) => void;
 }
 
 interface UsageMarkerLine {
@@ -73,20 +74,37 @@ interface UsageMarkerLine {
   type?: "dashed" | "solid";
 }
 
-interface AppFullKey {
+export interface AppFullKey {
   key: "app";
   app: App;
 }
-interface TagFullKey {
+export interface TagFullKey {
   key: "tag";
   tag: Tag;
 }
-type FullKey = AppFullKey | TagFullKey;
+export type FullKey = AppFullKey | TagFullKey;
 
-type FullValues<T> = FullKey & { values: T };
+export interface AppKey {
+  key: "app";
+  id: Ref<App>;
+}
+export interface TagKey {
+  key: "tag";
+  id: Ref<Tag>;
+}
+export type Key = AppKey | TagKey;
+
+export type FullValues<T> = FullKey & T;
+export type Values<T> = Key & T;
 
 // group tick index, duration
 type DataItem = [number, number];
+
+interface HoverData {
+  at: DateTime;
+  hovered?: Key;
+  data?: Values<{ duration: number }>[];
+}
 
 // Get range of datetimes for the period, and convert to ticks
 function getDateTimeRangePerPeriod(
@@ -144,9 +162,14 @@ export function UsageChart({
   /// Callbacks
   onHover,
 }: UsageChartProps) {
+  // ECharts instance
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstanceRef = useRef<echarts.ECharts | null>(null);
 
+  // Hover
+  const [hoveredData, setHoveredData] = useState<HoverData | null>(null);
+
+  // App/Tag State
   const apps = useAppState((state) => state.apps);
   const tags = useAppState((state) => state.tags);
   const { handleStaleApps, handleStaleTags } = useRefresh();
@@ -186,7 +209,7 @@ export function UsageChart({
     return (
       appKeys
         .groupBy((key) => key.app.tagId)
-        .mapValues((apps, tagIdStr): FullValues<DataItem[]>[] => {
+        .mapValues((apps, tagIdStr): FullValues<{ values: DataItem[] }>[] => {
           const tagId = tagIdStr === "null" ? null : (+tagIdStr as Ref<Tag>);
 
           // If we're showing untagged as apps, return the apps
@@ -350,20 +373,32 @@ export function UsageChart({
         axisPointer: {
           type: "shadow",
 
-          // TODO: Hover
-          // label: {
-          //   show: false,
-          //   formatter: (params) => {
-          //     const seriesValues: EntityMap<App, number> = Object.fromEntries(
-          //       params.seriesData.map(
-          //         (v) =>
-          //           [+v.seriesId!, (v.value as [number, number])[1]] as const,
-          //       ),
-          //     );
-          //     setHoverSeries(seriesValues);
-          //     return "";
-          //   },
-          // },
+          label: {
+            show: false,
+            formatter: (params) => {
+              const at = ticksToDateTime(+params.value);
+              const data: Values<{ duration: number }>[] =
+                params.seriesData.map((series) => {
+                  const duration = (series.data as DataItem)[1];
+                  const [key, idStr] = series.seriesId!.split("-");
+                  if (key === "app") {
+                    const id = +idStr as Ref<App>;
+                    return { key, id, duration };
+                  } else if (key === "tag") {
+                    const id = +idStr as Ref<Tag>;
+                    return { key, id, duration };
+                  } else {
+                    throw new Error("Invalid key: " + key);
+                  }
+                });
+              setHoveredData((hoverData) => ({
+                ...(hoverData ?? {}),
+                at,
+                data,
+              }));
+              return "";
+            },
+          },
         },
         formatter() {
           // disables echarts tooltip
@@ -445,35 +480,45 @@ export function UsageChart({
       ],
     } satisfies echarts.EChartsOption;
 
-    // TODO: Hover
+    chart.getZr().on("mousemove", (params) => {
+      const pos = [params.offsetX, params.offsetY];
+      const isInGrid = chart.containPixel("grid", pos);
+      if (isInGrid) {
+        const pointerData = chart.convertFromPixel("grid", pos);
+        setHoveredData({
+          at: ticksToDateTime(xAxisValues[pointerData[0]]),
+        });
+      } else if (!isInGrid) {
+        setHoveredData(null);
+        onHover?.(undefined);
+      }
+    });
 
-    // chart.getZr().on("mousemove", (params) => {
-    //   const pos = [params.offsetX, params.offsetY];
-    //   const isInGrid = chart.containPixel("grid", pos);
-    //   if (isInGrid) {
-    //     const pointerData = chart.convertFromPixel("grid", pos);
-    //     setHoveredData({
-    //       date: ticksToDateTime(xaxisRange[pointerData[0]]),
-    //     });
-    //   } else if (!isInGrid) {
-    //     setHoveredData(null);
-    //     onHover?.(undefined);
-    //   }
-    // });
+    chart.on("mousemove", (params) => {
+      const [keyStr, idStr] = params.seriesId!.split("-");
+      const ticks = +params.name;
+      const at = ticksToDateTime(ticks);
 
-    // TODO: Hover
+      let key: Key | undefined;
+      if (keyStr === "app") {
+        const id = +idStr as Ref<App>;
+        key = { key: "app", id };
+      } else if (keyStr === "tag") {
+        const id = +idStr as Ref<Tag>;
+        key = { key: "tag", id };
+      }
+      setHoveredData((hoverData) => ({
+        ...hoverData,
+        at,
+        hovered: key,
+      }));
 
-    // chart.on("mousemove", (params) => {
-    //   const appId = +(params.seriesId ?? 0) as Ref<App>;
-    //   setHoveredData({ date: ticksToDateTime(+params.name), appId });
-    //   if (onHover) {
-    //     onHover({
-    //       id: appId,
-    //       duration: params.value as number,
-    //       group: params.axisValue as number,
-    //     });
-    //   }
-    // });
+      onHover?.({
+        key: key!,
+        group: ticks,
+        duration: (params.value as DataItem)[1],
+      });
+    });
 
     const resizeObserver = new ResizeObserver(() => {
       requestAnimationFrame(() => chart.resize());
@@ -505,17 +550,17 @@ export function UsageChart({
 
   return (
     <div ref={chartRef} className={cn("w-full h-full", className)}>
-      {/* TODO: Hover 
       <Tooltip targetRef={chartRef} show={!!hoveredData}>
-        <AppUsageChartTooltipContent
-          hoveredAppId={hoveredData?.appId ?? null}
-          singleAppId={singleAppId}
-          payload={hoverSeries}
-          dt={hoveredData?.date ?? DateTime.fromSeconds(0)}
+        <div>{JSON.stringify(hoveredData)}</div>
+        {/* <AppUsageChartTooltipContent
+          hoveredAppId={hoveredData?.hoveredApp ?? null}
+          singleAppId={onlyShowOneAppId}
+          payload={hoveredData?.data ?? []}
+          dt={hoveredData?.at ?? DateTime.fromSeconds(0)}
           maximumApps={10}
-          highlightedAppIds={highlightedAppIds}
-        />
-      </Tooltip> */}
+          highlightedAppIds={highlightedApps}
+        /> */}
+      </Tooltip>
     </div>
   );
 }
