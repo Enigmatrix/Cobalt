@@ -18,6 +18,7 @@ import {
   durationToTicks,
   periodToDuration,
   ticksToDateTime,
+  toHumanDateTime,
   toHumanDuration,
   type Period,
 } from "@/lib/time";
@@ -161,7 +162,7 @@ export function UsageChart({
   hideYAxis = false,
   gradientBars = false,
   barRadius,
-  xAxisFormatter,
+  xAxisFormatter = toHumanDateTime,
   // Whether the Y-axis maximum should equal the period duration
   maxYIsPeriod = false,
   // The interval between Y-axis ticks
@@ -447,7 +448,7 @@ export function UsageChart({
           padding: [6, 0, 0, 0],
           formatter: (value: string) => {
             const dt = ticksToDateTime(+value);
-            return xAxisFormatter?.(dt) ?? dt.toString();
+            return xAxisFormatter(dt);
           },
         },
         show: !hideXAxis,
