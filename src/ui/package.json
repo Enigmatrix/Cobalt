@@ -15,6 +15,7 @@
     "lint:fix": "eslint --fix"
   },
   "dependencies": {
+    "@floating-ui/react": "^0.27.13",
     "@hookform/resolvers": "^4.1.3",
     "@radix-ui/react-alert-dialog": "^1.1.14",
     "@radix-ui/react-checkbox": "^1.3.2",

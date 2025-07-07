@@ -199,7 +199,7 @@ function AppDisplay({
   return (
     <div className={cn("flex items-center gap-2 ml-2", className)}>
       <AppIcon appIcon={app.icon} className="w-6 h-6 shrink-0 mr-1" />
-      <div className="flex flex-col mr-2">
+      <div className="flex flex-col mr-4">
         <Text className="text-base max-w-52">{app.name}</Text>
         {at && (
           <DateTimeText
@@ -224,7 +224,7 @@ function TagDisplay({
   return (
     <div className={cn("flex items-center gap-2 ml-2", className)}>
       <TagIcon className="w-6 h-6 shrink-0 mr-1" style={{ color: tag.color }} />
-      <div className="flex flex-col mr-2">
+      <div className="flex flex-col mr-4">
         <div className="flex items-center gap-2">
           <Text className="text-base max-w-52">{tag.name}</Text>
           <ScoreCircle score={tag.score} />

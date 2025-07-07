@@ -1,6 +1,6 @@
 import { HScrollView } from "@/components/hscroll-view";
-import { Tooltip } from "@/components/viz/tooltip";
 import { UsageTooltipContent } from "@/components/viz/usage-tooltip";
+import { VizTooltip } from "@/components/viz/viz-tooltip";
 import { scaleColor } from "@/lib/color-utils";
 import type { App, Ref, Tag } from "@/lib/entities";
 import { useAppState } from "@/lib/state";
@@ -199,7 +199,7 @@ const Heatmap: React.FC<HeatmapProps> = ({
           {renderAxes()}
         </svg>
       </div>
-      <Tooltip targetRef={containerRef} show={tooltipData !== null}>
+      <VizTooltip targetRef={containerRef} show={tooltipData !== null}>
         <UsageTooltipContent
           at={tooltipData?.date ?? DateTime.fromSeconds(0)}
           showRows={false}
@@ -220,7 +220,7 @@ const Heatmap: React.FC<HeatmapProps> = ({
           }
           maximum={1}
         />
-      </Tooltip>
+      </VizTooltip>
     </HScrollView>
   );
 };

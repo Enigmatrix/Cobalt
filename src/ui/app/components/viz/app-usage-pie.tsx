@@ -4,8 +4,8 @@ import {
   stringToFullKey,
   type FullKeyWithDuration,
 } from "@/components/target-keys";
-import { Tooltip } from "@/components/viz/tooltip";
 import { UsageTooltipContent } from "@/components/viz/usage-tooltip";
+import { VizTooltip } from "@/components/viz/viz-tooltip";
 import { useRefresh } from "@/hooks/use-refresh";
 import type { App, Ref, Tag, WithDuration } from "@/lib/entities";
 import { untagged, useAppState, type EntityMap } from "@/lib/state";
@@ -325,7 +325,7 @@ export function AppUsagePieChart({
 
   return (
     <div ref={chartRef} className={cn("w-full h-full", className)}>
-      <Tooltip targetRef={chartRef} show={!!hoveredData}>
+      <VizTooltip targetRef={chartRef} show={!!hoveredData}>
         {hoveredData && (
           <UsageTooltipContent
             data={hoveredData.key === "app" ? appData : tagData}
@@ -336,7 +336,7 @@ export function AppUsagePieChart({
             totalDuration={totalDuration}
           />
         )}
-      </Tooltip>
+      </VizTooltip>
     </div>
   );
 }
