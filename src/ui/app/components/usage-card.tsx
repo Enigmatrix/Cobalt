@@ -1,9 +1,15 @@
 import { DurationText } from "@/components/time/duration-text";
 import { Button } from "@/components/ui/button";
+import {
+  VizCard,
+  VizCardAction,
+  VizCardContent,
+  VizCardHeader,
+  VizCardTitle,
+} from "@/components/viz/viz-card";
 import { useToday } from "@/hooks/use-time";
 import type { Interval, Period } from "@/lib/time";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import type { DateTime } from "luxon";
 import { useCallback, useMemo } from "react";
 
 export function UsageCard({
@@ -46,9 +52,9 @@ export function UsageCard({
   }, [interval, canGoPrev, prev, onIntervalChanged]);
 
   return (
-    <div className="flex flex-col rounded-xl bg-card border border-border">
-      <div className="flex items-center">
-        <div className="flex flex-col p-4 pb-1 min-w-0">
+    <VizCard>
+      <VizCardHeader className="pb-1">
+        <VizCardTitle className="pl-4 pt-4">
           <div className="whitespace-nowrap text-base text-card-foreground/50">
             {title(interval)}
           </div>
@@ -64,12 +70,9 @@ export function UsageCard({
               </>
             )}
           </div>
-        </div>
+        </VizCardTitle>
 
-        <div className="flex-1" />
-
-        {/* hide button controls between md: and lg: */}
-        <div className="flex m-2 max-lg:hidden max-md:block">
+        <VizCardAction className="flex mt-5 mr-2">
           <Button
             variant="ghost"
             size="icon"
@@ -86,11 +89,11 @@ export function UsageCard({
           >
             <ChevronRight />
           </Button>
-        </div>
-      </div>
+        </VizCardAction>
+      </VizCardHeader>
 
-      {children}
-    </div>
+      <VizCardContent>{children}</VizCardContent>
+    </VizCard>
   );
 }
 
