@@ -1,11 +1,14 @@
 import { appIconHtmlImgElement } from "@/components/app/app-icon";
-import { useTheme } from "@/components/theme-provider";
-import { AppUsageChartTooltipContent } from "@/components/viz/app-usage-chart-tooltip";
-import { TagUsageChartTooltipContent } from "@/components/viz/tag-usage-chart-tooltip";
+import {
+  fullKeyToString,
+  stringToFullKey,
+  type FullKeyWithDuration,
+} from "@/components/target-keys";
 import { Tooltip } from "@/components/viz/tooltip";
-import { useApps, useTags } from "@/hooks/use-refresh";
+import { UsageTooltipContent } from "@/components/viz/usage-tooltip";
+import { useRefresh } from "@/hooks/use-refresh";
 import type { App, Ref, Tag, WithDuration } from "@/lib/entities";
-import { untagged, type EntityMap } from "@/lib/state";
+import { untagged, useAppState, type EntityMap } from "@/lib/state";
 import { cn } from "@/lib/utils";
 import type { ClassValue } from "clsx";
 import * as echarts from "echarts";
@@ -31,113 +34,91 @@ interface AngleAxis {
 export interface AppUsagePieChartProps {
   data: EntityMap<App, WithDuration<App>>;
   // apps to highlight, order them by index in array. will be drawn left to right = top to bottom. unhighlighted apps will be drawn on top of highlighted apps.
-  highlightedAppIds?: Ref<App>[];
+  highlightedApps?: Record<Ref<App>, boolean>;
+  highlightedTags?: Record<Ref<Tag>, boolean>;
   unhighlightedAppOpacity?: number;
-  hideApps?: Record<Ref<App>, boolean>;
+  hiddenApps?: Record<Ref<App>, boolean>;
   animationsEnabled?: boolean;
 
   className?: ClassValue;
 
-  onAppHover?: (data?: Ref<App>) => void;
-  onTagHover?: (data?: Ref<Tag>) => void;
+  onHover?: (key?: FullKeyWithDuration) => void;
 }
 
 export function AppUsagePieChart({
   data,
-  highlightedAppIds,
+  highlightedApps,
+  highlightedTags,
   unhighlightedAppOpacity = 0.3,
-  hideApps,
+  hiddenApps,
   animationsEnabled = true,
   className,
-  onAppHover,
-  onTagHover,
+  onHover,
 }: AppUsagePieChartProps) {
-  const { theme } = useTheme();
+  const hasAnyHighlighted = useMemo(() => {
+    if (!highlightedApps && !highlightedTags) return false;
+    return (
+      Object.values(highlightedApps ?? {}).some((v) => v) ||
+      Object.values(highlightedTags ?? {}).some((v) => v)
+    );
+  }, [highlightedApps, highlightedTags]);
 
-  const [hoveredData, setHoveredData] = useState<{
-    tagId?: Ref<Tag>;
-    appId?: Ref<App>;
-  } | null>(null);
+  const [hoveredData, setHoveredData] = useState<FullKeyWithDuration | null>(
+    null,
+  );
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstanceRef = useRef<echarts.ECharts | null>(null);
 
-  const appIds = useMemo(
-    () => Object.keys(data).map((id) => +id as Ref<App>),
-    [data],
-  );
-  const apps = useApps(appIds);
-  const tags = useTags();
+  const apps = useAppState((state) => state.apps);
+  const tags = useAppState((state) => state.tags);
+  const { handleStaleApps } = useRefresh();
 
-  // const totalUsage = useMemo(() => {
-  //   return _(apps)
-  //     .filter((app) => !hideApps?.[app.id])
-  //     .reduce((sum, app) => sum + (data[app.id]?.duration ?? 0), 0);
-  // }, [apps, data, hideApps]);
-
-  const appPayload = useMemo(() => {
-    return _(data)
-      .filter(
-        (appDur) =>
-          appDur !== undefined && appDur.duration > 0 && !hideApps?.[appDur.id],
-      )
-      .map((appDur) => [appDur!.id, appDur!.duration] as const)
-      .fromPairs()
-      .value();
-  }, [data, hideApps]);
-
-  const tagPayload = useMemo(() => {
-    return _(apps)
-      .filter((app) => !hideApps?.[app.id])
-      .map(
-        (app) =>
-          [app.tagId ?? untagged.id, data[app.id]?.duration ?? 0] as const,
-      )
-      .groupBy(0)
-      .mapValues((x) => x.reduce((sum, [, duration]) => sum + duration, 0))
-      .value();
-  }, [apps, data, hideApps]);
+  const totalDuration = useMemo(() => {
+    return _(apps).reduce(
+      (sum, app) => sum + (data[app!.id]?.duration ?? 0),
+      0,
+    );
+  }, [apps, data]);
 
   const appData = useMemo(() => {
-    return _(apps)
-      .filter((app) => !hideApps?.[app.id])
-      .map((app) => ({
-        ...app,
-        duration: data[app.id]?.duration ?? 0,
-      }))
-      .filter((app) => app.duration > 0)
-      .orderBy(["tagId", "duration"], ["asc", "desc"])
-      .value();
-  }, [apps, data, hideApps]);
+    return (
+      _(Object.keys(data))
+        // Map to apps
+        .map((id) => apps[+id as Ref<App>])
+        .thru(handleStaleApps)
+        .filter((app) => !hiddenApps?.[app.id])
+        .map((app) => ({
+          key: "app" as const,
+          app,
+          duration: data[app.id]?.duration ?? 0,
+        }))
+        .filter((app) => app.duration > 0)
+        .orderBy(["app.tagId", "app.duration"], ["asc", "desc"])
+        .value()
+    );
+  }, [apps, data, hiddenApps, handleStaleApps]);
 
   const tagData = useMemo(() => {
-    // Get all tagged apps
-    const taggedAppIds = new Set(tags.flatMap((tag) => tag.apps));
-
-    // Calculate untagged duration
-    const untaggedDuration = apps
-      .filter((app) => !taggedAppIds.has(app.id) && !hideApps?.[app.id])
-      .reduce((sum, app) => sum + (data[app.id]?.duration ?? 0), 0);
-
-    // Create tag data including untagged
-    const tagData = [
-      // Tags
-      ...tags.map((tag) => ({
-        ...tag,
-        duration: _(tag.apps)
-          .map((appId) => data[appId]?.duration ?? 0)
-          .sum(),
-      })),
-      // Add untagged category if there are untagged apps
-      ...[
-        {
-          ...untagged,
-          duration: untaggedDuration,
-        },
-      ],
-    ].filter((tag) => tag.duration > 0);
-
-    return tagData;
-  }, [tags, apps, data, hideApps]);
+    return _(Object.keys(data))
+      .map((id) => apps[+id as Ref<App>])
+      .thru(handleStaleApps)
+      .filter((app) => !hiddenApps?.[app.id])
+      .map((app) => ({
+        tagId: app.tagId,
+        duration: data[app.id]?.duration ?? 0,
+      }))
+      .groupBy("tagId")
+      .mapValues((apps) => _(apps).sumBy("duration"))
+      .toPairs()
+      .orderBy(([tagId]) => +tagId)
+      .map(([tagId, duration]) => ({
+        key: "tag" as const,
+        tag: tagId === "null" ? untagged : tags[+tagId as Ref<Tag>]!,
+        duration,
+      }))
+      .filter((tagDur) => tagDur.duration > 0 && tagDur.tag !== undefined) // TODO: use handleStaleTags
+      .value();
+  }, [tags, apps, data, hiddenApps, handleStaleApps]);
 
   useEffect(() => {
     if (!chartRef.current) return;
@@ -148,19 +129,23 @@ export function AppUsagePieChart({
     const tagSeries = tagData
       .filter((tag) => tag.duration)
       .map(
-        (tag) =>
+        (data) =>
           ({
             type: "bar",
             coordinateSystem: "polar",
             stack: "tags",
-            id: "tag-" + tag.id,
+            id: fullKeyToString(data),
             data: [
               {
-                id: tag.id,
-                name: tag.name,
-                value: tag.duration,
+                id: data.tag.id,
+                name: data.tag.name,
+                value: data.duration,
                 itemStyle: {
-                  color: tag.color,
+                  opacity:
+                    (highlightedTags?.[data.tag.id] ?? !hasAnyHighlighted)
+                      ? undefined
+                      : unhighlightedAppOpacity,
+                  color: data.tag.color,
                 },
               },
             ],
@@ -168,12 +153,12 @@ export function AppUsagePieChart({
       );
 
     const appSeries = appData.map(
-      (app) =>
+      (data) =>
         ({
           type: "bar",
           coordinateSystem: "polar",
           stack: "apps",
-          id: "app-" + app.id,
+          id: fullKeyToString(data),
           labelLayout(params) {
             // eslint-disable-next-line @typescript-eslint/dot-notation
             const model = (chart["getModel"] as () => GlobalModel)();
@@ -202,22 +187,22 @@ export function AppUsagePieChart({
           },
           data: [
             {
-              id: app.id,
-              name: app.name,
-              value: app.duration,
+              id: data.app.id,
+              name: data.app.name,
+              value: data.duration,
               itemStyle: {
                 opacity:
-                  (highlightedAppIds?.includes(app.id) ?? true)
+                  (highlightedApps?.[data.app.id] ?? !hasAnyHighlighted)
                     ? undefined
                     : unhighlightedAppOpacity,
-                color: app.color,
+                color: data.app.color,
               },
               label: {
                 show: true,
                 rotate: 0,
                 position: "middle",
                 backgroundColor: {
-                  image: appIconHtmlImgElement(app.icon),
+                  image: appIconHtmlImgElement(data.app.icon),
                 },
                 formatter: () => {
                   return `{empty|}`;
@@ -305,25 +290,15 @@ export function AppUsagePieChart({
       const isInGrid = isInApp || isInTag;
       if (!isInGrid) {
         setHoveredData(null);
-        onAppHover?.(undefined);
+        onHover?.(undefined);
       }
     });
 
     chart.on("mousemove", (params) => {
-      if (params.seriesId?.startsWith("app-")) {
-        const id = +params.seriesId.slice(4) as Ref<App>;
-        setHoveredData({ appId: id });
-        onAppHover?.(id);
-      } else if (params.seriesId?.startsWith("tag-")) {
-        const idStr = params.seriesId.slice(4);
-        let id: Ref<Tag> = untagged.id;
-        if (idStr !== untagged.id + "") {
-          id = +idStr as Ref<Tag>;
-        }
-        setHoveredData({ tagId: id });
-        onTagHover?.(id);
-      }
-      // else ignore event
+      const key = stringToFullKey(params.seriesId!, apps, tags);
+      const value = { ...key, duration: params.value as number };
+      setHoveredData(value);
+      onHover?.(value);
     });
 
     const resizeObserver = new ResizeObserver(() => {
@@ -344,31 +319,30 @@ export function AppUsagePieChart({
     data,
     appData,
     tagData,
-    onAppHover,
-    onTagHover,
+    onHover,
+    setHoveredData,
     animationsEnabled,
-    highlightedAppIds,
+    highlightedApps,
+    highlightedTags,
+    hasAnyHighlighted,
     unhighlightedAppOpacity,
-    theme,
+    apps,
+    tags,
   ]);
 
   return (
     <div ref={chartRef} className={cn("w-full h-full", className)}>
-      <Tooltip targetRef={chartRef} show={!!hoveredData?.appId}>
-        <AppUsageChartTooltipContent
-          hoveredAppId={hoveredData?.appId ?? null}
-          payload={appPayload}
-          maximumApps={10}
-          highlightedAppIds={highlightedAppIds}
-        />
-      </Tooltip>
-      <Tooltip targetRef={chartRef} show={!!hoveredData?.tagId}>
-        <TagUsageChartTooltipContent
-          hoveredTagId={hoveredData?.tagId ?? null}
-          payload={tagPayload}
-          maximumTags={10}
-          // highlightedAppIds={highlightedAppIds}
-        />
+      <Tooltip targetRef={chartRef} show={!!hoveredData}>
+        {hoveredData && (
+          <UsageTooltipContent
+            data={hoveredData.key === "app" ? appData : tagData}
+            hovered={hoveredData}
+            maximum={10}
+            highlightedApps={highlightedApps}
+            highlightedTags={highlightedTags}
+            totalDuration={totalDuration}
+          />
+        )}
       </Tooltip>
     </div>
   );
