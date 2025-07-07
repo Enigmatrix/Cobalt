@@ -93,24 +93,17 @@ export function AppUsagePieChart({
           duration: data[app.id]?.duration ?? 0,
         }))
         .filter((app) => app.duration > 0)
-        .orderBy(["app.tagId", "app.duration"], ["asc", "desc"])
+        .orderBy(["app.tagId", "duration"], ["asc", "desc"]) // "null" is last
         .value()
     );
   }, [apps, data, hiddenApps, handleStaleApps]);
 
   const tagData = useMemo(() => {
-    return _(Object.keys(data))
-      .map((id) => apps[+id as Ref<App>])
-      .thru(handleStaleApps)
-      .filter((app) => !hiddenApps?.[app.id])
-      .map((app) => ({
-        tagId: app.tagId,
-        duration: data[app.id]?.duration ?? 0,
-      }))
-      .groupBy("tagId")
+    return _(appData)
+      .groupBy("app.tagId")
       .mapValues((apps) => _(apps).sumBy("duration"))
       .toPairs()
-      .orderBy(([tagId]) => +tagId)
+      .orderBy(([tagId]) => +tagId) // "null" is last
       .map(([tagId, duration]) => ({
         key: "tag" as const,
         tag: tagId === "null" ? untagged : tags[+tagId as Ref<Tag>]!,
@@ -118,7 +111,7 @@ export function AppUsagePieChart({
       }))
       .filter((tagDur) => tagDur.duration > 0 && tagDur.tag !== undefined) // TODO: use handleStaleTags
       .value();
-  }, [tags, apps, data, hiddenApps, handleStaleApps]);
+  }, [tags, appData]);
 
   useEffect(() => {
     if (!chartRef.current) return;
