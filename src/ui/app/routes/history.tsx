@@ -20,6 +20,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Gantt } from "@/components/viz/gantt2";
+import { GroupByPicker } from "@/components/viz/groupby-picker";
 import { UsageChart, type GroupBy } from "@/components/viz/usage-chart";
 import { VerticalLegend } from "@/components/viz/vertical-legend";
 import {
@@ -200,21 +201,7 @@ function AppUsagePerPeriodHistory() {
           <Label className="font-medium text-muted-foreground place-self-end">
             View
           </Label>
-          <Select
-            value={groupBy}
-            onValueChange={(s) => setGroupBy(s as GroupBy)}
-          >
-            <SelectTrigger className="min-w-32 font-medium">
-              <SelectValue placeholder="Select a view" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={"app" as GroupBy}>Apps</SelectItem>
-              <SelectItem value={"tag" as GroupBy}>Tags</SelectItem>
-              <SelectItem value={"tag-show-untagged" as GroupBy}>
-                Tags (untagged separate)
-              </SelectItem>
-            </SelectContent>
-          </Select>
+          <GroupByPicker groupBy={groupBy} setGroupBy={setGroupBy} />
         </FormItem>
         <FormItem>
           <Label className="font-medium text-muted-foreground place-self-end">
