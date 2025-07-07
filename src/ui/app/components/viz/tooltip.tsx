@@ -1,6 +1,13 @@
 import { cn } from "@/lib/utils";
+import {
+  flip,
+  offset,
+  useClientPoint,
+  useFloating,
+  useInteractions,
+} from "@floating-ui/react";
 import type { ClassValue } from "clsx";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
 interface TooltipProps {
@@ -8,96 +15,77 @@ interface TooltipProps {
   show?: boolean;
   className?: ClassValue;
   targetRef: React.RefObject<HTMLElement | null>;
-  delta?: { x: number; y: number };
+  delta?: number;
 }
-
-const DELTA_X = 10;
-const DELTA_Y = 10;
 
 export function Tooltip({
   show = true,
   children,
   className,
   targetRef,
-  delta,
+  delta = 10,
 }: TooltipProps) {
-  const tooltipRef = useRef<HTMLDivElement>(null);
-  const positionRef = useRef({ x: 0, y: 0 });
-  const rafRef = useRef<number>(0);
-  const isOverRef = useRef(false);
+  const [isOpen, setIsOpen] = useState(false);
   const [shouldRender, setShouldRender] = useState(false);
+
+  const { refs, floatingStyles, context } = useFloating({
+    open: isOpen,
+    onOpenChange: setIsOpen,
+    placement: "top-start",
+    middleware: [offset(delta), flip()],
+  });
+
+  const clientPoint = useClientPoint(context, {
+    axis: "both",
+  });
+
+  const { getFloatingProps } = useInteractions([clientPoint]);
 
   useEffect(() => {
     const target = targetRef?.current;
     if (!target) return;
 
-    const updatePosition = () => {
-      if (!tooltipRef.current) return;
-      const rect = tooltipRef.current.getBoundingClientRect();
-      const tooltip = tooltipRef.current;
-      const deltaX = delta?.x ?? DELTA_X;
-      const deltaY = delta?.y ?? DELTA_Y;
-
-      let x = positionRef.current.x + deltaX;
-      let y = positionRef.current.y + deltaY;
-
-      if (x + rect.width > window.innerWidth) {
-        x = Math.max(0, x - rect.width - deltaX * 2);
-      }
-      if (y + rect.height > window.innerHeight) {
-        y = Math.max(0, y - rect.height - deltaY * 2);
-      }
-
-      tooltip.style.transform = `translate(${x}px, ${y}px)`;
-      tooltip.style.visibility = "inherit";
-    };
-
-    const handleMouseMove = (e: MouseEvent) => {
-      positionRef.current = { x: e.clientX, y: e.clientY };
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      rafRef.current = requestAnimationFrame(updatePosition);
-    };
-
     const handleMouseEnter = () => {
-      isOverRef.current = true;
+      setIsOpen(true);
       setShouldRender(true);
     };
 
     const handleMouseLeave = () => {
-      isOverRef.current = false;
+      setIsOpen(false);
       setShouldRender(false);
     };
 
     target.addEventListener("mouseenter", handleMouseEnter);
     target.addEventListener("mouseleave", handleMouseLeave);
-    target.addEventListener("mousemove", handleMouseMove);
 
     return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
       target.removeEventListener("mouseenter", handleMouseEnter);
       target.removeEventListener("mouseleave", handleMouseLeave);
-      target.removeEventListener("mousemove", handleMouseMove);
     };
-  }, [targetRef, delta]);
+  }, [targetRef]);
+
+  // Set the reference element to the target
+  useEffect(() => {
+    if (targetRef?.current) {
+      refs.setReference(targetRef.current);
+    }
+  }, [targetRef, refs]);
 
   if (!show || !shouldRender) return null;
 
   return createPortal(
     <div
-      ref={tooltipRef}
+      ref={refs.setFloating}
       className={cn(
         "rounded-lg border border-border bg-background px-2.5 py-1.5 shadow-xl",
         className,
       )}
       style={{
-        position: "fixed",
-        left: 0,
-        top: 0,
+        ...floatingStyles,
         pointerEvents: "none",
         zIndex: 9999,
-        transform: "translate(0, 0)",
-        visibility: "hidden",
       }}
+      {...getFloatingProps()}
     >
       {children}
     </div>,
