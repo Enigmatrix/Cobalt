@@ -26,7 +26,6 @@ export function VizTooltip({
   delta = 10,
 }: TooltipProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [shouldRender, setShouldRender] = useState(false);
 
   const { refs, floatingStyles, context } = useFloating({
     open: isOpen,
@@ -47,12 +46,10 @@ export function VizTooltip({
 
     const handleMouseEnter = () => {
       setIsOpen(true);
-      setShouldRender(true);
     };
 
     const handleMouseLeave = () => {
       setIsOpen(false);
-      setShouldRender(false);
     };
 
     target.addEventListener("mouseenter", handleMouseEnter);
@@ -71,7 +68,7 @@ export function VizTooltip({
     }
   }, [targetRef, refs]);
 
-  if (!show || !shouldRender) return null;
+  if (!show || !isOpen) return null;
 
   return createPortal(
     <div
