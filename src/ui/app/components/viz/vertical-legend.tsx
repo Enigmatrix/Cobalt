@@ -99,7 +99,7 @@ export function VerticalLegend({
       setUncheckedApps((prev) => {
         const newState = { ...prev };
         apps
-          .filter((app) => app.tagId === (id === untagged.id ? null : id))
+          .filter((app) => (app.tagId ?? untagged.id) === id)
           .forEach((app) => {
             newState[app.id] = !checked;
           });
@@ -150,10 +150,10 @@ export function VerticalLegend({
   const tagStatus = useCallback(
     (tagId: Ref<Tag>): CheckedState => {
       const allUnchecked = apps
-        .filter((app) => app.tagId === (tagId === untagged.id ? null : tagId))
+        .filter((app) => (app.tagId ?? untagged.id) === tagId)
         .every((app) => !!uncheckedApps[app.id]);
       const allChecked = apps
-        .filter((app) => app.tagId === (tagId === untagged.id ? null : tagId))
+        .filter((app) => (app.tagId ?? untagged.id) === tagId)
         .every((app) => !uncheckedApps[app.id]);
       return allChecked ? true : allUnchecked ? false : "indeterminate";
     },
@@ -188,9 +188,7 @@ export function VerticalLegend({
       // Add apps under this tag if expanded
       if (!unexpandedTags[tagIdStr]) {
         filteredApps
-          .filter(
-            (app) => app.tagId === (tag.id === untagged.id ? null : tag.id),
-          )
+          .filter((app) => (app.tagId ?? untagged.id) === tag.id)
           .forEach((app) => {
             data.push({
               id: `app-${app.id}`,
