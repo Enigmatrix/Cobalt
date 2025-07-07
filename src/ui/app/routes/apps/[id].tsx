@@ -379,7 +379,15 @@ function AppUsageBarChartCard({
         />
       </div>
     ),
-    [appDurationsPerPeriod, period, xAxisLabelFormatter, interval, start, end],
+    [
+      appDurationsPerPeriod,
+      period,
+      xAxisLabelFormatter,
+      interval,
+      start,
+      end,
+      appId,
+    ],
   );
 
   return (

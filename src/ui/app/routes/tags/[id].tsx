@@ -332,21 +332,19 @@ function TagUsageBarChartCard({
       end: interval.end,
       period,
     });
-  const { tagAppDurationsPerPeriod, totalTagUsage } = useMemo(() => {
-    const tagAppDurationsPerPeriod = _(tag.apps)
-      .map((appId) => [appId, appDurationsPerPeriod[appId] ?? []])
-      .fromPairs()
-      .value();
-    const totalTagUsage =
-      _(tagAppDurationsPerPeriod).values().flatten().sumBy("duration") ?? 0;
-    return { tagAppDurationsPerPeriod, totalTagUsage };
+  const { totalTagUsage } = useMemo(() => {
+    const totalTagUsage = _(tag.apps)
+      .flatMap((appId) => appDurationsPerPeriod[appId] ?? [])
+      .sumBy("duration");
+    return { totalTagUsage };
   }, [appDurationsPerPeriod, tag]);
 
   const children = useMemo(
     () => (
       <div className="aspect-video flex-1 mx-1 max-w-full">
         <UsageChart
-          appDurationsPerPeriod={tagAppDurationsPerPeriod}
+          appDurationsPerPeriod={appDurationsPerPeriod}
+          onlyShowOneTag={tag.id}
           period={period}
           start={start ?? interval.start}
           end={end ?? interval.end}
@@ -358,12 +356,13 @@ function TagUsageBarChartCard({
       </div>
     ),
     [
-      tagAppDurationsPerPeriod,
+      appDurationsPerPeriod,
       period,
       xAxisLabelFormatter,
       interval,
       start,
       end,
+      tag.id,
     ],
   );
 
