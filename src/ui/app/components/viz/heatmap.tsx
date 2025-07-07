@@ -1,9 +1,9 @@
 import { HScrollView } from "@/components/hscroll-view";
-import { AppUsageChartTooltipContent } from "@/components/viz/app-usage-chart-tooltip";
-import { TagUsageChartTooltipContent } from "@/components/viz/tag-usage-chart-tooltip";
 import { Tooltip } from "@/components/viz/tooltip";
+import { UsageTooltipContent } from "@/components/viz/usage-tooltip";
 import { scaleColor } from "@/lib/color-utils";
 import type { App, Ref, Tag } from "@/lib/entities";
+import { useAppState } from "@/lib/state";
 import { cn } from "@/lib/utils";
 import type { ClassValue } from "clsx";
 import { DateTime, Interval } from "luxon";
@@ -78,6 +78,9 @@ const Heatmap: React.FC<HeatmapProps> = ({
   const startWeek = useMemo(() => startDate.startOf("week"), [startDate]);
   const ref = useRef<SVGSVGElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
+
+  const apps = useAppState((state) => state.apps);
+  const tags = useAppState((state) => state.tags);
 
   const heatmapData = useMemo(() => {
     const result: HeatmapData[] = [];
@@ -197,22 +200,26 @@ const Heatmap: React.FC<HeatmapProps> = ({
         </svg>
       </div>
       <Tooltip targetRef={containerRef} show={tooltipData !== null}>
-        {appId && (
-          <AppUsageChartTooltipContent
-            hoveredAppId={null}
-            singleAppId={appId}
-            payload={{ [appId]: tooltipData?.value ?? 0 }}
-            dt={tooltipData?.date ?? DateTime.fromSeconds(0)}
-          />
-        )}
-        {tagId && (
-          <TagUsageChartTooltipContent
-            hoveredTagId={null}
-            singleTagId={tagId}
-            payload={{ [tagId]: tooltipData?.value ?? 0 }}
-            dt={tooltipData?.date ?? DateTime.fromSeconds(0)}
-          />
-        )}
+        <UsageTooltipContent
+          at={tooltipData?.date ?? DateTime.fromSeconds(0)}
+          showRows={false}
+          hovered={
+            (tooltipData?.value ?? 0) === 0
+              ? undefined
+              : appId
+                ? {
+                    key: "app" as const,
+                    app: apps[appId]!,
+                    duration: tooltipData?.value ?? 0,
+                  }
+                : {
+                    key: "tag" as const,
+                    tag: tags[tagId!]!,
+                    duration: tooltipData?.value ?? 0,
+                  }
+          }
+          maximum={1}
+        />
       </Tooltip>
     </HScrollView>
   );
