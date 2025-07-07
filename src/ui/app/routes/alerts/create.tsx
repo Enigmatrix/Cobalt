@@ -1,17 +1,11 @@
 import { AlertForm, type FormValues } from "@/components/alert/alert-form";
 import { DateRangePicker } from "@/components/time/date-range-picker";
 import { DurationText } from "@/components/time/duration-text";
+import { PeriodPicker } from "@/components/time/period-picker";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { FormItem } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UsageChart } from "@/components/viz/usage-chart";
 import { useZodForm } from "@/hooks/use-form";
@@ -294,20 +288,7 @@ export function AppUsageBarChartView({
             <Label className="font-medium text-muted-foreground place-self-end">
               Period
             </Label>
-            <Select
-              value={period}
-              onValueChange={(s) => setPeriod(s as Period)}
-            >
-              <SelectTrigger className="min-w-32 font-medium">
-                <SelectValue placeholder="Select a period" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="hour">Hour</SelectItem>
-                <SelectItem value="day">Day</SelectItem>
-                <SelectItem value="week">Week</SelectItem>
-                <SelectItem value="month">Month</SelectItem>
-              </SelectContent>
-            </Select>
+            <PeriodPicker period={period} setPeriod={setPeriod} />
           </FormItem>
 
           <div className="flex gap-1">

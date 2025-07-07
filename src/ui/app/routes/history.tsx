@@ -1,5 +1,6 @@
 import { DateRangePicker } from "@/components/time/date-range-picker";
 import { DurationText } from "@/components/time/duration-text";
+import { PeriodPicker } from "@/components/time/period-picker";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -219,17 +220,7 @@ function AppUsagePerPeriodHistory() {
           <Label className="font-medium text-muted-foreground place-self-end">
             Period
           </Label>
-          <Select value={period} onValueChange={(s) => setPeriod(s as Period)}>
-            <SelectTrigger className="min-w-32 font-medium">
-              <SelectValue placeholder="Select a period" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="hour">Hour</SelectItem>
-              <SelectItem value="day">Day</SelectItem>
-              <SelectItem value="week">Week</SelectItem>
-              <SelectItem value="month">Month</SelectItem>
-            </SelectContent>
-          </Select>
+          <PeriodPicker period={period} setPeriod={setPeriod} />
         </FormItem>
       </div>
 
