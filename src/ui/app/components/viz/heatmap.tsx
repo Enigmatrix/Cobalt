@@ -226,7 +226,6 @@ const Heatmap: React.FC<HeatmapProps> = ({
                 ]
           }
           at={tooltipData?.date ?? DateTime.fromSeconds(0)}
-          totalDuration={tooltipData?.value ?? 0}
           hovered={
             (tooltipData?.value ?? 0) === 0
               ? undefined

@@ -73,7 +73,7 @@ export function UsageTooltipContent({
               datetime={at}
             />
             <div className="flex-1 min-w-4" />
-            <DurationText ticks={totalDuration} />
+            <DurationText ticks={totalDuration ?? 0} />
           </div>
         )
       )}
@@ -150,7 +150,7 @@ function TagRow({ tag, isHighlighted }: { tag: Tag; isHighlighted: boolean }) {
 function HoverDisplay({
   hovered,
   duration,
-  totalDuration: totalDuration,
+  totalDuration,
   at,
 }: {
   hovered: FullKey;
