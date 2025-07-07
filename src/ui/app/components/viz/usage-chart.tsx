@@ -11,8 +11,8 @@ import {
   type FullKeyWithDuration,
   type KeyWith,
 } from "@/components/target-keys";
-import { Tooltip } from "@/components/viz/tooltip";
 import { UsageTooltipContent } from "@/components/viz/usage-tooltip";
+import { VizTooltip } from "@/components/viz/viz-tooltip";
 import { useRefresh } from "@/hooks/use-refresh";
 import { getVarColorAsHex, scaleColor } from "@/lib/color-utils";
 import type { App, Ref, Tag, WithGroupedDuration } from "@/lib/entities";
@@ -473,7 +473,7 @@ export function UsageChart({
 
   return (
     <div ref={chartRef} className={cn("w-full h-full", className)}>
-      <Tooltip targetRef={chartRef} show={!!hoveredData}>
+      <VizTooltip targetRef={chartRef} show={!!hoveredData}>
         <UsageTooltipContent
           at={hoveredData?.at ?? undefined}
           data={hoveredData?.data ?? undefined}
@@ -485,7 +485,7 @@ export function UsageChart({
             totalUsagePerPeriod[dateTimeToTicks(hoveredData?.at ?? start)] ?? 0
           }
         />
-      </Tooltip>
+      </VizTooltip>
     </div>
   );
 }

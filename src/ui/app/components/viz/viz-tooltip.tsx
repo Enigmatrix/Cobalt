@@ -18,7 +18,7 @@ interface TooltipProps {
   delta?: number;
 }
 
-export function Tooltip({
+export function VizTooltip({
   show = true,
   children,
   className,

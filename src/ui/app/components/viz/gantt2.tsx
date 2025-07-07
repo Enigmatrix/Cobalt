@@ -2,7 +2,7 @@ import AppIcon from "@/components/app/app-icon";
 import { DurationText } from "@/components/time/duration-text";
 import { DateTimeText } from "@/components/time/time-text";
 import { Text } from "@/components/ui/text";
-import { Tooltip } from "@/components/viz/tooltip";
+import { VizTooltip } from "@/components/viz/viz-tooltip";
 import { useApps } from "@/hooks/use-refresh";
 import { useWidth } from "@/hooks/use-width";
 import { getVarColorAsHex } from "@/lib/color-utils";
@@ -821,7 +821,7 @@ export function Gantt({
             height: innerRelevantHeight,
           }}
         >
-          <Tooltip show={hoverData !== null} targetRef={chartRef}>
+          <VizTooltip show={hoverData !== null} targetRef={chartRef}>
             <div className="max-w-[800px]">
               {(hoverData as CombinedUsage)?.type === "combined" ? (
                 <CombinedUsageTooltip usage={hoverData as CombinedUsage} />
@@ -832,9 +832,9 @@ export function Gantt({
                 />
               )}
             </div>
-          </Tooltip>
+          </VizTooltip>
 
-          <Tooltip show={hoverInteraction !== null} targetRef={chartRef}>
+          <VizTooltip show={hoverInteraction !== null} targetRef={chartRef}>
             <div className="max-w-[800px]">
               {(hoverInteraction as CombinedInteractionPeriod)?.type ===
               "combined" ? (
@@ -847,9 +847,9 @@ export function Gantt({
                 />
               )}
             </div>
-          </Tooltip>
+          </VizTooltip>
 
-          <Tooltip show={hoverSystemEvent !== null} targetRef={chartRef}>
+          <VizTooltip show={hoverSystemEvent !== null} targetRef={chartRef}>
             <div className="max-w-[800px]">
               {hoverSystemEvent && (
                 <div className={cn("flex flex-col")}>
@@ -864,7 +864,7 @@ export function Gantt({
                 </div>
               )}
             </div>
-          </Tooltip>
+          </VizTooltip>
         </div>
         {/* Info Bars */}
         <div
