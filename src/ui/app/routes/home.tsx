@@ -59,26 +59,27 @@ export default function Home() {
       </header>
       <div className="h-0 flex-auto overflow-auto [scrollbar-gutter:stable]">
         <div className="flex flex-col gap-4 p-4">
-          <div className="grid auto-rows-min gap-4 grid-cols-1">
+          <div className="grid auto-rows-min gap-4 grid-cols-[2fr_1fr]">
             <AppUsageBarChartCard
               timePeriod="day"
               period="hour"
               xAxisLabelFormatter={hour24Formatter}
             />
-          </div>
-
-          <div className="grid auto-rows-min gap-4 grid-cols-2">
             <AppUsageBarChartCard
               timePeriod="week"
               period="day"
               xAxisLabelFormatter={weekDayFormatter}
             />
+          </div>
+
+          <div className="grid auto-rows-min gap-4 grid-cols-1">
             <AppUsageBarChartCard
               timePeriod="month"
               period="day"
               xAxisLabelFormatter={monthDayFormatter}
             />
           </div>
+
           <div className="sticky rounded-xl bg-muted/50 border border-border overflow-clip">
             <Gantt
               usages={usages}
