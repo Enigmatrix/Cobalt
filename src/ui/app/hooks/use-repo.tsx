@@ -76,13 +76,20 @@ export function useAppDurationsPerPeriod({
 }) {
   const { refreshToken } = useRefresh();
   const [ret, setRet] = useState<{
-    appUsage: number;
+    totalAppUsage: number;
     totalUsage: number;
-    usages: EntityMap<App, WithGroupedDuration<App>[]>;
+    appDurationsPerPeriod: EntityMap<App, WithGroupedDuration<App>[]>;
     start?: DateTime;
     end?: DateTime;
     period?: Period;
-  }>({ appUsage: 0, totalUsage: 0, usages: {}, start, end, period });
+  }>({
+    totalAppUsage: 0,
+    totalUsage: 0,
+    appDurationsPerPeriod: {},
+    start,
+    end,
+    period,
+  });
   const [isLoading, startTransition] = useTransition();
   const latestRequestRef = useRef<number>(0);
   const requestCounterRef = useRef<number>(0);
@@ -95,7 +102,7 @@ export function useAppDurationsPerPeriod({
       const requestId = ++requestCounterRef.current;
       latestRequestRef.current = requestId;
 
-      const usages = await getAppDurationsPerPeriod({
+      const appDurationsPerPeriod = await getAppDurationsPerPeriod({
         start,
         end,
         period,
@@ -103,12 +110,17 @@ export function useAppDurationsPerPeriod({
 
       // Only update state if this is still the latest request
       if (latestRequestRef.current === requestId) {
-        const appUsage = appId ? _(usages[appId]).sumBy("duration") : 0;
-        const totalUsage = _(usages).values().flatten().sumBy("duration");
+        const totalAppUsage = appId
+          ? _(appDurationsPerPeriod[appId]).sumBy("duration")
+          : 0;
+        const totalUsage = _(appDurationsPerPeriod)
+          .values()
+          .flatten()
+          .sumBy("duration");
         setRet({
-          appUsage,
+          totalAppUsage,
           totalUsage,
-          usages,
+          appDurationsPerPeriod,
           start,
           end,
           period,

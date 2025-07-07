@@ -96,7 +96,7 @@ export default function Apps() {
 
   const interval = usePeriodInterval("day");
   const {
-    usages,
+    appDurationsPerPeriod,
     start: loadStart,
     end: loadEnd,
   } = useAppDurationsPerPeriod({ ...interval, period: "hour" });
@@ -120,7 +120,7 @@ export default function Apps() {
           app={appsSorted[index]}
           start={loadStart ?? interval.start}
           end={loadEnd ?? interval.end}
-          usages={usages}
+          usages={appDurationsPerPeriod}
         />
       </VirtualListItem>
     ),
@@ -299,7 +299,7 @@ function AppListItem({
             hideYAxis
             gradientBars
             maxYIsPeriod
-            usages={appUsages}
+            appDurationsPerPeriod={appUsages}
             period="hour"
             onlyShowOneAppId
             start={start}

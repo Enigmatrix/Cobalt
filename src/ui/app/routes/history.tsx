@@ -149,7 +149,7 @@ function AppUsagePerPeriodHistory() {
   const {
     isLoading,
     totalUsage,
-    usages: appUsages,
+    appDurationsPerPeriod,
     period: loadPeriod,
     start,
     end,
@@ -235,7 +235,7 @@ function AppUsagePerPeriodHistory() {
 
       <div className="flex flex-1 min-h-0 overflow-hidden rounded-lg bg-card shadow-xs border border-border">
         <UsageChart
-          usages={appUsages}
+          appDurationsPerPeriod={appDurationsPerPeriod}
           period={loadPeriod ?? period}
           start={start ?? interval?.start ?? DateTime.now()}
           end={end ?? interval?.end ?? DateTime.now()}

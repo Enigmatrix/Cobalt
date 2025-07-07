@@ -251,7 +251,7 @@ export function AppUsageBarChartView({
   }, [period, usageLimit, timeFrame]);
 
   const {
-    usages: appUsages,
+    appDurationsPerPeriod,
     period: loadPeriod,
     start,
     end,
@@ -345,7 +345,7 @@ export function AppUsageBarChartView({
         </div>
         <div className="aspect-video ">
           <UsageChart
-            usages={appUsages}
+            appDurationsPerPeriod={appDurationsPerPeriod}
             highlightedApps={highlightedApps}
             markerLines={
               scaledUsageLimit

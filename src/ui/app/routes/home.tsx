@@ -105,7 +105,7 @@ function AppUsageBarChartCard({
   const startingInterval = usePeriodInterval(timePeriod);
   const [interval, setInterval] = useState(startingInterval);
 
-  const { isLoading, totalUsage, usages, start, end } =
+  const { isLoading, totalUsage, appDurationsPerPeriod, start, end } =
     useAppDurationsPerPeriod({
       start: interval.start,
       end: interval.end,
@@ -116,7 +116,7 @@ function AppUsageBarChartCard({
     () => (
       <div className="aspect-video flex-1 mx-1 max-w-full">
         <UsageChart
-          usages={usages}
+          appDurationsPerPeriod={appDurationsPerPeriod}
           period={period}
           start={start ?? interval.start}
           end={end ?? interval.end}
@@ -128,7 +128,7 @@ function AppUsageBarChartCard({
         />
       </div>
     ),
-    [usages, period, xAxisLabelFormatter, interval, start, end],
+    [appDurationsPerPeriod, period, xAxisLabelFormatter, interval, start, end],
   );
 
   return (

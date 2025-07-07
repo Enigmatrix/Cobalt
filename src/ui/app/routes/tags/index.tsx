@@ -93,7 +93,7 @@ export default function Tags() {
 
   const interval = usePeriodInterval("day");
   const {
-    usages,
+    appDurationsPerPeriod,
     start: loadStart,
     end: loadEnd,
   } = useAppDurationsPerPeriod({ ...interval, period: "hour" });
@@ -104,7 +104,7 @@ export default function Tags() {
           tag={tagsSorted[index]}
           start={loadStart ?? interval.start}
           end={loadEnd ?? interval.end}
-          usages={usages}
+          usages={appDurationsPerPeriod}
         />
       </VirtualListItem>
     ),
@@ -316,7 +316,7 @@ function TagListItem({
             hideYAxis
             gradientBars
             maxYIsPeriod
-            usages={usagesFiltered}
+            appDurationsPerPeriod={usagesFiltered}
             start={start}
             end={end}
             period="hour"

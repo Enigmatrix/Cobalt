@@ -37,7 +37,7 @@ interface UsageChartProps {
   className?: ClassValue;
 
   /// Data
-  usages: EntityMap<App, WithGroupedDuration<App>[]>;
+  appDurationsPerPeriod: EntityMap<App, WithGroupedDuration<App>[]>;
   start: DateTime;
   end: DateTime;
   period: Period;
@@ -117,7 +117,7 @@ export function UsageChart({
   className,
 
   /// Data
-  usages,
+  appDurationsPerPeriod,
   start,
   end,
   period,
@@ -170,7 +170,7 @@ export function UsageChart({
     start,
     end,
     period,
-    usages,
+    appDurationsPerPeriod,
     hiddenApps,
     hiddenTags,
     sortedApps,
@@ -483,7 +483,7 @@ function useUsageChartData({
   start,
   end,
   period,
-  usages,
+  appDurationsPerPeriod,
   hiddenApps,
   hiddenTags,
   sortedApps,
@@ -495,7 +495,7 @@ function useUsageChartData({
   start: DateTime;
   end: DateTime;
   period: Period;
-  usages: EntityMap<App, WithGroupedDuration<App>[]>;
+  appDurationsPerPeriod: EntityMap<App, WithGroupedDuration<App>[]>;
   hiddenApps?: Record<Ref<App>, boolean>;
   hiddenTags?: Record<Ref<Tag>, boolean>;
   sortedApps?: Ref<App>[];
@@ -516,7 +516,7 @@ function useUsageChartData({
   }, [start, end, period]);
 
   const fullKeyValues = useMemo(() => {
-    const appKeys = _(Object.keys(usages))
+    const appKeys = _(Object.keys(appDurationsPerPeriod))
       // Map to apps
       .map((id) => apps[id as unknown as Ref<App>])
       .thru(handleStaleApps)
@@ -527,7 +527,7 @@ function useUsageChartData({
       .orderBy((key) => sortedApps?.indexOf(key.app.id) ?? -1, "desc")
       .map((key) => ({
         ...key,
-        values: usages[key.app.id]!.map(
+        values: appDurationsPerPeriod[key.app.id]!.map(
           (usage) =>
             [xAxisTickToIndexLookup[usage.group], usage.duration] as DataItem,
         ),
@@ -584,7 +584,7 @@ function useUsageChartData({
         .value()
     );
   }, [
-    usages,
+    appDurationsPerPeriod,
     hiddenApps,
     hiddenTags,
     sortedApps,

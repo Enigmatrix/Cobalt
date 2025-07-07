@@ -76,9 +76,9 @@ function AppPage({ app }: { app: App }) {
 
   const {
     isLoading: isYearDataLoading,
-    appUsage: yearUsage,
+    totalAppUsage: yearUsage,
     totalUsage: yearTotalUsage,
-    usages: yearUsages,
+    appDurationsPerPeriod: yearUsages,
     start: yearStart,
   } = useAppDurationsPerPeriod({
     start: yearInterval.start,
@@ -349,23 +349,29 @@ function AppUsageBarChartCard({
   const startingInterval = usePeriodInterval(timePeriod);
   const [interval, setInterval] = useState(startingInterval);
 
-  const { isLoading, appUsage, totalUsage, usages, start, end } =
-    useAppDurationsPerPeriod({
-      start: interval.start,
-      end: interval.end,
-      period,
-      appId,
-    });
+  const {
+    isLoading,
+    totalAppUsage,
+    totalUsage,
+    appDurationsPerPeriod,
+    start,
+    end,
+  } = useAppDurationsPerPeriod({
+    start: interval.start,
+    end: interval.end,
+    period,
+    appId,
+  });
 
   const appUsages = useMemo(() => {
-    return { [appId]: usages[appId] ?? [] };
-  }, [usages, appId]);
+    return { [appId]: appDurationsPerPeriod[appId] ?? [] };
+  }, [appDurationsPerPeriod, appId]);
 
   const children = useMemo(
     () => (
       <div className="aspect-video flex-1 mx-1 max-w-full">
         <UsageChart
-          usages={appUsages}
+          appDurationsPerPeriod={appUsages}
           onlyShowOneAppId
           start={start ?? interval.start}
           end={end ?? interval.end}
@@ -387,7 +393,7 @@ function AppUsageBarChartCard({
       onIntervalChanged={setInterval}
       children={children}
       isLoading={isLoading}
-      usage={appUsage}
+      usage={totalAppUsage}
       totalUsage={totalUsage}
     />
   );
