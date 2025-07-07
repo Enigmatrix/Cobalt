@@ -24,6 +24,7 @@ export function UsageTooltipContent({
   highlightedApps,
   highlightedTags,
   totalDuration,
+  showRows = true,
   className,
 }: {
   at?: DateTime;
@@ -33,6 +34,7 @@ export function UsageTooltipContent({
   highlightedApps?: Record<Ref<App>, boolean>;
   highlightedTags?: Record<Ref<Tag>, boolean>;
   totalDuration?: number;
+  showRows?: boolean;
   className?: ClassValue;
 }) {
   const hasAnyHighlighted = useMemo(() => {
@@ -78,7 +80,7 @@ export function UsageTooltipContent({
         )
       )}
 
-      {fullData && fullData.length > 0 && (
+      {showRows && fullData && fullData.length > 0 && (
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 pt-1.5 border-t border-border">
           {fullData.slice(0, maximum).map((d) => {
             return (
@@ -108,11 +110,14 @@ export function UsageTooltipContent({
         </div>
       )}
 
-      {maximum !== undefined && fullData && fullData.length > maximum && (
-        <div className="text-muted-foreground mt-1">
-          + {fullData.length - maximum} more
-        </div>
-      )}
+      {showRows &&
+        maximum !== undefined &&
+        fullData &&
+        fullData.length > maximum && (
+          <div className="text-muted-foreground mt-1">
+            + {fullData.length - maximum} more
+          </div>
+        )}
     </div>
   );
 }

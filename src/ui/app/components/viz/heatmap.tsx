@@ -201,31 +201,8 @@ const Heatmap: React.FC<HeatmapProps> = ({
       </div>
       <Tooltip targetRef={containerRef} show={tooltipData !== null}>
         <UsageTooltipContent
-          data={
-            (tooltipData?.value ?? 0) === 0
-              ? []
-              : [
-                  ...(appId
-                    ? [
-                        {
-                          key: "app" as const,
-                          app: apps[appId]!,
-                          duration: tooltipData?.value ?? 0,
-                        },
-                      ]
-                    : []),
-                  ...(tagId
-                    ? [
-                        {
-                          key: "tag" as const,
-                          tag: tags[tagId]!,
-                          duration: tooltipData?.value ?? 0,
-                        },
-                      ]
-                    : []),
-                ]
-          }
           at={tooltipData?.date ?? DateTime.fromSeconds(0)}
+          showRows={false}
           hovered={
             (tooltipData?.value ?? 0) === 0
               ? undefined
