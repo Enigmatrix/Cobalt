@@ -363,16 +363,12 @@ function AppUsageBarChartCard({
     appId,
   });
 
-  const appUsages = useMemo(() => {
-    return { [appId]: appDurationsPerPeriod[appId] ?? [] };
-  }, [appDurationsPerPeriod, appId]);
-
   const children = useMemo(
     () => (
       <div className="aspect-video flex-1 mx-1 max-w-full">
         <UsageChart
-          appDurationsPerPeriod={appUsages}
-          onlyShowOneAppId
+          appDurationsPerPeriod={appDurationsPerPeriod}
+          onlyShowOneApp={appId}
           start={start ?? interval.start}
           end={end ?? interval.end}
           xAxisFormatter={xAxisLabelFormatter}
@@ -383,7 +379,7 @@ function AppUsageBarChartCard({
         />
       </div>
     ),
-    [appUsages, period, xAxisLabelFormatter, interval, start, end],
+    [appDurationsPerPeriod, period, xAxisLabelFormatter, interval, start, end],
   );
 
   return (

@@ -120,7 +120,7 @@ export default function Apps() {
           app={appsSorted[index]}
           start={loadStart ?? interval.start}
           end={loadEnd ?? interval.end}
-          usages={appDurationsPerPeriod}
+          appDurationsPerPeriod={appDurationsPerPeriod}
         />
       </VirtualListItem>
     ),
@@ -245,20 +245,16 @@ function VirtualListItem({
 
 function AppListItem({
   app,
-  usages,
+  appDurationsPerPeriod,
   start,
   end,
 }: {
   app: App;
-  usages: EntityMap<App, WithGroupedDuration<App>[]>;
+  appDurationsPerPeriod: EntityMap<App, WithGroupedDuration<App>[]>;
   start: DateTime;
   end: DateTime;
 }) {
   const tag = useTag(app.tagId);
-
-  const appUsages = useMemo(() => {
-    return { [app.id]: usages[app.id] ?? [] };
-  }, [usages, app.id]);
 
   return (
     <NavLink
@@ -299,9 +295,9 @@ function AppListItem({
             hideYAxis
             gradientBars
             maxYIsPeriod
-            appDurationsPerPeriod={appUsages}
+            appDurationsPerPeriod={appDurationsPerPeriod}
             period="hour"
-            onlyShowOneAppId
+            onlyShowOneApp={app.id}
             start={start}
             end={end}
             className="w-48 flex-none aspect-none h-20"

@@ -61,7 +61,7 @@ interface UsageChartProps {
   sortedApps?: Ref<App>[];
   sortedTags?: Ref<Tag>[];
   // Special mode to only show one app - doesn't show icon, and the tooltip is different
-  onlyShowOneAppId?: boolean;
+  onlyShowOneApp?: Ref<App>;
 
   /// Chart Options
   animationsEnabled?: boolean;
@@ -135,7 +135,7 @@ export function UsageChart({
   sortedApps,
   sortedTags,
   // Special mode to only show one app - doesn't show icon, and the tooltip is different
-  onlyShowOneAppId,
+  onlyShowOneApp,
 
   /// Chart Options
   animationsEnabled = true,
@@ -178,6 +178,7 @@ export function UsageChart({
     groupBy,
     apps,
     tags,
+    onlyShowOneApp,
   });
 
   const hasAnyHighlighted = useMemo(() => {
@@ -252,7 +253,7 @@ export function UsageChart({
         },
 
         label: {
-          show: !onlyShowOneAppId,
+          show: !onlyShowOneApp,
           position: "inside",
           backgroundColor: {
             image:
@@ -278,7 +279,7 @@ export function UsageChart({
     unhighlightedOpacity,
     barRadius,
     gradientBars,
-    onlyShowOneAppId,
+    onlyShowOneApp,
     hasAnyHighlighted,
   ]);
 
@@ -491,6 +492,7 @@ function useUsageChartData({
   groupBy,
   apps,
   tags,
+  onlyShowOneApp,
 }: {
   start: DateTime;
   end: DateTime;
@@ -503,6 +505,7 @@ function useUsageChartData({
   groupBy: GroupBy;
   apps: EntityMap<App, App>;
   tags: EntityMap<Tag, Tag>;
+  onlyShowOneApp?: Ref<App>;
 }) {
   const { handleStaleApps, handleStaleTags } = useRefresh();
 
@@ -516,7 +519,9 @@ function useUsageChartData({
   }, [start, end, period]);
 
   const fullKeyValues = useMemo(() => {
-    const appKeys = _(Object.keys(appDurationsPerPeriod))
+    const appKeys = _(
+      onlyShowOneApp ? [onlyShowOneApp] : Object.keys(appDurationsPerPeriod),
+    )
       // Map to apps
       .map((id) => apps[id as unknown as Ref<App>])
       .thru(handleStaleApps)
@@ -595,6 +600,7 @@ function useUsageChartData({
     handleStaleApps,
     handleStaleTags,
     xAxisTickToIndexLookup,
+    onlyShowOneApp,
   ]);
   return { xAxisValues, xAxisTickToIndexLookup, data: fullKeyValues };
 }
