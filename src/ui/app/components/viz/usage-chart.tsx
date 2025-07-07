@@ -168,7 +168,11 @@ export function UsageChart({
   const apps = useAppState((state) => state.apps);
   const tags = useAppState((state) => state.tags);
 
-  const { xAxisValues, data: fullKeyValues } = useUsageChartData({
+  const {
+    xAxisValues,
+    data: fullKeyValues,
+    totalUsagePerPeriod,
+  } = useUsageChartData({
     start,
     end,
     period,
@@ -477,6 +481,9 @@ export function UsageChart({
           maximum={10}
           highlightedApps={highlightedApps}
           highlightedTags={highlightedTags}
+          totalDuration={
+            totalUsagePerPeriod[dateTimeToTicks(hoveredData?.at ?? start)] ?? 0
+          }
         />
       </Tooltip>
     </div>
@@ -618,5 +625,27 @@ function useUsageChartData({
     onlyShowOneApp,
     onlyShowOneTag,
   ]);
-  return { xAxisValues, xAxisTickToIndexLookup, data: fullKeyValues };
+
+  // map between group and total duration
+  const totalUsagePerPeriod: Record<number, number> = useMemo(() => {
+    return _(appDurationsPerPeriod)
+      .flatMap((appDurations) => appDurations)
+      .groupBy((appDur) => appDur?.group)
+      .map(
+        (durations, group) =>
+          [
+            +group,
+            durations.reduce((acc, appDur) => acc + (appDur?.duration ?? 0), 0),
+          ] as const,
+      )
+      .fromPairs()
+      .value();
+  }, [appDurationsPerPeriod]);
+
+  return {
+    xAxisValues,
+    xAxisTickToIndexLookup,
+    data: fullKeyValues,
+    totalUsagePerPeriod,
+  };
 }

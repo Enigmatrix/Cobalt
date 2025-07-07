@@ -23,6 +23,7 @@ export function UsageTooltipContent({
   maximum = 10,
   highlightedApps,
   highlightedTags,
+  totalDuration,
   className,
 }: {
   at?: DateTime;
@@ -31,6 +32,7 @@ export function UsageTooltipContent({
   maximum: number;
   highlightedApps?: Record<Ref<App>, boolean>;
   highlightedTags?: Record<Ref<Tag>, boolean>;
+  totalDuration?: number;
   className?: ClassValue;
 }) {
   const hasAnyHighlighted = useMemo(() => {
@@ -40,10 +42,6 @@ export function UsageTooltipContent({
       Object.values(highlightedTags ?? {}).some((v) => v)
     );
   }, [highlightedApps, highlightedTags]);
-
-  const totalDuration = useMemo(() => {
-    return data?.reduce((acc, curr) => acc + curr.duration, 0) ?? 0;
-  }, [data]);
 
   const fullData = useMemo(() => {
     return _(data)
