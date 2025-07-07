@@ -93,7 +93,7 @@ export default function Tags() {
 
   const interval = usePeriodInterval("day");
   const {
-    usages,
+    appDurationsPerPeriod,
     start: loadStart,
     end: loadEnd,
   } = useAppDurationsPerPeriod({ ...interval, period: "hour" });
@@ -104,7 +104,7 @@ export default function Tags() {
           tag={tagsSorted[index]}
           start={loadStart ?? interval.start}
           end={loadEnd ?? interval.end}
-          usages={usages}
+          appDurationsPerPeriod={appDurationsPerPeriod}
         />
       </VirtualListItem>
     ),
@@ -251,22 +251,16 @@ function VirtualListItem({
 
 function TagListItem({
   tag,
-  usages,
+  appDurationsPerPeriod,
   start,
   end,
 }: {
   tag: Tag;
-  usages: EntityMap<App, WithGroupedDuration<App>[]>;
+  appDurationsPerPeriod: EntityMap<App, WithGroupedDuration<App>[]>;
   start: DateTime;
   end: DateTime;
 }) {
   const apps = useApps(tag.apps);
-  const usagesFiltered = useMemo(() => {
-    return _(apps)
-      .map((app) => [app.id, usages[app.id] ?? []])
-      .fromPairs()
-      .value();
-  }, [usages, apps]);
 
   return (
     <NavLink
@@ -316,7 +310,8 @@ function TagListItem({
             hideYAxis
             gradientBars
             maxYIsPeriod
-            usages={usagesFiltered}
+            appDurationsPerPeriod={appDurationsPerPeriod}
+            onlyShowOneTag={tag.id}
             start={start}
             end={end}
             period="hour"

@@ -37,7 +37,7 @@ interface UsageChartProps {
   className?: ClassValue;
 
   /// Data
-  usages: EntityMap<App, WithGroupedDuration<App>[]>;
+  appDurationsPerPeriod: EntityMap<App, WithGroupedDuration<App>[]>;
   start: DateTime;
   end: DateTime;
   period: Period;
@@ -60,8 +60,9 @@ interface UsageChartProps {
   // Sorting
   sortedApps?: Ref<App>[];
   sortedTags?: Ref<Tag>[];
-  // Special mode to only show one app - doesn't show icon, and the tooltip is different
-  onlyShowOneAppId?: boolean;
+  // Special mode to only show one app/tag
+  onlyShowOneApp?: Ref<App>;
+  onlyShowOneTag?: Ref<Tag>;
 
   /// Chart Options
   animationsEnabled?: boolean;
@@ -117,7 +118,7 @@ export function UsageChart({
   className,
 
   /// Data
-  usages,
+  appDurationsPerPeriod,
   start,
   end,
   period,
@@ -134,8 +135,9 @@ export function UsageChart({
   // Sorting
   sortedApps,
   sortedTags,
-  // Special mode to only show one app - doesn't show icon, and the tooltip is different
-  onlyShowOneAppId,
+  // Special mode to only show one app/tag
+  onlyShowOneApp,
+  onlyShowOneTag,
 
   /// Chart Options
   animationsEnabled = true,
@@ -166,11 +168,15 @@ export function UsageChart({
   const apps = useAppState((state) => state.apps);
   const tags = useAppState((state) => state.tags);
 
-  const { xAxisValues, data: fullKeyValues } = useUsageChartData({
+  const {
+    xAxisValues,
+    data: fullKeyValues,
+    totalUsagePerPeriod,
+  } = useUsageChartData({
     start,
     end,
     period,
-    usages,
+    appDurationsPerPeriod,
     hiddenApps,
     hiddenTags,
     sortedApps,
@@ -178,6 +184,8 @@ export function UsageChart({
     groupBy,
     apps,
     tags,
+    onlyShowOneApp,
+    onlyShowOneTag,
   });
 
   const hasAnyHighlighted = useMemo(() => {
@@ -252,7 +260,7 @@ export function UsageChart({
         },
 
         label: {
-          show: !onlyShowOneAppId,
+          show: !onlyShowOneApp,
           position: "inside",
           backgroundColor: {
             image:
@@ -278,7 +286,7 @@ export function UsageChart({
     unhighlightedOpacity,
     barRadius,
     gradientBars,
-    onlyShowOneAppId,
+    onlyShowOneApp,
     hasAnyHighlighted,
   ]);
 
@@ -473,6 +481,9 @@ export function UsageChart({
           maximum={10}
           highlightedApps={highlightedApps}
           highlightedTags={highlightedTags}
+          totalDuration={
+            totalUsagePerPeriod[dateTimeToTicks(hoveredData?.at ?? start)] ?? 0
+          }
         />
       </Tooltip>
     </div>
@@ -483,7 +494,7 @@ function useUsageChartData({
   start,
   end,
   period,
-  usages,
+  appDurationsPerPeriod,
   hiddenApps,
   hiddenTags,
   sortedApps,
@@ -491,11 +502,13 @@ function useUsageChartData({
   groupBy,
   apps,
   tags,
+  onlyShowOneApp,
+  onlyShowOneTag,
 }: {
   start: DateTime;
   end: DateTime;
   period: Period;
-  usages: EntityMap<App, WithGroupedDuration<App>[]>;
+  appDurationsPerPeriod: EntityMap<App, WithGroupedDuration<App>[]>;
   hiddenApps?: Record<Ref<App>, boolean>;
   hiddenTags?: Record<Ref<Tag>, boolean>;
   sortedApps?: Ref<App>[];
@@ -503,6 +516,8 @@ function useUsageChartData({
   groupBy: GroupBy;
   apps: EntityMap<App, App>;
   tags: EntityMap<Tag, Tag>;
+  onlyShowOneApp?: Ref<App>;
+  onlyShowOneTag?: Ref<Tag>;
 }) {
   const { handleStaleApps, handleStaleTags } = useRefresh();
 
@@ -516,21 +531,33 @@ function useUsageChartData({
   }, [start, end, period]);
 
   const fullKeyValues = useMemo(() => {
-    const appKeys = _(Object.keys(usages))
+    const appKeys = _(
+      // If only showing one app, return the app
+      onlyShowOneApp ? [onlyShowOneApp] : Object.keys(appDurationsPerPeriod),
+    )
       // Map to apps
-      .map((id) => apps[id as unknown as Ref<App>])
+      .map((id) => apps[+id as Ref<App>])
       .thru(handleStaleApps)
       // Remove hidden apps
       .filter((app) => !hiddenApps?.[app.id])
+      // Remove hidden tags
+      .filter((app) => !hiddenTags?.[app.tagId ?? untagged.id])
+      // Remove if not only showing one tag
+      .filter(
+        (app) =>
+          !onlyShowOneTag || (app.tagId ?? untagged.id) === onlyShowOneTag,
+      )
+
       .map((app) => ({ key: "app", app }) as AppFullKey)
       // Sort apps
       .orderBy((key) => sortedApps?.indexOf(key.app.id) ?? -1, "desc")
       .map((key) => ({
         ...key,
-        values: usages[key.app.id]!.map(
-          (usage) =>
-            [xAxisTickToIndexLookup[usage.group], usage.duration] as DataItem,
-        ),
+        values:
+          appDurationsPerPeriod[key.app.id]?.map(
+            (usage) =>
+              [xAxisTickToIndexLookup[usage.group], usage.duration] as DataItem,
+          ) ?? [],
       }));
 
     // Default grouping is none - just return the apps
@@ -584,7 +611,7 @@ function useUsageChartData({
         .value()
     );
   }, [
-    usages,
+    appDurationsPerPeriod,
     hiddenApps,
     hiddenTags,
     sortedApps,
@@ -595,6 +622,30 @@ function useUsageChartData({
     handleStaleApps,
     handleStaleTags,
     xAxisTickToIndexLookup,
+    onlyShowOneApp,
+    onlyShowOneTag,
   ]);
-  return { xAxisValues, xAxisTickToIndexLookup, data: fullKeyValues };
+
+  // map between group and total duration
+  const totalUsagePerPeriod: Record<number, number> = useMemo(() => {
+    return _(appDurationsPerPeriod)
+      .flatMap((appDurations) => appDurations)
+      .groupBy((appDur) => appDur?.group)
+      .map(
+        (durations, group) =>
+          [
+            +group,
+            durations.reduce((acc, appDur) => acc + (appDur?.duration ?? 0), 0),
+          ] as const,
+      )
+      .fromPairs()
+      .value();
+  }, [appDurationsPerPeriod]);
+
+  return {
+    xAxisValues,
+    xAxisTickToIndexLookup,
+    data: fullKeyValues,
+    totalUsagePerPeriod,
+  };
 }

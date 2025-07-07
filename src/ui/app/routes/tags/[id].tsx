@@ -326,31 +326,25 @@ function TagUsageBarChartCard({
   const startingInterval = usePeriodInterval(timePeriod);
   const [interval, setInterval] = useState(startingInterval);
 
-  const {
-    isLoading,
-    totalUsage,
-    usages: appUsages,
-    start,
-    end,
-  } = useAppDurationsPerPeriod({
-    start: interval.start,
-    end: interval.end,
-    period,
-  });
-  const { usages, tagUsage } = useMemo(() => {
-    const usages = _(tag.apps)
-      .map((appId) => [appId, appUsages[appId] ?? []])
-      .fromPairs()
-      .value();
-    const tagUsage = _(usages).values().flatten().sumBy("duration") ?? 0;
-    return { usages, tagUsage };
-  }, [appUsages, tag]);
+  const { isLoading, totalUsage, appDurationsPerPeriod, start, end } =
+    useAppDurationsPerPeriod({
+      start: interval.start,
+      end: interval.end,
+      period,
+    });
+  const { totalTagUsage } = useMemo(() => {
+    const totalTagUsage = _(tag.apps)
+      .flatMap((appId) => appDurationsPerPeriod[appId] ?? [])
+      .sumBy("duration");
+    return { totalTagUsage };
+  }, [appDurationsPerPeriod, tag]);
 
   const children = useMemo(
     () => (
       <div className="aspect-video flex-1 mx-1 max-w-full">
         <UsageChart
-          usages={usages}
+          appDurationsPerPeriod={appDurationsPerPeriod}
+          onlyShowOneTag={tag.id}
           period={period}
           start={start ?? interval.start}
           end={end ?? interval.end}
@@ -361,7 +355,15 @@ function TagUsageBarChartCard({
         />
       </div>
     ),
-    [usages, period, xAxisLabelFormatter, interval, start, end],
+    [
+      appDurationsPerPeriod,
+      period,
+      xAxisLabelFormatter,
+      interval,
+      start,
+      end,
+      tag.id,
+    ],
   );
 
   return (
@@ -371,7 +373,7 @@ function TagUsageBarChartCard({
       onIntervalChanged={setInterval}
       children={children}
       isLoading={isLoading}
-      usage={tagUsage}
+      usage={totalTagUsage}
       totalUsage={totalUsage}
     />
   );
