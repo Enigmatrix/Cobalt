@@ -2,6 +2,7 @@ import { cn } from "@/lib/utils";
 import {
   flip,
   offset,
+  shift,
   useClientPoint,
   useFloating,
   useInteractions,
@@ -31,13 +32,18 @@ export function VizTooltip({
     open: isOpen,
     onOpenChange: setIsOpen,
     placement: "top-start",
-    middleware: [offset(delta), flip()],
+    middleware: [offset(delta), shift(), flip()],
   });
 
   const clientPoint = useClientPoint(context, {
     axis: "both",
   });
 
+  // Typically, we use the getReferenceProps() on the anchor element.
+  // However, to avoid re-rendering woes, we skip that and just use the
+  // the useEffect below to manually handle the mouse enter and leave events.
+  // See https://floating-ui.com/docs/useinteractions#external-reference for
+  // an actual example of how it should be used.
   const { getFloatingProps } = useInteractions([clientPoint]);
 
   useEffect(() => {
