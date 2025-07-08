@@ -306,7 +306,11 @@ function TagSelect({
         value={tagId}
         onValueChanged={setTagId}
         render={() => (
-          <Button size="icon" variant="ghost" className="p-1 w-auto h-auto">
+          <Button
+            size="icon"
+            variant="ghost"
+            className="p-1 ml-1 w-auto h-auto"
+          >
             <ChevronsUpDown />
           </Button>
         )}
@@ -317,7 +321,7 @@ function TagSelect({
       variant="outline"
       className={cn("whitespace-nowrap text-muted-foreground", className)}
     >
-      <Text className="max-w-32">Untagged</Text>
+      <Text className="max-w-32 ml-1">Untagged</Text>
       <ChooseTag
         value={tagId}
         onValueChanged={setTagId}
@@ -325,7 +329,7 @@ function TagSelect({
           <Button
             size="icon"
             variant="ghost"
-            className="p-1 ml-2 w-auto h-auto"
+            className="p-1 ml-1 w-auto h-auto"
           >
             <ChevronsUpDown />
           </Button>

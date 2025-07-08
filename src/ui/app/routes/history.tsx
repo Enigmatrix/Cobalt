@@ -1,5 +1,6 @@
 import { DateRangePicker } from "@/components/time/date-range-picker";
 import { DurationText } from "@/components/time/duration-text";
+import { PeriodPicker } from "@/components/time/period-picker";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -19,6 +20,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Gantt } from "@/components/viz/gantt2";
+import { GroupByPicker } from "@/components/viz/groupby-picker";
 import { UsageChart, type GroupBy } from "@/components/viz/usage-chart";
 import { VerticalLegend } from "@/components/viz/vertical-legend";
 import {
@@ -199,37 +201,13 @@ function AppUsagePerPeriodHistory() {
           <Label className="font-medium text-muted-foreground place-self-end">
             View
           </Label>
-          <Select
-            value={groupBy}
-            onValueChange={(s) => setGroupBy(s as GroupBy)}
-          >
-            <SelectTrigger className="min-w-32 font-medium">
-              <SelectValue placeholder="Select a view" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={"app" as GroupBy}>Apps</SelectItem>
-              <SelectItem value={"tag" as GroupBy}>Tags</SelectItem>
-              <SelectItem value={"tag-show-untagged" as GroupBy}>
-                Tags (untagged separate)
-              </SelectItem>
-            </SelectContent>
-          </Select>
+          <GroupByPicker groupBy={groupBy} setGroupBy={setGroupBy} />
         </FormItem>
         <FormItem>
           <Label className="font-medium text-muted-foreground place-self-end">
             Period
           </Label>
-          <Select value={period} onValueChange={(s) => setPeriod(s as Period)}>
-            <SelectTrigger className="min-w-32 font-medium">
-              <SelectValue placeholder="Select a period" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="hour">Hour</SelectItem>
-              <SelectItem value="day">Day</SelectItem>
-              <SelectItem value="week">Week</SelectItem>
-              <SelectItem value="month">Month</SelectItem>
-            </SelectContent>
-          </Select>
+          <PeriodPicker period={period} setPeriod={setPeriod} />
         </FormItem>
       </div>
 
