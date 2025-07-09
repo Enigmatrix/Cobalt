@@ -61,9 +61,9 @@ export default function Home() {
           </BreadcrumbList>
         </Breadcrumb>
       </header>
-      <div className="h-0 flex-auto overflow-auto [scrollbar-gutter:stable]">
+      <div className="h-0 flex-auto overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]">
         <div className="flex flex-col gap-4 p-4">
-          <div className="grid auto-rows-min gap-4 grid-cols-[2fr_1fr]">
+          <div className="grid auto-rows-min gap-4 grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
             <AppUsageBarChartCard
               timePeriod="day"
               period="hour"
