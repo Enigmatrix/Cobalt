@@ -22,7 +22,7 @@ export interface TimePeriodUsageCardProps extends IntervalControls {
   isLoading: boolean;
 }
 
-export function TimePeriodUsageCard({
+export function UsageCard({
   interval,
   canGoNext,
   canGoPrev,
@@ -33,31 +33,15 @@ export function TimePeriodUsageCard({
   children,
   isLoading,
 }: TimePeriodUsageCardProps) {
-  const today = useToday();
-  const title = useMemo(
-    () => toHumanInterval(today, interval),
-    [today, interval],
-  );
-
   return (
     <VizCard>
       <VizCardHeader className="pb-1">
         <VizCardTitle className="pl-4 pt-4">
-          <div className="whitespace-nowrap text-base text-card-foreground/50">
-            {title}
-          </div>
-          <div className="flex gap-2 items-baseline font-semibold">
-            <DurationText className="text-xl" ticks={usage ?? totalUsage} />
-            {usage !== undefined && usage !== 0 && (
-              <>
-                <span className="text-xl text-muted-foreground">/</span>
-                <DurationText
-                  className="text-muted-foreground"
-                  ticks={totalUsage}
-                />
-              </>
-            )}
-          </div>
+          <UsageCardTitle
+            usage={usage}
+            totalUsage={totalUsage}
+            interval={interval}
+          />
         </VizCardTitle>
 
         <VizCardAction className="flex mt-5 mr-2">
@@ -82,5 +66,41 @@ export function TimePeriodUsageCard({
 
       <VizCardContent>{children}</VizCardContent>
     </VizCard>
+  );
+}
+
+export function UsageCardTitle({
+  usage,
+  totalUsage,
+  interval,
+}: {
+  usage?: number;
+  totalUsage: number;
+  interval: Interval;
+}) {
+  const today = useToday();
+  const title = useMemo(
+    () => toHumanInterval(today, interval),
+    [today, interval],
+  );
+
+  return (
+    <>
+      <div className="whitespace-nowrap text-base text-card-foreground/50">
+        {title}
+      </div>
+      <div className="flex gap-2 items-baseline font-semibold">
+        <DurationText className="text-xl" ticks={usage ?? totalUsage} />
+        {usage !== undefined && usage !== 0 && (
+          <>
+            <span className="text-xl text-muted-foreground">/</span>
+            <DurationText
+              className="text-muted-foreground"
+              ticks={totalUsage}
+            />
+          </>
+        )}
+      </div>
+    </>
   );
 }

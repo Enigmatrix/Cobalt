@@ -6,7 +6,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { TimePeriodUsageCard } from "@/components/usage-card";
+import { UsageCard } from "@/components/usage-card";
 import { Gantt } from "@/components/viz/gantt2";
 import { UsageChart } from "@/components/viz/usage-chart";
 import { useLastNonNull } from "@/hooks/use-last";
@@ -146,7 +146,7 @@ function AppUsageBarChartCard({
   );
 
   return (
-    <TimePeriodUsageCard
+    <UsageCard
       timePeriod={timePeriod}
       interval={interval}
       canGoNext={canGoNext}

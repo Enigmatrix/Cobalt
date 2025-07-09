@@ -25,7 +25,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Text } from "@/components/ui/text";
-import { TimePeriodUsageCard } from "@/components/usage-card";
+import { UsageCard } from "@/components/usage-card";
 import { Gantt } from "@/components/viz/gantt2";
 import Heatmap from "@/components/viz/heatmap";
 import { UsageChart } from "@/components/viz/usage-chart";
@@ -292,7 +292,7 @@ function TagPage({ tag }: { tag: Tag }) {
             />
           </div>
 
-          <TimePeriodUsageCard
+          <UsageCard
             timePeriod="year"
             usage={yearUsage}
             totalUsage={yearTotalUsage}
@@ -314,7 +314,7 @@ function TagPage({ tag }: { tag: Tag }) {
                 tagId={tag.id}
               />
             </div>
-          </TimePeriodUsageCard>
+          </UsageCard>
 
           <div className="sticky rounded-xl bg-muted/50 border border-border overflow-clip">
             <Gantt
@@ -390,7 +390,7 @@ function TagUsageBarChartCard({
   );
 
   return (
-    <TimePeriodUsageCard
+    <UsageCard
       timePeriod={timePeriod}
       interval={interval}
       canGoNext={canGoNext}
