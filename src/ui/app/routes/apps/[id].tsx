@@ -232,7 +232,7 @@ function AppPage({ app }: { app: App }) {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 auto-rows-min gap-4 md:grid-cols-3">
+          <div className="grid auto-rows-min gap-4 grid-cols-[2fr_1fr]">
             <AppUsageBarChartCard
               timePeriod="day"
               period="hour"
@@ -245,6 +245,9 @@ function AppPage({ app }: { app: App }) {
               xAxisLabelFormatter={weekDayFormatter}
               appId={app.id}
             />
+          </div>
+
+          <div className="grid auto-rows-min gap-4 grid-cols-1">
             <AppUsageBarChartCard
               timePeriod="month"
               period="day"
@@ -252,6 +255,7 @@ function AppPage({ app }: { app: App }) {
               appId={app.id}
             />
           </div>
+
           <TimePeriodUsageCard
             timePeriod="year"
             usage={yearUsage}
@@ -388,7 +392,7 @@ function AppUsageBarChartCard({
 
   const children = useMemo(
     () => (
-      <div className="aspect-video flex-1 mx-1 max-w-full">
+      <div className="aspect-video flex-1 mx-1 max-w-full max-h-80">
         <UsageChart
           appDurationsPerPeriod={appDurationsPerPeriod}
           onlyShowOneApp={appId}

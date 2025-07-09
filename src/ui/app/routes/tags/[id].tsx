@@ -268,7 +268,7 @@ function TagPage({ tag }: { tag: Tag }) {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 auto-rows-min gap-4 md:grid-cols-3">
+          <div className="grid auto-rows-min gap-4 grid-cols-[2fr_1fr]">
             <TagUsageBarChartCard
               timePeriod="day"
               period="hour"
@@ -281,6 +281,9 @@ function TagPage({ tag }: { tag: Tag }) {
               xAxisLabelFormatter={weekDayFormatter}
               tag={tag}
             />
+          </div>
+
+          <div className="grid auto-rows-min gap-4 grid-cols-1">
             <TagUsageBarChartCard
               timePeriod="month"
               period="day"
@@ -288,6 +291,7 @@ function TagPage({ tag }: { tag: Tag }) {
               tag={tag}
             />
           </div>
+
           <TimePeriodUsageCard
             timePeriod="year"
             usage={yearUsage}
@@ -360,7 +364,7 @@ function TagUsageBarChartCard({
 
   const children = useMemo(
     () => (
-      <div className="aspect-video flex-1 mx-1 max-w-full">
+      <div className="aspect-video flex-1 mx-1 max-w-full max-h-80">
         <UsageChart
           appDurationsPerPeriod={appDurationsPerPeriod}
           onlyShowOneTag={tag.id}
