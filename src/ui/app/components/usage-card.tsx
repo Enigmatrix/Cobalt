@@ -8,7 +8,7 @@ import {
   VizCardTitle,
 } from "@/components/viz/viz-card";
 import { useToday } from "@/hooks/use-time";
-import type { Interval, Period } from "@/lib/time";
+import { toHumanInterval, type Interval, type Period } from "@/lib/time";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
@@ -108,57 +108,6 @@ export interface TimePeriodUsageCardProps {
   isLoading: boolean;
 }
 
-const hourTitle = (today: DateTime, interval: Interval) => {
-  const dt = interval.start;
-  const format =
-    dt.toFormat("yyyy LLL dd") === today.toFormat("yyyy LLL dd")
-      ? "HH:mm"
-      : "yyyy LLL dd HH:mm";
-  return dt.toFormat(format);
-};
-
-const dayTitle = (today: DateTime, interval: Interval) => {
-  const dt = interval.start;
-  if (+today.startOf("day") === +dt) return "Today";
-  if (+today.startOf("day").minus({ day: 1 }) === +dt) return "Yesterday";
-  const format = dt.year === today.year ? "dd LLL" : "dd LLL yyyy";
-  return dt.toFormat(format);
-};
-
-const weekTitle = (today: DateTime, interval: Interval) => {
-  const dt = interval.start;
-  if (+today.startOf("week") === +dt) return "This Week";
-  if (+today.startOf("week").minus({ week: 1 }) === +dt) return "Last Week";
-  const format =
-    dt.year === today.year && dt.endOf("week").year === today.year
-      ? "dd LLL"
-      : "dd LLL yyyy";
-  return dt.toFormat(format) + " - " + dt.endOf("week").toFormat(format);
-};
-
-const monthTitle = (today: DateTime, interval: Interval) => {
-  const dt = interval.start;
-  if (+today.startOf("month") === +dt) return "This Month";
-  if (+today.startOf("month").minus({ month: 1 }) === +dt) return "Last Month";
-  const format = dt.year === today.year ? "LLL" : "LLL yyyy";
-  return dt.toFormat(format);
-};
-
-const yearTitle = (today: DateTime, interval: Interval) => {
-  const dt = interval.start;
-  if (+today.startOf("year") === +dt) return "This Year";
-  if (+today.startOf("year").minus({ year: 1 }) === +dt) return "Last Year";
-  return dt.toFormat("yyyy");
-};
-
-const titles = {
-  hour: hourTitle,
-  day: dayTitle,
-  week: weekTitle,
-  month: monthTitle,
-  year: yearTitle,
-};
-
 export function TimePeriodUsageCard({
   timePeriod,
   ...props
@@ -191,7 +140,7 @@ export function TimePeriodUsageCard({
         return true;
       },
       title(interval: Interval) {
-        return titles[timePeriod](today, interval);
+        return toHumanInterval(today, interval);
       },
     }),
     [timePeriod, today],
