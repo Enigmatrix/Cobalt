@@ -7,56 +7,44 @@ import {
   VizCardHeader,
   VizCardTitle,
 } from "@/components/viz/viz-card";
-import { useToday } from "@/hooks/use-time";
+import { useToday, type IntervalControls } from "@/hooks/use-time";
 import { toHumanInterval, type Interval, type Period } from "@/lib/time";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useCallback, useMemo } from "react";
+import { useMemo } from "react";
 
-export function UsageCard({
-  interval,
-  onIntervalChanged,
-  next,
-  prev,
-  canGoNext,
-  canGoPrev,
-
-  title,
-  usage,
-  totalUsage,
-  children,
-  isLoading,
-}: {
+export interface TimePeriodUsageCardProps extends IntervalControls {
+  timePeriod: Period;
   interval: Interval;
-  onIntervalChanged: (interval: Interval) => void;
-  next: (interval: Interval) => Interval;
-  prev: (interval: Interval) => Interval;
-  canGoNext: (interval: Interval) => boolean;
-  canGoPrev: (interval: Interval) => boolean;
-  title: (interval: Interval) => string;
 
   usage?: number;
   totalUsage: number;
   children: React.ReactNode;
   isLoading: boolean;
-}) {
-  const nextCallback = useCallback(() => {
-    if (canGoNext(interval)) {
-      onIntervalChanged(next(interval));
-    }
-  }, [interval, canGoNext, next, onIntervalChanged]);
+}
 
-  const prevCallback = useCallback(() => {
-    if (canGoPrev(interval)) {
-      onIntervalChanged(prev(interval));
-    }
-  }, [interval, canGoPrev, prev, onIntervalChanged]);
+export function TimePeriodUsageCard({
+  interval,
+  canGoNext,
+  canGoPrev,
+  goNext,
+  goPrev,
+  usage,
+  totalUsage,
+  children,
+  isLoading,
+}: TimePeriodUsageCardProps) {
+  const today = useToday();
+  const title = useMemo(
+    () => toHumanInterval(today, interval),
+    [today, interval],
+  );
 
   return (
     <VizCard>
       <VizCardHeader className="pb-1">
         <VizCardTitle className="pl-4 pt-4">
           <div className="whitespace-nowrap text-base text-card-foreground/50">
-            {title(interval)}
+            {title}
           </div>
           <div className="flex gap-2 items-baseline font-semibold">
             <DurationText className="text-xl" ticks={usage ?? totalUsage} />
@@ -76,16 +64,16 @@ export function UsageCard({
           <Button
             variant="ghost"
             size="icon"
-            onClick={prevCallback}
-            disabled={!canGoPrev(interval) || isLoading}
+            onClick={goPrev}
+            disabled={!canGoPrev || isLoading}
           >
             <ChevronLeft />
           </Button>
           <Button
             variant="ghost"
             size="icon"
-            onClick={nextCallback}
-            disabled={!canGoNext(interval) || isLoading}
+            onClick={goNext}
+            disabled={!canGoNext || isLoading}
           >
             <ChevronRight />
           </Button>
@@ -95,56 +83,4 @@ export function UsageCard({
       <VizCardContent>{children}</VizCardContent>
     </VizCard>
   );
-}
-
-export interface TimePeriodUsageCardProps {
-  timePeriod: Period;
-  interval: Interval;
-  onIntervalChanged: (interval: Interval) => void;
-
-  usage?: number;
-  totalUsage: number;
-  children: React.ReactNode;
-  isLoading: boolean;
-}
-
-export function TimePeriodUsageCard({
-  timePeriod,
-  ...props
-}: TimePeriodUsageCardProps) {
-  const today = useToday();
-
-  const iterProps = useMemo(
-    () => ({
-      next(interval: Interval) {
-        return {
-          start: interval.start.plus({ [timePeriod]: 1 }),
-          end: interval.start
-            .plus({ [timePeriod]: 1 })
-            .plus({ [timePeriod]: 1 }),
-        };
-      },
-      prev(interval: Interval) {
-        return {
-          start: interval.start.minus({ [timePeriod]: 1 }),
-          end: interval.start
-            .minus({ [timePeriod]: 1 })
-            .plus({ [timePeriod]: 1 }),
-        };
-      },
-      canGoNext(interval: Interval) {
-        const nextStart = interval.start.plus({ [timePeriod]: 1 });
-        return today.plus({ day: 1 }) > nextStart;
-      },
-      canGoPrev() {
-        return true;
-      },
-      title(interval: Interval) {
-        return toHumanInterval(today, interval);
-      },
-    }),
-    [timePeriod, today],
-  );
-
-  return <UsageCard {...props} {...iterProps} />;
 }

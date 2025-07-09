@@ -9,13 +9,17 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { TimePeriodUsageCard } from "@/components/usage-card";
 import { Gantt } from "@/components/viz/gantt2";
 import { UsageChart } from "@/components/viz/usage-chart";
+import { useLastNonNull } from "@/hooks/use-last";
 import {
   useAppDurationsPerPeriod,
   useAppSessionUsages,
   useInteractionPeriods,
   useSystemEvents,
 } from "@/hooks/use-repo";
-import { usePeriodInterval } from "@/hooks/use-time";
+import {
+  useIntervalControlsWithDefault,
+  usePeriodInterval,
+} from "@/hooks/use-time";
 import {
   hour24Formatter,
   monthDayFormatter,
@@ -23,7 +27,7 @@ import {
   type Period,
 } from "@/lib/time";
 import { DateTime } from "luxon";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 
 export default function Home() {
   const interval = usePeriodInterval("day");
@@ -106,13 +110,19 @@ function AppUsageBarChartCard({
   period: Period;
   xAxisLabelFormatter: (dt: DateTime) => string;
 }) {
-  const startingInterval = usePeriodInterval(timePeriod);
-  const [interval, setInterval] = useState(startingInterval);
+  const {
+    interval: intervalNullable,
+    canGoNext,
+    goNext,
+    canGoPrev,
+    goPrev,
+  } = useIntervalControlsWithDefault(timePeriod);
+  const interval = useLastNonNull(intervalNullable);
 
   const { isLoading, totalUsage, appDurationsPerPeriod, start, end } =
     useAppDurationsPerPeriod({
-      start: interval.start,
-      end: interval.end,
+      start: interval?.start,
+      end: interval?.end,
       period,
     });
 
@@ -139,7 +149,10 @@ function AppUsageBarChartCard({
     <TimePeriodUsageCard
       timePeriod={timePeriod}
       interval={interval}
-      onIntervalChanged={setInterval}
+      canGoNext={canGoNext}
+      goNext={goNext}
+      canGoPrev={canGoPrev}
+      goPrev={goPrev}
       children={children}
       isLoading={isLoading}
       totalUsage={totalUsage}

@@ -29,13 +29,17 @@ import { TimePeriodUsageCard } from "@/components/usage-card";
 import { Gantt } from "@/components/viz/gantt2";
 import Heatmap from "@/components/viz/heatmap";
 import { UsageChart } from "@/components/viz/usage-chart";
+import { useLastNonNull } from "@/hooks/use-last";
 import { useAlerts, useTag } from "@/hooks/use-refresh";
 import {
   useAppDurationsPerPeriod,
   useAppSessionUsages,
   useTagDurationsPerPeriod,
 } from "@/hooks/use-repo";
-import { usePeriodInterval } from "@/hooks/use-time";
+import {
+  useIntervalControlsWithDefault,
+  usePeriodInterval,
+} from "@/hooks/use-time";
 import type { App, Ref, Tag } from "@/lib/entities";
 import { useAppState } from "@/lib/state";
 import {
@@ -98,8 +102,14 @@ function TagPage({ tag }: { tag: Tag }) {
     await removeTag(tag.id);
   }, [removeTag, navigate, tag.id]);
 
-  const yearInitInterval = usePeriodInterval("year");
-  const [yearInterval, setYearInterval] = useState(yearInitInterval);
+  const {
+    interval: yearIntervalNullable,
+    canGoNext: yearCanGoNext,
+    goNext: yearGoNext,
+    canGoPrev: yearCanGoPrev,
+    goPrev: yearGoPrev,
+  } = useIntervalControlsWithDefault("year");
+  const yearInterval = useLastNonNull(yearIntervalNullable);
 
   const alerts = useAlerts();
   const tagAlerts = useMemo(
@@ -283,7 +293,10 @@ function TagPage({ tag }: { tag: Tag }) {
             usage={yearUsage}
             totalUsage={yearTotalUsage}
             interval={yearInterval}
-            onIntervalChanged={setYearInterval}
+            canGoNext={yearCanGoNext}
+            canGoPrev={yearCanGoPrev}
+            goNext={yearGoNext}
+            goPrev={yearGoPrev}
             isLoading={isYearDataLoading}
           >
             <div className="p-4">
@@ -323,8 +336,14 @@ function TagUsageBarChartCard({
   xAxisLabelFormatter: (dt: DateTime) => string;
   tag: Tag;
 }) {
-  const startingInterval = usePeriodInterval(timePeriod);
-  const [interval, setInterval] = useState(startingInterval);
+  const {
+    interval: intervalNullable,
+    canGoNext,
+    goNext,
+    canGoPrev,
+    goPrev,
+  } = useIntervalControlsWithDefault(timePeriod);
+  const interval = useLastNonNull(intervalNullable);
 
   const { isLoading, totalUsage, appDurationsPerPeriod, start, end } =
     useAppDurationsPerPeriod({
@@ -370,7 +389,10 @@ function TagUsageBarChartCard({
     <TimePeriodUsageCard
       timePeriod={timePeriod}
       interval={interval}
-      onIntervalChanged={setInterval}
+      canGoNext={canGoNext}
+      canGoPrev={canGoPrev}
+      goNext={goNext}
+      goPrev={goPrev}
       children={children}
       isLoading={isLoading}
       usage={totalTagUsage}
