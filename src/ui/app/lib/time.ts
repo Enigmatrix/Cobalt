@@ -77,16 +77,16 @@ export function periodToDuration(period: Period): Duration {
 export function toHumanDateTime(dt: DateTime): string {
   // if time part is 00:00:00, then return date part only
   if (dt.toFormat("HH:mm:ss") === "00:00:00") {
-    return dt.toFormat("LLL dd, y");
+    return dt.toFormat("dd LLL y");
   }
   if (dt.toFormat("ss") === "00") {
-    return dt.toFormat("LLL dd, y hh:mm a");
+    return dt.toFormat("dd LLL y hh:mm a");
   }
-  return dt.toFormat("LLL dd, y hh:mm:ss a");
+  return dt.toFormat("dd LLL y hh:mm:ss a");
 }
 
 export function toHumanDateTimeFull(dt: DateTime): string {
-  return dt.toFormat("LLL dd, y hh:mm:ss a");
+  return dt.toFormat("dd LLL y hh:mm:ss a");
 }
 
 export function toHumanInterval(today: DateTime, interval: Interval): string {
@@ -122,9 +122,9 @@ export function isIntervalMatchingPeriod(
 function periodTitleHour(today: DateTime, interval: Interval): string {
   const dt = interval.start;
   const format =
-    dt.toFormat("yyyy LLL dd") === today.toFormat("yyyy LLL dd")
+    dt.toFormat("y LLL dd") === today.toFormat("y LLL dd")
       ? "HH:mm"
-      : "yyyy LLL dd HH:mm";
+      : "dd LLL y hh:mm a";
   return dt.toFormat(format);
 }
 
@@ -132,7 +132,7 @@ function periodTitleDay(today: DateTime, interval: Interval): string {
   const dt = interval.start;
   if (today.startOf("day").equals(dt)) return "Today";
   if (today.startOf("day").minus({ day: 1 }).equals(dt)) return "Yesterday";
-  const format = dt.year === today.year ? "dd LLL" : "dd LLL yyyy";
+  const format = dt.year === today.year ? "dd LLL" : "dd LLL y";
   return dt.toFormat(format);
 }
 
@@ -143,7 +143,7 @@ function periodTitleWeek(today: DateTime, interval: Interval): string {
   const format =
     dt.year === today.year && dt.endOf("week").year === today.year
       ? "dd LLL"
-      : "dd LLL yyyy";
+      : "dd LLL y";
   return dt.toFormat(format) + " - " + dt.endOf("week").toFormat(format);
 }
 
@@ -152,7 +152,7 @@ function periodTitleMonth(today: DateTime, interval: Interval): string {
   if (today.startOf("month").equals(dt)) return "This Month";
   if (today.startOf("month").minus({ month: 1 }).equals(dt))
     return "Last Month";
-  const format = dt.year === today.year ? "LLL" : "LLL yyyy";
+  const format = dt.year === today.year ? "LLL" : "LLL y";
   return dt.toFormat(format);
 }
 
@@ -160,7 +160,7 @@ function periodTitleYear(today: DateTime, interval: Interval): string {
   const dt = interval.start;
   if (today.startOf("year").equals(dt)) return "This Year";
   if (today.startOf("year").minus({ year: 1 }).equals(dt)) return "Last Year";
-  return dt.toFormat("yyyy");
+  return dt.toFormat("y");
 }
 
 const periodTitles = {
