@@ -6,7 +6,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { UsageCard } from "@/components/usage-card";
+import { NextButton, PrevButton, UsageCard } from "@/components/usage-card";
 import { Gantt } from "@/components/viz/gantt2";
 import { UsageChart } from "@/components/viz/usage-chart";
 import { useLastNonNull } from "@/hooks/use-last";
@@ -147,15 +147,23 @@ function AppUsageBarChartCard({
 
   return (
     <UsageCard
-      timePeriod={timePeriod}
       interval={interval}
-      canGoNext={canGoNext}
-      goNext={goNext}
-      canGoPrev={canGoPrev}
-      goPrev={goPrev}
-      children={children}
-      isLoading={isLoading}
       totalUsage={totalUsage}
+      children={children}
+      actions={
+        <>
+          <PrevButton
+            canGoPrev={canGoPrev}
+            isLoading={isLoading}
+            goPrev={goPrev}
+          />
+          <NextButton
+            canGoNext={canGoNext}
+            isLoading={isLoading}
+            goNext={goNext}
+          />
+        </>
+      }
     />
   );
 }

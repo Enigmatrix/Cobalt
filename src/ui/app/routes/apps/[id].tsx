@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Text } from "@/components/ui/text";
-import { UsageCard } from "@/components/usage-card";
+import { NextButton, PrevButton, UsageCard } from "@/components/usage-card";
 import { Gantt } from "@/components/viz/gantt2";
 import Heatmap from "@/components/viz/heatmap";
 import { UsageChart } from "@/components/viz/usage-chart";
@@ -257,15 +257,23 @@ function AppPage({ app }: { app: App }) {
           </div>
 
           <UsageCard
-            timePeriod="year"
             usage={yearUsage}
             totalUsage={yearTotalUsage}
             interval={yearInterval}
-            isLoading={isYearDataLoading}
-            canGoNext={yearCanGoNext}
-            goNext={yearGoNext}
-            canGoPrev={yearCanGoPrev}
-            goPrev={yearGoPrev}
+            actions={
+              <>
+                <PrevButton
+                  canGoPrev={yearCanGoPrev}
+                  isLoading={isYearDataLoading}
+                  goPrev={yearGoPrev}
+                />
+                <NextButton
+                  canGoNext={yearCanGoNext}
+                  isLoading={isYearDataLoading}
+                  goNext={yearGoNext}
+                />
+              </>
+            }
           >
             <div className="p-4">
               <Heatmap
@@ -419,16 +427,24 @@ function AppUsageBarChartCard({
 
   return (
     <UsageCard
-      timePeriod={timePeriod}
       interval={interval}
-      canGoNext={canGoNext}
-      goNext={goNext}
-      canGoPrev={canGoPrev}
-      goPrev={goPrev}
-      children={children}
-      isLoading={isLoading}
       usage={totalAppUsage}
       totalUsage={totalUsage}
+      children={children}
+      actions={
+        <>
+          <PrevButton
+            canGoPrev={canGoPrev}
+            isLoading={isLoading}
+            goPrev={goPrev}
+          />
+          <NextButton
+            canGoNext={canGoNext}
+            isLoading={isLoading}
+            goNext={goNext}
+          />
+        </>
+      }
     />
   );
 }

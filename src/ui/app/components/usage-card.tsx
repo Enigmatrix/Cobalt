@@ -7,32 +7,27 @@ import {
   VizCardHeader,
   VizCardTitle,
 } from "@/components/viz/viz-card";
-import { useToday, type IntervalControls } from "@/hooks/use-time";
-import { toHumanInterval, type Interval, type Period } from "@/lib/time";
+import { useToday } from "@/hooks/use-time";
+import { toHumanInterval, type Interval } from "@/lib/time";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo } from "react";
 
-export interface TimePeriodUsageCardProps extends IntervalControls {
-  timePeriod: Period;
+export interface UsageCardProps {
   interval: Interval;
 
   usage?: number;
   totalUsage: number;
   children: React.ReactNode;
-  isLoading: boolean;
+  actions: React.ReactNode;
 }
 
 export function UsageCard({
   interval,
-  canGoNext,
-  canGoPrev,
-  goNext,
-  goPrev,
   usage,
   totalUsage,
   children,
-  isLoading,
-}: TimePeriodUsageCardProps) {
+  actions,
+}: UsageCardProps) {
   return (
     <VizCard>
       <VizCardHeader className="pb-1">
@@ -44,28 +39,53 @@ export function UsageCard({
           />
         </VizCardTitle>
 
-        <VizCardAction className="flex mt-5 mr-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={goPrev}
-            disabled={!canGoPrev || isLoading}
-          >
-            <ChevronLeft />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={goNext}
-            disabled={!canGoNext || isLoading}
-          >
-            <ChevronRight />
-          </Button>
-        </VizCardAction>
+        <VizCardAction className="flex mt-5 mr-2">{actions}</VizCardAction>
       </VizCardHeader>
 
       <VizCardContent>{children}</VizCardContent>
     </VizCard>
+  );
+}
+
+export function PrevButton({
+  canGoPrev,
+  isLoading,
+  goPrev,
+}: {
+  canGoPrev: boolean;
+  isLoading: boolean;
+  goPrev: () => void;
+}) {
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={goPrev}
+      disabled={!canGoPrev || isLoading}
+    >
+      <ChevronLeft />
+    </Button>
+  );
+}
+
+export function NextButton({
+  canGoNext,
+  isLoading,
+  goNext,
+}: {
+  canGoNext: boolean;
+  isLoading: boolean;
+  goNext: () => void;
+}) {
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={goNext}
+      disabled={!canGoNext || isLoading}
+    >
+      <ChevronRight />
+    </Button>
   );
 }
 

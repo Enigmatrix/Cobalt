@@ -25,7 +25,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Text } from "@/components/ui/text";
-import { UsageCard } from "@/components/usage-card";
+import { NextButton, PrevButton, UsageCard } from "@/components/usage-card";
 import { Gantt } from "@/components/viz/gantt2";
 import Heatmap from "@/components/viz/heatmap";
 import { UsageChart } from "@/components/viz/usage-chart";
@@ -293,15 +293,23 @@ function TagPage({ tag }: { tag: Tag }) {
           </div>
 
           <UsageCard
-            timePeriod="year"
             usage={yearUsage}
             totalUsage={yearTotalUsage}
             interval={yearInterval}
-            canGoNext={yearCanGoNext}
-            canGoPrev={yearCanGoPrev}
-            goNext={yearGoNext}
-            goPrev={yearGoPrev}
-            isLoading={isYearDataLoading}
+            actions={
+              <>
+                <PrevButton
+                  canGoPrev={yearCanGoPrev}
+                  isLoading={isYearDataLoading}
+                  goPrev={yearGoPrev}
+                />
+                <NextButton
+                  canGoNext={yearCanGoNext}
+                  isLoading={isYearDataLoading}
+                  goNext={yearGoNext}
+                />
+              </>
+            }
           >
             <div className="p-4">
               <Heatmap
@@ -391,16 +399,24 @@ function TagUsageBarChartCard({
 
   return (
     <UsageCard
-      timePeriod={timePeriod}
       interval={interval}
-      canGoNext={canGoNext}
-      canGoPrev={canGoPrev}
-      goNext={goNext}
-      goPrev={goPrev}
-      children={children}
-      isLoading={isLoading}
       usage={totalTagUsage}
       totalUsage={totalUsage}
+      children={children}
+      actions={
+        <>
+          <PrevButton
+            canGoPrev={canGoPrev}
+            isLoading={isLoading}
+            goPrev={goPrev}
+          />
+          <NextButton
+            canGoNext={canGoNext}
+            isLoading={isLoading}
+            goNext={goNext}
+          />
+        </>
+      }
     />
   );
 }
