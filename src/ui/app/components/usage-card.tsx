@@ -1,6 +1,12 @@
 import { DurationText } from "@/components/time/duration-text";
 import { Button } from "@/components/ui/button";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   VizCard,
   VizCardAction,
   VizCardContent,
@@ -30,7 +36,7 @@ export function UsageCard({
 }: UsageCardProps) {
   return (
     <VizCard>
-      <VizCardHeader className="pb-1">
+      <VizCardHeader className="pb-1 has-data-[slot=card-action]:grid-cols-[minmax(0,1fr)_auto]">
         <VizCardTitle className="pl-4 pt-4">
           <UsageCardTitle
             usage={usage}
@@ -39,7 +45,7 @@ export function UsageCard({
           />
         </VizCardTitle>
 
-        <VizCardAction className="flex mt-5 mr-2">{actions}</VizCardAction>
+        <VizCardAction className="flex mt-4 mr-1.5">{actions}</VizCardAction>
       </VizCardHeader>
 
       <VizCardContent>{children}</VizCardContent>
@@ -106,9 +112,17 @@ export function UsageCardTitle({
 
   return (
     <>
-      <div className="whitespace-nowrap text-base text-card-foreground/50">
-        {title}
-      </div>
+      {/* TODO: create a interval range component? */}
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger className="max-w-full text-base text-card-foreground/50 truncate">
+            {title}
+          </TooltipTrigger>
+          <TooltipContent>
+            <div>{title}</div>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
       <div className="flex gap-2 items-baseline font-semibold">
         <DurationText className="text-xl" ticks={usage ?? totalUsage} />
         {usage !== undefined && usage !== 0 && (
