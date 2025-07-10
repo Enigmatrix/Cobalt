@@ -25,17 +25,21 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Text } from "@/components/ui/text";
-import { TimePeriodUsageCard } from "@/components/usage-card";
+import { NextButton, PrevButton, UsageCard } from "@/components/usage-card";
 import { Gantt } from "@/components/viz/gantt2";
 import Heatmap from "@/components/viz/heatmap";
 import { UsageChart } from "@/components/viz/usage-chart";
+import { useLastNonNull } from "@/hooks/use-last";
 import { useAlerts, useTag } from "@/hooks/use-refresh";
 import {
   useAppDurationsPerPeriod,
   useAppSessionUsages,
   useTagDurationsPerPeriod,
 } from "@/hooks/use-repo";
-import { usePeriodInterval } from "@/hooks/use-time";
+import {
+  useIntervalControlsWithDefault,
+  usePeriodInterval,
+} from "@/hooks/use-time";
 import type { App, Ref, Tag } from "@/lib/entities";
 import { useAppState } from "@/lib/state";
 import {
@@ -98,8 +102,14 @@ function TagPage({ tag }: { tag: Tag }) {
     await removeTag(tag.id);
   }, [removeTag, navigate, tag.id]);
 
-  const yearInitInterval = usePeriodInterval("year");
-  const [yearInterval, setYearInterval] = useState(yearInitInterval);
+  const {
+    interval: yearIntervalNullable,
+    canGoNext: yearCanGoNext,
+    goNext: yearGoNext,
+    canGoPrev: yearCanGoPrev,
+    goPrev: yearGoPrev,
+  } = useIntervalControlsWithDefault("year");
+  const yearInterval = useLastNonNull(yearIntervalNullable);
 
   const alerts = useAlerts();
   const tagAlerts = useMemo(
@@ -185,7 +195,7 @@ function TagPage({ tag }: { tag: Tag }) {
         </Breadcrumb>
       </header>
 
-      <div className="h-0 flex-auto overflow-auto [scrollbar-gutter:stable]">
+      <div className="h-0 flex-auto overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]">
         <div className="flex flex-col gap-4 p-4">
           {/* Tag Info */}
           <div className="rounded-xl bg-card border border-border px-6 pt-6 pb-4">
@@ -258,7 +268,7 @@ function TagPage({ tag }: { tag: Tag }) {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 auto-rows-min gap-4 md:grid-cols-3">
+          <div className="grid auto-rows-min gap-4 grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
             <TagUsageBarChartCard
               timePeriod="day"
               period="hour"
@@ -271,6 +281,9 @@ function TagPage({ tag }: { tag: Tag }) {
               xAxisLabelFormatter={weekDayFormatter}
               tag={tag}
             />
+          </div>
+
+          <div className="grid auto-rows-min gap-4 grid-cols-1">
             <TagUsageBarChartCard
               timePeriod="month"
               period="day"
@@ -278,13 +291,25 @@ function TagPage({ tag }: { tag: Tag }) {
               tag={tag}
             />
           </div>
-          <TimePeriodUsageCard
-            timePeriod="year"
+
+          <UsageCard
             usage={yearUsage}
             totalUsage={yearTotalUsage}
             interval={yearInterval}
-            onIntervalChanged={setYearInterval}
-            isLoading={isYearDataLoading}
+            actions={
+              <>
+                <PrevButton
+                  canGoPrev={yearCanGoPrev}
+                  isLoading={isYearDataLoading}
+                  goPrev={yearGoPrev}
+                />
+                <NextButton
+                  canGoNext={yearCanGoNext}
+                  isLoading={isYearDataLoading}
+                  goNext={yearGoNext}
+                />
+              </>
+            }
           >
             <div className="p-4">
               <Heatmap
@@ -297,7 +322,7 @@ function TagPage({ tag }: { tag: Tag }) {
                 tagId={tag.id}
               />
             </div>
-          </TimePeriodUsageCard>
+          </UsageCard>
 
           <div className="sticky rounded-xl bg-muted/50 border border-border overflow-clip">
             <Gantt
@@ -323,8 +348,14 @@ function TagUsageBarChartCard({
   xAxisLabelFormatter: (dt: DateTime) => string;
   tag: Tag;
 }) {
-  const startingInterval = usePeriodInterval(timePeriod);
-  const [interval, setInterval] = useState(startingInterval);
+  const {
+    interval: intervalNullable,
+    canGoNext,
+    goNext,
+    canGoPrev,
+    goPrev,
+  } = useIntervalControlsWithDefault(timePeriod);
+  const interval = useLastNonNull(intervalNullable);
 
   const { isLoading, totalUsage, appDurationsPerPeriod, start, end } =
     useAppDurationsPerPeriod({
@@ -341,7 +372,7 @@ function TagUsageBarChartCard({
 
   const children = useMemo(
     () => (
-      <div className="aspect-video flex-1 mx-1 max-w-full">
+      <div className="aspect-video flex-1 mx-1 max-w-full max-h-80">
         <UsageChart
           appDurationsPerPeriod={appDurationsPerPeriod}
           onlyShowOneTag={tag.id}
@@ -367,14 +398,25 @@ function TagUsageBarChartCard({
   );
 
   return (
-    <TimePeriodUsageCard
-      timePeriod={timePeriod}
+    <UsageCard
       interval={interval}
-      onIntervalChanged={setInterval}
-      children={children}
-      isLoading={isLoading}
       usage={totalTagUsage}
       totalUsage={totalUsage}
+      children={children}
+      actions={
+        <>
+          <PrevButton
+            canGoPrev={canGoPrev}
+            isLoading={isLoading}
+            goPrev={goPrev}
+          />
+          <NextButton
+            canGoNext={canGoNext}
+            isLoading={isLoading}
+            goNext={goNext}
+          />
+        </>
+      }
     />
   );
 }

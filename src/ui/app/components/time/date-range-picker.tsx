@@ -8,7 +8,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useToday } from "@/hooks/use-time";
-import { toHumanDateTime, type Interval } from "@/lib/time";
+import { toHumanDateTime, toHumanInterval, type Interval } from "@/lib/time";
 import { cn } from "@/lib/utils";
 import type { ClassValue } from "clsx";
 import { DateTime, Duration } from "luxon";
@@ -222,7 +222,7 @@ export function DateRangePicker({
               className,
             )}
           >
-            {formatDateRange(value, quickRanges)}
+            {formatDateRange(today, value)}
           </Button>
         )}
       </PopoverTrigger>
@@ -310,19 +310,9 @@ export function DateRangePicker({
   );
 }
 
-const formatDateRange = (date: Interval | null, ranges: QuickRange[]) => {
+const formatDateRange = (today: DateTime, date: Interval | null) => {
   if (date?.start !== undefined && date.end !== undefined) {
-    const range = ranges.find(
-      (r) => +r.start === +(date.start ?? 0) && +r.end === +(date.end ?? 0),
-    );
-    if (range) {
-      return range.label;
-    }
-    return (
-      <>
-        {toHumanDateTime(date.start)} - {toHumanDateTime(date.end)}
-      </>
-    );
+    return toHumanInterval(today, date);
   }
   return <span>Pick a time range</span>;
 };

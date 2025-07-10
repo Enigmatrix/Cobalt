@@ -6,16 +6,20 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { TimePeriodUsageCard } from "@/components/usage-card";
+import { NextButton, PrevButton, UsageCard } from "@/components/usage-card";
 import { Gantt } from "@/components/viz/gantt2";
 import { UsageChart } from "@/components/viz/usage-chart";
+import { useLastNonNull } from "@/hooks/use-last";
 import {
   useAppDurationsPerPeriod,
   useAppSessionUsages,
   useInteractionPeriods,
   useSystemEvents,
 } from "@/hooks/use-repo";
-import { usePeriodInterval } from "@/hooks/use-time";
+import {
+  useIntervalControlsWithDefault,
+  usePeriodInterval,
+} from "@/hooks/use-time";
 import {
   hour24Formatter,
   monthDayFormatter,
@@ -23,7 +27,7 @@ import {
   type Period,
 } from "@/lib/time";
 import { DateTime } from "luxon";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 
 export default function Home() {
   const interval = usePeriodInterval("day");
@@ -57,9 +61,9 @@ export default function Home() {
           </BreadcrumbList>
         </Breadcrumb>
       </header>
-      <div className="h-0 flex-auto overflow-auto [scrollbar-gutter:stable]">
+      <div className="h-0 flex-auto overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]">
         <div className="flex flex-col gap-4 p-4">
-          <div className="grid auto-rows-min gap-4 grid-cols-[2fr_1fr]">
+          <div className="grid auto-rows-min gap-4 grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
             <AppUsageBarChartCard
               timePeriod="day"
               period="hour"
@@ -106,13 +110,19 @@ function AppUsageBarChartCard({
   period: Period;
   xAxisLabelFormatter: (dt: DateTime) => string;
 }) {
-  const startingInterval = usePeriodInterval(timePeriod);
-  const [interval, setInterval] = useState(startingInterval);
+  const {
+    interval: intervalNullable,
+    canGoNext,
+    goNext,
+    canGoPrev,
+    goPrev,
+  } = useIntervalControlsWithDefault(timePeriod);
+  const interval = useLastNonNull(intervalNullable);
 
   const { isLoading, totalUsage, appDurationsPerPeriod, start, end } =
     useAppDurationsPerPeriod({
-      start: interval.start,
-      end: interval.end,
+      start: interval?.start,
+      end: interval?.end,
       period,
     });
 
@@ -136,13 +146,24 @@ function AppUsageBarChartCard({
   );
 
   return (
-    <TimePeriodUsageCard
-      timePeriod={timePeriod}
+    <UsageCard
       interval={interval}
-      onIntervalChanged={setInterval}
-      children={children}
-      isLoading={isLoading}
       totalUsage={totalUsage}
+      children={children}
+      actions={
+        <>
+          <PrevButton
+            canGoPrev={canGoPrev}
+            isLoading={isLoading}
+            goPrev={goPrev}
+          />
+          <NextButton
+            canGoNext={canGoNext}
+            isLoading={isLoading}
+            goNext={goNext}
+          />
+        </>
+      }
     />
   );
 }

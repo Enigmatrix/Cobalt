@@ -16,17 +16,21 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Text } from "@/components/ui/text";
-import { TimePeriodUsageCard } from "@/components/usage-card";
+import { NextButton, PrevButton, UsageCard } from "@/components/usage-card";
 import { Gantt } from "@/components/viz/gantt2";
 import Heatmap from "@/components/viz/heatmap";
 import { UsageChart } from "@/components/viz/usage-chart";
 import { useClipboard } from "@/hooks/use-clipboard";
+import { useLastNonNull } from "@/hooks/use-last";
 import { useApp, useTag } from "@/hooks/use-refresh";
 import {
   useAppDurationsPerPeriod,
   useAppSessionUsages,
 } from "@/hooks/use-repo";
-import { usePeriodInterval } from "@/hooks/use-time";
+import {
+  useIntervalControlsWithDefault,
+  usePeriodInterval,
+} from "@/hooks/use-time";
 import { type App, type Ref, type Tag } from "@/lib/entities";
 import { useAppState } from "@/lib/state";
 import {
@@ -71,8 +75,14 @@ function AppPage({ app }: { app: App }) {
 
   const { copy, hasCopied } = useClipboard();
 
-  const yearInitInterval = usePeriodInterval("year");
-  const [yearInterval, setYearInterval] = useState(yearInitInterval);
+  const {
+    interval: yearIntervalNullable,
+    canGoNext: yearCanGoNext,
+    goNext: yearGoNext,
+    canGoPrev: yearCanGoPrev,
+    goPrev: yearGoPrev,
+  } = useIntervalControlsWithDefault("year");
+  const yearInterval = useLastNonNull(yearIntervalNullable);
 
   const {
     isLoading: isYearDataLoading,
@@ -136,7 +146,7 @@ function AppPage({ app }: { app: App }) {
         </Breadcrumb>
       </header>
 
-      <div className="h-0 flex-auto overflow-auto [scrollbar-gutter:stable]">
+      <div className="h-0 flex-auto overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]">
         <div className="flex flex-col gap-4 p-4">
           {/* App Info */}
           <div className="rounded-xl bg-card border border-border p-6">
@@ -222,7 +232,7 @@ function AppPage({ app }: { app: App }) {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 auto-rows-min gap-4 md:grid-cols-3">
+          <div className="grid auto-rows-min gap-4 grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
             <AppUsageBarChartCard
               timePeriod="day"
               period="hour"
@@ -235,6 +245,9 @@ function AppPage({ app }: { app: App }) {
               xAxisLabelFormatter={weekDayFormatter}
               appId={app.id}
             />
+          </div>
+
+          <div className="grid auto-rows-min gap-4 grid-cols-1">
             <AppUsageBarChartCard
               timePeriod="month"
               period="day"
@@ -242,13 +255,25 @@ function AppPage({ app }: { app: App }) {
               appId={app.id}
             />
           </div>
-          <TimePeriodUsageCard
-            timePeriod="year"
+
+          <UsageCard
             usage={yearUsage}
             totalUsage={yearTotalUsage}
             interval={yearInterval}
-            onIntervalChanged={setYearInterval}
-            isLoading={isYearDataLoading}
+            actions={
+              <>
+                <PrevButton
+                  canGoPrev={yearCanGoPrev}
+                  isLoading={isYearDataLoading}
+                  goPrev={yearGoPrev}
+                />
+                <NextButton
+                  canGoNext={yearCanGoNext}
+                  isLoading={isYearDataLoading}
+                  goNext={yearGoNext}
+                />
+              </>
+            }
           >
             <div className="p-4">
               <Heatmap
@@ -261,7 +286,7 @@ function AppPage({ app }: { app: App }) {
                 appId={app.id}
               />
             </div>
-          </TimePeriodUsageCard>
+          </UsageCard>
 
           <div className="sticky rounded-xl bg-muted/50 border border-border overflow-clip">
             <Gantt
@@ -350,8 +375,14 @@ function AppUsageBarChartCard({
   xAxisLabelFormatter: (dt: DateTime) => string;
   appId: Ref<App>;
 }) {
-  const startingInterval = usePeriodInterval(timePeriod);
-  const [interval, setInterval] = useState(startingInterval);
+  const {
+    interval: intervalNullable,
+    canGoNext,
+    goNext,
+    canGoPrev,
+    goPrev,
+  } = useIntervalControlsWithDefault(timePeriod);
+  const interval = useLastNonNull(intervalNullable);
 
   const {
     isLoading,
@@ -369,7 +400,7 @@ function AppUsageBarChartCard({
 
   const children = useMemo(
     () => (
-      <div className="aspect-video flex-1 mx-1 max-w-full">
+      <div className="aspect-video flex-1 mx-1 max-w-full max-h-80">
         <UsageChart
           appDurationsPerPeriod={appDurationsPerPeriod}
           onlyShowOneApp={appId}
@@ -395,14 +426,25 @@ function AppUsageBarChartCard({
   );
 
   return (
-    <TimePeriodUsageCard
-      timePeriod={timePeriod}
+    <UsageCard
       interval={interval}
-      onIntervalChanged={setInterval}
-      children={children}
-      isLoading={isLoading}
       usage={totalAppUsage}
       totalUsage={totalUsage}
+      children={children}
+      actions={
+        <>
+          <PrevButton
+            canGoPrev={canGoPrev}
+            isLoading={isLoading}
+            goPrev={goPrev}
+          />
+          <NextButton
+            canGoNext={canGoNext}
+            isLoading={isLoading}
+            goNext={goNext}
+          />
+        </>
+      }
     />
   );
 }
