@@ -10,7 +10,7 @@ pub struct ForegroundEventWatcher {
     session: WindowSession,
     browser: BrowserDetector,
     track_incognito: bool,
-    browser_state: State,
+    web_state: State,
 }
 
 /// Foreground window session change event.
@@ -36,25 +36,25 @@ pub struct WindowSession {
 
 impl ForegroundEventWatcher {
     /// Create a new [WindowSession] with the starting [WindowSession].
-    pub fn new(session: WindowSession, config: &Config, browser_state: State) -> Result<Self> {
+    pub fn new(session: WindowSession, config: &Config, web_state: State) -> Result<Self> {
         let browser = BrowserDetector::new()?;
         Ok(Self {
             session,
             browser,
             track_incognito: config.track_incognito(),
-            browser_state,
+            web_state,
         })
     }
 
     /// Get the foreground window session.
     pub fn foreground_window_session(
         browser: &BrowserDetector,
-        mut browser_state: WriteLockedState<'_>,
+        mut web_state: WriteLockedState<'_>,
         track_incognito: bool,
     ) -> Result<Option<WindowSession>> {
         if let Some(fg) = Window::foreground() {
             let (is_browser, fetched_path) = {
-                let is_browser = browser_state.browser_windows.get(&fg).cloned();
+                let is_browser = web_state.browser_windows.get(&fg).cloned();
                 if let Some(is_browser) = is_browser {
                     // We know already if it's a browser or not
                     (is_browser, None)
@@ -64,14 +64,14 @@ impl ForegroundEventWatcher {
                     // So we further check if it's a chromium process
                     let (is_browser, fetched_path) = if maybe_browser {
                         let ptid = fg.ptid().context("get ptid")?;
-                        if browser_state.browser_processes.contains(&ptid.pid) {
+                        if web_state.browser_processes.contains(&ptid.pid) {
                             (true, None)
                         } else {
                             let process = Process::new(ptid.pid).context("get process")?;
                             let path = process.path().context("get process path")?;
                             let is_browser = BrowserDetector::is_maybe_chromium_exe(&path);
                             if is_browser {
-                                browser_state.browser_processes.insert(ptid.pid);
+                                web_state.browser_processes.insert(ptid.pid);
                             }
                             (is_browser, Some(path))
                         }
@@ -79,12 +79,12 @@ impl ForegroundEventWatcher {
                         (false, None)
                     };
 
-                    browser_state.browser_windows.insert(fg.clone(), is_browser);
+                    web_state.browser_windows.insert(fg.clone(), is_browser);
 
                     (is_browser, fetched_path)
                 }
             };
-            drop(browser_state);
+            drop(web_state);
 
             let (title, url) = if is_browser {
                 let element = browser.get_chromium_element(&fg)?;
@@ -118,7 +118,7 @@ impl ForegroundEventWatcher {
 
     /// Poll for a new [`ForegroundChangedEvent`].
     pub fn poll(&mut self, at: Timestamp) -> Result<Option<ForegroundChangedEvent>> {
-        let state = self.browser_state.blocking_write();
+        let state = self.web_state.blocking_write();
         if let Some(session) =
             Self::foreground_window_session(&self.browser, state, self.track_incognito)?
         {

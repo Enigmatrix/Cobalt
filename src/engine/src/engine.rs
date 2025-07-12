@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use data::db::{DatabasePool, FoundOrInserted, UsageWriter};
 use data::entities::{
     AppIdentity, InteractionPeriod, Ref, Session, SystemEvent as DataSystemEvent, Usage,
@@ -13,19 +11,18 @@ use scoped_futures::ScopedFutureExt;
 use util::config::Config;
 use util::error::{Context, Result};
 use util::future::runtime::Handle;
-use util::future::sync::Mutex;
 use util::time::ToTicks;
 use util::tracing::{ResultTraceExt, debug, info, trace};
 
-use crate::cache::{AppDetails, Cache, SessionDetails};
+use crate::desktop::{AppDetails, DesktopState, DesktopStateInner, SessionDetails};
 use crate::foreground_window_session_async;
 use crate::resolver::AppInfoResolver;
 
 /// The main [Engine] that processes [Event]s and updates the [Database] with new [Usage]s, [Session]s and [App]s.
 pub struct Engine {
-    cache: Arc<Mutex<Cache>>,
+    desktop: DesktopState,
     config: Config,
-    browser_state: web::State,
+    web_state: web::State,
     current_usage: Usage,
     db_pool: DatabasePool,
     inserter: UsageWriter,
@@ -47,9 +44,9 @@ pub enum Event {
 
 /// Options for creating a new [Engine].
 pub struct EngineOptions {
-    pub cache: Arc<Mutex<Cache>>,
+    pub desktop: DesktopState,
     pub config: Config,
-    pub browser_state: web::State,
+    pub web_state: web::State,
     pub db_pool: DatabasePool,
     pub foreground: WindowSession,
     pub start: Timestamp,
@@ -62,9 +59,9 @@ impl Engine {
         let db = options.db_pool.get_db().await?;
         let inserter = UsageWriter::new(db)?;
         let mut ret = Self {
-            cache: options.cache,
+            desktop: options.desktop,
             config: options.config,
-            browser_state: options.browser_state,
+            web_state: options.web_state,
             db_pool: options.db_pool,
             inserter,
             // set a default value, then update it right after
@@ -115,8 +112,7 @@ impl Engine {
                 }
             } else if !prev && self.active {
                 let foreground =
-                    foreground_window_session_async(&self.config, self.browser_state.clone())
-                        .await?;
+                    foreground_window_session_async(&self.config, self.web_state.clone()).await?;
                 self.current_usage = Usage {
                     id: Default::default(),
                     session_id: self.get_session_details(foreground, *now).await?,
@@ -201,19 +197,19 @@ impl Engine {
         mut ws: WindowSession,
         at: Timestamp,
     ) -> Result<Ref<Session>> {
-        let mut cache = self.cache.lock().await;
+        let mut desktop = self.desktop.write().await;
 
         // If window is browser (assume true if unknown), then we need the url.
         // Else set the url to None.
-        if !cache.is_browser(&ws.window).await.unwrap_or(true) {
+        if !desktop.is_browser(&ws.window).await.unwrap_or(true) {
             ws.url = None;
         }
 
-        let session_details = cache
-            .get_or_insert_session_for_window(ws.clone(), |cache| {
+        let session_details = desktop
+            .get_or_insert_session_for_window(ws.clone(), |desktop| {
                 async {
                     Self::create_session_for_window(
-                        cache,
+                        desktop,
                         self.db_pool.clone(),
                         &mut self.inserter,
                         &self.spawner,
@@ -234,7 +230,7 @@ impl Engine {
 
     /// Create a [Session] for the given [Window]
     async fn create_session_for_window(
-        cache: &mut Cache,
+        desktop: &mut DesktopStateInner,
         db_pool: DatabasePool,
         inserter: &mut UsageWriter,
         spawner: &Handle,
@@ -246,7 +242,7 @@ impl Engine {
         let ptid = ws.window.ptid()?;
         let mut app = {
             let db_pool = db_pool.clone();
-            let AppDetails { app, .. } = cache
+            let AppDetails { app, .. } = desktop
                 .get_or_insert_app_for_ptid(ptid, |_| async {
                     Self::create_app_for_ptid(
                         inserter,
@@ -265,7 +261,7 @@ impl Engine {
 
         if let Some(url) = &ws.url {
             let base_url = WebsiteInfo::url_to_base_url(url).context("url to base url")?;
-            let AppDetails { app: web_app, .. } = cache
+            let AppDetails { app: web_app, .. } = desktop
                 .get_or_insert_website_for_base_url(base_url.clone(), |_| async {
                     Self::create_app_for_base_url(inserter, db_pool, spawner, base_url, at).await
                 })

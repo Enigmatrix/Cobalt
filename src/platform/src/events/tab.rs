@@ -9,7 +9,7 @@ use crate::web;
 /// Watches a browser (by PID) for tab changes. Changes should be reported as fast as possible.
 pub struct BrowserTabWatcher {
     browser_pids: SmallHashMap<ProcessId, WindowTitleWatcher>,
-    browser_state: web::State,
+    web_state: web::State,
     tab_change_tx: Sender<TabChange>,
 }
 
@@ -27,10 +27,10 @@ pub enum TabChange {
 
 impl BrowserTabWatcher {
     /// Create a new [BrowserTabWatcher]
-    pub fn new(tab_change_tx: Sender<TabChange>, browser_state: web::State) -> Result<Self> {
+    pub fn new(tab_change_tx: Sender<TabChange>, web_state: web::State) -> Result<Self> {
         Ok(Self {
             browser_pids: SmallHashMap::new(),
-            browser_state,
+            web_state,
             tab_change_tx,
         })
     }
@@ -58,7 +58,7 @@ impl BrowserTabWatcher {
     pub fn tick(&mut self) -> Result<()> {
         {
             let pids = {
-                let state = self.browser_state.blocking_read();
+                let state = self.web_state.blocking_read();
                 state.browser_processes.clone() // unfortunately we need to clone here
             };
             self.update_browsers(&pids)?;

@@ -1,5 +1,6 @@
 use std::collections::{HashMap, HashSet};
 use std::future::Future;
+use std::sync::Arc;
 
 use data::entities::{App, AppIdentity, Ref, Session};
 use platform::events::WindowSession;
@@ -9,13 +10,22 @@ use scoped_futures::ScopedBoxFuture;
 use util::ds::{SmallHashMap, SmallHashSet};
 use util::error::Result;
 use util::future as tokio;
+use util::future::sync::RwLock;
 
-/// Cache for storing information about windows, processes, apps and sessions.
+/// Desktop State - for storing information about windows, processes, apps and sessions.
 #[derive(Debug)]
-pub struct Cache {
+pub struct DesktopStateInner {
     store: Store,
     web: WebsiteCache,
     platform: PlatformCache,
+}
+
+/// Shared Desktop State
+pub type DesktopState = Arc<RwLock<DesktopStateInner>>;
+
+/// Create a new [DesktopState]
+pub fn new_desktop_state(web_state: web::State) -> DesktopState {
+    Arc::new(RwLock::new(DesktopStateInner::new(web_state)))
 }
 
 /// Cache for storing information about apps and sessions
@@ -77,9 +87,9 @@ pub enum KillableProcessId {
     Aumid(String),
 }
 
-impl Cache {
+impl DesktopStateInner {
     /// Create a new [Cache].
-    pub fn new(browser_state: web::State) -> Self {
+    pub fn new(web_state: web::State) -> Self {
         Self {
             store: Store {
                 sessions: HashMap::new(),
@@ -88,7 +98,7 @@ impl Cache {
             web: WebsiteCache {
                 websites: HashMap::new(),
                 apps: HashMap::new(),
-                state: browser_state,
+                state: web_state,
             },
             platform: PlatformCache {
                 windows: HashMap::new(),
@@ -141,70 +151,6 @@ impl Cache {
     /// Get the websites for an [App]. If the app is not a website, will return nothing.
     pub fn websites_for_app(&self, app: &Ref<App>) -> impl Iterator<Item = &BaseWebsiteUrl> {
         self.web.apps.get(app).into_iter()
-    }
-
-    /// Remove a process and associated windows from the [Cache].
-    pub async fn remove_process(&mut self, process: ProcessId) {
-        let removed_windows = self
-            .platform
-            .windows
-            .extract_if(|ptid, _| ptid.pid == process)
-            .flat_map(|(_, windows)| windows)
-            .collect::<SmallHashSet<_>>();
-
-        self.platform.processes.retain(|_, entry| {
-            // remove pid from list, and remove the entry altogether if it's empty
-            entry.process_threads.retain(|ptid| ptid.pid != process);
-            !entry.process_threads.is_empty()
-        });
-
-        self.store.apps.retain(|ptid, _| ptid.pid != process);
-        self.store
-            .sessions
-            .retain(|ws, _| !removed_windows.contains(&ws.window));
-
-        {
-            let mut state = self.web.state.write().await;
-            state.browser_processes.remove(&process);
-            state
-                .browser_windows
-                .retain(|window, _| !removed_windows.contains(window));
-        }
-    }
-
-    /// Remove an app and associated processes, windows from the [Cache].
-    pub async fn remove_app(&mut self, app: Ref<App>) {
-        let app_entry = self.platform.processes.remove(&app);
-        if let Some(app_entry) = app_entry {
-            let removed_windows = self
-                .platform
-                .windows
-                .extract_if(|ptid, _| app_entry.process_threads.contains(ptid))
-                .flat_map(|(_, windows)| windows)
-                .collect::<SmallHashSet<_>>();
-
-            self.store
-                .apps
-                .retain(|ptid, _| !app_entry.process_threads.contains(ptid));
-            self.store
-                .sessions
-                .retain(|ws, _| !removed_windows.contains(&ws.window));
-
-            let removed_pids = app_entry
-                .process_threads
-                .iter()
-                .map(|ptid| ptid.pid)
-                .collect::<SmallHashSet<_>>();
-            {
-                let mut state = self.web.state.write().await;
-                state
-                    .browser_processes
-                    .retain(|pid| !removed_pids.contains(pid));
-                state
-                    .browser_windows
-                    .retain(|window, _| !removed_windows.contains(window));
-            }
-        }
     }
 
     /// Get or insert a [SessionDetails] for a [Window], using the create callback
@@ -303,6 +249,70 @@ impl Cache {
     //     unimplemented!()
     // }
 
+    /// Remove a process and associated windows from the [Cache].
+    pub async fn remove_process(&mut self, process: ProcessId) {
+        let removed_windows = self
+            .platform
+            .windows
+            .extract_if(|ptid, _| ptid.pid == process)
+            .flat_map(|(_, windows)| windows)
+            .collect::<SmallHashSet<_>>();
+
+        self.platform.processes.retain(|_, entry| {
+            // remove pid from list, and remove the entry altogether if it's empty
+            entry.process_threads.retain(|ptid| ptid.pid != process);
+            !entry.process_threads.is_empty()
+        });
+
+        self.store.apps.retain(|ptid, _| ptid.pid != process);
+        self.store
+            .sessions
+            .retain(|ws, _| !removed_windows.contains(&ws.window));
+
+        {
+            let mut state = self.web.state.write().await;
+            state.browser_processes.remove(&process);
+            state
+                .browser_windows
+                .retain(|window, _| !removed_windows.contains(window));
+        }
+    }
+
+    /// Remove an app and associated processes, windows from the [Cache].
+    pub async fn remove_app(&mut self, app: Ref<App>) {
+        let app_entry = self.platform.processes.remove(&app);
+        if let Some(app_entry) = app_entry {
+            let removed_windows = self
+                .platform
+                .windows
+                .extract_if(|ptid, _| app_entry.process_threads.contains(ptid))
+                .flat_map(|(_, windows)| windows)
+                .collect::<SmallHashSet<_>>();
+
+            self.store
+                .apps
+                .retain(|ptid, _| !app_entry.process_threads.contains(ptid));
+            self.store
+                .sessions
+                .retain(|ws, _| !removed_windows.contains(&ws.window));
+
+            let removed_pids = app_entry
+                .process_threads
+                .iter()
+                .map(|ptid| ptid.pid)
+                .collect::<SmallHashSet<_>>();
+            {
+                let mut state = self.web.state.write().await;
+                state
+                    .browser_processes
+                    .retain(|pid| !removed_pids.contains(pid));
+                state
+                    .browser_windows
+                    .retain(|window, _| !removed_windows.contains(window));
+            }
+        }
+    }
+
     /// Retains all process for windows in the list, and removes the rest
     /// of the process and windows not in the list.
     pub async fn retain_cache(&mut self) -> Result<()> {
@@ -360,10 +370,10 @@ async fn inner_mut_compiles() {
 
     let window: Window = Window::foreground().unwrap();
     let process = ProcessThreadId { pid: 1, tid: 1 };
-    let browser_state = web::default_state();
-    let mut cache = Cache::new(browser_state);
+    let web_state = web::default_state();
+    let mut desktop = DesktopStateInner::new(web_state);
 
-    cache
+    desktop
         .get_or_insert_session_for_window(
             WindowSession {
                 window,
