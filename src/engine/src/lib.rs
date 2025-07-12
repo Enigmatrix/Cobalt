@@ -62,19 +62,21 @@ fn real_main() -> Result<()> {
         let config = config.clone();
         let fg = fg.clone();
         let browser_state = browser_state.clone();
-        thread::spawn(move || {
-            event_loop(
-                &config,
-                browser_state,
-                event_tx,
-                alert_tx,
-                tab_change_tx,
-                fg,
-                now,
-            )
-            .context("event loop")
-            .error();
-        })
+        thread::Builder::new()
+            .name("event_loop_thread".to_string())
+            .spawn(move || {
+                event_loop(
+                    &config,
+                    browser_state,
+                    event_tx,
+                    alert_tx,
+                    tab_change_tx,
+                    fg,
+                    now,
+                )
+                .context("event loop")
+                .error();
+            })?
     };
 
     processor(
