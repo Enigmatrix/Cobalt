@@ -27,7 +27,7 @@ use util::future::task::JoinHandle;
 use util::tracing::{ResultTraceExt, error, info};
 use util::{Target, future};
 
-use crate::engine::EngineOptions;
+use crate::engine::EngineArgs;
 
 mod desktop;
 mod engine;
@@ -52,72 +52,79 @@ fn real_main() -> Result<()> {
 
     let web_state = web::default_state();
     let desktop = desktop::new_desktop_state(web_state.clone());
+
     let (event_tx, event_rx) = channels::unbounded();
     let (alert_tx, alert_rx) = channels::unbounded();
     let (tab_change_tx, tab_change_rx) = channels::unbounded();
 
-    let now = Timestamp::now();
-    let fg = foreground_window_session(&config, web_state.clone())?;
+    let start = Timestamp::now();
+    let window_session = foreground_window_session(&config, web_state.clone())?;
 
     let ev_thread = {
         let config = config.clone();
-        let fg = fg.clone();
+        let window_session = window_session.clone();
         let web_state = web_state.clone();
         thread::Builder::new()
             .name("event_loop_thread".to_string())
             .spawn(move || {
-                event_loop(
-                    &config,
+                event_loop(EventLoopArgs {
+                    config,
                     web_state,
                     event_tx,
                     alert_tx,
                     tab_change_tx,
-                    fg,
-                    now,
-                )
+                    window_session,
+                    start,
+                })
                 .context("event loop")
                 .error();
             })?
     };
 
-    processor(
+    processor(ProcessorArgs {
         desktop,
         web_state,
-        &config,
-        fg,
-        now,
+        config,
+        window_session,
+        start,
         event_rx,
         alert_rx,
         tab_change_rx,
-    )?;
+    })?;
     // can't turn this to util::error::Result :/
     ev_thread.join().expect("event loop thread");
     Ok(())
+}
+
+struct EventLoopArgs {
+    web_state: web::State,
+
+    config: Config,
+
+    event_tx: Sender<Event>,
+    alert_tx: Sender<Timestamp>,
+    tab_change_tx: Sender<TabChange>,
+
+    window_session: WindowSession,
+    start: Timestamp,
 }
 
 /// Win32 [EventLoop] thread to poll for events.
 /// All the callback and functioons used in this
 /// function run on the _same_ thread - so thread-safety
 /// is not an issue.
-fn event_loop(
-    config: &Config,
-    web_state: web::State,
-    event_tx: Sender<Event>,
-    alert_tx: Sender<Timestamp>,
-    tab_change_tx: Sender<TabChange>,
-    fg: WindowSession,
-    now: Timestamp,
-) -> Result<()> {
+fn event_loop(args: EventLoopArgs) -> Result<()> {
     let ev = EventLoop::new();
 
-    let poll_dur = config.poll_duration().into();
-    let alert_dur = config.alert_duration().into();
+    let poll_dur = args.config.poll_duration().into();
+    let alert_dur = args.config.alert_duration().into();
 
     let message_window = MessageWindow::new()?;
 
-    let mut fg_watcher = ForegroundEventWatcher::new(fg, config, web_state.clone())?;
-    let it_watcher = InteractionWatcher::init(config, now)?;
-    let system_event_tx = event_tx.clone();
+    let mut fg_watcher =
+        ForegroundEventWatcher::new(args.window_session, &args.config, args.web_state.clone())?;
+    let it_watcher = InteractionWatcher::init(&args.config, args.start)?;
+    let system_event_tx = args.event_tx.clone();
 
     let _it_watcher = it_watcher.clone();
     let _system_watcher = SystemEventWatcher::new(&message_window, move |event| {
@@ -143,12 +150,12 @@ fn event_loop(
             let now = Timestamp::now();
             // if there is a switch event, process it. otherwise, tick to update the usage.
             if let Some(event) = fg_watcher.poll(now)? {
-                event_tx.send(Event::ForegroundChanged(event))?;
+                args.event_tx.send(Event::ForegroundChanged(event))?;
             } else {
-                event_tx.send(Event::Tick(now))?;
+                args.event_tx.send(Event::Tick(now))?;
             }
             if let Some(event) = it_watcher.borrow_mut().as_mut().unwrap().poll(now)? {
-                event_tx.send(Event::InteractionChanged(event))?;
+                args.event_tx.send(Event::InteractionChanged(event))?;
             }
             Ok(())
         }),
@@ -158,12 +165,12 @@ fn event_loop(
         alert_dur,
         Box::new(move || {
             let now = Timestamp::now();
-            alert_tx.send(now)?;
+            args.alert_tx.send(now)?;
             Ok(())
         }),
     )?;
 
-    let mut browser_tab_watcher = BrowserTabWatcher::new(tab_change_tx.clone(), web_state)?;
+    let mut browser_tab_watcher = BrowserTabWatcher::new(args.tab_change_tx, args.web_state)?;
 
     let dim_tick = Duration::from_millis(1000);
     let _browser_tab_tick_timer = Timer::new(
@@ -183,7 +190,7 @@ fn event_loop(
 }
 
 /// Processing loop for the [Engine].
-async fn engine_loop(options: EngineOptions, rx: Receiver<Event>) -> Result<()> {
+async fn engine_loop(options: EngineArgs, rx: Receiver<Event>) -> Result<()> {
     let mut engine = Engine::new(options).await?;
     loop {
         let ev = rx.recv_async().await?;
@@ -237,17 +244,22 @@ async fn sentry_loop(
     res
 }
 
-/// Runs the [Engine] and [Sentry] loops in an asynchronous executor.
-fn processor(
+struct ProcessorArgs {
     desktop: desktop::DesktopState,
     web_state: web::State,
-    config: &Config,
-    mut fg: WindowSession,
-    mut now: Timestamp,
+
+    config: Config,
+
     event_rx: Receiver<Event>,
     alert_rx: Receiver<Timestamp>,
     tab_change_rx: Receiver<TabChange>,
-) -> Result<()> {
+
+    window_session: WindowSession,
+    start: Timestamp,
+}
+
+/// Runs the [Engine] and [Sentry] loops in an asynchronous executor.
+fn processor(mut args: ProcessorArgs) -> Result<()> {
     let rt = Builder::new_multi_thread()
         .enable_time()
         .enable_io()
@@ -256,7 +268,7 @@ fn processor(
 
     let handle = rt.handle().clone();
     let res: Result<()> = rt.block_on(async move {
-        let db_pool = DatabasePool::new(config).await?;
+        let db_pool = DatabasePool::new(&args.config).await?;
 
         // re-run failed app info updates
         let _db_pool = db_pool.clone();
@@ -269,9 +281,9 @@ fn processor(
         });
 
         let sentry_handle = {
-            let desktop = desktop.clone();
+            let desktop = args.desktop.clone();
             let db_pool = db_pool.clone();
-            let config = config.clone();
+            let config = args.config.clone();
             let spawner = handle.clone();
             handle.spawn(async move {
                 for attempt in 0.. {
@@ -283,8 +295,8 @@ fn processor(
                         db_pool.clone(),
                         desktop.clone(),
                         spawner.clone(),
-                        alert_rx.clone(),
-                        tab_change_rx.clone(),
+                        args.alert_rx.clone(),
+                        args.tab_change_rx.clone(),
                     )
                     .await
                     .context("sentry loop")
@@ -295,21 +307,23 @@ fn processor(
 
         for attempt in 0.. {
             if attempt > 0 {
-                future::time::sleep(config.poll_duration()).await;
+                future::time::sleep(args.config.poll_duration()).await;
                 info!("restarting engine loop");
-                fg = foreground_window_session_async(config, web_state.clone()).await?;
-                now = Timestamp::now();
+                args.window_session =
+                    foreground_window_session_async(&args.config, args.web_state.clone()).await?;
+                args.start = Timestamp::now();
             }
-            let options = EngineOptions {
-                desktop: desktop.clone(),
-                config: config.clone(),
-                web_state: web_state.clone(),
+            let event_rx = args.event_rx.clone();
+            let args = EngineArgs {
+                desktop: args.desktop.clone(),
+                config: args.config.clone(),
+                web_state: args.web_state.clone(),
                 db_pool: db_pool.clone(),
-                foreground: fg.clone(),
-                start: now,
+                window_session: args.window_session.clone(),
+                start: args.start,
                 spawner: handle.clone(),
             };
-            engine_loop(options, event_rx.clone())
+            engine_loop(args, event_rx)
                 .await
                 .context("engine loop")
                 .error();

@@ -42,20 +42,23 @@ pub enum Event {
     Tick(Timestamp),
 }
 
-/// Options for creating a new [Engine].
-pub struct EngineOptions {
+/// Args for creating a new [Engine].
+pub struct EngineArgs {
     pub desktop: DesktopState,
-    pub config: Config,
     pub web_state: web::State,
-    pub db_pool: DatabasePool,
-    pub foreground: WindowSession,
-    pub start: Timestamp,
+
+    pub config: Config,
+
     pub spawner: Handle,
+    pub db_pool: DatabasePool,
+
+    pub window_session: WindowSession,
+    pub start: Timestamp,
 }
 
 impl Engine {
     /// Create a new [Engine], which initializes it's first [Usage]
-    pub async fn new(options: EngineOptions) -> Result<Self> {
+    pub async fn new(options: EngineArgs) -> Result<Self> {
         let db = options.db_pool.get_db().await?;
         let inserter = UsageWriter::new(db)?;
         let mut ret = Self {
@@ -73,7 +76,7 @@ impl Engine {
         ret.current_usage = Usage {
             id: Default::default(),
             session_id: ret
-                .get_session_details(options.foreground, options.start)
+                .get_session_details(options.window_session, options.start)
                 .await?,
             start: options.start.to_ticks(),
             end: options.start.to_ticks(),
@@ -111,11 +114,11 @@ impl Engine {
                         .await?;
                 }
             } else if !prev && self.active {
-                let foreground =
+                let window_session =
                     foreground_window_session_async(&self.config, self.web_state.clone()).await?;
                 self.current_usage = Usage {
                     id: Default::default(),
-                    session_id: self.get_session_details(foreground, *now).await?,
+                    session_id: self.get_session_details(window_session, *now).await?,
                     start: now.to_ticks(),
                     end: now.to_ticks(),
                 };
