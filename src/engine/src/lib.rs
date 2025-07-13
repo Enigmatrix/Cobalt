@@ -21,7 +21,7 @@ use sentry::Sentry;
 use util::channels::{self, Receiver, Sender};
 use util::config::{self, Config};
 use util::error::{Context, Result};
-use util::future::runtime::{Builder, Handle};
+use util::future::runtime::{Builder, Handle, Runtime};
 use util::future::sync::Mutex;
 use util::future::task::JoinHandle;
 use util::retry::{ExponentialBuilder, Retryable, RetryableWithContext};
@@ -37,13 +37,24 @@ mod sentry;
 
 /// Entry point for the engine
 pub fn main() {
-    if let Err(report) = real_main() {
+    let (config, rt) = match setup() {
+        Ok(v) => v,
+        Err(e) => {
+            error!("fatal error caught in setup: {:?}", e);
+            std::process::exit(1);
+        }
+    };
+
+    let web_state = web::default_state();
+    let desktop_state = desktop::new_desktop_state(web_state.clone());
+
+    if let Err(report) = run(&config, rt.handle().clone(), web_state, desktop_state) {
         error!("fatal error caught in main: {:?}", report);
         std::process::exit(1);
     }
 }
 
-fn real_main() -> Result<()> {
+fn setup() -> Result<(Config, Runtime)> {
     util::set_target(Target::Engine);
     let config = config::get_config()?;
     util::setup(&config)?;
@@ -51,20 +62,26 @@ fn real_main() -> Result<()> {
     platform::setup()?;
     info!("running as {:?}", User::current()?);
 
-    let web_state = web::default_state();
-    let desktop_state = desktop::new_desktop_state(web_state.clone());
-
-    let (event_tx, event_rx) = channels::unbounded();
-    let (alert_tx, alert_rx) = channels::unbounded();
-    let (tab_change_tx, tab_change_rx) = channels::unbounded();
-
     let rt = Builder::new_multi_thread()
         .enable_time()
         .enable_io()
         .build()?;
 
+    Ok((config, rt))
+}
+
+fn run(
+    config: &Config,
+    rt: Handle,
+    web_state: web::State,
+    desktop_state: desktop::DesktopState,
+) -> Result<()> {
+    let (event_tx, event_rx) = channels::unbounded();
+    let (alert_tx, alert_rx) = channels::unbounded();
+    let (tab_change_tx, tab_change_rx) = channels::unbounded();
+
     let start = Timestamp::now();
-    let window_session = foreground_window_session(&config, web_state.clone())?;
+    let window_session = foreground_window_session(config, web_state.clone())?;
 
     let ev_thread = {
         let config = config.clone();
@@ -87,11 +104,11 @@ fn real_main() -> Result<()> {
             })?
     };
 
-    rt.block_on(processor(ProcessorArgs {
+    rt.clone().block_on(processor(ProcessorArgs {
         desktop_state,
         web_state,
-        config,
-        rt: rt.handle().clone(),
+        config: config.clone(),
+        rt,
         window_session,
         start,
         event_rx,
