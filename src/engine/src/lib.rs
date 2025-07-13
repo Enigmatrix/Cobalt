@@ -52,7 +52,7 @@ fn real_main() -> Result<()> {
     info!("running as {:?}", User::current()?);
 
     let web_state = web::default_state();
-    let desktop = desktop::new_desktop_state(web_state.clone());
+    let desktop_state = desktop::new_desktop_state(web_state.clone());
 
     let (event_tx, event_rx) = channels::unbounded();
     let (alert_tx, alert_rx) = channels::unbounded();
@@ -88,7 +88,7 @@ fn real_main() -> Result<()> {
     };
 
     rt.block_on(processor(ProcessorArgs {
-        desktop,
+        desktop_state,
         web_state,
         config,
         rt: rt.handle().clone(),
@@ -208,13 +208,13 @@ async fn engine_loop(options: EngineArgs, rx: Receiver<Event>) -> Result<()> {
 /// Processing loop for the [Sentry].
 async fn sentry_loop(
     db_pool: DatabasePool,
-    desktop: desktop::DesktopState,
+    desktop_state: desktop::DesktopState,
     spawner: Handle,
     alert_rx: Receiver<Timestamp>,
     tab_change_rx: Receiver<TabChange>,
 ) -> Result<()> {
     let db = db_pool.get_db().await?;
-    let sentry = Arc::new(Mutex::new(Sentry::new(desktop, db)?));
+    let sentry = Arc::new(Mutex::new(Sentry::new(desktop_state, db)?));
 
     let _sentry = sentry.clone();
     let join1: JoinHandle<Result<()>> = spawner.spawn(async move {
@@ -251,7 +251,7 @@ async fn sentry_loop(
 }
 
 struct ProcessorArgs {
-    desktop: desktop::DesktopState,
+    desktop_state: desktop::DesktopState,
     web_state: web::State,
 
     config: Config,
@@ -280,7 +280,7 @@ async fn processor(args: ProcessorArgs) -> Result<()> {
     });
 
     let sentry_handle = {
-        let desktop = args.desktop.clone();
+        let desktop_state = args.desktop_state.clone();
         let db_pool = db_pool.clone();
         let config = args.config.clone();
         let spawner = args.rt.clone();
@@ -289,7 +289,7 @@ async fn processor(args: ProcessorArgs) -> Result<()> {
             (|| async {
                 sentry_loop(
                     db_pool.clone(),
-                    desktop.clone(),
+                    desktop_state.clone(),
                     spawner.clone(),
                     args.alert_rx.clone(),
                     args.tab_change_rx.clone(),
@@ -338,7 +338,7 @@ async fn processor(args: ProcessorArgs) -> Result<()> {
     .context((
         true, // first time!
         EngineArgs {
-            desktop: args.desktop.clone(),
+            desktop_state: args.desktop_state.clone(),
             config: args.config.clone(),
             web_state: args.web_state.clone(),
             db_pool: db_pool.clone(),

@@ -20,7 +20,7 @@ use crate::resolver::AppInfoResolver;
 
 /// The main [Engine] that processes [Event]s and updates the [Database] with new [Usage]s, [Session]s and [App]s.
 pub struct Engine {
-    desktop: DesktopState,
+    desktop_state: DesktopState,
     config: Config,
     web_state: web::State,
     current_usage: Usage,
@@ -45,7 +45,7 @@ pub enum Event {
 /// Args for creating a new [Engine].
 #[derive(Clone)]
 pub struct EngineArgs {
-    pub desktop: DesktopState,
+    pub desktop_state: DesktopState,
     pub web_state: web::State,
 
     pub config: Config,
@@ -63,7 +63,7 @@ impl Engine {
         let db = options.db_pool.get_db().await?;
         let inserter = UsageWriter::new(db)?;
         let mut ret = Self {
-            desktop: options.desktop,
+            desktop_state: options.desktop_state,
             config: options.config,
             web_state: options.web_state,
             db_pool: options.db_pool,
@@ -201,19 +201,19 @@ impl Engine {
         mut ws: WindowSession,
         at: Timestamp,
     ) -> Result<Ref<Session>> {
-        let mut desktop = self.desktop.write().await;
+        let mut desktop_state = self.desktop_state.write().await;
 
         // If window is browser (assume true if unknown), then we need the url.
         // Else set the url to None.
-        if !desktop.is_browser(&ws.window).await.unwrap_or(true) {
+        if !desktop_state.is_browser(&ws.window).await.unwrap_or(true) {
             ws.url = None;
         }
 
-        let session_details = desktop
-            .get_or_insert_session_for_window(ws.clone(), |desktop| {
+        let session_details = desktop_state
+            .get_or_insert_session_for_window(ws.clone(), |desktop_state| {
                 async {
                     Self::create_session_for_window(
-                        desktop,
+                        desktop_state,
                         self.db_pool.clone(),
                         &mut self.inserter,
                         &self.spawner,
@@ -234,7 +234,7 @@ impl Engine {
 
     /// Create a [Session] for the given [Window]
     async fn create_session_for_window(
-        desktop: &mut DesktopStateInner,
+        desktop_state: &mut DesktopStateInner,
         db_pool: DatabasePool,
         inserter: &mut UsageWriter,
         spawner: &Handle,
@@ -246,7 +246,7 @@ impl Engine {
         let ptid = ws.window.ptid()?;
         let mut app = {
             let db_pool = db_pool.clone();
-            let AppDetails { app, .. } = desktop
+            let AppDetails { app, .. } = desktop_state
                 .get_or_insert_app_for_ptid(ptid, |_| async {
                     Self::create_app_for_ptid(
                         inserter,
@@ -265,7 +265,7 @@ impl Engine {
 
         if let Some(url) = &ws.url {
             let base_url = WebsiteInfo::url_to_base_url(url).context("url to base url")?;
-            let AppDetails { app: web_app, .. } = desktop
+            let AppDetails { app: web_app, .. } = desktop_state
                 .get_or_insert_website_for_base_url(base_url.clone(), |_| async {
                     Self::create_app_for_base_url(inserter, db_pool, spawner, base_url, at).await
                 })
