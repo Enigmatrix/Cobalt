@@ -43,6 +43,7 @@ pub enum Event {
 }
 
 /// Args for creating a new [Engine].
+#[derive(Clone)]
 pub struct EngineArgs {
     pub desktop: DesktopState,
     pub web_state: web::State,

@@ -6,7 +6,6 @@
 //! Engine running in the background
 
 use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 
 use data::db::{AppUpdater, DatabasePool};
@@ -25,7 +24,7 @@ use util::error::{Context, Result};
 use util::future::runtime::{Builder, Handle};
 use util::future::sync::Mutex;
 use util::future::task::JoinHandle;
-use util::retry::{Backoff, ExponentialBuilder, RetryWithContext, Retryable, RetryableWithContext};
+use util::retry::{ExponentialBuilder, Retryable, RetryableWithContext};
 use util::tracing::{ResultTraceExt, error, info};
 use util::{Target, future};
 
@@ -210,7 +209,6 @@ async fn sentry_loop(
 ) -> Result<()> {
     let db = db_pool.get_db().await?;
     let sentry = Arc::new(Mutex::new(Sentry::new(desktop, db)?));
-    // TODO: these two loops must die if the other one dies.
 
     let _sentry = sentry.clone();
     let join1: JoinHandle<Result<()>> = spawner.spawn(async move {
@@ -261,7 +259,7 @@ struct ProcessorArgs {
 }
 
 /// Runs the [Engine] and [Sentry] loops in an asynchronous executor.
-fn processor(mut args: ProcessorArgs) -> Result<()> {
+fn processor(args: ProcessorArgs) -> Result<()> {
     let rt = Builder::new_multi_thread()
         .enable_time()
         .enable_io()
@@ -287,12 +285,9 @@ fn processor(mut args: ProcessorArgs) -> Result<()> {
             let db_pool = db_pool.clone();
             let config = args.config.clone();
             let spawner = handle.clone();
+
             handle.spawn(async move {
-                for attempt in 0.. {
-                    if attempt > 0 {
-                        future::time::sleep(config.alert_duration()).await;
-                        info!("restarting sentry loop");
-                    }
+                (|| async {
                     sentry_loop(
                         db_pool.clone(),
                         desktop.clone(),
@@ -302,21 +297,48 @@ fn processor(mut args: ProcessorArgs) -> Result<()> {
                     )
                     .await
                     .context("sentry loop")
-                    .error();
-                }
+                })
+                .retry(
+                    ExponentialBuilder::new()
+                        .with_min_delay(config.alert_duration())
+                        .without_max_times(),
+                )
+                .notify(|err, _| {
+                    error!("sentry loop failed: {:?}", err);
+                })
+                .await
             })
         };
 
-        for attempt in 0.. {
-            if attempt > 0 {
-                future::time::sleep(args.config.poll_duration()).await;
-                info!("restarting engine loop");
-                args.window_session =
-                    foreground_window_session_async(&args.config, args.web_state.clone()).await?;
-                args.start = Timestamp::now();
+        (|(first_time, mut args, event_rx): (bool, EngineArgs, Receiver<Event>)| async move {
+            // if this is not the first time, we need to get a new window session
+            if !first_time {
+                match foreground_window_session_async(&args.config, args.web_state.clone()).await {
+                    Ok(window_session) => {
+                        args.start = Timestamp::now();
+                        args.window_session = window_session;
+                    }
+                    Err(e) => {
+                        return ((false, args.clone(), event_rx.clone()), Err(e));
+                    }
+                }
             }
-            let event_rx = args.event_rx.clone();
-            let args = EngineArgs {
+
+            (
+                (false, args.clone(), event_rx.clone()),
+                engine_loop(args, event_rx.clone())
+                    .await
+                    .context("engine loop"),
+            )
+        })
+        .retry(
+            ExponentialBuilder::new()
+                .with_min_delay(args.config.poll_duration())
+                .without_max_times(),
+        )
+        .context((
+            true, // first time!
+            EngineArgs {
                 desktop: args.desktop.clone(),
                 config: args.config.clone(),
                 web_state: args.web_state.clone(),
@@ -324,45 +346,20 @@ fn processor(mut args: ProcessorArgs) -> Result<()> {
                 window_session: args.window_session.clone(),
                 start: args.start,
                 spawner: handle.clone(),
-            };
-            engine_loop(args, event_rx)
-                .await
-                .context("engine loop")
-                .error();
-        }
-
-        let first_time = Arc::new(AtomicBool::new(true));
-        (|| async {
-            let mut start = args.start.clone();
-            let mut window_session = args.window_session.clone();
-
-            // if this is not the first time, we need to get a new window session
-            if !first_time.load(Ordering::Relaxed) {
-                start = Timestamp::now();
-                window_session =
-                    foreground_window_session_async(&args.config, args.web_state.clone()).await?;
-            }
-
-            let event_rx = args.event_rx.clone();
-            let args = EngineArgs {
-                desktop: args.desktop.clone(),
-                config: args.config.clone(),
-                web_state: args.web_state.clone(),
-                db_pool: db_pool.clone(),
-                window_session,
-                start,
-                spawner: handle.clone(),
-            };
-            engine_loop(args, event_rx).await.context("engine loop")
-        })
-        .retry(ExponentialBuilder::new().without_max_times())
+            },
+            args.event_rx.clone(),
+        ))
         .notify(|err, _| {
-            first_time.store(false, Ordering::Relaxed);
             error!("engine loop failed: {:?}", err);
         })
-        .await?;
+        .await
+        .1
+        .context("engine loop error")?;
 
-        sentry_handle.await?;
+        sentry_handle
+            .await
+            .context("join sentry loop")?
+            .context("sentry loop error")?;
         Ok(())
     });
     res
