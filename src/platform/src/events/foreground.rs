@@ -46,76 +46,6 @@ impl ForegroundEventWatcher {
         })
     }
 
-    /// Get the foreground window session.
-    pub fn foreground_window_session(
-        browser: &BrowserDetector,
-        mut web_state: WriteLockedState<'_>,
-        track_incognito: bool,
-    ) -> Result<Option<WindowSession>> {
-        if let Some(fg) = Window::foreground() {
-            let (is_browser, fetched_path) = {
-                let is_browser = web_state.browser_windows.get(&fg).cloned();
-                if let Some(is_browser) = is_browser {
-                    // We know already if it's a browser or not
-                    (is_browser, None)
-                } else {
-                    // Educated guess. Note that VSCode will pass this check since it's a chromium app.
-                    let maybe_browser = browser.is_maybe_chromium_window(&fg).warn();
-                    // So we further check if it's a chromium process
-                    let (is_browser, fetched_path) = if maybe_browser {
-                        let ptid = fg.ptid().context("get ptid")?;
-                        if web_state.browser_processes.contains(&ptid.pid) {
-                            (true, None)
-                        } else {
-                            let process = Process::new(ptid.pid).context("get process")?;
-                            let path = process.path().context("get process path")?;
-                            let is_browser = BrowserDetector::is_maybe_chromium_exe(&path);
-                            if is_browser {
-                                web_state.browser_processes.insert(ptid.pid);
-                            }
-                            (is_browser, Some(path))
-                        }
-                    } else {
-                        (false, None)
-                    };
-
-                    web_state.browser_windows.insert(fg.clone(), is_browser);
-
-                    (is_browser, fetched_path)
-                }
-            };
-            drop(web_state);
-
-            let (title, url) = if is_browser {
-                let element = browser.get_chromium_element(&fg)?;
-                let incognito = browser
-                    .chromium_incognito(&element)
-                    .context("get chromium incognito")?;
-                if let Some(incognito) = incognito
-                    && incognito
-                    && !track_incognito
-                {
-                    ("<Incognito>".to_string(), None)
-                } else {
-                    let url = browser.chromium_url(&element).context("get chromium url")?;
-                    let title = fg.title()?;
-                    (title, url)
-                }
-            } else {
-                (fg.title()?, None)
-            };
-
-            let session = WindowSession {
-                title,
-                url,
-                window: fg,
-                fetched_path,
-            };
-            return Ok(Some(session));
-        }
-        Ok(None)
-    }
-
     /// Poll for a new [`ForegroundChangedEvent`].
     pub fn poll(&mut self, at: Timestamp) -> Result<Option<ForegroundChangedEvent>> {
         let state = self.web_state.blocking_write();
@@ -129,5 +59,81 @@ impl ForegroundEventWatcher {
             return Ok(Some(ForegroundChangedEvent { at, session }));
         }
         Ok(None)
+    }
+
+    /// Get the foreground window session.
+    pub fn foreground_window_session(
+        browser: &BrowserDetector,
+        web_state: WriteLockedState<'_>,
+        track_incognito: bool,
+    ) -> Result<Option<WindowSession>> {
+        if let Some(window) = Window::foreground() {
+            let (is_browser, fetched_path) =
+                Self::browser_window_session(&window, browser, web_state)?;
+
+            let (title, url) = if is_browser {
+                let element = browser.get_chromium_element(&window)?;
+                let incognito = browser
+                    .chromium_incognito(&element)
+                    .context("get chromium incognito")?;
+                if let Some(incognito) = incognito
+                    && incognito
+                    && !track_incognito
+                {
+                    ("<Incognito>".to_string(), None)
+                } else {
+                    let url = browser.chromium_url(&element).context("get chromium url")?;
+                    let title = window.title()?;
+                    (title, url)
+                }
+            } else {
+                (window.title()?, None)
+            };
+
+            let session = WindowSession {
+                title,
+                url,
+                window,
+                fetched_path,
+            };
+            return Ok(Some(session));
+        }
+        Ok(None)
+    }
+
+    fn browser_window_session(
+        window: &Window,
+        browser: &BrowserDetector,
+        mut web_state: WriteLockedState<'_>,
+    ) -> Result<(bool, Option<String>)> {
+        let is_browser = web_state.browser_windows.get(window).cloned();
+        if let Some(is_browser) = is_browser {
+            // We know already if it's a browser or not
+            return Ok((is_browser, None));
+        }
+
+        // Educated guess. Note that VSCode will pass this check since it's a chromium app.
+        let maybe_browser = browser.is_maybe_chromium_window(window).warn();
+        // So we further check if it's a chromium process
+        let (is_browser, fetched_path) = if maybe_browser {
+            let ptid = window.ptid().context("get ptid")?;
+            if web_state.browser_processes.contains(&ptid.pid) {
+                (true, None)
+            } else {
+                let process = Process::new(ptid.pid).context("get process")?;
+                let path = process.path().context("get process path")?;
+                let is_browser = browser.is_chromium_exe(&path);
+                if is_browser {
+                    web_state.browser_processes.insert(ptid.pid);
+                }
+                (is_browser, Some(path))
+            }
+        } else {
+            (false, None)
+        };
+
+        web_state.browser_windows.insert(window.clone(), is_browser);
+
+        Ok((is_browser, fetched_path))
     }
 }
