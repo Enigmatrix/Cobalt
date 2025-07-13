@@ -6,6 +6,7 @@
 //! Engine running in the background
 
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 
 use data::db::{AppUpdater, DatabasePool};
@@ -24,6 +25,7 @@ use util::error::{Context, Result};
 use util::future::runtime::{Builder, Handle};
 use util::future::sync::Mutex;
 use util::future::task::JoinHandle;
+use util::retry::{Backoff, ExponentialBuilder, RetryWithContext, Retryable, RetryableWithContext};
 use util::tracing::{ResultTraceExt, error, info};
 use util::{Target, future};
 
@@ -328,6 +330,37 @@ fn processor(mut args: ProcessorArgs) -> Result<()> {
                 .context("engine loop")
                 .error();
         }
+
+        let first_time = Arc::new(AtomicBool::new(true));
+        (|| async {
+            let mut start = args.start.clone();
+            let mut window_session = args.window_session.clone();
+
+            // if this is not the first time, we need to get a new window session
+            if !first_time.load(Ordering::Relaxed) {
+                start = Timestamp::now();
+                window_session =
+                    foreground_window_session_async(&args.config, args.web_state.clone()).await?;
+            }
+
+            let event_rx = args.event_rx.clone();
+            let args = EngineArgs {
+                desktop: args.desktop.clone(),
+                config: args.config.clone(),
+                web_state: args.web_state.clone(),
+                db_pool: db_pool.clone(),
+                window_session,
+                start,
+                spawner: handle.clone(),
+            };
+            engine_loop(args, event_rx).await.context("engine loop")
+        })
+        .retry(ExponentialBuilder::new().without_max_times())
+        .notify(|err, _| {
+            first_time.store(false, Ordering::Relaxed);
+            error!("engine loop failed: {:?}", err);
+        })
+        .await?;
 
         sentry_handle.await?;
         Ok(())

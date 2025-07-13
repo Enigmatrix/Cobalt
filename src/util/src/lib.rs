@@ -10,6 +10,8 @@ pub mod ds;
 pub mod error;
 /// Async base
 pub mod future;
+/// Retry helpers
+pub mod retry;
 ///  Common timesystem traits
 pub mod time;
 /// Logging, tracing helpers
