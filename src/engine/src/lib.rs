@@ -58,6 +58,11 @@ fn real_main() -> Result<()> {
     let (alert_tx, alert_rx) = channels::unbounded();
     let (tab_change_tx, tab_change_rx) = channels::unbounded();
 
+    let rt = Builder::new_multi_thread()
+        .enable_time()
+        .enable_io()
+        .build()?;
+
     let start = Timestamp::now();
     let window_session = foreground_window_session(&config, web_state.clone())?;
 
@@ -82,16 +87,17 @@ fn real_main() -> Result<()> {
             })?
     };
 
-    processor(ProcessorArgs {
+    rt.block_on(processor(ProcessorArgs {
         desktop,
         web_state,
         config,
+        rt: rt.handle().clone(),
         window_session,
         start,
         event_rx,
         alert_rx,
         tab_change_rx,
-    })?;
+    }))?;
     // can't turn this to util::error::Result :/
     ev_thread.join().expect("event loop thread");
     Ok(())
@@ -249,6 +255,7 @@ struct ProcessorArgs {
     web_state: web::State,
 
     config: Config,
+    rt: Handle,
 
     event_rx: Receiver<Event>,
     alert_rx: Receiver<Timestamp>,
@@ -259,110 +266,100 @@ struct ProcessorArgs {
 }
 
 /// Runs the [Engine] and [Sentry] loops in an asynchronous executor.
-fn processor(args: ProcessorArgs) -> Result<()> {
-    let rt = Builder::new_multi_thread()
-        .enable_time()
-        .enable_io()
-        .build()?;
-    // let rt = Builder::new_multi_thread().enable_all().build()?;
+async fn processor(args: ProcessorArgs) -> Result<()> {
+    let db_pool = DatabasePool::new(&args.config).await?;
 
-    let handle = rt.handle().clone();
-    let res: Result<()> = rt.block_on(async move {
-        let db_pool = DatabasePool::new(&args.config).await?;
+    // re-run failed app info updates
+    let _db_pool = db_pool.clone();
+    let _handle = args.rt.clone();
+    args.rt.clone().spawn(async move {
+        update_app_infos(_db_pool, _handle)
+            .await
+            .context("update app infos")
+            .error();
+    });
 
-        // re-run failed app info updates
-        let _db_pool = db_pool.clone();
-        let _handle = handle.clone();
-        handle.clone().spawn(async move {
-            update_app_infos(_db_pool, _handle)
-                .await
-                .context("update app infos")
-                .error();
-        });
+    let sentry_handle = {
+        let desktop = args.desktop.clone();
+        let db_pool = db_pool.clone();
+        let config = args.config.clone();
+        let spawner = args.rt.clone();
 
-        let sentry_handle = {
-            let desktop = args.desktop.clone();
-            let db_pool = db_pool.clone();
-            let config = args.config.clone();
-            let spawner = handle.clone();
-
-            handle.spawn(async move {
-                (|| async {
-                    sentry_loop(
-                        db_pool.clone(),
-                        desktop.clone(),
-                        spawner.clone(),
-                        args.alert_rx.clone(),
-                        args.tab_change_rx.clone(),
-                    )
-                    .await
-                    .context("sentry loop")
-                })
-                .retry(
-                    ExponentialBuilder::new()
-                        .with_min_delay(config.alert_duration())
-                        .without_max_times(),
+        args.rt.clone().spawn(async move {
+            (|| async {
+                sentry_loop(
+                    db_pool.clone(),
+                    desktop.clone(),
+                    spawner.clone(),
+                    args.alert_rx.clone(),
+                    args.tab_change_rx.clone(),
                 )
-                .notify(|err, _| {
-                    error!("sentry loop failed: {:?}", err);
-                })
                 .await
+                .context("sentry loop")
             })
-        };
+            .retry(
+                ExponentialBuilder::new()
+                    .with_min_delay(config.alert_duration())
+                    .without_max_times(),
+            )
+            .notify(|err, _| {
+                error!("sentry loop failed: {:?}", err);
+            })
+            .await
+        })
+    };
 
-        (|(first_time, mut args, event_rx): (bool, EngineArgs, Receiver<Event>)| async move {
-            // if this is not the first time, we need to get a new window session
-            if !first_time {
-                match foreground_window_session_async(&args.config, args.web_state.clone()).await {
-                    Ok(window_session) => {
-                        args.start = Timestamp::now();
-                        args.window_session = window_session;
-                    }
-                    Err(e) => {
-                        return ((false, args.clone(), event_rx.clone()), Err(e));
-                    }
+    (|(first_time, mut args, event_rx): (bool, EngineArgs, Receiver<Event>)| async move {
+        // if this is not the first time, we need to get a new window session
+        if !first_time {
+            match foreground_window_session_async(&args.config, args.web_state.clone()).await {
+                Ok(window_session) => {
+                    args.start = Timestamp::now();
+                    args.window_session = window_session;
+                }
+                Err(e) => {
+                    return ((false, args.clone(), event_rx.clone()), Err(e));
                 }
             }
+        }
 
-            (
-                (false, args.clone(), event_rx.clone()),
-                engine_loop(args, event_rx.clone())
-                    .await
-                    .context("engine loop"),
-            )
-        })
-        .retry(
-            ExponentialBuilder::new()
-                .with_min_delay(args.config.poll_duration())
-                .without_max_times(),
+        (
+            (false, args.clone(), event_rx.clone()),
+            engine_loop(args, event_rx.clone())
+                .await
+                .context("engine loop"),
         )
-        .context((
-            true, // first time!
-            EngineArgs {
-                desktop: args.desktop.clone(),
-                config: args.config.clone(),
-                web_state: args.web_state.clone(),
-                db_pool: db_pool.clone(),
-                window_session: args.window_session.clone(),
-                start: args.start,
-                spawner: handle.clone(),
-            },
-            args.event_rx.clone(),
-        ))
-        .notify(|err, _| {
-            error!("engine loop failed: {:?}", err);
-        })
-        .await
-        .1
-        .context("engine loop error")?;
+    })
+    .retry(
+        ExponentialBuilder::new()
+            .with_min_delay(args.config.poll_duration())
+            .without_max_times(),
+    )
+    .context((
+        true, // first time!
+        EngineArgs {
+            desktop: args.desktop.clone(),
+            config: args.config.clone(),
+            web_state: args.web_state.clone(),
+            db_pool: db_pool.clone(),
+            window_session: args.window_session.clone(),
+            start: args.start,
+            spawner: args.rt.clone(),
+        },
+        args.event_rx.clone(),
+    ))
+    .notify(|err, _| {
+        error!("engine loop failed: {:?}", err);
+    })
+    .await
+    .1
+    .context("engine loop error")?;
 
-        sentry_handle
-            .await
-            .context("join sentry loop")?
-            .context("sentry loop error")?;
-        Ok(())
-    });
-    res
+    sentry_handle
+        .await
+        .context("join sentry loop")?
+        .context("sentry loop error")?;
+    Ok(())
 }
 
 async fn update_app_infos(db_pool: DatabasePool, handle: Handle) -> Result<()> {
