@@ -24,12 +24,13 @@ use util::error::{Context, Result};
 use util::future::runtime::{Builder, Handle};
 use util::future::sync::Mutex;
 use util::future::task::JoinHandle;
+use util::retry::{ExponentialBuilder, Retryable, RetryableWithContext};
 use util::tracing::{ResultTraceExt, error, info};
 use util::{Target, future};
 
-use crate::engine::EngineOptions;
+use crate::engine::EngineArgs;
 
-mod cache;
+mod desktop;
 mod engine;
 mod resolver;
 mod sentry;
@@ -50,70 +51,87 @@ fn real_main() -> Result<()> {
     platform::setup()?;
     info!("running as {:?}", User::current()?);
 
-    let browser_state = web::default_state();
+    let web_state = web::default_state();
+    let desktop_state = desktop::new_desktop_state(web_state.clone());
+
     let (event_tx, event_rx) = channels::unbounded();
     let (alert_tx, alert_rx) = channels::unbounded();
     let (tab_change_tx, tab_change_rx) = channels::unbounded();
 
-    let now = Timestamp::now();
-    let fg = foreground_window_session(&config, browser_state.clone())?;
+    let rt = Builder::new_multi_thread()
+        .enable_time()
+        .enable_io()
+        .build()?;
+
+    let start = Timestamp::now();
+    let window_session = foreground_window_session(&config, web_state.clone())?;
 
     let ev_thread = {
         let config = config.clone();
-        let fg = fg.clone();
-        let browser_state = browser_state.clone();
-        thread::spawn(move || {
-            event_loop(
-                &config,
-                browser_state,
-                event_tx,
-                alert_tx,
-                tab_change_tx,
-                fg,
-                now,
-            )
-            .context("event loop")
-            .error();
-        })
+        let window_session = window_session.clone();
+        let web_state = web_state.clone();
+        thread::Builder::new()
+            .name("event_loop_thread".to_string())
+            .spawn(move || {
+                event_loop(EventLoopArgs {
+                    config,
+                    web_state,
+                    event_tx,
+                    alert_tx,
+                    tab_change_tx,
+                    window_session,
+                    start,
+                })
+                .context("event loop")
+                .error();
+            })?
     };
 
-    processor(
-        &config,
-        browser_state,
-        fg,
-        now,
+    rt.block_on(processor(ProcessorArgs {
+        desktop_state,
+        web_state,
+        config,
+        rt: rt.handle().clone(),
+        window_session,
+        start,
         event_rx,
         alert_rx,
         tab_change_rx,
-    )?;
+    }))?;
     // can't turn this to util::error::Result :/
     ev_thread.join().expect("event loop thread");
     Ok(())
+}
+
+struct EventLoopArgs {
+    web_state: web::State,
+
+    config: Config,
+
+    event_tx: Sender<Event>,
+    alert_tx: Sender<Timestamp>,
+    tab_change_tx: Sender<TabChange>,
+
+    window_session: WindowSession,
+    start: Timestamp,
 }
 
 /// Win32 [EventLoop] thread to poll for events.
 /// All the callback and functioons used in this
 /// function run on the _same_ thread - so thread-safety
 /// is not an issue.
-fn event_loop(
-    config: &Config,
-    browser_state: web::State,
-    event_tx: Sender<Event>,
-    alert_tx: Sender<Timestamp>,
-    tab_change_tx: Sender<TabChange>,
-    fg: WindowSession,
-    now: Timestamp,
-) -> Result<()> {
+fn event_loop(args: EventLoopArgs) -> Result<()> {
     let ev = EventLoop::new();
 
-    let poll_dur = config.poll_duration().into();
-    let alert_dur = config.alert_duration().into();
+    let poll_dur = args.config.poll_duration().into();
+    let alert_dur = args.config.alert_duration().into();
 
     let message_window = MessageWindow::new()?;
 
-    let mut fg_watcher = ForegroundEventWatcher::new(fg, config, browser_state.clone())?;
-    let it_watcher = InteractionWatcher::init(config, now)?;
-    let system_event_tx = event_tx.clone();
+    let mut fg_watcher =
+        ForegroundEventWatcher::new(args.window_session, &args.config, args.web_state.clone())?;
+    let it_watcher = InteractionWatcher::init(&args.config, args.start)?;
+    let system_event_tx = args.event_tx.clone();
 
     let _it_watcher = it_watcher.clone();
     let _system_watcher = SystemEventWatcher::new(&message_window, move |event| {
@@ -139,12 +157,12 @@ fn event_loop(
             let now = Timestamp::now();
             // if there is a switch event, process it. otherwise, tick to update the usage.
             if let Some(event) = fg_watcher.poll(now)? {
-                event_tx.send(Event::ForegroundChanged(event))?;
+                args.event_tx.send(Event::ForegroundChanged(event))?;
             } else {
-                event_tx.send(Event::Tick(now))?;
+                args.event_tx.send(Event::Tick(now))?;
             }
             if let Some(event) = it_watcher.borrow_mut().as_mut().unwrap().poll(now)? {
-                event_tx.send(Event::InteractionChanged(event))?;
+                args.event_tx.send(Event::InteractionChanged(event))?;
             }
             Ok(())
         }),
@@ -154,12 +172,12 @@ fn event_loop(
         alert_dur,
         Box::new(move || {
             let now = Timestamp::now();
-            alert_tx.send(now)?;
+            args.alert_tx.send(now)?;
             Ok(())
         }),
     )?;
 
-    let mut browser_tab_watcher = BrowserTabWatcher::new(tab_change_tx.clone(), browser_state)?;
+    let mut browser_tab_watcher = BrowserTabWatcher::new(args.tab_change_tx, args.web_state)?;
 
     let dim_tick = Duration::from_millis(1000);
     let _browser_tab_tick_timer = Timer::new(
@@ -179,7 +197,7 @@ fn event_loop(
 }
 
 /// Processing loop for the [Engine].
-async fn engine_loop(options: EngineOptions, rx: Receiver<Event>) -> Result<()> {
+async fn engine_loop(options: EngineArgs, rx: Receiver<Event>) -> Result<()> {
     let mut engine = Engine::new(options).await?;
     loop {
         let ev = rx.recv_async().await?;
@@ -190,14 +208,13 @@ async fn engine_loop(options: EngineOptions, rx: Receiver<Event>) -> Result<()> 
 /// Processing loop for the [Sentry].
 async fn sentry_loop(
     db_pool: DatabasePool,
-    cache: Arc<Mutex<cache::Cache>>,
+    desktop_state: desktop::DesktopState,
     spawner: Handle,
     alert_rx: Receiver<Timestamp>,
     tab_change_rx: Receiver<TabChange>,
 ) -> Result<()> {
     let db = db_pool.get_db().await?;
-    let sentry = Arc::new(Mutex::new(Sentry::new(cache, db)?));
-    // TODO: these two loops must die if the other one dies.
+    let sentry = Arc::new(Mutex::new(Sentry::new(desktop_state, db)?));
 
     let _sentry = sentry.clone();
     let join1: JoinHandle<Result<()>> = spawner.spawn(async move {
@@ -233,89 +250,116 @@ async fn sentry_loop(
     res
 }
 
-/// Runs the [Engine] and [Sentry] loops in an asynchronous executor.
-fn processor(
-    config: &Config,
-    browser_state: web::State,
-    mut fg: WindowSession,
-    mut now: Timestamp,
+struct ProcessorArgs {
+    desktop_state: desktop::DesktopState,
+    web_state: web::State,
+
+    config: Config,
+    rt: Handle,
+
     event_rx: Receiver<Event>,
     alert_rx: Receiver<Timestamp>,
     tab_change_rx: Receiver<TabChange>,
-) -> Result<()> {
-    let rt = Builder::new_multi_thread()
-        .enable_time()
-        .enable_io()
-        .build()?;
-    // let rt = Builder::new_multi_thread().enable_all().build()?;
 
-    let cache = Arc::new(Mutex::new(cache::Cache::new(browser_state.clone())));
+    window_session: WindowSession,
+    start: Timestamp,
+}
 
-    let handle = rt.handle().clone();
-    let res: Result<()> = rt.block_on(async move {
-        let db_pool = DatabasePool::new(config).await?;
+/// Runs the [Engine] and [Sentry] loops in an asynchronous executor.
+async fn processor(args: ProcessorArgs) -> Result<()> {
+    let db_pool = DatabasePool::new(&args.config).await?;
 
-        // re-run failed app info updates
-        let _db_pool = db_pool.clone();
-        let _handle = handle.clone();
-        handle.clone().spawn(async move {
-            update_app_infos(_db_pool, _handle)
+    // re-run failed app info updates
+    let _db_pool = db_pool.clone();
+    let _handle = args.rt.clone();
+    args.rt.clone().spawn(async move {
+        update_app_infos(_db_pool, _handle)
+            .await
+            .context("update app infos")
+            .error();
+    });
+
+    let sentry_handle = {
+        let desktop_state = args.desktop_state.clone();
+        let db_pool = db_pool.clone();
+        let config = args.config.clone();
+        let spawner = args.rt.clone();
+
+        args.rt.clone().spawn(async move {
+            (|| async {
+                sentry_loop(
+                    db_pool.clone(),
+                    desktop_state.clone(),
+                    spawner.clone(),
+                    args.alert_rx.clone(),
+                    args.tab_change_rx.clone(),
+                )
                 .await
-                .context("update app infos")
-                .error();
-        });
-
-        let sentry_handle = {
-            let cache = cache.clone();
-            let db_pool = db_pool.clone();
-            let config = config.clone();
-            let spawner = handle.clone();
-            handle.spawn(async move {
-                for attempt in 0.. {
-                    if attempt > 0 {
-                        future::time::sleep(config.alert_duration()).await;
-                        info!("restarting sentry loop");
-                    }
-                    sentry_loop(
-                        db_pool.clone(),
-                        cache.clone(),
-                        spawner.clone(),
-                        alert_rx.clone(),
-                        tab_change_rx.clone(),
-                    )
-                    .await
-                    .context("sentry loop")
-                    .error();
-                }
+                .context("sentry loop")
             })
-        };
+            .retry(
+                ExponentialBuilder::new()
+                    .with_min_delay(config.alert_duration())
+                    .without_max_times(),
+            )
+            .notify(|err, _| {
+                error!("sentry loop failed: {:?}", err);
+            })
+            .await
+        })
+    };
 
-        for attempt in 0.. {
-            if attempt > 0 {
-                future::time::sleep(config.poll_duration()).await;
-                info!("restarting engine loop");
-                fg = foreground_window_session_async(config, browser_state.clone()).await?;
-                now = Timestamp::now();
+    (|(first_time, mut args, event_rx): (bool, EngineArgs, Receiver<Event>)| async move {
+        // if this is not the first time, we need to get a new window session
+        if !first_time {
+            match foreground_window_session_async(&args.config, args.web_state.clone()).await {
+                Ok(window_session) => {
+                    args.start = Timestamp::now();
+                    args.window_session = window_session;
+                }
+                Err(e) => {
+                    return ((false, args.clone(), event_rx.clone()), Err(e));
+                }
             }
-            let options = EngineOptions {
-                cache: cache.clone(),
-                config: config.clone(),
-                browser_state: browser_state.clone(),
-                db_pool: db_pool.clone(),
-                foreground: fg.clone(),
-                start: now,
-                spawner: handle.clone(),
-            };
-            engine_loop(options, event_rx.clone())
-                .await
-                .context("engine loop")
-                .error();
         }
 
-        sentry_handle.await?;
-        Ok(())
-    });
-    res
+        (
+            (false, args.clone(), event_rx.clone()),
+            engine_loop(args, event_rx.clone())
+                .await
+                .context("engine loop"),
+        )
+    })
+    .retry(
+        ExponentialBuilder::new()
+            .with_min_delay(args.config.poll_duration())
+            .without_max_times(),
+    )
+    .context((
+        true, // first time!
+        EngineArgs {
+            desktop_state: args.desktop_state.clone(),
+            config: args.config.clone(),
+            web_state: args.web_state.clone(),
+            db_pool: db_pool.clone(),
+            window_session: args.window_session.clone(),
+            start: args.start,
+            spawner: args.rt.clone(),
+        },
+        args.event_rx.clone(),
+    ))
+    .notify(|err, _| {
+        error!("engine loop failed: {:?}", err);
+    })
+    .await
+    .1
+    .context("engine loop error")?;
+
+    sentry_handle
+        .await
+        .context("join sentry loop")?
+        .context("sentry loop error")?;
+    Ok(())
 }
 
 async fn update_app_infos(db_pool: DatabasePool, handle: Handle) -> Result<()> {
@@ -344,12 +388,12 @@ async fn update_app_infos(db_pool: DatabasePool, handle: Handle) -> Result<()> {
 }
 
 /// Get the foreground [Window], and makes it into a [WindowSession] blocking until one is present.
-fn foreground_window_session(config: &Config, browser_state: web::State) -> Result<WindowSession> {
+fn foreground_window_session(config: &Config, web_state: web::State) -> Result<WindowSession> {
     let browser = BrowserDetector::new()?;
     loop {
         let session = ForegroundEventWatcher::foreground_window_session(
             &browser,
-            browser_state.blocking_write(),
+            web_state.blocking_write(),
             config.track_incognito(),
         )?;
         if let Some(session) = session {
@@ -365,13 +409,13 @@ fn foreground_window_session(config: &Config, browser_state: web::State) -> Resu
 /// Get the foreground [Window], and makes it into a [WindowSession] blocking until one is present.
 async fn foreground_window_session_async(
     config: &Config,
-    browser_state: web::State,
+    web_state: web::State,
 ) -> Result<WindowSession> {
     let browser = BrowserDetector::new()?;
     loop {
         let session = ForegroundEventWatcher::foreground_window_session(
             &browser,
-            browser_state.write().await,
+            web_state.write().await,
             config.track_incognito(),
         )?;
         if let Some(session) = session {

@@ -1,5 +1,4 @@
 use std::collections::{HashMap, HashSet};
-use std::sync::Arc;
 
 use data::db::{AlertManager, Database, TriggeredAlert};
 use data::entities::{
@@ -9,15 +8,14 @@ use platform::events::TabChange;
 use platform::objects::{Process, Progress, Timestamp as PlatformTimestamp, ToastManager, Window};
 use platform::web::{BaseWebsiteUrl, BrowserDetector, WebsiteInfo};
 use util::error::Result;
-use util::future::sync::Mutex;
 use util::time::ToTicks;
 use util::tracing::{ResultTraceExt, debug, info};
 
-use crate::cache::{Cache, KillableProcessId};
+use crate::desktop::{DesktopState, KillableProcessId};
 
 /// Watcher to track [TriggeredAlert]s and [TriggeredReminder]s and take action on them.
 pub struct Sentry {
-    cache: Arc<Mutex<Cache>>,
+    desktop_state: DesktopState,
     mgr: AlertManager,
     // Invariant: the website_actions map is *wholly* updated. That is, run() executes
     // and updates this after clearing it with *all* alerts' websites. This is easily
@@ -72,10 +70,10 @@ impl Ord for WebsiteAction {
 
 impl Sentry {
     /// Create a new [Sentry] with the given [Cache] and [Database].
-    pub fn new(cache: Arc<Mutex<Cache>>, db: Database) -> Result<Self> {
+    pub fn new(desktop_state: DesktopState, db: Database) -> Result<Self> {
         let mgr = AlertManager::new(db)?;
         Ok(Self {
-            cache,
+            desktop_state,
             mgr,
             website_actions: HashMap::new(),
         })
@@ -88,8 +86,8 @@ impl Sentry {
         let changed_browser_windows = match tab_change {
             TabChange::Tab { window } => HashSet::from_iter(vec![window]),
             TabChange::Tick => {
-                let cache = self.cache.lock().await;
-                cache.browser_windows().await
+                let desktop_state = self.desktop_state.read().await;
+                desktop_state.browser_windows().await
             }
         };
 
@@ -124,11 +122,11 @@ impl Sentry {
 
     /// Run the [Sentry] to check for triggered alerts and reminders and take action on them.
     pub async fn run(&mut self, now: PlatformTimestamp) -> Result<()> {
-        // Retain alive entries in cache before we start processing
+        // Retain alive entries in desktop_state before we start processing
         // - avoids dimming dead windows / killing dead processes
         {
-            let mut cache = self.cache.lock().await;
-            cache.retain_cache().await?;
+            let mut desktop_state = self.desktop_state.write().await;
+            desktop_state.retain_cache().await?;
         }
 
         // Reset the website actions - it will get repopulated by the alerts
@@ -193,14 +191,14 @@ impl Sentry {
                             let process = Process::new_killable(pid)?;
                             self.handle_kill_action(&process).warn();
 
-                            let mut cache = self.cache.lock().await;
-                            cache.remove_process(pid).await;
+                            let mut desktop_state = self.desktop_state.write().await;
+                            desktop_state.remove_process(pid).await;
                         }
                         KillableProcessId::Aumid(aumid) => {
                             Process::kill_uwp(&aumid).await.warn();
 
-                            let mut cache = self.cache.lock().await;
-                            cache.remove_app(app).await;
+                            let mut desktop_state = self.desktop_state.write().await;
+                            desktop_state.remove_app(app).await;
                         }
                     }
                 }
@@ -309,11 +307,11 @@ impl Sentry {
     ) -> Result<(Vec<(Ref<App>, KillableProcessId)>, Vec<BaseWebsiteUrl>)> {
         let target_apps = self.mgr.target_apps(target).await?;
 
-        let cache = self.cache.lock().await;
+        let desktop_state = self.desktop_state.read().await;
         let processes = target_apps
             .iter()
             .flat_map(move |app| {
-                cache
+                desktop_state
                     .platform_processes_for_app(app)
                     .into_iter()
                     .map(|pid| (app.clone(), pid))
@@ -321,10 +319,15 @@ impl Sentry {
             .collect();
 
         // yes, we lock twice here ...
-        let cache = self.cache.lock().await;
+        let desktop_state = self.desktop_state.read().await;
         let websites = target_apps
             .iter()
-            .flat_map(move |app| cache.websites_for_app(app).cloned().collect::<Vec<_>>())
+            .flat_map(move |app| {
+                desktop_state
+                    .websites_for_app(app)
+                    .cloned()
+                    .collect::<Vec<_>>()
+            })
             .collect();
         Ok((processes, websites))
     }
@@ -336,11 +339,11 @@ impl Sentry {
     ) -> Result<(Vec<Window>, Vec<BaseWebsiteUrl>)> {
         let target_apps = self.mgr.target_apps(target).await?;
 
-        let cache = self.cache.lock().await;
+        let desktop_state = self.desktop_state.read().await;
         let windows = target_apps
             .iter()
             .flat_map(move |app| {
-                cache
+                desktop_state
                     .platform_windows_for_app(app)
                     .cloned()
                     .collect::<Vec<_>>() // ew
@@ -348,10 +351,15 @@ impl Sentry {
             .collect();
 
         // yes, we lock twice here ...
-        let cache = self.cache.lock().await;
+        let desktop_state = self.desktop_state.read().await;
         let websites = target_apps
             .iter()
-            .flat_map(move |app| cache.websites_for_app(app).cloned().collect::<Vec<_>>())
+            .flat_map(move |app| {
+                desktop_state
+                    .websites_for_app(app)
+                    .cloned()
+                    .collect::<Vec<_>>()
+            })
             .collect();
         Ok((windows, websites))
     }

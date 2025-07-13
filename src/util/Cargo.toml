@@ -20,3 +20,4 @@ tracing-appender = "0.2.3"
 tokio = { version = "1.43", features = ["macros", "rt-multi-thread"] }
 dirs = "6.0.0"
 serde_json = "1.0.140"
+backon = "1.5.1"
