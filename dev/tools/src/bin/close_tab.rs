@@ -3,7 +3,7 @@
 use clap::Parser;
 use dialoguer::Select;
 use dialoguer::theme::ColorfulTheme;
-use platform::web::BrowserDetector;
+use platform::web;
 use tools::filters::{
     ProcessFilter, ProcessWindowGroup, WindowDetails, WindowFilter, match_running_windows,
 };
@@ -36,10 +36,10 @@ fn main() -> Result<()> {
         },
     )?;
 
-    let browser = BrowserDetector::new()?;
+    let detect = web::Detect::new()?;
     if let Some(details) = select_window(&matches)? {
-        let element = browser.get_chromium_element(&details.window)?;
-        browser.close_current_tab(&element)?;
+        let element = detect.get_chromium_element(&details.window)?;
+        detect.close_current_tab(&element)?;
     } else {
         eprintln!("No windows found matching the criteria");
     }

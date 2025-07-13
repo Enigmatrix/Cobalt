@@ -7,8 +7,9 @@ use windows::Win32::UI::Accessibility::{
     IUIAutomationCondition, IUIAutomationElement, IUIAutomationElement9,
     IUIAutomationInvokePattern, TreeScope_Children, TreeScope_Descendants,
     TreeTraversalOptions_LastToFirstOrder, UIA_AutomationIdPropertyId, UIA_ButtonControlTypeId,
-    UIA_ClassNamePropertyId, UIA_ControlTypePropertyId, UIA_InvokePatternId, UIA_NamePropertyId,
-    UIA_SelectionItemIsSelectedPropertyId, UIA_TabItemControlTypeId, UIA_ValueValuePropertyId,
+    UIA_ClassNamePropertyId, UIA_ControlTypePropertyId, UIA_DocumentControlTypeId,
+    UIA_InvokePatternId, UIA_NamePropertyId, UIA_SelectionItemIsSelectedPropertyId,
+    UIA_TabItemControlTypeId, UIA_ValueValuePropertyId,
 };
 use windows::core::{AgileReference, Interface};
 
@@ -37,7 +38,7 @@ fn perf<T>(f: impl FnOnce() -> T, name: &str) -> T {
 
 /// Detects browser usage information
 #[derive(Clone)]
-pub struct BrowserDetector {
+pub struct Detect {
     automation: AgileReference<IUIAutomation>,
     browser_root_view_cond: AgileReference<IUIAutomationCondition>,
     root_web_area_cond: AgileReference<IUIAutomationCondition>,
@@ -45,7 +46,7 @@ pub struct BrowserDetector {
     cache_request: AgileReference<IUIAutomationCacheRequest>,
 }
 
-impl BrowserDetector {
+impl Detect {
     /// Create a new [BrowserDetector]
     pub fn new() -> Result<Self> {
         let automation: IUIAutomation =
@@ -55,7 +56,13 @@ impl BrowserDetector {
                 .CreatePropertyCondition(UIA_ClassNamePropertyId, &"BrowserRootView".into())?
         };
         let root_web_area_cond = unsafe {
-            automation.CreatePropertyCondition(UIA_AutomationIdPropertyId, &"RootWebArea".into())?
+            let control_cond = automation.CreatePropertyCondition(
+                UIA_ControlTypePropertyId,
+                &UIA_DocumentControlTypeId.0.into(),
+            )?;
+            let class_cond = automation
+                .CreatePropertyCondition(UIA_AutomationIdPropertyId, &"RootWebArea".into())?;
+            automation.CreateAndCondition(&control_cond, &class_cond)?
         };
         let omnibox_cond = unsafe {
             automation

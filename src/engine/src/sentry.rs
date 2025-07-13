@@ -6,7 +6,7 @@ use data::entities::{
 };
 use platform::events::TabChange;
 use platform::objects::{Process, Progress, Timestamp as PlatformTimestamp, ToastManager, Window};
-use platform::web::{BaseWebsiteUrl, BrowserDetector, WebsiteInfo};
+use platform::web;
 use util::error::Result;
 use util::time::ToTicks;
 use util::tracing::{ResultTraceExt, debug, info};
@@ -81,7 +81,7 @@ impl Sentry {
 
     /// Dim the browser windows matching the given [TabUpdate].
     pub async fn handle_tab_change(&mut self, tab_change: TabChange) -> Result<()> {
-        let browser_detect = BrowserDetector::new()?;
+        let detect = web::Detect::new()?;
 
         let changed_browser_windows = match tab_change {
             TabChange::Tab { window } => HashSet::from_iter(vec![window]),
@@ -98,9 +98,9 @@ impl Sentry {
             }
 
             // TODO check if incognito?
-            let element = browser_detect.get_chromium_element(&window)?;
-            let url = browser_detect.chromium_url(&element).unwrap_or_default();
-            let base_url = WebsiteInfo::url_to_base_url(&url.unwrap_or_default())?.to_string();
+            let element = detect.get_chromium_element(&window)?;
+            let url = detect.chromium_url(&element).unwrap_or_default();
+            let base_url = web::WebsiteInfo::url_to_base_url(&url.unwrap_or_default())?.to_string();
 
             if let Some(action) = self.website_actions.get(&base_url) {
                 match action {
@@ -108,7 +108,7 @@ impl Sentry {
                         self.handle_dim_action(&window, *dim_level).warn();
                     }
                     WebsiteAction::Kill => {
-                        browser_detect.close_current_tab(&element).warn();
+                        detect.close_current_tab(&element).warn();
                     }
                 }
             } else {
@@ -304,7 +304,7 @@ impl Sentry {
     async fn processes_and_websites_for_target(
         &mut self,
         target: &Target,
-    ) -> Result<(Vec<(Ref<App>, KillableProcessId)>, Vec<BaseWebsiteUrl>)> {
+    ) -> Result<(Vec<(Ref<App>, KillableProcessId)>, Vec<web::BaseWebsiteUrl>)> {
         let target_apps = self.mgr.target_apps(target).await?;
 
         let desktop_state = self.desktop_state.read().await;
@@ -336,7 +336,7 @@ impl Sentry {
     async fn windows_and_websites_for_target(
         &mut self,
         target: &Target,
-    ) -> Result<(Vec<Window>, Vec<BaseWebsiteUrl>)> {
+    ) -> Result<(Vec<Window>, Vec<web::BaseWebsiteUrl>)> {
         let target_apps = self.mgr.target_apps(target).await?;
 
         let desktop_state = self.desktop_state.read().await;
