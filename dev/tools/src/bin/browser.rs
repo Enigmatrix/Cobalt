@@ -1,7 +1,7 @@
 //! List out browser information
 
 use clap::Parser;
-use platform::web::{BrowserDetector, WebsiteInfo};
+use platform::web;
 use tools::filters::{
     ProcessDetails, ProcessFilter, WindowDetails, WindowFilter, match_running_windows,
 };
@@ -59,7 +59,7 @@ async fn main() -> Result<()> {
         },
     )?;
 
-    let detect = BrowserDetector::new()?;
+    let detect = web::Detect::new()?;
 
     let mut browsers = vec![];
     for window_group in window_group {
@@ -72,10 +72,10 @@ async fn main() -> Result<()> {
             let url = detect.chromium_url(&element)?;
             let incognito = detect.chromium_incognito(&element)?;
             let (name, description) = if let Some(url) = &url {
-                let base_url = WebsiteInfo::url_to_base_url(url)?;
-                let website_info = WebsiteInfo::from_base_url(base_url.clone())
+                let base_url = web::WebsiteInfo::url_to_base_url(url)?;
+                let website_info = web::WebsiteInfo::from_base_url(base_url.clone())
                     .await
-                    .unwrap_or(WebsiteInfo::default_from_url(base_url));
+                    .unwrap_or(web::WebsiteInfo::default_from_url(base_url));
                 (Some(website_info.name), Some(website_info.description))
             } else {
                 (None, None)

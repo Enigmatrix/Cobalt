@@ -15,7 +15,7 @@ use platform::events::{
     WindowSession,
 };
 use platform::objects::{Duration, EventLoop, MessageWindow, Timer, Timestamp, User};
-use platform::web::{self, BrowserDetector};
+use platform::web;
 use resolver::AppInfoResolver;
 use sentry::Sentry;
 use util::channels::{self, Receiver, Sender};
@@ -406,10 +406,10 @@ async fn update_app_infos(db_pool: DatabasePool, handle: Handle) -> Result<()> {
 
 /// Get the foreground [Window], and makes it into a [WindowSession] blocking until one is present.
 fn foreground_window_session(config: &Config, web_state: web::State) -> Result<WindowSession> {
-    let browser = BrowserDetector::new()?;
+    let detect = web::Detect::new()?;
     loop {
         let session = ForegroundEventWatcher::foreground_window_session(
-            &browser,
+            &detect,
             web_state.blocking_write(),
             config.track_incognito(),
         )?;
@@ -428,10 +428,10 @@ async fn foreground_window_session_async(
     config: &Config,
     web_state: web::State,
 ) -> Result<WindowSession> {
-    let browser = BrowserDetector::new()?;
+    let detect = web::Detect::new()?;
     loop {
         let session = ForegroundEventWatcher::foreground_window_session(
-            &browser,
+            &detect,
             web_state.write().await,
             config.track_incognito(),
         )?;

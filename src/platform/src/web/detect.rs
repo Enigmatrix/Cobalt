@@ -38,7 +38,7 @@ fn perf<T>(f: impl FnOnce() -> T, name: &str) -> T {
 
 /// Detects browser usage information
 #[derive(Clone)]
-pub struct BrowserDetector {
+pub struct Detect {
     automation: AgileReference<IUIAutomation>,
     browser_root_view_cond: AgileReference<IUIAutomationCondition>,
     root_web_area_cond: AgileReference<IUIAutomationCondition>,
@@ -46,7 +46,7 @@ pub struct BrowserDetector {
     cache_request: AgileReference<IUIAutomationCacheRequest>,
 }
 
-impl BrowserDetector {
+impl Detect {
     /// Create a new [BrowserDetector]
     pub fn new() -> Result<Self> {
         let automation: IUIAutomation =

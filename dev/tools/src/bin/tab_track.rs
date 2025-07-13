@@ -4,7 +4,7 @@ use std::sync::Mutex;
 
 use platform::events::WindowTitleWatcher;
 use platform::objects::{EventLoop, Target, Window};
-use platform::web::BrowserDetector;
+use platform::web;
 use tools::filters::{ProcessFilter, WindowFilter, match_running_windows};
 use util::error::Result;
 // use util::tracing::info;
@@ -18,18 +18,18 @@ use util::{Target as UtilTarget, config, future as tokio};
 // }
 
 struct UnsafeSyncSendBrowserDetect {
-    browser: BrowserDetector,
+    detect: web::Detect,
 }
 
 impl UnsafeSyncSendBrowserDetect {
     fn new() -> Result<Self> {
-        let browser = BrowserDetector::new()?;
-        Ok(Self { browser })
+        let detect = web::Detect::new()?;
+        Ok(Self { detect })
     }
 
     pub fn chromium_url(&self, window: &Window) -> Result<Option<String>> {
-        let element = self.browser.get_chromium_element(window)?;
-        self.browser.chromium_url(&element)
+        let element = self.detect.get_chromium_element(window)?;
+        self.detect.chromium_url(&element)
     }
 }
 
