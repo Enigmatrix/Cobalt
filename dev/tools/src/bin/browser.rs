@@ -96,7 +96,7 @@ async fn main() -> Result<()> {
         if browser_windows.is_empty() {
             continue;
         }
-        if !BrowserDetector::is_maybe_chromium_exe(&window_group.process.path) {
+        if !detect.is_chromium_exe(&window_group.process.path) {
             continue;
         }
 

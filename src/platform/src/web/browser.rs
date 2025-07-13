@@ -16,6 +16,12 @@ use crate::objects::Window;
 
 const DEBUG_LIMIT: std::time::Duration = std::time::Duration::from_millis(10);
 const WARN_LIMIT: std::time::Duration = std::time::Duration::from_millis(100);
+const BROWSERS: [&str; 2] = [
+    // Chrome
+    r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+    // Edge
+    r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+];
 
 fn perf<T>(f: impl FnOnce() -> T, name: &str) -> T {
     let start = std::time::Instant::now();
@@ -56,11 +62,11 @@ impl BrowserDetector {
                 .CreatePropertyCondition(UIA_NamePropertyId, &"Address and search bar".into())?
         };
         let cache_request = unsafe {
-            let cache_requesst = automation.CreateCacheRequest()?;
-            cache_requesst.SetAutomationElementMode(AutomationElementMode_None)?;
-            cache_requesst.AddProperty(UIA_NamePropertyId)?;
-            cache_requesst.AddProperty(UIA_ValueValuePropertyId)?;
-            cache_requesst
+            let cache_request = automation.CreateCacheRequest()?;
+            cache_request.SetAutomationElementMode(AutomationElementMode_None)?;
+            cache_request.AddProperty(UIA_NamePropertyId)?;
+            cache_request.AddProperty(UIA_ValueValuePropertyId)?;
+            cache_request
         };
         Ok(Self {
             automation: AgileReference::new(&automation)?,
@@ -72,10 +78,11 @@ impl BrowserDetector {
     }
 
     /// Check if the path is a browser. Not meant to be super-accurate, but should be good enough.
-    pub fn is_maybe_chromium_exe(path: &str) -> bool {
-        let browsers = ["chrome.exe", "msedge.exe"];
+    pub fn is_chromium_exe(&self, path: &str) -> bool {
         let path_lower = path.to_lowercase();
-        browsers.iter().any(|browser| path_lower.ends_with(browser))
+        BROWSERS
+            .iter()
+            .any(|browser| path_lower.to_lowercase() == browser.to_lowercase())
     }
 
     /// Check if the [Window] is a Chromium browser
