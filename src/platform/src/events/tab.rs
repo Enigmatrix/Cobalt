@@ -67,14 +67,14 @@ impl BrowserTabWatcher {
 
                     {
                         let mut web_state = web_state.blocking_write();
-                        // only None when the window has been removed and this callback was called right after,
-                        // but before the callback was dropped
-                        if let Some(state) = web_state.browser_windows.get_mut(&window) {
-                            let state = state.as_mut().expect("browser window state exists");
+                        if let Some(state) = web_state.browser_windows.get_mut(&window)
+                            && let Some(state) = state.as_mut()
+                        {
                             state.last_url = last_url.clone();
                             state.last_title = last_title;
                         }
                     }
+
                     tab_change_tx.send(TabChange::Tab {
                         window,
                         url: last_url,
