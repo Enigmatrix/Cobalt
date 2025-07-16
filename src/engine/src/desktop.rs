@@ -3,7 +3,7 @@ use std::future::Future;
 use std::sync::Arc;
 
 use data::entities::{App, AppIdentity, Ref, Session};
-use platform::events::WindowSession;
+use platform::events::{ForegroundWindowSessionInfo, WindowSession};
 use platform::objects::{ProcessId, ProcessThreadId, Window};
 use platform::web::{self, BaseWebsiteUrl};
 use scoped_futures::ScopedBoxFuture;
@@ -157,7 +157,7 @@ impl DesktopStateInner {
     /// to make a new [SessionDetails] if not found.
     pub async fn get_or_insert_session_for_window<'a>(
         &'a mut self,
-        ws: WindowSession,
+        session: ForegroundWindowSessionInfo,
         create: impl for<'b> FnOnce(&'b mut Self) -> ScopedBoxFuture<'a, 'b, Result<SessionDetails>>,
     ) -> Result<&'a mut SessionDetails> {
         // if-let doesn't work since the borrow lasts until end of function,
@@ -166,8 +166,12 @@ impl DesktopStateInner {
         // if let Some(found) = self.sessions.get(&ws) {
         //     return Ok(found);
         // }
-        if self.store.sessions.contains_key(&ws) {
-            return Ok(self.store.sessions.get_mut(&ws).unwrap());
+        if self.store.sessions.contains_key(&session.window_session) {
+            return Ok(self
+                .store
+                .sessions
+                .get_mut(&session.window_session)
+                .unwrap());
         }
 
         let created = { create(self).await? };
@@ -176,9 +180,13 @@ impl DesktopStateInner {
             .windows
             .entry(created.ptid)
             .or_default()
-            .insert(ws.window.clone());
+            .insert(session.window_session.window.clone());
 
-        Ok(self.store.sessions.entry(ws).or_insert(created))
+        Ok(self
+            .store
+            .sessions
+            .entry(session.window_session)
+            .or_insert(created))
     }
 
     /// Get or insert a [AppDetails] for a [ProcessThreadId], using the create callback
@@ -330,11 +338,15 @@ impl DesktopStateInner {
             .collect::<SmallHashSet<_>>();
 
         // retain only app refs for processes that are alive
+        let mut removed_pids = SmallHashSet::new();
         self.platform.processes.retain(|_, entry| {
-            entry
-                .process_threads
-                .retain(|ptid| self.platform.windows.contains_key(ptid));
-            !entry.process_threads.is_empty()
+            removed_pids.extend(
+                entry
+                    .process_threads
+                    .extract_if(|ptid| !self.platform.windows.contains_key(ptid))
+                    .map(|ptid| ptid.pid),
+            );
+            entry.process_threads.is_empty()
         });
 
         // retain only sessions and apps for which their windows and apps that are alive
@@ -343,19 +355,13 @@ impl DesktopStateInner {
             .retain(|ws, _| !removed_windows.contains(&ws.window));
         self.store
             .apps
-            .retain(|ptid, _| self.platform.windows.contains_key(ptid));
+            .retain(|ptid, _| !removed_pids.contains(&ptid.pid));
 
-        let alive_pids = self
-            .platform
-            .windows
-            .keys()
-            .map(|ptid| ptid.pid)
-            .collect::<SmallHashSet<_>>();
         {
             let mut state = self.web.state.write().await;
             state
                 .browser_processes
-                .retain(|process| alive_pids.contains(process));
+                .retain(|process| !removed_pids.contains(process));
             state
                 .browser_windows
                 .retain(|window, _| !removed_windows.contains(window));
@@ -375,10 +381,12 @@ async fn inner_mut_compiles() {
 
     desktop
         .get_or_insert_session_for_window(
-            WindowSession {
-                window,
-                title: "".to_string(),
-                url: None,
+            ForegroundWindowSessionInfo {
+                window_session: WindowSession {
+                    window,
+                    title: "".to_string(),
+                    url: None,
+                },
                 fetched_path: None,
             },
             |cache| {

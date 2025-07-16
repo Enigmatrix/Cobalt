@@ -3,7 +3,7 @@ use data::entities::{
     AppIdentity, InteractionPeriod, Ref, Session, SystemEvent as DataSystemEvent, Usage,
 };
 use platform::events::{
-    ForegroundChangedEvent, InteractionChangedEvent, SystemStateEvent, WindowSession,
+    ForegroundChangedEvent, ForegroundWindowSessionInfo, InteractionChangedEvent, SystemStateEvent,
 };
 use platform::objects::{Process, ProcessThreadId, Timestamp, Window};
 use platform::web::{self, BaseWebsiteUrl, WebsiteInfo};
@@ -53,7 +53,7 @@ pub struct EngineArgs {
     pub spawner: Handle,
     pub db_pool: DatabasePool,
 
-    pub window_session: WindowSession,
+    pub session: ForegroundWindowSessionInfo,
     pub start: Timestamp,
 }
 
@@ -77,7 +77,7 @@ impl Engine {
         ret.current_usage = Usage {
             id: Default::default(),
             session_id: ret
-                .get_session_details(options.window_session, options.start)
+                .get_session_details(options.session, options.start)
                 .await?,
             start: options.start.to_ticks(),
             end: options.start.to_ticks(),
@@ -198,26 +198,30 @@ impl Engine {
     /// Get the [Session] details for the given [WindowSession]
     async fn get_session_details(
         &mut self,
-        mut ws: WindowSession,
+        mut session: ForegroundWindowSessionInfo,
         at: Timestamp,
     ) -> Result<Ref<Session>> {
         let mut desktop_state = self.desktop_state.write().await;
 
         // If window is browser (assume true if unknown), then we need the url.
         // Else set the url to None.
-        if !desktop_state.is_browser(&ws.window).await.unwrap_or(true) {
-            ws.url = None;
+        if !desktop_state
+            .is_browser(&session.window_session.window)
+            .await
+            .unwrap_or(true)
+        {
+            session.window_session.url = None;
         }
 
         let session_details = desktop_state
-            .get_or_insert_session_for_window(ws.clone(), |desktop_state| {
+            .get_or_insert_session_for_window(session.clone(), |desktop_state| {
                 async {
                     Self::create_session_for_window(
                         desktop_state,
                         self.db_pool.clone(),
                         &mut self.inserter,
                         &self.spawner,
-                        ws,
+                        session,
                         at,
                     )
                     .await
@@ -238,12 +242,12 @@ impl Engine {
         db_pool: DatabasePool,
         inserter: &mut UsageWriter,
         spawner: &Handle,
-        ws: WindowSession,
+        session: ForegroundWindowSessionInfo,
         at: Timestamp,
     ) -> Result<SessionDetails> {
-        trace!(?ws, "insert session");
+        trace!(?session, "insert session");
 
-        let ptid = ws.window.ptid()?;
+        let ptid = session.window_session.window.ptid()?;
         let mut app = {
             let db_pool = db_pool.clone();
             let AppDetails { app, .. } = desktop_state
@@ -253,8 +257,8 @@ impl Engine {
                         db_pool,
                         spawner,
                         ptid,
-                        &ws.window,
-                        ws.fetched_path,
+                        &session.window_session.window,
+                        session.fetched_path,
                         at,
                     )
                     .await
@@ -263,7 +267,7 @@ impl Engine {
             app.clone()
         };
 
-        if let Some(url) = &ws.url {
+        if let Some(url) = &session.window_session.url {
             let base_url = WebsiteInfo::url_to_base_url(url).context("url to base url")?;
             let AppDetails { app: web_app, .. } = desktop_state
                 .get_or_insert_website_for_base_url(base_url.clone(), |_| async {
@@ -276,8 +280,8 @@ impl Engine {
         let mut session = Session {
             id: Default::default(),
             app_id: app,
-            title: ws.title,
-            url: ws.url,
+            title: session.window_session.title,
+            url: session.window_session.url,
         };
         inserter.insert_session(&mut session).await?;
 

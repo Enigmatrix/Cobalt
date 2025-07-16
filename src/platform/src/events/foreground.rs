@@ -17,11 +17,20 @@ pub struct ForegroundEventWatcher {
 pub struct ForegroundChangedEvent {
     /// Timestamp of foreground window session change
     pub at: Timestamp,
-    /// New [WindowSession] details
-    pub session: WindowSession,
+    /// New [ForegroundWindowSessionInfo] details
+    pub session: ForegroundWindowSessionInfo,
 }
 
-/// A session of [Window]. Each session has a unique title.
+/// A session of [Window] with additional info
+#[derive(Debug, Clone, Hash, Eq, PartialEq)]
+pub struct ForegroundWindowSessionInfo {
+    /// Foreground [WindowSession]
+    pub window_session: WindowSession,
+    /// Path to the executable, if fetched
+    pub fetched_path: Option<String>,
+}
+
+/// A session of [Window]. Each session has a unique title, url.
 #[derive(Debug, Clone, Hash, Eq, PartialEq)]
 pub struct WindowSession {
     /// Foreground [Window]
@@ -30,8 +39,6 @@ pub struct WindowSession {
     pub title: String,
     /// Foreground [Window] URL, if Browser
     pub url: Option<String>,
-    /// Path to the executable, if fetched
-    pub fetched_path: Option<String>,
 }
 
 impl ForegroundEventWatcher {
@@ -52,10 +59,10 @@ impl ForegroundEventWatcher {
         if let Some(session) =
             Self::foreground_window_session(&self.detect, state, self.track_incognito)?
         {
-            if session == self.session {
+            if session.window_session == self.session {
                 return Ok(None);
             }
-            self.session = session.clone();
+            self.session = session.window_session.clone();
             return Ok(Some(ForegroundChangedEvent { at, session }));
         }
         Ok(None)
@@ -66,7 +73,7 @@ impl ForegroundEventWatcher {
         detect: &web::Detect,
         web_state: web::WriteLockedState<'_>,
         track_incognito: bool,
-    ) -> Result<Option<WindowSession>> {
+    ) -> Result<Option<ForegroundWindowSessionInfo>> {
         if let Some(window) = Window::foreground() {
             let (is_browser, fetched_path) =
                 Self::browser_window_session(&window, detect, web_state)?;
@@ -90,10 +97,9 @@ impl ForegroundEventWatcher {
                 (window.title()?, None)
             };
 
-            let session = WindowSession {
-                title,
-                url,
-                window,
+            let window_session = WindowSession { title, url, window };
+            let session = ForegroundWindowSessionInfo {
+                window_session,
                 fetched_path,
             };
             return Ok(Some(session));

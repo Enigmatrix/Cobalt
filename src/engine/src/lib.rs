@@ -11,8 +11,8 @@ use std::thread;
 use data::db::{AppUpdater, DatabasePool};
 use engine::{Engine, Event};
 use platform::events::{
-    BrowserTabWatcher, ForegroundEventWatcher, InteractionWatcher, SystemEventWatcher, TabChange,
-    WindowSession,
+    BrowserTabWatcher, ForegroundEventWatcher, ForegroundWindowSessionInfo, InteractionWatcher,
+    SystemEventWatcher, TabChange,
 };
 use platform::objects::{Duration, EventLoop, MessageWindow, Timer, Timestamp, User};
 use platform::web;
@@ -81,11 +81,11 @@ fn run(
     let (tab_change_tx, tab_change_rx) = channels::unbounded();
 
     let start = Timestamp::now();
-    let window_session = foreground_window_session(config, web_state.clone())?;
+    let session = foreground_window_session(config, web_state.clone())?;
 
     let ev_thread = {
         let config = config.clone();
-        let window_session = window_session.clone();
+        let session = session.clone();
         let web_state = web_state.clone();
         thread::Builder::new()
             .name("event_loop_thread".to_string())
@@ -96,11 +96,11 @@ fn run(
                     event_tx,
                     alert_tx,
                     tab_change_tx,
-                    window_session,
+                    session,
                     start,
                 })
                 .context("event loop")
-                .error();
+                .expect("event loop failed");
             })?
     };
 
@@ -109,7 +109,7 @@ fn run(
         web_state,
         config: config.clone(),
         rt,
-        window_session,
+        session,
         start,
         event_rx,
         alert_rx,
@@ -129,7 +129,7 @@ struct EventLoopArgs {
     alert_tx: Sender<Timestamp>,
     tab_change_tx: Sender<TabChange>,
 
-    window_session: WindowSession,
+    session: ForegroundWindowSessionInfo,
     start: Timestamp,
 }
 
@@ -145,8 +145,11 @@ fn event_loop(args: EventLoopArgs) -> Result<()> {
 
     let message_window = MessageWindow::new()?;
 
-    let mut fg_watcher =
-        ForegroundEventWatcher::new(args.window_session, &args.config, args.web_state.clone())?;
+    let mut fg_watcher = ForegroundEventWatcher::new(
+        args.session.window_session,
+        &args.config,
+        args.web_state.clone(),
+    )?;
     let it_watcher = InteractionWatcher::init(&args.config, args.start)?;
     let system_event_tx = args.event_tx.clone();
 
@@ -278,7 +281,7 @@ struct ProcessorArgs {
     alert_rx: Receiver<Timestamp>,
     tab_change_rx: Receiver<TabChange>,
 
-    window_session: WindowSession,
+    session: ForegroundWindowSessionInfo,
     start: Timestamp,
 }
 
@@ -332,7 +335,7 @@ async fn processor(args: ProcessorArgs) -> Result<()> {
             match foreground_window_session_async(&args.config, args.web_state.clone()).await {
                 Ok(window_session) => {
                     args.start = Timestamp::now();
-                    args.window_session = window_session;
+                    args.session = window_session;
                 }
                 Err(e) => {
                     return ((false, args.clone(), event_rx.clone()), Err(e));
@@ -359,7 +362,7 @@ async fn processor(args: ProcessorArgs) -> Result<()> {
             config: args.config.clone(),
             web_state: args.web_state.clone(),
             db_pool: db_pool.clone(),
-            window_session: args.window_session.clone(),
+            session: args.session.clone(),
             start: args.start,
             spawner: args.rt.clone(),
         },
@@ -405,7 +408,10 @@ async fn update_app_infos(db_pool: DatabasePool, handle: Handle) -> Result<()> {
 }
 
 /// Get the foreground [Window], and makes it into a [WindowSession] blocking until one is present.
-fn foreground_window_session(config: &Config, web_state: web::State) -> Result<WindowSession> {
+fn foreground_window_session(
+    config: &Config,
+    web_state: web::State,
+) -> Result<ForegroundWindowSessionInfo> {
     let detect = web::Detect::new()?;
     loop {
         let session = ForegroundEventWatcher::foreground_window_session(
@@ -427,7 +433,7 @@ fn foreground_window_session(config: &Config, web_state: web::State) -> Result<W
 async fn foreground_window_session_async(
     config: &Config,
     web_state: web::State,
-) -> Result<WindowSession> {
+) -> Result<ForegroundWindowSessionInfo> {
     let detect = web::Detect::new()?;
     loop {
         let session = ForegroundEventWatcher::foreground_window_session(
