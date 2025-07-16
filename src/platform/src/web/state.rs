@@ -10,9 +10,22 @@ use crate::objects::{ProcessId, Window};
 pub struct StateInner {
     /// Cache of whether a window is a browser or not.
     /// Not present means that we don't know if it's a browser or not.
-    pub browser_windows: SmallHashMap<Window, bool>,
+    /// Value = None means it's not a browser window.
+    /// Value = Some(BrowserWindowState) means it's a browser window and this is the state.
+    pub browser_windows: SmallHashMap<Window, Option<BrowserWindowState>>,
     /// Processes that are known to be browsers.
     pub browser_processes: SmallHashSet<ProcessId>,
+}
+
+/// State of a browser window
+#[derive(Debug, Default, Clone)]
+pub struct BrowserWindowState {
+    /// Whether the window is in incognito mode
+    pub is_incognito: bool,
+    /// Last URL of the window
+    pub last_url: String,
+    /// Last title of the window
+    pub last_title: String,
 }
 
 /// Shared state of browsers and websites seen in the desktop
