@@ -229,12 +229,13 @@ async fn engine_loop(options: EngineArgs, rx: Receiver<Event>) -> Result<()> {
 async fn sentry_loop(
     db_pool: DatabasePool,
     desktop_state: desktop::DesktopState,
+    web_state: web::State,
     spawner: Handle,
     alert_rx: Receiver<Timestamp>,
     tab_change_rx: Receiver<TabChange>,
 ) -> Result<()> {
     let db = db_pool.get_db().await?;
-    let sentry = Arc::new(Mutex::new(Sentry::new(desktop_state, db)?));
+    let sentry = Arc::new(Mutex::new(Sentry::new(desktop_state, web_state, db)?));
 
     let _sentry = sentry.clone();
     let join1: JoinHandle<Result<()>> = spawner.spawn(async move {
@@ -301,6 +302,7 @@ async fn processor(args: ProcessorArgs) -> Result<()> {
 
     let sentry_handle = {
         let desktop_state = args.desktop_state.clone();
+        let web_state = args.web_state.clone();
         let db_pool = db_pool.clone();
         let config = args.config.clone();
         let spawner = args.rt.clone();
@@ -310,6 +312,7 @@ async fn processor(args: ProcessorArgs) -> Result<()> {
                 sentry_loop(
                     db_pool.clone(),
                     desktop_state.clone(),
+                    web_state.clone(),
                     spawner.clone(),
                     args.alert_rx.clone(),
                     args.tab_change_rx.clone(),

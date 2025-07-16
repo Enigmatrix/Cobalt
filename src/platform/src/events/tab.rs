@@ -1,6 +1,6 @@
 use util::channels::Sender;
 use util::ds::{SmallHashMap, SmallHashSet};
-use util::error::Result;
+use util::error::{Context, ContextCompat, Result};
 
 use crate::events::WindowTitleWatcher;
 use crate::objects::{ProcessId, Target, Window};
@@ -9,6 +9,7 @@ use crate::web;
 /// Watches a browser (by PID) for tab changes. Changes should be reported as fast as possible.
 pub struct BrowserTabWatcher {
     browser_pids: SmallHashMap<ProcessId, WindowTitleWatcher>,
+    detect: web::Detect,
     web_state: web::State,
     tab_change_tx: Sender<TabChange>,
 }
@@ -20,6 +21,8 @@ pub enum TabChange {
     Tab {
         /// Window where the tab changed
         window: Window,
+        /// URL of the tab that the user has switched to
+        url: String,
     },
     /// Periodic tick to check for changes in all browser windows.
     Tick,
@@ -30,6 +33,7 @@ impl BrowserTabWatcher {
     pub fn new(tab_change_tx: Sender<TabChange>, web_state: web::State) -> Result<Self> {
         Ok(Self {
             browser_pids: SmallHashMap::new(),
+            detect: web::Detect::new()?,
             web_state,
             tab_change_tx,
         })
@@ -43,8 +47,38 @@ impl BrowserTabWatcher {
         for pid in pids {
             if !self.browser_pids.contains_key(pid) {
                 let tab_change_tx = self.tab_change_tx.clone();
+                let detect = self.detect.clone();
+                let web_state = self.web_state.clone();
                 let callback = Box::new(move |window: Window| {
-                    tab_change_tx.send(TabChange::Tab { window })?;
+                    let element = {
+                        let web_state = web_state.blocking_read();
+                        let Some(element) = web_state.get_browser_window_element(&window)? else {
+                            return Ok(());
+                        };
+                        element
+                    };
+
+                    // TODO: need to get retry logic here
+                    let last_url = detect
+                        .chromium_url(&element)
+                        .context("get chromium url")?
+                        .context("no element")?;
+                    let last_title = window.title()?;
+
+                    {
+                        let mut web_state = web_state.blocking_write();
+                        // only None when the window has been removed and this callback was called right after,
+                        // but before the callback was dropped
+                        if let Some(state) = web_state.browser_windows.get_mut(&window) {
+                            let state = state.as_mut().expect("browser window state exists");
+                            state.last_url = last_url.clone();
+                            state.last_title = last_title;
+                        }
+                    }
+                    tab_change_tx.send(TabChange::Tab {
+                        window,
+                        url: last_url,
+                    })?;
                     Ok(())
                 });
                 self.browser_pids
