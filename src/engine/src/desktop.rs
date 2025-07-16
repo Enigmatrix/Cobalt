@@ -330,11 +330,15 @@ impl DesktopStateInner {
             .collect::<SmallHashSet<_>>();
 
         // retain only app refs for processes that are alive
+        let mut removed_pids = SmallHashSet::new();
         self.platform.processes.retain(|_, entry| {
-            entry
-                .process_threads
-                .retain(|ptid| self.platform.windows.contains_key(ptid));
-            !entry.process_threads.is_empty()
+            removed_pids.extend(
+                entry
+                    .process_threads
+                    .extract_if(|ptid| !self.platform.windows.contains_key(ptid))
+                    .map(|ptid| ptid.pid),
+            );
+            entry.process_threads.is_empty()
         });
 
         // retain only sessions and apps for which their windows and apps that are alive
@@ -343,19 +347,13 @@ impl DesktopStateInner {
             .retain(|ws, _| !removed_windows.contains(&ws.window));
         self.store
             .apps
-            .retain(|ptid, _| self.platform.windows.contains_key(ptid));
+            .retain(|ptid, _| !removed_pids.contains(&ptid.pid));
 
-        let alive_pids = self
-            .platform
-            .windows
-            .keys()
-            .map(|ptid| ptid.pid)
-            .collect::<SmallHashSet<_>>();
         {
             let mut state = self.web.state.write().await;
             state
                 .browser_processes
-                .retain(|process| alive_pids.contains(process));
+                .retain(|process| !removed_pids.contains(process));
             state
                 .browser_windows
                 .retain(|window, _| !removed_windows.contains(window));
