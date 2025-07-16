@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use util::ds::{SmallHashMap, SmallHashSet};
+use util::error::Result;
 use util::future::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 use windows::Win32::UI::Accessibility::IUIAutomationElement9;
 use windows::core::AgileReference;
@@ -30,6 +31,24 @@ pub struct BrowserWindowState {
     pub last_url: String,
     /// Last title of the window
     pub last_title: String,
+}
+
+impl StateInner {
+    /// Get the UI Automation element for the [Window]
+    pub fn get_browser_window_element(
+        &self,
+        window: &Window,
+    ) -> Result<Option<IUIAutomationElement9>> {
+        let Some(state) = self.browser_windows.get(window) else {
+            return Ok(None);
+        };
+
+        let Some(state) = state else {
+            return Ok(None);
+        };
+
+        Ok(Some(state.window_element.resolve()?))
+    }
 }
 
 /// Shared state of browsers and websites seen in the desktop

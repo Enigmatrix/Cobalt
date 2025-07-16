@@ -16,6 +16,7 @@ use crate::desktop::{DesktopState, KillableProcessId};
 /// Watcher to track [TriggeredAlert]s and [TriggeredReminder]s and take action on them.
 pub struct Sentry {
     desktop_state: DesktopState,
+    web_state: web::State,
     mgr: AlertManager,
     // Invariant: the website_actions map is *wholly* updated. That is, run() executes
     // and updates this after clearing it with *all* alerts' websites. This is easily
@@ -70,10 +71,11 @@ impl Ord for WebsiteAction {
 
 impl Sentry {
     /// Create a new [Sentry] with the given [Cache] and [Database].
-    pub fn new(desktop_state: DesktopState, db: Database) -> Result<Self> {
+    pub fn new(desktop_state: DesktopState, web_state: web::State, db: Database) -> Result<Self> {
         let mgr = AlertManager::new(db)?;
         Ok(Self {
             desktop_state,
+            web_state,
             mgr,
             website_actions: HashMap::new(),
         })
@@ -83,24 +85,41 @@ impl Sentry {
     pub async fn handle_tab_change(&mut self, tab_change: TabChange) -> Result<()> {
         let detect = web::Detect::new()?;
 
-        let changed_browser_windows = match tab_change {
-            TabChange::Tab { window } => HashSet::from_iter(vec![window]),
+        let changed_browser_windows: HashSet<(Window, Option<String>)> = match tab_change {
+            TabChange::Tab { window, url } => HashSet::from_iter(vec![(window, Some(url))]),
             TabChange::Tick => {
                 let desktop_state = self.desktop_state.read().await;
-                desktop_state.browser_windows().await
+                desktop_state
+                    .browser_windows()
+                    .await
+                    .into_iter()
+                    .map(|window| (window, None))
+                    .collect()
             }
         };
 
-        for window in changed_browser_windows {
+        for (window, url) in changed_browser_windows {
             // skip if window is dead or minimized
             if window.ptid().is_err() || window.is_minimized() {
                 continue;
             }
 
             // TODO check if incognito?
-            let element = detect.get_chromium_element(&window)?;
-            let url = detect.chromium_url(&element).unwrap_or_default();
-            let base_url = web::WebsiteInfo::url_to_base_url(&url.unwrap_or_default())?.to_string();
+            let (element, url) = if let Some(url) = url {
+                (None, url)
+            } else {
+                let element = {
+                    let web_state = self.web_state.read().await;
+
+                    let Some(element) = web_state.get_browser_window_element(&window)? else {
+                        return Ok(());
+                    };
+                    element
+                };
+                let url = detect.chromium_url(&element)?.unwrap_or_default();
+                (Some(element), url)
+            };
+            let base_url = web::WebsiteInfo::url_to_base_url(&url)?.to_string();
 
             if let Some(action) = self.website_actions.get(&base_url) {
                 match action {
@@ -108,6 +127,20 @@ impl Sentry {
                         self.handle_dim_action(&window, *dim_level).warn();
                     }
                     WebsiteAction::Kill => {
+                        let element = if let Some(element) = element {
+                            element
+                        } else {
+                            // drop the element to avoid !Send error - it's None anyway
+                            drop(element);
+
+                            let web_state = self.web_state.read().await;
+
+                            let Some(element) = web_state.get_browser_window_element(&window)?
+                            else {
+                                continue;
+                            };
+                            element
+                        };
                         detect.close_current_tab(&element).warn();
                     }
                 }
