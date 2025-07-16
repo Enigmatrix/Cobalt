@@ -228,9 +228,11 @@ impl DesktopStateInner {
         Ok(self.web.websites.entry(base_url).or_insert(created))
     }
 
+    // TODO: remove these two methods
+
     pub async fn is_browser(&self, window: &Window) -> Option<bool> {
         let state = self.web.state.read().await;
-        state.browser_windows.get(window).copied()
+        state.browser_windows.get(window).map(|s| s.is_some())
     }
 
     /// Get all browser windows.
@@ -240,8 +242,8 @@ impl DesktopStateInner {
             .browser_windows
             .iter()
             .filter_map(
-                |(window, is_browser)| {
-                    if *is_browser { Some(window) } else { None }
+                |(window, state)| {
+                    if state.is_some() { Some(window) } else { None }
                 },
             )
             .cloned()
