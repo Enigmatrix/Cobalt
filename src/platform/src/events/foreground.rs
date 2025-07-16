@@ -1,6 +1,7 @@
 use util::config::Config;
-use util::error::{Context, Result};
+use util::error::{Context, ContextCompat, Result};
 use util::tracing::ResultTraceExt;
+use windows::core::AgileReference;
 
 use crate::objects::{Process, Timestamp, Window};
 use crate::web;
@@ -75,23 +76,13 @@ impl ForegroundEventWatcher {
         track_incognito: bool,
     ) -> Result<Option<ForegroundWindowSessionInfo>> {
         if let Some(window) = Window::foreground() {
-            let (is_browser, fetched_path) =
-                Self::browser_window_session(&window, detect, web_state)?;
+            let (state, fetched_path) = Self::browser_window_session(&window, detect, web_state)?;
 
-            let (title, url) = if is_browser {
-                let element = detect.get_chromium_element(&window)?;
-                let incognito = detect
-                    .chromium_incognito(&element)
-                    .context("get chromium incognito")?;
-                if let Some(incognito) = incognito
-                    && incognito
-                    && !track_incognito
-                {
+            let (title, url) = if let Some(state) = state {
+                if state.is_incognito && !track_incognito {
                     ("<Incognito>".to_string(), None)
                 } else {
-                    let url = detect.chromium_url(&element).context("get chromium url")?;
-                    let title = window.title()?;
-                    (title, url)
+                    (state.last_title, Some(state.last_url))
                 }
             } else {
                 (window.title()?, None)
@@ -111,11 +102,11 @@ impl ForegroundEventWatcher {
         window: &Window,
         detect: &web::Detect,
         mut web_state: web::WriteLockedState<'_>,
-    ) -> Result<(bool, Option<String>)> {
-        let is_browser = web_state.browser_windows.get(window).cloned();
-        if let Some(is_browser) = is_browser {
+    ) -> Result<(Option<web::BrowserWindowState>, Option<String>)> {
+        let state = web_state.browser_windows.get(window);
+        if let Some(state) = state {
             // We know already if it's a browser or not
-            return Ok((is_browser, None));
+            return Ok((state.clone(), None));
         }
 
         // Educated guess. Note that VSCode will pass this check since it's a chromium app.
@@ -138,8 +129,33 @@ impl ForegroundEventWatcher {
             (false, None)
         };
 
-        web_state.browser_windows.insert(window.clone(), is_browser);
+        // TODO: instead of Option's context("no element") we should use backon retries
+        let state = if is_browser {
+            let window_element = detect.get_chromium_element(window)?;
+            let is_incognito = detect
+                .chromium_incognito(&window_element)
+                .context("get chromium incognito")?
+                .context("no element")?;
+            let last_url = detect
+                .chromium_url(&window_element)
+                .context("get chromium url")?
+                .context("no element")?;
+            let last_title = window.title()?;
+            let window_element = AgileReference::new(&window_element)?;
+            Some(web::BrowserWindowState {
+                window_element,
+                is_incognito,
+                last_url,
+                last_title,
+            })
+        } else {
+            None
+        };
 
-        Ok((is_browser, fetched_path))
+        web_state
+            .browser_windows
+            .insert(window.clone(), state.clone());
+
+        Ok((state, fetched_path))
     }
 }

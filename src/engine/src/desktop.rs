@@ -228,35 +228,6 @@ impl DesktopStateInner {
         Ok(self.web.websites.entry(base_url).or_insert(created))
     }
 
-    pub async fn is_browser(&self, window: &Window) -> Option<bool> {
-        let state = self.web.state.read().await;
-        state.browser_windows.get(window).copied()
-    }
-
-    /// Get all browser windows.
-    pub async fn browser_windows(&self) -> SmallHashSet<Window> {
-        let state = self.web.state.read().await;
-        state
-            .browser_windows
-            .iter()
-            .filter_map(
-                |(window, is_browser)| {
-                    if *is_browser { Some(window) } else { None }
-                },
-            )
-            .cloned()
-            .collect()
-    }
-
-    // pub async fn get_or_insert_session_for_window(&mut self, window: Window, create: impl Future<Output = Result<SessionDetails>>) -> Result<&SessionDetails> {
-
-    //     unimplemented!()
-    // }
-
-    // pub async fn get_or_insert_app_for_process(&mut self, process: Process, create: impl Future<Output = Result<AppDetails>>) -> Result<&AppDetails> {
-    //     unimplemented!()
-    // }
-
     /// Remove a process and associated windows from the [Cache].
     pub async fn remove_process(&mut self, process: ProcessId) {
         let removed_windows = self

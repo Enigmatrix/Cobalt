@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 use data::db::{AlertManager, Database, TriggeredAlert};
 use data::entities::{
@@ -16,6 +16,7 @@ use crate::desktop::{DesktopState, KillableProcessId};
 /// Watcher to track [TriggeredAlert]s and [TriggeredReminder]s and take action on them.
 pub struct Sentry {
     desktop_state: DesktopState,
+    web_state: web::State,
     mgr: AlertManager,
     // Invariant: the website_actions map is *wholly* updated. That is, run() executes
     // and updates this after clearing it with *all* alerts' websites. This is easily
@@ -70,10 +71,11 @@ impl Ord for WebsiteAction {
 
 impl Sentry {
     /// Create a new [Sentry] with the given [Cache] and [Database].
-    pub fn new(desktop_state: DesktopState, db: Database) -> Result<Self> {
+    pub fn new(desktop_state: DesktopState, web_state: web::State, db: Database) -> Result<Self> {
         let mgr = AlertManager::new(db)?;
         Ok(Self {
             desktop_state,
+            web_state,
             mgr,
             website_actions: HashMap::new(),
         })
@@ -83,24 +85,41 @@ impl Sentry {
     pub async fn handle_tab_change(&mut self, tab_change: TabChange) -> Result<()> {
         let detect = web::Detect::new()?;
 
-        let changed_browser_windows = match tab_change {
-            TabChange::Tab { window } => HashSet::from_iter(vec![window]),
+        let changed_browser_windows: Vec<(Window, String)> = match tab_change {
+            TabChange::Tab { window, url } => vec![(window, url)],
             TabChange::Tick => {
-                let desktop_state = self.desktop_state.read().await;
-                desktop_state.browser_windows().await
+                // Update all browser windows with the latest url and title
+                let mut web_state = self.web_state.write().await;
+                let windows = web_state
+                    .browser_windows
+                    .iter_mut()
+                    .flat_map(|(window, state)| {
+                        state.as_mut().map(|state| (window.clone(), state))
+                    });
+
+                let mut ret = Vec::new();
+                for (window, state) in windows {
+                    let Some(url) = detect.chromium_url(&state.window_element.resolve()?)? else {
+                        continue;
+                    };
+                    let title = window.title()?;
+                    state.last_url = url.clone();
+                    state.last_title = title.clone();
+                    ret.push((window, url));
+                }
+
+                ret
             }
         };
 
-        for window in changed_browser_windows {
+        for (window, url) in changed_browser_windows {
             // skip if window is dead or minimized
             if window.ptid().is_err() || window.is_minimized() {
                 continue;
             }
 
             // TODO check if incognito?
-            let element = detect.get_chromium_element(&window)?;
-            let url = detect.chromium_url(&element).unwrap_or_default();
-            let base_url = web::WebsiteInfo::url_to_base_url(&url.unwrap_or_default())?.to_string();
+            let base_url = web::WebsiteInfo::url_to_base_url(&url)?.to_string();
 
             if let Some(action) = self.website_actions.get(&base_url) {
                 match action {
@@ -108,6 +127,15 @@ impl Sentry {
                         self.handle_dim_action(&window, *dim_level).warn();
                     }
                     WebsiteAction::Kill => {
+                        let element = {
+                            let web_state = self.web_state.read().await;
+
+                            let Some(element) = web_state.get_browser_window_element(&window)?
+                            else {
+                                continue;
+                            };
+                            element
+                        };
                         detect.close_current_tab(&element).warn();
                     }
                 }
