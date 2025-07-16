@@ -1,6 +1,7 @@
 use util::config::Config;
 use util::error::{Context, ContextCompat, Result};
 use util::tracing::ResultTraceExt;
+use windows::core::AgileReference;
 
 use crate::objects::{Process, Timestamp, Window};
 use crate::web;
@@ -130,17 +131,19 @@ impl ForegroundEventWatcher {
 
         // TODO: instead of Option's context("no element") we should use backon retries
         let state = if is_browser {
-            let element = detect.get_chromium_element(window)?;
+            let window_element = detect.get_chromium_element(window)?;
             let is_incognito = detect
-                .chromium_incognito(&element)
+                .chromium_incognito(&window_element)
                 .context("get chromium incognito")?
                 .context("no element")?;
             let last_url = detect
-                .chromium_url(&element)
+                .chromium_url(&window_element)
                 .context("get chromium url")?
                 .context("no element")?;
             let last_title = window.title()?;
+            let window_element = AgileReference::new(&window_element)?;
             Some(web::BrowserWindowState {
+                window_element,
                 is_incognito,
                 last_url,
                 last_title,

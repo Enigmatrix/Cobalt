@@ -2,6 +2,8 @@ use std::sync::Arc;
 
 use util::ds::{SmallHashMap, SmallHashSet};
 use util::future::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
+use windows::Win32::UI::Accessibility::IUIAutomationElement9;
+use windows::core::AgileReference;
 
 use crate::objects::{ProcessId, Window};
 
@@ -18,8 +20,10 @@ pub struct StateInner {
 }
 
 /// State of a browser window
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Clone)]
 pub struct BrowserWindowState {
+    /// UI Automation element of the window
+    pub window_element: AgileReference<IUIAutomationElement9>,
     /// Whether the window is in incognito mode
     pub is_incognito: bool,
     /// Last URL of the window
