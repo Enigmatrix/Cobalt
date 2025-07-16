@@ -100,7 +100,7 @@ fn run(
                     start,
                 })
                 .context("event loop")
-                .error();
+                .expect("event loop failed");
             })?
     };
 
