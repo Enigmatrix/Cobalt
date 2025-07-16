@@ -1,6 +1,7 @@
 use std::sync::Mutex;
 
-use util::error::Result;
+use util::error::{Context, Result};
+use util::tracing::ResultTraceExt;
 use windows::Win32::Foundation::HWND;
 use windows::Win32::UI::Accessibility::HWINEVENTHOOK;
 use windows::Win32::UI::WindowsAndMessaging::{EVENT_OBJECT_NAMECHANGE, OBJID_WINDOW};
@@ -34,7 +35,7 @@ impl WindowTitleWatcher {
                 return;
             }
             let window = Window::new(hwnd);
-            on_name_change(window).expect("on_name_change");
+            on_name_change(window).context("on_name_change").error();
             drop(guard);
         };
 
