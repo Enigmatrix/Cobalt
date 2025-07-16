@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 use data::db::{AlertManager, Database, TriggeredAlert};
 use data::entities::{
@@ -85,16 +85,30 @@ impl Sentry {
     pub async fn handle_tab_change(&mut self, tab_change: TabChange) -> Result<()> {
         let detect = web::Detect::new()?;
 
-        let changed_browser_windows: HashSet<(Window, Option<String>)> = match tab_change {
-            TabChange::Tab { window, url } => HashSet::from_iter(vec![(window, Some(url))]),
+        let changed_browser_windows: Vec<(Window, String)> = match tab_change {
+            TabChange::Tab { window, url } => vec![(window, url)],
             TabChange::Tick => {
-                let desktop_state = self.desktop_state.read().await;
-                desktop_state
-                    .browser_windows()
-                    .await
-                    .into_iter()
-                    .map(|window| (window, None))
-                    .collect()
+                // Update all browser windows with the latest url and title
+                let mut web_state = self.web_state.write().await;
+                let windows = web_state
+                    .browser_windows
+                    .iter_mut()
+                    .flat_map(|(window, state)| {
+                        state.as_mut().map(|state| (window.clone(), state))
+                    });
+
+                let mut ret = Vec::new();
+                for (window, state) in windows {
+                    let Some(url) = detect.chromium_url(&state.window_element.resolve()?)? else {
+                        continue;
+                    };
+                    let title = window.title()?;
+                    state.last_url = url.clone();
+                    state.last_title = title.clone();
+                    ret.push((window, url));
+                }
+
+                ret
             }
         };
 
@@ -105,20 +119,6 @@ impl Sentry {
             }
 
             // TODO check if incognito?
-            let (element, url) = if let Some(url) = url {
-                (None, url)
-            } else {
-                let element = {
-                    let web_state = self.web_state.read().await;
-
-                    let Some(element) = web_state.get_browser_window_element(&window)? else {
-                        return Ok(());
-                    };
-                    element
-                };
-                let url = detect.chromium_url(&element)?.unwrap_or_default();
-                (Some(element), url)
-            };
             let base_url = web::WebsiteInfo::url_to_base_url(&url)?.to_string();
 
             if let Some(action) = self.website_actions.get(&base_url) {
@@ -127,12 +127,7 @@ impl Sentry {
                         self.handle_dim_action(&window, *dim_level).warn();
                     }
                     WebsiteAction::Kill => {
-                        let element = if let Some(element) = element {
-                            element
-                        } else {
-                            // drop the element to avoid !Send error - it's None anyway
-                            drop(element);
-
+                        let element = {
                             let web_state = self.web_state.read().await;
 
                             let Some(element) = web_state.get_browser_window_element(&window)?
