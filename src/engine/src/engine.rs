@@ -198,20 +198,10 @@ impl Engine {
     /// Get the [Session] details for the given [WindowSession]
     async fn get_session_details(
         &mut self,
-        mut session: ForegroundWindowSessionInfo,
+        session: ForegroundWindowSessionInfo,
         at: Timestamp,
     ) -> Result<Ref<Session>> {
         let mut desktop_state = self.desktop_state.write().await;
-
-        // If window is browser (assume true if unknown), then we need the url.
-        // Else set the url to None.
-        if !desktop_state
-            .is_browser(&session.window_session.window)
-            .await
-            .unwrap_or(true)
-        {
-            session.window_session.url = None;
-        }
 
         let session_details = desktop_state
             .get_or_insert_session_for_window(session.clone(), |desktop_state| {
