@@ -1,6 +1,6 @@
 # Cobalt
 
-View usage statistics of all your apps. Track and determine where you are wasting time, and get your procrastination under control.
+View usage statistics of all your apps. Track and determine where you are wasting time, ad get your procrastination under control.
 
 > [!WARNING]
 > Cobalt was established before in the [archive/main](https://github.com/Enigmatrix/Cobalt/tree/archive/main) branch, and you can try the previous product from the [Github Releases](https://github.com/Enigmatrix/Cobalt/releases).
