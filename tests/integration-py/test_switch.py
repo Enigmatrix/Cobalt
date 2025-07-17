@@ -6,12 +6,13 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from driver import driver_web_state, DriverData
 
 logger = logging.getLogger(__name__)
 
 
 @pytest.fixture
-def driver():
+def browser():
     chrome_options = Options()
     chrome_options.add_argument("--start-maximized")
     chrome_options.add_argument("--enable-features=UiaProvider")
@@ -20,22 +21,25 @@ def driver():
     driver.quit()
 
 
-def test_switch(driver):
+def test_switch(driver_web_state: DriverData, browser: webdriver.Chrome):
     url1, url2 = "https://www.google.com", "https://enigmatrix.me"
 
     # Open first tab and navigate to url1
     logger.info(f"Opening first tab: {url1}")
-    driver.get(url1)
+    browser.get(url1)
     # Wait for Google page to load
-    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.NAME, "q")))
+    WebDriverWait(browser, 10).until(EC.presence_of_element_located((By.NAME, "q")))
     logger.info(f"{url1} page loaded successfully")
+
+    # Wait 3 seconds on url1
+    time.sleep(3)
 
     # Open second tab and navigate to url2
     logger.info(f"Opening second tab: {url2}")
-    driver.execute_script(f"window.open('{url2}', '_blank');")
-    driver.switch_to.window(driver.window_handles[1])
+    browser.execute_script(f"window.open('{url2}', '_blank');")
+    browser.switch_to.window(browser.window_handles[1])
     # Wait for url2 page to load
-    WebDriverWait(driver, 10).until(
+    WebDriverWait(browser, 10).until(
         EC.presence_of_element_located((By.TAG_NAME, "body"))
     )
     logger.info(f"{url2} page loaded successfully")
@@ -47,11 +51,16 @@ def test_switch(driver):
 
     # Switch to the first tab (url1)
     logger.info(f"Switching to {url1} tab...")
-    driver.switch_to.window(driver.window_handles[0])
+    browser.switch_to.window(browser.window_handles[0])
     logger.info(f"Currently active tab: {url1}")
 
     # Wait 5 seconds on url1
     logger.info(f"Waiting 5 seconds on {url1}...")
     time.sleep(5)
 
-    logger.info("Test completed successfully!")
+    events = driver_web_state.events()
+    for event in events:
+        logger.info(f"Event: {event}")
+
+    logger.info(f"Test completed successfully!")
+    assert False
