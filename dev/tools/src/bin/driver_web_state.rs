@@ -1,18 +1,36 @@
 //! Driver to poll the [web::State] as the engine is runningand save it to a file
 
+use std::fs::File;
+use std::io::Write;
 use std::thread;
-use std::time::UNIX_EPOCH;
+use std::time::{Duration, UNIX_EPOCH};
 
+use clap::{Parser, command};
 use engine::desktop;
 use platform::objects::Window;
 use platform::web;
+use serde::Serialize;
 use util::ds::SmallHashMap;
 use util::error::Result;
 use util::tracing::error;
 use util::{Target, config, future as tokio};
 
+#[derive(Parser, Debug, Clone)]
+#[command(author, version, about, long_about = None)]
+struct Args {
+    /// Path to save the events to
+    #[arg(long, default_value = "data.json")]
+    path: String,
+
+    /// Delay between events polling in milliseconds
+    #[arg(long, default_value = "10")]
+    delay: u64,
+}
+
 fn main() -> Result<()> {
-    util::set_target(Target::Engine);
+    util::set_target(Target::Tool {
+        name: "driver_web_state".to_string(),
+    });
     let config = config::get_config()?;
     util::setup(&config)?;
     platform::setup()?;
@@ -22,23 +40,17 @@ fn main() -> Result<()> {
         .enable_io()
         .build()?;
 
+    let args = Args::parse();
+
     let web_state = web::default_state();
     let desktop_state = desktop::new_desktop_state(web_state.clone());
 
     let _web_state = web_state.clone();
     thread::spawn(move || {
         let mut driver = Driver::new(_web_state);
-        loop {
-            let ts = std::time::SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .unwrap()
-                .as_secs();
-            let events = driver.step(ts);
-            for event in events {
-                println!("{event:?}");
-            }
-            std::thread::sleep(std::time::Duration::from_millis(10));
-        }
+        driver
+            .run(&args.path, Duration::from_millis(args.delay))
+            .expect("failed to run driver");
     });
 
     if let Err(report) = engine::run(&config, rt.handle().clone(), web_state, desktop_state) {
@@ -49,13 +61,13 @@ fn main() -> Result<()> {
 }
 
 struct Driver {
-    current_state: RecordedState,
+    current_state: WebStateSnapshot,
     state: web::State,
 }
 
 impl Driver {
     fn new(state: web::State) -> Self {
-        let current_state = RecordedState::from(&*state.blocking_read());
+        let current_state = WebStateSnapshot::from(&*state.blocking_read());
         Self {
             state,
             current_state,
@@ -63,21 +75,37 @@ impl Driver {
     }
 
     fn step(&mut self, ts: u64) -> Vec<Event> {
-        let new_state = RecordedState::from(&*self.state.blocking_read());
+        let new_state = WebStateSnapshot::from(&*self.state.blocking_read());
         let events = self.current_state.diff(&new_state, ts);
         self.current_state = new_state;
         events
+    }
+
+    fn run(&mut self, path: &str, delay: Duration) -> Result<()> {
+        let mut file = File::create(path)?;
+        loop {
+            let ts = time_now();
+            let events = self.step(ts);
+
+            for event in events {
+                let json = serde_json::to_string(&event)?;
+                file.write_all(json.as_bytes())?;
+                file.write_all(b"\n")?;
+            }
+
+            thread::sleep(delay);
+        }
     }
 }
 
 /// Shared inner state of browsers and websites seen in the desktop
 #[derive(Debug, Default)]
-struct RecordedState {
-    pub browser_windows: SmallHashMap<Window, Option<BrowserWindowContext>>,
+struct WebStateSnapshot {
+    pub browser_windows: SmallHashMap<Window, Option<BrowserWindowSnapshot>>,
     // pub browser_processes: SmallHashSet<ProcessId>,
 }
 
-impl From<&web::StateInner> for RecordedState {
+impl From<&web::StateInner> for WebStateSnapshot {
     fn from(state: &web::StateInner) -> Self {
         Self {
             browser_windows: state
@@ -86,7 +114,7 @@ impl From<&web::StateInner> for RecordedState {
                 .map(|(window, state)| {
                     (
                         window.clone(),
-                        state.clone().map(|state| BrowserWindowContext {
+                        state.clone().map(|state| BrowserWindowSnapshot {
                             is_incognito: state.is_incognito,
                             url: state.last_url.clone(),
                             title: state.last_title.clone(),
@@ -99,25 +127,25 @@ impl From<&web::StateInner> for RecordedState {
     }
 }
 
-impl RecordedState {
-    fn diff(&self, new_state: &RecordedState, ts: u64) -> Vec<Event> {
+impl WebStateSnapshot {
+    fn diff(&self, new_state: &WebStateSnapshot, ts: u64) -> Vec<Event> {
         let mut events = Vec::new();
 
-        for (window, ctx) in &new_state.browser_windows {
-            let Some(ctx) = ctx else { continue };
-            let old_ctx = self.browser_windows.get(window);
-            let change = if let Some(old_state) = old_ctx {
-                let old_ctx = old_state
+        for (window, snapshot) in &new_state.browser_windows {
+            let Some(snapshot) = snapshot else { continue };
+            let old_snapshot = self.browser_windows.get(window);
+            let change = if let Some(old_snapshot) = old_snapshot {
+                let old_snapshot = old_snapshot
                     .as_ref()
                     .expect("browser window should remain browser window from start");
-                old_ctx != ctx
+                old_snapshot != snapshot
             } else {
                 true
             };
 
             if change {
-                events.push(Event::BrowserWindowContextChanged {
-                    context: ctx.clone(),
+                events.push(Event::BrowserWindowSnapshotChange {
+                    snapshot: snapshot.clone(),
                     timestamp: ts,
                 });
             }
@@ -127,21 +155,34 @@ impl RecordedState {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
-struct BrowserWindowContext {
+#[derive(Debug, PartialEq, Eq, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct BrowserWindowSnapshot {
     pub is_incognito: bool,
     pub url: String,
     pub title: String,
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Serialize)]
+#[serde(tag = "type")]
+#[serde(rename_all = "camelCase")]
 enum Event {
-    BrowserWindowContextChanged {
-        context: BrowserWindowContext,
+    #[serde(rename_all = "camelCase")]
+    #[serde(rename = "state-change")]
+    BrowserWindowSnapshotChange {
+        #[serde(flatten)]
+        snapshot: BrowserWindowSnapshot,
         timestamp: u64,
     },
     // WindowFocused {
     //     window: Window,
     //     timestamp: u64,
     // },
+}
+
+fn time_now() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_secs()
 }
