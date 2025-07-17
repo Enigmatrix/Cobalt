@@ -1,4 +1,5 @@
 use std::io::Result;
+use std::path::PathBuf;
 use std::time::Duration;
 
 pub use dirs::*;
@@ -41,15 +42,15 @@ impl Default for Config {
 
 impl Config {
     /// Get the config path from dir
-    pub fn config_path(segment: &str) -> Result<String> {
+    pub fn config_path(segment: &str) -> Result<PathBuf> {
         #[cfg(debug_assertions)]
         {
             use crate::{TARGET, Target};
 
             let target = TARGET.lock().unwrap().clone();
             match target {
-                Target::Engine => Ok(segment.to_string()),
-                Target::Ui => Ok("../../../".to_string() + segment),
+                Target::Engine => Ok(PathBuf::from(segment)),
+                Target::Ui => Ok(PathBuf::from("../../../").join(segment)),
             }
         }
 
@@ -118,23 +119,22 @@ impl Config {
     }
 
     /// Returns the connection string to the query context database
-    pub fn connection_string(&self) -> Result<String> {
+    pub fn connection_string(&self) -> Result<PathBuf> {
         Self::config_path("main.db")
     }
 
     /// Returns the connection string to the query context database
-    pub fn logs_dir(&self) -> Result<String> {
+    pub fn logs_dir(&self) -> Result<PathBuf> {
         Self::config_path("logs")
     }
 
     /// Returns the path to the icons directory
-    pub fn icons_dir() -> Result<String> {
+    pub fn icons_dir() -> Result<PathBuf> {
         let path = Self::config_path("icons")?;
-        let path = std::path::Path::new(&path);
         if !path.exists() {
-            std::fs::create_dir(path)?;
+            std::fs::create_dir(&path)?;
         }
-        Ok(std::path::absolute(path)?.to_string_lossy().to_string())
+        Ok(path)
     }
 
     /// Engine Log filter (tracing)
@@ -209,7 +209,10 @@ pub fn get_config() -> Result<Config> {
 fn combined_extract_fields() -> Result<()> {
     std::env::set_current_dir("../../")?;
     let config = get_config()?;
-    assert_eq!("main.db", config.connection_string()?);
+    assert_eq!(
+        "main.db",
+        config.connection_string()?.to_string_lossy().to_string()
+    );
     std::fs::remove_file(Config::config_path(CONFIG_FILE)?).expect("failed to remove file");
     std::env::set_current_dir("src/util")?;
 

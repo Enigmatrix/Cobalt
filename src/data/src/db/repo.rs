@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::path::Path;
 
 use super::repo_crud::APP_DUR;
 use super::*;
@@ -324,8 +323,7 @@ impl Repository {
             .execute(self.db.executor())
             .await?;
 
-        let dir_path = Config::icons_dir()?;
-        let dir = Path::new(&dir_path);
+        let dir = Config::icons_dir()?;
 
         for icon in icons {
             let path = dir.join(icon.icon);

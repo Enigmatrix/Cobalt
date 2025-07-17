@@ -1,5 +1,3 @@
-use std::path::Path;
-
 use data::db::{AppUpdater, DatabasePool};
 use data::entities::{App, AppIdentity, Ref};
 use platform::objects::AppInfo;
@@ -54,7 +52,7 @@ impl AppInfoResolver {
             let id = app.0.to_string();
             let ext = icon.deduce_ext();
             let file_name = format!("{}.{}", id, ext.unwrap_or("bin".to_string()));
-            let icon_path = Path::new(&icons_dir).join(&file_name);
+            let icon_path = icons_dir.join(&file_name);
             fs::write(&icon_path, icon.data).await?;
             Some(file_name)
         } else {

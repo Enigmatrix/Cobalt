@@ -117,9 +117,9 @@ fn check_and_remove_file(file: &str) -> util::error::Result<()> {
         .map(|f| f.is_file())
         .unwrap_or(false)
     {
-        std::fs::remove_file(&file).context(format!("remove {}", &file))?;
+        std::fs::remove_file(&file).context(format!("remove {:?}", &file))?;
     } else {
-        warn!("file {} not found", file);
+        warn!("file {:?} not found", file);
     }
     Ok(())
 }
@@ -127,9 +127,9 @@ fn check_and_remove_file(file: &str) -> util::error::Result<()> {
 fn check_and_remove_dir(dir: &str) -> util::error::Result<()> {
     let dir = util::config::Config::config_path(dir)?;
     if std::fs::metadata(&dir).map(|f| f.is_dir()).unwrap_or(false) {
-        std::fs::remove_dir_all(&dir).context(format!("remove {}", &dir))?;
+        std::fs::remove_dir_all(&dir).context(format!("remove {:?}", &dir))?;
     } else {
-        warn!("dir {} not found", dir);
+        warn!("dir {:?} not found", dir);
     }
     Ok(())
 }
@@ -143,7 +143,7 @@ fn check_and_copy_file(dir: &Path, file: &str) -> util::error::Result<()> {
     {
         std::fs::copy(from_file, to_file).context(format!("copy {file}"))?;
     } else {
-        warn!("file {} not found", file);
+        warn!("file {file} not found");
     }
     Ok(())
 }
