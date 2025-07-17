@@ -32,28 +32,42 @@ pub struct Engine {
 
 /// Events that the [Engine] can handle.
 pub enum Event {
+    /// System Event
     System {
+        /// System State Event
         event: SystemStateEvent,
+        /// Last interaction before this system event - so that we can write/end the interaction period
         last_interaction: Option<InteractionChangedEvent>,
+        /// Time of occurance
         now: Timestamp,
     },
+    /// Foreground Changed Event
     ForegroundChanged(ForegroundChangedEvent),
+    /// Interaction Changed Event
     InteractionChanged(InteractionChangedEvent),
+    /// Tick Event (manual update)
     Tick(Timestamp),
 }
 
 /// Args for creating a new [Engine].
 #[derive(Clone)]
 pub struct EngineArgs {
+    /// Desktop State
     pub desktop_state: DesktopState,
+    /// Web State
     pub web_state: web::State,
 
+    /// Config
     pub config: Config,
 
+    /// Spawner for async tasks
     pub spawner: Handle,
+    /// Database Pool
     pub db_pool: DatabasePool,
 
+    /// Starting Session
     pub session: ForegroundWindowSessionInfo,
+    /// Start time
     pub start: Timestamp,
 }
 

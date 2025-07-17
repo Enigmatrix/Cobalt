@@ -62,28 +62,36 @@ pub struct PlatformCache {
 /// Details about a [App].
 #[derive(Debug, Default)]
 pub struct AppEntry {
+    /// All [ProcessThreadId]s that are known to be a part of this app
     pub process_threads: SmallHashSet<ProcessThreadId>,
+    /// Identity of the app
     pub identity: AppIdentity,
 }
 
 /// Details about a [Session].
 #[derive(Debug)]
 pub struct SessionDetails {
+    /// Session Id
     pub session: Ref<Session>,
+    /// Process Thread Id
     pub ptid: ProcessThreadId,
 }
 
 /// Details about a [App].
 #[derive(Debug)]
 pub struct AppDetails {
+    /// App Id
     pub app: Ref<App>,
+    /// Identity of the app
     pub identity: AppIdentity,
 }
 
 /// A process that can be killed.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum KillableProcessId {
+    /// Win32 Process Id
     Win32(ProcessId),
+    /// Aumid
     Aumid(String),
 }
 
