@@ -38,7 +38,9 @@ unsafe impl Sync for UnsafeSyncSendBrowserDetect {}
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<()> {
-    util::set_target(UtilTarget::Engine);
+    util::set_target(UtilTarget::Tool {
+        name: "tab_track".to_string(),
+    });
     let config = config::get_config()?;
     util::setup(&config)?;
     platform::setup()?;
