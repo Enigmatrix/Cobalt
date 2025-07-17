@@ -51,6 +51,7 @@ impl Config {
             match target {
                 Target::Engine => Ok(PathBuf::from(segment)),
                 Target::Ui => Ok(PathBuf::from("../../../").join(segment)),
+                Target::Tool { .. } => Ok(PathBuf::from(segment)),
             }
         }
 

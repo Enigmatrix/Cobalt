@@ -30,6 +30,11 @@ pub enum Target {
     /// Engine module target
     #[default]
     Engine,
+    /// Tool target
+    Tool {
+        /// Name of the tool
+        name: String,
+    },
 }
 
 static INIT: Once = Once::new();

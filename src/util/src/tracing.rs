@@ -60,8 +60,10 @@ impl<T: Default> ResultTraceExt<T> for Result<T> {
 pub fn setup(config: &Config) -> Result<()> {
     let target = TARGET.lock().unwrap().clone();
     let (filter_directives, log_file) = match target {
-        Target::Ui => (config.ui_log_filter(), "Cobalt.Ui"),
-        Target::Engine => (config.engine_log_filter(), "Cobalt.Engine"),
+        Target::Ui => (config.ui_log_filter(), "Cobalt.Ui".to_string()),
+        Target::Engine => (config.engine_log_filter(), "Cobalt.Engine".to_string()),
+        // TODO: what should the log filter directive be for this?
+        Target::Tool { name, .. } => (config.engine_log_filter(), format!("Cobalt.Tool.{name}")),
     };
 
     let rolling = RollingFileAppender::builder()
