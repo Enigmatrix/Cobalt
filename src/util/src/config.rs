@@ -60,15 +60,10 @@ impl Config {
         #[cfg(not(debug_assertions))]
         {
             use std::io::{Error, ErrorKind};
-            dirs::data_local_dir()
+            Ok(dirs::data_local_dir()
                 .ok_or(Error::new(ErrorKind::NotFound, "data local dir"))?
                 .join("me.enigmatrix.cobalt")
-                .join(segment)
-                .into_os_string()
-                .into_string()
-                .map_err(|oss| {
-                    Error::new(ErrorKind::Other, format!("convert path to utf8: {:?}", oss))
-                })
+                .join(segment))
         }
     }
 
