@@ -32,20 +32,14 @@ def test_switch(
     driver_web_state: DriverData, browser: webdriver.Chrome, events: RecordedEvents
 ):
     events.push(
-        BrowserWindowSnapshotChange(
-            url="data:,", title="data:, - Google Chrome", is_incognito=False
-        )
+        BrowserWindowSnapshotChange(url="data:,", title="data:, - Google Chrome")
     )
     url1, url2 = "https://www.google.com/", "https://enigmatrix.me/"
 
     # Open first tab and navigate to url1
     logger.info(f"Opening first tab: {url1}")
     browser.get(url1)
-    events.push(
-        BrowserWindowSnapshotChange(
-            url=url1, title="Google - Google Chrome", is_incognito=False
-        )
-    )
+    events.push(BrowserWindowSnapshotChange(url=url1, title="Google - Google Chrome"))
     # Wait for Google page to load
     WebDriverWait(browser, 10).until(EC.presence_of_element_located((By.NAME, "q")))
     logger.info(f"{url1} page loaded successfully")
@@ -58,14 +52,10 @@ def test_switch(
     browser.execute_script(f"window.open('{url2}', '_blank');")
     browser.switch_to.window(browser.window_handles[1])
     events.push(
-        BrowserWindowSnapshotChange(
-            url="about:blank", title="Untitled - Google Chrome", is_incognito=False
-        )
+        BrowserWindowSnapshotChange(url="about:blank", title="Untitled - Google Chrome")
     )
     events.push(
-        BrowserWindowSnapshotChange(
-            url=url2, title="Enigmatrix - Google Chrome", is_incognito=False
-        )
+        BrowserWindowSnapshotChange(url=url2, title="Enigmatrix - Google Chrome")
     )
     # Wait for url2 page to load
     WebDriverWait(browser, 10).until(
@@ -95,6 +85,8 @@ def test_switch(
     out_events = driver_web_state.events()
     for event in out_events:
         logger.info(f"Event: {event}")
+
+    assert events == out_events
 
     logger.info(f"Test completed successfully! {events.events} == {out_events}")
     assert False

@@ -1,4 +1,5 @@
 import time
+import sys
 import pytest
 import logging
 import tempfile
@@ -6,10 +7,14 @@ import shutil
 import subprocess
 import json
 from pathlib import Path
-from dataclasses import dataclass
-from typing import Union, Optional, Dict, Any
+from dataclasses import dataclass, field
+from typing import Union, Optional, Dict, Any, List
+import difflib
+import webbrowser
 
 logger = logging.getLogger(__name__)
+
+TOLERANCE_MS = 500
 
 
 class DriverData:
@@ -73,24 +78,36 @@ def driver_web_state(request, build_driver_web_state):
     # Only show output if test failed
     if hasattr(request.node, "rep_call") and request.node.rep_call.failed:
         logger.info("--- driver_web_state stdout ---")
-        out = open(stdout_path, "r").read()
-        logger.info(out)
+        out = open(stdout_path, "rb").read()
+        sys.stdout.buffer.write(out)
         logger.info("--- driver_web_state stderr ---")
-        err = open(stderr_path, "r").read()
-        logger.info(err)
+        err = open(stderr_path, "rb").read()
+        sys.stderr.buffer.write(err)
 
     shutil.rmtree(save_dir, ignore_errors=True)
 
 
+# Unix epoch imestamp in milliseconds, with {TOLERANCE_MS}ms tolerance
+class Timestamp:
+    def __init__(self, timestamp: Optional[int] = None):
+        self.timestamp = timestamp or unix_ms()
+
+    def __eq__(self, other: "Timestamp") -> bool:
+        return self.timestamp == pytest.approx(other.timestamp, abs=TOLERANCE_MS)
+
+    def __cmp__(self, other: "Timestamp") -> int:
+        raise NotImplementedError("Timestamp comparison is not supported")
+
+    def __str__(self) -> str:
+        return f"{self.timestamp}"
+
+    def __repr__(self) -> str:
+        return f"{self.timestamp}"
+
+
 @dataclass
 class Event:
-    timestamp: int
-
-    def __eq__(self, other: "Event") -> bool:
-        # Allow 150ms difference in timestamp
-        return type(self) == type(other) and self.timestamp == pytest.approx(
-            other.timestamp, abs=150
-        )
+    timestamp: Timestamp = field(default_factory=lambda: Timestamp(), kw_only=True)
 
     @staticmethod
     def from_json(obj: Dict[str, Any]) -> "Event":
@@ -105,20 +122,17 @@ class Event:
 
 @dataclass
 class BrowserWindowSnapshotChange(Event):
-    is_incognito: bool
     url: str
     title: str
-
-    def __init__(self, url: str, title: str, is_incognito: bool):
-        super().__init__(unix_ms())
-        self.url = url
-        self.title = title
-        self.is_incognito = is_incognito
+    is_incognito: bool = False
 
     @staticmethod
     def from_json(obj: Dict[str, Any]) -> "BrowserWindowSnapshotChange":
         return BrowserWindowSnapshotChange(
-            url=obj["url"], title=obj["title"], is_incognito=obj["isIncognito"]
+            timestamp=Timestamp(obj["timestamp"]),
+            url=obj["url"],
+            title=obj["title"],
+            is_incognito=obj["isIncognito"],
         )
 
 
@@ -128,7 +142,9 @@ class WindowFocused(Event):
 
     @staticmethod
     def from_json(obj: Dict[str, Any]) -> "WindowFocused":
-        return WindowFocused(window=obj["window"], timestamp=obj["timestamp"])
+        return WindowFocused(
+            timestamp=Timestamp(obj["timestamp"]), window=obj["window"]
+        )
 
 
 EventType = Union[BrowserWindowSnapshotChange, WindowFocused]
@@ -142,15 +158,22 @@ class RecordedEvents:
     def push(self, event: Event):
         self.events.append(event)
 
-    def __eq__(self, other):
-        if not isinstance(other, RecordedEvents):
-            return False
-        if len(self.events) != len(other.events):
-            return False
-        for a, b in zip(self.events, other.events):
+    def __eq__(self, other: List[Event]):
+        for a, b in zip(self.events, other):
             if a != b:
+                logger.error(f"Event mismatch: {a} != {b}")
+                self.diff_events(other)
+                assert a == b  # will fail
                 return False
         return True
+
+    def diff_events(self, other: List[Event]):
+        d = difflib.HtmlDiff()
+        o = d.make_file(map(str, self.events), map(str, other))
+        outpath = tempfile.mkstemp(suffix=".html")[1]
+        with open(outpath, "w") as f:
+            f.write(o)
+        webbrowser.open(outpath)
 
 
 @pytest.fixture
