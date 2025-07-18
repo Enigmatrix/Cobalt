@@ -3,9 +3,7 @@ import logging
 import tempfile
 import shutil
 import subprocess
-import os
 import json
-import time
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -24,7 +22,7 @@ class DriverData:
 
 
 @pytest.fixture
-def driver_web_state(request):
+def driver_web_state(request, build_driver_web_state):
     """
     Pytest fixture to manage the driver_web_state process and data.json output.
     Args:
@@ -33,16 +31,19 @@ def driver_web_state(request):
         DriverData object for reading lines/events from data.json.
     """
     save_dir = Path(tempfile.mkdtemp(prefix="driver_web_state_"))
+
+    # Write appsettings.json to save_dir
     appsettings = getattr(request, "param", None)
     root = Path(__file__).resolve().parents[2]
     if appsettings is None:
+        # Load default appsettings.json
         with open(root / "dev/appsettings.Debug.json", "r", encoding="utf-8") as f:
             appsettings = json.load(f)
-
     appsettings_path = Path(save_dir) / "appsettings.json"
     with open(appsettings_path, "w", encoding="utf-8") as f:
         json.dump(appsettings, f)
 
+    # Start driver_web_state in background, save stdout/stderr to files
     driver_path = root / "target" / "debug" / "driver_web_state.exe"
     stdout_path = save_dir / "driver_web_state_stdout.txt"
     stderr_path = save_dir / "driver_web_state_stderr.txt"
@@ -55,7 +56,6 @@ def driver_web_state(request):
         bufsize=0,
     )
 
-    # Wait for data.json to appear, up to 10 seconds
     data_file = Path(save_dir) / "data.json"
     yield DriverData(data_file)
 
