@@ -86,10 +86,9 @@ impl Detect {
 
     /// Check if the path is a browser. Not meant to be super-accurate, but should be good enough.
     pub fn is_chromium_exe(&self, path: &str) -> bool {
-        let path_lower = path.to_lowercase();
         BROWSERS
             .iter()
-            .any(|browser| path_lower.to_lowercase() == browser.to_lowercase())
+            .any(|browser| path.to_lowercase() == browser.to_lowercase())
     }
 
     /// Check if the [Window] is a Chromium browser
