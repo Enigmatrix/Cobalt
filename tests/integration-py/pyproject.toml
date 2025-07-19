@@ -2,14 +2,8 @@
 name = "integration-py"
 version = "0.1.0"
 description = "Integration tests for Cobalt"
-requires-python = ">=3.11"
 dependencies = [
     "pyautogui>=0.9.54",
     "pytest>=8.4.1",
     "selenium>=4.34.2",
-]
-
-[dependency-groups]
-dev = [
-    "ruff>=0.12.3",
 ]
