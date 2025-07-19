@@ -18,8 +18,27 @@ TOLERANCE_MS = 500
 
 
 class DriverData:
-    def __init__(self, file_path: Path):
-        self.file_path = file_path
+    def __init__(self, root_dir: Path, save_dir: Path):
+        self.root_dir = root_dir
+        self.save_dir = save_dir
+        self.file_path = save_dir / "data.json"
+
+        self.driver_path = root_dir / "target" / "debug" / "driver_web_state.exe"
+        self.stdout_path = save_dir / "driver_web_state_stdout.txt"
+        self.stderr_path = save_dir / "driver_web_state_stderr.txt"
+        self.driver_program = None
+
+    def start(self):
+        logger.info(f"Starting driver_web_state from {self.driver_path}...")
+        # Start driver_web_state in background, save stdout/stderr to files
+        self.driver_program = subprocess.Popen(
+            [str(self.driver_path)],
+            cwd=self.save_dir,
+            stdout=open(self.stdout_path, "w"),
+            stderr=open(self.stderr_path, "w"),
+            text=True,
+            bufsize=0,
+        )
 
     def lines(self):
         with open(self.file_path, "r", encoding="utf-8") as f:
@@ -53,35 +72,22 @@ def driver_web_state(request, build_driver_web_state):
     with open(appsettings_path, "w", encoding="utf-8") as f:
         json.dump(appsettings, f)
 
-    # Start driver_web_state in background, save stdout/stderr to files
-    driver_path = root / "target" / "debug" / "driver_web_state.exe"
-    stdout_path = save_dir / "driver_web_state_stdout.txt"
-    stderr_path = save_dir / "driver_web_state_stderr.txt"
-    driver_program = subprocess.Popen(
-        [str(driver_path)],
-        cwd=save_dir,
-        stdout=open(stdout_path, "w"),
-        stderr=open(stderr_path, "w"),
-        text=True,
-        bufsize=0,
-    )
-
-    data_file = Path(save_dir) / "data.json"
-    yield DriverData(data_file)
+    data = DriverData(root, save_dir)
+    yield data
 
     # Cleanup
     try:
-        driver_program.kill()
+        data.driver_program.kill()
     except Exception as e:
         logger.warning(f"Failed to terminate driver_program: {e}")
 
     # Only show output if test failed
     if hasattr(request.node, "rep_call") and request.node.rep_call.failed:
         logger.info("--- driver_web_state stdout ---")
-        out = open(stdout_path, "rb").read()
+        out = open(data.stdout_path, "rb").read()
         sys.stdout.buffer.write(out)
         logger.info("--- driver_web_state stderr ---")
-        err = open(stderr_path, "rb").read()
+        err = open(data.stderr_path, "rb").read()
         sys.stderr.buffer.write(err)
 
     shutil.rmtree(save_dir, ignore_errors=True)
@@ -113,7 +119,7 @@ class Event:
     def from_json(obj: Dict[str, Any]) -> "Event":
         event_type = obj.get("type")
         if event_type == "state-change":
-            return BrowserWindowSnapshotChange.from_json(obj)
+            return Change.from_json(obj)
         elif event_type == "window-focused":
             return WindowFocused.from_json(obj)
         else:
@@ -121,14 +127,14 @@ class Event:
 
 
 @dataclass
-class BrowserWindowSnapshotChange(Event):
+class Change(Event):
     url: str
     title: str
     is_incognito: bool = False
 
     @staticmethod
-    def from_json(obj: Dict[str, Any]) -> "BrowserWindowSnapshotChange":
-        return BrowserWindowSnapshotChange(
+    def from_json(obj: Dict[str, Any]) -> "Change":
+        return Change(
             timestamp=Timestamp(obj["timestamp"]),
             url=obj["url"],
             title=obj["title"],
@@ -147,7 +153,7 @@ class WindowFocused(Event):
         )
 
 
-EventType = Union[BrowserWindowSnapshotChange, WindowFocused]
+EventType = Union[Change, WindowFocused]
 
 
 class RecordedEvents:
@@ -159,6 +165,11 @@ class RecordedEvents:
         self.events.append(event)
 
     def __eq__(self, other: List[Event]):
+        if len(self.events) != len(other):
+            logger.error(f"Event length mismatch: {len(self.events)} != {len(other)}")
+            self.diff_events(other)
+            return False
+
         for a, b in zip(self.events, other):
             if a != b:
                 logger.error(f"Event mismatch: {a} != {b}")

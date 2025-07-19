@@ -11,7 +11,7 @@ from driver import (
     DriverData,
     events,
     RecordedEvents,
-    BrowserWindowSnapshotChange,
+    Change,
     WindowFocused,
 )
 
@@ -21,72 +21,64 @@ logger = logging.getLogger(__name__)
 @pytest.fixture
 def browser():
     chrome_options = Options()
-    chrome_options.add_argument("--start-maximized")
+    # chrome_options.add_argument("--start-maximized")
+
+    # this is enabled by default in Chrome but selenium doesn't enable it by default
     chrome_options.add_argument("--enable-features=UiaProvider")
+
     driver = webdriver.Chrome(options=chrome_options)
     yield driver
     driver.quit()
 
 
+DELAY = 2
+
+
 def test_switch(
     driver_web_state: DriverData, browser: webdriver.Chrome, events: RecordedEvents
 ):
-    events.push(
-        BrowserWindowSnapshotChange(url="data:,", title="data:, - Google Chrome")
-    )
-    url1, url2 = "https://www.google.com/", "https://enigmatrix.me/"
+    url1 = "https://chromium.googlesource.com/chromium/src/+/refs/heads/lkgr/docs/design/README.md"
+    url2 = "https://learn.microsoft.com/en-us/windows/win32/winauto/microsoft-active-accessibility-and-ui-automation-compared"
+    title1 = "Chromium Docs - Chromium Design Docs"
+    title2 = "Microsoft Active Accessibility and UI Automation Compared - Win32 apps | Microsoft Learn"
 
-    # Open first tab and navigate to url1
+    # open url1 and url2 in new tabs
     logger.info(f"Opening first tab: {url1}")
     browser.get(url1)
-    events.push(BrowserWindowSnapshotChange(url=url1, title="Google - Google Chrome"))
-    # Wait for Google page to load
-    WebDriverWait(browser, 10).until(EC.presence_of_element_located((By.NAME, "q")))
-    logger.info(f"{url1} page loaded successfully")
-
-    # Wait 3 seconds on url1
-    time.sleep(3)
-
-    # Open second tab and navigate to url2
     logger.info(f"Opening second tab: {url2}")
     browser.execute_script(f"window.open('{url2}', '_blank');")
-    browser.switch_to.window(browser.window_handles[1])
-    events.push(
-        BrowserWindowSnapshotChange(url="about:blank", title="Untitled - Google Chrome")
-    )
-    events.push(
-        BrowserWindowSnapshotChange(url=url2, title="Enigmatrix - Google Chrome")
-    )
-    # Wait for url2 page to load
     WebDriverWait(browser, 10).until(
         EC.presence_of_element_located((By.TAG_NAME, "body"))
     )
-    logger.info(f"{url2} page loaded successfully")
-    logger.info(f"Currently active tab: {url2}")
+    logger.info(f"Switching to back first tab: {url1}")
+    browser.switch_to.window(browser.window_handles[0])
+
+    # start driver_web_state after opening tabs
+    driver_web_state.start()
+    # initial foreground state is url1
+    events.push(Change(url=url1, title=f"{title1} - Google Chrome"))
+
+    # Wait for 5 seconds on url1
+    logger.info(f"Waiting {DELAY} seconds on {url1}...")
+    time.sleep(DELAY)
+
+    # Switch to the first tab (url2)
+    logger.info(f"Switching to {url2} tab...")
+    browser.switch_to.window(browser.window_handles[1])
+    events.push(Change(url=url2, title=f"{title2} - Google Chrome"))
 
     # Wait 5 seconds on url2
-    logger.info(f"Waiting 5 seconds on {url2}...")
-    time.sleep(5)
+    logger.info(f"Waiting {DELAY} seconds on {url2}...")
+    time.sleep(DELAY)
 
     # Switch to the first tab (url1)
     logger.info(f"Switching to {url1} tab...")
     browser.switch_to.window(browser.window_handles[0])
-    events.push(
-        BrowserWindowSnapshotChange(
-            url=url1, title="Google - Google Chrome", is_incognito=False
-        )
-    )
-    logger.info(f"Currently active tab: {url1}")
+    events.push(Change(url=url1, title=f"{title1} - Google Chrome"))
 
     # Wait 5 seconds on url1
-    logger.info(f"Waiting 5 seconds on {url1}...")
-    time.sleep(5)
+    logger.info(f"Waiting {DELAY} seconds on {url1}...")
+    time.sleep(DELAY)
 
     out_events = driver_web_state.events()
-    for event in out_events:
-        logger.info(f"Event: {event}")
-
     assert events == out_events
-
-    logger.info(f"Test completed successfully! {events.events} == {out_events}")
-    assert False
