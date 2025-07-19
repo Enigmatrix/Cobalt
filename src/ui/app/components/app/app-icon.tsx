@@ -8,7 +8,7 @@ import {
   Tag as TagStatic,
 } from "lucide-static";
 import normalize from "path-normalize";
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 export const DEFAULT_ICON_SVG_URL = "data:image/svg+xml," + CircleHelpStatic;
 export const TAG_ICON_URL = "data:image/svg+xml," + TagStatic;
@@ -45,8 +45,10 @@ export default function AppIcon({
   className?: ClassValue;
 }) {
   const [hasError, setHasError] = useState(false);
-  const icon = useMemo(() => {
-    return appIconUrl(appIcon);
+  const [icon, setIcon] = useState<string | null>(null);
+  useEffect(() => {
+    setHasError(false);
+    setIcon(appIconUrl(appIcon));
   }, [appIcon]);
 
   if (!icon || hasError) {
