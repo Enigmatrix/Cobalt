@@ -30,10 +30,14 @@ use util::{Target, future};
 
 use crate::engine::EngineArgs;
 
-mod desktop;
-mod engine;
-mod resolver;
-mod sentry;
+/// Desktop State
+pub mod desktop;
+/// Engine for processing events
+pub mod engine;
+/// Resolver for app info
+pub mod resolver;
+/// Sentry for alerting
+pub mod sentry;
 
 /// Entry point for the engine
 pub fn main() {
@@ -70,7 +74,8 @@ fn setup() -> Result<(Config, Runtime)> {
     Ok((config, rt))
 }
 
-fn run(
+/// Run the engine
+pub fn run(
     config: &Config,
     rt: Handle,
     web_state: web::State,
