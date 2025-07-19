@@ -110,7 +110,9 @@ impl TabSelectionEventHandler {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    util::set_target(UtilTarget::Engine);
+    util::set_target(UtilTarget::Tool {
+        name: "tab_switch".to_string(),
+    });
     let config = config::get_config()?;
     util::setup(&config)?;
     platform::setup()?;

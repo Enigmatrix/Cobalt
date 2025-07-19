@@ -42,7 +42,9 @@ struct TabDetails {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    util::set_target(Target::Engine);
+    util::set_target(Target::Tool {
+        name: "browser".to_string(),
+    });
     let config = config::get_config()?;
     util::setup(&config)?;
     platform::setup()?;

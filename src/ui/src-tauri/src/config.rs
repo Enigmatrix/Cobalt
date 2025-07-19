@@ -28,5 +28,9 @@ pub async fn config_set_track_incognito(state: State<'_, AppState>, value: bool)
 #[tauri::command]
 #[tracing::instrument(err)]
 pub async fn get_icons_dir() -> AppResult<String> {
-    Ok(Config::icons_dir().context("get icons dir")?)
+    let path = Config::icons_dir().context("get icons dir")?;
+    Ok(std::path::absolute(path)
+        .context("get absolute path")?
+        .to_string_lossy()
+        .to_string())
 }
