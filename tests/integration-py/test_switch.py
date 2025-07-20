@@ -16,6 +16,7 @@ from driver import (
     Change,
     WindowFocused,
 )
+from server import server, Webserver
 
 logger = logging.getLogger(__name__)
 
@@ -114,6 +115,111 @@ def test_switch(
 
     # Wait 5 seconds on url1
     logger.info(f"Waiting {DELAY} seconds on {url1}...")
+    time.sleep(DELAY)
+
+    out_events = driver_web_state.events()
+    assert events == out_events
+
+
+def test_switch_diff_url_same_title(
+    driver_web_state: DriverData,
+    browser: webdriver.Chrome,
+    server: Webserver,
+    events: RecordedEvents,
+):
+    url1 = f"http://localhost:{server.port}/diff_url_same_title_1.html"
+    url2 = f"http://localhost:{server.port}/diff_url_same_title_2.html"
+    title = "Same Title"
+
+    # open url1 and url2 in new tabs
+    logger.info(f"Opening first tab:")
+    browser.get(url1)
+
+    logger.info(f"Opening second tab:")
+    browser.switch_to.new_window("tab")
+    browser.get(url2)
+
+    logger.info(f"Switching to back first tab:")
+    browser.switch_to.window(browser.window_handles[0])
+
+    # start driver_web_state after opening tabs
+    driver_web_state.start()
+    # initial foreground state is url1
+    events.push(Change(url=url1, title=f"{title} - Google Chrome"))
+
+    # Wait for 5 seconds on url1
+    logger.info(f"Waiting {DELAY} seconds on {url1}...")
+    time.sleep(DELAY)
+
+    # Switch to the first tab (url2)
+    logger.info(f"Switching to second tab...")
+    browser.switch_to.window(browser.window_handles[1])
+    events.push(Change(url=url2, title=f"{title} - Google Chrome"))
+
+    # Wait 5 seconds on url2
+    logger.info(f"Waiting {DELAY} seconds on second tab...")
+    time.sleep(DELAY)
+
+    # Switch to the first tab (url1)
+    logger.info(f"Switching to first tab...")
+    browser.switch_to.window(browser.window_handles[0])
+    events.push(Change(url=url1, title=f"{title} - Google Chrome"))
+
+    # Wait 5 seconds on url1
+    logger.info(f"Waiting {DELAY} seconds on {url1}...")
+    time.sleep(DELAY)
+
+    out_events = driver_web_state.events()
+    assert events == out_events
+
+
+def test_switch_same_url_diff_title(
+    driver_web_state: DriverData,
+    browser: webdriver.Chrome,
+    server: Webserver,
+    events: RecordedEvents,
+):
+    url = f"http://localhost:{server.port}/same_url_diff_title.html"
+
+    # open url1 and url2 in new tabs
+    logger.info(f"Opening first tab:")
+    browser.get(url)
+    title1 = browser.title
+
+    logger.info(f"Opening second tab:")
+    browser.switch_to.new_window("tab")
+    browser.get(url)
+    title2 = browser.title
+
+    logger.info(f"Switching to back first tab:")
+    browser.switch_to.window(browser.window_handles[0])
+    assert title1 != title2
+
+    # start driver_web_state after opening tabs
+    driver_web_state.start()
+    # initial foreground state is url
+    events.push(Change(url=url, title=f"{title1} - Google Chrome"))
+
+    # Wait for 5 seconds on url
+    logger.info(f"Waiting {DELAY} seconds on {url}...")
+    time.sleep(DELAY)
+
+    # Switch to the first tab (url)
+    logger.info(f"Switching to second tab...")
+    browser.switch_to.window(browser.window_handles[1])
+    events.push(Change(url=url, title=f"{title2} - Google Chrome"))
+
+    # Wait 5 seconds on url
+    logger.info(f"Waiting {DELAY} seconds on second tab...")
+    time.sleep(DELAY)
+
+    # Switch to the first tab (url)
+    logger.info(f"Switching to first tab...")
+    browser.switch_to.window(browser.window_handles[0])
+    events.push(Change(url=url, title=f"{title1} - Google Chrome"))
+
+    # Wait 5 seconds on url
+    logger.info(f"Waiting {DELAY} seconds on {url}...")
     time.sleep(DELAY)
 
     out_events = driver_web_state.events()
