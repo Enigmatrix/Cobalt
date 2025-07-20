@@ -184,5 +184,5 @@ fn time_now() -> u64 {
     std::time::SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap()
-        .as_secs()
+        .as_millis() as u64
 }
