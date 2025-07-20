@@ -77,18 +77,25 @@ def driver_web_state(request, build_driver_web_state):
 
     # Cleanup
     try:
-        data.driver_program.kill()
+        if data.driver_program:
+            data.driver_program.kill()
     except Exception as e:
         logger.warning(f"Failed to terminate driver_program: {e}")
 
     # Only show output if test failed
     if hasattr(request.node, "rep_call") and request.node.rep_call.failed:
         logger.info("--- driver_web_state stdout ---")
-        out = open(data.stdout_path, "rb").read()
-        sys.stdout.buffer.write(out)
+        try:
+            out = open(data.stdout_path, "rb").read()
+            sys.stdout.buffer.write(out)
+        except Exception as e:
+            logger.warning("Failed to read stdout of driver")
         logger.info("--- driver_web_state stderr ---")
-        err = open(data.stderr_path, "rb").read()
-        sys.stderr.buffer.write(err)
+        try:
+            err = open(data.sterr_path, "rb").read()
+            sys.stderr.buffer.write(err)
+        except Exception as e:
+            logger.warning("Failed to read stderr of driver")
 
     shutil.rmtree(save_dir, ignore_errors=True)
 

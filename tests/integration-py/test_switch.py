@@ -44,9 +44,17 @@ urls = {
         "url": "https://github.com/chromium/chromium",
         "title": "GitHub - chromium/chromium: The official GitHub mirror of the Chromium source",
     },
-    "chrome internal": {
+    "chrome_internal": {
         "url": "chrome://flags/1",  # use /1 due to omnibox and document value differences
         "title": "Experiments",
+    },
+    "data_html": {
+        "url": "data:text/html,<html><head><title>nanisore</title></head><body><h1>Hello, World!</h1></body></html>",
+        "title": "nanisore",
+    },
+    "data_png": {
+        "url": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==",
+        "title": "w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg== (5×5)",  # this is a red dot png image
     },
 }
 
@@ -72,7 +80,7 @@ def test_switch(
     browser.get(url1)
     logger.info(f"Opening second tab: {url2}")
     pyautogui.hotkey("ctrl", "t")
-    pyautogui.typewrite(url2)
+    pyautogui.typewrite(url2, interval=0.01)
     time.sleep(0.1)
     pyautogui.press("enter")
     WebDriverWait(browser, 10).until(
