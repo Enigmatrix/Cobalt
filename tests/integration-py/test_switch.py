@@ -39,8 +39,8 @@ urls = {
         "title": "Chromium Docs - Chromium Design Docs",
     },
     "https2": {
-        "url": "https://learn.microsoft.com/en-us/windows/win32/winauto/microsoft-active-accessibility-and-ui-automation-compared",
-        "title": "Microsoft Active Accessibility and UI Automation Compared - Win32 apps | Microsoft Learn",
+        "url": "https://github.com/chromium/chromium",
+        "title": "GitHub - chromium/chromium: The official GitHub mirror of the Chromium source",
     },
     "chrome internal": {
         "url": "chrome://flags/1",  # use /1 due to omnibox and document value differences
