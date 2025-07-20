@@ -10,7 +10,7 @@ from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Union, Optional, Dict, Any, List
 import difflib
-import webbrowser
+from wasabi import color
 
 logger = logging.getLogger(__name__)
 
@@ -179,12 +179,26 @@ class RecordedEvents:
         return True
 
     def diff_events(self, other: List[Event]):
-        d = difflib.HtmlDiff()
-        o = d.make_file(map(str, self.events), map(str, other))
-        outpath = tempfile.mkstemp(suffix=".html")[1]
-        with open(outpath, "w") as f:
-            f.write(o)
-        webbrowser.open(outpath)
+        list1 = "\n".join(str(e) for e in self.events)
+        list2 = "\n".join(str(e) for e in other)
+
+        def diff_strings(a, b):
+            output = []
+            matcher = difflib.SequenceMatcher(None, a, b)
+            for opcode, a0, a1, b0, b1 in matcher.get_opcodes():
+                if opcode == "equal":
+                    output.append(a[a0:a1])
+                elif opcode == "insert":
+                    output.append(color(b[b0:b1], fg=16, bg="green"))
+                elif opcode == "delete":
+                    output.append(color(a[a0:a1], fg=16, bg="red"))
+                elif opcode == "replace":
+                    output.append(color(a[a0:a1], fg=16, bg="red"))
+                    output.append(color(b[b0:b1], fg=16, bg="green"))
+            return "".join(output)
+
+        d = diff_strings(list1, list2)
+        logger.info("--- Event diff (actual vs expected) ---\n" + d)
 
 
 @pytest.fixture
