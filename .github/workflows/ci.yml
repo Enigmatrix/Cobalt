@@ -136,4 +136,4 @@ jobs:
       - name: Set up Python
         run: uv python install
       - name: Run tests
-        run: uv run --exact --package integration-py  pytest -o log_cli_level=INFO 
+        run: uv run --exact --package integration-py  pytest -o log_cli_level=INFO -v
