@@ -46,7 +46,7 @@ urls = {
         "title": "GitHub - chromium/chromium: The official GitHub mirror of the Chromium source",
     },
     "chrome_internal": {
-        "url": "chrome://flags/1",  # use /1 due to omnibox and document value differences
+        "url": "chrome://flags/",
         "title": "Experiments",
     },
     "data_html": {
