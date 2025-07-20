@@ -47,9 +47,6 @@ wheels = [
 name = "cobalt"
 version = "0.1.0"
 source = { virtual = "." }
-dependencies = [
-    { name = "integration-py" },
-]
 
 [package.dev-dependencies]
 dev = [
@@ -57,7 +54,6 @@ dev = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "integration-py", virtual = "tests/integration-py" }]
 
 [package.metadata.requires-dev]
 dev = [{ name = "ruff", specifier = ">=0.12.3" }]

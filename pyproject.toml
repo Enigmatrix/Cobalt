@@ -2,8 +2,6 @@
 name = "cobalt"
 version = "0.1.0"
 requires-python = ">=3.11"
-dependencies = ["integration-py"]
-
 
 
 [dependency-groups]
@@ -11,8 +9,7 @@ dev = [
     "ruff>=0.12.3",
 ]
 
-[tool.uv.sources]
-integration-py = { workspace = true }
-
 [tool.uv.workspace]
-members = ["tests/integration-py"]
+members = [
+    "tests/integration-py",
+]
