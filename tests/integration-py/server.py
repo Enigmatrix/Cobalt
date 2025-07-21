@@ -1,6 +1,5 @@
 import pytest
 from dataclasses import dataclass
-import http.server
 import os
 import subprocess
 import random
