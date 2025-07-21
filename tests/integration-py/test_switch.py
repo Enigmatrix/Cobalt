@@ -45,6 +45,10 @@ urls = {
         "url": "https://github.com/chromium/chromium",
         "title": "GitHub - chromium/chromium: The official GitHub mirror of the Chromium source",
     },
+    "http1": {
+        "url": "http://thecodelesscode.com/case/63",
+        "title": "The Codeless Code: Case 63 Shackles",
+    },
     "chrome_internal": {
         "url": "chrome://flags/",
         "title": "Experiments",
