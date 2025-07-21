@@ -121,3 +121,19 @@ jobs:
               ref: 'tags/nightly',
               sha: context.sha
             })
+
+  integration:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update Rust Toolchain
+        uses: dtolnay/rust-toolchain@1.88.0
+      - name: Setup Rust cache
+        uses: Swatinem/rust-cache@v2
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+      - name: Set up Python
+        run: uv python install
+      - name: Run tests
+        run: uv run --exact --package integration-py  pytest -o log_cli_level=INFO -v

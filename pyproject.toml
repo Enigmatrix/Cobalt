@@ -1,0 +1,15 @@
+[project]
+name = "cobalt"
+version = "0.1.0"
+requires-python = ">=3.11"
+
+
+[dependency-groups]
+dev = [
+    "ruff>=0.12.3",
+]
+
+[tool.uv.workspace]
+members = [
+    "tests/integration-py",
+]
