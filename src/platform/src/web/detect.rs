@@ -1,4 +1,5 @@
 use reqwest::Url;
+use url::Host;
 use util::error::{Context, Result};
 use util::tracing::{debug, info, warn};
 use windows::Win32::System::Com::{CLSCTX_ALL, CoCreateInstance};
@@ -325,10 +326,33 @@ impl Detect {
 
         if add_scheme {
             // we have no idea if www. is there or not.
-            search_value = format!(
+            let mut with_scheme = format!(
                 "{}://{search_value}",
                 if is_http_hint { "http" } else { "https" }
             );
+
+            // Replace https with http if the host is trustworthy, since if the real URL is http:// chromium would
+            // consider it to be trusted and we would have used it as https:// in the above code.
+            // These URLs actually are most likely to be HTTP.
+            // https://www.w3.org/TR/secure-contexts/#is-origin-trustworthy
+            if let Ok(url) = Url::parse(&with_scheme) {
+                let trustworthy = match url.host() {
+                    Some(Host::Domain(domain)) => {
+                        domain == "localhost"
+                            || domain == "localhost."
+                            || domain.ends_with(".localhost")
+                            || domain.ends_with(".localhost.")
+                    }
+                    Some(Host::Ipv4(ip)) => ip.is_loopback(),
+                    Some(Host::Ipv6(ip)) => ip.is_loopback(), // This is only ::1 instead of ::1/128, but it's good enough.
+                    _ => false,
+                };
+                if trustworthy {
+                    with_scheme = format!("http://{search_value}");
+                }
+            }
+
+            search_value = with_scheme;
         }
 
         Url::parse(&search_value).map_or(search_value, |mut url| {
@@ -378,7 +402,7 @@ fn uia_find_result(
 fn test_unelide_localhost() {
     let search_value = "localhost:33790/diff_url_same_title_1.html";
     let url = Detect::unelide_omnibox_text(search_value.to_string(), false);
-    assert_eq!(url, "https://localhost:33790/diff_url_same_title_1.html");
+    assert_eq!(url, "http://localhost:33790/diff_url_same_title_1.html");
 }
 
 #[test]
