@@ -7,7 +7,6 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-import pyautogui
 from driver import (
     driver_web_state,
     DriverData,
@@ -24,7 +23,6 @@ logger = logging.getLogger(__name__)
 @pytest.fixture
 def browser():
     chrome_options = Options()
-    # chrome_options.add_argument("--start-maximized")
 
     # this is enabled by default in Chrome but selenium doesn't enable it by default
     chrome_options.add_argument("--enable-features=UiaProvider")
@@ -84,10 +82,8 @@ def test_switch(
     logger.info(f"Opening first tab: {url1}")
     browser.get(url1)
     logger.info(f"Opening second tab: {url2}")
-    pyautogui.hotkey("ctrl", "t")
-    pyautogui.typewrite(url2, interval=0.01)
-    time.sleep(0.1)
-    pyautogui.press("enter")
+    browser.switch_to.new_window("tab")
+    browser.get(url2)
     WebDriverWait(browser, 10).until(
         EC.presence_of_element_located((By.TAG_NAME, "body"))
     )

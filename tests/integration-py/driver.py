@@ -92,7 +92,7 @@ def driver_web_state(request, build_driver_web_state):
             logger.warning("Failed to read stdout of driver")
         logger.info("--- driver_web_state stderr ---")
         try:
-            err = open(data.sterr_path, "rb").read()
+            err = open(data.stderr_path, "rb").read()
             sys.stderr.buffer.write(err)
         except Exception as e:
             logger.warning("Failed to read stderr of driver")
@@ -100,7 +100,7 @@ def driver_web_state(request, build_driver_web_state):
     shutil.rmtree(save_dir, ignore_errors=True)
 
 
-# Unix epoch imestamp in milliseconds, with {TOLERANCE_MS}ms tolerance
+# Unix epoch timestamp in milliseconds, with {TOLERANCE_MS}ms tolerance
 class Timestamp:
     def __init__(self, timestamp: Optional[int] = None):
         self.timestamp = timestamp or unix_ms()
