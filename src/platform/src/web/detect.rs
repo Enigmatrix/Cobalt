@@ -1,4 +1,5 @@
 use reqwest::Url;
+use url::Host;
 use util::error::{Context, Result};
 use util::tracing::{debug, info, warn};
 use windows::Win32::System::Com::{CLSCTX_ALL, CoCreateInstance};
@@ -43,6 +44,7 @@ pub struct Detect {
     browser_root_view_cond: AgileReference<IUIAutomationCondition>,
     root_web_area_cond: AgileReference<IUIAutomationCondition>,
     omnibox_cond: AgileReference<IUIAutomationCondition>,
+    omnibox_icon_cond: AgileReference<IUIAutomationCondition>,
     cache_request: AgileReference<IUIAutomationCacheRequest>,
 }
 
@@ -68,6 +70,10 @@ impl Detect {
             automation
                 .CreatePropertyCondition(UIA_NamePropertyId, &"Address and search bar".into())?
         };
+        let omnibox_icon_cond = unsafe {
+            automation
+                .CreatePropertyCondition(UIA_ClassNamePropertyId, &"LocationIconView".into())?
+        };
         let cache_request = unsafe {
             let cache_request = automation.CreateCacheRequest()?;
             cache_request.SetAutomationElementMode(AutomationElementMode_None)?;
@@ -80,6 +86,7 @@ impl Detect {
             browser_root_view_cond: AgileReference::new(&browser_root_view_cond)?,
             root_web_area_cond: AgileReference::new(&root_web_area_cond)?,
             omnibox_cond: AgileReference::new(&omnibox_cond)?,
+            omnibox_icon_cond: AgileReference::new(&omnibox_icon_cond)?,
             cache_request: AgileReference::new(&cache_request)?,
         })
     }
@@ -163,7 +170,7 @@ impl Detect {
             )?
             .to_string();
             if !url.is_empty() {
-                return Ok(Some(url));
+                return Ok(Some(Self::elide_document_url(&url)?));
             }
         }
 
@@ -182,37 +189,39 @@ impl Detect {
             return Ok(None);
         };
 
+        let omnibox_icon = uia_find_result(perf(
+            || unsafe {
+                element.FindFirstBuildCache(
+                    TreeScope_Descendants,
+                    &self.omnibox_icon_cond.resolve()?,
+                    &self.cache_request.resolve()?,
+                )
+            },
+            "omnibox_icon - FindFirstBuildCache",
+        ))
+        .context("find omnibox icon")?;
+        let Some(omnibox_icon) = omnibox_icon else {
+            return Ok(None);
+        };
+
         let search_value = perf(
             || unsafe { omnibox.GetCachedPropertyValue(UIA_ValueValuePropertyId) },
             "omnibox - GetCachedPropertyValue(UIA_ValueValuePropertyId)",
         )?
         .to_string();
-        info!("using omnibox url: {search_value}");
 
-        // Omnibox URL is used when there is a long loading period (so document isn't loaded), or
-        // when an old tab is loaded again from energy saver (so title is set, but no document is loaded).
+        let icon_text = perf(
+            || unsafe { omnibox_icon.GetCachedPropertyValue(UIA_NamePropertyId) },
+            "omnibox_icon - GetCachedPropertyValue(UIA_NamePropertyId)",
+        )?
+        .to_string();
+        info!("using omnibox url: {search_value}, icon: {icon_text}");
 
-        // From Omnibox, we get a URL like this:
-        // "google.com/search?q=test". note that proto is not shown.
-        // for chrome://, data:XXX and other non http/https links, it's there tho e.g. chrome://newtab.
-
-        let url = match Url::parse(&search_value) {
-            // see if we get no proto error (here it's relative url without base)
-            // if so, add https:// to the front and see if we get a valid url.
-            // if thats finally valid, then we use that url.
-            // in all other cases, use original value
-            Err(url::ParseError::RelativeUrlWithoutBase) => {
-                // The URL could really be http://
-                // There might be way to detect this by checking the button next to the omnibox and seeing if it's lock / not-secure.
-                let url = format!("https://{search_value}");
-                if Url::parse(&url).is_ok() {
-                    url
-                } else {
-                    search_value
-                }
-            }
-            _ => search_value,
-        };
+        // For HTTP urls, the icon is the error icon with text "Not secure".
+        // In rare cases of HTTPS url with invalid cert, the icon is the same as above
+        // however, the 'search_value' is the full https url so is_http_hint is ignored.
+        let is_http_hint = icon_text == "Not secure";
+        let url = Self::unelide_omnibox_text(search_value, is_http_hint);
 
         Ok(if url.is_empty() { None } else { Some(url) })
     }
@@ -285,6 +294,98 @@ impl Detect {
 
         Ok(())
     }
+
+    /// Unelide the omnibox text to the create a valid URL.
+    pub fn unelide_omnibox_text(mut search_value: String, is_http_hint: bool) -> String {
+        // Omnibox URL is used when there is a long loading period (so document isn't loaded), or
+        // when an old tab is loaded again from energy saver (so title is set, but no document is loaded).
+
+        // From Omnibox, we get a URL like this:
+        // "google.com/search?q=test". note that proto (scheme) is not shown.
+        // for chrome://, data:XXX and other non http/https links, it's there tho e.g. chrome://newtab.
+
+        let add_scheme = match Url::parse(&search_value) {
+            Ok(url) => {
+                if url.cannot_be_a_base() {
+                    // localhost:1337/a.html gets parsed as a relative url without base! with schema=localhost, path=1337/a.html
+                    // cannot_be_a_base = true. So we have a heuristic to check if the path's first character starts with a number to indicate a port.
+                    url.path()
+                        .chars()
+                        .next()
+                        .map(|c| c.is_ascii_digit())
+                        .unwrap_or(false)
+                } else {
+                    false
+                }
+            }
+            // see if we get no proto error (here it's relative url without base)
+            // for e.g. google.com/a
+            Err(url::ParseError::RelativeUrlWithoutBase) => true,
+            _ => false,
+        };
+
+        if add_scheme {
+            // we have no idea if www. is there or not.
+            let mut with_scheme = format!(
+                "{}://{search_value}",
+                if is_http_hint { "http" } else { "https" }
+            );
+
+            // Replace https with http if the host is trustworthy, since if the real URL is http:// chromium would
+            // consider it to be trusted and we would have used it as https:// in the above code.
+            // These URLs actually are most likely to be HTTP.
+            // https://www.w3.org/TR/secure-contexts/#is-origin-trustworthy
+            if let Ok(url) = Url::parse(&with_scheme) {
+                let trustworthy = match url.host() {
+                    Some(Host::Domain(domain)) => {
+                        domain == "localhost"
+                            || domain == "localhost."
+                            || domain.ends_with(".localhost")
+                            || domain.ends_with(".localhost.")
+                    }
+                    Some(Host::Ipv4(ip)) => ip.is_loopback(),
+                    Some(Host::Ipv6(ip)) => ip.is_loopback(), // This is only ::1 instead of ::1/128, but it's good enough.
+                    _ => false,
+                };
+                if trustworthy {
+                    with_scheme = format!("http://{search_value}");
+                }
+            }
+
+            search_value = with_scheme;
+        }
+
+        Url::parse(&search_value).map_or(search_value, |mut url| {
+            // https://google.com -> https://google.com/
+            if url.path() == "" {
+                url.set_path("/");
+            }
+            url.to_string()
+        })
+    }
+
+    /// Elide the document URL to the text that would be shown in the omnibox.
+    pub fn elide_document_url(url: &str) -> Result<String> {
+        let Ok(mut url) = Url::parse(url) else {
+            return Ok(url.to_string());
+        };
+        if url.scheme() == "http" || url.scheme() == "https" {
+            // Strip www. from the host
+            if let Some(host) = url.host_str()
+                && let Some(new_host) = host.strip_prefix("www.")
+            {
+                let new_host = new_host.to_string();
+                url.set_host(Some(&new_host))?;
+            }
+        }
+
+        // https://google.com -> https://google.com/
+        if url.path() == "" {
+            url.set_path("/");
+        }
+
+        Ok(url.to_string())
+    }
 }
 
 fn uia_find_result(
@@ -295,4 +396,167 @@ fn uia_find_result(
         Err(err) if err.code().is_ok() => Ok(None),
         Err(err) => Err(err),
     }
+}
+
+#[test]
+fn test_unelide_localhost() {
+    let search_value = "localhost:33790/diff_url_same_title_1.html";
+    let url = Detect::unelide_omnibox_text(search_value.to_string(), false);
+    assert_eq!(url, "http://localhost:33790/diff_url_same_title_1.html");
+}
+
+#[test]
+fn test_unelide_localhost_hint() {
+    let search_value = "localhost:33790/diff_url_same_title_1.html";
+    let url = Detect::unelide_omnibox_text(search_value.to_string(), true);
+    assert_eq!(url, "http://localhost:33790/diff_url_same_title_1.html");
+}
+
+#[test]
+fn test_unelide_https_www() {
+    let search_value = "google.com";
+    let url = Detect::unelide_omnibox_text(search_value.to_string(), false);
+    assert_eq!(url, "https://google.com/");
+}
+
+#[test]
+fn test_unelide_https_www_hint() {
+    let search_value = "google.com";
+    let url = Detect::unelide_omnibox_text(search_value.to_string(), true);
+    assert_eq!(url, "http://google.com/");
+}
+
+#[test]
+fn test_unelide_https_www_whole() {
+    let search_value = "https://google.com";
+    let url = Detect::unelide_omnibox_text(search_value.to_string(), false);
+    assert_eq!(url, "https://google.com/");
+}
+
+#[test]
+fn test_unelide_https_www_whole_hint() {
+    let search_value = "https://google.com";
+    let url = Detect::unelide_omnibox_text(search_value.to_string(), true);
+    assert_eq!(url, "https://google.com/");
+}
+
+#[test]
+fn test_unelide_https_www_whole2() {
+    let search_value = "https://www.google.com";
+    let url = Detect::unelide_omnibox_text(search_value.to_string(), false);
+    assert_eq!(url, "https://www.google.com/");
+}
+
+#[test]
+fn test_unelide_https_www_with_path_query() {
+    let search_value = "google.com/search?q=test";
+    let url = Detect::unelide_omnibox_text(search_value.to_string(), false);
+    assert_eq!(url, "https://google.com/search?q=test");
+}
+
+#[test]
+fn test_unelide_non_http() {
+    let search_value = "chrome://settings/";
+    let url = Detect::unelide_omnibox_text(search_value.to_string(), false);
+    assert_eq!(url, "chrome://settings/");
+}
+
+#[test]
+fn test_unelide_non_http2() {
+    let search_value = "chrome://settings";
+    let url = Detect::unelide_omnibox_text(search_value.to_string(), false);
+    assert_eq!(url, "chrome://settings/");
+}
+
+#[test]
+fn test_unelide_non_http_with_path() {
+    let search_value = "chrome://settings/what";
+    let url = Detect::unelide_omnibox_text(search_value.to_string(), false);
+    assert_eq!(url, "chrome://settings/what");
+}
+
+#[test]
+fn test_unelide_non_http_with_query() {
+    let search_value = "chrome://settings/?q=test";
+    let url = Detect::unelide_omnibox_text(search_value.to_string(), false);
+    assert_eq!(url, "chrome://settings/?q=test");
+}
+
+#[test]
+fn test_unelide_non_http_with_path_query() {
+    let search_value = "chrome://settings/what?q=test";
+    let url = Detect::unelide_omnibox_text(search_value.to_string(), false);
+    assert_eq!(url, "chrome://settings/what?q=test");
+}
+
+#[test]
+fn test_elide_https_www() -> Result<()> {
+    let url = "https://www.google.com";
+    let elided = Detect::elide_document_url(url)?;
+    assert_eq!(elided, "https://google.com/");
+    Ok(())
+}
+
+#[test]
+fn test_elide_http_www() -> Result<()> {
+    let url = "http://www.google.com";
+    let elided = Detect::elide_document_url(url)?;
+    assert_eq!(elided, "http://google.com/");
+    Ok(())
+}
+
+#[test]
+fn test_elide_https_www_with_path_query() -> Result<()> {
+    let url = "https://www.google.com/search?q=test";
+    let elided = Detect::elide_document_url(url)?;
+    assert_eq!(elided, "https://google.com/search?q=test");
+    Ok(())
+}
+
+#[test]
+fn test_elide_http_www_with_path_query() -> Result<()> {
+    let url = "http://www.google.com/search?q=test";
+    let elided = Detect::elide_document_url(url)?;
+    assert_eq!(elided, "http://google.com/search?q=test");
+    Ok(())
+}
+
+#[test]
+fn test_elide_non_http() -> Result<()> {
+    let url = "chrome://settings";
+    let elided = Detect::elide_document_url(url)?;
+    assert_eq!(elided, "chrome://settings/");
+    Ok(())
+}
+
+#[test]
+fn test_elide_non_http2() -> Result<()> {
+    let url = "chrome://settings/";
+    let elided = Detect::elide_document_url(url)?;
+    assert_eq!(elided, "chrome://settings/");
+    Ok(())
+}
+
+#[test]
+fn test_elide_non_http_with_path() -> Result<()> {
+    let url = "chrome://settings/what";
+    let elided = Detect::elide_document_url(url)?;
+    assert_eq!(elided, "chrome://settings/what");
+    Ok(())
+}
+
+#[test]
+fn test_elide_non_http_with_query() -> Result<()> {
+    let url = "chrome://settings/?q=test";
+    let elided = Detect::elide_document_url(url)?;
+    assert_eq!(elided, "chrome://settings/?q=test");
+    Ok(())
+}
+
+#[test]
+fn test_elide_non_http_with_path_query() -> Result<()> {
+    let url = "chrome://settings/what?q=test";
+    let elided = Detect::elide_document_url(url)?;
+    assert_eq!(elided, "chrome://settings/what?q=test");
+    Ok(())
 }
