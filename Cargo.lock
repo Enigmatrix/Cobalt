@@ -3631,6 +3631,7 @@ dependencies = [
  "url",
  "util",
  "windows 0.59.0",
+ "windows-core 0.59.0",
 ]
 
 [[package]]
