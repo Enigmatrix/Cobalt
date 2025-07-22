@@ -135,5 +135,9 @@ jobs:
         uses: astral-sh/setup-uv@v6
       - name: Set up Python
         run: uv python install
+      - name: Ruff Format
+        run: uv run ruff format --check
+      - name: Ruff Check
+        run: uv run ruff check --output-format=github
       - name: Run tests
         run: uv run --exact --package integration-py  pytest -o log_cli_level=INFO -v
