@@ -11,8 +11,7 @@ use std::thread;
 use data::db::{AppUpdater, DatabasePool};
 use engine::{Engine, Event};
 use platform::events::{
-    BrowserTabWatcher, ForegroundEventWatcher, ForegroundWindowSessionInfo, InteractionWatcher,
-    SystemEventWatcher, TabChange,
+    ForegroundEventWatcher, ForegroundWindowSessionInfo, InteractionWatcher, SystemEventWatcher,
 };
 use platform::objects::{Duration, EventLoop, MessageWindow, Timer, Timestamp, User};
 use platform::web;
@@ -83,7 +82,7 @@ pub fn run(
 ) -> Result<()> {
     let (event_tx, event_rx) = channels::unbounded();
     let (alert_tx, alert_rx) = channels::unbounded();
-    let (tab_change_tx, tab_change_rx) = channels::unbounded();
+    let (web_change_tx, web_change_rx) = channels::unbounded();
 
     let start = Timestamp::now();
     let session = foreground_window_session(config, web_state.clone())?;
@@ -100,7 +99,7 @@ pub fn run(
                     web_state,
                     event_tx,
                     alert_tx,
-                    tab_change_tx,
+                    web_change_tx,
                     session,
                     start,
                 })
@@ -118,7 +117,7 @@ pub fn run(
         start,
         event_rx,
         alert_rx,
-        tab_change_rx,
+        web_change_rx,
     }))?;
     // can't turn this to util::error::Result :/
     ev_thread.join().expect("event loop thread");
@@ -132,7 +131,7 @@ struct EventLoopArgs {
 
     event_tx: Sender<Event>,
     alert_tx: Sender<Timestamp>,
-    tab_change_tx: Sender<TabChange>,
+    web_change_tx: Sender<web::Changed>,
 
     session: ForegroundWindowSessionInfo,
     start: Timestamp,
@@ -202,15 +201,13 @@ fn event_loop(args: EventLoopArgs) -> Result<()> {
         }),
     )?;
 
-    let mut browser_tab_watcher = BrowserTabWatcher::new(args.tab_change_tx, args.web_state)?;
+    let mut web_watcher = web::Watcher::new(args.web_change_tx, args.web_state)?;
 
     let dim_tick = Duration::from_millis(1000);
-    let _browser_tab_tick_timer = Timer::new(
+    let _web_tick_timer = Timer::new(
         dim_tick,
         Box::new(move || {
-            browser_tab_watcher
-                .tick()
-                .context("browser tab watcher tick")?;
+            web_watcher.tick().context("web watcher tick")?;
 
             Ok(())
         }),
@@ -237,7 +234,7 @@ async fn sentry_loop(
     web_state: web::State,
     spawner: Handle,
     alert_rx: Receiver<Timestamp>,
-    tab_change_rx: Receiver<TabChange>,
+    web_change_rx: Receiver<web::Changed>,
 ) -> Result<()> {
     let db = db_pool.get_db().await?;
     let sentry = Arc::new(Mutex::new(Sentry::new(desktop_state, web_state, db)?));
@@ -245,9 +242,9 @@ async fn sentry_loop(
     let _sentry = sentry.clone();
     let join1: JoinHandle<Result<()>> = spawner.spawn(async move {
         loop {
-            let tab_change = tab_change_rx.recv_async().await?;
+            let web_change = web_change_rx.recv_async().await?;
             let mut sentry = _sentry.lock().await;
-            sentry.handle_tab_change(tab_change).await?;
+            sentry.handle_web_change(web_change).await?;
         }
     });
 
@@ -285,7 +282,7 @@ struct ProcessorArgs {
 
     event_rx: Receiver<Event>,
     alert_rx: Receiver<Timestamp>,
-    tab_change_rx: Receiver<TabChange>,
+    web_change_rx: Receiver<web::Changed>,
 
     session: ForegroundWindowSessionInfo,
     start: Timestamp,
@@ -320,7 +317,7 @@ async fn processor(args: ProcessorArgs) -> Result<()> {
                     web_state.clone(),
                     spawner.clone(),
                     args.alert_rx.clone(),
-                    args.tab_change_rx.clone(),
+                    args.web_change_rx.clone(),
                 )
                 .await
                 .context("sentry loop")

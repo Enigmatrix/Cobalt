@@ -35,10 +35,7 @@ pub struct BrowserWindowState {
 
 impl StateInner {
     /// Get the UI Automation element for the [Window]
-    pub fn get_browser_window_element(
-        &self,
-        window: &Window,
-    ) -> Result<Option<IUIAutomationElement9>> {
+    pub fn get_browser_window(&self, window: &Window) -> Result<Option<&BrowserWindowState>> {
         let Some(state) = self.browser_windows.get(window) else {
             return Ok(None);
         };
@@ -47,7 +44,23 @@ impl StateInner {
             return Ok(None);
         };
 
-        Ok(Some(state.window_element.resolve()?))
+        Ok(Some(state))
+    }
+
+    /// Get the UI Automation element for the [Window] as mutable
+    pub fn get_browser_window_mut(
+        &mut self,
+        window: &Window,
+    ) -> Result<Option<&mut BrowserWindowState>> {
+        let Some(state) = self.browser_windows.get_mut(window) else {
+            return Ok(None);
+        };
+
+        let Some(state) = state.as_mut() else {
+            return Ok(None);
+        };
+
+        Ok(Some(state))
     }
 }
 

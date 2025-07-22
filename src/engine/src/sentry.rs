@@ -4,7 +4,6 @@ use data::db::{AlertManager, Database, TriggeredAlert};
 use data::entities::{
     AlertEvent, App, Duration, Reason, Ref, ReminderEvent, Target, Timestamp, TriggerAction,
 };
-use platform::events::TabChange;
 use platform::objects::{Process, Progress, Timestamp as PlatformTimestamp, ToastManager, Window};
 use platform::web;
 use util::error::Result;
@@ -20,7 +19,7 @@ pub struct Sentry {
     mgr: AlertManager,
     // Invariant: the website_actions map is *wholly* updated. That is, run() executes
     // and updates this after clearing it with *all* alerts' websites. This is easily
-    // maintained since the two places its used - run() and handle_tab_change() are both &mut self.
+    // maintained since the two places its used - run() and handle_web_change() are both &mut self.
     website_actions: HashMap<String, WebsiteAction>,
 }
 
@@ -81,68 +80,39 @@ impl Sentry {
         })
     }
 
-    /// Dim the browser windows matching the given [TabUpdate].
-    pub async fn handle_tab_change(&mut self, tab_change: TabChange) -> Result<()> {
+    /// Run Alert Actions for the browser window matching the given [web::Changed].
+    pub async fn handle_web_change(&mut self, web_change: web::Changed) -> Result<()> {
         let detect = web::Detect::new()?;
+        let web::Changed { window, url, .. } = web_change;
 
-        let changed_browser_windows: Vec<(Window, String)> = match tab_change {
-            TabChange::Tab { window, url } => vec![(window, url)],
-            TabChange::Tick => {
-                // Update all browser windows with the latest url and title
-                let mut web_state = self.web_state.write().await;
-                let windows = web_state
-                    .browser_windows
-                    .iter_mut()
-                    .flat_map(|(window, state)| {
-                        state.as_mut().map(|state| (window.clone(), state))
-                    });
+        // skip if window is dead or minimized
+        if window.ptid().is_err() || window.is_minimized() {
+            return Ok(());
+        }
 
-                let mut ret = Vec::new();
-                for (window, state) in windows {
-                    let Some(url) = detect.chromium_url(&state.window_element.resolve()?)? else {
-                        continue;
-                    };
-                    let title = window.title()?;
-                    state.last_url = url.clone();
-                    state.last_title = title.clone();
-                    ret.push((window, url));
+        // TODO check if incognito?
+        let base_url = web::WebsiteInfo::url_to_base_url(&url)?.to_string();
+
+        if let Some(action) = self.website_actions.get(&base_url) {
+            match action {
+                WebsiteAction::Dim(dim_level) => {
+                    self.handle_dim_action(&window, *dim_level).warn();
                 }
+                WebsiteAction::Kill => {
+                    let element = {
+                        let web_state = self.web_state.read().await;
 
-                ret
-            }
-        };
-
-        for (window, url) in changed_browser_windows {
-            // skip if window is dead or minimized
-            if window.ptid().is_err() || window.is_minimized() {
-                continue;
-            }
-
-            // TODO check if incognito?
-            let base_url = web::WebsiteInfo::url_to_base_url(&url)?.to_string();
-
-            if let Some(action) = self.website_actions.get(&base_url) {
-                match action {
-                    WebsiteAction::Dim(dim_level) => {
-                        self.handle_dim_action(&window, *dim_level).warn();
-                    }
-                    WebsiteAction::Kill => {
-                        let element = {
-                            let web_state = self.web_state.read().await;
-
-                            let Some(element) = web_state.get_browser_window_element(&window)?
-                            else {
-                                continue;
-                            };
-                            element
+                        let Some(state) = web_state.get_browser_window(&window)? else {
+                            return Ok(());
                         };
-                        detect.close_current_tab(&element).warn();
-                    }
+                        state.window_element.resolve()?
+                    };
+                    detect.close_current_tab(&element).warn();
                 }
-            } else {
-                // no action taken, so we dim to back to full
-                self.handle_dim_action(&window, 1.0f64).warn();
             }
+        } else {
+            // no action taken, so we dim to back to full
+            self.handle_dim_action(&window, 1.0f64).warn();
         }
 
         Ok(())
