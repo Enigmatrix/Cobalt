@@ -9,13 +9,11 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from driver import (
-    driver_web_state,
     DriverData,
-    events,
     RecordedEvents,
     Change,
 )
-from server import server, Webserver
+from server import Webserver
 
 logger = logging.getLogger(__name__)
 
