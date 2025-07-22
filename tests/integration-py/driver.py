@@ -89,13 +89,13 @@ def driver_web_state(request, build_driver_web_state):
             out = open(data.stdout_path, "rb").read()
             sys.stdout.buffer.write(out)
         except Exception as e:
-            logger.warning("Failed to read stdout of driver", e, exc_info=True)
+            logger.warning("Failed to read stdout of driver: %s", e, exc_info=True)
         logger.info("--- driver_web_state stderr ---")
         try:
             err = open(data.stderr_path, "rb").read()
             sys.stderr.buffer.write(err)
         except Exception as e:
-            logger.warning("Failed to read stderr of driver", e, exc_info=True)
+            logger.warning("Failed to read stderr of driver: %s", e, exc_info=True)
 
     shutil.rmtree(save_dir, ignore_errors=True)
 

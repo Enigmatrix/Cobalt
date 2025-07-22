@@ -89,7 +89,9 @@ def test_switch_diff_url_same_title(
     url2 = f"http://localhost:{server.port}/diff_url_same_title_2.html"
     title = "Same Title"
 
-    do_test_switch(driver_web_state, browser, events, url1, url2, title, title)
+    do_test_switch(
+        driver_web_state, browser, events, url1, url2, title1=title, title2=title
+    )
 
 
 def test_switch_same_url_diff_title(
@@ -100,7 +102,9 @@ def test_switch_same_url_diff_title(
 ):
     url = f"http://localhost:{server.port}/same_url_diff_title.html"
 
-    do_test_switch(driver_web_state, browser, events, url, url, None, None)
+    do_test_switch(
+        driver_web_state, browser, events, url, url, title1=None, title2=None
+    )
 
 
 def do_test_switch(
