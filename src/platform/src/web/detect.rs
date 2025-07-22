@@ -40,7 +40,8 @@ fn perf<T>(f: impl FnOnce() -> T, name: &str) -> T {
 /// Detects browser usage information
 #[derive(Clone)]
 pub struct Detect {
-    automation: AgileReference<IUIAutomation>,
+    /// Automation object
+    pub automation: AgileReference<IUIAutomation>,
     browser_root_view_cond: AgileReference<IUIAutomationCondition>,
     root_web_area_cond: AgileReference<IUIAutomationCondition>,
     omnibox_cond: AgileReference<IUIAutomationCondition>,
@@ -113,6 +114,54 @@ impl Detect {
         Ok(element)
     }
 
+    /// Get the UI Automation element for the omnibox in the [Window]
+    pub fn get_chromium_omnibox_element(
+        &self,
+        window_element: &IUIAutomationElement9,
+        use_cache: bool,
+    ) -> Result<Option<IUIAutomationElement9>> {
+        uia_find_result(perf(
+            || unsafe {
+                window_element.FindFirstBuildCache(
+                    TreeScope_Descendants,
+                    &self.omnibox_cond.resolve()?,
+                    (if use_cache {
+                        Some(self.cache_request.resolve()?)
+                    } else {
+                        None
+                    })
+                    .as_ref(),
+                )
+            },
+            "omnibox - FindFirstBuildCache",
+        ))
+        .context("find omnibox")
+    }
+
+    /// Get the UI Automation element for the omnibox icon in the [Window]
+    pub fn get_chromium_omnibox_icon_element(
+        &self,
+        window_element: &IUIAutomationElement9,
+        use_cache: bool,
+    ) -> Result<Option<IUIAutomationElement9>> {
+        uia_find_result(perf(
+            || unsafe {
+                window_element.FindFirstBuildCache(
+                    TreeScope_Descendants,
+                    &self.omnibox_icon_cond.resolve()?,
+                    (if use_cache {
+                        Some(self.cache_request.resolve()?)
+                    } else {
+                        None
+                    })
+                    .as_ref(),
+                )
+            },
+            "omnibox_icon - FindFirstBuildCache",
+        ))
+        .context("find omnibox icon")
+    }
+
     /// Check if the [Window] is in incognito mode
     pub fn chromium_incognito(&self, element: &IUIAutomationElement9) -> Result<Option<bool>> {
         let browser_root_view = uia_find_result(perf(
@@ -174,32 +223,12 @@ impl Detect {
             }
         }
 
-        let omnibox = uia_find_result(perf(
-            || unsafe {
-                element.FindFirstBuildCache(
-                    TreeScope_Descendants,
-                    &self.omnibox_cond.resolve()?,
-                    &self.cache_request.resolve()?,
-                )
-            },
-            "omnibox - FindFirstBuildCache",
-        ))
-        .context("find omnibox")?;
+        let omnibox = self.get_chromium_omnibox_element(element, true)?;
         let Some(omnibox) = omnibox else {
             return Ok(None);
         };
 
-        let omnibox_icon = uia_find_result(perf(
-            || unsafe {
-                element.FindFirstBuildCache(
-                    TreeScope_Descendants,
-                    &self.omnibox_icon_cond.resolve()?,
-                    &self.cache_request.resolve()?,
-                )
-            },
-            "omnibox_icon - FindFirstBuildCache",
-        ))
-        .context("find omnibox icon")?;
+        let omnibox_icon = self.get_chromium_omnibox_icon_element(element, true)?;
         let Some(omnibox_icon) = omnibox_icon else {
             return Ok(None);
         };
