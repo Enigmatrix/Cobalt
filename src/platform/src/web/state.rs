@@ -23,14 +23,25 @@ pub struct StateInner {
 /// State of a browser window
 #[derive(Debug, Clone)]
 pub struct BrowserWindowState {
-    /// UI Automation element of the window
-    pub window_element: AgileReference<IUIAutomationElement9>,
+    /// Extracted UI Automation elements of the window
+    pub extracted_elements: ExtractedUIElements,
     /// Whether the window is in incognito mode
     pub is_incognito: bool,
     /// Last URL of the window
     pub last_url: String,
     /// Last title of the window
     pub last_title: String,
+}
+
+/// Extracted UI Automation elements of a browser window
+#[derive(Debug, Clone)]
+pub struct ExtractedUIElements {
+    /// UI Automation element of the window
+    pub window_element: AgileReference<IUIAutomationElement9>,
+    /// UI Automation element of the omnibox
+    pub omnibox: AgileReference<IUIAutomationElement9>,
+    /// UI Automation element of the omnibox icon
+    pub omnibox_icon: AgileReference<IUIAutomationElement9>,
 }
 
 impl StateInner {

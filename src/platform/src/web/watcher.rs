@@ -3,10 +3,9 @@ use util::ds::{SmallHashMap, SmallHashSet};
 use util::error::{Context, ContextCompat, Result};
 use util::tracing::{self, instrument};
 use windows::Win32::UI::Accessibility::{
-    IUIAutomationElement9, TreeScope_Element, UIA_AriaRolePropertyId, UIA_NamePropertyId,
-    UIA_PROPERTY_ID, UIA_ValueValuePropertyId,
+    TreeScope_Element, UIA_AriaRolePropertyId, UIA_NamePropertyId, UIA_PROPERTY_ID,
+    UIA_ValueValuePropertyId,
 };
-use windows::core::AgileReference;
 
 use crate::events::{PropertyChange, WindowTitleWatcher};
 use crate::objects::{ProcessId, Target, Window};
@@ -59,13 +58,13 @@ impl Watcher {
                     .flat_map(|(window, state)| {
                         state
                             .as_ref()
-                            .map(|state| (window.clone(), state.window_element.clone()))
+                            .map(|state| (window.clone(), state.extracted_elements.clone()))
                     })
                     .collect();
                 (pids, windows)
             };
-            self.update_browsers_processes(&pids)?;
             self.update_browser_windows(windows)?;
+            self.update_browsers_processes(&pids)?;
         }
         Ok(())
     }
@@ -77,10 +76,14 @@ impl Watcher {
         // Add any new browsers to the list, watch them for title changes
         for pid in pids {
             if !self.processes.contains_key(pid) {
-                let web_state = self.web_state.clone();
+                let args = Args {
+                    web_state: self.web_state.clone(),
+                    detect: self.detect.clone(),
+                    web_change_tx: self.web_change_tx.clone(),
+                };
 
                 let callback = Box::new(move |window: Window| {
-                    Self::title_change_callback(window, web_state.clone())
+                    Self::title_change_callback(window, args.clone())
                 });
                 self.processes
                     .insert(*pid, WindowTitleWatcher::new(Target::Id(*pid), callback)?);
@@ -91,99 +94,91 @@ impl Watcher {
 
     fn update_browser_windows(
         &mut self,
-        windows: SmallHashMap<Window, AgileReference<IUIAutomationElement9>>,
+        windows: SmallHashMap<Window, web::ExtractedUIElements>,
     ) -> Result<()> {
         // Remove any browsers that are no longer in the list
         self.windows
             .retain(|window, _| windows.contains_key(window));
 
         // Add any new browsers to the list, watch them for title changes
-        for (window, window_element) in windows {
+        for (window, extracted_elements) in windows {
             if !self.windows.contains_key(&window) {
-                let window_element = window_element.clone();
+                let omnibox = extracted_elements.omnibox.clone();
 
-                let omnibox = self
-                    .detect
-                    .get_chromium_omnibox_element(&window_element.resolve()?, true)?
-                    .context("no omnibox")?;
-                let omnibox_icon = self
-                    .detect
-                    .get_chromium_omnibox_icon_element(&window_element.resolve()?, true)?
-                    .context("no omnibox icon")?;
+                let args = Args {
+                    web_state: self.web_state.clone(),
+                    detect: self.detect.clone(),
+                    web_change_tx: self.web_change_tx.clone(),
+                };
 
                 let callback = {
                     let window = window.clone();
-
-                    let web_state = self.web_state.clone();
-                    let detect = self.detect.clone();
-                    let web_change_tx = self.web_change_tx.clone();
+                    let args = args.clone();
 
                     Box::new(move |_eventid: UIA_PROPERTY_ID, value: String| {
                         Self::omnibox_text_change_callback(
                             window.clone(),
-                            window_element.clone(),
-                            AgileReference::new(&omnibox_icon)?,
                             value,
-                            web_state.clone(),
-                            detect.clone(),
-                            web_change_tx.clone(),
+                            extracted_elements.clone(),
+                            args.clone(),
                         )
                     })
                 };
-                self.windows.insert(
-                    window,
-                    PropertyChange::new(
-                        self.detect.automation.clone(),
-                        AgileReference::new(&omnibox)?,
-                        TreeScope_Element,
-                        None,
-                        &[UIA_ValueValuePropertyId],
-                        callback,
-                    )?,
-                );
+
+                let handler = PropertyChange::new(
+                    self.detect.automation.clone(),
+                    omnibox,
+                    TreeScope_Element,
+                    None,
+                    &[UIA_ValueValuePropertyId],
+                    callback,
+                )?;
+
+                self.windows.insert(window, handler);
             }
         }
 
         Ok(())
     }
 
-    #[instrument(level = "trace", skip(web_state))]
-    fn title_change_callback(window: Window, web_state: web::State) -> Result<()> {
-        let title = window.title()?;
+    #[instrument(level = "trace", skip(args))]
+    fn title_change_callback(window: Window, args: Args) -> Result<()> {
+        // Get the extracted elements from the state.
+        let extracted_elements = {
+            let state = args.web_state.blocking_read();
+            let Some(state) = state.get_browser_window(&window)? else {
+                return Ok(());
+            };
+            state.extracted_elements.clone()
+        };
 
-        {
-            let mut web_state = web_state.blocking_write();
-            if let Some(state) = web_state.get_browser_window_mut(&window)? {
-                state.last_title = title;
-            }
-        }
-
-        Ok(())
+        Self::central_callback(window, None, extracted_elements, args)
+            .context("title change callback")
     }
 
-    #[instrument(
-        level = "trace",
-        skip(window_element, omnibox_icon, web_state, detect, web_change_tx)
-    )]
+    #[instrument(level = "trace", skip(extracted_elements, args))]
     fn omnibox_text_change_callback(
         window: Window,
-        window_element: AgileReference<IUIAutomationElement9>,
-        omnibox_icon: AgileReference<IUIAutomationElement9>,
         value: String,
-
-        web_state: web::State,
-        detect: web::Detect,
-
-        web_change_tx: Sender<Changed>,
+        extracted_elements: web::ExtractedUIElements,
+        args: Args,
     ) -> Result<()> {
-        // TODO: need to call window title
+        Self::central_callback(window, Some(value), extracted_elements, args)
+            .context("omnibox text change callback")
+    }
 
+    fn central_callback(
+        window: Window,
+        url: Option<String>,
+        extracted_elements: web::ExtractedUIElements,
+        args: Args,
+    ) -> Result<()> {
         // TODO: mutex for reentrancy
-        //
 
         let icon_role = perf(
             || unsafe {
-                omnibox_icon
+                extracted_elements
+                    .omnibox_icon
                     .resolve()?
                     .GetCurrentPropertyValue(UIA_AriaRolePropertyId)
             },
@@ -191,28 +186,39 @@ impl Watcher {
         )?
         .to_string();
 
+        // Use the given url if available, otherwise get it from the omnibox.
+        let url = if let Some(url) = url {
+            url
+        } else {
+            let omnibox = extracted_elements.omnibox.resolve()?;
+            perf(
+                || unsafe { omnibox.GetCurrentPropertyValue(UIA_ValueValuePropertyId) },
+                "omnibox - GetCurrentPropertyValue(UIA_ValueValuePropertyId)",
+            )?
+            .to_string()
+        };
+
         // If a user types in the omnibox, the icon name will be "Search icon". Otherwise it seems to be "View site information" / "Not secure".
         // This can be seen in https://github.com/chromium/chromium/blob/7cfb7a7ce147dc091f752943bd909238d1ad002b/chrome/browser/ui/views/location_bar/location_icon_view.cc#L271
         // where if the icon role/name/desc changed depending on whether the textbox is editing or empty.
         //
         // So we have no false positives - but we can still have false negatives:
         // - e.g. user types in the omnibox, then switches to a different tab, then switches back to the original tab.
-        let last_url = if icon_role == "button" && !value.is_empty() {
+        let last_url = if icon_role == "button" && !url.is_empty() {
+            let omnibox_icon = extracted_elements.omnibox_icon.resolve()?;
             let icon_text = perf(
-                || unsafe {
-                    omnibox_icon
-                        .resolve()?
-                        .GetCurrentPropertyValue(UIA_NamePropertyId)
-                },
+                || unsafe { omnibox_icon.GetCurrentPropertyValue(UIA_NamePropertyId) },
                 "omnibox_icon - GetCurrentPropertyValue(UIA_NamePropertyId)",
             )?
             .to_string();
 
             let is_http_hint = web::Detect::is_http_hint_from_icon_text(&icon_text);
-            web::Detect::unelide_omnibox_text(value, is_http_hint)
+            web::Detect::unelide_omnibox_text(url, is_http_hint)
         } else {
-            detect
-                .chromium_url(&window_element.resolve()?)
+            // Or fetch the url from the document element.
+            // TODO: backon retries + timeout to restack + use rt spawn_blocking + throttle
+            args.detect
+                .chromium_url(&extracted_elements.window_element.resolve()?)
                 .context("get chromium url")?
                 .context("no element")?
         };
@@ -221,7 +227,7 @@ impl Watcher {
         let last_title = window.title()?;
 
         let (changed, is_incognito) = {
-            let mut web_state = web_state.blocking_write();
+            let mut web_state = args.web_state.blocking_write();
             let Some(state) = web_state.get_browser_window_mut(&window)? else {
                 return Ok(());
             };
@@ -237,7 +243,7 @@ impl Watcher {
         };
 
         if changed {
-            web_change_tx.send(Changed {
+            args.web_change_tx.send(Changed {
                 window,
                 url: last_url,
                 is_incognito,
@@ -245,4 +251,12 @@ impl Watcher {
         }
         Ok(())
     }
+}
+
+#[derive(Clone)]
+struct Args {
+    web_state: web::State,
+    detect: web::Detect,
+
+    web_change_tx: Sender<Changed>,
 }

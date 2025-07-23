@@ -105,7 +105,7 @@ impl Sentry {
                         let Some(state) = web_state.get_browser_window(&window)? else {
                             return Ok(());
                         };
-                        state.window_element.resolve()?
+                        state.extracted_elements.window_element.resolve()?
                     };
                     detect.close_current_tab(&element).warn();
                 }

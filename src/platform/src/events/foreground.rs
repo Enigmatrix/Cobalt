@@ -132,6 +132,14 @@ impl ForegroundEventWatcher {
         // TODO: instead of Option's context("no element") we should use backon retries
         let state = if is_browser {
             let window_element = detect.get_chromium_element(window)?;
+
+            let omnibox = detect
+                .get_chromium_omnibox_element(&window_element, true)?
+                .context("no omnibox")?;
+            let omnibox_icon = detect
+                .get_chromium_omnibox_icon_element(&window_element, true)?
+                .context("no omnibox icon")?;
+
             let is_incognito = detect
                 .chromium_incognito(&window_element)
                 .context("get chromium incognito")?
@@ -141,9 +149,14 @@ impl ForegroundEventWatcher {
                 .context("get chromium url")?
                 .context("no element")?;
             let last_title = window.title()?;
-            let window_element = AgileReference::new(&window_element)?;
+
+            let extracted_elements = web::ExtractedUIElements {
+                window_element: AgileReference::new(&window_element)?,
+                omnibox: AgileReference::new(&omnibox)?,
+                omnibox_icon: AgileReference::new(&omnibox_icon)?,
+            };
             Some(web::BrowserWindowState {
-                window_element,
+                extracted_elements,
                 is_incognito,
                 last_url,
                 last_title,
