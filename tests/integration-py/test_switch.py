@@ -63,7 +63,7 @@ urls = {
 
 url_pairs = itertools.permutations(urls.keys(), 2)
 
-DELAY = 5
+DELAY = 2
 
 
 @pytest.mark.parametrize("url1,url2", url_pairs)
