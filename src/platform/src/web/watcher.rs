@@ -27,7 +27,9 @@ pub struct Changed {
     /// Window where the tab changed
     pub window: Window,
     /// URL of the tab that the user has switched to
-    pub url: String,
+    pub new_url: String,
+    /// URL of the tab that the user has switched from
+    pub prev_url: String,
     /// Whether the window is incognito
     pub is_incognito: bool,
 }
@@ -198,7 +200,7 @@ impl Watcher {
         //
         // So we have no false positives - but we can still have false negatives:
         // - e.g. user types in the omnibox, then switches to a different tab, then switches back to the original tab.
-        let last_url = if icon_role == "button" && !url.is_empty() {
+        let new_url = if icon_role == "button" && !url.is_empty() {
             let omnibox_icon = extracted_elements.omnibox_icon.resolve()?;
             let icon_text = perf(
                 || unsafe { omnibox_icon.GetCurrentPropertyValue(UIA_NamePropertyId) },
@@ -221,26 +223,25 @@ impl Watcher {
         // causing the title to be stale
         let last_title = window.title()?;
 
-        let (changed, is_incognito) = {
+        let (prev_url, is_incognito) = {
             let mut web_state = args.web_state.blocking_write();
             let Some(state) = web_state.get_browser_window_mut(&window)? else {
                 return Ok(());
             };
 
-            let changed = (&state.last_url, &state.last_title) != (&last_url, &last_title);
+            let prev_url = state.last_url.clone();
 
-            if changed {
-                state.last_url = last_url.clone();
-                state.last_title = last_title;
-            }
+            state.last_url = new_url.clone();
+            state.last_title = last_title;
 
-            (changed, state.is_incognito)
+            (prev_url, state.is_incognito)
         };
 
-        if changed {
+        if prev_url != new_url {
             args.web_change_tx.send(Changed {
                 window,
-                url: last_url,
+                prev_url,
+                new_url,
                 is_incognito,
             })?;
         }

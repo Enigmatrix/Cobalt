@@ -83,7 +83,9 @@ impl Sentry {
     /// Run Alert Actions for the browser window matching the given [web::Changed].
     pub async fn handle_web_change(&mut self, web_change: web::Changed) -> Result<()> {
         let detect = web::Detect::new()?;
-        let web::Changed { window, url, .. } = web_change;
+        let web::Changed {
+            window, new_url, ..
+        } = web_change;
 
         // skip if window is dead or minimized
         if window.ptid().is_err() || window.is_minimized() {
@@ -91,7 +93,7 @@ impl Sentry {
         }
 
         // TODO check if incognito?
-        let base_url = web::WebsiteInfo::url_to_base_url(&url)?.to_string();
+        let base_url = web::WebsiteInfo::url_to_base_url(&new_url)?.to_string();
 
         if let Some(action) = self.website_actions.get(&base_url) {
             match action {
