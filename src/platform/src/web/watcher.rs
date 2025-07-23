@@ -1,7 +1,9 @@
+use std::sync::{Arc, Mutex};
+
 use util::channels::Sender;
 use util::ds::{SmallHashMap, SmallHashSet};
 use util::error::{Context, ContextCompat, Result};
-use util::tracing::{self, instrument};
+use util::tracing::{self, debug, instrument};
 use windows::Win32::UI::Accessibility::{
     TreeScope_Element, UIA_AriaRolePropertyId, UIA_NamePropertyId, UIA_PROPERTY_ID,
     UIA_ValueValuePropertyId,
@@ -13,13 +15,10 @@ use crate::web::{self, perf};
 
 /// Watches a browser (by PID) for tab changes. Changes should be reported as fast as possible.
 pub struct Watcher {
-    detect: web::Detect,
-    web_state: web::State,
-
     processes: SmallHashMap<ProcessId, WindowTitleWatcher>,
     windows: SmallHashMap<Window, PropertyChange>,
 
-    web_change_tx: Sender<Changed>,
+    args: Args,
 }
 
 /// Probable change to the focused tab in some browser window.
@@ -40,9 +39,12 @@ impl Watcher {
             processes: SmallHashMap::new(),
             windows: SmallHashMap::new(),
 
-            detect: web::Detect::new()?,
-            web_state,
-            web_change_tx,
+            args: Args {
+                web_state,
+                detect: web::Detect::new()?,
+                reentrancy: Arc::new(Mutex::new(())),
+                web_change_tx,
+            },
         })
     }
 
@@ -50,7 +52,7 @@ impl Watcher {
     pub fn tick(&mut self) -> Result<()> {
         {
             let (pids, windows) = {
-                let state = self.web_state.blocking_read();
+                let state = self.args.web_state.blocking_read();
                 let pids = state.browser_processes.clone();
                 let windows = state
                     .browser_windows
@@ -76,11 +78,7 @@ impl Watcher {
         // Add any new browsers to the list, watch them for title changes
         for pid in pids {
             if !self.processes.contains_key(pid) {
-                let args = Args {
-                    web_state: self.web_state.clone(),
-                    detect: self.detect.clone(),
-                    web_change_tx: self.web_change_tx.clone(),
-                };
+                let args = self.args.clone();
 
                 let callback = Box::new(move |window: Window| {
                     Self::title_change_callback(window, args.clone())
@@ -105,11 +103,7 @@ impl Watcher {
             if !self.windows.contains_key(&window) {
                 let omnibox = extracted_elements.omnibox.clone();
 
-                let args = Args {
-                    web_state: self.web_state.clone(),
-                    detect: self.detect.clone(),
-                    web_change_tx: self.web_change_tx.clone(),
-                };
+                let args = self.args.clone();
 
                 let callback = {
                     let window = window.clone();
@@ -126,7 +120,7 @@ impl Watcher {
                 };
 
                 let handler = PropertyChange::new(
-                    self.detect.automation.clone(),
+                    self.args.detect.automation.clone(),
                     omnibox,
                     TreeScope_Element,
                     None,
@@ -173,7 +167,7 @@ impl Watcher {
         extracted_elements: web::ExtractedUIElements,
         args: Args,
     ) -> Result<()> {
-        // TODO: mutex for reentrancy
+        let _guard = args.reentrancy.lock().expect("reentrancy lock poisoned");
 
         let icon_role = perf(
             || unsafe {
@@ -213,6 +207,7 @@ impl Watcher {
             .to_string();
 
             let is_http_hint = web::Detect::is_http_hint_from_icon_text(&icon_text);
+            debug!(?url, ?icon_text, "tab changed");
             web::Detect::unelide_omnibox_text(url, is_http_hint)
         } else {
             // Or fetch the url from the document element.
@@ -223,7 +218,7 @@ impl Watcher {
                 .context("no element")?
         };
         // we get the title again since the above last_url fetch might have taken a long time to run,
-        // causing the title to be stale / too early.
+        // causing the title to be stale
         let last_title = window.title()?;
 
         let (changed, is_incognito) = {
@@ -257,6 +252,7 @@ impl Watcher {
 struct Args {
     web_state: web::State,
     detect: web::Detect,
+    reentrancy: Arc<Mutex<()>>,
 
     web_change_tx: Sender<Changed>,
 }
