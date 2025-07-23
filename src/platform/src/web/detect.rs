@@ -25,7 +25,8 @@ const BROWSERS: [&str; 2] = [
     r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
 ];
 
-fn perf<T>(f: impl FnOnce() -> T, name: &str) -> T {
+/// Perform an operation and log the time it took.
+pub fn perf<T>(f: impl FnOnce() -> T, name: &str) -> T {
     let start = std::time::Instant::now();
     let result = f();
     let elapsed = start.elapsed();
@@ -253,10 +254,7 @@ impl Detect {
         .to_string();
         info!("using omnibox url: {search_value}, icon: {icon_text}");
 
-        // For HTTP urls, the icon is the error icon with text "Not secure".
-        // In rare cases of HTTPS url with invalid cert, the icon is the same as above
-        // however, the 'search_value' is the full https url so is_http_hint is ignored.
-        let is_http_hint = icon_text == "Not secure";
+        let is_http_hint = Self::is_http_hint_from_icon_text(&icon_text);
         let url = Self::unelide_omnibox_text(search_value, is_http_hint);
 
         Ok(if url.is_empty() { None } else { Some(url) })
@@ -329,6 +327,14 @@ impl Detect {
         )?;
 
         Ok(())
+    }
+
+    /// Check if the icon text is a hint that the URL is HTTP.
+    /// For HTTP urls, the icon is the error icon with text "Not secure".
+    /// In rare cases of HTTPS url with invalid cert, the icon is the same as above
+    /// however, the 'search_value' is the full https url so is_http_hint is ignored.
+    pub fn is_http_hint_from_icon_text(icon_text: &str) -> bool {
+        icon_text == "Not secure"
     }
 
     /// Unelide the omnibox text to the create a valid URL.
