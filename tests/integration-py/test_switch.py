@@ -42,8 +42,8 @@ urls = {
         "title": "GitHub - chromium/chromium: The official GitHub mirror of the Chromium source",
     },
     "http1": {
-        "url": "http://thecodelesscode.com/case/63",
-        "title": "The Codeless Code: Case 63 Shackles",
+        "url": "http://textfiles.com/",
+        "title": "T E X T F I L E S D O T C O M",
     },
     "chrome_internal": {
         "url": "chrome://flags/",
