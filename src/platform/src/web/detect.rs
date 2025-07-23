@@ -4,8 +4,8 @@ use util::error::{Context, Result};
 use util::tracing::{debug, info, warn};
 use windows::Win32::System::Com::{CLSCTX_ALL, CoCreateInstance};
 use windows::Win32::UI::Accessibility::{
-    AutomationElementMode_None, CUIAutomation, IUIAutomation, IUIAutomationCacheRequest,
-    IUIAutomationCondition, IUIAutomationElement, IUIAutomationElement9,
+    AutomationElementMode_Full, AutomationElementMode_None, CUIAutomation, IUIAutomation,
+    IUIAutomationCacheRequest, IUIAutomationCondition, IUIAutomationElement, IUIAutomationElement9,
     IUIAutomationInvokePattern, TreeScope_Children, TreeScope_Descendants,
     TreeTraversalOptions_LastToFirstOrder, UIA_AutomationIdPropertyId, UIA_ButtonControlTypeId,
     UIA_ClassNamePropertyId, UIA_ControlTypePropertyId, UIA_DocumentControlTypeId,
@@ -47,6 +47,7 @@ pub struct Detect {
     omnibox_cond: AgileReference<IUIAutomationCondition>,
     omnibox_icon_cond: AgileReference<IUIAutomationCondition>,
     cache_request: AgileReference<IUIAutomationCacheRequest>,
+    cache_request_full: AgileReference<IUIAutomationCacheRequest>,
 }
 
 impl Detect {
@@ -82,6 +83,13 @@ impl Detect {
             cache_request.AddProperty(UIA_ValueValuePropertyId)?;
             cache_request
         };
+        let cache_request_full = unsafe {
+            let cache_request = automation.CreateCacheRequest()?;
+            cache_request.SetAutomationElementMode(AutomationElementMode_Full)?;
+            cache_request.AddProperty(UIA_NamePropertyId)?;
+            cache_request.AddProperty(UIA_ValueValuePropertyId)?;
+            cache_request
+        };
         Ok(Self {
             automation: AgileReference::new(&automation)?,
             browser_root_view_cond: AgileReference::new(&browser_root_view_cond)?,
@@ -89,6 +97,7 @@ impl Detect {
             omnibox_cond: AgileReference::new(&omnibox_cond)?,
             omnibox_icon_cond: AgileReference::new(&omnibox_icon_cond)?,
             cache_request: AgileReference::new(&cache_request)?,
+            cache_request_full: AgileReference::new(&cache_request_full)?,
         })
     }
 
@@ -118,19 +127,18 @@ impl Detect {
     pub fn get_chromium_omnibox_element(
         &self,
         window_element: &IUIAutomationElement9,
-        use_cache: bool,
+        use_full: bool,
     ) -> Result<Option<IUIAutomationElement9>> {
         uia_find_result(perf(
             || unsafe {
                 window_element.FindFirstBuildCache(
                     TreeScope_Descendants,
                     &self.omnibox_cond.resolve()?,
-                    (if use_cache {
-                        Some(self.cache_request.resolve()?)
+                    &if use_full {
+                        self.cache_request_full.resolve()?
                     } else {
-                        None
-                    })
-                    .as_ref(),
+                        self.cache_request.resolve()?
+                    },
                 )
             },
             "omnibox - FindFirstBuildCache",
@@ -142,19 +150,18 @@ impl Detect {
     pub fn get_chromium_omnibox_icon_element(
         &self,
         window_element: &IUIAutomationElement9,
-        use_cache: bool,
+        use_full: bool,
     ) -> Result<Option<IUIAutomationElement9>> {
         uia_find_result(perf(
             || unsafe {
                 window_element.FindFirstBuildCache(
                     TreeScope_Descendants,
                     &self.omnibox_icon_cond.resolve()?,
-                    (if use_cache {
-                        Some(self.cache_request.resolve()?)
+                    &if use_full {
+                        self.cache_request_full.resolve()?
                     } else {
-                        None
-                    })
-                    .as_ref(),
+                        self.cache_request.resolve()?
+                    },
                 )
             },
             "omnibox_icon - FindFirstBuildCache",
@@ -223,12 +230,12 @@ impl Detect {
             }
         }
 
-        let omnibox = self.get_chromium_omnibox_element(element, true)?;
+        let omnibox = self.get_chromium_omnibox_element(element, false)?;
         let Some(omnibox) = omnibox else {
             return Ok(None);
         };
 
-        let omnibox_icon = self.get_chromium_omnibox_icon_element(element, true)?;
+        let omnibox_icon = self.get_chromium_omnibox_icon_element(element, false)?;
         let Some(omnibox_icon) = omnibox_icon else {
             return Ok(None);
         };
