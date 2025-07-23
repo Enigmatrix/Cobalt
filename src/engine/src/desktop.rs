@@ -2,15 +2,21 @@ use std::collections::{HashMap, HashSet};
 use std::future::Future;
 use std::sync::Arc;
 
-use data::entities::{App, AppIdentity, Ref, Session};
+use data::entities::{Alert, App, AppIdentity, Duration, Ref, Session, Timestamp};
 use platform::events::{ForegroundWindowSessionInfo, WindowSession};
 use platform::objects::{ProcessId, ProcessThreadId, Window};
-use platform::web::{self, BaseWebsiteUrl};
+use platform::web;
 use scoped_futures::ScopedBoxFuture;
 use util::ds::{SmallHashMap, SmallHashSet};
 use util::error::Result;
 use util::future as tokio;
 use util::future::sync::RwLock;
+
+/// Minimum opacity of a dimmed window
+pub const MIN_DIM_LEVEL: f64 = 0.5;
+
+/// Full opacity of a dimmed window
+pub const FULL_DIM_LEVEL: f64 = 1.0;
 
 /// Desktop State - for storing information about windows, processes, apps and sessions.
 #[derive(Debug)]
@@ -18,6 +24,7 @@ pub struct DesktopStateInner {
     store: Store,
     web: WebsiteCache,
     platform: PlatformCache,
+    actions: ActionStore,
 }
 
 /// Shared Desktop State
@@ -43,9 +50,9 @@ pub struct Store {
 #[derive(Debug)]
 pub struct WebsiteCache {
     // This never gets cleared, but it's ok since it's a small set of urls?
-    websites: HashMap<BaseWebsiteUrl, AppDetails>,
+    websites: HashMap<web::BaseWebsiteUrl, AppDetails>,
     // This never gets cleared, but it's ok since it's a small set of apps?
-    apps: HashMap<Ref<App>, BaseWebsiteUrl>,
+    apps: HashMap<Ref<App>, web::BaseWebsiteUrl>,
     // Web state
     state: web::State,
 }
@@ -57,6 +64,90 @@ pub struct PlatformCache {
     // A process can have many windows.
     windows: SmallHashMap<ProcessThreadId, HashSet<Window>>,
     processes: SmallHashMap<Ref<App>, AppEntry>,
+}
+
+/// Status of a dimmed window
+#[derive(Debug, Default, Clone)]
+pub struct DimStatus {
+    requests: HashMap<Ref<Alert>, DimRequest>,
+}
+
+impl DimStatus {
+    /// Create a new [DimStatus] with one request
+    pub fn with_one(request: DimRequest) -> Self {
+        Self {
+            requests: HashMap::from([(request.by.clone(), request)]),
+        }
+    }
+
+    /// Get the opacity of the dim
+    pub fn opacity(&self, now: Timestamp) -> f64 {
+        self.requests
+            .values()
+            .map(|r| r.opacity(now))
+            .min_by(f64::total_cmp)
+            .unwrap_or(FULL_DIM_LEVEL)
+    }
+
+    /// Add a dim request
+    pub fn add(&mut self, request: DimRequest) {
+        self.requests.insert(request.by.clone(), request);
+    }
+
+    /// Remove a dim request
+    pub fn remove_by(&mut self, by: Ref<Alert>) {
+        self.requests.remove(&by);
+    }
+
+    /// Remove expired dim requests
+    pub fn remove_expired(&mut self, now: Timestamp) {
+        self.requests.retain(|_, r| r.expiry <= now);
+    }
+
+    /// Merge another [DimStatus] into this one
+    pub fn merge(&mut self, other: &DimStatus) {
+        self.requests.extend(other.requests.clone());
+    }
+
+    /// Merge another [DimStatus] into this one
+    pub fn into_merged(self, other: DimStatus) -> Self {
+        let mut new = self;
+        new.merge(&other);
+        new
+    }
+
+    /// Check if there are any dim requests
+    pub fn is_empty(&self) -> bool {
+        self.requests.is_empty()
+    }
+}
+
+/// Request to dim a window
+#[derive(Debug, Clone)]
+pub struct DimRequest {
+    /// Who requested the dim
+    pub by: Ref<Alert>,
+    /// When the dim started
+    pub start: Timestamp,
+    /// Dim over this duration
+    pub duration: Duration,
+    /// When the dim will expire
+    pub expiry: Timestamp,
+}
+
+impl DimRequest {
+    /// Get the opacity of the dim
+    pub fn opacity(&self, now: Timestamp) -> f64 {
+        let progress = (now - self.start) as f64 / (self.duration as f64);
+        FULL_DIM_LEVEL - (progress.min(1.0) * (FULL_DIM_LEVEL - MIN_DIM_LEVEL))
+    }
+}
+
+/// Store for storing actions for processes and websites
+#[derive(Debug)]
+pub struct ActionStore {
+    /// Current dim status for each window. If not present, the window is not dimmed.
+    pub dim: HashMap<Window, DimStatus>,
 }
 
 /// Details about a [App].
@@ -112,6 +203,9 @@ impl DesktopStateInner {
                 windows: HashMap::new(),
                 processes: HashMap::new(),
             },
+            actions: ActionStore {
+                dim: HashMap::new(),
+            },
         }
     }
 
@@ -157,8 +251,13 @@ impl DesktopStateInner {
     }
 
     /// Get the websites for an [App]. If the app is not a website, will return nothing.
-    pub fn websites_for_app(&self, app: &Ref<App>) -> impl Iterator<Item = &BaseWebsiteUrl> {
+    pub fn websites_for_app(&self, app: &Ref<App>) -> impl Iterator<Item = &web::BaseWebsiteUrl> {
         self.web.apps.get(app).into_iter()
+    }
+
+    /// Get a mutable reference to the dim status for a [Window]
+    pub fn dim_status_mut(&mut self, window: &Window) -> &mut DimStatus {
+        self.actions.dim.entry(window.clone()).or_default()
     }
 
     /// Get or insert a [SessionDetails] for a [Window], using the create callback
@@ -220,11 +319,11 @@ impl DesktopStateInner {
         Ok(self.store.apps.entry(ptid).or_insert(created))
     }
 
-    /// Get or insert a [AppDetails] for a [BaseWebsiteUrl], using the create callback
+    /// Get or insert a [AppDetails] for a [web::BaseWebsiteUrl], using the create callback
     /// to make a new [AppDetails] if not found.
     pub async fn get_or_insert_website_for_base_url<F: Future<Output = Result<AppDetails>>>(
         &mut self,
-        base_url: BaseWebsiteUrl,
+        base_url: web::BaseWebsiteUrl,
         create: impl FnOnce(&mut Self) -> F,
     ) -> Result<&mut AppDetails> {
         if self.web.websites.contains_key(&base_url) {
@@ -256,6 +355,10 @@ impl DesktopStateInner {
             .sessions
             .retain(|ws, _| !removed_windows.contains(&ws.window));
 
+        self.actions
+            .dim
+            .retain(|window, _| !removed_windows.contains(window));
+
         {
             let mut state = self.web.state.write().await;
             state.browser_processes.remove(&process);
@@ -282,6 +385,10 @@ impl DesktopStateInner {
             self.store
                 .sessions
                 .retain(|ws, _| !removed_windows.contains(&ws.window));
+
+            self.actions
+                .dim
+                .retain(|window, _| !removed_windows.contains(window));
 
             let removed_pids = app_entry
                 .process_threads
@@ -335,6 +442,10 @@ impl DesktopStateInner {
         self.store
             .apps
             .retain(|ptid, _| !removed_pids.contains(&ptid.pid));
+
+        self.actions
+            .dim
+            .retain(|window, _| !removed_windows.contains(window));
 
         {
             let mut state = self.web.state.write().await;
