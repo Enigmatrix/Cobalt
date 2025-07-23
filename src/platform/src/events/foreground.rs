@@ -1,6 +1,7 @@
 use util::config::Config;
 use util::error::{Context, ContextCompat, Result};
-use util::tracing::ResultTraceExt;
+use util::retry::{BlockingRetryable, ExponentialBuilder};
+use util::tracing::{ResultTraceExt, error};
 use windows::core::AgileReference;
 
 use crate::objects::{Process, Timestamp, Window};
@@ -139,10 +140,18 @@ impl ForegroundEventWatcher {
             let omnibox_icon = detect
                 .get_chromium_omnibox_icon_element(&window_element, true)?
                 .context("no omnibox icon")?;
+
             // this is the element that is least likely to exist since the page could not be loaded
-            let root_web_area = detect
-                .get_chromium_root_web_area_element(&window_element, true)?
-                .context("no root web area")?;
+            let root_web_area = (|| {
+                detect
+                    .get_chromium_root_web_area_element(&window_element, true)?
+                    .context("no root web area")
+            })
+            .retry(ExponentialBuilder::new())
+            .notify(|err, _| {
+                error!("no root web area: {err:?}");
+            })
+            .call()?;
 
             let is_incognito = detect
                 .chromium_incognito(&window_element)
