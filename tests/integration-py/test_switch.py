@@ -80,6 +80,37 @@ def test_switch_various(
     do_test_switch(driver_web_state, browser, events, url1, url2, title1, title2)
 
 
+def test_switch_new_window(
+    driver_web_state: DriverData,
+    browser: webdriver.Chrome,
+    events: RecordedEvents,
+):
+    url1, url2 = "https1", "https2"
+    url1, title1 = urls[url1]["url"], urls[url1]["title"]
+    url2, title2 = urls[url2]["url"], urls[url2]["title"]
+
+    do_test_open_new(
+        driver_web_state, browser, events, open_new_window, url1, url2, title1, title2
+    )
+
+
+def test_switch_new_dialog(
+    driver_web_state: DriverData,
+    browser: webdriver.Chrome,
+    events: RecordedEvents,
+):
+    url1, url2 = "https1", "https2"
+    url1, title1 = urls[url1]["url"], urls[url1]["title"]
+    url2, title2 = urls[url2]["url"], urls[url2]["title"]
+
+    do_test_open_new(
+        driver_web_state, browser, events, open_new_dialog, url1, url2, title1, title2
+    )
+
+
+# TODO: test for opening 'Extensions' dialog, 'User' dialog, 'Icon' dialog, 'Ctrl-F' dialog, etc.
+
+
 def test_switch_diff_url_same_title(
     driver_web_state: DriverData,
     browser: webdriver.Chrome,
@@ -91,7 +122,13 @@ def test_switch_diff_url_same_title(
     title = "Same Title"
 
     do_test_switch(
-        driver_web_state, browser, events, url1, url2, title1=title, title2=title
+        driver_web_state,
+        browser,
+        events,
+        url1,
+        url2,
+        title1=title,
+        title2=title,
     )
 
 
@@ -104,8 +141,32 @@ def test_switch_same_url_diff_title(
     url = f"http://localhost:{server.port}/same_url_diff_title.html"
 
     do_test_switch(
-        driver_web_state, browser, events, url, url, title1=None, title2=None
+        driver_web_state,
+        browser,
+        events,
+        url,
+        url,
+        title1=None,
+        title2=None,
     )
+
+
+def open_new_window(browser: webdriver.Chrome, url: str):
+    browser.switch_to.new_window("window")
+    browser.get(url)
+    WebDriverWait(browser, 10).until(
+        EC.presence_of_element_located((By.TAG_NAME, "body"))
+    )
+    # remove focus from the omnibox. not really needed here, but it's for consistency
+    pyautogui.hotkey("esc")
+
+
+def open_new_dialog(browser: webdriver.Chrome, url: str):
+    browser.execute_script(f"window.open('{url}', '_blank', 'popup');")
+    WebDriverWait(browser, 10).until(
+        EC.presence_of_element_located((By.TAG_NAME, "body"))
+    )
+    # don't remove focus from the omnibox - that kills the navigation to the dialog, shows about:blank
 
 
 def do_test_switch(
@@ -156,6 +217,47 @@ def do_test_switch(
     events.push(Change(url=url1, title=f"{title1} - Google Chrome"))
 
     logger.info(f"Waiting {DELAY} seconds on tab 1: {url1}")
+    time.sleep(DELAY)
+
+    out_events = driver_web_state.events()
+    assert events == out_events
+
+
+def do_test_open_new(
+    driver_web_state: DriverData,
+    browser: webdriver.Chrome,
+    events: RecordedEvents,
+    open_new,
+    url1: str,
+    url2: str,
+    title1: Optional[str] = None,
+    title2: Optional[str] = None,
+):
+    # open url1 and url2 in new tabs
+    logger.info(f"Opening tab/window 1: {url1}")
+    browser.get(url1)
+    title1 = title1 if title1 is not None else browser.title
+
+    logger.info(f"Opening tab/window 2: {url2}")
+    open_new(browser, url2)
+    title2 = title2 if title2 is not None else browser.title
+
+    logger.info(f"Switching back to tab/window 1: {url1}")
+    browser.switch_to.window(browser.window_handles[0])
+
+    logger.info("Starting driver_web_state")
+    driver_web_state.start()
+    # initial foreground state is url1
+    events.push(Change(url=url1, title=f"{title1} - Google Chrome"))
+
+    logger.info(f"Waiting {DELAY} seconds on tab/window 1: {url1}")
+    time.sleep(DELAY)
+
+    logger.info(f"Switching to tab/window 2: {url2}")
+    browser.switch_to.window(browser.window_handles[1])
+    events.push(Change(url=url2, title=f"{title2} - Google Chrome"))
+
+    logger.info(f"Waiting {DELAY} seconds on tab/window 2: {url2}")
     time.sleep(DELAY)
 
     out_events = driver_web_state.events()
