@@ -432,7 +432,7 @@ impl DesktopStateInner {
                     .extract_if(|ptid| !self.platform.windows.contains_key(ptid))
                     .map(|ptid| ptid.pid),
             );
-            entry.process_threads.is_empty()
+            !entry.process_threads.is_empty()
         });
 
         // retain only sessions and apps for which their windows and apps that are alive
