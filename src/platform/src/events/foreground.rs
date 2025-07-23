@@ -1,6 +1,7 @@
 use util::config::Config;
 use util::error::{Context, ContextCompat, Result};
 use util::tracing::ResultTraceExt;
+use windows::Win32::UI::Accessibility::UIA_WindowControlTypeId;
 use windows::core::AgileReference;
 
 use crate::objects::{Process, Timestamp, Window};
@@ -132,6 +133,12 @@ impl ForegroundEventWatcher {
         // TODO: instead of Option's context("no element") we should use backon retries
         let state = if is_browser {
             let window_element = detect.get_chromium_element(window)?;
+            // If this is not a Chromium window, then it's a dialog e.g. Ctrl-F box, 'Extensions' popup dialog, etc.
+            // TODO what about alert(), user-password basic auth dialog?, window.open() dialogs by
+            // https://developer.mozilla.org/en-US/docs/Web/API/Window/open#popup and other options?
+            if unsafe { window_element.CurrentControlType()? } != UIA_WindowControlTypeId {
+                return Ok((None, None));
+            }
 
             let omnibox = detect
                 .get_chromium_omnibox_element(&window_element, true)?
