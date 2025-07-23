@@ -170,6 +170,31 @@ impl Detect {
         .context("find omnibox icon")
     }
 
+    /// Get the UI Automation element for the RootWebArea in the [Window]
+    pub fn get_chromium_root_web_area_element(
+        &self,
+        window_element: &IUIAutomationElement9,
+        use_full: bool,
+    ) -> Result<Option<IUIAutomationElement9>> {
+        uia_find_result(perf(
+            || unsafe {
+                window_element.FindFirstWithOptionsBuildCache(
+                    TreeScope_Descendants,
+                    &self.root_web_area_cond.resolve()?,
+                    &if use_full {
+                        self.cache_request_full.resolve()?
+                    } else {
+                        self.cache_request.resolve()?
+                    },
+                    TreeTraversalOptions_LastToFirstOrder,
+                    window_element,
+                )
+            },
+            "root_web_area - FindFirstWithOptionsBuildCache",
+        ))
+        .context("find root web area")
+    }
+
     /// Check if the [Window] is in incognito mode
     pub fn chromium_incognito(&self, element: &IUIAutomationElement9) -> Result<Option<bool>> {
         let browser_root_view = uia_find_result(perf(
@@ -207,19 +232,9 @@ impl Detect {
     /// Notably, this only works for Chrome and Edge right now.
     /// This might break in the future if Chrome/Edge team changes the UI.
     pub fn chromium_url(&self, element: &IUIAutomationElement9) -> Result<Option<String>> {
-        let root_web_area = uia_find_result(perf(
-            || unsafe {
-                element.FindFirstWithOptionsBuildCache(
-                    TreeScope_Descendants,
-                    &self.root_web_area_cond.resolve()?,
-                    &self.cache_request.resolve()?,
-                    TreeTraversalOptions_LastToFirstOrder,
-                    element,
-                )
-            },
-            "root_web_area - FindFirstWithOptionsBuildCache",
-        ))
-        .context("find root web area")?;
+        // TODO: some of this code is duplicated - extract a function
+
+        let root_web_area = self.get_chromium_root_web_area_element(element, false)?;
         if let Some(root_web_area) = root_web_area {
             let url = perf(
                 || unsafe { root_web_area.GetCachedPropertyValue(UIA_ValueValuePropertyId) },
