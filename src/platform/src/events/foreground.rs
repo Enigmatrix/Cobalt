@@ -139,10 +139,6 @@ impl ForegroundEventWatcher {
             let omnibox_icon = detect
                 .get_chromium_omnibox_icon_element(&window_element, true)?
                 .context("no omnibox icon")?;
-            // this is the element that is least likely to exist since the page could not be loaded
-            let root_web_area = detect
-                .get_chromium_root_web_area_element(&window_element, true)?
-                .context("no root web area")?;
 
             let is_incognito = detect
                 .chromium_incognito(&window_element)
@@ -158,7 +154,6 @@ impl ForegroundEventWatcher {
                 window_element: AgileReference::new(&window_element)?,
                 omnibox: AgileReference::new(&omnibox)?,
                 omnibox_icon: AgileReference::new(&omnibox_icon)?,
-                root_web_area: AgileReference::new(&root_web_area)?,
             };
             Some(web::BrowserWindowState {
                 extracted_elements,

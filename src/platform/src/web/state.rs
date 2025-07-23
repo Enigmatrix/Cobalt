@@ -42,8 +42,6 @@ pub struct ExtractedUIElements {
     pub omnibox: AgileReference<IUIAutomationElement9>,
     /// UI Automation element of the omnibox icon
     pub omnibox_icon: AgileReference<IUIAutomationElement9>,
-    /// UI Automation element of the root web area
-    pub root_web_area: AgileReference<IUIAutomationElement9>,
 }
 
 impl StateInner {
