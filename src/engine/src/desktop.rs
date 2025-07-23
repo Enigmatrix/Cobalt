@@ -99,9 +99,10 @@ impl DimStatus {
         self.requests.remove(&by);
     }
 
-    /// Remove expired dim requests
-    pub fn remove_expired(&mut self, now: Timestamp) {
-        self.requests.retain(|_, r| r.expiry <= now);
+    /// Subtract another [DimStatus] from this one
+    pub fn subtract(&mut self, other: &DimStatus) {
+        self.requests
+            .retain(|_, r| !other.requests.contains_key(&r.by));
     }
 
     /// Merge another [DimStatus] into this one
@@ -131,8 +132,6 @@ pub struct DimRequest {
     pub start: Timestamp,
     /// Dim over this duration
     pub duration: Duration,
-    /// When the dim will expire
-    pub expiry: Timestamp,
 }
 
 impl DimRequest {
@@ -258,6 +257,21 @@ impl DesktopStateInner {
     /// Get a mutable reference to the dim status for a [Window]
     pub fn dim_status_mut(&mut self, window: &Window) -> &mut DimStatus {
         self.actions.dim.entry(window.clone()).or_default()
+    }
+
+    /// Reset the dim statuses.
+    /// The entries are not removed, but the requests are cleared.
+    /// If the entries are still empty after this, the window will be undimmed
+    /// and then this entry will be removed by Sentry.
+    pub fn reset_dim_statuses(&mut self) {
+        self.actions.dim.iter_mut().for_each(|(_, dim_status)| {
+            dim_status.requests.clear();
+        });
+    }
+
+    /// Get all dim statuses
+    pub fn dim_statuses(&mut self) -> &mut HashMap<Window, DimStatus> {
+        &mut self.actions.dim
     }
 
     /// Get or insert a [SessionDetails] for a [Window], using the create callback
