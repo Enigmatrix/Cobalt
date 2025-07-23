@@ -2,7 +2,7 @@ use std::sync::{Arc, Mutex};
 
 use util::channels::Sender;
 use util::ds::{SmallHashMap, SmallHashSet};
-use util::error::{Context, ContextCompat, Result};
+use util::error::{Context, Result};
 use util::tracing::{self, debug, instrument};
 use windows::Win32::UI::Accessibility::{
     TreeScope_Element, UIA_AriaRolePropertyId, UIA_NamePropertyId, UIA_PROPERTY_ID,
@@ -212,10 +212,17 @@ impl Watcher {
         } else {
             // Or fetch the url from the document element.
             // TODO: backon retries + timeout to restack + use rt spawn_blocking + throttle
-            args.detect
-                .chromium_url(&extracted_elements.window_element.resolve()?)
-                .context("get chromium url")?
-                .context("no element")?
+
+            let root_web_area = extracted_elements.root_web_area.resolve()?;
+            let text = url;
+            let url = perf(
+                || unsafe { root_web_area.GetCurrentPropertyValue(UIA_ValueValuePropertyId) },
+                "root_web_area - GetCurrentPropertyValue(UIA_ValueValuePropertyId)",
+            )?
+            .to_string();
+            let url = web::Detect::elide_document_url(&url)?;
+            debug!(?url, ?icon_role, ?text, "fetch url");
+            url
         };
         // we get the title again since the above last_url fetch might have taken a long time to run,
         // causing the title to be stale
