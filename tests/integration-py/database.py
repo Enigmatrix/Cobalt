@@ -2,6 +2,7 @@ from pathlib import Path
 import sqlite3
 from typing import Optional
 import time
+from constants import TICKS_PER_SECOND, WINDOWS_EPOCH_OFFSET
 
 
 def db_time() -> int:
@@ -9,7 +10,7 @@ def db_time() -> int:
     # Windows ticks are 100-nanosecond intervals since 1601-01-01
     # Convert Unix timestamp to Windows ticks
     unix_time = time.time()
-    windows_ticks = unix_time * 10_000_000 + 621355968000000000
+    windows_ticks = unix_time * TICKS_PER_SECOND + WINDOWS_EPOCH_OFFSET
     return int(windows_ticks)
 
 

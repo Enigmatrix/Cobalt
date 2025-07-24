@@ -89,7 +89,7 @@ def driver_web_state(request, build_driver_web_state):
         sys.stdout.buffer.write(out)
     except Exception as e:
         logger.warning("Failed to read stdout of driver: %s", e, exc_info=True)
-    sys.stderr.write("--- driver_web_state stderr ---")
+    sys.stderr.write("--- driver_web_state stderr ---\n")
     try:
         err = open(data.stderr_path, "rb").read()
         sys.stderr.buffer.write(err)

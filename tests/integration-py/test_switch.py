@@ -14,6 +14,7 @@ from driver import (
     Change,
 )
 from server import Webserver
+from constants import BROWSER_OPEN_DELAY
 
 logger = logging.getLogger(__name__)
 
@@ -47,8 +48,6 @@ urls = {
 
 
 url_pairs = itertools.permutations(urls.keys(), 2)
-
-DELAY = 2
 
 
 @pytest.mark.parametrize("url1,url2", url_pairs)
@@ -187,22 +186,22 @@ def do_test_switch(
     # initial foreground state is url1
     events.push(Change(url=url1, title=f"{title1} - Google Chrome"))
 
-    logger.info(f"Waiting {DELAY} seconds on tab 1: {url1}")
-    time.sleep(DELAY)
+    logger.info(f"Waiting {BROWSER_OPEN_DELAY} seconds on tab 1: {url1}")
+    time.sleep(BROWSER_OPEN_DELAY)
 
     logger.info(f"Switching to tab 2: {url2}")
     browser.switch_to.window(browser.window_handles[1])
     events.push(Change(url=url2, title=f"{title2} - Google Chrome"))
 
-    logger.info(f"Waiting {DELAY} seconds on tab 2: {url2}")
-    time.sleep(DELAY)
+    logger.info(f"Waiting {BROWSER_OPEN_DELAY} seconds on tab 2: {url2}")
+    time.sleep(BROWSER_OPEN_DELAY)
 
     logger.info(f"Switching to tab 1: {url1}")
     browser.switch_to.window(browser.window_handles[0])
     events.push(Change(url=url1, title=f"{title1} - Google Chrome"))
 
-    logger.info(f"Waiting {DELAY} seconds on tab 1: {url1}")
-    time.sleep(DELAY)
+    logger.info(f"Waiting {BROWSER_OPEN_DELAY} seconds on tab 1: {url1}")
+    time.sleep(BROWSER_OPEN_DELAY)
 
     out_events = driver_web_state.events()
     assert events == out_events
@@ -235,15 +234,15 @@ def do_test_open_new(
     # initial foreground state is url1
     events.push(Change(url=url1, title=f"{title1} - Google Chrome"))
 
-    logger.info(f"Waiting {DELAY} seconds on tab/window 1: {url1}")
-    time.sleep(DELAY)
+    logger.info(f"Waiting {BROWSER_OPEN_DELAY} seconds on tab/window 1: {url1}")
+    time.sleep(BROWSER_OPEN_DELAY)
 
     logger.info(f"Switching to tab/window 2: {url2}")
     browser.switch_to.window(browser.window_handles[1])
     events.push(Change(url=url2, title=f"{title2} - Google Chrome"))
 
-    logger.info(f"Waiting {DELAY} seconds on tab/window 2: {url2}")
-    time.sleep(DELAY)
+    logger.info(f"Waiting {BROWSER_OPEN_DELAY} seconds on tab/window 2: {url2}")
+    time.sleep(BROWSER_OPEN_DELAY)
 
     out_events = driver_web_state.events()
     assert events == out_events
