@@ -26,6 +26,7 @@
     
     <!-- Launch engine after installation/upgrade/repair -->
     <CustomAction Id="LaunchEngine" 
+                  Impersonate="yes"
                   ExeCommand="[INSTALLDIR]engine.exe" 
                   Directory="INSTALLDIR"
                   Return="asyncNoWait" />
