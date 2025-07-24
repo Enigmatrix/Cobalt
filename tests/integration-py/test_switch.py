@@ -5,7 +5,6 @@ import pytest
 import logging
 import itertools
 from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -17,20 +16,6 @@ from driver import (
 from server import Webserver
 
 logger = logging.getLogger(__name__)
-
-
-@pytest.fixture
-def browser():
-    chrome_options = Options()
-
-    # this is enabled by default in Chrome but selenium doesn't enable it by default
-    chrome_options.add_argument("--enable-features=UiaProvider")
-    chrome_options.add_argument("--log-level=3")
-    chrome_options.add_experimental_option("excludeSwitches", ["enable-logging"])
-
-    driver = webdriver.Chrome(options=chrome_options)
-    yield driver
-    driver.quit()
 
 
 urls = {
