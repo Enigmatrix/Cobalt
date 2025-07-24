@@ -6,6 +6,7 @@ use data::entities::{
 };
 use platform::objects::{Process, Progress, Timestamp as PlatformTimestamp, ToastManager, Window};
 use platform::web;
+use util::config::Config;
 use util::error::Result;
 use util::time::ToTicks;
 use util::tracing::{ResultTraceExt, debug, info};
@@ -14,6 +15,7 @@ use crate::desktop::{DesktopState, DimRequest, DimStatus, KillableProcessId};
 
 /// Watcher to track [TriggeredAlert]s and [TriggeredReminder]s and take action on them.
 pub struct Sentry {
+    config: Config,
     desktop_state: DesktopState,
     web_state: web::State,
     mgr: AlertManager,
@@ -43,9 +45,15 @@ impl WebsiteAction {
 
 impl Sentry {
     /// Create a new [Sentry] with the given [Cache] and [Database].
-    pub fn new(desktop_state: DesktopState, web_state: web::State, db: Database) -> Result<Self> {
+    pub fn new(
+        config: Config,
+        desktop_state: DesktopState,
+        web_state: web::State,
+        db: Database,
+    ) -> Result<Self> {
         let mgr = AlertManager::new(db)?;
         Ok(Self {
+            config,
             desktop_state,
             web_state,
             mgr,
@@ -61,7 +69,7 @@ impl Sentry {
             window,
             new_url,
             prev_url,
-            ..
+            is_incognito,
         } = web_change;
 
         // skip if window is dead or minimized
@@ -69,7 +77,11 @@ impl Sentry {
             return Ok(());
         }
 
-        // TODO check if incognito?
+        // skip if incognito and not tracking incognito
+        if is_incognito && !self.config.track_incognito() {
+            return Ok(());
+        }
+
         let base_url = web::WebsiteInfo::url_to_base_url(&new_url)?.to_string();
         let prev_base_url = web::WebsiteInfo::url_to_base_url(&prev_url)?.to_string();
 
@@ -160,11 +172,16 @@ impl Sentry {
                     .iter()
                     .flat_map(|(window, state)| state.iter().map(move |state| (window, state)))
                     .flat_map(|(window, state)| {
+                        // skip if incognito and not tracking incognito
+                        if !self.config.track_incognito() && state.is_incognito {
+                            return None;
+                        }
+
                         let base_url = web::WebsiteInfo::url_to_base_url(&state.last_url)
-                            .ok()?
-                            .to_string();
+                            .map(Some)
+                            .warn()?;
                         let Some(WebsiteAction::Dim(dim_status)) =
-                            self.website_actions.get(&base_url)
+                            self.website_actions.get(&base_url.to_string())
                         else {
                             return None;
                         };
