@@ -1,5 +1,6 @@
 import time
 from typing import Optional
+import pyautogui
 import pytest
 import logging
 import itertools
@@ -127,6 +128,9 @@ def do_test_switch(
     WebDriverWait(browser, 10).until(
         EC.presence_of_element_located((By.TAG_NAME, "body"))
     )
+    # remove focus from the omnibox
+    pyautogui.hotkey("esc")
+
     title2 = title2 if title2 is not None else browser.title
 
     logger.info(f"Switching back to tab 1: {url1}")
