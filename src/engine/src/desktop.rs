@@ -424,18 +424,15 @@ impl DesktopStateInner {
     /// Retains all process for windows in the list, and removes the rest
     /// of the process and windows not in the list.
     pub async fn retain_cache(&mut self) -> Result<()> {
-        let removed_windows = self
-            .platform
-            .windows
-            .extract_if(|ptid, windows| {
-                // check if window is alive by checking if the pid() calls
-                // still succeeds and returns the same pid as previously
-                // returned to the engine
-                windows.retain(|window| window.ptid().ok() == Some(*ptid));
-                windows.is_empty()
-            })
-            .flat_map(|(_, windows)| windows)
-            .collect::<SmallHashSet<_>>();
+        let mut removed_windows = SmallHashSet::new();
+        self.platform.windows.retain(|ptid, windows| {
+            // check if window is alive by checking if the pid() calls
+            // still succeeds and returns the same pid as previously
+            // returned to the engine
+            removed_windows.extend(windows.extract_if(|window| window.ptid().ok() != Some(*ptid)));
+            // remove entry if it's empty
+            !windows.is_empty()
+        });
 
         // retain only app refs for processes that are alive
         let mut removed_pids = SmallHashSet::new();
