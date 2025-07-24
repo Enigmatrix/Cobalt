@@ -6,6 +6,8 @@ BROWSER_FAST_SWITCH_DELAY = 0.15
 
 MAX_DRIVER_INIT_DELAY = 5
 
+UIA_ACTION_DELAY = 1
+
 # from engine/src/desktop.rs
 MIN_DIM_LEVEL = 0.5
 

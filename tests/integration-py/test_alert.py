@@ -1,13 +1,16 @@
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import win32con
 import time
 import logging
 from selenium import webdriver
-from driver import (
-    DriverData,
-    RecordedEvents,
-)
+from driver import DriverData
 from database import Database, db_time
 import pyautogui
 import win32gui
+import pytest
+from browser import INCOGNITO_MODE, NORMAL_MODE
 
 from constants import (
     BROWSER_OPEN_DELAY,
@@ -17,6 +20,7 @@ from constants import (
     MAX_DRIVER_INIT_DELAY,
     MIN_DIM_LEVEL,
     TICKS_PER_SECOND,
+    UIA_ACTION_DELAY,
 )
 
 logger = logging.getLogger(__name__)
@@ -39,33 +43,67 @@ urls = {
 }
 
 
+@pytest.mark.parametrize(
+    "browser,browser_mode",
+    [(NORMAL_MODE, NORMAL_MODE), (INCOGNITO_MODE, INCOGNITO_MODE)],
+    indirect=["browser"],
+)
 def test_alert_dim_between_tabs(
     driver_web_state: DriverData,
     browser: webdriver.Chrome,
-    events: RecordedEvents,
+    browser_mode: bool,
 ):
+    """
+    Test that the dim level is correct when switching between tabs.
+    We create monthly alerts that dim the browser for 1h/3h and 1h/5h that are immediatly triggered.
+    Then we switch between tabs and check that the dim level is correct.
+    By default in appsettings.json, we don't track incognito tabs - dim level is full for these.
+
+
+    We don't use browser.switch_to.new_window() because it doesn't work with incognito tabs.
+    """
     url1 = urls["https1"]["url"]
     url2 = urls["https2"]["url"]
     url3 = urls["https3"]["url"]
+    incognito = browser_mode == INCOGNITO_MODE
 
     # open url1 and url2 in new tabs
     logger.info(f"Opening tab 1: {url1}")
     browser.get(url1)
 
     logger.info(f"Opening tab 2: {url2}")
-    browser.switch_to.new_window("tab")
-    browser.get(url2)
+    pyautogui.hotkey("ctrl", "t")
+    time.sleep(UIA_ACTION_DELAY)
+    pyautogui.typewrite(url2)
+    pyautogui.press("enter")
+    time.sleep(UIA_ACTION_DELAY)
+    WebDriverWait(browser, 10).until(
+        EC.presence_of_element_located((By.TAG_NAME, "body"))
+    )
     # remove focus from the omnibox
     pyautogui.hotkey("esc")
+    # wait for handle to settle
+    while len(browser.window_handles) != 2:
+        time.sleep(1)
 
     logger.info(f"Opening tab 3: {url3}")
-    browser.switch_to.new_window("tab")
-    browser.get(url3)
+    pyautogui.hotkey("ctrl", "t")
+    time.sleep(UIA_ACTION_DELAY)
+    pyautogui.typewrite(url3)
+    pyautogui.press("enter")
+    time.sleep(UIA_ACTION_DELAY)
+    WebDriverWait(browser, 10).until(
+        EC.presence_of_element_located((By.TAG_NAME, "body"))
+    )
     # remove focus from the omnibox
     pyautogui.hotkey("esc")
 
     logger.info(f"Switching back to tab 1: {url1}")
     browser.switch_to.window(browser.window_handles[0])
+
+    print(browser.window_handles)
+    # get browser hwnd
+    hwnd = get_foreground_window()
 
     logger.info("Starting driver_web_state")
     driver_web_state.start()
@@ -158,35 +196,32 @@ def test_alert_dim_between_tabs(
     logger.info(f"Switching to tab 2: {url2}")
     browser.switch_to.window(browser.window_handles[1])
 
-    # can't do this earlier, because the window hasn't been dimmed so
-    # SetLayeredWindowAttributes (and SetWindowLong(GWL_EXSTYLE)) isn't called
     time.sleep(BROWSER_URL_FETCH_DELAY)
-    hwnd = get_foreground_window()
-    check_dim_level(hwnd, 1.0 / 3)
+    check_dim_level(hwnd, 1.0 / 3 if not incognito else 0)
 
     logger.info(f"Waiting {BROWSER_OPEN_DELAY} seconds on tab 2: {url2}")
     time.sleep(BROWSER_OPEN_DELAY)
-    check_dim_level(hwnd, 1.0 / 3)
+    check_dim_level(hwnd, 1.0 / 3 if not incognito else 0)
 
     logger.info(f"Switching to tab 3: {url3}")
     browser.switch_to.window(browser.window_handles[2])
 
     time.sleep(BROWSER_URL_FETCH_DELAY)
-    check_dim_level(hwnd, 1.0 / 5)
+    check_dim_level(hwnd, 1.0 / 5 if not incognito else 0)
 
     logger.info(f"Waiting {BROWSER_OPEN_DELAY} seconds on tab 3: {url3}")
     time.sleep(BROWSER_OPEN_DELAY)
-    check_dim_level(hwnd, 1.0 / 5)
+    check_dim_level(hwnd, 1.0 / 5 if not incognito else 0)
 
     logger.info(f"Switching to tab 2: {url2}")
     browser.switch_to.window(browser.window_handles[1])
 
     time.sleep(BROWSER_FAST_SWITCH_DELAY)
-    check_dim_level(hwnd, 1.0 / 3)
+    check_dim_level(hwnd, 1.0 / 3 if not incognito else 0)
 
     logger.info(f"Waiting {BROWSER_OPEN_DELAY} seconds on tab 2: {url2}")
     time.sleep(BROWSER_OPEN_DELAY)
-    check_dim_level(hwnd, 1.0 / 3)
+    check_dim_level(hwnd, 1.0 / 3 if not incognito else 0)
 
     logger.info(f"Switching to tab 1: {url1}")
     browser.switch_to.window(browser.window_handles[0])
@@ -202,15 +237,19 @@ def test_alert_dim_between_tabs(
     browser.switch_to.window(browser.window_handles[2])
 
     time.sleep(BROWSER_FAST_SWITCH_DELAY)
-    check_dim_level(hwnd, 1.0 / 5)
+    check_dim_level(hwnd, 1.0 / 5 if not incognito else 0)
 
     logger.info(f"Waiting {BROWSER_OPEN_DELAY} seconds on tab 3: {url3}")
     time.sleep(BROWSER_OPEN_DELAY)
-    check_dim_level(hwnd, 1.0 / 5)
+    check_dim_level(hwnd, 1.0 / 5 if not incognito else 0)
 
 
 def get_dim_level(hwnd: int) -> float:
+    win32gui.SetWindowLong(hwnd, win32con.GWL_EXSTYLE, win32con.WS_EX_LAYERED)
     (_, bAlpha, _) = win32gui.GetLayeredWindowAttributes(hwnd)
+    # bAlpha cannot be 0 - it just means that layering was not done
+    if bAlpha == 0:
+        return 1.0
     return bAlpha / 255.0
 
 
