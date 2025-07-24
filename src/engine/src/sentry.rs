@@ -9,7 +9,7 @@ use platform::web;
 use util::config::Config;
 use util::error::Result;
 use util::time::ToTicks;
-use util::tracing::{ResultTraceExt, debug, info};
+use util::tracing::{ResultTraceExt, debug, info, trace};
 
 use crate::desktop::{DesktopState, DimRequest, DimStatus, KillableProcessId};
 
@@ -102,8 +102,7 @@ impl Sentry {
 
                     debug!(?current_dim_status, "tab switch: dimming {window:?}",);
 
-                    let dim_level = current_dim_status.opacity(now.to_ticks());
-                    self.handle_dim_action(&window, dim_level).warn();
+                    self.handle_dim_action(&window, current_dim_status, now)?;
                 }
                 WebsiteAction::Kill => {
                     let element = {
@@ -114,6 +113,9 @@ impl Sentry {
                         };
                         state.extracted_elements.window_element.resolve()?
                     };
+
+                    debug!("killing current tab in {window:?}");
+
                     detect.close_current_tab(&element).warn();
                 }
             }
@@ -128,8 +130,7 @@ impl Sentry {
                     ?current_dim_status,
                     "tab switch: removing dim status for {window:?}"
                 );
-                let dim_level = current_dim_status.opacity(now.to_ticks());
-                self.handle_dim_action(&window, dim_level).warn();
+                self.handle_dim_action(&window, current_dim_status, now)?;
             }
         }
 
@@ -192,8 +193,7 @@ impl Sentry {
             for (window, dim_status) in desktop_state.dim_statuses() {
                 debug!(?dim_status, "alerts: dimming {window:?}");
 
-                let dim_level = dim_status.opacity(now.to_ticks());
-                self.handle_dim_action(window, dim_level)?;
+                self.handle_dim_action(window, dim_status, now)?;
             }
 
             // remove empty dim statuses
@@ -201,20 +201,6 @@ impl Sentry {
                 .dim_statuses()
                 .retain(|_, dim_status| !dim_status.is_empty());
         }
-
-        // TODO: logging move to handle_dim_action
-        //
-        // for window in windows {
-        //     if dim_level == 1.0f64 {
-        //         info!(?alert, "start dimming window {:?}", window);
-        //     } else if dim_level == MIN_DIM_LEVEL && progress <= 1.01f64 {
-        //         // allow for floating point imprecision. check if we reach ~100% progress
-        //         info!(?alert, "max dim window reached for {:?}", window);
-        //     } else {
-        //         debug!(?alert, "dimming window {:?} to {}", window, dim_level);
-        //     }
-        //     self.handle_dim_action(&window, dim_level).warn();
-        // }
 
         let reminder_hits = self.mgr.triggered_reminders(&now).await?;
         for triggered_reminder in reminder_hits {
@@ -343,8 +329,18 @@ impl Sentry {
     }
 
     /// Dim the [Window] to the given opacity.
-    pub fn handle_dim_action(&self, window: &Window, dim: f64) -> Result<()> {
-        window.dim(dim).warn();
+    pub fn handle_dim_action(
+        &self,
+        window: &Window,
+        dim_status: &DimStatus,
+        now: PlatformTimestamp,
+    ) -> Result<()> {
+        let dim_level = dim_status.opacity(now.to_ticks());
+
+        trace!(?dim_status, "dimming window {window:?} to {dim_level}");
+
+        // ignore errors here since the window could be closed by the user
+        window.dim(dim_level).warn();
         Ok(())
     }
 
