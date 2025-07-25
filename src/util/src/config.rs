@@ -60,10 +60,15 @@ impl Config {
         #[cfg(not(debug_assertions))]
         {
             use std::io::{Error, ErrorKind};
-            Ok(dirs::data_local_dir()
+            let parent = dirs::data_local_dir()
                 .ok_or(Error::new(ErrorKind::NotFound, "data local dir"))?
-                .join("me.enigmatrix.cobalt")
-                .join(segment))
+                .join("me.enigmatrix.cobalt");
+
+            if !parent.try_exists()? {
+                std::fs::create_dir(&parent)?;
+            }
+
+            Ok(parent.join(segment))
         }
     }
 
@@ -119,7 +124,7 @@ impl Config {
         Self::config_path("main.db")
     }
 
-    /// Returns the connection string to the query context database
+    /// Returns the path to the logs directory
     pub fn logs_dir(&self) -> Result<PathBuf> {
         Self::config_path("logs")
     }
