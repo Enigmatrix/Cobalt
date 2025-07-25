@@ -4,8 +4,8 @@ use util::error::{Context, Result};
 use util::tracing::{debug, info, warn};
 use windows::Win32::System::Com::{CLSCTX_ALL, CoCreateInstance};
 use windows::Win32::UI::Accessibility::{
-    AutomationElementMode_None, CUIAutomation, IUIAutomation, IUIAutomationCacheRequest,
-    IUIAutomationCondition, IUIAutomationElement, IUIAutomationElement9,
+    AutomationElementMode_Full, AutomationElementMode_None, CUIAutomation, IUIAutomation,
+    IUIAutomationCacheRequest, IUIAutomationCondition, IUIAutomationElement, IUIAutomationElement9,
     IUIAutomationInvokePattern, TreeScope_Children, TreeScope_Descendants,
     TreeTraversalOptions_LastToFirstOrder, UIA_AutomationIdPropertyId, UIA_ButtonControlTypeId,
     UIA_ClassNamePropertyId, UIA_ControlTypePropertyId, UIA_DocumentControlTypeId,
@@ -25,7 +25,8 @@ const BROWSERS: [&str; 2] = [
     r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
 ];
 
-fn perf<T>(f: impl FnOnce() -> T, name: &str) -> T {
+/// Perform an operation and log the time it took.
+pub fn perf<T>(f: impl FnOnce() -> T, name: &str) -> T {
     let start = std::time::Instant::now();
     let result = f();
     let elapsed = start.elapsed();
@@ -40,12 +41,14 @@ fn perf<T>(f: impl FnOnce() -> T, name: &str) -> T {
 /// Detects browser usage information
 #[derive(Clone)]
 pub struct Detect {
-    automation: AgileReference<IUIAutomation>,
+    /// Automation object
+    pub automation: AgileReference<IUIAutomation>,
     browser_root_view_cond: AgileReference<IUIAutomationCondition>,
     root_web_area_cond: AgileReference<IUIAutomationCondition>,
     omnibox_cond: AgileReference<IUIAutomationCondition>,
     omnibox_icon_cond: AgileReference<IUIAutomationCondition>,
     cache_request: AgileReference<IUIAutomationCacheRequest>,
+    cache_request_full: AgileReference<IUIAutomationCacheRequest>,
 }
 
 impl Detect {
@@ -81,6 +84,13 @@ impl Detect {
             cache_request.AddProperty(UIA_ValueValuePropertyId)?;
             cache_request
         };
+        let cache_request_full = unsafe {
+            let cache_request = automation.CreateCacheRequest()?;
+            cache_request.SetAutomationElementMode(AutomationElementMode_Full)?;
+            cache_request.AddProperty(UIA_NamePropertyId)?;
+            cache_request.AddProperty(UIA_ValueValuePropertyId)?;
+            cache_request
+        };
         Ok(Self {
             automation: AgileReference::new(&automation)?,
             browser_root_view_cond: AgileReference::new(&browser_root_view_cond)?,
@@ -88,6 +98,7 @@ impl Detect {
             omnibox_cond: AgileReference::new(&omnibox_cond)?,
             omnibox_icon_cond: AgileReference::new(&omnibox_icon_cond)?,
             cache_request: AgileReference::new(&cache_request)?,
+            cache_request_full: AgileReference::new(&cache_request_full)?,
         })
     }
 
@@ -111,6 +122,77 @@ impl Detect {
             "ElementFromHandle",
         )?;
         Ok(element)
+    }
+
+    /// Get the UI Automation element for the omnibox in the [Window]
+    pub fn get_chromium_omnibox_element(
+        &self,
+        window_element: &IUIAutomationElement9,
+        use_full: bool,
+    ) -> Result<Option<IUIAutomationElement9>> {
+        uia_find_result(perf(
+            || unsafe {
+                window_element.FindFirstBuildCache(
+                    TreeScope_Descendants,
+                    &self.omnibox_cond.resolve()?,
+                    &if use_full {
+                        self.cache_request_full.resolve()?
+                    } else {
+                        self.cache_request.resolve()?
+                    },
+                )
+            },
+            "omnibox - FindFirstBuildCache",
+        ))
+        .context("find omnibox")
+    }
+
+    /// Get the UI Automation element for the omnibox icon in the [Window]
+    pub fn get_chromium_omnibox_icon_element(
+        &self,
+        window_element: &IUIAutomationElement9,
+        use_full: bool,
+    ) -> Result<Option<IUIAutomationElement9>> {
+        uia_find_result(perf(
+            || unsafe {
+                window_element.FindFirstBuildCache(
+                    TreeScope_Descendants,
+                    &self.omnibox_icon_cond.resolve()?,
+                    &if use_full {
+                        self.cache_request_full.resolve()?
+                    } else {
+                        self.cache_request.resolve()?
+                    },
+                )
+            },
+            "omnibox_icon - FindFirstBuildCache",
+        ))
+        .context("find omnibox icon")
+    }
+
+    /// Get the UI Automation element for the RootWebArea in the [Window]
+    pub fn get_chromium_root_web_area_element(
+        &self,
+        window_element: &IUIAutomationElement9,
+        use_full: bool,
+    ) -> Result<Option<IUIAutomationElement9>> {
+        uia_find_result(perf(
+            || unsafe {
+                window_element.FindFirstWithOptionsBuildCache(
+                    TreeScope_Descendants,
+                    &self.root_web_area_cond.resolve()?,
+                    &if use_full {
+                        self.cache_request_full.resolve()?
+                    } else {
+                        self.cache_request.resolve()?
+                    },
+                    TreeTraversalOptions_LastToFirstOrder,
+                    window_element,
+                )
+            },
+            "root_web_area - FindFirstWithOptionsBuildCache",
+        ))
+        .context("find root web area")
     }
 
     /// Check if the [Window] is in incognito mode
@@ -150,19 +232,9 @@ impl Detect {
     /// Notably, this only works for Chrome and Edge right now.
     /// This might break in the future if Chrome/Edge team changes the UI.
     pub fn chromium_url(&self, element: &IUIAutomationElement9) -> Result<Option<String>> {
-        let root_web_area = uia_find_result(perf(
-            || unsafe {
-                element.FindFirstWithOptionsBuildCache(
-                    TreeScope_Descendants,
-                    &self.root_web_area_cond.resolve()?,
-                    &self.cache_request.resolve()?,
-                    TreeTraversalOptions_LastToFirstOrder,
-                    element,
-                )
-            },
-            "root_web_area - FindFirstWithOptionsBuildCache",
-        ))
-        .context("find root web area")?;
+        // TODO: some of this code is duplicated - extract a function
+
+        let root_web_area = self.get_chromium_root_web_area_element(element, false)?;
         if let Some(root_web_area) = root_web_area {
             let url = perf(
                 || unsafe { root_web_area.GetCachedPropertyValue(UIA_ValueValuePropertyId) },
@@ -174,32 +246,12 @@ impl Detect {
             }
         }
 
-        let omnibox = uia_find_result(perf(
-            || unsafe {
-                element.FindFirstBuildCache(
-                    TreeScope_Descendants,
-                    &self.omnibox_cond.resolve()?,
-                    &self.cache_request.resolve()?,
-                )
-            },
-            "omnibox - FindFirstBuildCache",
-        ))
-        .context("find omnibox")?;
+        let omnibox = self.get_chromium_omnibox_element(element, false)?;
         let Some(omnibox) = omnibox else {
             return Ok(None);
         };
 
-        let omnibox_icon = uia_find_result(perf(
-            || unsafe {
-                element.FindFirstBuildCache(
-                    TreeScope_Descendants,
-                    &self.omnibox_icon_cond.resolve()?,
-                    &self.cache_request.resolve()?,
-                )
-            },
-            "omnibox_icon - FindFirstBuildCache",
-        ))
-        .context("find omnibox icon")?;
+        let omnibox_icon = self.get_chromium_omnibox_icon_element(element, false)?;
         let Some(omnibox_icon) = omnibox_icon else {
             return Ok(None);
         };
@@ -217,10 +269,7 @@ impl Detect {
         .to_string();
         info!("using omnibox url: {search_value}, icon: {icon_text}");
 
-        // For HTTP urls, the icon is the error icon with text "Not secure".
-        // In rare cases of HTTPS url with invalid cert, the icon is the same as above
-        // however, the 'search_value' is the full https url so is_http_hint is ignored.
-        let is_http_hint = icon_text == "Not secure";
+        let is_http_hint = Self::is_http_hint_from_icon_text(&icon_text);
         let url = Self::unelide_omnibox_text(search_value, is_http_hint);
 
         Ok(if url.is_empty() { None } else { Some(url) })
@@ -293,6 +342,14 @@ impl Detect {
         )?;
 
         Ok(())
+    }
+
+    /// Check if the icon text is a hint that the URL is HTTP.
+    /// For HTTP urls, the icon is the error icon with text "Not secure".
+    /// In rare cases of HTTPS url with invalid cert, the icon is the same as above
+    /// however, the 'search_value' is the full https url so is_http_hint is ignored.
+    pub fn is_http_hint_from_icon_text(icon_text: &str) -> bool {
+        icon_text == "Not secure"
     }
 
     /// Unelide the omnibox text to the create a valid URL.

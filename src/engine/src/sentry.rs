@@ -2,78 +2,58 @@ use std::collections::HashMap;
 
 use data::db::{AlertManager, Database, TriggeredAlert};
 use data::entities::{
-    AlertEvent, App, Duration, Reason, Ref, ReminderEvent, Target, Timestamp, TriggerAction,
+    AlertEvent, App, Duration, Reason, Ref, ReminderEvent, Target, TriggerAction,
 };
-use platform::events::TabChange;
 use platform::objects::{Process, Progress, Timestamp as PlatformTimestamp, ToastManager, Window};
 use platform::web;
+use util::config::Config;
 use util::error::Result;
 use util::time::ToTicks;
-use util::tracing::{ResultTraceExt, debug, info};
+use util::tracing::{ResultTraceExt, debug, info, trace};
 
-use crate::desktop::{DesktopState, KillableProcessId};
+use crate::desktop::{DesktopState, DimRequest, DimStatus, KillableProcessId};
 
 /// Watcher to track [TriggeredAlert]s and [TriggeredReminder]s and take action on them.
 pub struct Sentry {
+    config: Config,
     desktop_state: DesktopState,
     web_state: web::State,
     mgr: AlertManager,
     // Invariant: the website_actions map is *wholly* updated. That is, run() executes
     // and updates this after clearing it with *all* alerts' websites. This is easily
-    // maintained since the two places its used - run() and handle_tab_change() are both &mut self.
+    // maintained since the two places its used - run() and handle_web_change() are both &mut self.
     website_actions: HashMap<String, WebsiteAction>,
 }
 
-const MIN_DIM_LEVEL: f64 = 0.5;
-
 #[derive(Clone, Debug)]
 enum WebsiteAction {
-    Dim(f64),
+    Dim(DimStatus),
     Kill,
 }
 
-impl PartialEq<WebsiteAction> for WebsiteAction {
-    fn eq(&self, other: &WebsiteAction) -> bool {
+impl WebsiteAction {
+    fn merge(&self, other: &Self) -> Self {
         match (self, other) {
-            (WebsiteAction::Dim(dim_level), WebsiteAction::Dim(other_dim_level)) => {
-                dim_level == other_dim_level
+            (WebsiteAction::Dim(dim_status), WebsiteAction::Dim(other_dim_status)) => {
+                WebsiteAction::Dim(dim_status.clone().into_merged(other_dim_status.clone()))
             }
-            (WebsiteAction::Kill, WebsiteAction::Kill) => true,
-            _ => false,
-        }
-    }
-}
-
-impl Eq for WebsiteAction {}
-
-impl PartialOrd for WebsiteAction {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Ord for WebsiteAction {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        match (self, other) {
-            (WebsiteAction::Dim(dim_level), WebsiteAction::Dim(other_dim_level)) => {
-                if (dim_level - other_dim_level).abs() <= f64::EPSILON {
-                    std::cmp::Ordering::Equal
-                } else {
-                    dim_level.total_cmp(other_dim_level)
-                }
-            }
-            (WebsiteAction::Kill, WebsiteAction::Kill) => std::cmp::Ordering::Equal,
-            (WebsiteAction::Kill, _) => std::cmp::Ordering::Greater,
-            (_, WebsiteAction::Kill) => std::cmp::Ordering::Less,
+            (WebsiteAction::Kill, _) => WebsiteAction::Kill,
+            (_, WebsiteAction::Kill) => WebsiteAction::Kill,
         }
     }
 }
 
 impl Sentry {
     /// Create a new [Sentry] with the given [Cache] and [Database].
-    pub fn new(desktop_state: DesktopState, web_state: web::State, db: Database) -> Result<Self> {
+    pub fn new(
+        config: Config,
+        desktop_state: DesktopState,
+        web_state: web::State,
+        db: Database,
+    ) -> Result<Self> {
         let mgr = AlertManager::new(db)?;
         Ok(Self {
+            config,
             desktop_state,
             web_state,
             mgr,
@@ -81,67 +61,76 @@ impl Sentry {
         })
     }
 
-    /// Dim the browser windows matching the given [TabUpdate].
-    pub async fn handle_tab_change(&mut self, tab_change: TabChange) -> Result<()> {
+    /// Run Alert Actions for the browser window matching the given [web::Changed].
+    pub async fn handle_web_change(&mut self, web_change: web::Changed) -> Result<()> {
+        let now = PlatformTimestamp::now();
         let detect = web::Detect::new()?;
+        let web::Changed {
+            window,
+            new_url,
+            prev_url,
+            is_incognito,
+        } = web_change;
 
-        let changed_browser_windows: Vec<(Window, String)> = match tab_change {
-            TabChange::Tab { window, url } => vec![(window, url)],
-            TabChange::Tick => {
-                // Update all browser windows with the latest url and title
-                let mut web_state = self.web_state.write().await;
-                let windows = web_state
-                    .browser_windows
-                    .iter_mut()
-                    .flat_map(|(window, state)| {
-                        state.as_mut().map(|state| (window.clone(), state))
-                    });
+        // skip if window is dead or minimized
+        if window.ptid().is_err() || window.is_minimized() {
+            return Ok(());
+        }
 
-                let mut ret = Vec::new();
-                for (window, state) in windows {
-                    let Some(url) = detect.chromium_url(&state.window_element.resolve()?)? else {
-                        continue;
-                    };
-                    let title = window.title()?;
-                    state.last_url = url.clone();
-                    state.last_title = title.clone();
-                    ret.push((window, url));
-                }
+        // skip if incognito and not tracking incognito
+        if is_incognito && !self.config.track_incognito() {
+            return Ok(());
+        }
 
-                ret
-            }
-        };
+        let base_url = web::WebsiteInfo::url_to_base_url(&new_url)?.to_string();
+        let prev_base_url = web::WebsiteInfo::url_to_base_url(&prev_url)?.to_string();
 
-        for (window, url) in changed_browser_windows {
-            // skip if window is dead or minimized
-            if window.ptid().is_err() || window.is_minimized() {
-                continue;
-            }
+        if let Some(action) = self.website_actions.get(&base_url) {
+            match action {
+                WebsiteAction::Dim(dim_status) => {
+                    let mut desktop_state = self.desktop_state.write().await;
+                    let current_dim_status = desktop_state.dim_status_mut(&window);
 
-            // TODO check if incognito?
-            let base_url = web::WebsiteInfo::url_to_base_url(&url)?.to_string();
-
-            if let Some(action) = self.website_actions.get(&base_url) {
-                match action {
-                    WebsiteAction::Dim(dim_level) => {
-                        self.handle_dim_action(&window, *dim_level).warn();
+                    // remove previous dim requests for the previous url if there are any
+                    if let Some(WebsiteAction::Dim(prev_website_dim_status)) =
+                        self.website_actions.get(&prev_base_url)
+                    {
+                        current_dim_status.subtract(prev_website_dim_status);
                     }
-                    WebsiteAction::Kill => {
-                        let element = {
-                            let web_state = self.web_state.read().await;
+                    // add new dim requests for the new url
+                    current_dim_status.merge(dim_status);
 
-                            let Some(element) = web_state.get_browser_window_element(&window)?
-                            else {
-                                continue;
-                            };
-                            element
+                    debug!(?current_dim_status, "tab switch: dimming {window:?}",);
+
+                    self.handle_dim_action(&window, current_dim_status, now)?;
+                }
+                WebsiteAction::Kill => {
+                    let element = {
+                        let web_state = self.web_state.read().await;
+
+                        let Some(state) = web_state.get_browser_window(&window)? else {
+                            return Ok(());
                         };
-                        detect.close_current_tab(&element).warn();
-                    }
+                        state.extracted_elements.window_element.resolve()?
+                    };
+
+                    debug!("killing current tab in {window:?}");
+
+                    detect.close_current_tab(&element).warn();
                 }
-            } else {
-                // no action taken, so we dim to back to full
-                self.handle_dim_action(&window, 1.0f64).warn();
+            }
+        } else {
+            // if we took a dim action for the previous url, we need to remove it
+            if let Some(WebsiteAction::Dim(dim_status)) = self.website_actions.get(&prev_base_url) {
+                let mut desktop_state = self.desktop_state.write().await;
+                let current_dim_status = desktop_state.dim_status_mut(&window);
+                current_dim_status.subtract(dim_status);
+
+                debug!(
+                    ?current_dim_status,
+                    "tab switch: removing dim status for {window:?}"
+                );
+                self.handle_dim_action(&window, current_dim_status, now)?;
             }
         }
 
@@ -154,15 +143,63 @@ impl Sentry {
         // - avoids dimming dead windows / killing dead processes
         {
             let mut desktop_state = self.desktop_state.write().await;
+
+            // reset dim statuses - we will repopulate them with the alerts
+            desktop_state.reset_dim_statuses();
+            self.website_actions.clear();
+
             desktop_state.retain_cache().await?;
         }
 
-        // Reset the website actions - it will get repopulated by the alerts
-        self.website_actions.clear();
-
         let alerts_hits = self.mgr.triggered_alerts(&now).await?;
+        // Dim actions are stored here so we can dim windows later - they do not care about website yet!
+        let mut dim_actions = HashMap::new();
         for triggered_alert in alerts_hits {
-            self.handle_alert(&triggered_alert, now).await?;
+            self.handle_alert(&triggered_alert, &mut dim_actions, now)
+                .await?;
+        }
+
+        {
+            let mut desktop_state = self.desktop_state.write().await;
+            let web_state = self.web_state.read().await;
+
+            // Merge dim actions from process/windows for alerts
+            Self::merge_dim_actions(desktop_state.dim_statuses(), dim_actions);
+            // Merge dim actions from browser windows' last urls
+            Self::merge_dim_actions(
+                desktop_state.dim_statuses(),
+                web_state
+                    .browser_windows
+                    .iter()
+                    .flat_map(|(window, state)| state.iter().map(move |state| (window, state)))
+                    .flat_map(|(window, state)| {
+                        // skip if incognito and not tracking incognito
+                        if !self.config.track_incognito() && state.is_incognito {
+                            return None;
+                        }
+
+                        let base_url = web::WebsiteInfo::url_to_base_url(&state.last_url)
+                            .map(Some)
+                            .warn()?;
+                        let Some(WebsiteAction::Dim(dim_status)) =
+                            self.website_actions.get(&base_url.to_string())
+                        else {
+                            return None;
+                        };
+                        Some((window.clone(), dim_status.clone()))
+                    }),
+            );
+
+            for (window, dim_status) in desktop_state.dim_statuses() {
+                debug!(?dim_status, "alerts: dimming {window:?}");
+
+                self.handle_dim_action(window, dim_status, now)?;
+            }
+
+            // remove empty dim statuses
+            desktop_state
+                .dim_statuses()
+                .retain(|_, dim_status| !dim_status.is_empty());
         }
 
         let reminder_hits = self.mgr.triggered_reminders(&now).await?;
@@ -192,6 +229,7 @@ impl Sentry {
     pub async fn handle_alert(
         &mut self,
         triggered_alert: &TriggeredAlert,
+        dim_actions: &mut HashMap<Window, DimStatus>,
         now: PlatformTimestamp,
     ) -> Result<()> {
         let TriggeredAlert {
@@ -199,13 +237,14 @@ impl Sentry {
             timestamp,
             name,
         } = triggered_alert;
+
         match &alert.trigger_action {
             TriggerAction::Kill => {
                 let (processes, websites) = self
                     .processes_and_websites_for_target(&alert.target)
                     .await?;
 
-                // set websites to kill - kill takes precedence over dim
+                // set websites to kill. kill takes precedence
                 self.merge_website_actions(
                     websites
                         .into_iter()
@@ -234,29 +273,28 @@ impl Sentry {
             TriggerAction::Dim { duration } => {
                 let (windows, websites) =
                     self.windows_and_websites_for_target(&alert.target).await?;
+
                 let start = timestamp.unwrap_or(now.to_ticks());
-                let end: Timestamp = now.to_ticks();
-                let progress = (end - start) as f64 / (*duration as f64);
-                let dim_level = 1.0f64 - (progress.min(1.0f64) * (1.0f64 - MIN_DIM_LEVEL));
+                let dim_request = DimRequest {
+                    by: alert.id.clone(),
+                    start,
+                    duration: *duration,
+                };
 
-                // set websites to dim - kill takes precedence
-                self.merge_website_actions(
-                    websites
+                // set websites to dim. kill takes precedence
+                self.merge_website_actions(websites.into_iter().map(|url| {
+                    (
+                        url.to_string(),
+                        WebsiteAction::Dim(DimStatus::with_one(dim_request.clone())),
+                    )
+                }));
+
+                Self::merge_dim_actions(
+                    dim_actions,
+                    windows
                         .into_iter()
-                        .map(|url| (url.to_string(), WebsiteAction::Dim(dim_level))),
+                        .map(|window| (window, DimStatus::with_one(dim_request.clone()))),
                 );
-
-                for window in windows {
-                    if dim_level == 1.0f64 {
-                        info!(?alert, "start dimming window {:?}", window);
-                    } else if dim_level == MIN_DIM_LEVEL && progress <= 1.01f64 {
-                        // allow for floating point imprecision. check if we reach ~100% progress
-                        info!(?alert, "max dim window reached for {:?}", window);
-                    } else {
-                        debug!(?alert, "dimming window {:?} to {}", window, dim_level);
-                    }
-                    self.handle_dim_action(&window, dim_level).warn();
-                }
             }
             TriggerAction::Message { content } => {
                 if timestamp.is_none() {
@@ -291,8 +329,18 @@ impl Sentry {
     }
 
     /// Dim the [Window] to the given opacity.
-    pub fn handle_dim_action(&self, window: &Window, dim: f64) -> Result<()> {
-        window.dim(dim)?;
+    pub fn handle_dim_action(
+        &self,
+        window: &Window,
+        dim_status: &DimStatus,
+        now: PlatformTimestamp,
+    ) -> Result<()> {
+        let dim_level = dim_status.opacity(now.to_ticks());
+
+        trace!(?dim_status, "dimming window {window:?} to {dim_level}");
+
+        // ignore errors here since the window could be closed by the user
+        window.dim(dim_level).warn();
         Ok(())
     }
 
@@ -392,10 +440,24 @@ impl Sentry {
         Ok((windows, websites))
     }
 
+    fn merge_dim_actions(
+        dim_actions: &mut HashMap<Window, DimStatus>,
+        new: impl IntoIterator<Item = (Window, DimStatus)>,
+    ) {
+        for (window, dim_status) in new {
+            let existing = if let Some(existing) = dim_actions.get(&window) {
+                existing.clone().into_merged(dim_status.clone())
+            } else {
+                dim_status.clone()
+            };
+            dim_actions.insert(window, existing);
+        }
+    }
+
     fn merge_website_actions(&mut self, new: impl IntoIterator<Item = (String, WebsiteAction)>) {
         for (url, action) in new {
             let action = if let Some(existing) = self.website_actions.get(&url) {
-                action.max(existing.clone())
+                action.merge(&existing.clone())
             } else {
                 action
             };

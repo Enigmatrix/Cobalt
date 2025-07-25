@@ -23,8 +23,8 @@ pub struct StateInner {
 /// State of a browser window
 #[derive(Debug, Clone)]
 pub struct BrowserWindowState {
-    /// UI Automation element of the window
-    pub window_element: AgileReference<IUIAutomationElement9>,
+    /// Extracted UI Automation elements of the window
+    pub extracted_elements: ExtractedUIElements,
     /// Whether the window is in incognito mode
     pub is_incognito: bool,
     /// Last URL of the window
@@ -33,12 +33,20 @@ pub struct BrowserWindowState {
     pub last_title: String,
 }
 
+/// Extracted UI Automation elements of a browser window
+#[derive(Debug, Clone)]
+pub struct ExtractedUIElements {
+    /// UI Automation element of the window
+    pub window_element: AgileReference<IUIAutomationElement9>,
+    /// UI Automation element of the omnibox
+    pub omnibox: AgileReference<IUIAutomationElement9>,
+    /// UI Automation element of the omnibox icon
+    pub omnibox_icon: AgileReference<IUIAutomationElement9>,
+}
+
 impl StateInner {
     /// Get the UI Automation element for the [Window]
-    pub fn get_browser_window_element(
-        &self,
-        window: &Window,
-    ) -> Result<Option<IUIAutomationElement9>> {
+    pub fn get_browser_window(&self, window: &Window) -> Result<Option<&BrowserWindowState>> {
         let Some(state) = self.browser_windows.get(window) else {
             return Ok(None);
         };
@@ -47,7 +55,23 @@ impl StateInner {
             return Ok(None);
         };
 
-        Ok(Some(state.window_element.resolve()?))
+        Ok(Some(state))
+    }
+
+    /// Get the UI Automation element for the [Window] as mutable
+    pub fn get_browser_window_mut(
+        &mut self,
+        window: &Window,
+    ) -> Result<Option<&mut BrowserWindowState>> {
+        let Some(state) = self.browser_windows.get_mut(window) else {
+            return Ok(None);
+        };
+
+        let Some(state) = state.as_mut() else {
+            return Ok(None);
+        };
+
+        Ok(Some(state))
     }
 }
 

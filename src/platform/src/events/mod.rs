@@ -1,11 +1,11 @@
 mod foreground;
 mod interaction;
 mod name;
+mod prop_change;
 mod system;
-mod tab;
 
 pub use foreground::*;
 pub use interaction::*;
 pub use name::*;
+pub use prop_change::*;
 pub use system::*;
-pub use tab::*;
