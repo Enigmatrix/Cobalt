@@ -5,7 +5,6 @@ import pytest
 import logging
 import itertools
 from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -15,22 +14,9 @@ from driver import (
     Change,
 )
 from server import Webserver
+from constants import BROWSER_OPEN_DELAY
 
 logger = logging.getLogger(__name__)
-
-
-@pytest.fixture
-def browser():
-    chrome_options = Options()
-
-    # this is enabled by default in Chrome but selenium doesn't enable it by default
-    chrome_options.add_argument("--enable-features=UiaProvider")
-    chrome_options.add_argument("--log-level=3")
-    chrome_options.add_experimental_option("excludeSwitches", ["enable-logging"])
-
-    driver = webdriver.Chrome(options=chrome_options)
-    yield driver
-    driver.quit()
 
 
 urls = {
@@ -62,8 +48,6 @@ urls = {
 
 
 url_pairs = itertools.permutations(urls.keys(), 2)
-
-DELAY = 2
 
 
 @pytest.mark.parametrize("url1,url2", url_pairs)
@@ -202,22 +186,22 @@ def do_test_switch(
     # initial foreground state is url1
     events.push(Change(url=url1, title=f"{title1} - Google Chrome"))
 
-    logger.info(f"Waiting {DELAY} seconds on tab 1: {url1}")
-    time.sleep(DELAY)
+    logger.info(f"Waiting {BROWSER_OPEN_DELAY} seconds on tab 1: {url1}")
+    time.sleep(BROWSER_OPEN_DELAY)
 
     logger.info(f"Switching to tab 2: {url2}")
     browser.switch_to.window(browser.window_handles[1])
     events.push(Change(url=url2, title=f"{title2} - Google Chrome"))
 
-    logger.info(f"Waiting {DELAY} seconds on tab 2: {url2}")
-    time.sleep(DELAY)
+    logger.info(f"Waiting {BROWSER_OPEN_DELAY} seconds on tab 2: {url2}")
+    time.sleep(BROWSER_OPEN_DELAY)
 
     logger.info(f"Switching to tab 1: {url1}")
     browser.switch_to.window(browser.window_handles[0])
     events.push(Change(url=url1, title=f"{title1} - Google Chrome"))
 
-    logger.info(f"Waiting {DELAY} seconds on tab 1: {url1}")
-    time.sleep(DELAY)
+    logger.info(f"Waiting {BROWSER_OPEN_DELAY} seconds on tab 1: {url1}")
+    time.sleep(BROWSER_OPEN_DELAY)
 
     out_events = driver_web_state.events()
     assert events == out_events
@@ -250,15 +234,15 @@ def do_test_open_new(
     # initial foreground state is url1
     events.push(Change(url=url1, title=f"{title1} - Google Chrome"))
 
-    logger.info(f"Waiting {DELAY} seconds on tab/window 1: {url1}")
-    time.sleep(DELAY)
+    logger.info(f"Waiting {BROWSER_OPEN_DELAY} seconds on tab/window 1: {url1}")
+    time.sleep(BROWSER_OPEN_DELAY)
 
     logger.info(f"Switching to tab/window 2: {url2}")
     browser.switch_to.window(browser.window_handles[1])
     events.push(Change(url=url2, title=f"{title2} - Google Chrome"))
 
-    logger.info(f"Waiting {DELAY} seconds on tab/window 2: {url2}")
-    time.sleep(DELAY)
+    logger.info(f"Waiting {BROWSER_OPEN_DELAY} seconds on tab/window 2: {url2}")
+    time.sleep(BROWSER_OPEN_DELAY)
 
     out_events = driver_web_state.events()
     assert events == out_events

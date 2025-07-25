@@ -7,6 +7,7 @@ requires-python = ">=3.11"
 dependencies = [
     "pyautogui>=0.9.54",
     "pytest>=8.4.1",
+    "pywin32>=311",
     "selenium>=4.34.2",
     "wasabi>=1.1.3",
 ]

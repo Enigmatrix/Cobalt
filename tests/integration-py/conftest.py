@@ -2,6 +2,7 @@ import pytest
 import subprocess
 from driver import driver_web_state, events  # noqa: F401
 from server import server  # noqa: F401
+from browser import browser  # noqa: F401
 
 
 @pytest.fixture(scope="session")
