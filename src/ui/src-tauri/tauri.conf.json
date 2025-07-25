@@ -54,7 +54,7 @@
       "wix": {
         "template": "./installer/main.wxs",
         "fragmentPaths": ["./installer/startup-task.wxs"],
-        "componentRefs": ["EngineExe", "EngineStartup"],
+        "componentRefs": ["EngineStartup"],
         "bannerPath": "./installer/banner.png",
         "dialogImagePath": "./installer/install_dialog.png"
       }
