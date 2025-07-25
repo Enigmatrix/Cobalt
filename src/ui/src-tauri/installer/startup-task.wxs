@@ -1,31 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
   <Fragment>
-    <!-- Engine component in INSTALLDIR -->
-    <DirectoryRef Id="INSTALLDIR">
-      <Component Id="EngineExe" Guid="024c72e8-2922-4a01-bc3b-b68db4970f13">
-          <CreateFolder />
-          <Shortcut Id="EngineShortcut"
-                    Name="Cobalt.Engine"
-                    Description="Cobalt Engine Shortcut"
-                    Advertise="no"
-                    Directory="INSTALLDIR"
-                    Target="[INSTALLDIR]engine.exe"
-                    WorkingDirectory="INSTALLDIR" />
-      </Component>
-    </DirectoryRef>
-
     <!-- Registry entry for startup -->
     <DirectoryRef Id="TARGETDIR">
       <Component Id="EngineStartup" Guid="*">
         <RegistryKey Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\Run" Action="createAndRemoveOnUninstall">
-          <RegistryValue Name="Cobalt.Engine" Type="string" Value="&quot;[INSTALLDIR]Cobalt.Engine.lnk&quot;" KeyPath="yes" />
+          <RegistryValue Name="Cobalt.Engine" Type="string" Value="&quot;[INSTALLDIR]engine.exe&quot;" KeyPath="yes" />
         </RegistryKey>
       </Component>
     </DirectoryRef>
     
     <!-- Launch engine after installation/upgrade/repair -->
     <CustomAction Id="LaunchEngine" 
+                  Impersonate="yes"
                   ExeCommand="[INSTALLDIR]engine.exe" 
                   Directory="INSTALLDIR"
                   Return="asyncNoWait" />
