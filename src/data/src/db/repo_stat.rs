@@ -4,7 +4,7 @@ use super::repo_crud::APP_DUR;
 use super::*;
 use crate::db::infused::WithGroup;
 use crate::db::repo::Repository;
-use crate::table::{Period, Score};
+use crate::table::{Duration, Period, Score};
 
 impl Repository {
     /// Gets the weighted average score of all apps in the given time range
@@ -101,5 +101,141 @@ impl Repository {
             .await?;
 
         Ok(score_results)
+    }
+}
+
+/// Represents a period of time that is either focused or distractive.
+#[derive(FromRow, Debug, PartialEq)]
+pub struct FocusPeriod {
+    /// The start time of the period.
+    pub start: Timestamp,
+    /// The end time of the period.
+    pub end: Timestamp,
+    /// Whether the period is a focused period. If false, it is a distractive period.
+    pub is_focused: bool,
+}
+
+/// Settings for focus periods.
+#[derive(FromRow, Debug, PartialEq)]
+pub struct FocusPeriodSettings {
+    /// The minimum score of a focused app.
+    pub min_focus_score: i64,
+    /// The minimum duration of a focused usage.
+    pub min_focus_usage_dur: Duration,
+    /// The maximum gap between two focused periods.
+    pub max_focus_gap: Duration,
+}
+
+/// Settings for distractive periods.
+#[derive(FromRow, Debug, PartialEq)]
+pub struct DistractivePeriodSettings {
+    /// The maximum score of a distractive app.
+    pub max_distractive_score: i64,
+    /// The minimum duration of a distractive usage.
+    pub min_distractive_usage_dur: Duration,
+    /// The maximum gap between two distractive periods.
+    pub max_distractive_gap: Duration,
+}
+
+impl Repository {
+    /// Gets all distractive and focused periods in the given time range, using the specified parameters.
+    ///
+    /// The algorithm is described in detail in `docs/get_periods_algorithm.md`.
+    pub async fn get_periods(
+        &mut self,
+        start: Timestamp,
+        end: Timestamp,
+        focus_settings: FocusPeriodSettings,
+        distractive_settings: DistractivePeriodSettings,
+    ) -> Result<Vec<FocusPeriod>> {
+        let query = "
+WITH RECURSIVE
+    params(start, end, min_focus_score, max_distractive_score, min_focus_usage_dur, min_distractive_usage_dur, max_focus_gap, max_distractive_gap) AS (
+        SELECT ?, ?, ?, ?, ?, ?, ?, ?
+    ),
+    app_scores AS (
+        SELECT a.id, COALESCE(t.score, 0) AS score
+        FROM apps a
+        LEFT JOIN tags t ON a.tag_id = t.id
+    ),
+    usages_in_range AS (
+        SELECT
+            u.start,
+            u.end,
+            s.app_id
+        FROM usages u
+        JOIN sessions s ON u.session_id = s.id
+        CROSS JOIN params p
+        WHERE u.end > p.start AND u.start < p.end
+    ),
+    distractive_usages AS (
+        SELECT u.start, u.end
+        FROM usages_in_range u
+        JOIN app_scores a ON u.app_id = a.id
+        CROSS JOIN params p
+        WHERE a.score < p.max_distractive_score AND (u.end - u.start) >= p.min_distractive_usage_dur
+    ),
+    distractive_periods_merged(start, end) AS (
+        SELECT start, end FROM distractive_usages
+        UNION
+        SELECT
+            MIN(d1.start, d2.start),
+            MAX(d1.end, d2.end)
+        FROM distractive_periods_merged d1
+        JOIN distractive_usages d2 ON d1.start <= d2.end AND d1.end >= d2.start - (SELECT max_distractive_gap FROM params)
+    ),
+    distractive_periods AS (
+        SELECT start, MAX(end) as end
+        FROM distractive_periods_merged
+        GROUP BY start
+    ),
+    focus_usages AS (
+        SELECT u.start, u.end
+        FROM usages_in_range u
+        JOIN app_scores a ON u.app_id = a.id
+        CROSS JOIN params p
+        WHERE a.score > p.min_focus_score AND (u.end - u.start) >= p.min_focus_usage_dur
+        AND NOT EXISTS (
+            SELECT 1 FROM distractive_periods dp
+            WHERE u.start < dp.end AND u.end > dp.start
+        )
+    ),
+    focus_periods_merged(start, end) AS (
+        SELECT start, end FROM focus_usages
+        UNION
+        SELECT
+            MIN(f1.start, f2.start),
+            MAX(f1.end, f2.end)
+        FROM focus_periods_merged f1
+        JOIN focus_usages f2 ON f1.start <= f2.end AND f1.end >= f2.start - (SELECT max_focus_gap FROM params)
+        WHERE NOT EXISTS (
+            SELECT 1 FROM distractive_periods dp
+            WHERE f1.end < dp.end AND f2.start > dp.start
+        )
+    ),
+    focus_periods AS (
+        SELECT start, MAX(end) as end
+        FROM focus_periods_merged
+        GROUP BY start
+    )
+SELECT start, end, 1 as is_focused FROM focus_periods
+UNION ALL
+SELECT start, end, 0 as is_focused FROM distractive_periods
+ORDER BY start;
+";
+
+        let periods: Vec<FocusPeriod> = query_as(query)
+            .bind(start)
+            .bind(end)
+            .bind(focus_settings.min_focus_score)
+            .bind(distractive_settings.max_distractive_score)
+            .bind(focus_settings.min_focus_usage_dur)
+            .bind(distractive_settings.min_distractive_usage_dur)
+            .bind(focus_settings.max_focus_gap)
+            .bind(distractive_settings.max_distractive_gap)
+            .fetch_all(self.db.executor())
+            .await?;
+
+        Ok(periods)
     }
 }

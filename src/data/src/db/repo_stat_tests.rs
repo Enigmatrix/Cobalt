@@ -3,9 +3,10 @@ use util::future as tokio;
 
 use super::tests::*;
 use super::*;
+use crate::db::repo_stat::{FocusPeriod, FocusPeriodSettings, DistractivePeriodSettings};
 use crate::db::repo_tests::{LOCAL_TEST_DATE, ONE_HOUR};
 use crate::entities::AppIdentity;
-use crate::table::Period;
+use crate::table::{Duration, Period};
 
 fn test_start() -> i64 {
     *LOCAL_TEST_DATE
