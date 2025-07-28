@@ -149,80 +149,129 @@ impl Repository {
         distractive_settings: DistractivePeriodSettings,
     ) -> Result<Vec<FocusPeriod>> {
         let query = "
-WITH RECURSIVE
-    params(start, end, min_focus_score, max_distractive_score, min_focus_usage_dur, min_distractive_usage_dur, max_focus_gap, max_distractive_gap) AS (
-        SELECT ?, ?, ?, ?, ?, ?, ?, ?
-    ),
-    app_scores AS (
-        SELECT a.id, COALESCE(t.score, 0) AS score
-        FROM apps a
-        LEFT JOIN tags t ON a.tag_id = t.id
-    ),
-    usages_in_range AS (
+        WITH
+            -- Parameters
+            params(start, end, min_focus_score, max_distractive_score, min_focus_usage_dur, min_distractive_usage_dur, max_focus_gap, max_distractive_gap) AS (
+                SELECT ?, ?, ?, ?, ?, ?, ?, ?
+            ),
+            -- App scores
+            app_scores AS (
+                SELECT a.id, COALESCE(t.score, 0) AS score
+                FROM apps a
+                LEFT JOIN tags t ON a.tag_id = t.id
+            ),
+            -- Usages within the time range
+            usages_in_range AS (
+                SELECT u.start, u.end, s.app_id
+                FROM usages u
+                JOIN sessions s ON u.session_id = s.id
+                CROSS JOIN params p
+                WHERE u.end > p.start AND u.start < p.end
+            ),
+            -------------------------------------------------------------
+            -- Distractive side
+            -------------------------------------------------------------
+            distractive_usages AS (
+                SELECT u.start, u.end
+                FROM usages_in_range u
+                JOIN app_scores a ON u.app_id = a.id
+                CROSS JOIN params p
+                WHERE a.score < p.max_distractive_score
+                  AND (u.end - u.start) >= p.min_distractive_usage_dur
+            ),
+            distractive_ordered AS (
+                SELECT start,
+                       end,
+                       LAG(end) OVER (ORDER BY start) AS prev_end
+                FROM distractive_usages
+            ),
+            distractive_flag AS (
+                SELECT d.start,
+                       d.end,
+                       CASE
+                         WHEN d.prev_end IS NULL
+                              OR d.start - d.prev_end > (SELECT max_distractive_gap FROM params)
+                         THEN 1 ELSE 0 END AS new_group
+                FROM distractive_ordered d
+            ),
+            distractive_grouped AS (
+                SELECT start,
+                       end,
+                       SUM(new_group) OVER (ORDER BY start) AS grp
+                FROM distractive_flag
+            ),
+            distractive_periods AS (
+                SELECT MIN(start) AS start, MAX(end) AS end
+                FROM distractive_grouped
+                GROUP BY grp
+            ),
+            -------------------------------------------------------------
+            -- Focus side
+            -------------------------------------------------------------
+            focus_usages AS (
+                SELECT u.start, u.end
+                FROM usages_in_range u
+                JOIN app_scores a ON u.app_id = a.id
+                CROSS JOIN params p
+                WHERE a.score > p.min_focus_score
+                  AND (u.end - u.start) >= p.min_focus_usage_dur
+            ),
+            focus_usages_pruned AS (
+                SELECT f.start, f.end
+                FROM focus_usages f
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM distractive_periods dp
+                    WHERE f.start < dp.end AND f.end > dp.start
+                )
+            ),
+            focus_ordered AS (
+                SELECT start,
+                       end,
+                       LAG(end) OVER (ORDER BY start) AS prev_end
+                FROM focus_usages_pruned
+            ),
+            focus_flag AS (
+                SELECT fo.start,
+                       fo.end,
+                       CASE
+                         WHEN fo.prev_end IS NULL
+                              OR fo.start - fo.prev_end > (SELECT max_focus_gap FROM params)
+                              OR EXISTS (
+                                   SELECT 1 FROM distractive_periods dp
+                                   WHERE dp.start < fo.start AND dp.end > fo.prev_end
+                              )
+                         THEN 1 ELSE 0 END AS new_group
+                FROM focus_ordered fo
+            ),
+            focus_grouped AS (
+                SELECT start,
+                       end,
+                       SUM(new_group) OVER (ORDER BY start) AS grp
+                FROM focus_flag
+            ),
+            focus_periods AS (
+                SELECT MIN(start) AS start, MAX(end) AS end
+                FROM focus_grouped
+                GROUP BY grp
+            )
+        -- Final output: union of focus and distractive periods
         SELECT
-            u.start,
-            u.end,
-            s.app_id
-        FROM usages u
-        JOIN sessions s ON u.session_id = s.id
-        CROSS JOIN params p
-        WHERE u.end > p.start AND u.start < p.end
-    ),
-    distractive_usages AS (
-        SELECT u.start, u.end
-        FROM usages_in_range u
-        JOIN app_scores a ON u.app_id = a.id
-        CROSS JOIN params p
-        WHERE a.score < p.max_distractive_score AND (u.end - u.start) >= p.min_distractive_usage_dur
-    ),
-    distractive_periods_merged(start, end) AS (
-        SELECT start, end FROM distractive_usages
-        UNION
+            MAX(start, (SELECT start FROM params)) as start,
+            MIN(end, (SELECT end FROM params)) as end,
+            1 as is_focused
+        FROM focus_periods
+        WHERE start < end  -- Ensure valid periods
+        
+        UNION ALL
+        
         SELECT
-            MIN(d1.start, d2.start),
-            MAX(d1.end, d2.end)
-        FROM distractive_periods_merged d1
-        JOIN distractive_usages d2 ON d1.start <= d2.end AND d1.end >= d2.start - (SELECT max_distractive_gap FROM params)
-    ),
-    distractive_periods AS (
-        SELECT start, MAX(end) as end
-        FROM distractive_periods_merged
-        GROUP BY start
-    ),
-    focus_usages AS (
-        SELECT u.start, u.end
-        FROM usages_in_range u
-        JOIN app_scores a ON u.app_id = a.id
-        CROSS JOIN params p
-        WHERE a.score > p.min_focus_score AND (u.end - u.start) >= p.min_focus_usage_dur
-        AND NOT EXISTS (
-            SELECT 1 FROM distractive_periods dp
-            WHERE u.start < dp.end AND u.end > dp.start
-        )
-    ),
-    focus_periods_merged(start, end) AS (
-        SELECT start, end FROM focus_usages
-        UNION
-        SELECT
-            MIN(f1.start, f2.start),
-            MAX(f1.end, f2.end)
-        FROM focus_periods_merged f1
-        JOIN focus_usages f2 ON f1.start <= f2.end AND f1.end >= f2.start - (SELECT max_focus_gap FROM params)
-        WHERE NOT EXISTS (
-            SELECT 1 FROM distractive_periods dp
-            WHERE f1.end < dp.end AND f2.start > dp.start
-        )
-    ),
-    focus_periods AS (
-        SELECT start, MAX(end) as end
-        FROM focus_periods_merged
-        GROUP BY start
-    )
-SELECT start, end, 1 as is_focused FROM focus_periods
-UNION ALL
-SELECT start, end, 0 as is_focused FROM distractive_periods
-ORDER BY start;
-";
+            MAX(start, (SELECT start FROM params)) as start,
+            MIN(end, (SELECT end FROM params)) as end,
+            0 as is_focused
+        FROM distractive_periods
+        WHERE start < end  -- Ensure valid periods
+        
+        ORDER BY start;";
 
         let periods: Vec<FocusPeriod> = query_as(query)
             .bind(start)
