@@ -3,7 +3,7 @@ use util::future as tokio;
 
 use super::tests::*;
 use super::*;
-use crate::db::repo_stat::{DistractivePeriodSettings, FocusPeriodSettings};
+use crate::db::infused::{DistractivePeriodSettings, FocusPeriodSettings};
 use crate::db::repo_tests::{LOCAL_TEST_DATE, ONE_HOUR};
 use crate::entities::AppIdentity;
 use crate::table::Period;

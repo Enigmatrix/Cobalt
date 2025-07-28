@@ -4,7 +4,7 @@ use super::repo_crud::APP_DUR;
 use super::*;
 use crate::db::infused::WithGroup;
 use crate::db::repo::Repository;
-use crate::table::{Duration, Period, Score};
+use crate::table::{Period, Score};
 
 impl Repository {
     /// Gets the weighted average score of all apps in the given time range
@@ -104,39 +104,6 @@ impl Repository {
     }
 }
 
-/// Represents a period of time that is either focused or distractive.
-#[derive(FromRow, Debug, PartialEq)]
-pub struct FocusPeriod {
-    /// The start time of the period.
-    pub start: Timestamp,
-    /// The end time of the period.
-    pub end: Timestamp,
-    /// Whether the period is a focused period. If false, it is a distractive period.
-    pub is_focused: bool,
-}
-
-/// Settings for focus periods.
-#[derive(FromRow, Debug, PartialEq)]
-pub struct FocusPeriodSettings {
-    /// The minimum score of a focused app.
-    pub min_focus_score: i64,
-    /// The minimum duration of a focused usage.
-    pub min_focus_usage_dur: Duration,
-    /// The maximum gap between two focused periods.
-    pub max_focus_gap: Duration,
-}
-
-/// Settings for distractive periods.
-#[derive(FromRow, Debug, PartialEq)]
-pub struct DistractivePeriodSettings {
-    /// The maximum score of a distractive app.
-    pub max_distractive_score: i64,
-    /// The minimum duration of a distractive usage.
-    pub min_distractive_usage_dur: Duration,
-    /// The maximum gap between two distractive periods.
-    pub max_distractive_gap: Duration,
-}
-
 impl Repository {
     /// Gets all distractive and focused periods in the given time range, using the specified parameters.
     ///
@@ -145,13 +112,16 @@ impl Repository {
         &mut self,
         start: Timestamp,
         end: Timestamp,
-        focus_settings: FocusPeriodSettings,
-        distractive_settings: DistractivePeriodSettings,
-    ) -> Result<Vec<FocusPeriod>> {
+        focus_settings: infused::FocusPeriodSettings,
+        distractive_settings: infused::DistractivePeriodSettings,
+    ) -> Result<Vec<infused::FocusPeriod>> {
         let query = "
         WITH
             -- Parameters
-            params(start, end, min_focus_score, max_distractive_score, min_focus_usage_dur, min_distractive_usage_dur, max_focus_gap, max_distractive_gap) AS (
+            params(start, end,
+                min_focus_score, max_distractive_score, min_focus_usage_dur,
+                min_distractive_usage_dur, max_focus_gap, max_distractive_gap)
+            AS (
                 SELECT ?, ?, ?, ?, ?, ?, ?, ?
             ),
             -- App scores
@@ -177,27 +147,29 @@ impl Repository {
                 JOIN app_scores a ON u.app_id = a.id
                 CROSS JOIN params p
                 WHERE a.score < p.max_distractive_score
-                  AND (u.end - u.start) >= p.min_distractive_usage_dur
+                    AND (u.end - u.start) >= p.min_distractive_usage_dur
             ),
             distractive_ordered AS (
-                SELECT start,
-                       end,
-                       LAG(end) OVER (ORDER BY start) AS prev_end
+                SELECT
+                    start,
+                    end,
+                    LAG(end) OVER (ORDER BY start) AS prev_end
                 FROM distractive_usages
             ),
             distractive_flag AS (
-                SELECT d.start,
-                       d.end,
-                       CASE
-                         WHEN d.prev_end IS NULL
-                              OR d.start - d.prev_end > (SELECT max_distractive_gap FROM params)
-                         THEN 1 ELSE 0 END AS new_group
+                SELECT
+                    d.start,
+                    d.end,
+                    (d.prev_end IS NULL OR
+                        d.start - d.prev_end > p.max_distractive_gap) AS new_group
                 FROM distractive_ordered d
+                CROSS JOIN params p
             ),
             distractive_grouped AS (
-                SELECT start,
-                       end,
-                       SUM(new_group) OVER (ORDER BY start) AS grp
+                SELECT
+                    start,
+                    end,
+                    SUM(new_group) OVER (ORDER BY start) AS grp
                 FROM distractive_flag
             ),
             distractive_periods AS (
@@ -214,7 +186,7 @@ impl Repository {
                 JOIN app_scores a ON u.app_id = a.id
                 CROSS JOIN params p
                 WHERE a.score > p.min_focus_score
-                  AND (u.end - u.start) >= p.min_focus_usage_dur
+                    AND (u.end - u.start) >= p.min_focus_usage_dur
             ),
             focus_usages_pruned AS (
                 SELECT f.start, f.end
@@ -225,28 +197,32 @@ impl Repository {
                 )
             ),
             focus_ordered AS (
-                SELECT start,
-                       end,
-                       LAG(end) OVER (ORDER BY start) AS prev_end
+                SELECT
+                    start,
+                    end,
+                    LAG(end) OVER (ORDER BY start) AS prev_end
                 FROM focus_usages_pruned
             ),
             focus_flag AS (
-                SELECT fo.start,
-                       fo.end,
-                       CASE
-                         WHEN fo.prev_end IS NULL
-                              OR fo.start - fo.prev_end > (SELECT max_focus_gap FROM params)
-                              OR EXISTS (
-                                   SELECT 1 FROM distractive_periods dp
-                                   WHERE dp.start < fo.start AND dp.end > fo.prev_end
-                              )
-                         THEN 1 ELSE 0 END AS new_group
+                SELECT
+                    fo.start,
+                    fo.end,
+                    (
+                        fo.prev_end IS NULL OR
+                        fo.start - fo.prev_end > p.max_focus_gap OR
+                        EXISTS (
+                            SELECT 1 FROM distractive_periods dp
+                            WHERE dp.start < fo.start AND dp.end > fo.prev_end
+                        )
+                    ) AS new_group
                 FROM focus_ordered fo
+                CROSS JOIN params p
             ),
             focus_grouped AS (
-                SELECT start,
-                       end,
-                       SUM(new_group) OVER (ORDER BY start) AS grp
+                SELECT
+                    start,
+                    end,
+                    SUM(new_group) OVER (ORDER BY start) AS grp
                 FROM focus_flag
             ),
             focus_periods AS (
@@ -273,7 +249,7 @@ impl Repository {
         
         ORDER BY start;";
 
-        let periods: Vec<FocusPeriod> = query_as(query)
+        let periods: Vec<infused::FocusPeriod> = query_as(query)
             .bind(start)
             .bind(end)
             .bind(focus_settings.min_focus_score)

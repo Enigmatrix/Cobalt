@@ -377,3 +377,39 @@ pub struct Session {
 
 /// [Session]s with [Usage]s, partitioned by [App]s
 pub type AppSessionUsages = HashMap<Ref<super::App>, HashMap<Ref<super::Session>, Session>>;
+
+/// Represents a period of time that is either focused or distractive.
+#[derive(FromRow, Debug, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FocusPeriod {
+    /// The start time of the period.
+    pub start: Timestamp,
+    /// The end time of the period.
+    pub end: Timestamp,
+    /// Whether the period is a focused period. If false, it is a distractive period.
+    pub is_focused: bool,
+}
+
+/// Settings for focus periods.
+#[derive(FromRow, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FocusPeriodSettings {
+    /// The minimum score of a focused app.
+    pub min_focus_score: i64,
+    /// The minimum duration of a focused usage.
+    pub min_focus_usage_dur: Duration,
+    /// The maximum gap between two focused periods.
+    pub max_focus_gap: Duration,
+}
+
+/// Settings for distractive periods.
+#[derive(FromRow, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DistractivePeriodSettings {
+    /// The maximum score of a distractive app.
+    pub max_distractive_score: i64,
+    /// The minimum duration of a distractive usage.
+    pub min_distractive_usage_dur: Duration,
+    /// The maximum gap between two distractive periods.
+    pub max_distractive_gap: Duration,
+}
