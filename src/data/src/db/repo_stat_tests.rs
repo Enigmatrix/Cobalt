@@ -2160,7 +2160,7 @@ async fn get_periods_single_focus_period() -> Result<()> {
             id: Ref::new(1),
             name: "Productivity".to_string(),
             color: "green".to_string(),
-            score: 10, // High score for focus
+            score: 10.0.into(), // High score for focus
             created_at: 0,
             updated_at: 0,
         },
@@ -2254,7 +2254,7 @@ async fn get_periods_single_distractive_period() -> Result<()> {
             id: Ref::new(1),
             name: "Gaming".to_string(),
             color: "red".to_string(),
-            score: 2, // Low score for distractive
+            score: 2.0.into(), // Low score for distractive
             created_at: 0,
             updated_at: 0,
         },
@@ -2348,7 +2348,7 @@ async fn get_periods_usage_too_short_for_focus() -> Result<()> {
             id: Ref::new(1),
             name: "Productivity".to_string(),
             color: "green".to_string(),
-            score: 10,
+            score: 10.0.into(),
             created_at: 0,
             updated_at: 0,
         },
@@ -2440,7 +2440,7 @@ async fn get_periods_usage_too_short_for_distractive() -> Result<()> {
             id: Ref::new(1),
             name: "Gaming".to_string(),
             color: "red".to_string(),
-            score: 2,
+            score: 2.0.into(),
             created_at: 0,
             updated_at: 0,
         },
@@ -2532,7 +2532,7 @@ async fn get_periods_score_below_focus_threshold() -> Result<()> {
             id: Ref::new(1),
             name: "LowScore".to_string(),
             color: "yellow".to_string(),
-            score: 3, // Below focus threshold of 5
+            score: 3.0.into(), // Below focus threshold of 5
             created_at: 0,
             updated_at: 0,
         },
@@ -2624,7 +2624,7 @@ async fn get_periods_score_above_distractive_threshold() -> Result<()> {
             id: Ref::new(1),
             name: "HighScore".to_string(),
             color: "blue".to_string(),
-            score: 5, // Above distractive threshold of 3
+            score: 5.0.into(), // Above distractive threshold of 3
             created_at: 0,
             updated_at: 0,
         },
@@ -2797,7 +2797,7 @@ async fn get_periods_multiple_focus_periods() -> Result<()> {
             id: Ref::new(1),
             name: "Productivity".to_string(),
             color: "green".to_string(),
-            score: 10,
+            score: 10.0.into(),
             created_at: 0,
             updated_at: 0,
         },
@@ -2920,7 +2920,7 @@ async fn get_periods_multiple_distractive_periods() -> Result<()> {
             id: Ref::new(1),
             name: "Gaming".to_string(),
             color: "red".to_string(),
-            score: 2,
+            score: 2.0.into(),
             created_at: 0,
             updated_at: 0,
         },
@@ -3043,7 +3043,7 @@ async fn get_periods_focus_and_distractive_periods() -> Result<()> {
             id: Ref::new(1),
             name: "Productivity".to_string(),
             color: "green".to_string(),
-            score: 10,
+            score: 10.0.into(),
             created_at: 0,
             updated_at: 0,
         },
@@ -3057,7 +3057,7 @@ async fn get_periods_focus_and_distractive_periods() -> Result<()> {
             id: Ref::new(2),
             name: "Gaming".to_string(),
             color: "red".to_string(),
-            score: 2,
+            score: 2.0.into(),
             created_at: 0,
             updated_at: 0,
         },
@@ -3200,7 +3200,7 @@ async fn get_periods_overlapping_usages_same_app() -> Result<()> {
             id: Ref::new(1),
             name: "Productivity".to_string(),
             color: "green".to_string(),
-            score: 10,
+            score: 10.0.into(),
             created_at: 0,
             updated_at: 0,
         },
@@ -3321,7 +3321,7 @@ async fn get_periods_gap_between_usages_within_threshold() -> Result<()> {
             id: Ref::new(1),
             name: "Productivity".to_string(),
             color: "green".to_string(),
-            score: 10,
+            score: 10.0.into(),
             created_at: 0,
             updated_at: 0,
         },
@@ -3442,7 +3442,7 @@ async fn get_periods_gap_between_usages_exceeds_threshold() -> Result<()> {
             id: Ref::new(1),
             name: "Productivity".to_string(),
             color: "green".to_string(),
-            score: 10,
+            score: 10.0.into(),
             created_at: 0,
             updated_at: 0,
         },
@@ -3566,7 +3566,7 @@ async fn get_periods_focus_period_overlaps_distractive_period() -> Result<()> {
             id: Ref::new(1),
             name: "Productivity".to_string(),
             color: "green".to_string(),
-            score: 10,
+            score: 10.0.into(),
             created_at: 0,
             updated_at: 0,
         },
@@ -3580,7 +3580,7 @@ async fn get_periods_focus_period_overlaps_distractive_period() -> Result<()> {
             id: Ref::new(2),
             name: "Gaming".to_string(),
             color: "red".to_string(),
-            score: 2,
+            score: 2.0.into(),
             created_at: 0,
             updated_at: 0,
         },
@@ -3721,7 +3721,7 @@ async fn get_periods_multiple_apps_same_tag() -> Result<()> {
             id: Ref::new(1),
             name: "Productivity".to_string(),
             color: "green".to_string(),
-            score: 10,
+            score: 10.0.into(),
             created_at: 0,
             updated_at: 0,
         },
@@ -3863,7 +3863,7 @@ async fn get_periods_usage_outside_time_range() -> Result<()> {
             id: Ref::new(1),
             name: "Productivity".to_string(),
             color: "green".to_string(),
-            score: 10,
+            score: 10.0.into(),
             created_at: 0,
             updated_at: 0,
         },
@@ -3956,7 +3956,7 @@ async fn get_periods_usage_partially_overlaps_time_range() -> Result<()> {
             id: Ref::new(1),
             name: "Productivity".to_string(),
             color: "green".to_string(),
-            score: 10,
+            score: 10.0.into(),
             created_at: 0,
             updated_at: 0,
         },
@@ -4054,7 +4054,7 @@ async fn get_periods_complex_merging_scenario() -> Result<()> {
             id: Ref::new(1),
             name: "Productivity".to_string(),
             color: "green".to_string(),
-            score: 10,
+            score: 10.0.into(),
             created_at: 0,
             updated_at: 0,
         },
@@ -4204,7 +4204,7 @@ async fn get_periods_focus_gap_exact_threshold_merges() -> Result<()> {
             id: Ref::new(1),
             name: "Focus".into(),
             color: "green".into(),
-            score: 10,
+            score: 10.0.into(),
             created_at: 0,
             updated_at: 0,
         },
@@ -4303,7 +4303,7 @@ async fn get_periods_focus_gap_just_over_threshold_no_merge() -> Result<()> {
             id: Ref::new(1),
             name: "Focus".into(),
             color: "green".into(),
-            score: 10,
+            score: 10.0.into(),
             created_at: 0,
             updated_at: 0,
         },
@@ -4398,7 +4398,7 @@ async fn get_periods_distractive_gap_exact_threshold_merges() -> Result<()> {
             id: Ref::new(1),
             name: "Social".into(),
             color: "red".into(),
-            score: 0,
+            score: 0.0.into(),
             created_at: 0,
             updated_at: 0,
         },
@@ -4495,7 +4495,7 @@ async fn get_periods_distractive_gap_over_threshold_no_merge() -> Result<()> {
             id: Ref::new(1),
             name: "Social".into(),
             color: "red".into(),
-            score: -2,
+            score: (-2.0).into(),
             created_at: 0,
             updated_at: 0,
         },
@@ -4592,7 +4592,7 @@ async fn get_periods_focus_pruned_by_exact_overlap() -> Result<()> {
             id: Ref::new(1),
             name: "Work".into(),
             color: "green".into(),
-            score: 10,
+            score: 10.0.into(),
             created_at: 0,
             updated_at: 0,
         },
@@ -4604,7 +4604,7 @@ async fn get_periods_focus_pruned_by_exact_overlap() -> Result<()> {
             id: Ref::new(2),
             name: "Social".into(),
             color: "red".into(),
-            score: 0,
+            score: 0.0.into(),
             created_at: 0,
             updated_at: 0,
         },
@@ -4804,7 +4804,7 @@ macro_rules! basic_get_periods_case {
 // Single usage exactly min duration qualifies as focus
 basic_get_periods_case!(
     get_periods_focus_exact_min_duration,
-    6,
+    6.0.into(),
     10 * 60 * 1000 * 10000,
     true
 );
@@ -4819,7 +4819,7 @@ async fn get_periods_focus_below_min_duration_skipped() -> Result<()> {
             id: Ref::new(1),
             name: "Tag".into(),
             color: "c".into(),
-            score: 6,
+            score: 6.0.into(),
             created_at: 0,
             updated_at: 0,
         },
@@ -4885,7 +4885,7 @@ async fn get_periods_focus_below_min_duration_skipped() -> Result<()> {
 // Distractive usage exactly min duration qualifies
 basic_get_periods_case!(
     get_periods_distractive_exact_min_duration,
-    0,
+    0.0.into(),
     10 * 60 * 1000 * 10000,
     false
 );
@@ -4964,7 +4964,7 @@ async fn get_periods_focus_usage_starts_before_range_clipped() -> Result<()> {
             id: Ref::new(1),
             name: "Tag".into(),
             color: "c".into(),
-            score: 8,
+            score: 8.0.into(),
             created_at: 0,
             updated_at: 0,
         },
@@ -5039,7 +5039,7 @@ async fn get_periods_distractive_usage_extends_after_range_clipped() -> Result<(
             id: Ref::new(1),
             name: "Tag".into(),
             color: "c".into(),
-            score: 0,
+            score: 0.0.into(),
             created_at: 0,
             updated_at: 0,
         },
@@ -5114,7 +5114,7 @@ async fn get_periods_usage_covers_entire_range() -> Result<()> {
             id: Ref::new(1),
             name: "High".into(),
             color: "g".into(),
-            score: 9,
+            score: 9.0.into(),
             created_at: 0,
             updated_at: 0,
         },
@@ -5181,7 +5181,7 @@ async fn get_periods_usage_covers_entire_range() -> Result<()> {
 // Negative tag score below distractive threshold still distractive
 basic_get_periods_case!(
     get_periods_negative_score_distractive,
-    -5,
+    (-5.0).into(),
     15 * 60 * 1000 * 10000,
     false
 );
@@ -5189,7 +5189,7 @@ basic_get_periods_case!(
 // Zero score when max_distractive_score is 3 counts as distractive
 basic_get_periods_case!(
     get_periods_zero_score_distractive,
-    0,
+    0.0.into(),
     15 * 60 * 1000 * 10000,
     false
 );
@@ -5197,7 +5197,7 @@ basic_get_periods_case!(
 // Focus score exactly one above threshold qualifies
 basic_get_periods_case!(
     get_periods_focus_score_one_above_threshold,
-    6,
+    6.0.into(),
     15 * 60 * 1000 * 10000,
     true
 );
@@ -5213,7 +5213,7 @@ async fn get_periods_focus_transitive_three_usages() -> Result<()> {
             id: Ref::new(1),
             name: "High".into(),
             color: "g".into(),
-            score: 9,
+            score: 9.0.into(),
             created_at: 0,
             updated_at: 0,
         },
@@ -5298,7 +5298,7 @@ async fn get_periods_focus_gap_crosses_distractive_not_merge() -> Result<()> {
             id: Ref::new(1),
             name: "Focus".into(),
             color: "g".into(),
-            score: 10,
+            score: 10.0.into(),
             created_at: 0,
             updated_at: 0,
         },
@@ -5310,7 +5310,7 @@ async fn get_periods_focus_gap_crosses_distractive_not_merge() -> Result<()> {
             id: Ref::new(2),
             name: "Dist".into(),
             color: "r".into(),
-            score: 0,
+            score: 0.0.into(),
             created_at: 0,
             updated_at: 0,
         },
@@ -5431,7 +5431,7 @@ async fn get_periods_focus_gap_crosses_distractive_not_merge() -> Result<()> {
 // Additional small macro-based cases to push total new tests >=20
 basic_get_periods_case!(
     get_periods_focus_score_equal_threshold_old,
-    2,
+    2.0.into(),
     15 * 60 * 1000 * 10000,
     false
 );
@@ -5439,7 +5439,7 @@ basic_get_periods_case!(
 // Score just under distractive threshold (2) should be distractive
 basic_get_periods_case!(
     get_periods_distractive_score_under_threshold,
-    2,
+    2.0.into(),
     15 * 60 * 1000 * 10000,
     false
 );
@@ -5455,7 +5455,7 @@ async fn get_periods_focus_overlap_zero_gap_merges() -> Result<()> {
             id: Ref::new(1),
             name: "Tag".into(),
             color: "g".into(),
-            score: 10,
+            score: 10.0.into(),
             created_at: 0,
             updated_at: 0,
         },
@@ -5543,7 +5543,7 @@ async fn get_periods_focus_score_equal_threshold_not_focus() -> Result<()> {
             id: Ref::new(1),
             name: "Tag".into(),
             color: "c".into(),
-            score: 5,
+            score: 5.0.into(),
             created_at: 0,
             updated_at: 0,
         },
