@@ -3,8 +3,7 @@ use sqlx::prelude::FromRow;
 use sqlx::sqlite::SqliteRow;
 use sqlx::{Result, Row, Type};
 
-use crate::table::Real;
-pub use crate::table::{Color, Duration, Id, Period, Ref, Timestamp};
+pub use crate::table::{Color, Duration, Id, Period, Real, Ref, Score, Timestamp};
 
 /// An app that has run on the computer.
 #[derive(Default, Debug, Clone, PartialEq, Eq, FromRow, Serialize)]
@@ -93,8 +92,8 @@ pub struct Tag {
     pub name: String,
     /// Color
     pub color: Color,
-    /// Score
-    pub score: i64,
+    /// Score as a real number from -100 to 100
+    pub score: Score,
     /// Created at
     pub created_at: Timestamp,
     /// Updated at

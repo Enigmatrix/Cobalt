@@ -1,6 +1,6 @@
-use std::fmt::Debug;
+use std::fmt::{self, Debug};
 use std::hash::{Hash, Hasher};
-use std::ops::Deref;
+use std::ops::{self, Deref};
 
 use serde::{Deserialize, Serialize};
 use sqlx::prelude::{FromRow, Type};
@@ -71,6 +71,8 @@ pub type Color = String;
 pub type Timestamp = i64;
 /// Duration as Windows ticks
 pub type Duration = i64;
+/// Score as a real number from -100 to 100
+pub type Score = Real;
 
 /// Time Period for grouping usages
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -88,8 +90,50 @@ pub enum Period {
     Year,
 }
 
-#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub struct Real(N64);
+/// Real number as a 64-bit floating point number with non-NaNs
+#[derive(Default, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, PartialOrd, Ord)]
+#[serde(transparent)]
+pub struct Real(pub N64);
+
+impl fmt::Display for Real {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", f64::from(self.0))
+    }
+}
+
+impl fmt::Debug for Real {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", f64::from(self.0))
+    }
+}
+
+impl ops::Add for Real {
+    type Output = Self;
+    fn add(self, other: Self) -> Self::Output {
+        Real(self.0 + other.0)
+    }
+}
+
+impl ops::Sub for Real {
+    type Output = Self;
+    fn sub(self, other: Self) -> Self::Output {
+        Real(self.0 - other.0)
+    }
+}
+
+impl ops::Mul for Real {
+    type Output = Self;
+    fn mul(self, other: Self) -> Self::Output {
+        Real(self.0 * other.0)
+    }
+}
+
+impl ops::Div for Real {
+    type Output = Self;
+    fn div(self, other: Self) -> Self::Output {
+        Real(self.0 / other.0)
+    }
+}
 
 impl sqlx::Type<sqlx::Sqlite> for Real {
     fn type_info() -> sqlx::sqlite::SqliteTypeInfo {
