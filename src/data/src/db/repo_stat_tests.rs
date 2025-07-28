@@ -20,7 +20,7 @@ async fn get_score_no_apps() -> Result<()> {
     let mut repo = Repository::new(db)?;
 
     let score = repo.get_score(test_start(), test_end()).await?;
-    assert_eq!(score, 0.0);
+    assert_eq!(score, 0.0.into());
 
     Ok(())
 }
@@ -117,7 +117,7 @@ async fn get_score_apps_no_tags() -> Result<()> {
 
     let score = repo.get_score(test_start(), test_end()).await?;
     // Apps without tags should contribute 0 to the score
-    assert_eq!(score, 0.0);
+    assert_eq!(score, 0.0.into());
 
     Ok(())
 }
@@ -134,7 +134,7 @@ async fn get_score_apps_with_tags() -> Result<()> {
             id: Ref::new(1),
             name: "Productivity".to_string(),
             color: "green".to_string(),
-            score: 10, // High score for productivity
+            score: 10.0.into(), // High score for productivity
             created_at: 0,
             updated_at: 0,
         },
@@ -147,7 +147,7 @@ async fn get_score_apps_with_tags() -> Result<()> {
             id: Ref::new(2),
             name: "Gaming".to_string(),
             color: "red".to_string(),
-            score: 5, // Lower score for gaming
+            score: 5.0.into(), // Lower score for gaming
             created_at: 0,
             updated_at: 0,
         },
@@ -241,10 +241,10 @@ async fn get_score_apps_with_tags() -> Result<()> {
 
     let score = repo.get_score(test_start(), test_end()).await?;
     // Expected: weighted average = (100 hours * 10 score + 50 hours * 5 score) / (100 + 50) hours = 8.333...
-    let expected = 25.0 / 3.0;
+    let expected = (25.0 / 3.0).into();
     let epsilon = 1e-9;
     assert!(
-        (score - expected).abs() < epsilon,
+        f64::from(score - expected).abs() < epsilon,
         "score: {}, expected: {}",
         score,
         expected
@@ -265,7 +265,7 @@ async fn get_score_mixed_apps() -> Result<()> {
             id: Ref::new(1),
             name: "Work".to_string(),
             color: "blue".to_string(),
-            score: 8,
+            score: 8.0.into(),
             created_at: 0,
             updated_at: 0,
         },
@@ -359,10 +359,10 @@ async fn get_score_mixed_apps() -> Result<()> {
 
     let score = repo.get_score(test_start(), test_end()).await?;
     // Expected: weighted average = (100 hours * 8 score + 50 hours * 0 score) / (100 + 50) hours = 5.333...
-    let expected = 16.0 / 3.0;
+    let expected = (16.0 / 3.0).into();
     let epsilon = 1e-9;
     assert!(
-        (score - expected).abs() < epsilon,
+        f64::from(score - expected).abs() < epsilon,
         "score: {}, expected: {}",
         score,
         expected
@@ -383,7 +383,7 @@ async fn get_score_usage_outside_range() -> Result<()> {
             id: Ref::new(1),
             name: "Test".to_string(),
             color: "purple".to_string(),
-            score: 10,
+            score: 10.0.into(),
             created_at: 0,
             updated_at: 0,
         },
@@ -448,7 +448,7 @@ async fn get_score_usage_outside_range() -> Result<()> {
 
     let score = repo.get_score(test_start(), test_end()).await?;
     // No usage within the range, so score should be 0
-    assert_eq!(score, 0.0);
+    assert_eq!(score, 0.0.into());
 
     Ok(())
 }
@@ -465,7 +465,7 @@ async fn get_score_partial_usage_overlap() -> Result<()> {
             id: Ref::new(1),
             name: "Overlap".to_string(),
             color: "orange".to_string(),
-            score: 6,
+            score: 6.0.into(),
             created_at: 0,
             updated_at: 0,
         },
@@ -530,7 +530,7 @@ async fn get_score_partial_usage_overlap() -> Result<()> {
 
     let score = repo.get_score(test_start(), test_end()).await?;
     // Expected: weighted average = (50 hours * 6 score + 30 hours * 6 score) / (50 + 30) hours = 6
-    assert_eq!(score, 6.0);
+    assert_eq!(score, 6.0.into());
 
     Ok(())
 }
@@ -547,7 +547,7 @@ async fn get_score_multiple_sessions_same_app() -> Result<()> {
             id: Ref::new(1),
             name: "MultiSession".to_string(),
             color: "cyan".to_string(),
-            score: 7,
+            score: 7.0.into(),
             created_at: 0,
             updated_at: 0,
         },
@@ -644,7 +644,7 @@ async fn get_score_multiple_sessions_same_app() -> Result<()> {
 
     let score = repo.get_score(test_start(), test_end()).await?;
     // Expected: weighted average = (50 + 50 + 50) hours * 7 score / (50 + 50 + 50) hours = 7
-    assert_eq!(score, 7.0);
+    assert_eq!(score, 7.0.into());
 
     Ok(())
 }
@@ -661,7 +661,7 @@ async fn get_score_zero_tag_score() -> Result<()> {
             id: Ref::new(1),
             name: "ZeroScore".to_string(),
             color: "black".to_string(),
-            score: 0, // Zero score
+            score: 0.0.into(), // Zero score
             created_at: 0,
             updated_at: 0,
         },
@@ -714,7 +714,7 @@ async fn get_score_zero_tag_score() -> Result<()> {
 
     let score = repo.get_score(test_start(), test_end()).await?;
     // Expected: 100 hours * 0 score = 0
-    assert_eq!(score, 0.0);
+    assert_eq!(score, 0.0.into());
 
     Ok(())
 }
@@ -731,7 +731,7 @@ async fn get_score_usage_extends_beyond_end() -> Result<()> {
             id: Ref::new(1),
             name: "BeyondEnd".to_string(),
             color: "purple".to_string(),
-            score: 8,
+            score: 8.0.into(),
             created_at: 0,
             updated_at: 0,
         },
@@ -786,7 +786,7 @@ async fn get_score_usage_extends_beyond_end() -> Result<()> {
     // Expected: only the portion within the range should count
     // 50 hours * 8 score = 400 score-hours, but this should be normalized by total time
     // The function should only consider the time within the range
-    let expected = 8.0; // The score should be the tag score since all usage is within range
+    let expected = 8.0.into(); // The score should be the tag score since all usage is within range
     assert_eq!(score, expected);
 
     Ok(())
@@ -804,7 +804,7 @@ async fn get_score_usage_starts_before_and_extends_beyond() -> Result<()> {
             id: Ref::new(1),
             name: "BeforeAndAfter".to_string(),
             color: "orange".to_string(),
-            score: 6,
+            score: 6.0.into(),
             created_at: 0,
             updated_at: 0,
         },
@@ -859,7 +859,7 @@ async fn get_score_usage_starts_before_and_extends_beyond() -> Result<()> {
     // Expected: only the portion within the range should count
     // Total range is 2000 hours, so the score should be 6.0 (the tag score)
     // since the entire range is covered by this usage
-    let expected = 6.0;
+    let expected = 6.0.into();
     assert_eq!(score, expected);
 
     Ok(())
@@ -890,7 +890,7 @@ async fn get_score_per_period_single_hour() -> Result<()> {
             id: Ref::new(1),
             name: "Test".to_string(),
             color: "blue".to_string(),
-            score: 10,
+            score: 10.0.into(),
             created_at: 0,
             updated_at: 0,
         },
@@ -947,7 +947,7 @@ async fn get_score_per_period_single_hour() -> Result<()> {
         .await?;
     assert_eq!(scores.len(), 1);
     assert_eq!(scores[0].group, hour_start);
-    assert_eq!(scores[0].value, 10.0);
+    assert_eq!(scores[0].value, 10.0.into());
 
     Ok(())
 }
@@ -964,7 +964,7 @@ async fn get_score_per_period_multiple_hours() -> Result<()> {
             id: Ref::new(1),
             name: "Test".to_string(),
             color: "blue".to_string(),
-            score: 8,
+            score: 8.0.into(),
             created_at: 0,
             updated_at: 0,
         },
@@ -1024,7 +1024,7 @@ async fn get_score_per_period_multiple_hours() -> Result<()> {
 
     // Each hour should have the same score since usage is evenly distributed
     for score in &scores {
-        assert_eq!(score.value, 8.0);
+        assert_eq!(score.value, 8.0.into());
     }
 
     Ok(())
@@ -1042,7 +1042,7 @@ async fn get_score_per_period_different_scores() -> Result<()> {
             id: Ref::new(1),
             name: "High".to_string(),
             color: "green".to_string(),
-            score: 10,
+            score: 10.0.into(),
             created_at: 0,
             updated_at: 0,
         },
@@ -1055,7 +1055,7 @@ async fn get_score_per_period_different_scores() -> Result<()> {
             id: Ref::new(2),
             name: "Low".to_string(),
             color: "red".to_string(),
-            score: 2,
+            score: 2.0.into(),
             created_at: 0,
             updated_at: 0,
         },
@@ -1157,9 +1157,9 @@ async fn get_score_per_period_different_scores() -> Result<()> {
 
     // First hour should have score 10, second hour should have score 2
     assert_eq!(scores[0].group, hour1_start);
-    assert_eq!(scores[0].value, 10.0);
+    assert_eq!(scores[0].value, 10.0.into());
     assert_eq!(scores[1].group, hour2_start);
-    assert_eq!(scores[1].value, 2.0);
+    assert_eq!(scores[1].value, 2.0.into());
 
     Ok(())
 }
@@ -1176,7 +1176,7 @@ async fn get_score_per_period_mixed_hour() -> Result<()> {
             id: Ref::new(1),
             name: "High".to_string(),
             color: "green".to_string(),
-            score: 10,
+            score: 10.0.into(),
             created_at: 0,
             updated_at: 0,
         },
@@ -1189,7 +1189,7 @@ async fn get_score_per_period_mixed_hour() -> Result<()> {
             id: Ref::new(2),
             name: "Low".to_string(),
             color: "red".to_string(),
-            score: 2,
+            score: 2.0.into(),
             created_at: 0,
             updated_at: 0,
         },
@@ -1290,7 +1290,7 @@ async fn get_score_per_period_mixed_hour() -> Result<()> {
 
     // Expected: weighted average = (20 min * 10 + 20 min * 2) / (20 + 20) min = 6.0
     assert_eq!(scores[0].group, hour_start);
-    assert_eq!(scores[0].value, 6.0);
+    assert_eq!(scores[0].value, 6.0.into());
 
     Ok(())
 }
@@ -1307,7 +1307,7 @@ async fn get_score_per_period_day_period() -> Result<()> {
             id: Ref::new(1),
             name: "Test".to_string(),
             color: "blue".to_string(),
-            score: 5,
+            score: 5.0.into(),
             created_at: 0,
             updated_at: 0,
         },
@@ -1364,7 +1364,7 @@ async fn get_score_per_period_day_period() -> Result<()> {
         .get_score_per_period(test_start(), test_end(), Period::Day)
         .await?;
     assert_eq!(scores.len(), 1);
-    assert_eq!(scores[0].value, 5.0);
+    assert_eq!(scores[0].value, 5.0.into());
 
     Ok(())
 }
@@ -1381,7 +1381,7 @@ async fn get_score_per_period_week_period() -> Result<()> {
             id: Ref::new(1),
             name: "Test".to_string(),
             color: "blue".to_string(),
-            score: 7,
+            score: 7.0.into(),
             created_at: 0,
             updated_at: 0,
         },
@@ -1438,7 +1438,7 @@ async fn get_score_per_period_week_period() -> Result<()> {
         .get_score_per_period(test_start(), test_end(), Period::Week)
         .await?;
     assert_eq!(scores.len(), 1);
-    assert_eq!(scores[0].value, 7.0);
+    assert_eq!(scores[0].value, 7.0.into());
 
     Ok(())
 }
@@ -1497,7 +1497,7 @@ async fn get_score_per_period_apps_without_tags() -> Result<()> {
         .get_score_per_period(test_start(), test_end(), Period::Hour)
         .await?;
     assert_eq!(scores.len(), 1);
-    assert_eq!(scores[0].value, 0.0); // Apps without tags should contribute 0 to the score
+    assert_eq!(scores[0].value, 0.0.into()); // Apps without tags should contribute 0 to the score
 
     Ok(())
 }
@@ -1514,7 +1514,7 @@ async fn get_score_per_period_complex_multi_period() -> Result<()> {
             id: Ref::new(1),
             name: "Productivity".to_string(),
             color: "green".to_string(),
-            score: 10,
+            score: 10.0.into(),
             created_at: 0,
             updated_at: 0,
         },
@@ -1527,7 +1527,7 @@ async fn get_score_per_period_complex_multi_period() -> Result<()> {
             id: Ref::new(2),
             name: "Gaming".to_string(),
             color: "red".to_string(),
-            score: 2,
+            score: 2.0.into(),
             created_at: 0,
             updated_at: 0,
         },
@@ -1652,11 +1652,11 @@ async fn get_score_per_period_complex_multi_period() -> Result<()> {
 
     // Hour 1: (30 min * 10 + 30 min * 2) / 60 min = 6.0
     assert_eq!(scores[0].group, hour1_start);
-    assert_eq!(scores[0].value, 6.0);
+    assert_eq!(scores[0].value, 6.0.into());
 
     // Hour 2: (45 min * 10 + 15 min * 2) / 60 min = 8.0
     assert_eq!(scores[1].group, hour2_start);
-    assert_eq!(scores[1].value, 8.0);
+    assert_eq!(scores[1].value, 8.0.into());
 
     Ok(())
 }
@@ -1673,7 +1673,7 @@ async fn get_score_per_period_usage_split_across_periods() -> Result<()> {
             id: Ref::new(1),
             name: "Test".to_string(),
             color: "blue".to_string(),
-            score: 6,
+            score: 6.0.into(),
             created_at: 0,
             updated_at: 0,
         },
@@ -1734,9 +1734,9 @@ async fn get_score_per_period_usage_split_across_periods() -> Result<()> {
 
     // Both hours should have the same score since usage is split evenly
     assert_eq!(scores[0].group, hour1_start);
-    assert_eq!(scores[0].value, 6.0);
+    assert_eq!(scores[0].value, 6.0.into());
     assert_eq!(scores[1].group, hour2_start);
-    assert_eq!(scores[1].value, 6.0);
+    assert_eq!(scores[1].value, 6.0.into());
 
     Ok(())
 }
@@ -1753,7 +1753,7 @@ async fn get_score_per_period_empty_periods() -> Result<()> {
             id: Ref::new(1),
             name: "Test".to_string(),
             color: "blue".to_string(),
-            score: 5,
+            score: 5.0.into(),
             created_at: 0,
             updated_at: 0,
         },
@@ -1810,7 +1810,7 @@ async fn get_score_per_period_empty_periods() -> Result<()> {
         .await?;
     assert_eq!(scores.len(), 1); // Only the hour with usage should be returned
     assert_eq!(scores[0].group, hour1_start);
-    assert_eq!(scores[0].value, 5.0);
+    assert_eq!(scores[0].value, 5.0.into());
 
     Ok(())
 }
@@ -1827,7 +1827,7 @@ async fn get_score_per_period_usage_extends_beyond_end() -> Result<()> {
             id: Ref::new(1),
             name: "BeyondEndPeriod".to_string(),
             color: "cyan".to_string(),
-            score: 9,
+            score: 9.0.into(),
             created_at: 0,
             updated_at: 0,
         },
@@ -1887,7 +1887,7 @@ async fn get_score_per_period_usage_extends_beyond_end() -> Result<()> {
     assert_eq!(scores.len(), 1);
     assert_eq!(scores[0].group, last_hour_start);
     // Expected: 30 minutes of usage in the last hour = 9.0 score
-    assert_eq!(scores[0].value, 9.0);
+    assert_eq!(scores[0].value, 9.0.into());
 
     Ok(())
 }
@@ -1904,7 +1904,7 @@ async fn get_score_per_period_usage_starts_before_and_extends_beyond() -> Result
             id: Ref::new(1),
             name: "BeforeAndAfterPeriod".to_string(),
             color: "magenta".to_string(),
-            score: 7,
+            score: 7.0.into(),
             created_at: 0,
             updated_at: 0,
         },
@@ -1966,7 +1966,7 @@ async fn get_score_per_period_usage_starts_before_and_extends_beyond() -> Result
 
     // Each hour should have the same score since usage is evenly distributed
     for score in &scores {
-        assert_eq!(score.value, 7.0);
+        assert_eq!(score.value, 7.0.into());
     }
 
     // Verify the first and last entries have correct timestamps
@@ -1988,7 +1988,7 @@ async fn get_score_per_period_mixed_usage_beyond_end() -> Result<()> {
             id: Ref::new(1),
             name: "WithinRange".to_string(),
             color: "green".to_string(),
-            score: 10,
+            score: 10.0.into(),
             created_at: 0,
             updated_at: 0,
         },
@@ -2001,7 +2001,7 @@ async fn get_score_per_period_mixed_usage_beyond_end() -> Result<()> {
             id: Ref::new(2),
             name: "BeyondEnd".to_string(),
             color: "red".to_string(),
-            score: 3,
+            score: 3.0.into(),
             created_at: 0,
             updated_at: 0,
         },
@@ -2105,11 +2105,11 @@ async fn get_score_per_period_mixed_usage_beyond_end() -> Result<()> {
 
     // First hour should have score 10 (within-range usage)
     assert_eq!(scores[0].group, hour1_start);
-    assert_eq!(scores[0].value, 10.0);
+    assert_eq!(scores[0].value, 10.0.into());
 
     // Last hour should have score 3 (beyond-end usage, but only the portion within range counts)
     assert_eq!(scores[1].group, last_hour_start);
-    assert_eq!(scores[1].value, 3.0);
+    assert_eq!(scores[1].value, 3.0.into());
 
     Ok(())
 }

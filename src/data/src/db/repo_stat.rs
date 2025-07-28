@@ -4,14 +4,14 @@ use super::repo_crud::APP_DUR;
 use super::*;
 use crate::db::infused::WithGroup;
 use crate::db::repo::Repository;
-use crate::table::Period;
+use crate::table::{Period, Score};
 
 impl Repository {
     /// Gets the weighted average score of all apps in the given time range
-    pub async fn get_score(&mut self, start: Timestamp, end: Timestamp) -> Result<f64> {
+    pub async fn get_score(&mut self, start: Timestamp, end: Timestamp) -> Result<Score> {
         #[derive(FromRow)]
         struct ScoreResult {
-            total_score: f64,
+            total_score: Score,
         }
 
         // Get app durations and their tag scores in the given time range
@@ -45,7 +45,7 @@ impl Repository {
         start: Timestamp,
         end: Timestamp,
         period: Period,
-    ) -> Result<Vec<WithGroup<f64>>> {
+    ) -> Result<Vec<WithGroup<Score>>> {
         let (period_start, period_end) =
             Self::sql_period_start_end(&Self::sql_ticks_to_unix("u.start"), &period);
 
@@ -94,7 +94,7 @@ impl Repository {
             GROUP BY period_start
            ");
 
-        let score_results: Vec<WithGroup<f64>> = query_as(&query)
+        let score_results: Vec<WithGroup<Score>> = query_as(&query)
             .bind(start)
             .bind(end)
             .fetch_all(self.db.executor())

@@ -1,5 +1,5 @@
 use data::db::infused::WithGroup;
-use data::entities::{Period, Timestamp};
+use data::entities::{Period, Score, Timestamp};
 use tauri::State;
 use util::tracing;
 
@@ -13,7 +13,7 @@ pub async fn get_score(
     _query_options: QueryOptions,
     start: Timestamp,
     end: Timestamp,
-) -> AppResult<f64> {
+) -> AppResult<Score> {
     let mut repo = {
         let state = state.read().await;
         state.assume_init().get_repo().await?
@@ -30,7 +30,7 @@ pub async fn get_score_per_period(
     start: Timestamp,
     end: Timestamp,
     period: Period,
-) -> AppResult<Vec<WithGroup<f64>>> {
+) -> AppResult<Vec<WithGroup<Score>>> {
     let mut repo = {
         let state = state.read().await;
         state.assume_init().get_repo().await?
