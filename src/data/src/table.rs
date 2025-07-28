@@ -5,6 +5,7 @@ use std::ops::Deref;
 use serde::{Deserialize, Serialize};
 use sqlx::prelude::{FromRow, Type};
 use sqlx::sqlite::SqliteRow;
+use util::num::N64;
 
 /// Trait for mapping an Entity to a [Table] in the database.
 pub trait Table {
@@ -85,4 +86,42 @@ pub enum Period {
     Month,
     /// Year
     Year,
+}
+
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Real(N64);
+
+impl sqlx::Type<sqlx::Sqlite> for Real {
+    fn type_info() -> sqlx::sqlite::SqliteTypeInfo {
+        <f64 as sqlx::Type<sqlx::Sqlite>>::type_info()
+    }
+}
+
+impl sqlx::Encode<'_, sqlx::Sqlite> for Real {
+    fn encode_by_ref(
+        &self,
+        buf: &mut <sqlx::Sqlite as sqlx::Database>::ArgumentBuffer<'_>,
+    ) -> Result<sqlx::encode::IsNull, sqlx::error::BoxDynError> {
+        <f64 as sqlx::Encode<'_, sqlx::Sqlite>>::encode_by_ref(&self.0.into(), buf)
+    }
+}
+
+impl<'r> sqlx::Decode<'r, sqlx::Sqlite> for Real {
+    fn decode(
+        value: <sqlx::Sqlite as sqlx::Database>::ValueRef<'r>,
+    ) -> Result<Self, sqlx::error::BoxDynError> {
+        <f64 as sqlx::Decode<'r, sqlx::Sqlite>>::decode(value).map(Real::from)
+    }
+}
+
+impl From<f64> for Real {
+    fn from(value: f64) -> Self {
+        Real(N64::new(value))
+    }
+}
+
+impl From<Real> for f64 {
+    fn from(value: Real) -> Self {
+        value.0.into()
+    }
 }

@@ -208,7 +208,7 @@ impl Sentry {
             self.handle_reminder_message(
                 &triggered_reminder.name,
                 &triggered_reminder.reminder.message,
-                triggered_reminder.reminder.threshold,
+                triggered_reminder.reminder.threshold.into(),
                 triggered_reminder.usage_limit,
             )
             .warn();

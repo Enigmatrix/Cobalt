@@ -4,6 +4,7 @@ use util::future as tokio;
 
 use super::*;
 use crate::entities::Reason;
+use crate::table::Real;
 
 pub async fn test_db() -> Result<Database> {
     let conn = SqliteConnectOptions::new()
@@ -351,7 +352,7 @@ async fn insert_reminder_raw(
     db: &mut Database,
     id: i64,
     a0: i64,
-    a1: f64,
+    a1: impl Into<Real>,
     a3: &str,
     a4: bool,
     a5: i64,
@@ -360,7 +361,7 @@ async fn insert_reminder_raw(
     query("INSERT INTO reminders VALUES (?, ?, ?, ?, ?, ?, ?)")
         .bind(id)
         .bind(a0)
-        .bind(a1)
+        .bind(a1.into())
         .bind(a3)
         .bind(a4)
         .bind(a5)
@@ -2284,7 +2285,7 @@ mod triggered_reminders {
             Reminder {
                 id: Ref::new(1),
                 alert_id: alert.clone(),
-                threshold: 0.50,
+                threshold: 0.50.into(),
                 message: "hello".to_string(),
                 active: true,
                 created_at: 0,
@@ -2298,7 +2299,7 @@ mod triggered_reminders {
             Reminder {
                 id: Ref::new(2),
                 alert_id: alert.clone(),
-                threshold: 0.51,
+                threshold: 0.51.into(),
                 message: "hello".to_string(),
                 active: true,
                 created_at: 0,
@@ -2337,7 +2338,7 @@ mod triggered_reminders {
             Reminder {
                 id: Ref::new(1),
                 alert_id: alert.clone(),
-                threshold: 0.50,
+                threshold: 0.50.into(),
                 message: "hello".to_string(),
                 active: false,
                 created_at: 0,
@@ -2350,7 +2351,7 @@ mod triggered_reminders {
             Reminder {
                 id: Ref::new(2),
                 alert_id: alert.clone(),
-                threshold: 0.50,
+                threshold: 0.50.into(),
                 message: "hello".to_string(),
                 active: true,
                 created_at: 0,
@@ -2388,7 +2389,7 @@ mod triggered_reminders {
             Reminder {
                 id: Ref::new(1),
                 alert_id: alert.clone().into(),
-                threshold: 0.50,
+                threshold: 0.50.into(),
                 message: "hello".to_string(),
                 active: true,
                 created_at: 0,
@@ -2437,7 +2438,7 @@ mod triggered_reminders {
             Reminder {
                 id: Ref::new(1),
                 alert_id: alert.clone(),
-                threshold: 0.50,
+                threshold: 0.50.into(),
                 message: "hello".to_string(),
                 active: true,
                 created_at: 0,
@@ -2486,7 +2487,7 @@ mod triggered_reminders {
             Reminder {
                 id: Ref::new(1),
                 alert_id: alert.clone(),
-                threshold: 0.50,
+                threshold: 0.50.into(),
                 message: "hello".to_string(),
                 active: true,
                 created_at: 0,

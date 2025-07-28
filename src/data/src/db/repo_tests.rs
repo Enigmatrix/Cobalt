@@ -1053,7 +1053,7 @@ async fn create_alert() -> Result<()> {
         time_frame: TimeFrame::Weekly,
         trigger_action: TriggerAction::Dim { duration: 500 },
         reminders: vec![CreateReminder {
-            threshold: 0.5,
+            threshold: 0.5.into(),
             message: "Half way there".into(),
             ignore_trigger: false,
         }],
@@ -1083,17 +1083,17 @@ async fn create_alert() -> Result<()> {
         },
         reminders: vec![
             CreateReminder {
-                threshold: 0.25,
+                threshold: 0.25.into(),
                 message: "Quarter way".into(),
                 ignore_trigger: false,
             },
             CreateReminder {
-                threshold: 0.5,
+                threshold: 0.5.into(),
                 message: "Half way there".into(),
                 ignore_trigger: false,
             },
             CreateReminder {
-                threshold: 0.75,
+                threshold: 0.75.into(),
                 message: "Almost there".into(),
                 ignore_trigger: false,
             },
