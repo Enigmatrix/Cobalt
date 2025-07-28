@@ -32,6 +32,9 @@ pub mod repo;
 /// Repository module (mostly just CRUD)
 pub mod repo_crud;
 
+/// Repository module (mostly just statistics fetching)
+pub mod repo_stat;
+
 /// Entities with extra information embedded.
 pub mod infused;
 
@@ -374,6 +377,8 @@ impl AlertManager {
     }
 }
 
+#[cfg(test)]
+mod repo_stat_tests;
 #[cfg(test)]
 mod repo_tests;
 #[cfg(test)]

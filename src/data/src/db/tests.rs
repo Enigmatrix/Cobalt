@@ -724,7 +724,7 @@ pub mod arrange {
             &app.description,
             &app.company,
             &app.color,
-            app.tag_id.as_ref().map(|id| id.0).clone(),
+            app.tag_id.as_ref().map(|id| id.0),
             if let AppIdentity::Win32 { .. } = app.identity {
                 1
             } else {
@@ -752,7 +752,7 @@ pub mod arrange {
             &app.description,
             &app.company,
             &app.color,
-            app.tag_id.as_ref().map(|id| id.0).clone(),
+            app.tag_id.as_ref().map(|id| id.0),
             if let AppIdentity::Win32 { .. } = app.identity {
                 1
             } else {
@@ -1381,7 +1381,7 @@ mod triggered_alerts {
             &mut db,
             AlertEvent {
                 id: Ref::default(),
-                alert_id: alert.id.clone().into(),
+                alert_id: alert.id.clone(),
                 timestamp: 75,
                 reason: Reason::Hit,
             },
