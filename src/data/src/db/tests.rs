@@ -4,6 +4,7 @@ use util::future as tokio;
 
 use super::*;
 use crate::entities::Reason;
+use crate::table::Real;
 
 pub async fn test_db() -> Result<Database> {
     let conn = SqliteConnectOptions::new()
@@ -351,7 +352,7 @@ async fn insert_reminder_raw(
     db: &mut Database,
     id: i64,
     a0: i64,
-    a1: f64,
+    a1: impl Into<Real>,
     a3: &str,
     a4: bool,
     a5: i64,
@@ -360,7 +361,7 @@ async fn insert_reminder_raw(
     query("INSERT INTO reminders VALUES (?, ?, ?, ?, ?, ?, ?)")
         .bind(id)
         .bind(a0)
-        .bind(a1)
+        .bind(a1.into())
         .bind(a3)
         .bind(a4)
         .bind(a5)
@@ -374,14 +375,14 @@ async fn insert_tag_raw(
     db: &mut Database,
     a0: &str,
     a1: &str,
-    a2: i64,
+    a2: impl Into<Real>,
     a3: i64,
     a4: i64,
 ) -> Result<Ref<Tag>> {
     let res = query("INSERT INTO tags VALUES (NULL, ?, ?, ?, ?, ?)")
         .bind(a0)
         .bind(a1)
-        .bind(a2)
+        .bind(a2.into())
         .bind(a3)
         .bind(a4)
         .execute(db.executor())
@@ -393,10 +394,10 @@ async fn insert_tag_raw(
 async fn target_apps() -> Result<()> {
     let mut db = test_db().await?;
     {
-        insert_tag_raw(&mut db, "tag_name1", "blue1", 0, 0, 0).await?;
-        insert_tag_raw(&mut db, "tag_name2", "blue2", 0, 0, 0).await?;
-        insert_tag_raw(&mut db, "tag_name3", "blue3", 0, 0, 0).await?;
-        insert_tag_raw(&mut db, "tag_name4", "blue4", 0, 0, 0).await?;
+        insert_tag_raw(&mut db, "tag_name1", "blue1", 0., 0, 0).await?;
+        insert_tag_raw(&mut db, "tag_name2", "blue2", 0., 0, 0).await?;
+        insert_tag_raw(&mut db, "tag_name3", "blue3", 0., 0, 0).await?;
+        insert_tag_raw(&mut db, "tag_name4", "blue4", 0., 0, 0).await?;
 
         insert_app_raw(
             &mut db,
@@ -1883,7 +1884,7 @@ mod triggered_alerts {
                 id: Ref::default(),
                 name: "tag_name1".to_string(),
                 color: "blue1".to_string(),
-                score: 5,
+                score: 5.0.into(),
                 created_at: 0,
                 updated_at: 0,
             },
@@ -1895,7 +1896,7 @@ mod triggered_alerts {
                 id: Ref::default(),
                 name: "tag_name2".to_string(),
                 color: "blue2".to_string(),
-                score: 0,
+                score: 0.0.into(),
                 created_at: 0,
                 updated_at: 0,
             },
@@ -1907,7 +1908,7 @@ mod triggered_alerts {
                 id: Ref::default(),
                 name: "emptytag".to_string(),
                 color: "e1".to_string(),
-                score: -5,
+                score: (-5.0).into(),
                 created_at: 0,
                 updated_at: 0,
             },
@@ -2284,7 +2285,7 @@ mod triggered_reminders {
             Reminder {
                 id: Ref::new(1),
                 alert_id: alert.clone(),
-                threshold: 0.50,
+                threshold: 0.50.into(),
                 message: "hello".to_string(),
                 active: true,
                 created_at: 0,
@@ -2298,7 +2299,7 @@ mod triggered_reminders {
             Reminder {
                 id: Ref::new(2),
                 alert_id: alert.clone(),
-                threshold: 0.51,
+                threshold: 0.51.into(),
                 message: "hello".to_string(),
                 active: true,
                 created_at: 0,
@@ -2337,7 +2338,7 @@ mod triggered_reminders {
             Reminder {
                 id: Ref::new(1),
                 alert_id: alert.clone(),
-                threshold: 0.50,
+                threshold: 0.50.into(),
                 message: "hello".to_string(),
                 active: false,
                 created_at: 0,
@@ -2350,7 +2351,7 @@ mod triggered_reminders {
             Reminder {
                 id: Ref::new(2),
                 alert_id: alert.clone(),
-                threshold: 0.50,
+                threshold: 0.50.into(),
                 message: "hello".to_string(),
                 active: true,
                 created_at: 0,
@@ -2388,7 +2389,7 @@ mod triggered_reminders {
             Reminder {
                 id: Ref::new(1),
                 alert_id: alert.clone().into(),
-                threshold: 0.50,
+                threshold: 0.50.into(),
                 message: "hello".to_string(),
                 active: true,
                 created_at: 0,
@@ -2437,7 +2438,7 @@ mod triggered_reminders {
             Reminder {
                 id: Ref::new(1),
                 alert_id: alert.clone(),
-                threshold: 0.50,
+                threshold: 0.50.into(),
                 message: "hello".to_string(),
                 active: true,
                 created_at: 0,
@@ -2486,7 +2487,7 @@ mod triggered_reminders {
             Reminder {
                 id: Ref::new(1),
                 alert_id: alert.clone(),
-                threshold: 0.50,
+                threshold: 0.50.into(),
                 message: "hello".to_string(),
                 active: true,
                 created_at: 0,

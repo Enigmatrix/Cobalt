@@ -10,6 +10,8 @@ pub mod ds;
 pub mod error;
 /// Async base
 pub mod future;
+/// Number types
+pub mod num;
 /// Retry helpers
 pub mod retry;
 ///  Common timesystem traits

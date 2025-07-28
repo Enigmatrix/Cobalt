@@ -22,7 +22,7 @@ impl Migration for Migration1 {
                 id                              INTEGER PRIMARY KEY NOT NULL,
                 name                            TEXT NOT NULL,
                 color                           TEXT NOT NULL,
-                score                           INTEGER NOT NULL DEFAULT 0 CHECK (score >= -100 AND score <= 100),
+                score                           REAL NOT NULL DEFAULT 0 CHECK (score >= -100 AND score <= 100),
                 created_at                      INTEGER NOT NULL,
                 updated_at                      INTEGER NOT NULL
             )",

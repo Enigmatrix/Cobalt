@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use super::*;
 use crate::entities::{TimeFrame, TriggerAction};
-use crate::table::{Color, Duration};
+use crate::table::{Color, Duration, Real};
 
 /// List of [Ref<T>]
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize)]
@@ -232,7 +232,7 @@ pub struct Alert {
 }
 
 /// [super::Reminder] with additional information
-#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, FromRow)]
 #[serde(rename_all = "camelCase")]
 pub struct Reminder {
     /// Identifier
@@ -240,7 +240,7 @@ pub struct Reminder {
     /// Link to [Alert]
     pub alert_id: Ref<super::Alert>,
     /// Threshold as 0-1 ratio of the Usage Limit
-    pub threshold: f64,
+    pub threshold: Real,
     /// Message to send when the threshold is reached
     pub message: String,
     /// Created at
@@ -255,20 +255,6 @@ pub struct Reminder {
     pub events: ValuePerPeriod<i64>,
 }
 
-impl PartialEq<Reminder> for Reminder {
-    fn eq(&self, other: &Reminder) -> bool {
-        self.id == other.id
-            && self.alert_id == other.alert_id
-            && (self.threshold - other.threshold).abs() <= f64::EPSILON
-            && self.message == other.message
-            && self.events == other.events
-            && self.created_at == other.created_at
-            && self.updated_at == other.updated_at
-    }
-}
-
-impl Eq for Reminder {}
-
 /// Options to create a new [super::Tag]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -277,8 +263,8 @@ pub struct CreateTag {
     pub name: String,
     /// Color
     pub color: String,
-    /// Score
-    pub score: i64,
+    /// Score as a real number from -100 to 100
+    pub score: Real,
     /// Apps List
     pub apps: Vec<Ref<super::App>>,
 }
@@ -291,8 +277,8 @@ pub struct UpdatedTag {
     pub id: Ref<super::Tag>,
     /// Name
     pub name: String,
-    /// Score
-    pub score: i64,
+    /// Score as a real number from -100 to 100
+    pub score: Real,
     /// Color
     pub color: String,
 }
@@ -320,7 +306,7 @@ pub struct CreateAlert {
 #[serde(rename_all = "camelCase")]
 pub struct CreateReminder {
     /// Threshold
-    pub threshold: f64,
+    pub threshold: Real,
     /// Message
     pub message: String,
     /// Whether to ignore the trigger
@@ -348,28 +334,18 @@ pub struct UpdatedAlert {
 }
 
 /// Options to update a [super::Reminder]
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdatedReminder {
     /// Identifier
     pub id: Option<Ref<super::Reminder>>,
     /// Threshold
-    pub threshold: f64,
+    pub threshold: Real,
     /// Message
     pub message: String,
     /// Whether to ignore the trigger
     pub ignore_trigger: bool,
 }
-
-impl PartialEq<UpdatedReminder> for UpdatedReminder {
-    fn eq(&self, other: &UpdatedReminder) -> bool {
-        self.id == other.id
-            && (self.threshold - other.threshold).abs() <= f64::EPSILON
-            && self.message == other.message
-    }
-}
-
-impl Eq for UpdatedReminder {}
 
 /// [super::Session] with additional information
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]

@@ -3,7 +3,7 @@ use sqlx::prelude::FromRow;
 use sqlx::sqlite::SqliteRow;
 use sqlx::{Result, Row, Type};
 
-pub use crate::table::{Color, Duration, Id, Period, Ref, Timestamp};
+pub use crate::table::{Color, Duration, Id, Period, Real, Ref, Score, Timestamp};
 
 /// An app that has run on the computer.
 #[derive(Default, Debug, Clone, PartialEq, Eq, FromRow, Serialize)]
@@ -92,8 +92,8 @@ pub struct Tag {
     pub name: String,
     /// Color
     pub color: Color,
-    /// Score
-    pub score: i64,
+    /// Score as a real number from -100 to 100
+    pub score: Score,
     /// Created at
     pub created_at: Timestamp,
     /// Updated at
@@ -283,7 +283,7 @@ pub struct Alert {
 }
 
 /// Notifications to send upon a certain threshold of an [Alert]'s usage_limit
-#[derive(Default, Debug, Clone, FromRow, Serialize, Deserialize)] // can't impl PartialEq, Eq for f64
+#[derive(Default, Debug, Clone, PartialEq, Eq, FromRow, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Reminder {
     /// Identifier
@@ -291,7 +291,7 @@ pub struct Reminder {
     /// Link to [Alert]
     pub alert_id: Ref<Alert>,
     /// Threshold as 0-1 ratio of the Usage Limit
-    pub threshold: f64,
+    pub threshold: Real,
     /// Message to send when the threshold is reached
     pub message: String,
     /// Whether this reminder is not deleted
@@ -301,18 +301,6 @@ pub struct Reminder {
     /// Updated at
     pub updated_at: Timestamp,
 }
-
-impl PartialEq<Reminder> for Reminder {
-    fn eq(&self, other: &Reminder) -> bool {
-        self.id == other.id
-            && self.alert_id == other.alert_id
-            && (self.threshold - other.threshold).abs() <= f64::EPSILON
-            && self.message == other.message
-            && self.active == other.active
-    }
-}
-
-impl Eq for Reminder {}
 
 /// Reason for the [AlertEvent]/[ReminderEvent]
 #[derive(Default, Debug, Clone, PartialEq, Eq, Type, Serialize, Deserialize)]

@@ -1,10 +1,11 @@
-use std::fmt::Debug;
+use std::fmt::{self, Debug};
 use std::hash::{Hash, Hasher};
-use std::ops::Deref;
+use std::ops::{self, Deref};
 
 use serde::{Deserialize, Serialize};
 use sqlx::prelude::{FromRow, Type};
 use sqlx::sqlite::SqliteRow;
+use util::num::N64;
 
 /// Trait for mapping an Entity to a [Table] in the database.
 pub trait Table {
@@ -70,6 +71,8 @@ pub type Color = String;
 pub type Timestamp = i64;
 /// Duration as Windows ticks
 pub type Duration = i64;
+/// Score as a real number from -100 to 100
+pub type Score = Real;
 
 /// Time Period for grouping usages
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -85,4 +88,84 @@ pub enum Period {
     Month,
     /// Year
     Year,
+}
+
+/// Real number as a 64-bit floating point number with non-NaNs
+#[derive(Default, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, PartialOrd, Ord)]
+#[serde(transparent)]
+pub struct Real(pub N64);
+
+impl fmt::Display for Real {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", f64::from(self.0))
+    }
+}
+
+impl fmt::Debug for Real {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", f64::from(self.0))
+    }
+}
+
+impl ops::Add for Real {
+    type Output = Self;
+    fn add(self, other: Self) -> Self::Output {
+        Real(self.0 + other.0)
+    }
+}
+
+impl ops::Sub for Real {
+    type Output = Self;
+    fn sub(self, other: Self) -> Self::Output {
+        Real(self.0 - other.0)
+    }
+}
+
+impl ops::Mul for Real {
+    type Output = Self;
+    fn mul(self, other: Self) -> Self::Output {
+        Real(self.0 * other.0)
+    }
+}
+
+impl ops::Div for Real {
+    type Output = Self;
+    fn div(self, other: Self) -> Self::Output {
+        Real(self.0 / other.0)
+    }
+}
+
+impl sqlx::Type<sqlx::Sqlite> for Real {
+    fn type_info() -> sqlx::sqlite::SqliteTypeInfo {
+        <f64 as sqlx::Type<sqlx::Sqlite>>::type_info()
+    }
+}
+
+impl sqlx::Encode<'_, sqlx::Sqlite> for Real {
+    fn encode_by_ref(
+        &self,
+        buf: &mut <sqlx::Sqlite as sqlx::Database>::ArgumentBuffer<'_>,
+    ) -> Result<sqlx::encode::IsNull, sqlx::error::BoxDynError> {
+        <f64 as sqlx::Encode<'_, sqlx::Sqlite>>::encode_by_ref(&self.0.into(), buf)
+    }
+}
+
+impl<'r> sqlx::Decode<'r, sqlx::Sqlite> for Real {
+    fn decode(
+        value: <sqlx::Sqlite as sqlx::Database>::ValueRef<'r>,
+    ) -> Result<Self, sqlx::error::BoxDynError> {
+        <f64 as sqlx::Decode<'r, sqlx::Sqlite>>::decode(value).map(Real::from)
+    }
+}
+
+impl From<f64> for Real {
+    fn from(value: f64) -> Self {
+        Real(N64::new(value))
+    }
+}
+
+impl From<Real> for f64 {
+    fn from(value: Real) -> Self {
+        value.0.into()
+    }
 }
