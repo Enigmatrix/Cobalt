@@ -43,6 +43,31 @@ The algorithm identifies and merges qualifying app usages into maximal "Focused 
     *   **Initial Focus Usages** (\(U'_F\)): Usages of focus apps that meet a minimum duration requirement.
         \[ U'_F = \{u \in U \mid u.a \in A_F \land (u.t_{end} - u.t_{start}) \ge \theta_{F,min\_dur}\} \]
 
+### Per-App Usage Merging (Pre-Filtering)
+
+Real-world data often splits a continuous interaction with the **same** application into multiple short `usage` rows (for instance, because the window briefly lost focus).  Relying on the raw rows would cause many short fragments to be discarded by the minimum-duration filter.
+
+To address this, **before** we apply the duration threshold we first **merge adjacent usages that belong to the same application** if the gap between them is not greater than the corresponding “max gap” setting.  Formally, for each app \(a\) we build a sequence of its usages ordered by their start time and merge runs as follows:
+
+• Two consecutive usages \(u_i, u_{i+1}\) where \(u_i.a = u_{i+1}.a\) are merged when
+\[
+    u_{i+1}.t_{start} - u_i.t_{end} \le \theta_{D,max\_gap} \quad (\text{distractive side})
+\]
+or
+\[
+    u_{i+1}.t_{start} - u_i.t_{end} \le \theta_{F,max\_gap} \quad (\text{focus side}).
+\]
+
+After the transitive closure of this rule, we obtain **per-app merged usages**
+\(\widetilde{U}_D\) and \(\widetilde{U}_F\).  The minimum-duration thresholds are then evaluated **on these merged intervals**:
+
+\[
+    U'_D = \{u \in \widetilde{U}_D \mid (u.t_{end} - u.t_{start}) \ge \theta_{D,min\_dur}\},\qquad
+    U'_F = \{u \in \widetilde{U}_F \mid (u.t_{end} - u.t_{start}) \ge \theta_{F,min\_dur}\}.
+\]
+
+The remainder of the algorithm (calculating DPs and FPs, pruning focus by distraction, and joining across applications) operates on these filtered, merged sets.
+
 ### Algorithm Steps
 
 The algorithm proceeds in three main stages:
