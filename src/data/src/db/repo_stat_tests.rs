@@ -3178,12 +3178,12 @@ async fn get_periods_focus_and_distractive_periods() -> Result<()> {
         .await?;
 
     assert_eq!(periods.len(), 2);
-    assert_eq!(periods[0].start, focus_start);
-    assert_eq!(periods[0].end, focus_end);
-    assert!(periods[0].is_focused);
-    assert_eq!(periods[1].start, distractive_start);
-    assert_eq!(periods[1].end, distractive_end);
-    assert!(!periods[1].is_focused); // distractive period
+    assert!(!periods[0].is_focused); // distractive period
+    assert_eq!(periods[0].start, distractive_start);
+    assert_eq!(periods[0].end, distractive_end);
+    assert!(periods[1].is_focused); // focus period
+    assert_eq!(periods[1].start, focus_start);
+    assert_eq!(periods[1].end, focus_end);
 
     Ok(())
 }

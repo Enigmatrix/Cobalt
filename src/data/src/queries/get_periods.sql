@@ -141,10 +141,18 @@ WITH
             GROUP BY group_number)
 
 
-SELECT start, end, 0 AS is_focused
+SELECT
+  MAX(start, p.range_start) AS start,
+  MIN(end, p.range_end) AS end,
+  0 AS is_focused
 FROM dp
+CROSS JOIN params p
 
 UNION ALL
 
-SELECT start, end, 1 AS is_focused
+SELECT
+  MAX(start, p.range_start) AS start,
+  MIN(end, p.range_end) AS end,
+  1 AS is_focused
 FROM fp
+CROSS JOIN params p
