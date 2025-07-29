@@ -5606,3 +5606,820 @@ async fn get_periods_focus_score_equal_threshold_not_focus() -> Result<()> {
     assert!(periods.is_empty());
     Ok(())
 }
+
+// Switching between different distractive apps within the max_distractive_gap should still merge into a single Distractive Period
+#[tokio::test]
+async fn get_periods_distractive_switch_apps_contiguous_usages_merges() -> Result<()> {
+    let db = test_db().await?;
+    let mut repo = Repository::new(db)?;
+
+    // Create a low-scoring tag (distractive)
+    let dist_tag = arrange::tag(
+        &mut repo.db,
+        Tag {
+            id: Ref::new(1),
+            name: "Leisure".into(),
+            color: "red".into(),
+            score: 2.0.into(),
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    // Two distractive apps that share the same low score tag
+    let dist_app1 = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(1),
+            name: "VideoPlayer".into(),
+            description: "".into(),
+            company: "".into(),
+            color: "red".into(),
+            identity: AppIdentity::Win32 {
+                path: "vid.exe".into(),
+            },
+            tag_id: Some(dist_tag.id.clone()),
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    let dist_app2 = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(2),
+            name: "MusicPlayer".into(),
+            description: "".into(),
+            company: "".into(),
+            color: "red".into(),
+            identity: AppIdentity::Win32 {
+                path: "music.exe".into(),
+            },
+            tag_id: Some(dist_tag.id.clone()),
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    // Sessions – one per app
+    let session1 = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(1),
+            app_id: dist_app1.id.clone(),
+            title: "s1".into(),
+            url: None,
+        },
+    )
+    .await?;
+
+    let session2 = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(2),
+            app_id: dist_app2.id.clone(),
+            title: "s2".into(),
+            url: None,
+        },
+    )
+    .await?;
+
+    // Two usages separated by < max_distractive_gap (4 min < 5 min)
+    let u1_start = test_start() + 10 * ONE_HOUR;
+    let u1_end = u1_start + 10 * 60 * 1000 * 10000; // 10 min
+    let u2_start = u1_end;
+    let u2_end = u2_start + 10 * 60 * 1000 * 10000; // 10 min
+
+    // Insert usages
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(1),
+            session_id: session1.id.clone(),
+            start: u1_start,
+            end: u1_end,
+        },
+    )
+    .await?;
+
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(2),
+            session_id: session2.id.clone(),
+            start: u2_start,
+            end: u2_end,
+        },
+    )
+    .await?;
+
+    let focus_settings = FocusPeriodSettings {
+        min_focus_score: 5,
+        min_focus_usage_dur: 15 * 60 * 1000 * 10000,
+        max_focus_gap: 5 * 60 * 1000 * 10000,
+    };
+    let dist_settings = DistractivePeriodSettings {
+        max_distractive_score: 3,
+        min_distractive_usage_dur: 15 * 60 * 1000 * 10000,
+        max_distractive_gap: 5 * 60 * 1000 * 10000,
+    };
+
+    let periods = repo
+        .get_periods(test_start(), test_end(), focus_settings, dist_settings)
+        .await?;
+
+    // Expect a single merged Distractive Period covering both usages
+    assert_eq!(periods.len(), 1);
+    assert!(!periods[0].is_focused);
+    assert_eq!(periods[0].start, u1_start);
+    assert_eq!(periods[0].end, u2_end);
+    Ok(())
+}
+
+// Two sessions of the SAME distractive app within the gap should merge into one DP
+#[tokio::test]
+async fn get_periods_distractive_multi_session_same_app_merges() -> Result<()> {
+    let db = test_db().await?;
+    let mut repo = Repository::new(db)?;
+
+    let dist_tag = arrange::tag(
+        &mut repo.db,
+        Tag {
+            id: Ref::new(1),
+            name: "Idle".into(),
+            color: "red".into(),
+            score: 1.0.into(),
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    let dist_app = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(1),
+            name: "Chat".into(),
+            description: "".into(),
+            company: "".into(),
+            color: "red".into(),
+            identity: AppIdentity::Win32 {
+                path: "chat.exe".into(),
+            },
+            tag_id: Some(dist_tag.id.clone()),
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    // Two separate sessions of the same app
+    let session1 = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(1),
+            app_id: dist_app.id.clone(),
+            title: "s1".into(),
+            url: None,
+        },
+    )
+    .await?;
+    let session2 = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(2),
+            app_id: dist_app.id.clone(),
+            title: "s2".into(),
+            url: None,
+        },
+    )
+    .await?;
+
+    let u1_start = test_start() + 12 * ONE_HOUR;
+    let u1_end = u1_start + 15 * 60 * 1000 * 10000; // 15 min
+    let u2_start = u1_end;
+    let u2_end = u2_start + 15 * 60 * 1000 * 10000;
+
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(1),
+            session_id: session1.id.clone(),
+            start: u1_start,
+            end: u1_end,
+        },
+    )
+    .await?;
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(2),
+            session_id: session2.id.clone(),
+            start: u2_start,
+            end: u2_end,
+        },
+    )
+    .await?;
+
+    let focus_settings = FocusPeriodSettings {
+        min_focus_score: 5,
+        min_focus_usage_dur: 25 * 60 * 1000 * 10000,
+        max_focus_gap: 5 * 60 * 1000 * 10000,
+    };
+    let dist_settings = DistractivePeriodSettings {
+        max_distractive_score: 3,
+        min_distractive_usage_dur: 25 * 60 * 1000 * 10000,
+        max_distractive_gap: 5 * 60 * 1000 * 10000,
+    };
+
+    let periods = repo
+        .get_periods(test_start(), test_end(), focus_settings, dist_settings)
+        .await?;
+
+    assert_eq!(periods.len(), 1);
+    assert!(!periods[0].is_focused);
+    assert_eq!(periods[0].start, u1_start);
+    assert_eq!(periods[0].end, u2_end);
+    Ok(())
+}
+
+// Switching between different focus apps within the max_focus_gap should merge into one Focus Period
+#[tokio::test]
+async fn get_periods_focus_switch_apps_contiguous_usages_merges() -> Result<()> {
+    let db = test_db().await?;
+    let mut repo = Repository::new(db)?;
+
+    let focus_tag = arrange::tag(
+        &mut repo.db,
+        Tag {
+            id: Ref::new(1),
+            name: "Productivity".into(),
+            color: "green".into(),
+            score: 10.0.into(),
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    let focus_app1 = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(1),
+            name: "IDE".into(),
+            description: "".into(),
+            company: "".into(),
+            color: "green".into(),
+            identity: AppIdentity::Win32 {
+                path: "ide.exe".into(),
+            },
+            tag_id: Some(focus_tag.id.clone()),
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    let focus_app2 = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(2),
+            name: "Editor".into(),
+            description: "".into(),
+            company: "".into(),
+            color: "green".into(),
+            identity: AppIdentity::Win32 {
+                path: "edit.exe".into(),
+            },
+            tag_id: Some(focus_tag.id.clone()),
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    let session1 = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(1),
+            app_id: focus_app1.id.clone(),
+            title: "s1".into(),
+            url: None,
+        },
+    )
+    .await?;
+    let session2 = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(2),
+            app_id: focus_app2.id.clone(),
+            title: "s2".into(),
+            url: None,
+        },
+    )
+    .await?;
+
+    let u1_start = test_start() + 14 * ONE_HOUR;
+    let u1_end = u1_start + 15 * 60 * 1000 * 10000; // 15 min
+    let u2_start = u1_end;
+    let u2_end = u2_start + 15 * 60 * 1000 * 10000;
+
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(1),
+            session_id: session1.id.clone(),
+            start: u1_start,
+            end: u1_end,
+        },
+    )
+    .await?;
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(2),
+            session_id: session2.id.clone(),
+            start: u2_start,
+            end: u2_end,
+        },
+    )
+    .await?;
+
+    let focus_settings = FocusPeriodSettings {
+        min_focus_score: 5,
+        min_focus_usage_dur: 25 * 60 * 1000 * 10000,
+        max_focus_gap: 5 * 60 * 1000 * 10000,
+    };
+    let dist_settings = DistractivePeriodSettings {
+        max_distractive_score: 3,
+        min_distractive_usage_dur: 25 * 60 * 1000 * 10000,
+        max_distractive_gap: 5 * 60 * 1000 * 10000,
+    };
+
+    let periods = repo
+        .get_periods(test_start(), test_end(), focus_settings, dist_settings)
+        .await?;
+
+    assert_eq!(periods.len(), 1);
+    assert!(periods[0].is_focused);
+    assert_eq!(periods[0].start, u1_start);
+    assert_eq!(periods[0].end, u2_end);
+    Ok(())
+}
+
+// Two sessions of the SAME focus app within the gap should merge into one FP (even though each usage alone is below min duration)
+#[tokio::test]
+async fn get_periods_focus_multi_session_same_app_merges() -> Result<()> {
+    let db = test_db().await?;
+    let mut repo = Repository::new(db)?;
+
+    let focus_tag = arrange::tag(
+        &mut repo.db,
+        Tag {
+            id: Ref::new(1),
+            name: "Coding".into(),
+            color: "green".into(),
+            score: 8.0.into(),
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    let focus_app = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(1),
+            name: "Terminal".into(),
+            description: "".into(),
+            company: "".into(),
+            color: "green".into(),
+            identity: AppIdentity::Win32 {
+                path: "term.exe".into(),
+            },
+            tag_id: Some(focus_tag.id.clone()),
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    let session1 = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(1),
+            app_id: focus_app.id.clone(),
+            title: "s1".into(),
+            url: None,
+        },
+    )
+    .await?;
+    let session2 = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(2),
+            app_id: focus_app.id.clone(),
+            title: "s2".into(),
+            url: None,
+        },
+    )
+    .await?;
+
+    let u1_start = test_start() + 16 * ONE_HOUR;
+    let u1_end = u1_start + 15 * 60 * 1000 * 10000; // 15 min
+    let u2_start = u1_end;
+    let u2_end = u2_start + 15 * 60 * 1000 * 10000;
+
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(1),
+            session_id: session1.id.clone(),
+            start: u1_start,
+            end: u1_end,
+        },
+    )
+    .await?;
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(2),
+            session_id: session2.id.clone(),
+            start: u2_start,
+            end: u2_end,
+        },
+    )
+    .await?;
+
+    let focus_settings = FocusPeriodSettings {
+        min_focus_score: 5,
+        min_focus_usage_dur: 25 * 60 * 1000 * 10000,
+        max_focus_gap: 5 * 60 * 1000 * 10000,
+    };
+    let dist_settings = DistractivePeriodSettings {
+        max_distractive_score: 3,
+        min_distractive_usage_dur: 25 * 60 * 1000 * 10000,
+        max_distractive_gap: 5 * 60 * 1000 * 10000,
+    };
+
+    let periods = repo
+        .get_periods(test_start(), test_end(), focus_settings, dist_settings)
+        .await?;
+
+    assert_eq!(periods.len(), 1);
+    assert!(periods[0].is_focused);
+    assert_eq!(periods[0].start, u1_start);
+    assert_eq!(periods[0].end, u2_end);
+    Ok(())
+}
+
+// Distractive period blocks a short focus usage from extending an initial focus period
+#[tokio::test]
+async fn get_periods_dp_blocks_focus_usage_extension() -> Result<()> {
+    let db = test_db().await?;
+    let mut repo = Repository::new(db)?;
+
+    // Tags
+    let focus_tag = arrange::tag(
+        &mut repo.db,
+        Tag {
+            id: Ref::new(1),
+            name: "Focus".into(),
+            color: "g".into(),
+            score: 10.0.into(),
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+    let dist_tag = arrange::tag(
+        &mut repo.db,
+        Tag {
+            id: Ref::new(2),
+            name: "Dist".into(),
+            color: "r".into(),
+            score: 0.0.into(),
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    // Apps
+    let focus_app = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(1),
+            name: "FApp".into(),
+            description: "".into(),
+            company: "".into(),
+            color: "g".into(),
+            identity: AppIdentity::Win32 {
+                path: "f.exe".into(),
+            },
+            tag_id: Some(focus_tag.id.clone()),
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+    let dist_app = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(2),
+            name: "DApp".into(),
+            description: "".into(),
+            company: "".into(),
+            color: "r".into(),
+            identity: AppIdentity::Win32 {
+                path: "d.exe".into(),
+            },
+            tag_id: Some(dist_tag.id.clone()),
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    // Sessions
+    let fsess = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(1),
+            app_id: focus_app.id.clone(),
+            title: "s".into(),
+            url: None,
+        },
+    )
+    .await?;
+    let dsess = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(2),
+            app_id: dist_app.id.clone(),
+            title: "s".into(),
+            url: None,
+        },
+    )
+    .await?;
+
+    // Timings (in Windows ticks)
+    let f1_start = test_start() + 18 * ONE_HOUR;
+    let six_min = 6 * 60 * 1000 * 10000;
+    let one_min = 60 * 1000 * 10000;
+    let f1_end = f1_start + six_min;
+    let f2_start = f1_end; // contiguous with first usage
+    let f2_end = f2_start + six_min;
+    // Distractive usage
+    let d_start = f2_end + one_min;
+    let d_end = d_start + 15 * 60 * 1000 * 10000;
+    // Short focus usage after DP (should NOT be merged)
+    let f3_start = d_end + one_min;
+    let f3_end = f3_start + six_min;
+
+    // Insert usages
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(1),
+            session_id: fsess.id.clone(),
+            start: f1_start,
+            end: f1_end,
+        },
+    )
+    .await?;
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(2),
+            session_id: fsess.id.clone(),
+            start: f2_start,
+            end: f2_end,
+        },
+    )
+    .await?;
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(3),
+            session_id: dsess.id.clone(),
+            start: d_start,
+            end: d_end,
+        },
+    )
+    .await?;
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(4),
+            session_id: fsess.id.clone(),
+            start: f3_start,
+            end: f3_end,
+        },
+    )
+    .await?;
+
+    // Settings
+    let focus_settings = FocusPeriodSettings {
+        min_focus_score: 5,
+        min_focus_usage_dur: 10 * 60 * 1000 * 10000,
+        max_focus_gap: 5 * 60 * 1000 * 10000,
+    };
+    let dist_settings = DistractivePeriodSettings {
+        max_distractive_score: 3,
+        min_distractive_usage_dur: 10 * 60 * 1000 * 10000,
+        max_distractive_gap: 5 * 60 * 1000 * 10000,
+    };
+
+    let periods = repo
+        .get_periods(test_start(), test_end(), focus_settings, dist_settings)
+        .await?;
+
+    // Expect exactly 1 FP (f1+f2) and 1 DP; the short focus after DP should be ignored
+    assert_eq!(periods.len(), 2);
+    let fp_count = periods.iter().filter(|p| p.is_focused).count();
+    assert_eq!(fp_count, 1);
+    let fp = periods.iter().find(|p| p.is_focused).unwrap();
+    assert_eq!(fp.start, f1_start);
+    assert_eq!(fp.end, f2_end);
+    Ok(())
+}
+
+// Distractive period prevents two qualifying focus periods from merging
+#[tokio::test]
+async fn get_periods_dp_prevents_focus_periods_merging() -> Result<()> {
+    let db = test_db().await?;
+    let mut repo = Repository::new(db)?;
+
+    // Tags
+    let focus_tag = arrange::tag(
+        &mut repo.db,
+        Tag {
+            id: Ref::new(1),
+            name: "Focus".into(),
+            color: "g".into(),
+            score: 10.0.into(),
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+    let dist_tag = arrange::tag(
+        &mut repo.db,
+        Tag {
+            id: Ref::new(2),
+            name: "Dist".into(),
+            color: "r".into(),
+            score: 0.0.into(),
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    // Apps
+    let focus_app = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(1),
+            name: "FApp".into(),
+            description: "".into(),
+            company: "".into(),
+            color: "g".into(),
+            identity: AppIdentity::Win32 {
+                path: "f.exe".into(),
+            },
+            tag_id: Some(focus_tag.id.clone()),
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+    let dist_app = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(2),
+            name: "DApp".into(),
+            description: "".into(),
+            company: "".into(),
+            color: "r".into(),
+            identity: AppIdentity::Win32 {
+                path: "d.exe".into(),
+            },
+            tag_id: Some(dist_tag.id.clone()),
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    // Sessions
+    let fsess = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(1),
+            app_id: focus_app.id.clone(),
+            title: "s".into(),
+            url: None,
+        },
+    )
+    .await?;
+    let dsess = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(2),
+            app_id: dist_app.id.clone(),
+            title: "s".into(),
+            url: None,
+        },
+    )
+    .await?;
+
+    // Timings
+    let f1_start = test_start() + 20 * ONE_HOUR;
+    let fifteen_min = 15 * 60 * 1000 * 10000;
+    let one_min = 60 * 1000 * 10000;
+    let f1_end = f1_start + fifteen_min;
+
+    let d_start = f1_end + one_min;
+    let d_end = d_start + 15 * 60 * 1000 * 10000;
+
+    let f2_start = d_end + one_min;
+    let f2_end = f2_start + fifteen_min;
+
+    // Insert usages
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(1),
+            session_id: fsess.id.clone(),
+            start: f1_start,
+            end: f1_end,
+        },
+    )
+    .await?;
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(2),
+            session_id: dsess.id.clone(),
+            start: d_start,
+            end: d_end,
+        },
+    )
+    .await?;
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(3),
+            session_id: fsess.id.clone(),
+            start: f2_start,
+            end: f2_end,
+        },
+    )
+    .await?;
+
+    // Settings (larger max_focus_gap so gap without DP would merge)
+    let focus_settings = FocusPeriodSettings {
+        min_focus_score: 5,
+        min_focus_usage_dur: 10 * 60 * 1000 * 10000,
+        max_focus_gap: 20 * 60 * 1000 * 10000, // 20 minutes
+    };
+    let dist_settings = DistractivePeriodSettings {
+        max_distractive_score: 3,
+        min_distractive_usage_dur: 10 * 60 * 1000 * 10000,
+        max_distractive_gap: 5 * 60 * 1000 * 10000,
+    };
+
+    let periods = repo
+        .get_periods(test_start(), test_end(), focus_settings, dist_settings)
+        .await?;
+
+    // Expect 2 separate FPs and 1 DP (total 3 periods)
+    assert_eq!(periods.len(), 3);
+    let fp_count = periods.iter().filter(|p| p.is_focused).count();
+    assert_eq!(fp_count, 2);
+    // Ensure the two FPs have expected boundaries
+    let mut fp_starts: Vec<i64> = periods
+        .iter()
+        .filter(|p| p.is_focused)
+        .map(|p| p.start)
+        .collect();
+    fp_starts.sort();
+    assert_eq!(fp_starts[0], f1_start);
+    assert_eq!(fp_starts[1], f2_start);
+    Ok(())
+}
