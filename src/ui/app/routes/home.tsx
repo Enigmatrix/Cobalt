@@ -1,3 +1,4 @@
+import { DateRangePicker } from "@/components/time/date-range-picker";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -9,6 +10,13 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { NextButton, PrevButton, UsageCard } from "@/components/usage-card";
 import { Gantt } from "@/components/viz/gantt2";
 import { UsageChart } from "@/components/viz/usage-chart";
+import {
+  VizCard,
+  VizCardAction,
+  VizCardContent,
+  VizCardHeader,
+  VizCardTitle,
+} from "@/components/viz/viz-card";
 import { useLastNonNull } from "@/hooks/use-last";
 import {
   useAppDurationsPerPeriod,
@@ -16,10 +24,7 @@ import {
   useInteractionPeriods,
   useSystemEvents,
 } from "@/hooks/use-repo";
-import {
-  useIntervalControlsWithDefault,
-  usePeriodInterval,
-} from "@/hooks/use-time";
+import { useIntervalControlsWithDefault } from "@/hooks/use-time";
 import {
   hour24Formatter,
   monthDayFormatter,
@@ -30,24 +35,6 @@ import { DateTime } from "luxon";
 import { useMemo } from "react";
 
 export default function Home() {
-  const interval = usePeriodInterval("day");
-
-  const { ret: usages, isLoading: usagesLoading } = useAppSessionUsages({
-    start: interval.start,
-    end: interval.end,
-  });
-  const { ret: interactions, isLoading: interactionPeriodsLoading } =
-    useInteractionPeriods({
-      start: interval.start,
-      end: interval.end,
-    });
-  const { ret: systemEvents, isLoading: systemEventsLoading } = useSystemEvents(
-    {
-      start: interval.start,
-      end: interval.end,
-    },
-  );
-
   return (
     <>
       <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
@@ -84,17 +71,7 @@ export default function Home() {
             />
           </div>
 
-          <div className="sticky rounded-xl bg-muted/50 border border-border overflow-clip">
-            <Gantt
-              usages={usages}
-              usagesLoading={usagesLoading}
-              interactionPeriods={interactions}
-              interactionPeriodsLoading={interactionPeriodsLoading}
-              systemEvents={systemEvents}
-              systemEventsLoading={systemEventsLoading}
-              interval={interval}
-            />
-          </div>
+          <SessionsCard />
         </div>
       </div>
     </>
@@ -165,5 +142,79 @@ function AppUsageBarChartCard({
         </>
       }
     />
+  );
+}
+
+function SessionsCard() {
+  const {
+    interval: intervalNullable,
+    canGoNext,
+    goNext,
+    canGoPrev,
+    goPrev,
+    setInterval,
+  } = useIntervalControlsWithDefault("day");
+  const interval = useLastNonNull(intervalNullable);
+
+  const { ret: usages, isLoading: usagesLoading } = useAppSessionUsages({
+    start: interval.start,
+    end: interval.end,
+  });
+  const { ret: interactions, isLoading: interactionPeriodsLoading } =
+    useInteractionPeriods({
+      start: interval.start,
+      end: interval.end,
+    });
+  const { ret: systemEvents, isLoading: systemEventsLoading } = useSystemEvents(
+    {
+      start: interval.start,
+      end: interval.end,
+    },
+  );
+  const isLoading =
+    usagesLoading || interactionPeriodsLoading || systemEventsLoading;
+
+  return (
+    <VizCard>
+      <VizCardHeader className="pb-4 has-data-[slot=card-action]:grid-cols-[minmax(0,1fr)_auto]">
+        <VizCardTitle className="pl-4 pt-4 text-lg font-bold">
+          Sessions
+        </VizCardTitle>
+
+        <VizCardAction className="flex mt-3 mr-1.5">
+          {
+            <>
+              <PrevButton
+                canGoPrev={canGoPrev}
+                isLoading={isLoading}
+                goPrev={goPrev}
+              />
+              <DateRangePicker
+                className="min-w-32"
+                value={intervalNullable}
+                onChange={setInterval}
+              />
+              <NextButton
+                canGoNext={canGoNext}
+                isLoading={isLoading}
+                goNext={goNext}
+              />
+            </>
+          }
+        </VizCardAction>
+      </VizCardHeader>
+
+      <VizCardContent>
+        <Gantt
+          usages={usages}
+          usagesLoading={usagesLoading}
+          interactionPeriods={interactions}
+          interactionPeriodsLoading={interactionPeriodsLoading}
+          systemEvents={systemEvents}
+          systemEventsLoading={systemEventsLoading}
+          interval={interval}
+        />
+      </VizCardContent>
+    </VizCard>
   );
 }
