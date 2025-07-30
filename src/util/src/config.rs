@@ -231,6 +231,23 @@ impl Config {
         Ok(())
     }
 
+    /// Set default focus streak settings
+    pub fn set_default_focus_streak_settings(&mut self, value: FocusStreakSettings) -> Result<()> {
+        self.default_focus_streak_settings = value;
+        self.write()?;
+        Ok(())
+    }
+
+    /// Set default distractive streak settings
+    pub fn set_default_distractive_streak_settings(
+        &mut self,
+        value: DistractiveStreakSettings,
+    ) -> Result<()> {
+        self.default_distractive_streak_settings = value;
+        self.write()?;
+        Ok(())
+    }
+
     /// UI Log filter (tracing)
     pub fn ui_log_filter(&self) -> &str {
         &self.ui_log_filter
