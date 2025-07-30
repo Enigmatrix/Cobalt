@@ -2123,13 +2123,13 @@ async fn get_streaks_no_apps() -> Result<()> {
     let mut repo = Repository::new(db)?;
 
     let focus_settings = FocusStreakSettings {
-        min_focus_score: 5,
+        min_focus_score: 5.0.into(),
         min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes in Windows ticks
         max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
     let distractive_settings = DistractiveStreakSettings {
-        max_distractive_score: 3,
+        max_distractive_score: 3.0.into(),
         min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes in Windows ticks
         max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
@@ -2214,13 +2214,13 @@ async fn get_streaks_single_focus_streak() -> Result<()> {
     .await?;
 
     let focus_settings = FocusStreakSettings {
-        min_focus_score: 5,
+        min_focus_score: 5.0.into(),
         min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes in Windows ticks
         max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
     let distractive_settings = DistractiveStreakSettings {
-        max_distractive_score: 3,
+        max_distractive_score: 3.0.into(),
         min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes in Windows ticks
         max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
@@ -2308,13 +2308,13 @@ async fn get_streaks_single_distractive_streak() -> Result<()> {
     .await?;
 
     let focus_settings = FocusStreakSettings {
-        min_focus_score: 5,
+        min_focus_score: 5.0.into(),
         min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes in Windows ticks
         max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
     let distractive_settings = DistractiveStreakSettings {
-        max_distractive_score: 3,
+        max_distractive_score: 3.0.into(),
         min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes in Windows ticks
         max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
@@ -2402,13 +2402,13 @@ async fn get_streaks_usage_too_short_for_focus() -> Result<()> {
     .await?;
 
     let focus_settings = FocusStreakSettings {
-        min_focus_score: 5,
+        min_focus_score: 5.0.into(),
         min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes minimum in Windows ticks
         max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
     let distractive_settings = DistractiveStreakSettings {
-        max_distractive_score: 3,
+        max_distractive_score: 3.0.into(),
         min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes in Windows ticks
         max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
@@ -2494,13 +2494,13 @@ async fn get_streaks_usage_too_short_for_distractive() -> Result<()> {
     .await?;
 
     let focus_settings = FocusStreakSettings {
-        min_focus_score: 5,
+        min_focus_score: 5.0.into(),
         min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes in Windows ticks
         max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
     let distractive_settings = DistractiveStreakSettings {
-        max_distractive_score: 3,
+        max_distractive_score: 3.0.into(),
         min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes minimum in Windows ticks
         max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
@@ -2586,13 +2586,13 @@ async fn get_streaks_score_below_focus_threshold() -> Result<()> {
     .await?;
 
     let focus_settings = FocusStreakSettings {
-        min_focus_score: 5,
+        min_focus_score: 5.0.into(),
         min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes in Windows ticks
         max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
     let distractive_settings = DistractiveStreakSettings {
-        max_distractive_score: 3,
+        max_distractive_score: 3.0.into(),
         min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes in Windows ticks
         max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
@@ -2678,13 +2678,13 @@ async fn get_streaks_score_above_distractive_threshold() -> Result<()> {
     .await?;
 
     let focus_settings = FocusStreakSettings {
-        min_focus_score: 5,
+        min_focus_score: 5.0.into(),
         min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes in Windows ticks
         max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
     let distractive_settings = DistractiveStreakSettings {
-        max_distractive_score: 3,
+        max_distractive_score: 3.0.into(),
         min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes in Windows ticks
         max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
@@ -2756,13 +2756,13 @@ async fn get_streaks_app_without_tag() -> Result<()> {
     .await?;
 
     let focus_settings = FocusStreakSettings {
-        min_focus_score: 5,
+        min_focus_score: 5.0.into(),
         min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes in Windows ticks
         max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
     let distractive_settings = DistractiveStreakSettings {
-        max_distractive_score: 3,
+        max_distractive_score: 3.0.into(),
         min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes in Windows ticks
         max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
@@ -2877,13 +2877,13 @@ async fn get_streaks_multiple_focus_streaks() -> Result<()> {
     .await?;
 
     let focus_settings = FocusStreakSettings {
-        min_focus_score: 5,
+        min_focus_score: 5.0.into(),
         min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes in Windows ticks
         max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
     let distractive_settings = DistractiveStreakSettings {
-        max_distractive_score: 3,
+        max_distractive_score: 3.0.into(),
         min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes in Windows ticks
         max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
@@ -3000,13 +3000,13 @@ async fn get_streaks_multiple_distractive_streaks() -> Result<()> {
     .await?;
 
     let focus_settings = FocusStreakSettings {
-        min_focus_score: 5,
+        min_focus_score: 5.0.into(),
         min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes in Windows ticks
         max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
     let distractive_settings = DistractiveStreakSettings {
-        max_distractive_score: 3,
+        max_distractive_score: 3.0.into(),
         min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes in Windows ticks
         max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
@@ -3157,13 +3157,13 @@ async fn get_streaks_focus_and_distractive_streaks() -> Result<()> {
     .await?;
 
     let focus_settings = FocusStreakSettings {
-        min_focus_score: 5,
+        min_focus_score: 5.0.into(),
         min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes in Windows ticks
         max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
     let distractive_settings = DistractiveStreakSettings {
-        max_distractive_score: 3,
+        max_distractive_score: 3.0.into(),
         min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes in Windows ticks
         max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
@@ -3280,13 +3280,13 @@ async fn get_streaks_overlapping_usages_same_app() -> Result<()> {
     .await?;
 
     let focus_settings = FocusStreakSettings {
-        min_focus_score: 5,
+        min_focus_score: 5.0.into(),
         min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes in Windows ticks
         max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
     let distractive_settings = DistractiveStreakSettings {
-        max_distractive_score: 3,
+        max_distractive_score: 3.0.into(),
         min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes in Windows ticks
         max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
@@ -3401,13 +3401,13 @@ async fn get_streaks_gap_between_usages_within_threshold() -> Result<()> {
     .await?;
 
     let focus_settings = FocusStreakSettings {
-        min_focus_score: 5,
+        min_focus_score: 5.0.into(),
         min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes in Windows ticks
         max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
     let distractive_settings = DistractiveStreakSettings {
-        max_distractive_score: 3,
+        max_distractive_score: 3.0.into(),
         min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes in Windows ticks
         max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
@@ -3522,13 +3522,13 @@ async fn get_streaks_gap_between_usages_exceeds_threshold() -> Result<()> {
     .await?;
 
     let focus_settings = FocusStreakSettings {
-        min_focus_score: 5,
+        min_focus_score: 5.0.into(),
         min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes in Windows ticks
         max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
     let distractive_settings = DistractiveStreakSettings {
-        max_distractive_score: 3,
+        max_distractive_score: 3.0.into(),
         min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes in Windows ticks
         max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
@@ -3680,13 +3680,13 @@ async fn get_streaks_focus_streak_overlaps_distractive_streak() -> Result<()> {
     .await?;
 
     let focus_settings = FocusStreakSettings {
-        min_focus_score: 5,
+        min_focus_score: 5.0.into(),
         min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes in Windows ticks
         max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
     let distractive_settings = DistractiveStreakSettings {
-        max_distractive_score: 3,
+        max_distractive_score: 3.0.into(),
         min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes in Windows ticks
         max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
@@ -3820,13 +3820,13 @@ async fn get_streaks_multiple_apps_same_tag() -> Result<()> {
     .await?;
 
     let focus_settings = FocusStreakSettings {
-        min_focus_score: 5,
+        min_focus_score: 5.0.into(),
         min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes in Windows ticks
         max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
     let distractive_settings = DistractiveStreakSettings {
-        max_distractive_score: 3,
+        max_distractive_score: 3.0.into(),
         min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes in Windows ticks
         max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
@@ -3918,13 +3918,13 @@ async fn get_streaks_usage_outside_time_range() -> Result<()> {
     .await?;
 
     let focus_settings = FocusStreakSettings {
-        min_focus_score: 5,
+        min_focus_score: 5.0.into(),
         min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes in Windows ticks
         max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
     let distractive_settings = DistractiveStreakSettings {
-        max_distractive_score: 3,
+        max_distractive_score: 3.0.into(),
         min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes in Windows ticks
         max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
@@ -4011,13 +4011,13 @@ async fn get_streaks_usage_partially_overlaps_time_range() -> Result<()> {
     .await?;
 
     let focus_settings = FocusStreakSettings {
-        min_focus_score: 5,
+        min_focus_score: 5.0.into(),
         min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes in Windows ticks
         max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
     let distractive_settings = DistractiveStreakSettings {
-        max_distractive_score: 3,
+        max_distractive_score: 3.0.into(),
         min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes in Windows ticks
         max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
@@ -4159,13 +4159,13 @@ async fn get_streaks_complex_merging_scenario() -> Result<()> {
     .await?;
 
     let focus_settings = FocusStreakSettings {
-        min_focus_score: 5,
+        min_focus_score: 5.0.into(),
         min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes in Windows ticks
         max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
     let distractive_settings = DistractiveStreakSettings {
-        max_distractive_score: 3,
+        max_distractive_score: 3.0.into(),
         min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes in Windows ticks
         max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
@@ -4267,12 +4267,12 @@ async fn get_streaks_focus_gap_exact_threshold_merges() -> Result<()> {
     .await?;
 
     let focus_settings = FocusStreakSettings {
-        min_focus_score: 5,
+        min_focus_score: 5.0.into(),
         min_focus_usage_dur: 20 * 60 * 1000 * 10000,
         max_focus_gap: 5 * 60 * 1000 * 10000,
     };
     let distractive_settings = DistractiveStreakSettings {
-        max_distractive_score: 3,
+        max_distractive_score: 3.0.into(),
         min_distractive_usage_dur: 15 * 60 * 1000 * 10000,
         max_distractive_gap: 5 * 60 * 1000 * 10000,
     };
@@ -4364,12 +4364,12 @@ async fn get_streaks_focus_gap_just_over_threshold_no_merge() -> Result<()> {
     .await?;
 
     let focus_settings = FocusStreakSettings {
-        min_focus_score: 5,
+        min_focus_score: 5.0.into(),
         min_focus_usage_dur: 20 * 60 * 1000 * 10000,
         max_focus_gap: 5 * 60 * 1000 * 10000,
     };
     let distractive_settings = DistractiveStreakSettings {
-        max_distractive_score: 3,
+        max_distractive_score: 3.0.into(),
         min_distractive_usage_dur: 15 * 60 * 1000 * 10000,
         max_distractive_gap: 5 * 60 * 1000 * 10000,
     };
@@ -4459,12 +4459,12 @@ async fn get_streaks_distractive_gap_exact_threshold_merges() -> Result<()> {
     .await?;
 
     let focus_settings = FocusStreakSettings {
-        min_focus_score: 5,
+        min_focus_score: 5.0.into(),
         min_focus_usage_dur: 20 * 60 * 1000 * 10000,
         max_focus_gap: 5 * 60 * 1000 * 10000,
     };
     let distractive_settings = DistractiveStreakSettings {
-        max_distractive_score: 3,
+        max_distractive_score: 3.0.into(),
         min_distractive_usage_dur: 10 * 60 * 1000 * 10000,
         max_distractive_gap: 5 * 60 * 1000 * 10000,
     };
@@ -4556,12 +4556,12 @@ async fn get_streaks_distractive_gap_over_threshold_no_merge() -> Result<()> {
     .await?;
 
     let focus_settings = FocusStreakSettings {
-        min_focus_score: 5,
+        min_focus_score: 5.0.into(),
         min_focus_usage_dur: 20 * 60 * 1000 * 10000,
         max_focus_gap: 5 * 60 * 1000 * 10000,
     };
     let distractive_settings = DistractiveStreakSettings {
-        max_distractive_score: 3,
+        max_distractive_score: 3.0.into(),
         min_distractive_usage_dur: 10 * 60 * 1000 * 10000,
         max_distractive_gap: 5 * 60 * 1000 * 10000,
     };
@@ -4694,12 +4694,12 @@ async fn get_streaks_focus_pruned_by_exact_overlap() -> Result<()> {
     .await?;
 
     let focus_settings = FocusStreakSettings {
-        min_focus_score: 5,
+        min_focus_score: 5.0.into(),
         min_focus_usage_dur: 30 * 60 * 1000 * 10000,
         max_focus_gap: 5 * 60 * 1000 * 10000,
     };
     let distractive_settings = DistractiveStreakSettings {
-        max_distractive_score: 3,
+        max_distractive_score: 3.0.into(),
         min_distractive_usage_dur: 20 * 60 * 1000 * 10000,
         max_distractive_gap: 5 * 60 * 1000 * 10000,
     };
@@ -4782,12 +4782,12 @@ macro_rules! basic_get_streaks_case {
             )
             .await?;
             let focus_settings = FocusStreakSettings {
-                min_focus_score: 5,
+                min_focus_score: 5.0.into(),
                 min_focus_usage_dur: 10 * 60 * 1000 * 10000,
                 max_focus_gap: 5 * 60 * 1000 * 10000,
             };
             let dist_settings = DistractiveStreakSettings {
-                max_distractive_score: 3,
+                max_distractive_score: 3.0.into(),
                 min_distractive_usage_dur: 10 * 60 * 1000 * 10000,
                 max_distractive_gap: 5 * 60 * 1000 * 10000,
             };
@@ -4866,12 +4866,12 @@ async fn get_streaks_focus_below_min_duration_skipped() -> Result<()> {
     )
     .await?;
     let focus_settings = FocusStreakSettings {
-        min_focus_score: 5,
+        min_focus_score: 5.0.into(),
         min_focus_usage_dur: 10 * 60 * 1000 * 10000,
         max_focus_gap: 5 * 60 * 1000 * 10000,
     };
     let dist_settings = DistractiveStreakSettings {
-        max_distractive_score: 3,
+        max_distractive_score: 3.0.into(),
         min_distractive_usage_dur: 10 * 60 * 1000 * 10000,
         max_distractive_gap: 5 * 60 * 1000 * 10000,
     };
@@ -4936,12 +4936,12 @@ async fn get_streaks_tagless_app_counts_distractive() -> Result<()> {
     )
     .await?;
     let focus_settings = FocusStreakSettings {
-        min_focus_score: 5,
+        min_focus_score: 5.0.into(),
         min_focus_usage_dur: 10 * 60 * 1000 * 10000,
         max_focus_gap: 5 * 60 * 1000 * 10000,
     };
     let dist_settings = DistractiveStreakSettings {
-        max_distractive_score: 3,
+        max_distractive_score: 3.0.into(),
         min_distractive_usage_dur: 10 * 60 * 1000 * 10000,
         max_distractive_gap: 5 * 60 * 1000 * 10000,
     };
@@ -5011,12 +5011,12 @@ async fn get_streaks_focus_usage_starts_before_range_clipped() -> Result<()> {
     )
     .await?;
     let focus_settings = FocusStreakSettings {
-        min_focus_score: 5,
+        min_focus_score: 5.0.into(),
         min_focus_usage_dur: 10 * 60 * 1000 * 10000,
         max_focus_gap: 5 * 60 * 1000 * 10000,
     };
     let dist_settings = DistractiveStreakSettings {
-        max_distractive_score: 3,
+        max_distractive_score: 3.0.into(),
         min_distractive_usage_dur: 10 * 60 * 1000 * 10000,
         max_distractive_gap: 5 * 60 * 1000 * 10000,
     };
@@ -5086,12 +5086,12 @@ async fn get_streaks_distractive_usage_extends_after_range_clipped() -> Result<(
     )
     .await?;
     let focus_settings = FocusStreakSettings {
-        min_focus_score: 5,
+        min_focus_score: 5.0.into(),
         min_focus_usage_dur: 10 * 60 * 1000 * 10000,
         max_focus_gap: 5 * 60 * 1000 * 10000,
     };
     let dist_settings = DistractiveStreakSettings {
-        max_distractive_score: 3,
+        max_distractive_score: 3.0.into(),
         min_distractive_usage_dur: 10 * 60 * 1000 * 10000,
         max_distractive_gap: 5 * 60 * 1000 * 10000,
     };
@@ -5159,12 +5159,12 @@ async fn get_streaks_usage_covers_entire_range() -> Result<()> {
     )
     .await?;
     let focus_settings = FocusStreakSettings {
-        min_focus_score: 5,
+        min_focus_score: 5.0.into(),
         min_focus_usage_dur: 10 * 60 * 1000 * 10000,
         max_focus_gap: 5 * 60 * 1000 * 10000,
     };
     let dist_settings = DistractiveStreakSettings {
-        max_distractive_score: 3,
+        max_distractive_score: 3.0.into(),
         min_distractive_usage_dur: 10 * 60 * 1000 * 10000,
         max_distractive_gap: 5 * 60 * 1000 * 10000,
     };
@@ -5269,12 +5269,12 @@ async fn get_streaks_focus_transitive_three_usages() -> Result<()> {
         .await?;
     }
     let focus_settings = FocusStreakSettings {
-        min_focus_score: 5,
+        min_focus_score: 5.0.into(),
         min_focus_usage_dur: 10 * 60 * 1000 * 10000,
         max_focus_gap: 5 * 60 * 1000 * 10000,
     };
     let dist_settings = DistractiveStreakSettings {
-        max_distractive_score: 3,
+        max_distractive_score: 3.0.into(),
         min_distractive_usage_dur: 10 * 60 * 1000 * 10000,
         max_distractive_gap: 5 * 60 * 1000 * 10000,
     };
@@ -5409,12 +5409,12 @@ async fn get_streaks_focus_gap_crosses_distractive_not_merge() -> Result<()> {
     )
     .await?;
     let focus_settings = FocusStreakSettings {
-        min_focus_score: 5,
+        min_focus_score: 5.0.into(),
         min_focus_usage_dur: 10 * 60 * 1000 * 10000,
         max_focus_gap: 5 * 60 * 1000 * 10000,
     };
     let dist_settings = DistractiveStreakSettings {
-        max_distractive_score: 3,
+        max_distractive_score: 3.0.into(),
         min_distractive_usage_dur: 10 * 60 * 1000 * 10000,
         max_distractive_gap: 5 * 60 * 1000 * 10000,
     };
@@ -5514,12 +5514,12 @@ async fn get_streaks_focus_overlap_zero_gap_merges() -> Result<()> {
     )
     .await?;
     let focus_settings = FocusStreakSettings {
-        min_focus_score: 5,
+        min_focus_score: 5.0.into(),
         min_focus_usage_dur: 10 * 60 * 1000 * 10000,
         max_focus_gap: 5 * 60 * 1000 * 10000,
     };
     let dist_settings = DistractiveStreakSettings {
-        max_distractive_score: 3,
+        max_distractive_score: 3.0.into(),
         min_distractive_usage_dur: 10 * 60 * 1000 * 10000,
         max_distractive_gap: 5 * 60 * 1000 * 10000,
     };
@@ -5590,12 +5590,12 @@ async fn get_streaks_focus_score_equal_threshold_not_focus() -> Result<()> {
     )
     .await?;
     let focus_settings = FocusStreakSettings {
-        min_focus_score: 5,
+        min_focus_score: 5.0.into(),
         min_focus_usage_dur: 10 * 60 * 1000 * 10000,
         max_focus_gap: 5 * 60 * 1000 * 10000,
     };
     let dist_settings = DistractiveStreakSettings {
-        max_distractive_score: 3,
+        max_distractive_score: 3.0.into(),
         min_distractive_usage_dur: 10 * 60 * 1000 * 10000,
         max_distractive_gap: 5 * 60 * 1000 * 10000,
     };
@@ -5719,12 +5719,12 @@ async fn get_streaks_distractive_switch_apps_contiguous_usages_merges() -> Resul
     .await?;
 
     let focus_settings = FocusStreakSettings {
-        min_focus_score: 5,
+        min_focus_score: 5.0.into(),
         min_focus_usage_dur: 15 * 60 * 1000 * 10000,
         max_focus_gap: 5 * 60 * 1000 * 10000,
     };
     let dist_settings = DistractiveStreakSettings {
-        max_distractive_score: 3,
+        max_distractive_score: 3.0.into(),
         min_distractive_usage_dur: 15 * 60 * 1000 * 10000,
         max_distractive_gap: 5 * 60 * 1000 * 10000,
     };
@@ -5828,12 +5828,12 @@ async fn get_streaks_distractive_multi_session_same_app_merges() -> Result<()> {
     .await?;
 
     let focus_settings = FocusStreakSettings {
-        min_focus_score: 5,
+        min_focus_score: 5.0.into(),
         min_focus_usage_dur: 25 * 60 * 1000 * 10000,
         max_focus_gap: 5 * 60 * 1000 * 10000,
     };
     let dist_settings = DistractiveStreakSettings {
-        max_distractive_score: 3,
+        max_distractive_score: 3.0.into(),
         min_distractive_usage_dur: 25 * 60 * 1000 * 10000,
         max_distractive_gap: 5 * 60 * 1000 * 10000,
     };
@@ -5954,12 +5954,12 @@ async fn get_streaks_focus_switch_apps_contiguous_usages_merges() -> Result<()> 
     .await?;
 
     let focus_settings = FocusStreakSettings {
-        min_focus_score: 5,
+        min_focus_score: 5.0.into(),
         min_focus_usage_dur: 25 * 60 * 1000 * 10000,
         max_focus_gap: 5 * 60 * 1000 * 10000,
     };
     let dist_settings = DistractiveStreakSettings {
-        max_distractive_score: 3,
+        max_distractive_score: 3.0.into(),
         min_distractive_usage_dur: 25 * 60 * 1000 * 10000,
         max_distractive_gap: 5 * 60 * 1000 * 10000,
     };
@@ -6061,12 +6061,12 @@ async fn get_streaks_focus_multi_session_same_app_merges() -> Result<()> {
     .await?;
 
     let focus_settings = FocusStreakSettings {
-        min_focus_score: 5,
+        min_focus_score: 5.0.into(),
         min_focus_usage_dur: 25 * 60 * 1000 * 10000,
         max_focus_gap: 5 * 60 * 1000 * 10000,
     };
     let dist_settings = DistractiveStreakSettings {
-        max_distractive_score: 3,
+        max_distractive_score: 3.0.into(),
         min_distractive_usage_dur: 25 * 60 * 1000 * 10000,
         max_distractive_gap: 5 * 60 * 1000 * 10000,
     };
@@ -6232,12 +6232,12 @@ async fn get_streaks_dp_blocks_focus_usage_extension() -> Result<()> {
 
     // Settings
     let focus_settings = FocusStreakSettings {
-        min_focus_score: 5,
+        min_focus_score: 5.0.into(),
         min_focus_usage_dur: 10 * 60 * 1000 * 10000,
         max_focus_gap: 5 * 60 * 1000 * 10000,
     };
     let dist_settings = DistractiveStreakSettings {
-        max_distractive_score: 3,
+        max_distractive_score: 3.0.into(),
         min_distractive_usage_dur: 10 * 60 * 1000 * 10000,
         max_distractive_gap: 5 * 60 * 1000 * 10000,
     };
@@ -6394,12 +6394,12 @@ async fn get_streaks_dp_prevents_focus_streaks_merging() -> Result<()> {
 
     // Settings (larger max_focus_gap so gap without DP would merge)
     let focus_settings = FocusStreakSettings {
-        min_focus_score: 5,
+        min_focus_score: 5.0.into(),
         min_focus_usage_dur: 10 * 60 * 1000 * 10000,
         max_focus_gap: 20 * 60 * 1000 * 10000, // 20 minutes
     };
     let dist_settings = DistractiveStreakSettings {
-        max_distractive_score: 3,
+        max_distractive_score: 3.0.into(),
         min_distractive_usage_dur: 10 * 60 * 1000 * 10000,
         max_distractive_gap: 5 * 60 * 1000 * 10000,
     };

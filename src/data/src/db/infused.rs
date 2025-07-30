@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use super::*;
 use crate::entities::{TimeFrame, TriggerAction};
-use crate::table::{Color, Duration, Real};
+use crate::table::{Color, Duration, Real, Score};
 
 /// List of [Ref<T>]
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize)]
@@ -395,7 +395,7 @@ pub struct Streak {
 #[serde(rename_all = "camelCase")]
 pub struct FocusStreakSettings {
     /// The minimum score of a focused app.
-    pub min_focus_score: i64,
+    pub min_focus_score: Score,
     /// The minimum duration of a focused usage.
     pub min_focus_usage_dur: Duration,
     /// The maximum gap between two focused streaks.
@@ -407,7 +407,7 @@ pub struct FocusStreakSettings {
 #[serde(rename_all = "camelCase")]
 pub struct DistractiveStreakSettings {
     /// The maximum score of a distractive app.
-    pub max_distractive_score: i64,
+    pub max_distractive_score: Score,
     /// The minimum duration of a distractive usage.
     pub min_distractive_usage_dur: Duration,
     /// The maximum gap between two distractive streaks.
