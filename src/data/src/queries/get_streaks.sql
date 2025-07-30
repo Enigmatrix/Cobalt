@@ -17,7 +17,7 @@ WITH
                 MAX(end)   AS end
             -- double window to do the grouping
             -- ref: https://stackoverflow.com/questions/63473256/how-do-i-group-datetimes-with-a-sqlite-windowing-functionk
-            FROM (SELECT start, end, SUM(is_group_start) over (ORDER BY start) as group_number
+            FROM (SELECT start, end, SUM(is_group_start) OVER (ORDER BY start) as group_number
                   FROM (SELECT u.start,
                                u.end,
                                -- window is all usages in [range_start, range_end], so LAG(end) is NULL
@@ -25,14 +25,13 @@ WITH
                                -- when the previous row's end != this row's start (i.e., not contiguous), else
                                -- is_group_start=0.
                                coalesce(LAG(end) OVER (ORDER BY u.start) <> u.start, 1) AS is_group_start
-                        FROM usages u
+                        FROM (SELECT u.start, u.end, u.session_id FROM usages u) u
                                  INNER JOIN sessions s on s.id = u.session_id
                                  INNER JOIN apps a ON a.id = s.app_id
                                  LEFT JOIN tags t ON t.id = a.tag_id
                                  CROSS JOIN params p
                         WHERE
                           -- filter usage if not in range
-                          -- TODO: cutoff at edges??
                             u.start < p.range_end
                           AND u.end > p.range_start
                           -- filter usage if not from distractive app
@@ -50,7 +49,7 @@ WITH
                 MAX(end)   AS end
             -- double window to do the grouping
             -- ref: https://stackoverflow.com/questions/63473256/how-do-i-group-datetimes-with-a-sqlite-windowing-functionk
-            FROM (SELECT start, end, SUM(is_group_start) over (ORDER BY start) as group_number
+            FROM (SELECT start, end, SUM(is_group_start) OVER (ORDER BY start) as group_number
                   FROM (SELECT u.start,
                                u.end,
                                -- window is all usages in [range_start, range_end], so LAG(end) is NULL
@@ -76,7 +75,7 @@ WITH
                 MAX(end)   AS end
             -- double window to do the grouping
             -- ref: https://stackoverflow.com/questions/63473256/how-do-i-group-datetimes-with-a-sqlite-windowing-functionk
-            FROM (SELECT start, end, SUM(is_group_start) over (ORDER BY start) as group_number
+            FROM (SELECT start, end, SUM(is_group_start) OVER (ORDER BY start) as group_number
                   FROM (SELECT u.start,
                                u.end,
                                -- window is all usages in [range_start, range_end], so LAG(end) is NULL
@@ -84,14 +83,13 @@ WITH
                                -- when the previous row's end != this row's start (i.e., not contiguous), else
                                -- is_group_start=0.
                                coalesce(LAG(end) OVER (ORDER BY u.start) <> u.start, 1) AS is_group_start
-                        FROM usages u
+                        FROM (SELECT u.start, u.end, u.session_id FROM usages u) u
                                  INNER JOIN sessions s on s.id = u.session_id
                                  INNER JOIN apps a ON a.id = s.app_id
                                  LEFT JOIN tags t ON t.id = a.tag_id
                                  CROSS JOIN params p
                         WHERE
                           -- filter usage if not in range
-                          -- TODO: cutoff at edges??
                             u.start < p.range_end
                           AND u.end > p.range_start
                           -- filter usage if not from focus app
@@ -115,7 +113,7 @@ WITH
                 MAX(end)   AS end
             -- double window to do the grouping
             -- ref: https://stackoverflow.com/questions/63473256/how-do-i-group-datetimes-with-a-sqlite-windowing-functionk
-            FROM (SELECT start, end, SUM(is_group_start) over (ORDER BY start) as group_number
+            FROM (SELECT start, end, SUM(is_group_start) OVER (ORDER BY start) as group_number
                   FROM (SELECT u.start,
                                u.end,
                                -- window is all usages in [range_start, range_end], so prev_end is NULL
@@ -141,18 +139,16 @@ WITH
             GROUP BY group_number)
 
 
-SELECT
-  MAX(start, p.range_start) AS start,
-  MIN(end, p.range_end) AS end,
-  0 AS is_focused
+SELECT MAX(start, p.range_start) AS start,
+       MIN(end, p.range_end)     AS end,
+       0                         AS is_focused
 FROM ds
-CROSS JOIN params p
+         CROSS JOIN params p
 
 UNION ALL
 
-SELECT
-  MAX(start, p.range_start) AS start,
-  MIN(end, p.range_end) AS end,
-  1 AS is_focused
+SELECT MAX(start, p.range_start) AS start,
+       MIN(end, p.range_end)     AS end,
+       1                         AS is_focused
 FROM fs
-CROSS JOIN params p
+         CROSS JOIN params p
