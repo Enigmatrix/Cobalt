@@ -1,5 +1,5 @@
 import { getTheme } from "@/components/theme-provider";
-import { getIconsDir } from "@/lib/config";
+import { getIconsDir, refresh as refreshConfig } from "@/lib/config";
 import type { Alert, App, Ref, Tag } from "@/lib/entities";
 import { info } from "@/lib/log";
 import {
@@ -52,6 +52,7 @@ export async function refresh() {
     getApps({ options }),
     getTags({ options }),
     getAlerts({ options }),
+    refreshConfig(),
   ]);
   useAppState.setState({ apps, tags, alerts, lastRefresh: now });
   info("refresh completed");
