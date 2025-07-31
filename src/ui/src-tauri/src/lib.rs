@@ -6,6 +6,7 @@ mod config;
 mod error;
 mod repo;
 mod state;
+mod stats;
 mod tracing;
 
 /// Tauri run entry point
@@ -58,6 +59,7 @@ pub fn run() {
             repo::get_app_session_usages,
             repo::get_interaction_periods,
             repo::get_system_events,
+            stats::get_score,
             tracing::log,
             config::read_config,
             config::config_set_track_incognito,
