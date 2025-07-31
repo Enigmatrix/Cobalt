@@ -23,6 +23,7 @@ import {
   useAppSessionUsages,
   useInteractionPeriods,
   useSystemEvents,
+  useTotalUsageFromPerPeriod,
 } from "@/hooks/use-repo";
 import { useIntervalControlsWithDefault } from "@/hooks/use-time";
 import {
@@ -96,12 +97,12 @@ function AppUsageBarChartCard({
   } = useIntervalControlsWithDefault(timePeriod);
   const interval = useLastNonNull(intervalNullable);
 
-  const { isLoading, totalUsage, appDurationsPerPeriod, start, end } =
-    useAppDurationsPerPeriod({
-      start: interval?.start,
-      end: interval?.end,
-      period,
-    });
+  const { isLoading, ret: appDurationsPerPeriod } = useAppDurationsPerPeriod({
+    start: interval?.start,
+    end: interval?.end,
+    period,
+  });
+  const totalUsage = useTotalUsageFromPerPeriod(appDurationsPerPeriod);
 
   const children = useMemo(
     () => (
@@ -109,8 +110,8 @@ function AppUsageBarChartCard({
         <UsageChart
           appDurationsPerPeriod={appDurationsPerPeriod}
           period={period}
-          start={start ?? interval.start}
-          end={end ?? interval.end}
+          start={interval.start}
+          end={interval.end}
           xAxisFormatter={xAxisLabelFormatter}
           className="aspect-none"
           maxYIsPeriod
@@ -119,7 +120,7 @@ function AppUsageBarChartCard({
         />
       </div>
     ),
-    [appDurationsPerPeriod, period, xAxisLabelFormatter, interval, start, end],
+    [appDurationsPerPeriod, period, xAxisLabelFormatter, interval],
   );
 
   return (

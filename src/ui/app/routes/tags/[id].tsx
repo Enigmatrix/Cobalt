@@ -34,7 +34,9 @@ import { useAlerts, useTag } from "@/hooks/use-refresh";
 import {
   useAppDurationsPerPeriod,
   useAppSessionUsages,
+  useSingleEntityUsageFromPerPeriod,
   useTagDurationsPerPeriod,
+  useTotalUsageFromPerPeriod,
 } from "@/hooks/use-repo";
 import {
   useIntervalControlsWithDefault,
@@ -120,18 +122,15 @@ function TagPage({ tag }: { tag: Tag }) {
     [alerts, tag],
   );
 
-  const {
-    isLoading: isYearDataLoading,
-    tagUsage: yearUsage,
-    totalUsage: yearTotalUsage,
-    usages: yearUsages,
-    start: yearStart,
-  } = useTagDurationsPerPeriod({
-    start: yearInterval.start,
-    end: yearInterval.end,
-    period: "day",
-    tag,
-  });
+  const { isLoading: isYearDataLoading, ret: yearUsages } =
+    useTagDurationsPerPeriod({
+      start: yearInterval.start,
+      end: yearInterval.end,
+      period: "day",
+    });
+  const yearTotalUsage = useTotalUsageFromPerPeriod(yearUsages);
+  const yearUsage = useSingleEntityUsageFromPerPeriod(yearUsages, tag.id);
+
   const yearData = useMemo(() => {
     return new Map(
       _(yearUsages[tag.id] ?? [])
@@ -315,7 +314,7 @@ function TagPage({ tag }: { tag: Tag }) {
               <Heatmap
                 data={yearData}
                 scaling={scaling}
-                startDate={yearStart ?? yearInterval.start}
+                startDate={yearInterval.start}
                 fullCellColorRgb={tag.color}
                 innerClassName="min-h-[200px]"
                 firstDayOfMonthClassName="stroke-card-foreground/50"
@@ -357,18 +356,18 @@ function TagUsageBarChartCard({
   } = useIntervalControlsWithDefault(timePeriod);
   const interval = useLastNonNull(intervalNullable);
 
-  const { isLoading, totalUsage, appDurationsPerPeriod, start, end } =
-    useAppDurationsPerPeriod({
-      start: interval.start,
-      end: interval.end,
-      period,
-    });
+  const { isLoading, ret: appDurationsPerPeriod } = useAppDurationsPerPeriod({
+    start: interval.start,
+    end: interval.end,
+    period,
+  });
   const { totalTagUsage } = useMemo(() => {
     const totalTagUsage = _(tag.apps)
       .flatMap((appId) => appDurationsPerPeriod[appId] ?? [])
       .sumBy("duration");
     return { totalTagUsage };
   }, [appDurationsPerPeriod, tag]);
+  const totalUsage = useTotalUsageFromPerPeriod(appDurationsPerPeriod);
 
   const children = useMemo(
     () => (
@@ -377,8 +376,8 @@ function TagUsageBarChartCard({
           appDurationsPerPeriod={appDurationsPerPeriod}
           onlyShowOneTag={tag.id}
           period={period}
-          start={start ?? interval.start}
-          end={end ?? interval.end}
+          start={interval.start}
+          end={interval.end}
           xAxisFormatter={xAxisLabelFormatter}
           className="aspect-none"
           maxYIsPeriod
@@ -386,15 +385,7 @@ function TagUsageBarChartCard({
         />
       </div>
     ),
-    [
-      appDurationsPerPeriod,
-      period,
-      xAxisLabelFormatter,
-      interval,
-      start,
-      end,
-      tag.id,
-    ],
+    [appDurationsPerPeriod, period, xAxisLabelFormatter, interval, tag.id],
   );
 
   return (

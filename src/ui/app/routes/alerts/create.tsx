@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UsageChart } from "@/components/viz/usage-chart";
 import { useZodForm } from "@/hooks/use-form";
 import { useHistoryRef } from "@/hooks/use-history-state";
+import { useLastNonNull } from "@/hooks/use-last";
 import { useTargetApps } from "@/hooks/use-refresh";
 import { useAppDurationsPerPeriod } from "@/hooks/use-repo";
 import { useIntervalControlsWithDefault } from "@/hooks/use-time";
@@ -25,7 +26,7 @@ import {
   InfoIcon,
   PlusIcon,
 } from "lucide-react";
-import { DateTime, Duration } from "luxon";
+import { Duration } from "luxon";
 import {
   Fragment,
   useCallback,
@@ -233,8 +234,15 @@ export function AppUsageBarChartView({
 }) {
   const [period, setPeriod] = useState<Period>("day");
 
-  const { interval, setInterval, canGoNext, goNext, canGoPrev, goPrev } =
-    useIntervalControlsWithDefault("week");
+  const {
+    interval: intervalNullable,
+    setInterval,
+    canGoNext,
+    goNext,
+    canGoPrev,
+    goPrev,
+  } = useIntervalControlsWithDefault("week");
+  const interval = useLastNonNull(intervalNullable);
 
   const scaledUsageLimit = useMemo(() => {
     if (!usageLimit || !timeFrame) return undefined;
@@ -244,15 +252,10 @@ export function AppUsageBarChartView({
     return perHourUsageLimit * hoursInPeriod(period);
   }, [period, usageLimit, timeFrame]);
 
-  const {
-    appDurationsPerPeriod,
-    period: loadPeriod,
-    start,
-    end,
-  } = useAppDurationsPerPeriod({
-    start: interval?.start,
-    end: interval?.end,
-    period: period,
+  const { ret: appDurationsPerPeriod } = useAppDurationsPerPeriod({
+    start: interval.start,
+    end: interval.end,
+    period,
   });
 
   const [yAxisInterval, maxYIsPeriod] = useMemo(() => {
@@ -268,12 +271,7 @@ export function AppUsageBarChartView({
       default:
         throw new Error(`Unknown period: ${period}`);
     }
-    // this should take period as a dependency, but we only take in loadPeriod
-    // which is a output of useAppDurationsPerPeriod, else we get yaxis flashes
-    // with the older data's yaxis interval before the data is loading
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loadPeriod]);
+  }, [period]);
 
   const targetApps = useTargetApps(target);
   const highlightedApps = useMemo(() => {
@@ -338,9 +336,9 @@ export function AppUsageBarChartView({
                   ]
                 : undefined
             }
-            period={loadPeriod ?? period}
-            start={start ?? interval?.start ?? DateTime.now()}
-            end={end ?? interval?.end ?? DateTime.now()}
+            period={period}
+            start={interval.start}
+            end={interval.end}
             className="w-full h-full"
             maxYIsPeriod={maxYIsPeriod}
             yAxisInterval={yAxisInterval}

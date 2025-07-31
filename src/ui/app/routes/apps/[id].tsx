@@ -26,6 +26,8 @@ import { useApp, useTag } from "@/hooks/use-refresh";
 import {
   useAppDurationsPerPeriod,
   useAppSessionUsages,
+  useSingleEntityUsageFromPerPeriod,
+  useTotalUsageFromPerPeriod,
 } from "@/hooks/use-repo";
 import {
   useIntervalControlsWithDefault,
@@ -84,18 +86,15 @@ function AppPage({ app }: { app: App }) {
   } = useIntervalControlsWithDefault("year");
   const yearInterval = useLastNonNull(yearIntervalNullable);
 
-  const {
-    isLoading: isYearDataLoading,
-    totalAppUsage: yearUsage,
-    totalUsage: yearTotalUsage,
-    appDurationsPerPeriod: yearUsages,
-    start: yearStart,
-  } = useAppDurationsPerPeriod({
-    start: yearInterval.start,
-    end: yearInterval.end,
-    period: "day",
-    appId: app.id,
-  });
+  const { isLoading: isYearDataLoading, ret: yearUsages } =
+    useAppDurationsPerPeriod({
+      start: yearInterval.start,
+      end: yearInterval.end,
+      period: "day",
+    });
+  const yearTotalUsage = useTotalUsageFromPerPeriod(yearUsages);
+  const yearUsage = useSingleEntityUsageFromPerPeriod(yearUsages, app.id);
+
   const yearData = useMemo(() => {
     return new Map(
       _(yearUsages[app.id] ?? [])
@@ -279,7 +278,7 @@ function AppPage({ app }: { app: App }) {
               <Heatmap
                 data={yearData}
                 scaling={scaling}
-                startDate={yearStart ?? yearInterval.start}
+                startDate={yearInterval.start}
                 fullCellColorRgb={app.color}
                 innerClassName="min-h-[200px]"
                 firstDayOfMonthClassName="stroke-card-foreground/50"
@@ -384,19 +383,17 @@ function AppUsageBarChartCard({
   } = useIntervalControlsWithDefault(timePeriod);
   const interval = useLastNonNull(intervalNullable);
 
-  const {
-    isLoading,
-    totalAppUsage,
-    totalUsage,
-    appDurationsPerPeriod,
-    start,
-    end,
-  } = useAppDurationsPerPeriod({
+  const { isLoading, ret: appDurationsPerPeriod } = useAppDurationsPerPeriod({
     start: interval.start,
     end: interval.end,
     period,
-    appId,
   });
+
+  const totalUsage = useTotalUsageFromPerPeriod(appDurationsPerPeriod);
+  const totalAppUsage = useSingleEntityUsageFromPerPeriod(
+    appDurationsPerPeriod,
+    appId,
+  );
 
   const children = useMemo(
     () => (
@@ -404,8 +401,8 @@ function AppUsageBarChartCard({
         <UsageChart
           appDurationsPerPeriod={appDurationsPerPeriod}
           onlyShowOneApp={appId}
-          start={start ?? interval.start}
-          end={end ?? interval.end}
+          start={interval.start}
+          end={interval.end}
           xAxisFormatter={xAxisLabelFormatter}
           period={period}
           gradientBars
@@ -414,15 +411,7 @@ function AppUsageBarChartCard({
         />
       </div>
     ),
-    [
-      appDurationsPerPeriod,
-      period,
-      xAxisLabelFormatter,
-      interval,
-      start,
-      end,
-      appId,
-    ],
+    [appDurationsPerPeriod, period, xAxisLabelFormatter, interval, appId],
   );
 
   return (

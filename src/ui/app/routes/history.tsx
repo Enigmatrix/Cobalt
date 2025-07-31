@@ -23,26 +23,33 @@ import { Gantt } from "@/components/viz/gantt2";
 import { GroupByPicker } from "@/components/viz/groupby-picker";
 import { UsageChart, type GroupBy } from "@/components/viz/usage-chart";
 import { VerticalLegend } from "@/components/viz/vertical-legend";
+import { useLastNonNull } from "@/hooks/use-last";
 import {
   useAppDurationsPerPeriod,
   useAppSessionUsages,
   useInteractionPeriods,
   useSystemEvents,
+  useTotalUsageFromPerPeriod,
 } from "@/hooks/use-repo";
 import {
   useIntervalControlsWithDefault,
   usePeriodInterval,
 } from "@/hooks/use-time";
 import type { App, Ref } from "@/lib/entities";
-import type { Period } from "@/lib/time";
+import type { Interval, Period } from "@/lib/time";
 import { cn } from "@/lib/utils";
 import { ChevronLeftIcon, ChevronRightIcon, Loader2 } from "lucide-react";
-import { DateTime, Duration } from "luxon";
+import { Duration } from "luxon";
 import { createContext, useContext, useMemo, useState } from "react";
 
 type View = "app-usage" | "session-history";
 
-type HistoryContextType = ReturnType<typeof useIntervalControlsWithDefault>;
+type HistoryContextType = Omit<
+  ReturnType<typeof useIntervalControlsWithDefault>,
+  "interval"
+> & {
+  interval: Interval;
+};
 const HistoryContext = createContext<HistoryContextType | null>(null);
 
 function useHistoryContext() {
@@ -56,8 +63,15 @@ function useHistoryContext() {
 export default function History() {
   const [view, setView] = useState<View>("app-usage");
   const fullPage = useMemo(() => view === "session-history", [view]);
-  const { interval, setInterval, canGoNext, goNext, canGoPrev, goPrev } =
-    useIntervalControlsWithDefault("week");
+  const {
+    interval: intervalNullable,
+    setInterval,
+    canGoNext,
+    goNext,
+    canGoPrev,
+    goPrev,
+  } = useIntervalControlsWithDefault("week");
+  const interval = useLastNonNull(intervalNullable);
 
   const historyContextValue = useMemo(
     () => ({
@@ -148,18 +162,12 @@ function AppUsagePerPeriodHistory() {
   const [period, setPeriod] = useState<Period>("day");
   const { interval } = useHistoryContext();
 
-  const {
-    isLoading,
-    totalUsage,
-    appDurationsPerPeriod,
-    period: loadPeriod,
-    start,
-    end,
-  } = useAppDurationsPerPeriod({
-    start: interval?.start,
-    end: interval?.end,
+  const { isLoading, ret: appDurationsPerPeriod } = useAppDurationsPerPeriod({
+    start: interval.start,
+    end: interval.end,
     period: period,
   });
+  const totalUsage = useTotalUsageFromPerPeriod(appDurationsPerPeriod);
 
   const [yAxisInterval, maxYIsPeriod] = useMemo(() => {
     switch (period) {
@@ -174,12 +182,7 @@ function AppUsagePerPeriodHistory() {
       default:
         throw new Error(`Unknown period: ${period}`);
     }
-    // this should take period as a dependency, but we only take in loadPeriod
-    // which is a output of useAppDurationsPerPeriod, else we get yaxis flashes
-    // with the older data's yaxis interval before the data is loading
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loadPeriod]);
+  }, [period]);
 
   // State for checked tags/apps
   const [uncheckedApps, setUncheckedApps] = useState<Record<Ref<App>, boolean>>(
@@ -214,9 +217,9 @@ function AppUsagePerPeriodHistory() {
       <div className="flex flex-1 min-h-0 overflow-hidden rounded-lg bg-card shadow-xs border border-border">
         <UsageChart
           appDurationsPerPeriod={appDurationsPerPeriod}
-          period={loadPeriod ?? period}
-          start={start ?? interval?.start ?? DateTime.now()}
-          end={end ?? interval?.end ?? DateTime.now()}
+          period={period}
+          start={interval.start}
+          end={interval.end}
           className="flex-1 h-full min-w-[400px] p-2"
           maxYIsPeriod={maxYIsPeriod}
           yAxisInterval={yAxisInterval}
