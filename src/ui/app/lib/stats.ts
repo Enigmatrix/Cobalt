@@ -1,4 +1,10 @@
-import type { Score, WithGroup } from "@/lib/entities";
+import type {
+  DistractivePeriodSettings,
+  FocusPeriod,
+  FocusPeriodSettings,
+  Score,
+  WithGroup,
+} from "@/lib/entities";
 import { getQueryOptions, type QueryOptions } from "@/lib/repo";
 import { dateTimeToTicks, type Period } from "@/lib/time";
 import { invoke } from "@tauri-apps/api/core";
@@ -38,5 +44,28 @@ export async function getScorePerPeriod({
     start: dateTimeToTicks(start),
     end: dateTimeToTicks(end),
     period,
+  });
+}
+
+export async function getPeriods({
+  options,
+  start,
+  end,
+  focusSettings,
+  distractiveSettings,
+}: {
+  options?: QueryOptions;
+  start: DateTime;
+  end: DateTime;
+  focusSettings: FocusPeriodSettings;
+  distractiveSettings: DistractivePeriodSettings;
+}): Promise<FocusPeriod[]> {
+  const queryOptions = getQueryOptions(options);
+  return await invoke("get_periods", {
+    queryOptions,
+    start: dateTimeToTicks(start),
+    end: dateTimeToTicks(end),
+    focusSettings,
+    distractiveSettings,
   });
 }

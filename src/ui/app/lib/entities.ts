@@ -174,3 +174,21 @@ export interface SystemEvent {
   timestamp: Timestamp;
   event: SystemEventEnum;
 }
+
+export interface FocusPeriod {
+  start: Timestamp;
+  end: Timestamp;
+  isFocused: boolean;
+}
+
+export interface FocusPeriodSettings {
+  minFocusScore: number;
+  minFocusUsageDur: number;
+  maxFocusGap: number;
+}
+
+export interface DistractivePeriodSettings {
+  maxDistractiveScore: number;
+  minDistractiveUsageDur: number;
+  maxDistractiveGap: number;
+}
