@@ -130,6 +130,7 @@ interface GanttProps {
   systemEvents?: SystemEvent[];
   systemEventsLoading?: boolean;
 
+  durationSummariesClassName?: ClassValue;
   defaultExpanded?: Record<Ref<App>, boolean>;
   interval: Interval;
   interactionInfoBarHeight?: number;
@@ -150,6 +151,7 @@ export function Gantt({
   interactionPeriodsLoading,
   systemEvents,
   systemEventsLoading,
+  durationSummariesClassName,
   defaultExpanded,
   interval,
   infoGap = 300,
@@ -884,10 +886,28 @@ export function Gantt({
     <div className="w-full h-full sticky">
       {/* Top bar */}
       <div
-        ref={topRef}
         className="sticky z-10 w-full border-border border-b bg-card top-0 shadow-md dark:shadow-xl"
         style={{ height: 90 }}
-      />
+      >
+        <div ref={topRef} className="w-full h-full"></div>
+
+        <div
+          className="absolute top-0 left-0 bottom-0"
+          style={{ width: infoGap }}
+        >
+          <div className="w-full h-full py-0 px-4">
+            <DurationSummaries
+              className={durationSummariesClassName}
+              usages={usagesPerAppSession}
+              usagesLoading={usagesLoading}
+              streaks={streaks}
+              streaksLoading={streaksLoading}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
       <div className="relative">
         <div
           ref={chartRef}
@@ -1165,6 +1185,87 @@ function InteractionTooltip({
         <DateTimeRange start={interaction.start} end={interaction.end} />
       </div>
     )
+  );
+}
+
+function DurationSummaries({
+  usages,
+  usagesLoading,
+
+  streaks,
+  streaksLoading,
+
+  className,
+}: {
+  usages: AppSessionUsages;
+  usagesLoading?: boolean;
+
+  streaks?: Streak[];
+  streaksLoading?: boolean;
+
+  className?: ClassValue;
+}) {
+  const [focusStreakUsage, distractiveStreakUsage] = useMemo(() => {
+    if (!streaks) {
+      return [0, 0];
+    }
+    return [
+      _(streaks)
+        .filter((streak) => streak.isFocused)
+        .sumBy((streak) => streak.end - streak.start),
+      _(streaks)
+        .filter((streak) => !streak.isFocused)
+        .sumBy((streak) => streak.end - streak.start),
+    ];
+  }, [streaks]);
+
+  const totalUsage = useMemo(() => {
+    return _(usages)
+      .flatMap((sessions) => Object.values(sessions))
+      .flatMap((session) =>
+        Object.values(session.usages).map((usage) => usage.end - usage.start),
+      )
+      .sum();
+  }, [usages]);
+
+  return (
+    <div
+      className={cn(
+        "flex items-center gap-1 text-muted-foreground text-lg font-semibold",
+        className,
+      )}
+    >
+      {streaks &&
+        (streaksLoading ? (
+          <Loader2Icon className="animate-spin" />
+        ) : (
+          <>
+            <DurationText
+              ticks={focusStreakUsage}
+              className="text-green-500/80"
+              description="Focus Streaks"
+            />
+            <div>/</div>
+            <DurationText
+              ticks={distractiveStreakUsage}
+              className="text-red-400/80"
+              description="Distractive Streaks"
+            />
+          </>
+        ))}
+      {streaks && <div>/</div>}
+      {usagesLoading ? (
+        <Loader2Icon className="animate-spin" />
+      ) : (
+        <>
+          <DurationText
+            ticks={totalUsage}
+            className="text-foreground/80"
+            description="Total Usage"
+          />
+        </>
+      )}
+    </div>
   );
 }
 

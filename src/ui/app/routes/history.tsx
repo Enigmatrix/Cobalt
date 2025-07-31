@@ -247,6 +247,7 @@ function SessionHistory() {
         systemEvents={systemEvents}
         systemEventsLoading={systemEventsLoading}
         interval={interval}
+        durationSummariesClassName="mt-4"
       />
     </div>
   );
