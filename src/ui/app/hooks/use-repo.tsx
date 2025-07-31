@@ -1,4 +1,5 @@
 import { useRefresh } from "@/hooks/use-refresh";
+import { useConfig } from "@/lib/config";
 import type { Ref, WithGroupedDuration } from "@/lib/entities";
 import {
   getAppDurations,
@@ -78,6 +79,18 @@ export const useTagDurationsPerPeriod = makeUseRepo(
 export const useScore = makeUseRepo(getScore, 0);
 export const useScorePerPeriod = makeUseRepo(getScorePerPeriod, []);
 export const useStreaks = makeUseRepo(getStreaks, []);
+export const useDefaultStreaks = function (arg: {
+  start: DateTime;
+  end: DateTime;
+}) {
+  const { defaultFocusStreakSettings, defaultDistractiveStreakSettings } =
+    useConfig();
+  return useStreaks({
+    ...arg,
+    focusSettings: defaultFocusStreakSettings,
+    distractiveSettings: defaultDistractiveStreakSettings,
+  });
+};
 
 export function useTotalUsageFromPerPeriod<T>(
   durationsPerPeriod: EntityMap<T, WithGroupedDuration<T>[]>,

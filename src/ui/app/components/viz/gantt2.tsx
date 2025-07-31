@@ -14,7 +14,7 @@ import {
   type SystemEventEnum,
   type Usage,
 } from "@/lib/entities";
-import type { InteractionPeriod, SystemEvent } from "@/lib/entities";
+import type { InteractionPeriod, Streak, SystemEvent } from "@/lib/entities";
 import type { AppSessionUsages } from "@/lib/repo";
 import { useAppState } from "@/lib/state";
 import {
@@ -121,6 +121,9 @@ interface GanttProps {
   usages: AppSessionUsages;
   usagesLoading?: boolean;
 
+  streaks?: Streak[];
+  streaksLoading?: boolean;
+
   interactionPeriods?: InteractionPeriod[];
   interactionPeriodsLoading?: boolean;
 
@@ -141,6 +144,8 @@ interface GanttProps {
 export function Gantt({
   usages: usagesPerAppSession,
   usagesLoading,
+  streaks,
+  streaksLoading,
   interactionPeriods,
   interactionPeriodsLoading,
   systemEvents,
@@ -389,9 +394,56 @@ export function Gantt({
 
     const timeGap = minRenderTimeGap(interval, width, dataZoom);
     const color = getVarColorAsHex("primary");
-    const series = seriesKeys.map((key) =>
-      seriesKeyToSeries(key, timeGap, color),
-    );
+
+    // ---------------------------
+    // Focus / Distractive Streaks
+    // ---------------------------
+    // Render background areas for the provided streaks using markArea. If a streak
+    // is focused we render it in green, otherwise in red. We span the whole
+    // vertical space of the chart so that it covers every bar.
+
+    const streakMarkAreaData: echarts.MarkAreaComponentOption["data"] = (
+      streaks ?? []
+    )
+      .filter((p) => p.start && p.end)
+      .map((p) => [
+        {
+          coord: [ticksToUnixMillis(p.start), 0],
+          // Individual color per streak
+          itemStyle: {
+            color: p.isFocused
+              ? "rgba(0, 225, 0, 0.35)" // green for focus
+              : "rgba(200, 0, 0, 0.35)", // red otherwise
+          },
+        },
+        {
+          coord: [ticksToUnixMillis(p.end), seriesHeight],
+        },
+      ]);
+
+    const streakSeries: echarts.SeriesOption[] = streakMarkAreaData.length
+      ? [
+          {
+            type: "scatter", // dummy series just to host markArea
+            name: "streaks",
+            data: [],
+            silent: true,
+            markArea: {
+              silent: true,
+              z: -2000,
+              itemStyle: {
+                opacity: 0.3,
+              },
+              data: streakMarkAreaData,
+            },
+          } as echarts.ScatterSeriesOption,
+        ]
+      : [];
+
+    const series = [
+      ...streakSeries,
+      ...seriesKeys.map((key) => seriesKeyToSeries(key, timeGap, color)),
+    ];
 
     const startValue = getDataZoomYStartValue(chartInstanceRef.current!);
 
@@ -454,6 +506,7 @@ export function Gantt({
     chartInit,
     dataZoom,
     innerHeight,
+    streaks,
   ]);
 
   useEffect(() => {
@@ -749,7 +802,13 @@ export function Gantt({
         <div style={style}>
           {key.type === "interactionBar" ? (
             <InteractionInfoBar
-              loading={!!(interactionPeriodsLoading ?? systemEventsLoading)}
+              loading={
+                !!(
+                  interactionPeriodsLoading ??
+                  systemEventsLoading ??
+                  streaksLoading
+                )
+              }
               interactionInfoBarHeight={interactionInfoBarHeight}
               key={key.type + key.id}
             />
@@ -783,6 +842,7 @@ export function Gantt({
       interactionInfoBarHeight,
       interactionPeriodsLoading,
       systemEventsLoading,
+      streaksLoading,
       toggleApp,
       expanded,
       appMap,

@@ -26,6 +26,7 @@ import { VerticalLegend } from "@/components/viz/vertical-legend";
 import {
   useAppDurationsPerPeriod,
   useAppSessionUsages,
+  useDefaultStreaks,
   useInteractionPeriods,
   useSystemEvents,
   useTotalUsageFromPerPeriod,
@@ -231,12 +232,16 @@ function SessionHistory() {
     useInteractionPeriods(interval);
   const { ret: systemEvents, isLoading: systemEventsLoading } =
     useSystemEvents(interval);
+  const { ret: streaks, isLoading: streaksLoading } =
+    useDefaultStreaks(interval);
 
   return (
     <div className="sticky rounded-lg bg-card shadow-xs border border-border overflow-clip">
       <Gantt
         usages={usages}
         usagesLoading={usagesLoading}
+        streaks={streaks}
+        streaksLoading={streaksLoading}
         interactionPeriods={interactions}
         interactionPeriodsLoading={interactionPeriodsLoading}
         systemEvents={systemEvents}

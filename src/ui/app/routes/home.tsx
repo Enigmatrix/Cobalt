@@ -20,6 +20,7 @@ import {
 import {
   useAppDurationsPerPeriod,
   useAppSessionUsages,
+  useDefaultStreaks,
   useInteractionPeriods,
   useSystemEvents,
   useTotalUsageFromPerPeriod,
@@ -148,9 +149,14 @@ function SessionsCard() {
     useInteractionPeriods(interval);
   const { ret: systemEvents, isLoading: systemEventsLoading } =
     useSystemEvents(interval);
+  const { ret: streaks, isLoading: streaksLoading } =
+    useDefaultStreaks(interval);
 
   const isLoading =
-    usagesLoading || interactionPeriodsLoading || systemEventsLoading;
+    usagesLoading ||
+    interactionPeriodsLoading ||
+    systemEventsLoading ||
+    streaksLoading;
 
   return (
     <VizCard>
@@ -186,6 +192,8 @@ function SessionsCard() {
         <Gantt
           usages={usages}
           usagesLoading={usagesLoading}
+          streaks={streaks}
+          streaksLoading={streaksLoading}
           interactionPeriods={interactions}
           interactionPeriodsLoading={interactionPeriodsLoading}
           systemEvents={systemEvents}
