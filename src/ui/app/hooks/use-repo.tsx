@@ -12,50 +12,55 @@ import type { EntityMap } from "@/lib/state";
 import type { Period } from "@/lib/time";
 import _ from "lodash";
 import type { DateTime } from "luxon";
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import useSWRImmutable from "swr/immutable";
 
-export function useRepo<T, Arg extends object>(
-  fn: (args: Arg) => Promise<T>,
-  def: T,
-  arg: Arg,
-) {
-  const { refreshToken } = useRefresh();
-  const [ret, setRet] = useState<T>(def);
-  const [isLoading, startTransition] = useTransition();
-  const latestRequestRef = useRef<number>(0);
-  const requestCounterRef = useRef<number>(0);
+type RepoFn<Args, Result> = (args: Args) => Promise<Result>;
 
-  useEffect(() => {
-    startTransition(async () => {
-      // Increment the counter for each new request
-      const requestId = ++requestCounterRef.current;
-      latestRequestRef.current = requestId;
-
-      const result = await fn(arg);
-
-      // Only update state if this is still the latest request
-      if (latestRequestRef.current === requestId) {
-        setRet(result);
-      }
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    refreshToken,
-    startTransition,
-    setRet,
-    fn,
-    // eslint-disable-next-line react-hooks/exhaustive-deps, @typescript-eslint/no-unsafe-assignment
-    ...Object.entries(arg).flat(),
-  ]);
-  return { ret, isLoading };
+interface RepoKey<Args, Result> {
+  fn: RepoFn<Args, Result>;
+  refreshToken: DateTime;
+  args: Args;
 }
 
-// fn is a function that takes one argument and returns a promise
-export function makeUseRepo<T, Arg extends object>(
-  fn: (args: Arg) => Promise<T>,
-  def: T,
-) {
-  return (arg: Arg) => useRepo<T, Arg>(fn, def, arg);
+export function useRepo<
+  Args,
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+  Result extends {},
+>(fn: RepoFn<Args, Result>, args: Args, def: Result) {
+  const { refreshToken } = useRefresh();
+  // ref: https://swr.vercel.app/docs/revalidation#disable-automatic-revalidations
+  // SWRImmutable is used to disable automatic revalidations - since we only rely
+  // on our own manual refresh using the refreshToken.
+  // Object keys are allowed: https://swr.vercel.app/docs/arguments#passing-objects
+  // note that they are serialized so it's deep equality
+  const swrResult = useSWRImmutable<Result>(
+    {
+      fn,
+      refreshToken,
+      args,
+    } as RepoKey<Args, Result>,
+    // ignore refreshToken
+    ({ fn, args }: RepoKey<Args, Result>) => {
+      return fn(args);
+    },
+  );
+  const ret = useMemo(() => {
+    const { data, ...rest } = swrResult;
+    return {
+      ...rest,
+      ret: data ?? def,
+    };
+  }, [swrResult, def]);
+  return ret;
+}
+
+export function makeUseRepo<
+  Args,
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+  Result extends {},
+>(fn: RepoFn<Args, Result>, def: Result) {
+  return (arg: Args) => useRepo<Args, Result>(fn, arg, def);
 }
 
 export const useAppDurations = makeUseRepo(getAppDurations, {});
