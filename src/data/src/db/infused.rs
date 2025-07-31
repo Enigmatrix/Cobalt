@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use super::*;
 use crate::entities::{TimeFrame, TriggerAction};
-use crate::table::{Color, Duration, Real};
+use crate::table::{Color, Duration, Real, Score};
 
 /// List of [Ref<T>]
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize)]
@@ -377,3 +377,39 @@ pub struct Session {
 
 /// [Session]s with [Usage]s, partitioned by [App]s
 pub type AppSessionUsages = HashMap<Ref<super::App>, HashMap<Ref<super::Session>, Session>>;
+
+/// Represents a streak of time that is either focused or distractive.
+#[derive(FromRow, Debug, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Streak {
+    /// The start time of the streak.
+    pub start: Timestamp,
+    /// The end time of the streak.
+    pub end: Timestamp,
+    /// Whether the streak is a focused streak. If false, it is a distractive streak.
+    pub is_focused: bool,
+}
+
+/// Settings for focus streaks.
+#[derive(FromRow, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FocusStreakSettings {
+    /// The minimum score of a focused app.
+    pub min_focus_score: Score,
+    /// The minimum duration of a focused usage.
+    pub min_focus_usage_dur: Duration,
+    /// The maximum gap between two focused streaks.
+    pub max_focus_gap: Duration,
+}
+
+/// Settings for distractive streaks.
+#[derive(FromRow, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DistractiveStreakSettings {
+    /// The maximum score of a distractive app.
+    pub max_distractive_score: Score,
+    /// The minimum duration of a distractive usage.
+    pub min_distractive_usage_dur: Duration,
+    /// The maximum gap between two distractive streaks.
+    pub max_distractive_gap: Duration,
+}

@@ -103,3 +103,32 @@ impl Repository {
         Ok(score_results)
     }
 }
+
+impl Repository {
+    /// Gets all distractive and focused streaks in the given time range, using the specified parameters.
+    ///
+    /// The algorithm is described in detail in `docs/ALGORITHM_get_streaks.md`.
+    pub async fn get_streaks(
+        &mut self,
+        start: Timestamp,
+        end: Timestamp,
+        focus_settings: infused::FocusStreakSettings,
+        distractive_settings: infused::DistractiveStreakSettings,
+    ) -> Result<Vec<infused::Streak>> {
+        let query = include_str!("../queries/get_streaks.sql");
+
+        let streaks: Vec<infused::Streak> = query_as(query)
+            .bind(start)
+            .bind(end)
+            .bind(focus_settings.min_focus_score)
+            .bind(distractive_settings.max_distractive_score)
+            .bind(focus_settings.min_focus_usage_dur)
+            .bind(distractive_settings.min_distractive_usage_dur)
+            .bind(focus_settings.max_focus_gap)
+            .bind(distractive_settings.max_distractive_gap)
+            .fetch_all(self.db.executor())
+            .await?;
+
+        Ok(streaks)
+    }
+}

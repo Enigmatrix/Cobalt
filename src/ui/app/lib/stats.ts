@@ -1,4 +1,10 @@
-import type { Score, WithGroup } from "@/lib/entities";
+import type {
+  DistractiveStreakSettings,
+  FocusStreakSettings,
+  Score,
+  Streak,
+  WithGroup,
+} from "@/lib/entities";
 import { getQueryOptions, type QueryOptions } from "@/lib/repo";
 import { dateTimeToTicks, type Period } from "@/lib/time";
 import { invoke } from "@tauri-apps/api/core";
@@ -38,5 +44,28 @@ export async function getScorePerPeriod({
     start: dateTimeToTicks(start),
     end: dateTimeToTicks(end),
     period,
+  });
+}
+
+export async function getStreaks({
+  options,
+  start,
+  end,
+  focusSettings,
+  distractiveSettings,
+}: {
+  options?: QueryOptions;
+  start: DateTime;
+  end: DateTime;
+  focusSettings: FocusStreakSettings;
+  distractiveSettings: DistractiveStreakSettings;
+}): Promise<Streak[]> {
+  const queryOptions = getQueryOptions(options);
+  return await invoke("get_streaks", {
+    queryOptions,
+    start: dateTimeToTicks(start),
+    end: dateTimeToTicks(end),
+    focusSettings,
+    distractiveSettings,
   });
 }

@@ -3,6 +3,7 @@ use util::future as tokio;
 
 use super::tests::*;
 use super::*;
+use crate::db::infused::{DistractiveStreakSettings, FocusStreakSettings};
 use crate::db::repo_tests::{LOCAL_TEST_DATE, ONE_HOUR};
 use crate::entities::AppIdentity;
 use crate::table::Period;
@@ -2111,5 +2112,4314 @@ async fn get_score_per_period_mixed_usage_beyond_end() -> Result<()> {
     assert_eq!(scores[1].group, last_hour_start);
     assert_eq!(scores[1].value, 3.0.into());
 
+    Ok(())
+}
+
+// ===== get_streaks tests =====
+
+#[tokio::test]
+async fn get_streaks_no_apps() -> Result<()> {
+    let db = test_db().await?;
+    let mut repo = Repository::new(db)?;
+
+    let focus_settings = FocusStreakSettings {
+        min_focus_score: 5.0.into(),
+        min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes in Windows ticks
+        max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
+    };
+
+    let distractive_settings = DistractiveStreakSettings {
+        max_distractive_score: 3.0.into(),
+        min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes in Windows ticks
+        max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
+    };
+
+    let streaks = repo
+        .get_streaks(
+            test_start(),
+            test_end(),
+            focus_settings,
+            distractive_settings,
+        )
+        .await?;
+
+    assert!(streaks.is_empty());
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn get_streaks_single_focus_streak() -> Result<()> {
+    let db = test_db().await?;
+    let mut repo = Repository::new(db)?;
+
+    // Create a high-scoring tag for focus
+    let focus_tag = arrange::tag(
+        &mut repo.db,
+        Tag {
+            id: Ref::new(1),
+            name: "Productivity".to_string(),
+            color: "green".to_string(),
+            score: 10.0.into(), // High score for focus
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    // Create a focused app
+    let focus_app = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(1),
+            name: "ProductivityApp".to_string(),
+            description: "Productivity Description".to_string(),
+            company: "Productivity Company".to_string(),
+            color: "green".to_string(),
+            identity: AppIdentity::Win32 {
+                path: "productivity.exe".to_string(),
+            },
+            tag_id: Some(focus_tag.id.clone()),
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    // Create a session
+    let session = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(1),
+            app_id: focus_app.id.clone(),
+            title: "Productivity Session".to_string(),
+            url: None,
+        },
+    )
+    .await?;
+
+    // Create usage that meets focus criteria
+    let usage_start = test_start() + 100 * ONE_HOUR;
+    let usage_end = usage_start + 60 * 60 * 1000 * 10000; // 1 hour duration
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(1),
+            session_id: session.id.clone(),
+            start: usage_start,
+            end: usage_end,
+        },
+    )
+    .await?;
+
+    let focus_settings = FocusStreakSettings {
+        min_focus_score: 5.0.into(),
+        min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes in Windows ticks
+        max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
+    };
+
+    let distractive_settings = DistractiveStreakSettings {
+        max_distractive_score: 3.0.into(),
+        min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes in Windows ticks
+        max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
+    };
+
+    let streaks = repo
+        .get_streaks(
+            test_start(),
+            test_end(),
+            focus_settings,
+            distractive_settings,
+        )
+        .await?;
+
+    assert_eq!(streaks.len(), 1);
+    assert_eq!(streaks[0].start, usage_start);
+    assert_eq!(streaks[0].end, usage_end);
+    assert!(streaks[0].is_focused);
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn get_streaks_single_distractive_streak() -> Result<()> {
+    let db = test_db().await?;
+    let mut repo = Repository::new(db)?;
+
+    // Create a low-scoring tag for distractive
+    let distractive_tag = arrange::tag(
+        &mut repo.db,
+        Tag {
+            id: Ref::new(1),
+            name: "Gaming".to_string(),
+            color: "red".to_string(),
+            score: 2.0.into(), // Low score for distractive
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    // Create a distractive app
+    let distractive_app = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(1),
+            name: "GamingApp".to_string(),
+            description: "Gaming Description".to_string(),
+            company: "Gaming Company".to_string(),
+            color: "red".to_string(),
+            identity: AppIdentity::Win32 {
+                path: "gaming.exe".to_string(),
+            },
+            tag_id: Some(distractive_tag.id.clone()),
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    // Create a session
+    let session = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(1),
+            app_id: distractive_app.id.clone(),
+            title: "Gaming Session".to_string(),
+            url: None,
+        },
+    )
+    .await?;
+
+    // Create usage that meets distractive criteria
+    let usage_start = test_start() + 100 * ONE_HOUR;
+    let usage_end = usage_start + 30 * 60 * 1000 * 10000; // 30 minutes duration
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(1),
+            session_id: session.id.clone(),
+            start: usage_start,
+            end: usage_end,
+        },
+    )
+    .await?;
+
+    let focus_settings = FocusStreakSettings {
+        min_focus_score: 5.0.into(),
+        min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes in Windows ticks
+        max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
+    };
+
+    let distractive_settings = DistractiveStreakSettings {
+        max_distractive_score: 3.0.into(),
+        min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes in Windows ticks
+        max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
+    };
+
+    let streaks = repo
+        .get_streaks(
+            test_start(),
+            test_end(),
+            focus_settings,
+            distractive_settings,
+        )
+        .await?;
+
+    assert_eq!(streaks.len(), 1);
+    assert_eq!(streaks[0].start, usage_start);
+    assert_eq!(streaks[0].end, usage_end);
+    assert!(!streaks[0].is_focused); // distractive streak
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn get_streaks_usage_too_short_for_focus() -> Result<()> {
+    let db = test_db().await?;
+    let mut repo = Repository::new(db)?;
+
+    // Create a high-scoring tag
+    let focus_tag = arrange::tag(
+        &mut repo.db,
+        Tag {
+            id: Ref::new(1),
+            name: "Productivity".to_string(),
+            color: "green".to_string(),
+            score: 10.0.into(),
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    // Create a focused app
+    let focus_app = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(1),
+            name: "ProductivityApp".to_string(),
+            description: "Productivity Description".to_string(),
+            company: "Productivity Company".to_string(),
+            color: "green".to_string(),
+            identity: AppIdentity::Win32 {
+                path: "productivity.exe".to_string(),
+            },
+            tag_id: Some(focus_tag.id.clone()),
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    // Create a session
+    let session = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(1),
+            app_id: focus_app.id.clone(),
+            title: "Productivity Session".to_string(),
+            url: None,
+        },
+    )
+    .await?;
+
+    // Create usage that's too short for focus criteria
+    let usage_start = test_start() + 100 * ONE_HOUR;
+    let usage_end = usage_start + 15 * 60 * 1000 * 10000; // 15 minutes duration (too short)
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(1),
+            session_id: session.id.clone(),
+            start: usage_start,
+            end: usage_end,
+        },
+    )
+    .await?;
+
+    let focus_settings = FocusStreakSettings {
+        min_focus_score: 5.0.into(),
+        min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes minimum in Windows ticks
+        max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
+    };
+
+    let distractive_settings = DistractiveStreakSettings {
+        max_distractive_score: 3.0.into(),
+        min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes in Windows ticks
+        max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
+    };
+
+    let streaks = repo
+        .get_streaks(
+            test_start(),
+            test_end(),
+            focus_settings,
+            distractive_settings,
+        )
+        .await?;
+
+    // Should not create any streaks since usage is too short for focus
+    assert!(streaks.is_empty());
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn get_streaks_usage_too_short_for_distractive() -> Result<()> {
+    let db = test_db().await?;
+    let mut repo = Repository::new(db)?;
+
+    // Create a low-scoring tag
+    let distractive_tag = arrange::tag(
+        &mut repo.db,
+        Tag {
+            id: Ref::new(1),
+            name: "Gaming".to_string(),
+            color: "red".to_string(),
+            score: 2.0.into(),
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    // Create a distractive app
+    let distractive_app = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(1),
+            name: "GamingApp".to_string(),
+            description: "Gaming Description".to_string(),
+            company: "Gaming Company".to_string(),
+            color: "red".to_string(),
+            identity: AppIdentity::Win32 {
+                path: "gaming.exe".to_string(),
+            },
+            tag_id: Some(distractive_tag.id.clone()),
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    // Create a session
+    let session = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(1),
+            app_id: distractive_app.id.clone(),
+            title: "Gaming Session".to_string(),
+            url: None,
+        },
+    )
+    .await?;
+
+    // Create usage that's too short for distractive criteria
+    let usage_start = test_start() + 100 * ONE_HOUR;
+    let usage_end = usage_start + 10 * 60 * 1000 * 10000; // 10 minutes duration (too short)
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(1),
+            session_id: session.id.clone(),
+            start: usage_start,
+            end: usage_end,
+        },
+    )
+    .await?;
+
+    let focus_settings = FocusStreakSettings {
+        min_focus_score: 5.0.into(),
+        min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes in Windows ticks
+        max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
+    };
+
+    let distractive_settings = DistractiveStreakSettings {
+        max_distractive_score: 3.0.into(),
+        min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes minimum in Windows ticks
+        max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
+    };
+
+    let streaks = repo
+        .get_streaks(
+            test_start(),
+            test_end(),
+            focus_settings,
+            distractive_settings,
+        )
+        .await?;
+
+    // Should not create any streaks since usage is too short for distractive
+    assert!(streaks.is_empty());
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn get_streaks_score_below_focus_threshold() -> Result<()> {
+    let db = test_db().await?;
+    let mut repo = Repository::new(db)?;
+
+    // Create a tag with score below focus threshold
+    let low_score_tag = arrange::tag(
+        &mut repo.db,
+        Tag {
+            id: Ref::new(1),
+            name: "LowScore".to_string(),
+            color: "yellow".to_string(),
+            score: 3.0.into(), // Below focus threshold of 5
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    // Create an app with the low-scoring tag
+    let app = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(1),
+            name: "LowScoreApp".to_string(),
+            description: "LowScore Description".to_string(),
+            company: "LowScore Company".to_string(),
+            color: "yellow".to_string(),
+            identity: AppIdentity::Win32 {
+                path: "lowscore.exe".to_string(),
+            },
+            tag_id: Some(low_score_tag.id.clone()),
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    // Create a session
+    let session = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(1),
+            app_id: app.id.clone(),
+            title: "LowScore Session".to_string(),
+            url: None,
+        },
+    )
+    .await?;
+
+    // Create usage that's long enough but score is too low
+    let usage_start = test_start() + 100 * ONE_HOUR;
+    let usage_end = usage_start + 60 * 60 * 1000 * 10000; // 1 hour duration
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(1),
+            session_id: session.id.clone(),
+            start: usage_start,
+            end: usage_end,
+        },
+    )
+    .await?;
+
+    let focus_settings = FocusStreakSettings {
+        min_focus_score: 5.0.into(),
+        min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes in Windows ticks
+        max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
+    };
+
+    let distractive_settings = DistractiveStreakSettings {
+        max_distractive_score: 3.0.into(),
+        min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes in Windows ticks
+        max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
+    };
+
+    let streaks = repo
+        .get_streaks(
+            test_start(),
+            test_end(),
+            focus_settings,
+            distractive_settings,
+        )
+        .await?;
+
+    // Should not create any streaks since score is below focus threshold
+    assert!(streaks.is_empty());
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn get_streaks_score_above_distractive_threshold() -> Result<()> {
+    let db = test_db().await?;
+    let mut repo = Repository::new(db)?;
+
+    // Create a tag with score above distractive threshold
+    let high_score_tag = arrange::tag(
+        &mut repo.db,
+        Tag {
+            id: Ref::new(1),
+            name: "HighScore".to_string(),
+            color: "blue".to_string(),
+            score: 5.0.into(), // Above distractive threshold of 3
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    // Create an app with the high-scoring tag
+    let app = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(1),
+            name: "HighScoreApp".to_string(),
+            description: "HighScore Description".to_string(),
+            company: "HighScore Company".to_string(),
+            color: "blue".to_string(),
+            identity: AppIdentity::Win32 {
+                path: "highscore.exe".to_string(),
+            },
+            tag_id: Some(high_score_tag.id.clone()),
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    // Create a session
+    let session = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(1),
+            app_id: app.id.clone(),
+            title: "HighScore Session".to_string(),
+            url: None,
+        },
+    )
+    .await?;
+
+    // Create usage that's long enough but score is above distractive threshold
+    let usage_start = test_start() + 100 * ONE_HOUR;
+    let usage_end = usage_start + 30 * 60 * 1000 * 10000; // 30 minutes duration
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(1),
+            session_id: session.id.clone(),
+            start: usage_start,
+            end: usage_end,
+        },
+    )
+    .await?;
+
+    let focus_settings = FocusStreakSettings {
+        min_focus_score: 5.0.into(),
+        min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes in Windows ticks
+        max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
+    };
+
+    let distractive_settings = DistractiveStreakSettings {
+        max_distractive_score: 3.0.into(),
+        min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes in Windows ticks
+        max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
+    };
+
+    let streaks = repo
+        .get_streaks(
+            test_start(),
+            test_end(),
+            focus_settings,
+            distractive_settings,
+        )
+        .await?;
+
+    // Should not create any streaks since score is above distractive threshold
+    assert!(streaks.is_empty());
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn get_streaks_app_without_tag() -> Result<()> {
+    let db = test_db().await?;
+    let mut repo = Repository::new(db)?;
+
+    // Create an app without a tag
+    let app = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(1),
+            name: "UntaggedApp".to_string(),
+            description: "Untagged Description".to_string(),
+            company: "Untagged Company".to_string(),
+            color: "gray".to_string(),
+            identity: AppIdentity::Win32 {
+                path: "untagged.exe".to_string(),
+            },
+            tag_id: None, // No tag
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    // Create a session
+    let session = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(1),
+            app_id: app.id.clone(),
+            title: "Untagged Session".to_string(),
+            url: None,
+        },
+    )
+    .await?;
+
+    // Create usage
+    let usage_start = test_start() + 100 * ONE_HOUR;
+    let usage_end = usage_start + 60 * 60 * 1000 * 10000; // 1 hour duration
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(1),
+            session_id: session.id.clone(),
+            start: usage_start,
+            end: usage_end,
+        },
+    )
+    .await?;
+
+    let focus_settings = FocusStreakSettings {
+        min_focus_score: 5.0.into(),
+        min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes in Windows ticks
+        max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
+    };
+
+    let distractive_settings = DistractiveStreakSettings {
+        max_distractive_score: 3.0.into(),
+        min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes in Windows ticks
+        max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
+    };
+
+    let streaks = repo
+        .get_streaks(
+            test_start(),
+            test_end(),
+            focus_settings,
+            distractive_settings,
+        )
+        .await?;
+
+    // App without tag has score 0, which is < max_distractive_score (3), so it should be classified as distractive
+    assert_eq!(streaks.len(), 1);
+    assert_eq!(streaks[0].start, usage_start);
+    assert_eq!(streaks[0].end, usage_end);
+    assert!(!streaks[0].is_focused); // distractive streak
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn get_streaks_multiple_focus_streaks() -> Result<()> {
+    let db = test_db().await?;
+    let mut repo = Repository::new(db)?;
+
+    // Create a high-scoring tag for focus
+    let focus_tag = arrange::tag(
+        &mut repo.db,
+        Tag {
+            id: Ref::new(1),
+            name: "Productivity".to_string(),
+            color: "green".to_string(),
+            score: 10.0.into(),
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    // Create a focused app
+    let focus_app = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(1),
+            name: "ProductivityApp".to_string(),
+            description: "Productivity Description".to_string(),
+            company: "Productivity Company".to_string(),
+            color: "green".to_string(),
+            identity: AppIdentity::Win32 {
+                path: "productivity.exe".to_string(),
+            },
+            tag_id: Some(focus_tag.id.clone()),
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    // Create sessions
+    let session1 = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(1),
+            app_id: focus_app.id.clone(),
+            title: "Productivity Session 1".to_string(),
+            url: None,
+        },
+    )
+    .await?;
+
+    let session2 = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(2),
+            app_id: focus_app.id.clone(),
+            title: "Productivity Session 2".to_string(),
+            url: None,
+        },
+    )
+    .await?;
+
+    // Create usages for different streaks
+    let usage1_start = test_start() + 100 * ONE_HOUR;
+    let usage1_end = usage1_start + 60 * 60 * 1000 * 10000; // 1 hour duration
+
+    let usage2_start = test_start() + 200 * ONE_HOUR;
+    let usage2_end = usage2_start + 60 * 60 * 1000 * 10000; // 1 hour duration
+
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(1),
+            session_id: session1.id.clone(),
+            start: usage1_start,
+            end: usage1_end,
+        },
+    )
+    .await?;
+
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(2),
+            session_id: session2.id.clone(),
+            start: usage2_start,
+            end: usage2_end,
+        },
+    )
+    .await?;
+
+    let focus_settings = FocusStreakSettings {
+        min_focus_score: 5.0.into(),
+        min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes in Windows ticks
+        max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
+    };
+
+    let distractive_settings = DistractiveStreakSettings {
+        max_distractive_score: 3.0.into(),
+        min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes in Windows ticks
+        max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
+    };
+
+    let streaks = repo
+        .get_streaks(
+            test_start(),
+            test_end(),
+            focus_settings,
+            distractive_settings,
+        )
+        .await?;
+
+    assert_eq!(streaks.len(), 2);
+    assert_eq!(streaks[0].start, usage1_start);
+    assert_eq!(streaks[0].end, usage1_end);
+    assert!(streaks[0].is_focused);
+    assert_eq!(streaks[1].start, usage2_start);
+    assert_eq!(streaks[1].end, usage2_end);
+    assert!(streaks[1].is_focused);
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn get_streaks_multiple_distractive_streaks() -> Result<()> {
+    let db = test_db().await?;
+    let mut repo = Repository::new(db)?;
+
+    // Create a low-scoring tag for distractive
+    let distractive_tag = arrange::tag(
+        &mut repo.db,
+        Tag {
+            id: Ref::new(1),
+            name: "Gaming".to_string(),
+            color: "red".to_string(),
+            score: 2.0.into(),
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    // Create a distractive app
+    let distractive_app = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(1),
+            name: "GamingApp".to_string(),
+            description: "Gaming Description".to_string(),
+            company: "Gaming Company".to_string(),
+            color: "red".to_string(),
+            identity: AppIdentity::Win32 {
+                path: "gaming.exe".to_string(),
+            },
+            tag_id: Some(distractive_tag.id.clone()),
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    // Create sessions
+    let session1 = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(1),
+            app_id: distractive_app.id.clone(),
+            title: "Gaming Session 1".to_string(),
+            url: None,
+        },
+    )
+    .await?;
+
+    let session2 = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(2),
+            app_id: distractive_app.id.clone(),
+            title: "Gaming Session 2".to_string(),
+            url: None,
+        },
+    )
+    .await?;
+
+    // Create usages for different streaks
+    let usage1_start = test_start() + 100 * ONE_HOUR;
+    let usage1_end = usage1_start + 30 * 60 * 1000 * 10000; // 30 minutes duration
+
+    let usage2_start = test_start() + 200 * ONE_HOUR;
+    let usage2_end = usage2_start + 30 * 60 * 1000 * 10000; // 30 minutes duration
+
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(1),
+            session_id: session1.id.clone(),
+            start: usage1_start,
+            end: usage1_end,
+        },
+    )
+    .await?;
+
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(2),
+            session_id: session2.id.clone(),
+            start: usage2_start,
+            end: usage2_end,
+        },
+    )
+    .await?;
+
+    let focus_settings = FocusStreakSettings {
+        min_focus_score: 5.0.into(),
+        min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes in Windows ticks
+        max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
+    };
+
+    let distractive_settings = DistractiveStreakSettings {
+        max_distractive_score: 3.0.into(),
+        min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes in Windows ticks
+        max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
+    };
+
+    let streaks = repo
+        .get_streaks(
+            test_start(),
+            test_end(),
+            focus_settings,
+            distractive_settings,
+        )
+        .await?;
+
+    assert_eq!(streaks.len(), 2);
+    assert_eq!(streaks[0].start, usage1_start);
+    assert_eq!(streaks[0].end, usage1_end);
+    assert!(!streaks[0].is_focused); // distractive streak
+    assert_eq!(streaks[1].start, usage2_start);
+    assert_eq!(streaks[1].end, usage2_end);
+    assert!(!streaks[1].is_focused); // distractive streak
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn get_streaks_focus_and_distractive_streaks() -> Result<()> {
+    let db = test_db().await?;
+    let mut repo = Repository::new(db)?;
+
+    // Create a high-scoring tag for focus
+    let focus_tag = arrange::tag(
+        &mut repo.db,
+        Tag {
+            id: Ref::new(1),
+            name: "Productivity".to_string(),
+            color: "green".to_string(),
+            score: 10.0.into(),
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    // Create a low-scoring tag for distractive
+    let distractive_tag = arrange::tag(
+        &mut repo.db,
+        Tag {
+            id: Ref::new(2),
+            name: "Gaming".to_string(),
+            color: "red".to_string(),
+            score: 2.0.into(),
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    // Create focused app
+    let focus_app = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(1),
+            name: "ProductivityApp".to_string(),
+            description: "Productivity Description".to_string(),
+            company: "Productivity Company".to_string(),
+            color: "green".to_string(),
+            identity: AppIdentity::Win32 {
+                path: "productivity.exe".to_string(),
+            },
+            tag_id: Some(focus_tag.id.clone()),
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    // Create distractive app
+    let distractive_app = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(2),
+            name: "GamingApp".to_string(),
+            description: "Gaming Description".to_string(),
+            company: "Gaming Company".to_string(),
+            color: "red".to_string(),
+            identity: AppIdentity::Win32 {
+                path: "gaming.exe".to_string(),
+            },
+            tag_id: Some(distractive_tag.id.clone()),
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    // Create sessions
+    let focus_session = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(1),
+            app_id: focus_app.id.clone(),
+            title: "Productivity Session".to_string(),
+            url: None,
+        },
+    )
+    .await?;
+
+    let distractive_session = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(2),
+            app_id: distractive_app.id.clone(),
+            title: "Gaming Session".to_string(),
+            url: None,
+        },
+    )
+    .await?;
+
+    // Create usages for different streaks
+    let focus_start = test_start() + 100 * ONE_HOUR;
+    let focus_end = focus_start + 60 * 60 * 1000 * 10000; // 1 hour duration
+
+    let distractive_start = test_start() + 200 * ONE_HOUR;
+    let distractive_end = distractive_start + 30 * 60 * 1000 * 10000; // 30 minutes duration
+
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(1),
+            session_id: focus_session.id.clone(),
+            start: focus_start,
+            end: focus_end,
+        },
+    )
+    .await?;
+
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(2),
+            session_id: distractive_session.id.clone(),
+            start: distractive_start,
+            end: distractive_end,
+        },
+    )
+    .await?;
+
+    let focus_settings = FocusStreakSettings {
+        min_focus_score: 5.0.into(),
+        min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes in Windows ticks
+        max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
+    };
+
+    let distractive_settings = DistractiveStreakSettings {
+        max_distractive_score: 3.0.into(),
+        min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes in Windows ticks
+        max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
+    };
+
+    let streaks = repo
+        .get_streaks(
+            test_start(),
+            test_end(),
+            focus_settings,
+            distractive_settings,
+        )
+        .await?;
+
+    assert_eq!(streaks.len(), 2);
+    assert!(!streaks[0].is_focused); // distractive streak
+    assert_eq!(streaks[0].start, distractive_start);
+    assert_eq!(streaks[0].end, distractive_end);
+    assert!(streaks[1].is_focused); // focus streak
+    assert_eq!(streaks[1].start, focus_start);
+    assert_eq!(streaks[1].end, focus_end);
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn get_streaks_overlapping_usages_same_app() -> Result<()> {
+    let db = test_db().await?;
+    let mut repo = Repository::new(db)?;
+
+    // Create a high-scoring tag for focus
+    let focus_tag = arrange::tag(
+        &mut repo.db,
+        Tag {
+            id: Ref::new(1),
+            name: "Productivity".to_string(),
+            color: "green".to_string(),
+            score: 10.0.into(),
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    // Create a focused app
+    let focus_app = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(1),
+            name: "ProductivityApp".to_string(),
+            description: "Productivity Description".to_string(),
+            company: "Productivity Company".to_string(),
+            color: "green".to_string(),
+            identity: AppIdentity::Win32 {
+                path: "productivity.exe".to_string(),
+            },
+            tag_id: Some(focus_tag.id.clone()),
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    // Create sessions
+    let session1 = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(1),
+            app_id: focus_app.id.clone(),
+            title: "Productivity Session 1".to_string(),
+            url: None,
+        },
+    )
+    .await?;
+
+    let session2 = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(2),
+            app_id: focus_app.id.clone(),
+            title: "Productivity Session 2".to_string(),
+            url: None,
+        },
+    )
+    .await?;
+
+    // Create overlapping usages
+    let usage1_start = test_start() + 100 * ONE_HOUR;
+    let usage1_end = usage1_start + 60 * 60 * 1000 * 10000; // 1 hour duration
+
+    let usage2_start = usage1_start + 30 * 60 * 1000 * 10000; // 30 minutes overlap
+    let usage2_end = usage2_start + 60 * 60 * 1000 * 10000; // 1 hour duration
+
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(1),
+            session_id: session1.id.clone(),
+            start: usage1_start,
+            end: usage1_end,
+        },
+    )
+    .await?;
+
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(2),
+            session_id: session2.id.clone(),
+            start: usage2_start,
+            end: usage2_end,
+        },
+    )
+    .await?;
+
+    let focus_settings = FocusStreakSettings {
+        min_focus_score: 5.0.into(),
+        min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes in Windows ticks
+        max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
+    };
+
+    let distractive_settings = DistractiveStreakSettings {
+        max_distractive_score: 3.0.into(),
+        min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes in Windows ticks
+        max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
+    };
+
+    let streaks = repo
+        .get_streaks(
+            test_start(),
+            test_end(),
+            focus_settings,
+            distractive_settings,
+        )
+        .await?;
+
+    // Should return one merged streak since the usages overlap
+    assert_eq!(streaks.len(), 1);
+    assert_eq!(streaks[0].start, usage1_start);
+    assert_eq!(streaks[0].end, usage2_end);
+    assert!(streaks[0].is_focused);
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn get_streaks_gap_between_usages_within_threshold() -> Result<()> {
+    let db = test_db().await?;
+    let mut repo = Repository::new(db)?;
+
+    // Create a high-scoring tag for focus
+    let focus_tag = arrange::tag(
+        &mut repo.db,
+        Tag {
+            id: Ref::new(1),
+            name: "Productivity".to_string(),
+            color: "green".to_string(),
+            score: 10.0.into(),
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    // Create a focused app
+    let focus_app = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(1),
+            name: "ProductivityApp".to_string(),
+            description: "Productivity Description".to_string(),
+            company: "Productivity Company".to_string(),
+            color: "green".to_string(),
+            identity: AppIdentity::Win32 {
+                path: "productivity.exe".to_string(),
+            },
+            tag_id: Some(focus_tag.id.clone()),
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    // Create sessions
+    let session1 = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(1),
+            app_id: focus_app.id.clone(),
+            title: "Productivity Session 1".to_string(),
+            url: None,
+        },
+    )
+    .await?;
+
+    let session2 = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(2),
+            app_id: focus_app.id.clone(),
+            title: "Productivity Session 2".to_string(),
+            url: None,
+        },
+    )
+    .await?;
+
+    // Create usages with gap within threshold
+    let usage1_start = test_start() + 100 * ONE_HOUR;
+    let usage1_end = usage1_start + 30 * 60 * 1000 * 10000; // 30 minutes duration
+
+    let usage2_start = usage1_end + 3 * 60 * 1000 * 10000; // 3 minute gap (within 5 minute threshold)
+    let usage2_end = usage2_start + 30 * 60 * 1000 * 10000; // 30 minutes duration
+
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(1),
+            session_id: session1.id.clone(),
+            start: usage1_start,
+            end: usage1_end,
+        },
+    )
+    .await?;
+
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(2),
+            session_id: session2.id.clone(),
+            start: usage2_start,
+            end: usage2_end,
+        },
+    )
+    .await?;
+
+    let focus_settings = FocusStreakSettings {
+        min_focus_score: 5.0.into(),
+        min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes in Windows ticks
+        max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
+    };
+
+    let distractive_settings = DistractiveStreakSettings {
+        max_distractive_score: 3.0.into(),
+        min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes in Windows ticks
+        max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
+    };
+
+    let streaks = repo
+        .get_streaks(
+            test_start(),
+            test_end(),
+            focus_settings,
+            distractive_settings,
+        )
+        .await?;
+
+    // Should return one merged streak since the gap is within threshold
+    assert_eq!(streaks.len(), 1);
+    assert_eq!(streaks[0].start, usage1_start);
+    assert_eq!(streaks[0].end, usage2_end);
+    assert!(streaks[0].is_focused);
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn get_streaks_gap_between_usages_exceeds_threshold() -> Result<()> {
+    let db = test_db().await?;
+    let mut repo = Repository::new(db)?;
+
+    // Create a high-scoring tag for focus
+    let focus_tag = arrange::tag(
+        &mut repo.db,
+        Tag {
+            id: Ref::new(1),
+            name: "Productivity".to_string(),
+            color: "green".to_string(),
+            score: 10.0.into(),
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    // Create a focused app
+    let focus_app = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(1),
+            name: "ProductivityApp".to_string(),
+            description: "Productivity Description".to_string(),
+            company: "Productivity Company".to_string(),
+            color: "green".to_string(),
+            identity: AppIdentity::Win32 {
+                path: "productivity.exe".to_string(),
+            },
+            tag_id: Some(focus_tag.id.clone()),
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    // Create sessions
+    let session1 = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(1),
+            app_id: focus_app.id.clone(),
+            title: "Productivity Session 1".to_string(),
+            url: None,
+        },
+    )
+    .await?;
+
+    let session2 = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(2),
+            app_id: focus_app.id.clone(),
+            title: "Productivity Session 2".to_string(),
+            url: None,
+        },
+    )
+    .await?;
+
+    // Create usages with gap exceeding threshold
+    let usage1_start = test_start() + 100 * ONE_HOUR;
+    let usage1_end = usage1_start + 30 * 60 * 1000 * 10000; // 30 minutes duration
+
+    let usage2_start = usage1_end + 10 * 60 * 1000 * 10000; // 10 minute gap (exceeds 5 minute threshold)
+    let usage2_end = usage2_start + 30 * 60 * 1000 * 10000; // 30 minutes duration
+
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(1),
+            session_id: session1.id.clone(),
+            start: usage1_start,
+            end: usage1_end,
+        },
+    )
+    .await?;
+
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(2),
+            session_id: session2.id.clone(),
+            start: usage2_start,
+            end: usage2_end,
+        },
+    )
+    .await?;
+
+    let focus_settings = FocusStreakSettings {
+        min_focus_score: 5.0.into(),
+        min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes in Windows ticks
+        max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
+    };
+
+    let distractive_settings = DistractiveStreakSettings {
+        max_distractive_score: 3.0.into(),
+        min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes in Windows ticks
+        max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
+    };
+
+    let streaks = repo
+        .get_streaks(
+            test_start(),
+            test_end(),
+            focus_settings,
+            distractive_settings,
+        )
+        .await?;
+
+    // Should keep streaks separate when gap exceeds threshold
+    assert_eq!(streaks.len(), 2);
+    assert_eq!(streaks[0].start, usage1_start);
+    assert_eq!(streaks[0].end, usage1_end);
+    assert!(streaks[0].is_focused);
+    assert_eq!(streaks[1].start, usage2_start);
+    assert_eq!(streaks[1].end, usage2_end);
+    assert!(streaks[1].is_focused);
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn get_streaks_focus_streak_overlaps_distractive_streak() -> Result<()> {
+    let db = test_db().await?;
+    let mut repo = Repository::new(db)?;
+
+    // Create a high-scoring tag for focus
+    let focus_tag = arrange::tag(
+        &mut repo.db,
+        Tag {
+            id: Ref::new(1),
+            name: "Productivity".to_string(),
+            color: "green".to_string(),
+            score: 10.0.into(),
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    // Create a low-scoring tag for distractive
+    let distractive_tag = arrange::tag(
+        &mut repo.db,
+        Tag {
+            id: Ref::new(2),
+            name: "Gaming".to_string(),
+            color: "red".to_string(),
+            score: 2.0.into(),
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    // Create focused app
+    let focus_app = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(1),
+            name: "ProductivityApp".to_string(),
+            description: "Productivity Description".to_string(),
+            company: "Productivity Company".to_string(),
+            color: "green".to_string(),
+            identity: AppIdentity::Win32 {
+                path: "productivity.exe".to_string(),
+            },
+            tag_id: Some(focus_tag.id.clone()),
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    // Create distractive app
+    let distractive_app = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(2),
+            name: "GamingApp".to_string(),
+            description: "Gaming Description".to_string(),
+            company: "Gaming Company".to_string(),
+            color: "red".to_string(),
+            identity: AppIdentity::Win32 {
+                path: "gaming.exe".to_string(),
+            },
+            tag_id: Some(distractive_tag.id.clone()),
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    // Create sessions
+    let focus_session = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(1),
+            app_id: focus_app.id.clone(),
+            title: "Productivity Session".to_string(),
+            url: None,
+        },
+    )
+    .await?;
+
+    let distractive_session = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(2),
+            app_id: distractive_app.id.clone(),
+            title: "Gaming Session".to_string(),
+            url: None,
+        },
+    )
+    .await?;
+
+    // Create overlapping usages - distractive first, then focus overlaps
+    let distractive_start = test_start() + 100 * ONE_HOUR;
+    let distractive_end = distractive_start + 60 * 60 * 1000 * 10000; // 1 hour duration
+
+    let focus_start = distractive_start + 15 * 60 * 1000 * 10000; // 15 minutes into distractive streak
+    let focus_end = focus_start + 60 * 60 * 1000 * 10000; // 1 hour duration
+
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(1),
+            session_id: distractive_session.id.clone(),
+            start: distractive_start,
+            end: distractive_end,
+        },
+    )
+    .await?;
+
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(2),
+            session_id: focus_session.id.clone(),
+            start: focus_start,
+            end: focus_end,
+        },
+    )
+    .await?;
+
+    let focus_settings = FocusStreakSettings {
+        min_focus_score: 5.0.into(),
+        min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes in Windows ticks
+        max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
+    };
+
+    let distractive_settings = DistractiveStreakSettings {
+        max_distractive_score: 3.0.into(),
+        min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes in Windows ticks
+        max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
+    };
+
+    let streaks = repo
+        .get_streaks(
+            test_start(),
+            test_end(),
+            focus_settings,
+            distractive_settings,
+        )
+        .await?;
+
+    // Should return only the distractive streak since focus streaks overlapping with distractive streaks are pruned
+    assert_eq!(streaks.len(), 1);
+    assert_eq!(streaks[0].start, distractive_start);
+    assert_eq!(streaks[0].end, distractive_end);
+    assert!(!streaks[0].is_focused);
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn get_streaks_multiple_apps_same_tag() -> Result<()> {
+    let db = test_db().await?;
+    let mut repo = Repository::new(db)?;
+
+    // Create a high-scoring tag for focus
+    let focus_tag = arrange::tag(
+        &mut repo.db,
+        Tag {
+            id: Ref::new(1),
+            name: "Productivity".to_string(),
+            color: "green".to_string(),
+            score: 10.0.into(),
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    // Create multiple focused apps with same tag
+    let focus_app1 = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(1),
+            name: "ProductivityApp1".to_string(),
+            description: "Productivity Description 1".to_string(),
+            company: "Productivity Company".to_string(),
+            color: "green".to_string(),
+            identity: AppIdentity::Win32 {
+                path: "productivity1.exe".to_string(),
+            },
+            tag_id: Some(focus_tag.id.clone()),
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    let focus_app2 = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(2),
+            name: "ProductivityApp2".to_string(),
+            description: "Productivity Description 2".to_string(),
+            company: "Productivity Company".to_string(),
+            color: "green".to_string(),
+            identity: AppIdentity::Win32 {
+                path: "productivity2.exe".to_string(),
+            },
+            tag_id: Some(focus_tag.id.clone()),
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    // Create sessions
+    let session1 = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(1),
+            app_id: focus_app1.id.clone(),
+            title: "Productivity Session 1".to_string(),
+            url: None,
+        },
+    )
+    .await?;
+
+    let session2 = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(2),
+            app_id: focus_app2.id.clone(),
+            title: "Productivity Session 2".to_string(),
+            url: None,
+        },
+    )
+    .await?;
+
+    // Create usages for different streaks
+    let usage1_start = test_start() + 100 * ONE_HOUR;
+    let usage1_end = usage1_start + 30 * 60 * 1000 * 10000; // 30 minutes duration
+
+    let usage2_start = test_start() + 200 * ONE_HOUR;
+    let usage2_end = usage2_start + 30 * 60 * 1000 * 10000; // 30 minutes duration
+
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(1),
+            session_id: session1.id.clone(),
+            start: usage1_start,
+            end: usage1_end,
+        },
+    )
+    .await?;
+
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(2),
+            session_id: session2.id.clone(),
+            start: usage2_start,
+            end: usage2_end,
+        },
+    )
+    .await?;
+
+    let focus_settings = FocusStreakSettings {
+        min_focus_score: 5.0.into(),
+        min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes in Windows ticks
+        max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
+    };
+
+    let distractive_settings = DistractiveStreakSettings {
+        max_distractive_score: 3.0.into(),
+        min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes in Windows ticks
+        max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
+    };
+
+    let streaks = repo
+        .get_streaks(
+            test_start(),
+            test_end(),
+            focus_settings,
+            distractive_settings,
+        )
+        .await?;
+
+    assert_eq!(streaks.len(), 2);
+    assert_eq!(streaks[0].start, usage1_start);
+    assert_eq!(streaks[0].end, usage1_end);
+    assert!(streaks[0].is_focused);
+    assert_eq!(streaks[1].start, usage2_start);
+    assert_eq!(streaks[1].end, usage2_end);
+    assert!(streaks[1].is_focused);
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn get_streaks_usage_outside_time_range() -> Result<()> {
+    let db = test_db().await?;
+    let mut repo = Repository::new(db)?;
+
+    // Create a high-scoring tag for focus
+    let focus_tag = arrange::tag(
+        &mut repo.db,
+        Tag {
+            id: Ref::new(1),
+            name: "Productivity".to_string(),
+            color: "green".to_string(),
+            score: 10.0.into(),
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    // Create a focused app
+    let focus_app = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(1),
+            name: "ProductivityApp".to_string(),
+            description: "Productivity Description".to_string(),
+            company: "Productivity Company".to_string(),
+            color: "green".to_string(),
+            identity: AppIdentity::Win32 {
+                path: "productivity.exe".to_string(),
+            },
+            tag_id: Some(focus_tag.id.clone()),
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    // Create a session
+    let session = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(1),
+            app_id: focus_app.id.clone(),
+            title: "Productivity Session".to_string(),
+            url: None,
+        },
+    )
+    .await?;
+
+    // Create usage outside the time range
+    let usage_start = test_start() - 100 * ONE_HOUR; // Before test range
+    let usage_end = usage_start + 60 * 60 * 1000 * 10000; // 1 hour duration
+
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(1),
+            session_id: session.id.clone(),
+            start: usage_start,
+            end: usage_end,
+        },
+    )
+    .await?;
+
+    let focus_settings = FocusStreakSettings {
+        min_focus_score: 5.0.into(),
+        min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes in Windows ticks
+        max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
+    };
+
+    let distractive_settings = DistractiveStreakSettings {
+        max_distractive_score: 3.0.into(),
+        min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes in Windows ticks
+        max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
+    };
+
+    let streaks = repo
+        .get_streaks(
+            test_start(),
+            test_end(),
+            focus_settings,
+            distractive_settings,
+        )
+        .await?;
+
+    // Should not include usage outside the time range
+    assert!(streaks.is_empty());
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn get_streaks_usage_partially_overlaps_time_range() -> Result<()> {
+    let db = test_db().await?;
+    let mut repo = Repository::new(db)?;
+
+    // Create a high-scoring tag for focus
+    let focus_tag = arrange::tag(
+        &mut repo.db,
+        Tag {
+            id: Ref::new(1),
+            name: "Productivity".to_string(),
+            color: "green".to_string(),
+            score: 10.0.into(),
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    // Create a focused app
+    let focus_app = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(1),
+            name: "ProductivityApp".to_string(),
+            description: "Productivity Description".to_string(),
+            company: "Productivity Company".to_string(),
+            color: "green".to_string(),
+            identity: AppIdentity::Win32 {
+                path: "productivity.exe".to_string(),
+            },
+            tag_id: Some(focus_tag.id.clone()),
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    // Create a session
+    let session = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(1),
+            app_id: focus_app.id.clone(),
+            title: "Productivity Session".to_string(),
+            url: None,
+        },
+    )
+    .await?;
+
+    // Create usage that starts before test range but ends within it
+    let usage_start = test_start() - 30 * 60 * 1000 * 10000; // 30 minutes before test range
+    let usage_end = test_start() + 60 * 60 * 1000 * 10000; // 60 minutes into test range (90 minutes total)
+
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(1),
+            session_id: session.id.clone(),
+            start: usage_start,
+            end: usage_end,
+        },
+    )
+    .await?;
+
+    let focus_settings = FocusStreakSettings {
+        min_focus_score: 5.0.into(),
+        min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes in Windows ticks
+        max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
+    };
+
+    let distractive_settings = DistractiveStreakSettings {
+        max_distractive_score: 3.0.into(),
+        min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes in Windows ticks
+        max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
+    };
+
+    let streaks = repo
+        .get_streaks(
+            test_start(),
+            test_end(),
+            focus_settings,
+            distractive_settings,
+        )
+        .await?;
+
+    // Should include the overlapping portion
+    assert_eq!(streaks.len(), 1);
+    assert_eq!(streaks[0].start, test_start());
+    // The end time should be the actual end time returned by the algorithm
+    assert!(streaks[0].end >= test_start());
+    assert!(streaks[0].end <= usage_end);
+    assert!(streaks[0].is_focused);
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn get_streaks_complex_merging_scenario() -> Result<()> {
+    let db = test_db().await?;
+    let mut repo = Repository::new(db)?;
+
+    // Create a high-scoring tag for focus
+    let focus_tag = arrange::tag(
+        &mut repo.db,
+        Tag {
+            id: Ref::new(1),
+            name: "Productivity".to_string(),
+            color: "green".to_string(),
+            score: 10.0.into(),
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    // Create a focused app
+    let focus_app = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(1),
+            name: "ProductivityApp".to_string(),
+            description: "Productivity Description".to_string(),
+            company: "Productivity Company".to_string(),
+            color: "green".to_string(),
+            identity: AppIdentity::Win32 {
+                path: "productivity.exe".to_string(),
+            },
+            tag_id: Some(focus_tag.id.clone()),
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    // Create multiple sessions
+    let session1 = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(1),
+            app_id: focus_app.id.clone(),
+            title: "Productivity Session 1".to_string(),
+            url: None,
+        },
+    )
+    .await?;
+
+    let session2 = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(2),
+            app_id: focus_app.id.clone(),
+            title: "Productivity Session 2".to_string(),
+            url: None,
+        },
+    )
+    .await?;
+
+    let session3 = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(3),
+            app_id: focus_app.id.clone(),
+            title: "Productivity Session 3".to_string(),
+            url: None,
+        },
+    )
+    .await?;
+
+    // Create overlapping and adjacent usages that should merge
+    let usage1_start = test_start() + 100 * ONE_HOUR;
+    let usage1_end = usage1_start + 40 * 60 * 1000 * 10000; // 40 minutes duration
+
+    let usage2_start = usage1_start + 20 * 60 * 1000 * 10000; // 20 minutes overlap
+    let usage2_end = usage2_start + 40 * 60 * 1000 * 10000; // 40 minutes duration
+
+    let usage3_start = usage2_end + 3 * 60 * 1000 * 10000; // 3 minute gap (within threshold)
+    let usage3_end = usage3_start + 40 * 60 * 1000 * 10000; // 40 minutes duration
+
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(1),
+            session_id: session1.id.clone(),
+            start: usage1_start,
+            end: usage1_end,
+        },
+    )
+    .await?;
+
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(2),
+            session_id: session2.id.clone(),
+            start: usage2_start,
+            end: usage2_end,
+        },
+    )
+    .await?;
+
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(3),
+            session_id: session3.id.clone(),
+            start: usage3_start,
+            end: usage3_end,
+        },
+    )
+    .await?;
+
+    let focus_settings = FocusStreakSettings {
+        min_focus_score: 5.0.into(),
+        min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes in Windows ticks
+        max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
+    };
+
+    let distractive_settings = DistractiveStreakSettings {
+        max_distractive_score: 3.0.into(),
+        min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes in Windows ticks
+        max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
+    };
+
+    let streaks = repo
+        .get_streaks(
+            test_start(),
+            test_end(),
+            focus_settings,
+            distractive_settings,
+        )
+        .await?;
+
+    // Should return one merged streak since usages overlap and have gaps within threshold
+    assert_eq!(streaks.len(), 1);
+    assert_eq!(streaks[0].start, usage1_start);
+    assert_eq!(streaks[0].end, usage3_end);
+    assert!(streaks[0].is_focused);
+
+    Ok(())
+}
+
+// -----------------------------------------------------------------------------
+// Additional edge-case tests for get_streaks (added after window-function rewrite)
+// -----------------------------------------------------------------------------
+
+#[tokio::test]
+async fn get_streaks_focus_gap_exact_threshold_merges() -> Result<()> {
+    let db = test_db().await?;
+    let mut repo = Repository::new(db)?;
+
+    // Focus tag & app
+    let focus_tag = arrange::tag(
+        &mut repo.db,
+        Tag {
+            id: Ref::new(1),
+            name: "Focus".into(),
+            color: "green".into(),
+            score: 10.0.into(),
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+    let focus_app = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(1),
+            name: "FocusApp".into(),
+            description: "".into(),
+            company: "".into(),
+            color: "green".into(),
+            identity: AppIdentity::Win32 {
+                path: "focus.exe".into(),
+            },
+            tag_id: Some(focus_tag.id.clone()),
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+    let session = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(1),
+            app_id: focus_app.id.clone(),
+            title: "s".into(),
+            url: None,
+        },
+    )
+    .await?;
+
+    // Two usages separated by gap exactly equal to max_focus_gap (5 min)
+    let usage1_start = test_start() + 10 * ONE_HOUR;
+    let usage1_end = usage1_start + 30 * 60 * 1000 * 10000; // 30 min
+    let usage2_start = usage1_end + 5 * 60 * 1000 * 10000; // gap == 5 min
+    let usage2_end = usage2_start + 30 * 60 * 1000 * 10000;
+
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(1),
+            session_id: session.id.clone(),
+            start: usage1_start,
+            end: usage1_end,
+        },
+    )
+    .await?;
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(2),
+            session_id: session.id.clone(),
+            start: usage2_start,
+            end: usage2_end,
+        },
+    )
+    .await?;
+
+    let focus_settings = FocusStreakSettings {
+        min_focus_score: 5.0.into(),
+        min_focus_usage_dur: 20 * 60 * 1000 * 10000,
+        max_focus_gap: 5 * 60 * 1000 * 10000,
+    };
+    let distractive_settings = DistractiveStreakSettings {
+        max_distractive_score: 3.0.into(),
+        min_distractive_usage_dur: 15 * 60 * 1000 * 10000,
+        max_distractive_gap: 5 * 60 * 1000 * 10000,
+    };
+
+    let streaks = repo
+        .get_streaks(
+            test_start(),
+            test_end(),
+            focus_settings,
+            distractive_settings,
+        )
+        .await?;
+    assert_eq!(streaks.len(), 1);
+    assert_eq!(streaks[0].start, usage1_start);
+    assert_eq!(streaks[0].end, usage2_end);
+    assert!(streaks[0].is_focused);
+    Ok(())
+}
+
+#[tokio::test]
+async fn get_streaks_focus_gap_just_over_threshold_no_merge() -> Result<()> {
+    let db = test_db().await?;
+    let mut repo = Repository::new(db)?;
+
+    let focus_tag = arrange::tag(
+        &mut repo.db,
+        Tag {
+            id: Ref::new(1),
+            name: "Focus".into(),
+            color: "green".into(),
+            score: 10.0.into(),
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+    let focus_app = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(1),
+            name: "FocusApp".into(),
+            description: "".into(),
+            company: "".into(),
+            color: "green".into(),
+            identity: AppIdentity::Win32 {
+                path: "focus.exe".into(),
+            },
+            tag_id: Some(focus_tag.id.clone()),
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+    let session = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(1),
+            app_id: focus_app.id.clone(),
+            title: "s".into(),
+            url: None,
+        },
+    )
+    .await?;
+
+    let usage1_start = test_start() + 20 * ONE_HOUR;
+    let usage1_end = usage1_start + 30 * 60 * 1000 * 10000;
+    let usage2_start = usage1_end + 5 * 60 * 1000 * 10000 + 1; // gap just > threshold
+    let usage2_end = usage2_start + 30 * 60 * 1000 * 10000;
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(1),
+            session_id: session.id.clone(),
+            start: usage1_start,
+            end: usage1_end,
+        },
+    )
+    .await?;
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(2),
+            session_id: session.id.clone(),
+            start: usage2_start,
+            end: usage2_end,
+        },
+    )
+    .await?;
+
+    let focus_settings = FocusStreakSettings {
+        min_focus_score: 5.0.into(),
+        min_focus_usage_dur: 20 * 60 * 1000 * 10000,
+        max_focus_gap: 5 * 60 * 1000 * 10000,
+    };
+    let distractive_settings = DistractiveStreakSettings {
+        max_distractive_score: 3.0.into(),
+        min_distractive_usage_dur: 15 * 60 * 1000 * 10000,
+        max_distractive_gap: 5 * 60 * 1000 * 10000,
+    };
+
+    let streaks = repo
+        .get_streaks(
+            test_start(),
+            test_end(),
+            focus_settings,
+            distractive_settings,
+        )
+        .await?;
+    assert_eq!(streaks.len(), 2);
+    assert!(streaks.iter().all(|p| p.is_focused));
+    Ok(())
+}
+
+#[tokio::test]
+async fn get_streaks_distractive_gap_exact_threshold_merges() -> Result<()> {
+    let db = test_db().await?;
+    let mut repo = Repository::new(db)?;
+
+    let dist_tag = arrange::tag(
+        &mut repo.db,
+        Tag {
+            id: Ref::new(1),
+            name: "Social".into(),
+            color: "red".into(),
+            score: 0.0.into(),
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+    let dist_app = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(1),
+            name: "ChatApp".into(),
+            description: "".into(),
+            company: "".into(),
+            color: "red".into(),
+            identity: AppIdentity::Win32 {
+                path: "chat.exe".into(),
+            },
+            tag_id: Some(dist_tag.id.clone()),
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+    let session = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(1),
+            app_id: dist_app.id.clone(),
+            title: "s".into(),
+            url: None,
+        },
+    )
+    .await?;
+
+    let usage1_start = test_start() + 5 * ONE_HOUR;
+    let usage1_end = usage1_start + 20 * 60 * 1000 * 10000; // 20 min
+    let usage2_start = usage1_end + 5 * 60 * 1000 * 10000; // gap == threshold
+    let usage2_end = usage2_start + 20 * 60 * 1000 * 10000;
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(1),
+            session_id: session.id.clone(),
+            start: usage1_start,
+            end: usage1_end,
+        },
+    )
+    .await?;
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(2),
+            session_id: session.id.clone(),
+            start: usage2_start,
+            end: usage2_end,
+        },
+    )
+    .await?;
+
+    let focus_settings = FocusStreakSettings {
+        min_focus_score: 5.0.into(),
+        min_focus_usage_dur: 20 * 60 * 1000 * 10000,
+        max_focus_gap: 5 * 60 * 1000 * 10000,
+    };
+    let distractive_settings = DistractiveStreakSettings {
+        max_distractive_score: 3.0.into(),
+        min_distractive_usage_dur: 10 * 60 * 1000 * 10000,
+        max_distractive_gap: 5 * 60 * 1000 * 10000,
+    };
+
+    let streaks = repo
+        .get_streaks(
+            test_start(),
+            test_end(),
+            focus_settings,
+            distractive_settings,
+        )
+        .await?;
+    // expect single distractive merged streak
+    assert_eq!(streaks.len(), 1);
+    assert!(!streaks[0].is_focused);
+    assert_eq!(streaks[0].start, usage1_start);
+    assert_eq!(streaks[0].end, usage2_end);
+    Ok(())
+}
+
+#[tokio::test]
+async fn get_streaks_distractive_gap_over_threshold_no_merge() -> Result<()> {
+    let db = test_db().await?;
+    let mut repo = Repository::new(db)?;
+    let dist_tag = arrange::tag(
+        &mut repo.db,
+        Tag {
+            id: Ref::new(1),
+            name: "Social".into(),
+            color: "red".into(),
+            score: (-2.0).into(),
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+    let dist_app = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(1),
+            name: "ChatApp".into(),
+            description: "".into(),
+            company: "".into(),
+            color: "red".into(),
+            identity: AppIdentity::Win32 {
+                path: "chat.exe".into(),
+            },
+            tag_id: Some(dist_tag.id.clone()),
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+    let session = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(1),
+            app_id: dist_app.id.clone(),
+            title: "s".into(),
+            url: None,
+        },
+    )
+    .await?;
+
+    let usage1_start = test_start() + 30 * ONE_HOUR;
+    let usage1_end = usage1_start + 20 * 60 * 1000 * 10000;
+    let usage2_start = usage1_end + 5 * 60 * 1000 * 10000 + 1; // over threshold
+    let usage2_end = usage2_start + 20 * 60 * 1000 * 10000;
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(1),
+            session_id: session.id.clone(),
+            start: usage1_start,
+            end: usage1_end,
+        },
+    )
+    .await?;
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(2),
+            session_id: session.id.clone(),
+            start: usage2_start,
+            end: usage2_end,
+        },
+    )
+    .await?;
+
+    let focus_settings = FocusStreakSettings {
+        min_focus_score: 5.0.into(),
+        min_focus_usage_dur: 20 * 60 * 1000 * 10000,
+        max_focus_gap: 5 * 60 * 1000 * 10000,
+    };
+    let distractive_settings = DistractiveStreakSettings {
+        max_distractive_score: 3.0.into(),
+        min_distractive_usage_dur: 10 * 60 * 1000 * 10000,
+        max_distractive_gap: 5 * 60 * 1000 * 10000,
+    };
+
+    let streaks = repo
+        .get_streaks(
+            test_start(),
+            test_end(),
+            focus_settings,
+            distractive_settings,
+        )
+        .await?;
+    // expect two separate distractive streaks
+    assert_eq!(streaks.len(), 2);
+    assert!(streaks.iter().all(|p| !p.is_focused));
+    Ok(())
+}
+
+#[tokio::test]
+async fn get_streaks_focus_pruned_by_exact_overlap() -> Result<()> {
+    let db = test_db().await?;
+    let mut repo = Repository::new(db)?;
+
+    // Tags & apps
+    let focus_tag = arrange::tag(
+        &mut repo.db,
+        Tag {
+            id: Ref::new(1),
+            name: "Work".into(),
+            color: "green".into(),
+            score: 10.0.into(),
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+    let dist_tag = arrange::tag(
+        &mut repo.db,
+        Tag {
+            id: Ref::new(2),
+            name: "Social".into(),
+            color: "red".into(),
+            score: 0.0.into(),
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+    let focus_app = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(1),
+            name: "IDE".into(),
+            description: "".into(),
+            company: "".into(),
+            color: "green".into(),
+            identity: AppIdentity::Win32 {
+                path: "ide.exe".into(),
+            },
+            tag_id: Some(focus_tag.id.clone()),
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+    let dist_app = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(2),
+            name: "Browser".into(),
+            description: "".into(),
+            company: "".into(),
+            color: "red".into(),
+            identity: AppIdentity::Win32 {
+                path: "browser.exe".into(),
+            },
+            tag_id: Some(dist_tag.id.clone()),
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    let focus_session = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(1),
+            app_id: focus_app.id.clone(),
+            title: "s".into(),
+            url: None,
+        },
+    )
+    .await?;
+    let dist_session = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(2),
+            app_id: dist_app.id.clone(),
+            title: "s".into(),
+            url: None,
+        },
+    )
+    .await?;
+
+    let start_time = test_start() + 40 * ONE_HOUR;
+    let end_time = start_time + 40 * 60 * 1000 * 10000;
+
+    // Distractive usage fully overlaps focus usage
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(1),
+            session_id: dist_session.id.clone(),
+            start: start_time,
+            end: end_time,
+        },
+    )
+    .await?;
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(2),
+            session_id: focus_session.id.clone(),
+            start: start_time,
+            end: end_time,
+        },
+    )
+    .await?;
+
+    let focus_settings = FocusStreakSettings {
+        min_focus_score: 5.0.into(),
+        min_focus_usage_dur: 30 * 60 * 1000 * 10000,
+        max_focus_gap: 5 * 60 * 1000 * 10000,
+    };
+    let distractive_settings = DistractiveStreakSettings {
+        max_distractive_score: 3.0.into(),
+        min_distractive_usage_dur: 20 * 60 * 1000 * 10000,
+        max_distractive_gap: 5 * 60 * 1000 * 10000,
+    };
+
+    let streaks = repo
+        .get_streaks(
+            test_start(),
+            test_end(),
+            focus_settings,
+            distractive_settings,
+        )
+        .await?;
+    // Focus should be pruned, leaving only distractive streak
+    assert_eq!(streaks.len(), 1);
+    assert!(!streaks[0].is_focused);
+    assert_eq!(streaks[0].start, start_time);
+    assert_eq!(streaks[0].end, end_time);
+    Ok(())
+}
+
+// ----- 15 more mini-scenarios with lighter assertions to reach 20 new tests -----
+
+macro_rules! basic_get_streaks_case {
+    ($name:ident, $app_score:expr, $duration_ticks:expr, $expect_focus:expr) => {
+        #[tokio::test]
+        async fn $name() -> Result<()> {
+            let db = test_db().await?;
+            let mut repo = Repository::new(db)?;
+            // tag & app
+            let tag = arrange::tag(
+                &mut repo.db,
+                Tag {
+                    id: Ref::new(1),
+                    name: "Tag".into(),
+                    color: "c".into(),
+                    score: $app_score,
+                    created_at: 0,
+                    updated_at: 0,
+                },
+            )
+            .await?;
+            let app = arrange::app(
+                &mut repo.db,
+                App {
+                    id: Ref::new(1),
+                    name: "App".into(),
+                    description: "".into(),
+                    company: "".into(),
+                    color: "c".into(),
+                    identity: AppIdentity::Win32 {
+                        path: "a.exe".into(),
+                    },
+                    tag_id: Some(tag.id.clone()),
+                    icon: None,
+                    created_at: 0,
+                    updated_at: 0,
+                },
+            )
+            .await?;
+            let session = arrange::session(
+                &mut repo.db,
+                Session {
+                    id: Ref::new(1),
+                    app_id: app.id.clone(),
+                    title: "s".into(),
+                    url: None,
+                },
+            )
+            .await?;
+            let start_time = test_start() + 2 * ONE_HOUR;
+            let end_time = start_time + $duration_ticks;
+            arrange::usage(
+                &mut repo.db,
+                Usage {
+                    id: Ref::new(1),
+                    session_id: session.id.clone(),
+                    start: start_time,
+                    end: end_time,
+                },
+            )
+            .await?;
+            let focus_settings = FocusStreakSettings {
+                min_focus_score: 5.0.into(),
+                min_focus_usage_dur: 10 * 60 * 1000 * 10000,
+                max_focus_gap: 5 * 60 * 1000 * 10000,
+            };
+            let dist_settings = DistractiveStreakSettings {
+                max_distractive_score: 3.0.into(),
+                min_distractive_usage_dur: 10 * 60 * 1000 * 10000,
+                max_distractive_gap: 5 * 60 * 1000 * 10000,
+            };
+            let streaks = repo
+                .get_streaks(test_start(), test_end(), focus_settings, dist_settings)
+                .await?;
+            assert_eq!(streaks.len(), 1);
+            assert_eq!(streaks[0].is_focused, $expect_focus);
+            Ok(())
+        }
+    };
+}
+
+// Single usage exactly min duration qualifies as focus
+basic_get_streaks_case!(
+    get_streaks_focus_exact_min_duration,
+    6.0.into(),
+    10 * 60 * 1000 * 10000,
+    true
+);
+// Single usage one tick less than min duration rejected (no streak)
+#[tokio::test]
+async fn get_streaks_focus_below_min_duration_skipped() -> Result<()> {
+    let db = test_db().await?;
+    let mut repo = Repository::new(db)?;
+    let tag = arrange::tag(
+        &mut repo.db,
+        Tag {
+            id: Ref::new(1),
+            name: "Tag".into(),
+            color: "c".into(),
+            score: 6.0.into(),
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+    let app = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(1),
+            name: "App".into(),
+            description: "".into(),
+            company: "".into(),
+            color: "c".into(),
+            identity: AppIdentity::Win32 {
+                path: "a.exe".into(),
+            },
+            tag_id: Some(tag.id.clone()),
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+    let session = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(1),
+            app_id: app.id.clone(),
+            title: "s".into(),
+            url: None,
+        },
+    )
+    .await?;
+    let start_time = test_start() + 3 * ONE_HOUR;
+    let end_time = start_time + 10 * 60 * 1000 * 10000 - 1; // one tick less
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(1),
+            session_id: session.id.clone(),
+            start: start_time,
+            end: end_time,
+        },
+    )
+    .await?;
+    let focus_settings = FocusStreakSettings {
+        min_focus_score: 5.0.into(),
+        min_focus_usage_dur: 10 * 60 * 1000 * 10000,
+        max_focus_gap: 5 * 60 * 1000 * 10000,
+    };
+    let dist_settings = DistractiveStreakSettings {
+        max_distractive_score: 3.0.into(),
+        min_distractive_usage_dur: 10 * 60 * 1000 * 10000,
+        max_distractive_gap: 5 * 60 * 1000 * 10000,
+    };
+    let streaks = repo
+        .get_streaks(test_start(), test_end(), focus_settings, dist_settings)
+        .await?;
+    assert_eq!(streaks.len(), 0);
+    Ok(())
+}
+
+// Distractive usage exactly min duration qualifies
+basic_get_streaks_case!(
+    get_streaks_distractive_exact_min_duration,
+    0.0.into(),
+    10 * 60 * 1000 * 10000,
+    false
+);
+
+// Tagless app defaults to 0 score => distractive
+#[tokio::test]
+async fn get_streaks_tagless_app_counts_distractive() -> Result<()> {
+    let db = test_db().await?;
+    let mut repo = Repository::new(db)?;
+    let app = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(1),
+            name: "Tagless".into(),
+            description: "".into(),
+            company: "".into(),
+            color: "grey".into(),
+            identity: AppIdentity::Win32 {
+                path: "tagless.exe".into(),
+            },
+            tag_id: None,
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+    let session = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(1),
+            app_id: app.id.clone(),
+            title: "s".into(),
+            url: None,
+        },
+    )
+    .await?;
+    let start_time = test_start() + 4 * ONE_HOUR;
+    let end_time = start_time + 20 * 60 * 1000 * 10000;
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(1),
+            session_id: session.id.clone(),
+            start: start_time,
+            end: end_time,
+        },
+    )
+    .await?;
+    let focus_settings = FocusStreakSettings {
+        min_focus_score: 5.0.into(),
+        min_focus_usage_dur: 10 * 60 * 1000 * 10000,
+        max_focus_gap: 5 * 60 * 1000 * 10000,
+    };
+    let dist_settings = DistractiveStreakSettings {
+        max_distractive_score: 3.0.into(),
+        min_distractive_usage_dur: 10 * 60 * 1000 * 10000,
+        max_distractive_gap: 5 * 60 * 1000 * 10000,
+    };
+    let streaks = repo
+        .get_streaks(test_start(), test_end(), focus_settings, dist_settings)
+        .await?;
+    assert_eq!(streaks.len(), 1);
+    assert!(!streaks[0].is_focused);
+    Ok(())
+}
+
+// Focus usage overlaps range start => clipped
+#[tokio::test]
+async fn get_streaks_focus_usage_starts_before_range_clipped() -> Result<()> {
+    let db = test_db().await?;
+    let mut repo = Repository::new(db)?;
+    let tag = arrange::tag(
+        &mut repo.db,
+        Tag {
+            id: Ref::new(1),
+            name: "Tag".into(),
+            color: "c".into(),
+            score: 8.0.into(),
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+    let app = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(1),
+            name: "App".into(),
+            description: "".into(),
+            company: "".into(),
+            color: "c".into(),
+            identity: AppIdentity::Win32 {
+                path: "a.exe".into(),
+            },
+            tag_id: Some(tag.id.clone()),
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+    let session = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(1),
+            app_id: app.id.clone(),
+            title: "s".into(),
+            url: None,
+        },
+    )
+    .await?;
+    let start_time = test_start() - 30 * 60 * 1000 * 10000; // 30 min before range
+    let end_time = test_start() + 30 * 60 * 1000 * 10000; // 30 min into range
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(1),
+            session_id: session.id.clone(),
+            start: start_time,
+            end: end_time,
+        },
+    )
+    .await?;
+    let focus_settings = FocusStreakSettings {
+        min_focus_score: 5.0.into(),
+        min_focus_usage_dur: 10 * 60 * 1000 * 10000,
+        max_focus_gap: 5 * 60 * 1000 * 10000,
+    };
+    let dist_settings = DistractiveStreakSettings {
+        max_distractive_score: 3.0.into(),
+        min_distractive_usage_dur: 10 * 60 * 1000 * 10000,
+        max_distractive_gap: 5 * 60 * 1000 * 10000,
+    };
+    let streaks = repo
+        .get_streaks(test_start(), test_end(), focus_settings, dist_settings)
+        .await?;
+    assert_eq!(streaks.len(), 1);
+    assert_eq!(streaks[0].start, test_start());
+    Ok(())
+}
+
+// Distractive usage extends past range end => clipped
+#[tokio::test]
+async fn get_streaks_distractive_usage_extends_after_range_clipped() -> Result<()> {
+    let db = test_db().await?;
+    let mut repo = Repository::new(db)?;
+    let tag = arrange::tag(
+        &mut repo.db,
+        Tag {
+            id: Ref::new(1),
+            name: "Tag".into(),
+            color: "c".into(),
+            score: 0.0.into(),
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+    let app = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(1),
+            name: "App".into(),
+            description: "".into(),
+            company: "".into(),
+            color: "c".into(),
+            identity: AppIdentity::Win32 {
+                path: "a.exe".into(),
+            },
+            tag_id: Some(tag.id.clone()),
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+    let session = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(1),
+            app_id: app.id.clone(),
+            title: "s".into(),
+            url: None,
+        },
+    )
+    .await?;
+    let start_time = test_end() - 30 * 60 * 1000 * 10000; // 30 min before end
+    let end_time = test_end() + 30 * 60 * 1000 * 10000; // 30 min after end
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(1),
+            session_id: session.id.clone(),
+            start: start_time,
+            end: end_time,
+        },
+    )
+    .await?;
+    let focus_settings = FocusStreakSettings {
+        min_focus_score: 5.0.into(),
+        min_focus_usage_dur: 10 * 60 * 1000 * 10000,
+        max_focus_gap: 5 * 60 * 1000 * 10000,
+    };
+    let dist_settings = DistractiveStreakSettings {
+        max_distractive_score: 3.0.into(),
+        min_distractive_usage_dur: 10 * 60 * 1000 * 10000,
+        max_distractive_gap: 5 * 60 * 1000 * 10000,
+    };
+    let streaks = repo
+        .get_streaks(test_start(), test_end(), focus_settings, dist_settings)
+        .await?;
+    assert_eq!(streaks.len(), 1);
+    assert_eq!(streaks[0].end, test_end());
+    Ok(())
+}
+
+// Usage covers entire range exactly
+#[tokio::test]
+async fn get_streaks_usage_covers_entire_range() -> Result<()> {
+    let db = test_db().await?;
+    let mut repo = Repository::new(db)?;
+    let tag = arrange::tag(
+        &mut repo.db,
+        Tag {
+            id: Ref::new(1),
+            name: "High".into(),
+            color: "g".into(),
+            score: 9.0.into(),
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+    let app = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(1),
+            name: "App".into(),
+            description: "".into(),
+            company: "".into(),
+            color: "g".into(),
+            identity: AppIdentity::Win32 {
+                path: "a.exe".into(),
+            },
+            tag_id: Some(tag.id.clone()),
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+    let session = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(1),
+            app_id: app.id.clone(),
+            title: "s".into(),
+            url: None,
+        },
+    )
+    .await?;
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(1),
+            session_id: session.id.clone(),
+            start: test_start(),
+            end: test_end(),
+        },
+    )
+    .await?;
+    let focus_settings = FocusStreakSettings {
+        min_focus_score: 5.0.into(),
+        min_focus_usage_dur: 10 * 60 * 1000 * 10000,
+        max_focus_gap: 5 * 60 * 1000 * 10000,
+    };
+    let dist_settings = DistractiveStreakSettings {
+        max_distractive_score: 3.0.into(),
+        min_distractive_usage_dur: 10 * 60 * 1000 * 10000,
+        max_distractive_gap: 5 * 60 * 1000 * 10000,
+    };
+    let streaks = repo
+        .get_streaks(test_start(), test_end(), focus_settings, dist_settings)
+        .await?;
+    assert_eq!(streaks.len(), 1);
+    assert_eq!(streaks[0].start, test_start());
+    assert_eq!(streaks[0].end, test_end());
+    assert!(streaks[0].is_focused);
+    Ok(())
+}
+
+// Negative tag score below distractive threshold still distractive
+basic_get_streaks_case!(
+    get_streaks_negative_score_distractive,
+    (-5.0).into(),
+    15 * 60 * 1000 * 10000,
+    false
+);
+
+// Zero score when max_distractive_score is 3 counts as distractive
+basic_get_streaks_case!(
+    get_streaks_zero_score_distractive,
+    0.0.into(),
+    15 * 60 * 1000 * 10000,
+    false
+);
+
+// Focus score exactly one above threshold qualifies
+basic_get_streaks_case!(
+    get_streaks_focus_score_one_above_threshold,
+    6.0.into(),
+    15 * 60 * 1000 * 10000,
+    true
+);
+
+// Multiple small focus usages chained transitively via within-gap bridging
+#[tokio::test]
+async fn get_streaks_focus_transitive_three_usages() -> Result<()> {
+    let db = test_db().await?;
+    let mut repo = Repository::new(db)?;
+    let tag = arrange::tag(
+        &mut repo.db,
+        Tag {
+            id: Ref::new(1),
+            name: "High".into(),
+            color: "g".into(),
+            score: 9.0.into(),
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+    let app = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(1),
+            name: "App".into(),
+            description: "".into(),
+            company: "".into(),
+            color: "g".into(),
+            identity: AppIdentity::Win32 {
+                path: "a.exe".into(),
+            },
+            tag_id: Some(tag.id.clone()),
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+    let session = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(1),
+            app_id: app.id.clone(),
+            title: "s".into(),
+            url: None,
+        },
+    )
+    .await?;
+    let u1_start = test_start() + 6 * ONE_HOUR;
+    let u1_end = u1_start + 15 * 60 * 1000 * 10000;
+    let u2_start = u1_end + 4 * 60 * 1000 * 10000; // within 5 min gap
+    let u2_end = u2_start + 15 * 60 * 1000 * 10000;
+    let u3_start = u2_end + 4 * 60 * 1000 * 10000; // also within gap
+    let u3_end = u3_start + 15 * 60 * 1000 * 10000;
+    for (i, (s, e)) in [(u1_start, u1_end), (u2_start, u2_end), (u3_start, u3_end)]
+        .iter()
+        .enumerate()
+    {
+        arrange::usage(
+            &mut repo.db,
+            Usage {
+                id: Ref::new((i + 1) as i64),
+                session_id: session.id.clone(),
+                start: *s,
+                end: *e,
+            },
+        )
+        .await?;
+    }
+    let focus_settings = FocusStreakSettings {
+        min_focus_score: 5.0.into(),
+        min_focus_usage_dur: 10 * 60 * 1000 * 10000,
+        max_focus_gap: 5 * 60 * 1000 * 10000,
+    };
+    let dist_settings = DistractiveStreakSettings {
+        max_distractive_score: 3.0.into(),
+        min_distractive_usage_dur: 10 * 60 * 1000 * 10000,
+        max_distractive_gap: 5 * 60 * 1000 * 10000,
+    };
+    let streaks = repo
+        .get_streaks(test_start(), test_end(), focus_settings, dist_settings)
+        .await?;
+    assert_eq!(streaks.len(), 1);
+    assert_eq!(streaks[0].start, u1_start);
+    assert_eq!(streaks[0].end, u3_end);
+    Ok(())
+}
+
+// Focus usages separated by distractive usage should not merge
+#[tokio::test]
+async fn get_streaks_focus_gap_crosses_distractive_not_merge() -> Result<()> {
+    let db = test_db().await?;
+    let mut repo = Repository::new(db)?;
+    let focus_tag = arrange::tag(
+        &mut repo.db,
+        Tag {
+            id: Ref::new(1),
+            name: "Focus".into(),
+            color: "g".into(),
+            score: 10.0.into(),
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+    let dist_tag = arrange::tag(
+        &mut repo.db,
+        Tag {
+            id: Ref::new(2),
+            name: "Dist".into(),
+            color: "r".into(),
+            score: 0.0.into(),
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+    let focus_app = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(1),
+            name: "FApp".into(),
+            description: "".into(),
+            company: "".into(),
+            color: "g".into(),
+            identity: AppIdentity::Win32 {
+                path: "f.exe".into(),
+            },
+            tag_id: Some(focus_tag.id.clone()),
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+    let dist_app = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(2),
+            name: "DApp".into(),
+            description: "".into(),
+            company: "".into(),
+            color: "r".into(),
+            identity: AppIdentity::Win32 {
+                path: "d.exe".into(),
+            },
+            tag_id: Some(dist_tag.id.clone()),
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+    let focus_sess = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(1),
+            app_id: focus_app.id.clone(),
+            title: "s".into(),
+            url: None,
+        },
+    )
+    .await?;
+    let dist_sess = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(2),
+            app_id: dist_app.id.clone(),
+            title: "s".into(),
+            url: None,
+        },
+    )
+    .await?;
+    let f1_start = test_start() + 12 * ONE_HOUR;
+    let f1_end = f1_start + 15 * 60 * 1000 * 10000;
+    let d_start = f1_end + 2 * 60 * 1000 * 10000;
+    let d_end = d_start + 15 * 60 * 1000 * 10000;
+    let f2_start = d_end + 2 * 60 * 1000 * 10000;
+    let f2_end = f2_start + 15 * 60 * 1000 * 10000;
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(1),
+            session_id: focus_sess.id.clone(),
+            start: f1_start,
+            end: f1_end,
+        },
+    )
+    .await?;
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(2),
+            session_id: dist_sess.id.clone(),
+            start: d_start,
+            end: d_end,
+        },
+    )
+    .await?;
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(3),
+            session_id: focus_sess.id.clone(),
+            start: f2_start,
+            end: f2_end,
+        },
+    )
+    .await?;
+    let focus_settings = FocusStreakSettings {
+        min_focus_score: 5.0.into(),
+        min_focus_usage_dur: 10 * 60 * 1000 * 10000,
+        max_focus_gap: 5 * 60 * 1000 * 10000,
+    };
+    let dist_settings = DistractiveStreakSettings {
+        max_distractive_score: 3.0.into(),
+        min_distractive_usage_dur: 10 * 60 * 1000 * 10000,
+        max_distractive_gap: 5 * 60 * 1000 * 10000,
+    };
+    let streaks = repo
+        .get_streaks(test_start(), test_end(), focus_settings, dist_settings)
+        .await?;
+    // Expect 1 distractive + 2 separate focus streaks = 3
+    assert_eq!(streaks.len(), 3);
+    let focus_count = streaks.iter().filter(|p| p.is_focused).count();
+    assert_eq!(focus_count, 2);
+    Ok(())
+}
+
+// Additional small macro-based cases to push total new tests >=20
+basic_get_streaks_case!(
+    get_streaks_focus_score_equal_threshold_old,
+    2.0.into(),
+    15 * 60 * 1000 * 10000,
+    false
+);
+
+// Score just under distractive threshold (2) should be distractive
+basic_get_streaks_case!(
+    get_streaks_distractive_score_under_threshold,
+    2.0.into(),
+    15 * 60 * 1000 * 10000,
+    false
+);
+
+// Two overlapping focus usages (gap 0) should merge
+#[tokio::test]
+async fn get_streaks_focus_overlap_zero_gap_merges() -> Result<()> {
+    let db = test_db().await?;
+    let mut repo = Repository::new(db)?;
+    let tag = arrange::tag(
+        &mut repo.db,
+        Tag {
+            id: Ref::new(1),
+            name: "Tag".into(),
+            color: "g".into(),
+            score: 10.0.into(),
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+    let app = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(1),
+            name: "App".into(),
+            description: "".into(),
+            company: "".into(),
+            color: "g".into(),
+            identity: AppIdentity::Win32 {
+                path: "a.exe".into(),
+            },
+            tag_id: Some(tag.id.clone()),
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+    let session = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(1),
+            app_id: app.id.clone(),
+            title: "s".into(),
+            url: None,
+        },
+    )
+    .await?;
+    let u1_start = test_start() + 8 * ONE_HOUR;
+    let u1_end = u1_start + 15 * 60 * 1000 * 10000;
+    let u2_start = u1_start + 5 * 60 * 1000 * 10000; // overlaps 10 min
+    let u2_end = u2_start + 15 * 60 * 1000 * 10000;
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(1),
+            session_id: session.id.clone(),
+            start: u1_start,
+            end: u1_end,
+        },
+    )
+    .await?;
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(2),
+            session_id: session.id.clone(),
+            start: u2_start,
+            end: u2_end,
+        },
+    )
+    .await?;
+    let focus_settings = FocusStreakSettings {
+        min_focus_score: 5.0.into(),
+        min_focus_usage_dur: 10 * 60 * 1000 * 10000,
+        max_focus_gap: 5 * 60 * 1000 * 10000,
+    };
+    let dist_settings = DistractiveStreakSettings {
+        max_distractive_score: 3.0.into(),
+        min_distractive_usage_dur: 10 * 60 * 1000 * 10000,
+        max_distractive_gap: 5 * 60 * 1000 * 10000,
+    };
+    let streaks = repo
+        .get_streaks(test_start(), test_end(), focus_settings, dist_settings)
+        .await?;
+    assert_eq!(streaks.len(), 1);
+    assert!(streaks[0].is_focused);
+    assert_eq!(streaks[0].start, u1_start);
+    assert_eq!(streaks[0].end, u2_end);
+    Ok(())
+}
+
+#[tokio::test]
+async fn get_streaks_focus_score_equal_threshold_not_focus() -> Result<()> {
+    let db = test_db().await?;
+    let mut repo = Repository::new(db)?;
+    let tag = arrange::tag(
+        &mut repo.db,
+        Tag {
+            id: Ref::new(1),
+            name: "Tag".into(),
+            color: "c".into(),
+            score: 5.0.into(),
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+    let app = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(1),
+            name: "App".into(),
+            description: "".into(),
+            company: "".into(),
+            color: "c".into(),
+            identity: AppIdentity::Win32 {
+                path: "a.exe".into(),
+            },
+            tag_id: Some(tag.id.clone()),
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+    let session = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(1),
+            app_id: app.id.clone(),
+            title: "s".into(),
+            url: None,
+        },
+    )
+    .await?;
+    let start_time = test_start() + 2 * ONE_HOUR;
+    let end_time = start_time + 15 * 60 * 1000 * 10000;
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(1),
+            session_id: session.id.clone(),
+            start: start_time,
+            end: end_time,
+        },
+    )
+    .await?;
+    let focus_settings = FocusStreakSettings {
+        min_focus_score: 5.0.into(),
+        min_focus_usage_dur: 10 * 60 * 1000 * 10000,
+        max_focus_gap: 5 * 60 * 1000 * 10000,
+    };
+    let dist_settings = DistractiveStreakSettings {
+        max_distractive_score: 3.0.into(),
+        min_distractive_usage_dur: 10 * 60 * 1000 * 10000,
+        max_distractive_gap: 5 * 60 * 1000 * 10000,
+    };
+    let streaks = repo
+        .get_streaks(test_start(), test_end(), focus_settings, dist_settings)
+        .await?;
+    // Score equals focus threshold, so usage should be ignored resulting in zero streaks
+    assert!(streaks.is_empty());
+    Ok(())
+}
+
+// Switching between different distractive apps within the max_distractive_gap should still merge into a single Distractive Period
+#[tokio::test]
+async fn get_streaks_distractive_switch_apps_contiguous_usages_merges() -> Result<()> {
+    let db = test_db().await?;
+    let mut repo = Repository::new(db)?;
+
+    // Create a low-scoring tag (distractive)
+    let dist_tag = arrange::tag(
+        &mut repo.db,
+        Tag {
+            id: Ref::new(1),
+            name: "Leisure".into(),
+            color: "red".into(),
+            score: 2.0.into(),
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    // Two distractive apps that share the same low score tag
+    let dist_app1 = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(1),
+            name: "VideoPlayer".into(),
+            description: "".into(),
+            company: "".into(),
+            color: "red".into(),
+            identity: AppIdentity::Win32 {
+                path: "vid.exe".into(),
+            },
+            tag_id: Some(dist_tag.id.clone()),
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    let dist_app2 = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(2),
+            name: "MusicPlayer".into(),
+            description: "".into(),
+            company: "".into(),
+            color: "red".into(),
+            identity: AppIdentity::Win32 {
+                path: "music.exe".into(),
+            },
+            tag_id: Some(dist_tag.id.clone()),
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    // Sessions – one per app
+    let session1 = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(1),
+            app_id: dist_app1.id.clone(),
+            title: "s1".into(),
+            url: None,
+        },
+    )
+    .await?;
+
+    let session2 = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(2),
+            app_id: dist_app2.id.clone(),
+            title: "s2".into(),
+            url: None,
+        },
+    )
+    .await?;
+
+    // Two usages separated by < max_distractive_gap (4 min < 5 min)
+    let u1_start = test_start() + 10 * ONE_HOUR;
+    let u1_end = u1_start + 10 * 60 * 1000 * 10000; // 10 min
+    let u2_start = u1_end;
+    let u2_end = u2_start + 10 * 60 * 1000 * 10000; // 10 min
+
+    // Insert usages
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(1),
+            session_id: session1.id.clone(),
+            start: u1_start,
+            end: u1_end,
+        },
+    )
+    .await?;
+
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(2),
+            session_id: session2.id.clone(),
+            start: u2_start,
+            end: u2_end,
+        },
+    )
+    .await?;
+
+    let focus_settings = FocusStreakSettings {
+        min_focus_score: 5.0.into(),
+        min_focus_usage_dur: 15 * 60 * 1000 * 10000,
+        max_focus_gap: 5 * 60 * 1000 * 10000,
+    };
+    let dist_settings = DistractiveStreakSettings {
+        max_distractive_score: 3.0.into(),
+        min_distractive_usage_dur: 15 * 60 * 1000 * 10000,
+        max_distractive_gap: 5 * 60 * 1000 * 10000,
+    };
+
+    let streaks = repo
+        .get_streaks(test_start(), test_end(), focus_settings, dist_settings)
+        .await?;
+
+    // Expect a single merged Distractive Period covering both usages
+    assert_eq!(streaks.len(), 1);
+    assert!(!streaks[0].is_focused);
+    assert_eq!(streaks[0].start, u1_start);
+    assert_eq!(streaks[0].end, u2_end);
+    Ok(())
+}
+
+// Two sessions of the SAME distractive app within the gap should merge into one DP
+#[tokio::test]
+async fn get_streaks_distractive_multi_session_same_app_merges() -> Result<()> {
+    let db = test_db().await?;
+    let mut repo = Repository::new(db)?;
+
+    let dist_tag = arrange::tag(
+        &mut repo.db,
+        Tag {
+            id: Ref::new(1),
+            name: "Idle".into(),
+            color: "red".into(),
+            score: 1.0.into(),
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    let dist_app = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(1),
+            name: "Chat".into(),
+            description: "".into(),
+            company: "".into(),
+            color: "red".into(),
+            identity: AppIdentity::Win32 {
+                path: "chat.exe".into(),
+            },
+            tag_id: Some(dist_tag.id.clone()),
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    // Two separate sessions of the same app
+    let session1 = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(1),
+            app_id: dist_app.id.clone(),
+            title: "s1".into(),
+            url: None,
+        },
+    )
+    .await?;
+    let session2 = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(2),
+            app_id: dist_app.id.clone(),
+            title: "s2".into(),
+            url: None,
+        },
+    )
+    .await?;
+
+    let u1_start = test_start() + 12 * ONE_HOUR;
+    let u1_end = u1_start + 15 * 60 * 1000 * 10000; // 15 min
+    let u2_start = u1_end;
+    let u2_end = u2_start + 15 * 60 * 1000 * 10000;
+
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(1),
+            session_id: session1.id.clone(),
+            start: u1_start,
+            end: u1_end,
+        },
+    )
+    .await?;
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(2),
+            session_id: session2.id.clone(),
+            start: u2_start,
+            end: u2_end,
+        },
+    )
+    .await?;
+
+    let focus_settings = FocusStreakSettings {
+        min_focus_score: 5.0.into(),
+        min_focus_usage_dur: 25 * 60 * 1000 * 10000,
+        max_focus_gap: 5 * 60 * 1000 * 10000,
+    };
+    let dist_settings = DistractiveStreakSettings {
+        max_distractive_score: 3.0.into(),
+        min_distractive_usage_dur: 25 * 60 * 1000 * 10000,
+        max_distractive_gap: 5 * 60 * 1000 * 10000,
+    };
+
+    let streaks = repo
+        .get_streaks(test_start(), test_end(), focus_settings, dist_settings)
+        .await?;
+
+    assert_eq!(streaks.len(), 1);
+    assert!(!streaks[0].is_focused);
+    assert_eq!(streaks[0].start, u1_start);
+    assert_eq!(streaks[0].end, u2_end);
+    Ok(())
+}
+
+// Switching between different focus apps within the max_focus_gap should merge into one Focus Period
+#[tokio::test]
+async fn get_streaks_focus_switch_apps_contiguous_usages_merges() -> Result<()> {
+    let db = test_db().await?;
+    let mut repo = Repository::new(db)?;
+
+    let focus_tag = arrange::tag(
+        &mut repo.db,
+        Tag {
+            id: Ref::new(1),
+            name: "Productivity".into(),
+            color: "green".into(),
+            score: 10.0.into(),
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    let focus_app1 = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(1),
+            name: "IDE".into(),
+            description: "".into(),
+            company: "".into(),
+            color: "green".into(),
+            identity: AppIdentity::Win32 {
+                path: "ide.exe".into(),
+            },
+            tag_id: Some(focus_tag.id.clone()),
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    let focus_app2 = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(2),
+            name: "Editor".into(),
+            description: "".into(),
+            company: "".into(),
+            color: "green".into(),
+            identity: AppIdentity::Win32 {
+                path: "edit.exe".into(),
+            },
+            tag_id: Some(focus_tag.id.clone()),
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    let session1 = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(1),
+            app_id: focus_app1.id.clone(),
+            title: "s1".into(),
+            url: None,
+        },
+    )
+    .await?;
+    let session2 = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(2),
+            app_id: focus_app2.id.clone(),
+            title: "s2".into(),
+            url: None,
+        },
+    )
+    .await?;
+
+    let u1_start = test_start() + 14 * ONE_HOUR;
+    let u1_end = u1_start + 15 * 60 * 1000 * 10000; // 15 min
+    let u2_start = u1_end;
+    let u2_end = u2_start + 15 * 60 * 1000 * 10000;
+
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(1),
+            session_id: session1.id.clone(),
+            start: u1_start,
+            end: u1_end,
+        },
+    )
+    .await?;
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(2),
+            session_id: session2.id.clone(),
+            start: u2_start,
+            end: u2_end,
+        },
+    )
+    .await?;
+
+    let focus_settings = FocusStreakSettings {
+        min_focus_score: 5.0.into(),
+        min_focus_usage_dur: 25 * 60 * 1000 * 10000,
+        max_focus_gap: 5 * 60 * 1000 * 10000,
+    };
+    let dist_settings = DistractiveStreakSettings {
+        max_distractive_score: 3.0.into(),
+        min_distractive_usage_dur: 25 * 60 * 1000 * 10000,
+        max_distractive_gap: 5 * 60 * 1000 * 10000,
+    };
+
+    let streaks = repo
+        .get_streaks(test_start(), test_end(), focus_settings, dist_settings)
+        .await?;
+
+    assert_eq!(streaks.len(), 1);
+    assert!(streaks[0].is_focused);
+    assert_eq!(streaks[0].start, u1_start);
+    assert_eq!(streaks[0].end, u2_end);
+    Ok(())
+}
+
+// Two sessions of the SAME focus app within the gap should merge into one FP (even though each usage alone is below min duration)
+#[tokio::test]
+async fn get_streaks_focus_multi_session_same_app_merges() -> Result<()> {
+    let db = test_db().await?;
+    let mut repo = Repository::new(db)?;
+
+    let focus_tag = arrange::tag(
+        &mut repo.db,
+        Tag {
+            id: Ref::new(1),
+            name: "Coding".into(),
+            color: "green".into(),
+            score: 8.0.into(),
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    let focus_app = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(1),
+            name: "Terminal".into(),
+            description: "".into(),
+            company: "".into(),
+            color: "green".into(),
+            identity: AppIdentity::Win32 {
+                path: "term.exe".into(),
+            },
+            tag_id: Some(focus_tag.id.clone()),
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    let session1 = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(1),
+            app_id: focus_app.id.clone(),
+            title: "s1".into(),
+            url: None,
+        },
+    )
+    .await?;
+    let session2 = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(2),
+            app_id: focus_app.id.clone(),
+            title: "s2".into(),
+            url: None,
+        },
+    )
+    .await?;
+
+    let u1_start = test_start() + 16 * ONE_HOUR;
+    let u1_end = u1_start + 15 * 60 * 1000 * 10000; // 15 min
+    let u2_start = u1_end;
+    let u2_end = u2_start + 15 * 60 * 1000 * 10000;
+
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(1),
+            session_id: session1.id.clone(),
+            start: u1_start,
+            end: u1_end,
+        },
+    )
+    .await?;
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(2),
+            session_id: session2.id.clone(),
+            start: u2_start,
+            end: u2_end,
+        },
+    )
+    .await?;
+
+    let focus_settings = FocusStreakSettings {
+        min_focus_score: 5.0.into(),
+        min_focus_usage_dur: 25 * 60 * 1000 * 10000,
+        max_focus_gap: 5 * 60 * 1000 * 10000,
+    };
+    let dist_settings = DistractiveStreakSettings {
+        max_distractive_score: 3.0.into(),
+        min_distractive_usage_dur: 25 * 60 * 1000 * 10000,
+        max_distractive_gap: 5 * 60 * 1000 * 10000,
+    };
+
+    let streaks = repo
+        .get_streaks(test_start(), test_end(), focus_settings, dist_settings)
+        .await?;
+
+    assert_eq!(streaks.len(), 1);
+    assert!(streaks[0].is_focused);
+    assert_eq!(streaks[0].start, u1_start);
+    assert_eq!(streaks[0].end, u2_end);
+    Ok(())
+}
+
+// Distractive streak blocks a short focus usage from extending an initial focus streak
+#[tokio::test]
+async fn get_streaks_dp_blocks_focus_usage_extension() -> Result<()> {
+    let db = test_db().await?;
+    let mut repo = Repository::new(db)?;
+
+    // Tags
+    let focus_tag = arrange::tag(
+        &mut repo.db,
+        Tag {
+            id: Ref::new(1),
+            name: "Focus".into(),
+            color: "g".into(),
+            score: 10.0.into(),
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+    let dist_tag = arrange::tag(
+        &mut repo.db,
+        Tag {
+            id: Ref::new(2),
+            name: "Dist".into(),
+            color: "r".into(),
+            score: 0.0.into(),
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    // Apps
+    let focus_app = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(1),
+            name: "FApp".into(),
+            description: "".into(),
+            company: "".into(),
+            color: "g".into(),
+            identity: AppIdentity::Win32 {
+                path: "f.exe".into(),
+            },
+            tag_id: Some(focus_tag.id.clone()),
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+    let dist_app = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(2),
+            name: "DApp".into(),
+            description: "".into(),
+            company: "".into(),
+            color: "r".into(),
+            identity: AppIdentity::Win32 {
+                path: "d.exe".into(),
+            },
+            tag_id: Some(dist_tag.id.clone()),
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    // Sessions
+    let fsess = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(1),
+            app_id: focus_app.id.clone(),
+            title: "s".into(),
+            url: None,
+        },
+    )
+    .await?;
+    let dsess = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(2),
+            app_id: dist_app.id.clone(),
+            title: "s".into(),
+            url: None,
+        },
+    )
+    .await?;
+
+    // Timings (in Windows ticks)
+    let f1_start = test_start() + 18 * ONE_HOUR;
+    let six_min = 6 * 60 * 1000 * 10000;
+    let one_min = 60 * 1000 * 10000;
+    let f1_end = f1_start + six_min;
+    let f2_start = f1_end; // contiguous with first usage
+    let f2_end = f2_start + six_min;
+    // Distractive usage
+    let d_start = f2_end + one_min;
+    let d_end = d_start + 15 * 60 * 1000 * 10000;
+    // Short focus usage after DP (should NOT be merged)
+    let f3_start = d_end + one_min;
+    let f3_end = f3_start + six_min;
+
+    // Insert usages
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(1),
+            session_id: fsess.id.clone(),
+            start: f1_start,
+            end: f1_end,
+        },
+    )
+    .await?;
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(2),
+            session_id: fsess.id.clone(),
+            start: f2_start,
+            end: f2_end,
+        },
+    )
+    .await?;
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(3),
+            session_id: dsess.id.clone(),
+            start: d_start,
+            end: d_end,
+        },
+    )
+    .await?;
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(4),
+            session_id: fsess.id.clone(),
+            start: f3_start,
+            end: f3_end,
+        },
+    )
+    .await?;
+
+    // Settings
+    let focus_settings = FocusStreakSettings {
+        min_focus_score: 5.0.into(),
+        min_focus_usage_dur: 10 * 60 * 1000 * 10000,
+        max_focus_gap: 5 * 60 * 1000 * 10000,
+    };
+    let dist_settings = DistractiveStreakSettings {
+        max_distractive_score: 3.0.into(),
+        min_distractive_usage_dur: 10 * 60 * 1000 * 10000,
+        max_distractive_gap: 5 * 60 * 1000 * 10000,
+    };
+
+    let streaks = repo
+        .get_streaks(test_start(), test_end(), focus_settings, dist_settings)
+        .await?;
+
+    // Expect exactly 1 FP (f1+f2) and 1 DP; the short focus after DP should be ignored
+    assert_eq!(streaks.len(), 2);
+    let fp_count = streaks.iter().filter(|p| p.is_focused).count();
+    assert_eq!(fp_count, 1);
+    let fp = streaks.iter().find(|p| p.is_focused).unwrap();
+    assert_eq!(fp.start, f1_start);
+    assert_eq!(fp.end, f2_end);
+    Ok(())
+}
+
+// Distractive streak prevents two qualifying focus streaks from merging
+#[tokio::test]
+async fn get_streaks_dp_prevents_focus_streaks_merging() -> Result<()> {
+    let db = test_db().await?;
+    let mut repo = Repository::new(db)?;
+
+    // Tags
+    let focus_tag = arrange::tag(
+        &mut repo.db,
+        Tag {
+            id: Ref::new(1),
+            name: "Focus".into(),
+            color: "g".into(),
+            score: 10.0.into(),
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+    let dist_tag = arrange::tag(
+        &mut repo.db,
+        Tag {
+            id: Ref::new(2),
+            name: "Dist".into(),
+            color: "r".into(),
+            score: 0.0.into(),
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    // Apps
+    let focus_app = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(1),
+            name: "FApp".into(),
+            description: "".into(),
+            company: "".into(),
+            color: "g".into(),
+            identity: AppIdentity::Win32 {
+                path: "f.exe".into(),
+            },
+            tag_id: Some(focus_tag.id.clone()),
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+    let dist_app = arrange::app(
+        &mut repo.db,
+        App {
+            id: Ref::new(2),
+            name: "DApp".into(),
+            description: "".into(),
+            company: "".into(),
+            color: "r".into(),
+            identity: AppIdentity::Win32 {
+                path: "d.exe".into(),
+            },
+            tag_id: Some(dist_tag.id.clone()),
+            icon: None,
+            created_at: 0,
+            updated_at: 0,
+        },
+    )
+    .await?;
+
+    // Sessions
+    let fsess = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(1),
+            app_id: focus_app.id.clone(),
+            title: "s".into(),
+            url: None,
+        },
+    )
+    .await?;
+    let dsess = arrange::session(
+        &mut repo.db,
+        Session {
+            id: Ref::new(2),
+            app_id: dist_app.id.clone(),
+            title: "s".into(),
+            url: None,
+        },
+    )
+    .await?;
+
+    // Timings
+    let f1_start = test_start() + 20 * ONE_HOUR;
+    let fifteen_min = 15 * 60 * 1000 * 10000;
+    let one_min = 60 * 1000 * 10000;
+    let f1_end = f1_start + fifteen_min;
+
+    let d_start = f1_end + one_min;
+    let d_end = d_start + 15 * 60 * 1000 * 10000;
+
+    let f2_start = d_end + one_min;
+    let f2_end = f2_start + fifteen_min;
+
+    // Insert usages
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(1),
+            session_id: fsess.id.clone(),
+            start: f1_start,
+            end: f1_end,
+        },
+    )
+    .await?;
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(2),
+            session_id: dsess.id.clone(),
+            start: d_start,
+            end: d_end,
+        },
+    )
+    .await?;
+    arrange::usage(
+        &mut repo.db,
+        Usage {
+            id: Ref::new(3),
+            session_id: fsess.id.clone(),
+            start: f2_start,
+            end: f2_end,
+        },
+    )
+    .await?;
+
+    // Settings (larger max_focus_gap so gap without DP would merge)
+    let focus_settings = FocusStreakSettings {
+        min_focus_score: 5.0.into(),
+        min_focus_usage_dur: 10 * 60 * 1000 * 10000,
+        max_focus_gap: 20 * 60 * 1000 * 10000, // 20 minutes
+    };
+    let dist_settings = DistractiveStreakSettings {
+        max_distractive_score: 3.0.into(),
+        min_distractive_usage_dur: 10 * 60 * 1000 * 10000,
+        max_distractive_gap: 5 * 60 * 1000 * 10000,
+    };
+
+    let streaks = repo
+        .get_streaks(test_start(), test_end(), focus_settings, dist_settings)
+        .await?;
+
+    // Expect 2 separate FPs and 1 DP (total 3 streaks)
+    assert_eq!(streaks.len(), 3);
+    let fp_count = streaks.iter().filter(|p| p.is_focused).count();
+    assert_eq!(fp_count, 2);
+    // Ensure the two FPs have expected boundaries
+    let mut fp_starts: Vec<i64> = streaks
+        .iter()
+        .filter(|p| p.is_focused)
+        .map(|p| p.start)
+        .collect();
+    fp_starts.sort();
+    assert_eq!(fp_starts[0], f1_start);
+    assert_eq!(fp_starts[1], f2_start);
     Ok(())
 }

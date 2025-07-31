@@ -174,3 +174,21 @@ export interface SystemEvent {
   timestamp: Timestamp;
   event: SystemEventEnum;
 }
+
+export interface Streak {
+  start: Timestamp;
+  end: Timestamp;
+  isFocused: boolean;
+}
+
+export interface FocusStreakSettings {
+  minFocusScore: number;
+  minFocusUsageDur: number;
+  maxFocusGap: number;
+}
+
+export interface DistractiveStreakSettings {
+  maxDistractiveScore: number;
+  minDistractiveUsageDur: number;
+  maxDistractiveGap: number;
+}
