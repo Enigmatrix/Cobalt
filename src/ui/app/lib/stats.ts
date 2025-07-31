@@ -1,8 +1,8 @@
 import type {
-  DistractivePeriodSettings,
-  FocusPeriod,
-  FocusPeriodSettings,
+  DistractiveStreakSettings,
+  FocusStreakSettings,
   Score,
+  Streak,
   WithGroup,
 } from "@/lib/entities";
 import { getQueryOptions, type QueryOptions } from "@/lib/repo";
@@ -47,7 +47,7 @@ export async function getScorePerPeriod({
   });
 }
 
-export async function getPeriods({
+export async function getStreaks({
   options,
   start,
   end,
@@ -57,11 +57,11 @@ export async function getPeriods({
   options?: QueryOptions;
   start: DateTime;
   end: DateTime;
-  focusSettings: FocusPeriodSettings;
-  distractiveSettings: DistractivePeriodSettings;
-}): Promise<FocusPeriod[]> {
+  focusSettings: FocusStreakSettings;
+  distractiveSettings: DistractiveStreakSettings;
+}): Promise<Streak[]> {
   const queryOptions = getQueryOptions(options);
-  return await invoke("get_periods", {
+  return await invoke("get_streaks", {
     queryOptions,
     start: dateTimeToTicks(start),
     end: dateTimeToTicks(end),

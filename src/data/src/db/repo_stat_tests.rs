@@ -3,7 +3,7 @@ use util::future as tokio;
 
 use super::tests::*;
 use super::*;
-use crate::db::infused::{DistractivePeriodSettings, FocusPeriodSettings};
+use crate::db::infused::{DistractiveStreakSettings, FocusStreakSettings};
 use crate::db::repo_tests::{LOCAL_TEST_DATE, ONE_HOUR};
 use crate::entities::AppIdentity;
 use crate::table::Period;
@@ -2115,27 +2115,27 @@ async fn get_score_per_period_mixed_usage_beyond_end() -> Result<()> {
     Ok(())
 }
 
-// ===== get_periods tests =====
+// ===== get_streaks tests =====
 
 #[tokio::test]
-async fn get_periods_no_apps() -> Result<()> {
+async fn get_streaks_no_apps() -> Result<()> {
     let db = test_db().await?;
     let mut repo = Repository::new(db)?;
 
-    let focus_settings = FocusPeriodSettings {
+    let focus_settings = FocusStreakSettings {
         min_focus_score: 5,
         min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes in Windows ticks
         max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
-    let distractive_settings = DistractivePeriodSettings {
+    let distractive_settings = DistractiveStreakSettings {
         max_distractive_score: 3,
         min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes in Windows ticks
         max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
-    let periods = repo
-        .get_periods(
+    let streaks = repo
+        .get_streaks(
             test_start(),
             test_end(),
             focus_settings,
@@ -2143,13 +2143,13 @@ async fn get_periods_no_apps() -> Result<()> {
         )
         .await?;
 
-    assert!(periods.is_empty());
+    assert!(streaks.is_empty());
 
     Ok(())
 }
 
 #[tokio::test]
-async fn get_periods_single_focus_period() -> Result<()> {
+async fn get_streaks_single_focus_streak() -> Result<()> {
     let db = test_db().await?;
     let mut repo = Repository::new(db)?;
 
@@ -2213,20 +2213,20 @@ async fn get_periods_single_focus_period() -> Result<()> {
     )
     .await?;
 
-    let focus_settings = FocusPeriodSettings {
+    let focus_settings = FocusStreakSettings {
         min_focus_score: 5,
         min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes in Windows ticks
         max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
-    let distractive_settings = DistractivePeriodSettings {
+    let distractive_settings = DistractiveStreakSettings {
         max_distractive_score: 3,
         min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes in Windows ticks
         max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
-    let periods = repo
-        .get_periods(
+    let streaks = repo
+        .get_streaks(
             test_start(),
             test_end(),
             focus_settings,
@@ -2234,16 +2234,16 @@ async fn get_periods_single_focus_period() -> Result<()> {
         )
         .await?;
 
-    assert_eq!(periods.len(), 1);
-    assert_eq!(periods[0].start, usage_start);
-    assert_eq!(periods[0].end, usage_end);
-    assert!(periods[0].is_focused);
+    assert_eq!(streaks.len(), 1);
+    assert_eq!(streaks[0].start, usage_start);
+    assert_eq!(streaks[0].end, usage_end);
+    assert!(streaks[0].is_focused);
 
     Ok(())
 }
 
 #[tokio::test]
-async fn get_periods_single_distractive_period() -> Result<()> {
+async fn get_streaks_single_distractive_streak() -> Result<()> {
     let db = test_db().await?;
     let mut repo = Repository::new(db)?;
 
@@ -2307,20 +2307,20 @@ async fn get_periods_single_distractive_period() -> Result<()> {
     )
     .await?;
 
-    let focus_settings = FocusPeriodSettings {
+    let focus_settings = FocusStreakSettings {
         min_focus_score: 5,
         min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes in Windows ticks
         max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
-    let distractive_settings = DistractivePeriodSettings {
+    let distractive_settings = DistractiveStreakSettings {
         max_distractive_score: 3,
         min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes in Windows ticks
         max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
-    let periods = repo
-        .get_periods(
+    let streaks = repo
+        .get_streaks(
             test_start(),
             test_end(),
             focus_settings,
@@ -2328,16 +2328,16 @@ async fn get_periods_single_distractive_period() -> Result<()> {
         )
         .await?;
 
-    assert_eq!(periods.len(), 1);
-    assert_eq!(periods[0].start, usage_start);
-    assert_eq!(periods[0].end, usage_end);
-    assert!(!periods[0].is_focused); // distractive period
+    assert_eq!(streaks.len(), 1);
+    assert_eq!(streaks[0].start, usage_start);
+    assert_eq!(streaks[0].end, usage_end);
+    assert!(!streaks[0].is_focused); // distractive streak
 
     Ok(())
 }
 
 #[tokio::test]
-async fn get_periods_usage_too_short_for_focus() -> Result<()> {
+async fn get_streaks_usage_too_short_for_focus() -> Result<()> {
     let db = test_db().await?;
     let mut repo = Repository::new(db)?;
 
@@ -2401,20 +2401,20 @@ async fn get_periods_usage_too_short_for_focus() -> Result<()> {
     )
     .await?;
 
-    let focus_settings = FocusPeriodSettings {
+    let focus_settings = FocusStreakSettings {
         min_focus_score: 5,
         min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes minimum in Windows ticks
         max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
-    let distractive_settings = DistractivePeriodSettings {
+    let distractive_settings = DistractiveStreakSettings {
         max_distractive_score: 3,
         min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes in Windows ticks
         max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
-    let periods = repo
-        .get_periods(
+    let streaks = repo
+        .get_streaks(
             test_start(),
             test_end(),
             focus_settings,
@@ -2422,14 +2422,14 @@ async fn get_periods_usage_too_short_for_focus() -> Result<()> {
         )
         .await?;
 
-    // Should not create any periods since usage is too short for focus
-    assert!(periods.is_empty());
+    // Should not create any streaks since usage is too short for focus
+    assert!(streaks.is_empty());
 
     Ok(())
 }
 
 #[tokio::test]
-async fn get_periods_usage_too_short_for_distractive() -> Result<()> {
+async fn get_streaks_usage_too_short_for_distractive() -> Result<()> {
     let db = test_db().await?;
     let mut repo = Repository::new(db)?;
 
@@ -2493,20 +2493,20 @@ async fn get_periods_usage_too_short_for_distractive() -> Result<()> {
     )
     .await?;
 
-    let focus_settings = FocusPeriodSettings {
+    let focus_settings = FocusStreakSettings {
         min_focus_score: 5,
         min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes in Windows ticks
         max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
-    let distractive_settings = DistractivePeriodSettings {
+    let distractive_settings = DistractiveStreakSettings {
         max_distractive_score: 3,
         min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes minimum in Windows ticks
         max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
-    let periods = repo
-        .get_periods(
+    let streaks = repo
+        .get_streaks(
             test_start(),
             test_end(),
             focus_settings,
@@ -2514,14 +2514,14 @@ async fn get_periods_usage_too_short_for_distractive() -> Result<()> {
         )
         .await?;
 
-    // Should not create any periods since usage is too short for distractive
-    assert!(periods.is_empty());
+    // Should not create any streaks since usage is too short for distractive
+    assert!(streaks.is_empty());
 
     Ok(())
 }
 
 #[tokio::test]
-async fn get_periods_score_below_focus_threshold() -> Result<()> {
+async fn get_streaks_score_below_focus_threshold() -> Result<()> {
     let db = test_db().await?;
     let mut repo = Repository::new(db)?;
 
@@ -2585,20 +2585,20 @@ async fn get_periods_score_below_focus_threshold() -> Result<()> {
     )
     .await?;
 
-    let focus_settings = FocusPeriodSettings {
+    let focus_settings = FocusStreakSettings {
         min_focus_score: 5,
         min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes in Windows ticks
         max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
-    let distractive_settings = DistractivePeriodSettings {
+    let distractive_settings = DistractiveStreakSettings {
         max_distractive_score: 3,
         min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes in Windows ticks
         max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
-    let periods = repo
-        .get_periods(
+    let streaks = repo
+        .get_streaks(
             test_start(),
             test_end(),
             focus_settings,
@@ -2606,14 +2606,14 @@ async fn get_periods_score_below_focus_threshold() -> Result<()> {
         )
         .await?;
 
-    // Should not create any periods since score is below focus threshold
-    assert!(periods.is_empty());
+    // Should not create any streaks since score is below focus threshold
+    assert!(streaks.is_empty());
 
     Ok(())
 }
 
 #[tokio::test]
-async fn get_periods_score_above_distractive_threshold() -> Result<()> {
+async fn get_streaks_score_above_distractive_threshold() -> Result<()> {
     let db = test_db().await?;
     let mut repo = Repository::new(db)?;
 
@@ -2677,20 +2677,20 @@ async fn get_periods_score_above_distractive_threshold() -> Result<()> {
     )
     .await?;
 
-    let focus_settings = FocusPeriodSettings {
+    let focus_settings = FocusStreakSettings {
         min_focus_score: 5,
         min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes in Windows ticks
         max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
-    let distractive_settings = DistractivePeriodSettings {
+    let distractive_settings = DistractiveStreakSettings {
         max_distractive_score: 3,
         min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes in Windows ticks
         max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
-    let periods = repo
-        .get_periods(
+    let streaks = repo
+        .get_streaks(
             test_start(),
             test_end(),
             focus_settings,
@@ -2698,14 +2698,14 @@ async fn get_periods_score_above_distractive_threshold() -> Result<()> {
         )
         .await?;
 
-    // Should not create any periods since score is above distractive threshold
-    assert!(periods.is_empty());
+    // Should not create any streaks since score is above distractive threshold
+    assert!(streaks.is_empty());
 
     Ok(())
 }
 
 #[tokio::test]
-async fn get_periods_app_without_tag() -> Result<()> {
+async fn get_streaks_app_without_tag() -> Result<()> {
     let db = test_db().await?;
     let mut repo = Repository::new(db)?;
 
@@ -2755,20 +2755,20 @@ async fn get_periods_app_without_tag() -> Result<()> {
     )
     .await?;
 
-    let focus_settings = FocusPeriodSettings {
+    let focus_settings = FocusStreakSettings {
         min_focus_score: 5,
         min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes in Windows ticks
         max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
-    let distractive_settings = DistractivePeriodSettings {
+    let distractive_settings = DistractiveStreakSettings {
         max_distractive_score: 3,
         min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes in Windows ticks
         max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
-    let periods = repo
-        .get_periods(
+    let streaks = repo
+        .get_streaks(
             test_start(),
             test_end(),
             focus_settings,
@@ -2777,16 +2777,16 @@ async fn get_periods_app_without_tag() -> Result<()> {
         .await?;
 
     // App without tag has score 0, which is < max_distractive_score (3), so it should be classified as distractive
-    assert_eq!(periods.len(), 1);
-    assert_eq!(periods[0].start, usage_start);
-    assert_eq!(periods[0].end, usage_end);
-    assert!(!periods[0].is_focused); // distractive period
+    assert_eq!(streaks.len(), 1);
+    assert_eq!(streaks[0].start, usage_start);
+    assert_eq!(streaks[0].end, usage_end);
+    assert!(!streaks[0].is_focused); // distractive streak
 
     Ok(())
 }
 
 #[tokio::test]
-async fn get_periods_multiple_focus_periods() -> Result<()> {
+async fn get_streaks_multiple_focus_streaks() -> Result<()> {
     let db = test_db().await?;
     let mut repo = Repository::new(db)?;
 
@@ -2847,7 +2847,7 @@ async fn get_periods_multiple_focus_periods() -> Result<()> {
     )
     .await?;
 
-    // Create usages for different periods
+    // Create usages for different streaks
     let usage1_start = test_start() + 100 * ONE_HOUR;
     let usage1_end = usage1_start + 60 * 60 * 1000 * 10000; // 1 hour duration
 
@@ -2876,20 +2876,20 @@ async fn get_periods_multiple_focus_periods() -> Result<()> {
     )
     .await?;
 
-    let focus_settings = FocusPeriodSettings {
+    let focus_settings = FocusStreakSettings {
         min_focus_score: 5,
         min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes in Windows ticks
         max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
-    let distractive_settings = DistractivePeriodSettings {
+    let distractive_settings = DistractiveStreakSettings {
         max_distractive_score: 3,
         min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes in Windows ticks
         max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
-    let periods = repo
-        .get_periods(
+    let streaks = repo
+        .get_streaks(
             test_start(),
             test_end(),
             focus_settings,
@@ -2897,19 +2897,19 @@ async fn get_periods_multiple_focus_periods() -> Result<()> {
         )
         .await?;
 
-    assert_eq!(periods.len(), 2);
-    assert_eq!(periods[0].start, usage1_start);
-    assert_eq!(periods[0].end, usage1_end);
-    assert!(periods[0].is_focused);
-    assert_eq!(periods[1].start, usage2_start);
-    assert_eq!(periods[1].end, usage2_end);
-    assert!(periods[1].is_focused);
+    assert_eq!(streaks.len(), 2);
+    assert_eq!(streaks[0].start, usage1_start);
+    assert_eq!(streaks[0].end, usage1_end);
+    assert!(streaks[0].is_focused);
+    assert_eq!(streaks[1].start, usage2_start);
+    assert_eq!(streaks[1].end, usage2_end);
+    assert!(streaks[1].is_focused);
 
     Ok(())
 }
 
 #[tokio::test]
-async fn get_periods_multiple_distractive_periods() -> Result<()> {
+async fn get_streaks_multiple_distractive_streaks() -> Result<()> {
     let db = test_db().await?;
     let mut repo = Repository::new(db)?;
 
@@ -2970,7 +2970,7 @@ async fn get_periods_multiple_distractive_periods() -> Result<()> {
     )
     .await?;
 
-    // Create usages for different periods
+    // Create usages for different streaks
     let usage1_start = test_start() + 100 * ONE_HOUR;
     let usage1_end = usage1_start + 30 * 60 * 1000 * 10000; // 30 minutes duration
 
@@ -2999,20 +2999,20 @@ async fn get_periods_multiple_distractive_periods() -> Result<()> {
     )
     .await?;
 
-    let focus_settings = FocusPeriodSettings {
+    let focus_settings = FocusStreakSettings {
         min_focus_score: 5,
         min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes in Windows ticks
         max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
-    let distractive_settings = DistractivePeriodSettings {
+    let distractive_settings = DistractiveStreakSettings {
         max_distractive_score: 3,
         min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes in Windows ticks
         max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
-    let periods = repo
-        .get_periods(
+    let streaks = repo
+        .get_streaks(
             test_start(),
             test_end(),
             focus_settings,
@@ -3020,19 +3020,19 @@ async fn get_periods_multiple_distractive_periods() -> Result<()> {
         )
         .await?;
 
-    assert_eq!(periods.len(), 2);
-    assert_eq!(periods[0].start, usage1_start);
-    assert_eq!(periods[0].end, usage1_end);
-    assert!(!periods[0].is_focused); // distractive period
-    assert_eq!(periods[1].start, usage2_start);
-    assert_eq!(periods[1].end, usage2_end);
-    assert!(!periods[1].is_focused); // distractive period
+    assert_eq!(streaks.len(), 2);
+    assert_eq!(streaks[0].start, usage1_start);
+    assert_eq!(streaks[0].end, usage1_end);
+    assert!(!streaks[0].is_focused); // distractive streak
+    assert_eq!(streaks[1].start, usage2_start);
+    assert_eq!(streaks[1].end, usage2_end);
+    assert!(!streaks[1].is_focused); // distractive streak
 
     Ok(())
 }
 
 #[tokio::test]
-async fn get_periods_focus_and_distractive_periods() -> Result<()> {
+async fn get_streaks_focus_and_distractive_streaks() -> Result<()> {
     let db = test_db().await?;
     let mut repo = Repository::new(db)?;
 
@@ -3127,7 +3127,7 @@ async fn get_periods_focus_and_distractive_periods() -> Result<()> {
     )
     .await?;
 
-    // Create usages for different periods
+    // Create usages for different streaks
     let focus_start = test_start() + 100 * ONE_HOUR;
     let focus_end = focus_start + 60 * 60 * 1000 * 10000; // 1 hour duration
 
@@ -3156,20 +3156,20 @@ async fn get_periods_focus_and_distractive_periods() -> Result<()> {
     )
     .await?;
 
-    let focus_settings = FocusPeriodSettings {
+    let focus_settings = FocusStreakSettings {
         min_focus_score: 5,
         min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes in Windows ticks
         max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
-    let distractive_settings = DistractivePeriodSettings {
+    let distractive_settings = DistractiveStreakSettings {
         max_distractive_score: 3,
         min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes in Windows ticks
         max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
-    let periods = repo
-        .get_periods(
+    let streaks = repo
+        .get_streaks(
             test_start(),
             test_end(),
             focus_settings,
@@ -3177,19 +3177,19 @@ async fn get_periods_focus_and_distractive_periods() -> Result<()> {
         )
         .await?;
 
-    assert_eq!(periods.len(), 2);
-    assert!(!periods[0].is_focused); // distractive period
-    assert_eq!(periods[0].start, distractive_start);
-    assert_eq!(periods[0].end, distractive_end);
-    assert!(periods[1].is_focused); // focus period
-    assert_eq!(periods[1].start, focus_start);
-    assert_eq!(periods[1].end, focus_end);
+    assert_eq!(streaks.len(), 2);
+    assert!(!streaks[0].is_focused); // distractive streak
+    assert_eq!(streaks[0].start, distractive_start);
+    assert_eq!(streaks[0].end, distractive_end);
+    assert!(streaks[1].is_focused); // focus streak
+    assert_eq!(streaks[1].start, focus_start);
+    assert_eq!(streaks[1].end, focus_end);
 
     Ok(())
 }
 
 #[tokio::test]
-async fn get_periods_overlapping_usages_same_app() -> Result<()> {
+async fn get_streaks_overlapping_usages_same_app() -> Result<()> {
     let db = test_db().await?;
     let mut repo = Repository::new(db)?;
 
@@ -3279,20 +3279,20 @@ async fn get_periods_overlapping_usages_same_app() -> Result<()> {
     )
     .await?;
 
-    let focus_settings = FocusPeriodSettings {
+    let focus_settings = FocusStreakSettings {
         min_focus_score: 5,
         min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes in Windows ticks
         max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
-    let distractive_settings = DistractivePeriodSettings {
+    let distractive_settings = DistractiveStreakSettings {
         max_distractive_score: 3,
         min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes in Windows ticks
         max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
-    let periods = repo
-        .get_periods(
+    let streaks = repo
+        .get_streaks(
             test_start(),
             test_end(),
             focus_settings,
@@ -3300,17 +3300,17 @@ async fn get_periods_overlapping_usages_same_app() -> Result<()> {
         )
         .await?;
 
-    // Should return one merged period since the usages overlap
-    assert_eq!(periods.len(), 1);
-    assert_eq!(periods[0].start, usage1_start);
-    assert_eq!(periods[0].end, usage2_end);
-    assert!(periods[0].is_focused);
+    // Should return one merged streak since the usages overlap
+    assert_eq!(streaks.len(), 1);
+    assert_eq!(streaks[0].start, usage1_start);
+    assert_eq!(streaks[0].end, usage2_end);
+    assert!(streaks[0].is_focused);
 
     Ok(())
 }
 
 #[tokio::test]
-async fn get_periods_gap_between_usages_within_threshold() -> Result<()> {
+async fn get_streaks_gap_between_usages_within_threshold() -> Result<()> {
     let db = test_db().await?;
     let mut repo = Repository::new(db)?;
 
@@ -3400,20 +3400,20 @@ async fn get_periods_gap_between_usages_within_threshold() -> Result<()> {
     )
     .await?;
 
-    let focus_settings = FocusPeriodSettings {
+    let focus_settings = FocusStreakSettings {
         min_focus_score: 5,
         min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes in Windows ticks
         max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
-    let distractive_settings = DistractivePeriodSettings {
+    let distractive_settings = DistractiveStreakSettings {
         max_distractive_score: 3,
         min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes in Windows ticks
         max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
-    let periods = repo
-        .get_periods(
+    let streaks = repo
+        .get_streaks(
             test_start(),
             test_end(),
             focus_settings,
@@ -3421,17 +3421,17 @@ async fn get_periods_gap_between_usages_within_threshold() -> Result<()> {
         )
         .await?;
 
-    // Should return one merged period since the gap is within threshold
-    assert_eq!(periods.len(), 1);
-    assert_eq!(periods[0].start, usage1_start);
-    assert_eq!(periods[0].end, usage2_end);
-    assert!(periods[0].is_focused);
+    // Should return one merged streak since the gap is within threshold
+    assert_eq!(streaks.len(), 1);
+    assert_eq!(streaks[0].start, usage1_start);
+    assert_eq!(streaks[0].end, usage2_end);
+    assert!(streaks[0].is_focused);
 
     Ok(())
 }
 
 #[tokio::test]
-async fn get_periods_gap_between_usages_exceeds_threshold() -> Result<()> {
+async fn get_streaks_gap_between_usages_exceeds_threshold() -> Result<()> {
     let db = test_db().await?;
     let mut repo = Repository::new(db)?;
 
@@ -3521,20 +3521,20 @@ async fn get_periods_gap_between_usages_exceeds_threshold() -> Result<()> {
     )
     .await?;
 
-    let focus_settings = FocusPeriodSettings {
+    let focus_settings = FocusStreakSettings {
         min_focus_score: 5,
         min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes in Windows ticks
         max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
-    let distractive_settings = DistractivePeriodSettings {
+    let distractive_settings = DistractiveStreakSettings {
         max_distractive_score: 3,
         min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes in Windows ticks
         max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
-    let periods = repo
-        .get_periods(
+    let streaks = repo
+        .get_streaks(
             test_start(),
             test_end(),
             focus_settings,
@@ -3542,20 +3542,20 @@ async fn get_periods_gap_between_usages_exceeds_threshold() -> Result<()> {
         )
         .await?;
 
-    // Should keep periods separate when gap exceeds threshold
-    assert_eq!(periods.len(), 2);
-    assert_eq!(periods[0].start, usage1_start);
-    assert_eq!(periods[0].end, usage1_end);
-    assert!(periods[0].is_focused);
-    assert_eq!(periods[1].start, usage2_start);
-    assert_eq!(periods[1].end, usage2_end);
-    assert!(periods[1].is_focused);
+    // Should keep streaks separate when gap exceeds threshold
+    assert_eq!(streaks.len(), 2);
+    assert_eq!(streaks[0].start, usage1_start);
+    assert_eq!(streaks[0].end, usage1_end);
+    assert!(streaks[0].is_focused);
+    assert_eq!(streaks[1].start, usage2_start);
+    assert_eq!(streaks[1].end, usage2_end);
+    assert!(streaks[1].is_focused);
 
     Ok(())
 }
 
 #[tokio::test]
-async fn get_periods_focus_period_overlaps_distractive_period() -> Result<()> {
+async fn get_streaks_focus_streak_overlaps_distractive_streak() -> Result<()> {
     let db = test_db().await?;
     let mut repo = Repository::new(db)?;
 
@@ -3654,7 +3654,7 @@ async fn get_periods_focus_period_overlaps_distractive_period() -> Result<()> {
     let distractive_start = test_start() + 100 * ONE_HOUR;
     let distractive_end = distractive_start + 60 * 60 * 1000 * 10000; // 1 hour duration
 
-    let focus_start = distractive_start + 15 * 60 * 1000 * 10000; // 15 minutes into distractive period
+    let focus_start = distractive_start + 15 * 60 * 1000 * 10000; // 15 minutes into distractive streak
     let focus_end = focus_start + 60 * 60 * 1000 * 10000; // 1 hour duration
 
     arrange::usage(
@@ -3679,20 +3679,20 @@ async fn get_periods_focus_period_overlaps_distractive_period() -> Result<()> {
     )
     .await?;
 
-    let focus_settings = FocusPeriodSettings {
+    let focus_settings = FocusStreakSettings {
         min_focus_score: 5,
         min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes in Windows ticks
         max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
-    let distractive_settings = DistractivePeriodSettings {
+    let distractive_settings = DistractiveStreakSettings {
         max_distractive_score: 3,
         min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes in Windows ticks
         max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
-    let periods = repo
-        .get_periods(
+    let streaks = repo
+        .get_streaks(
             test_start(),
             test_end(),
             focus_settings,
@@ -3700,17 +3700,17 @@ async fn get_periods_focus_period_overlaps_distractive_period() -> Result<()> {
         )
         .await?;
 
-    // Should return only the distractive period since focus periods overlapping with distractive periods are pruned
-    assert_eq!(periods.len(), 1);
-    assert_eq!(periods[0].start, distractive_start);
-    assert_eq!(periods[0].end, distractive_end);
-    assert!(!periods[0].is_focused);
+    // Should return only the distractive streak since focus streaks overlapping with distractive streaks are pruned
+    assert_eq!(streaks.len(), 1);
+    assert_eq!(streaks[0].start, distractive_start);
+    assert_eq!(streaks[0].end, distractive_end);
+    assert!(!streaks[0].is_focused);
 
     Ok(())
 }
 
 #[tokio::test]
-async fn get_periods_multiple_apps_same_tag() -> Result<()> {
+async fn get_streaks_multiple_apps_same_tag() -> Result<()> {
     let db = test_db().await?;
     let mut repo = Repository::new(db)?;
 
@@ -3790,7 +3790,7 @@ async fn get_periods_multiple_apps_same_tag() -> Result<()> {
     )
     .await?;
 
-    // Create usages for different periods
+    // Create usages for different streaks
     let usage1_start = test_start() + 100 * ONE_HOUR;
     let usage1_end = usage1_start + 30 * 60 * 1000 * 10000; // 30 minutes duration
 
@@ -3819,20 +3819,20 @@ async fn get_periods_multiple_apps_same_tag() -> Result<()> {
     )
     .await?;
 
-    let focus_settings = FocusPeriodSettings {
+    let focus_settings = FocusStreakSettings {
         min_focus_score: 5,
         min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes in Windows ticks
         max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
-    let distractive_settings = DistractivePeriodSettings {
+    let distractive_settings = DistractiveStreakSettings {
         max_distractive_score: 3,
         min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes in Windows ticks
         max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
-    let periods = repo
-        .get_periods(
+    let streaks = repo
+        .get_streaks(
             test_start(),
             test_end(),
             focus_settings,
@@ -3840,19 +3840,19 @@ async fn get_periods_multiple_apps_same_tag() -> Result<()> {
         )
         .await?;
 
-    assert_eq!(periods.len(), 2);
-    assert_eq!(periods[0].start, usage1_start);
-    assert_eq!(periods[0].end, usage1_end);
-    assert!(periods[0].is_focused);
-    assert_eq!(periods[1].start, usage2_start);
-    assert_eq!(periods[1].end, usage2_end);
-    assert!(periods[1].is_focused);
+    assert_eq!(streaks.len(), 2);
+    assert_eq!(streaks[0].start, usage1_start);
+    assert_eq!(streaks[0].end, usage1_end);
+    assert!(streaks[0].is_focused);
+    assert_eq!(streaks[1].start, usage2_start);
+    assert_eq!(streaks[1].end, usage2_end);
+    assert!(streaks[1].is_focused);
 
     Ok(())
 }
 
 #[tokio::test]
-async fn get_periods_usage_outside_time_range() -> Result<()> {
+async fn get_streaks_usage_outside_time_range() -> Result<()> {
     let db = test_db().await?;
     let mut repo = Repository::new(db)?;
 
@@ -3917,20 +3917,20 @@ async fn get_periods_usage_outside_time_range() -> Result<()> {
     )
     .await?;
 
-    let focus_settings = FocusPeriodSettings {
+    let focus_settings = FocusStreakSettings {
         min_focus_score: 5,
         min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes in Windows ticks
         max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
-    let distractive_settings = DistractivePeriodSettings {
+    let distractive_settings = DistractiveStreakSettings {
         max_distractive_score: 3,
         min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes in Windows ticks
         max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
-    let periods = repo
-        .get_periods(
+    let streaks = repo
+        .get_streaks(
             test_start(),
             test_end(),
             focus_settings,
@@ -3939,13 +3939,13 @@ async fn get_periods_usage_outside_time_range() -> Result<()> {
         .await?;
 
     // Should not include usage outside the time range
-    assert!(periods.is_empty());
+    assert!(streaks.is_empty());
 
     Ok(())
 }
 
 #[tokio::test]
-async fn get_periods_usage_partially_overlaps_time_range() -> Result<()> {
+async fn get_streaks_usage_partially_overlaps_time_range() -> Result<()> {
     let db = test_db().await?;
     let mut repo = Repository::new(db)?;
 
@@ -4010,20 +4010,20 @@ async fn get_periods_usage_partially_overlaps_time_range() -> Result<()> {
     )
     .await?;
 
-    let focus_settings = FocusPeriodSettings {
+    let focus_settings = FocusStreakSettings {
         min_focus_score: 5,
         min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes in Windows ticks
         max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
-    let distractive_settings = DistractivePeriodSettings {
+    let distractive_settings = DistractiveStreakSettings {
         max_distractive_score: 3,
         min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes in Windows ticks
         max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
-    let periods = repo
-        .get_periods(
+    let streaks = repo
+        .get_streaks(
             test_start(),
             test_end(),
             focus_settings,
@@ -4032,18 +4032,18 @@ async fn get_periods_usage_partially_overlaps_time_range() -> Result<()> {
         .await?;
 
     // Should include the overlapping portion
-    assert_eq!(periods.len(), 1);
-    assert_eq!(periods[0].start, test_start());
+    assert_eq!(streaks.len(), 1);
+    assert_eq!(streaks[0].start, test_start());
     // The end time should be the actual end time returned by the algorithm
-    assert!(periods[0].end >= test_start());
-    assert!(periods[0].end <= usage_end);
-    assert!(periods[0].is_focused);
+    assert!(streaks[0].end >= test_start());
+    assert!(streaks[0].end <= usage_end);
+    assert!(streaks[0].is_focused);
 
     Ok(())
 }
 
 #[tokio::test]
-async fn get_periods_complex_merging_scenario() -> Result<()> {
+async fn get_streaks_complex_merging_scenario() -> Result<()> {
     let db = test_db().await?;
     let mut repo = Repository::new(db)?;
 
@@ -4158,20 +4158,20 @@ async fn get_periods_complex_merging_scenario() -> Result<()> {
     )
     .await?;
 
-    let focus_settings = FocusPeriodSettings {
+    let focus_settings = FocusStreakSettings {
         min_focus_score: 5,
         min_focus_usage_dur: 30 * 60 * 1000 * 10000, // 30 minutes in Windows ticks
         max_focus_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
-    let distractive_settings = DistractivePeriodSettings {
+    let distractive_settings = DistractiveStreakSettings {
         max_distractive_score: 3,
         min_distractive_usage_dur: 15 * 60 * 1000 * 10000, // 15 minutes in Windows ticks
         max_distractive_gap: 5 * 60 * 1000 * 10000,        // 5 minutes in Windows ticks
     };
 
-    let periods = repo
-        .get_periods(
+    let streaks = repo
+        .get_streaks(
             test_start(),
             test_end(),
             focus_settings,
@@ -4179,21 +4179,21 @@ async fn get_periods_complex_merging_scenario() -> Result<()> {
         )
         .await?;
 
-    // Should return one merged period since usages overlap and have gaps within threshold
-    assert_eq!(periods.len(), 1);
-    assert_eq!(periods[0].start, usage1_start);
-    assert_eq!(periods[0].end, usage3_end);
-    assert!(periods[0].is_focused);
+    // Should return one merged streak since usages overlap and have gaps within threshold
+    assert_eq!(streaks.len(), 1);
+    assert_eq!(streaks[0].start, usage1_start);
+    assert_eq!(streaks[0].end, usage3_end);
+    assert!(streaks[0].is_focused);
 
     Ok(())
 }
 
 // -----------------------------------------------------------------------------
-// Additional edge-case tests for get_periods (added after window-function rewrite)
+// Additional edge-case tests for get_streaks (added after window-function rewrite)
 // -----------------------------------------------------------------------------
 
 #[tokio::test]
-async fn get_periods_focus_gap_exact_threshold_merges() -> Result<()> {
+async fn get_streaks_focus_gap_exact_threshold_merges() -> Result<()> {
     let db = test_db().await?;
     let mut repo = Repository::new(db)?;
 
@@ -4266,34 +4266,34 @@ async fn get_periods_focus_gap_exact_threshold_merges() -> Result<()> {
     )
     .await?;
 
-    let focus_settings = FocusPeriodSettings {
+    let focus_settings = FocusStreakSettings {
         min_focus_score: 5,
         min_focus_usage_dur: 20 * 60 * 1000 * 10000,
         max_focus_gap: 5 * 60 * 1000 * 10000,
     };
-    let distractive_settings = DistractivePeriodSettings {
+    let distractive_settings = DistractiveStreakSettings {
         max_distractive_score: 3,
         min_distractive_usage_dur: 15 * 60 * 1000 * 10000,
         max_distractive_gap: 5 * 60 * 1000 * 10000,
     };
 
-    let periods = repo
-        .get_periods(
+    let streaks = repo
+        .get_streaks(
             test_start(),
             test_end(),
             focus_settings,
             distractive_settings,
         )
         .await?;
-    assert_eq!(periods.len(), 1);
-    assert_eq!(periods[0].start, usage1_start);
-    assert_eq!(periods[0].end, usage2_end);
-    assert!(periods[0].is_focused);
+    assert_eq!(streaks.len(), 1);
+    assert_eq!(streaks[0].start, usage1_start);
+    assert_eq!(streaks[0].end, usage2_end);
+    assert!(streaks[0].is_focused);
     Ok(())
 }
 
 #[tokio::test]
-async fn get_periods_focus_gap_just_over_threshold_no_merge() -> Result<()> {
+async fn get_streaks_focus_gap_just_over_threshold_no_merge() -> Result<()> {
     let db = test_db().await?;
     let mut repo = Repository::new(db)?;
 
@@ -4363,32 +4363,32 @@ async fn get_periods_focus_gap_just_over_threshold_no_merge() -> Result<()> {
     )
     .await?;
 
-    let focus_settings = FocusPeriodSettings {
+    let focus_settings = FocusStreakSettings {
         min_focus_score: 5,
         min_focus_usage_dur: 20 * 60 * 1000 * 10000,
         max_focus_gap: 5 * 60 * 1000 * 10000,
     };
-    let distractive_settings = DistractivePeriodSettings {
+    let distractive_settings = DistractiveStreakSettings {
         max_distractive_score: 3,
         min_distractive_usage_dur: 15 * 60 * 1000 * 10000,
         max_distractive_gap: 5 * 60 * 1000 * 10000,
     };
 
-    let periods = repo
-        .get_periods(
+    let streaks = repo
+        .get_streaks(
             test_start(),
             test_end(),
             focus_settings,
             distractive_settings,
         )
         .await?;
-    assert_eq!(periods.len(), 2);
-    assert!(periods.iter().all(|p| p.is_focused));
+    assert_eq!(streaks.len(), 2);
+    assert!(streaks.iter().all(|p| p.is_focused));
     Ok(())
 }
 
 #[tokio::test]
-async fn get_periods_distractive_gap_exact_threshold_merges() -> Result<()> {
+async fn get_streaks_distractive_gap_exact_threshold_merges() -> Result<()> {
     let db = test_db().await?;
     let mut repo = Repository::new(db)?;
 
@@ -4458,35 +4458,35 @@ async fn get_periods_distractive_gap_exact_threshold_merges() -> Result<()> {
     )
     .await?;
 
-    let focus_settings = FocusPeriodSettings {
+    let focus_settings = FocusStreakSettings {
         min_focus_score: 5,
         min_focus_usage_dur: 20 * 60 * 1000 * 10000,
         max_focus_gap: 5 * 60 * 1000 * 10000,
     };
-    let distractive_settings = DistractivePeriodSettings {
+    let distractive_settings = DistractiveStreakSettings {
         max_distractive_score: 3,
         min_distractive_usage_dur: 10 * 60 * 1000 * 10000,
         max_distractive_gap: 5 * 60 * 1000 * 10000,
     };
 
-    let periods = repo
-        .get_periods(
+    let streaks = repo
+        .get_streaks(
             test_start(),
             test_end(),
             focus_settings,
             distractive_settings,
         )
         .await?;
-    // expect single distractive merged period
-    assert_eq!(periods.len(), 1);
-    assert!(!periods[0].is_focused);
-    assert_eq!(periods[0].start, usage1_start);
-    assert_eq!(periods[0].end, usage2_end);
+    // expect single distractive merged streak
+    assert_eq!(streaks.len(), 1);
+    assert!(!streaks[0].is_focused);
+    assert_eq!(streaks[0].start, usage1_start);
+    assert_eq!(streaks[0].end, usage2_end);
     Ok(())
 }
 
 #[tokio::test]
-async fn get_periods_distractive_gap_over_threshold_no_merge() -> Result<()> {
+async fn get_streaks_distractive_gap_over_threshold_no_merge() -> Result<()> {
     let db = test_db().await?;
     let mut repo = Repository::new(db)?;
     let dist_tag = arrange::tag(
@@ -4555,33 +4555,33 @@ async fn get_periods_distractive_gap_over_threshold_no_merge() -> Result<()> {
     )
     .await?;
 
-    let focus_settings = FocusPeriodSettings {
+    let focus_settings = FocusStreakSettings {
         min_focus_score: 5,
         min_focus_usage_dur: 20 * 60 * 1000 * 10000,
         max_focus_gap: 5 * 60 * 1000 * 10000,
     };
-    let distractive_settings = DistractivePeriodSettings {
+    let distractive_settings = DistractiveStreakSettings {
         max_distractive_score: 3,
         min_distractive_usage_dur: 10 * 60 * 1000 * 10000,
         max_distractive_gap: 5 * 60 * 1000 * 10000,
     };
 
-    let periods = repo
-        .get_periods(
+    let streaks = repo
+        .get_streaks(
             test_start(),
             test_end(),
             focus_settings,
             distractive_settings,
         )
         .await?;
-    // expect two separate distractive periods
-    assert_eq!(periods.len(), 2);
-    assert!(periods.iter().all(|p| !p.is_focused));
+    // expect two separate distractive streaks
+    assert_eq!(streaks.len(), 2);
+    assert!(streaks.iter().all(|p| !p.is_focused));
     Ok(())
 }
 
 #[tokio::test]
-async fn get_periods_focus_pruned_by_exact_overlap() -> Result<()> {
+async fn get_streaks_focus_pruned_by_exact_overlap() -> Result<()> {
     let db = test_db().await?;
     let mut repo = Repository::new(db)?;
 
@@ -4693,36 +4693,36 @@ async fn get_periods_focus_pruned_by_exact_overlap() -> Result<()> {
     )
     .await?;
 
-    let focus_settings = FocusPeriodSettings {
+    let focus_settings = FocusStreakSettings {
         min_focus_score: 5,
         min_focus_usage_dur: 30 * 60 * 1000 * 10000,
         max_focus_gap: 5 * 60 * 1000 * 10000,
     };
-    let distractive_settings = DistractivePeriodSettings {
+    let distractive_settings = DistractiveStreakSettings {
         max_distractive_score: 3,
         min_distractive_usage_dur: 20 * 60 * 1000 * 10000,
         max_distractive_gap: 5 * 60 * 1000 * 10000,
     };
 
-    let periods = repo
-        .get_periods(
+    let streaks = repo
+        .get_streaks(
             test_start(),
             test_end(),
             focus_settings,
             distractive_settings,
         )
         .await?;
-    // Focus should be pruned, leaving only distractive period
-    assert_eq!(periods.len(), 1);
-    assert!(!periods[0].is_focused);
-    assert_eq!(periods[0].start, start_time);
-    assert_eq!(periods[0].end, end_time);
+    // Focus should be pruned, leaving only distractive streak
+    assert_eq!(streaks.len(), 1);
+    assert!(!streaks[0].is_focused);
+    assert_eq!(streaks[0].start, start_time);
+    assert_eq!(streaks[0].end, end_time);
     Ok(())
 }
 
 // ----- 15 more mini-scenarios with lighter assertions to reach 20 new tests -----
 
-macro_rules! basic_get_periods_case {
+macro_rules! basic_get_streaks_case {
     ($name:ident, $app_score:expr, $duration_ticks:expr, $expect_focus:expr) => {
         #[tokio::test]
         async fn $name() -> Result<()> {
@@ -4781,36 +4781,36 @@ macro_rules! basic_get_periods_case {
                 },
             )
             .await?;
-            let focus_settings = FocusPeriodSettings {
+            let focus_settings = FocusStreakSettings {
                 min_focus_score: 5,
                 min_focus_usage_dur: 10 * 60 * 1000 * 10000,
                 max_focus_gap: 5 * 60 * 1000 * 10000,
             };
-            let dist_settings = DistractivePeriodSettings {
+            let dist_settings = DistractiveStreakSettings {
                 max_distractive_score: 3,
                 min_distractive_usage_dur: 10 * 60 * 1000 * 10000,
                 max_distractive_gap: 5 * 60 * 1000 * 10000,
             };
-            let periods = repo
-                .get_periods(test_start(), test_end(), focus_settings, dist_settings)
+            let streaks = repo
+                .get_streaks(test_start(), test_end(), focus_settings, dist_settings)
                 .await?;
-            assert_eq!(periods.len(), 1);
-            assert_eq!(periods[0].is_focused, $expect_focus);
+            assert_eq!(streaks.len(), 1);
+            assert_eq!(streaks[0].is_focused, $expect_focus);
             Ok(())
         }
     };
 }
 
 // Single usage exactly min duration qualifies as focus
-basic_get_periods_case!(
-    get_periods_focus_exact_min_duration,
+basic_get_streaks_case!(
+    get_streaks_focus_exact_min_duration,
     6.0.into(),
     10 * 60 * 1000 * 10000,
     true
 );
-// Single usage one tick less than min duration rejected (no period)
+// Single usage one tick less than min duration rejected (no streak)
 #[tokio::test]
-async fn get_periods_focus_below_min_duration_skipped() -> Result<()> {
+async fn get_streaks_focus_below_min_duration_skipped() -> Result<()> {
     let db = test_db().await?;
     let mut repo = Repository::new(db)?;
     let tag = arrange::tag(
@@ -4865,26 +4865,26 @@ async fn get_periods_focus_below_min_duration_skipped() -> Result<()> {
         },
     )
     .await?;
-    let focus_settings = FocusPeriodSettings {
+    let focus_settings = FocusStreakSettings {
         min_focus_score: 5,
         min_focus_usage_dur: 10 * 60 * 1000 * 10000,
         max_focus_gap: 5 * 60 * 1000 * 10000,
     };
-    let dist_settings = DistractivePeriodSettings {
+    let dist_settings = DistractiveStreakSettings {
         max_distractive_score: 3,
         min_distractive_usage_dur: 10 * 60 * 1000 * 10000,
         max_distractive_gap: 5 * 60 * 1000 * 10000,
     };
-    let periods = repo
-        .get_periods(test_start(), test_end(), focus_settings, dist_settings)
+    let streaks = repo
+        .get_streaks(test_start(), test_end(), focus_settings, dist_settings)
         .await?;
-    assert_eq!(periods.len(), 0);
+    assert_eq!(streaks.len(), 0);
     Ok(())
 }
 
 // Distractive usage exactly min duration qualifies
-basic_get_periods_case!(
-    get_periods_distractive_exact_min_duration,
+basic_get_streaks_case!(
+    get_streaks_distractive_exact_min_duration,
     0.0.into(),
     10 * 60 * 1000 * 10000,
     false
@@ -4892,7 +4892,7 @@ basic_get_periods_case!(
 
 // Tagless app defaults to 0 score => distractive
 #[tokio::test]
-async fn get_periods_tagless_app_counts_distractive() -> Result<()> {
+async fn get_streaks_tagless_app_counts_distractive() -> Result<()> {
     let db = test_db().await?;
     let mut repo = Repository::new(db)?;
     let app = arrange::app(
@@ -4935,27 +4935,27 @@ async fn get_periods_tagless_app_counts_distractive() -> Result<()> {
         },
     )
     .await?;
-    let focus_settings = FocusPeriodSettings {
+    let focus_settings = FocusStreakSettings {
         min_focus_score: 5,
         min_focus_usage_dur: 10 * 60 * 1000 * 10000,
         max_focus_gap: 5 * 60 * 1000 * 10000,
     };
-    let dist_settings = DistractivePeriodSettings {
+    let dist_settings = DistractiveStreakSettings {
         max_distractive_score: 3,
         min_distractive_usage_dur: 10 * 60 * 1000 * 10000,
         max_distractive_gap: 5 * 60 * 1000 * 10000,
     };
-    let periods = repo
-        .get_periods(test_start(), test_end(), focus_settings, dist_settings)
+    let streaks = repo
+        .get_streaks(test_start(), test_end(), focus_settings, dist_settings)
         .await?;
-    assert_eq!(periods.len(), 1);
-    assert!(!periods[0].is_focused);
+    assert_eq!(streaks.len(), 1);
+    assert!(!streaks[0].is_focused);
     Ok(())
 }
 
 // Focus usage overlaps range start => clipped
 #[tokio::test]
-async fn get_periods_focus_usage_starts_before_range_clipped() -> Result<()> {
+async fn get_streaks_focus_usage_starts_before_range_clipped() -> Result<()> {
     let db = test_db().await?;
     let mut repo = Repository::new(db)?;
     let tag = arrange::tag(
@@ -5010,27 +5010,27 @@ async fn get_periods_focus_usage_starts_before_range_clipped() -> Result<()> {
         },
     )
     .await?;
-    let focus_settings = FocusPeriodSettings {
+    let focus_settings = FocusStreakSettings {
         min_focus_score: 5,
         min_focus_usage_dur: 10 * 60 * 1000 * 10000,
         max_focus_gap: 5 * 60 * 1000 * 10000,
     };
-    let dist_settings = DistractivePeriodSettings {
+    let dist_settings = DistractiveStreakSettings {
         max_distractive_score: 3,
         min_distractive_usage_dur: 10 * 60 * 1000 * 10000,
         max_distractive_gap: 5 * 60 * 1000 * 10000,
     };
-    let periods = repo
-        .get_periods(test_start(), test_end(), focus_settings, dist_settings)
+    let streaks = repo
+        .get_streaks(test_start(), test_end(), focus_settings, dist_settings)
         .await?;
-    assert_eq!(periods.len(), 1);
-    assert_eq!(periods[0].start, test_start());
+    assert_eq!(streaks.len(), 1);
+    assert_eq!(streaks[0].start, test_start());
     Ok(())
 }
 
 // Distractive usage extends past range end => clipped
 #[tokio::test]
-async fn get_periods_distractive_usage_extends_after_range_clipped() -> Result<()> {
+async fn get_streaks_distractive_usage_extends_after_range_clipped() -> Result<()> {
     let db = test_db().await?;
     let mut repo = Repository::new(db)?;
     let tag = arrange::tag(
@@ -5085,27 +5085,27 @@ async fn get_periods_distractive_usage_extends_after_range_clipped() -> Result<(
         },
     )
     .await?;
-    let focus_settings = FocusPeriodSettings {
+    let focus_settings = FocusStreakSettings {
         min_focus_score: 5,
         min_focus_usage_dur: 10 * 60 * 1000 * 10000,
         max_focus_gap: 5 * 60 * 1000 * 10000,
     };
-    let dist_settings = DistractivePeriodSettings {
+    let dist_settings = DistractiveStreakSettings {
         max_distractive_score: 3,
         min_distractive_usage_dur: 10 * 60 * 1000 * 10000,
         max_distractive_gap: 5 * 60 * 1000 * 10000,
     };
-    let periods = repo
-        .get_periods(test_start(), test_end(), focus_settings, dist_settings)
+    let streaks = repo
+        .get_streaks(test_start(), test_end(), focus_settings, dist_settings)
         .await?;
-    assert_eq!(periods.len(), 1);
-    assert_eq!(periods[0].end, test_end());
+    assert_eq!(streaks.len(), 1);
+    assert_eq!(streaks[0].end, test_end());
     Ok(())
 }
 
 // Usage covers entire range exactly
 #[tokio::test]
-async fn get_periods_usage_covers_entire_range() -> Result<()> {
+async fn get_streaks_usage_covers_entire_range() -> Result<()> {
     let db = test_db().await?;
     let mut repo = Repository::new(db)?;
     let tag = arrange::tag(
@@ -5158,45 +5158,45 @@ async fn get_periods_usage_covers_entire_range() -> Result<()> {
         },
     )
     .await?;
-    let focus_settings = FocusPeriodSettings {
+    let focus_settings = FocusStreakSettings {
         min_focus_score: 5,
         min_focus_usage_dur: 10 * 60 * 1000 * 10000,
         max_focus_gap: 5 * 60 * 1000 * 10000,
     };
-    let dist_settings = DistractivePeriodSettings {
+    let dist_settings = DistractiveStreakSettings {
         max_distractive_score: 3,
         min_distractive_usage_dur: 10 * 60 * 1000 * 10000,
         max_distractive_gap: 5 * 60 * 1000 * 10000,
     };
-    let periods = repo
-        .get_periods(test_start(), test_end(), focus_settings, dist_settings)
+    let streaks = repo
+        .get_streaks(test_start(), test_end(), focus_settings, dist_settings)
         .await?;
-    assert_eq!(periods.len(), 1);
-    assert_eq!(periods[0].start, test_start());
-    assert_eq!(periods[0].end, test_end());
-    assert!(periods[0].is_focused);
+    assert_eq!(streaks.len(), 1);
+    assert_eq!(streaks[0].start, test_start());
+    assert_eq!(streaks[0].end, test_end());
+    assert!(streaks[0].is_focused);
     Ok(())
 }
 
 // Negative tag score below distractive threshold still distractive
-basic_get_periods_case!(
-    get_periods_negative_score_distractive,
+basic_get_streaks_case!(
+    get_streaks_negative_score_distractive,
     (-5.0).into(),
     15 * 60 * 1000 * 10000,
     false
 );
 
 // Zero score when max_distractive_score is 3 counts as distractive
-basic_get_periods_case!(
-    get_periods_zero_score_distractive,
+basic_get_streaks_case!(
+    get_streaks_zero_score_distractive,
     0.0.into(),
     15 * 60 * 1000 * 10000,
     false
 );
 
 // Focus score exactly one above threshold qualifies
-basic_get_periods_case!(
-    get_periods_focus_score_one_above_threshold,
+basic_get_streaks_case!(
+    get_streaks_focus_score_one_above_threshold,
     6.0.into(),
     15 * 60 * 1000 * 10000,
     true
@@ -5204,7 +5204,7 @@ basic_get_periods_case!(
 
 // Multiple small focus usages chained transitively via within-gap bridging
 #[tokio::test]
-async fn get_periods_focus_transitive_three_usages() -> Result<()> {
+async fn get_streaks_focus_transitive_three_usages() -> Result<()> {
     let db = test_db().await?;
     let mut repo = Repository::new(db)?;
     let tag = arrange::tag(
@@ -5268,28 +5268,28 @@ async fn get_periods_focus_transitive_three_usages() -> Result<()> {
         )
         .await?;
     }
-    let focus_settings = FocusPeriodSettings {
+    let focus_settings = FocusStreakSettings {
         min_focus_score: 5,
         min_focus_usage_dur: 10 * 60 * 1000 * 10000,
         max_focus_gap: 5 * 60 * 1000 * 10000,
     };
-    let dist_settings = DistractivePeriodSettings {
+    let dist_settings = DistractiveStreakSettings {
         max_distractive_score: 3,
         min_distractive_usage_dur: 10 * 60 * 1000 * 10000,
         max_distractive_gap: 5 * 60 * 1000 * 10000,
     };
-    let periods = repo
-        .get_periods(test_start(), test_end(), focus_settings, dist_settings)
+    let streaks = repo
+        .get_streaks(test_start(), test_end(), focus_settings, dist_settings)
         .await?;
-    assert_eq!(periods.len(), 1);
-    assert_eq!(periods[0].start, u1_start);
-    assert_eq!(periods[0].end, u3_end);
+    assert_eq!(streaks.len(), 1);
+    assert_eq!(streaks[0].start, u1_start);
+    assert_eq!(streaks[0].end, u3_end);
     Ok(())
 }
 
 // Focus usages separated by distractive usage should not merge
 #[tokio::test]
-async fn get_periods_focus_gap_crosses_distractive_not_merge() -> Result<()> {
+async fn get_streaks_focus_gap_crosses_distractive_not_merge() -> Result<()> {
     let db = test_db().await?;
     let mut repo = Repository::new(db)?;
     let focus_tag = arrange::tag(
@@ -5408,37 +5408,37 @@ async fn get_periods_focus_gap_crosses_distractive_not_merge() -> Result<()> {
         },
     )
     .await?;
-    let focus_settings = FocusPeriodSettings {
+    let focus_settings = FocusStreakSettings {
         min_focus_score: 5,
         min_focus_usage_dur: 10 * 60 * 1000 * 10000,
         max_focus_gap: 5 * 60 * 1000 * 10000,
     };
-    let dist_settings = DistractivePeriodSettings {
+    let dist_settings = DistractiveStreakSettings {
         max_distractive_score: 3,
         min_distractive_usage_dur: 10 * 60 * 1000 * 10000,
         max_distractive_gap: 5 * 60 * 1000 * 10000,
     };
-    let periods = repo
-        .get_periods(test_start(), test_end(), focus_settings, dist_settings)
+    let streaks = repo
+        .get_streaks(test_start(), test_end(), focus_settings, dist_settings)
         .await?;
-    // Expect 1 distractive + 2 separate focus periods = 3
-    assert_eq!(periods.len(), 3);
-    let focus_count = periods.iter().filter(|p| p.is_focused).count();
+    // Expect 1 distractive + 2 separate focus streaks = 3
+    assert_eq!(streaks.len(), 3);
+    let focus_count = streaks.iter().filter(|p| p.is_focused).count();
     assert_eq!(focus_count, 2);
     Ok(())
 }
 
 // Additional small macro-based cases to push total new tests >=20
-basic_get_periods_case!(
-    get_periods_focus_score_equal_threshold_old,
+basic_get_streaks_case!(
+    get_streaks_focus_score_equal_threshold_old,
     2.0.into(),
     15 * 60 * 1000 * 10000,
     false
 );
 
 // Score just under distractive threshold (2) should be distractive
-basic_get_periods_case!(
-    get_periods_distractive_score_under_threshold,
+basic_get_streaks_case!(
+    get_streaks_distractive_score_under_threshold,
     2.0.into(),
     15 * 60 * 1000 * 10000,
     false
@@ -5446,7 +5446,7 @@ basic_get_periods_case!(
 
 // Two overlapping focus usages (gap 0) should merge
 #[tokio::test]
-async fn get_periods_focus_overlap_zero_gap_merges() -> Result<()> {
+async fn get_streaks_focus_overlap_zero_gap_merges() -> Result<()> {
     let db = test_db().await?;
     let mut repo = Repository::new(db)?;
     let tag = arrange::tag(
@@ -5513,28 +5513,28 @@ async fn get_periods_focus_overlap_zero_gap_merges() -> Result<()> {
         },
     )
     .await?;
-    let focus_settings = FocusPeriodSettings {
+    let focus_settings = FocusStreakSettings {
         min_focus_score: 5,
         min_focus_usage_dur: 10 * 60 * 1000 * 10000,
         max_focus_gap: 5 * 60 * 1000 * 10000,
     };
-    let dist_settings = DistractivePeriodSettings {
+    let dist_settings = DistractiveStreakSettings {
         max_distractive_score: 3,
         min_distractive_usage_dur: 10 * 60 * 1000 * 10000,
         max_distractive_gap: 5 * 60 * 1000 * 10000,
     };
-    let periods = repo
-        .get_periods(test_start(), test_end(), focus_settings, dist_settings)
+    let streaks = repo
+        .get_streaks(test_start(), test_end(), focus_settings, dist_settings)
         .await?;
-    assert_eq!(periods.len(), 1);
-    assert!(periods[0].is_focused);
-    assert_eq!(periods[0].start, u1_start);
-    assert_eq!(periods[0].end, u2_end);
+    assert_eq!(streaks.len(), 1);
+    assert!(streaks[0].is_focused);
+    assert_eq!(streaks[0].start, u1_start);
+    assert_eq!(streaks[0].end, u2_end);
     Ok(())
 }
 
 #[tokio::test]
-async fn get_periods_focus_score_equal_threshold_not_focus() -> Result<()> {
+async fn get_streaks_focus_score_equal_threshold_not_focus() -> Result<()> {
     let db = test_db().await?;
     let mut repo = Repository::new(db)?;
     let tag = arrange::tag(
@@ -5589,27 +5589,27 @@ async fn get_periods_focus_score_equal_threshold_not_focus() -> Result<()> {
         },
     )
     .await?;
-    let focus_settings = FocusPeriodSettings {
+    let focus_settings = FocusStreakSettings {
         min_focus_score: 5,
         min_focus_usage_dur: 10 * 60 * 1000 * 10000,
         max_focus_gap: 5 * 60 * 1000 * 10000,
     };
-    let dist_settings = DistractivePeriodSettings {
+    let dist_settings = DistractiveStreakSettings {
         max_distractive_score: 3,
         min_distractive_usage_dur: 10 * 60 * 1000 * 10000,
         max_distractive_gap: 5 * 60 * 1000 * 10000,
     };
-    let periods = repo
-        .get_periods(test_start(), test_end(), focus_settings, dist_settings)
+    let streaks = repo
+        .get_streaks(test_start(), test_end(), focus_settings, dist_settings)
         .await?;
-    // Score equals focus threshold, so usage should be ignored resulting in zero periods
-    assert!(periods.is_empty());
+    // Score equals focus threshold, so usage should be ignored resulting in zero streaks
+    assert!(streaks.is_empty());
     Ok(())
 }
 
 // Switching between different distractive apps within the max_distractive_gap should still merge into a single Distractive Period
 #[tokio::test]
-async fn get_periods_distractive_switch_apps_contiguous_usages_merges() -> Result<()> {
+async fn get_streaks_distractive_switch_apps_contiguous_usages_merges() -> Result<()> {
     let db = test_db().await?;
     let mut repo = Repository::new(db)?;
 
@@ -5718,32 +5718,32 @@ async fn get_periods_distractive_switch_apps_contiguous_usages_merges() -> Resul
     )
     .await?;
 
-    let focus_settings = FocusPeriodSettings {
+    let focus_settings = FocusStreakSettings {
         min_focus_score: 5,
         min_focus_usage_dur: 15 * 60 * 1000 * 10000,
         max_focus_gap: 5 * 60 * 1000 * 10000,
     };
-    let dist_settings = DistractivePeriodSettings {
+    let dist_settings = DistractiveStreakSettings {
         max_distractive_score: 3,
         min_distractive_usage_dur: 15 * 60 * 1000 * 10000,
         max_distractive_gap: 5 * 60 * 1000 * 10000,
     };
 
-    let periods = repo
-        .get_periods(test_start(), test_end(), focus_settings, dist_settings)
+    let streaks = repo
+        .get_streaks(test_start(), test_end(), focus_settings, dist_settings)
         .await?;
 
     // Expect a single merged Distractive Period covering both usages
-    assert_eq!(periods.len(), 1);
-    assert!(!periods[0].is_focused);
-    assert_eq!(periods[0].start, u1_start);
-    assert_eq!(periods[0].end, u2_end);
+    assert_eq!(streaks.len(), 1);
+    assert!(!streaks[0].is_focused);
+    assert_eq!(streaks[0].start, u1_start);
+    assert_eq!(streaks[0].end, u2_end);
     Ok(())
 }
 
 // Two sessions of the SAME distractive app within the gap should merge into one DP
 #[tokio::test]
-async fn get_periods_distractive_multi_session_same_app_merges() -> Result<()> {
+async fn get_streaks_distractive_multi_session_same_app_merges() -> Result<()> {
     let db = test_db().await?;
     let mut repo = Repository::new(db)?;
 
@@ -5827,31 +5827,31 @@ async fn get_periods_distractive_multi_session_same_app_merges() -> Result<()> {
     )
     .await?;
 
-    let focus_settings = FocusPeriodSettings {
+    let focus_settings = FocusStreakSettings {
         min_focus_score: 5,
         min_focus_usage_dur: 25 * 60 * 1000 * 10000,
         max_focus_gap: 5 * 60 * 1000 * 10000,
     };
-    let dist_settings = DistractivePeriodSettings {
+    let dist_settings = DistractiveStreakSettings {
         max_distractive_score: 3,
         min_distractive_usage_dur: 25 * 60 * 1000 * 10000,
         max_distractive_gap: 5 * 60 * 1000 * 10000,
     };
 
-    let periods = repo
-        .get_periods(test_start(), test_end(), focus_settings, dist_settings)
+    let streaks = repo
+        .get_streaks(test_start(), test_end(), focus_settings, dist_settings)
         .await?;
 
-    assert_eq!(periods.len(), 1);
-    assert!(!periods[0].is_focused);
-    assert_eq!(periods[0].start, u1_start);
-    assert_eq!(periods[0].end, u2_end);
+    assert_eq!(streaks.len(), 1);
+    assert!(!streaks[0].is_focused);
+    assert_eq!(streaks[0].start, u1_start);
+    assert_eq!(streaks[0].end, u2_end);
     Ok(())
 }
 
 // Switching between different focus apps within the max_focus_gap should merge into one Focus Period
 #[tokio::test]
-async fn get_periods_focus_switch_apps_contiguous_usages_merges() -> Result<()> {
+async fn get_streaks_focus_switch_apps_contiguous_usages_merges() -> Result<()> {
     let db = test_db().await?;
     let mut repo = Repository::new(db)?;
 
@@ -5953,31 +5953,31 @@ async fn get_periods_focus_switch_apps_contiguous_usages_merges() -> Result<()> 
     )
     .await?;
 
-    let focus_settings = FocusPeriodSettings {
+    let focus_settings = FocusStreakSettings {
         min_focus_score: 5,
         min_focus_usage_dur: 25 * 60 * 1000 * 10000,
         max_focus_gap: 5 * 60 * 1000 * 10000,
     };
-    let dist_settings = DistractivePeriodSettings {
+    let dist_settings = DistractiveStreakSettings {
         max_distractive_score: 3,
         min_distractive_usage_dur: 25 * 60 * 1000 * 10000,
         max_distractive_gap: 5 * 60 * 1000 * 10000,
     };
 
-    let periods = repo
-        .get_periods(test_start(), test_end(), focus_settings, dist_settings)
+    let streaks = repo
+        .get_streaks(test_start(), test_end(), focus_settings, dist_settings)
         .await?;
 
-    assert_eq!(periods.len(), 1);
-    assert!(periods[0].is_focused);
-    assert_eq!(periods[0].start, u1_start);
-    assert_eq!(periods[0].end, u2_end);
+    assert_eq!(streaks.len(), 1);
+    assert!(streaks[0].is_focused);
+    assert_eq!(streaks[0].start, u1_start);
+    assert_eq!(streaks[0].end, u2_end);
     Ok(())
 }
 
 // Two sessions of the SAME focus app within the gap should merge into one FP (even though each usage alone is below min duration)
 #[tokio::test]
-async fn get_periods_focus_multi_session_same_app_merges() -> Result<()> {
+async fn get_streaks_focus_multi_session_same_app_merges() -> Result<()> {
     let db = test_db().await?;
     let mut repo = Repository::new(db)?;
 
@@ -6060,31 +6060,31 @@ async fn get_periods_focus_multi_session_same_app_merges() -> Result<()> {
     )
     .await?;
 
-    let focus_settings = FocusPeriodSettings {
+    let focus_settings = FocusStreakSettings {
         min_focus_score: 5,
         min_focus_usage_dur: 25 * 60 * 1000 * 10000,
         max_focus_gap: 5 * 60 * 1000 * 10000,
     };
-    let dist_settings = DistractivePeriodSettings {
+    let dist_settings = DistractiveStreakSettings {
         max_distractive_score: 3,
         min_distractive_usage_dur: 25 * 60 * 1000 * 10000,
         max_distractive_gap: 5 * 60 * 1000 * 10000,
     };
 
-    let periods = repo
-        .get_periods(test_start(), test_end(), focus_settings, dist_settings)
+    let streaks = repo
+        .get_streaks(test_start(), test_end(), focus_settings, dist_settings)
         .await?;
 
-    assert_eq!(periods.len(), 1);
-    assert!(periods[0].is_focused);
-    assert_eq!(periods[0].start, u1_start);
-    assert_eq!(periods[0].end, u2_end);
+    assert_eq!(streaks.len(), 1);
+    assert!(streaks[0].is_focused);
+    assert_eq!(streaks[0].start, u1_start);
+    assert_eq!(streaks[0].end, u2_end);
     Ok(())
 }
 
-// Distractive period blocks a short focus usage from extending an initial focus period
+// Distractive streak blocks a short focus usage from extending an initial focus streak
 #[tokio::test]
-async fn get_periods_dp_blocks_focus_usage_extension() -> Result<()> {
+async fn get_streaks_dp_blocks_focus_usage_extension() -> Result<()> {
     let db = test_db().await?;
     let mut repo = Repository::new(db)?;
 
@@ -6231,34 +6231,34 @@ async fn get_periods_dp_blocks_focus_usage_extension() -> Result<()> {
     .await?;
 
     // Settings
-    let focus_settings = FocusPeriodSettings {
+    let focus_settings = FocusStreakSettings {
         min_focus_score: 5,
         min_focus_usage_dur: 10 * 60 * 1000 * 10000,
         max_focus_gap: 5 * 60 * 1000 * 10000,
     };
-    let dist_settings = DistractivePeriodSettings {
+    let dist_settings = DistractiveStreakSettings {
         max_distractive_score: 3,
         min_distractive_usage_dur: 10 * 60 * 1000 * 10000,
         max_distractive_gap: 5 * 60 * 1000 * 10000,
     };
 
-    let periods = repo
-        .get_periods(test_start(), test_end(), focus_settings, dist_settings)
+    let streaks = repo
+        .get_streaks(test_start(), test_end(), focus_settings, dist_settings)
         .await?;
 
     // Expect exactly 1 FP (f1+f2) and 1 DP; the short focus after DP should be ignored
-    assert_eq!(periods.len(), 2);
-    let fp_count = periods.iter().filter(|p| p.is_focused).count();
+    assert_eq!(streaks.len(), 2);
+    let fp_count = streaks.iter().filter(|p| p.is_focused).count();
     assert_eq!(fp_count, 1);
-    let fp = periods.iter().find(|p| p.is_focused).unwrap();
+    let fp = streaks.iter().find(|p| p.is_focused).unwrap();
     assert_eq!(fp.start, f1_start);
     assert_eq!(fp.end, f2_end);
     Ok(())
 }
 
-// Distractive period prevents two qualifying focus periods from merging
+// Distractive streak prevents two qualifying focus streaks from merging
 #[tokio::test]
-async fn get_periods_dp_prevents_focus_periods_merging() -> Result<()> {
+async fn get_streaks_dp_prevents_focus_streaks_merging() -> Result<()> {
     let db = test_db().await?;
     let mut repo = Repository::new(db)?;
 
@@ -6393,27 +6393,27 @@ async fn get_periods_dp_prevents_focus_periods_merging() -> Result<()> {
     .await?;
 
     // Settings (larger max_focus_gap so gap without DP would merge)
-    let focus_settings = FocusPeriodSettings {
+    let focus_settings = FocusStreakSettings {
         min_focus_score: 5,
         min_focus_usage_dur: 10 * 60 * 1000 * 10000,
         max_focus_gap: 20 * 60 * 1000 * 10000, // 20 minutes
     };
-    let dist_settings = DistractivePeriodSettings {
+    let dist_settings = DistractiveStreakSettings {
         max_distractive_score: 3,
         min_distractive_usage_dur: 10 * 60 * 1000 * 10000,
         max_distractive_gap: 5 * 60 * 1000 * 10000,
     };
 
-    let periods = repo
-        .get_periods(test_start(), test_end(), focus_settings, dist_settings)
+    let streaks = repo
+        .get_streaks(test_start(), test_end(), focus_settings, dist_settings)
         .await?;
 
-    // Expect 2 separate FPs and 1 DP (total 3 periods)
-    assert_eq!(periods.len(), 3);
-    let fp_count = periods.iter().filter(|p| p.is_focused).count();
+    // Expect 2 separate FPs and 1 DP (total 3 streaks)
+    assert_eq!(streaks.len(), 3);
+    let fp_count = streaks.iter().filter(|p| p.is_focused).count();
     assert_eq!(fp_count, 2);
     // Ensure the two FPs have expected boundaries
-    let mut fp_starts: Vec<i64> = periods
+    let mut fp_starts: Vec<i64> = streaks
         .iter()
         .filter(|p| p.is_focused)
         .map(|p| p.start)

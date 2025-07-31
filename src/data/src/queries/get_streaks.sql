@@ -5,12 +5,12 @@ WITH
            min_focus_usage_dur, min_distractive_usage_dur,
            max_focus_gap, max_distractive_gap) AS (SELECT ?, ?, ?, ?, ?, ?, ?, ?),
 
-    -- Distractive Periods: Initial
-    -- get DPs from continuous usages of distractive apps
+    -- Distractive Streaks (DSs): Initial
+    -- get DSs from continuous usages of distractive apps
     --   (switches between session of the same app and between
     --   distractive apps are grouped together to form one usage)
-    -- filter each DP to make sure its duration exceeds min_distractive_usage_dur
-    initial_dp
+    -- filter each DS to make sure its duration exceeds min_distractive_usage_dur
+    initial_ds
         AS (SELECT
                 -- get range. alternatively, a 'first'/'last' getter of a group would work
                 MIN(start) AS start,
@@ -38,12 +38,12 @@ WITH
                           -- filter usage if not from distractive app
                           AND p.max_distractive_score > coalesce(t.score, 0)))
             GROUP BY group_number
-            -- Filter out DPs less than min_distractive_usage_dur
+            -- Filter out DSs less than min_distractive_usage_dur
             HAVING MAX(end) - MIN(start) >= (SELECT min_distractive_usage_dur FROM params)),
 
-    -- Distractive Periods: Combined if 'Close'
-    --  if adjacent DPs have a gap less than max_distractive_gap then combine them
-    dp
+    -- Distractive Streaks: Combined if 'Close'
+    --  if adjacent DSs have a gap less than max_distractive_gap then combine them
+    ds
         AS (SELECT
                 -- get range. alternatively, a 'first'/'last' getter of a group would work
                 MIN(start) AS start,
@@ -55,21 +55,21 @@ WITH
                                u.end,
                                -- window is all usages in [range_start, range_end], so LAG(end) is NULL
                                -- only for the first usage in range, where is_group_start=1. is_group_start=1
-                               -- when this DP's start - the previous DP's end exceeds max_distractive_gap, else
+                               -- when this DS's start - the previous DS's end exceeds max_distractive_gap, else
                                -- is_group_start=0. this is the 'if close' metric.
                                coalesce(u.start - LAG(end) OVER (ORDER BY u.start) > p.max_distractive_gap,
                                         1) AS is_group_start
-                        FROM initial_dp u
+                        FROM initial_ds u
                                  CROSS JOIN params p))
             GROUP BY group_number),
 
-    -- Focus Periods: Initial
-    -- filter each usage if it intersects with any DP
-    -- get FPs from continuous usages of focus apps
+    -- Focus Streaks: Initial
+    -- filter each usage if it intersects with any DS
+    -- get FSs from continuous usages of focus apps
     --   (switches between session of the same app and between
     --   focus apps are grouped together to form one usage)
-    -- filter each FP to make sure its duration exceeds min_focus_usage_dur
-    initial_fp
+    -- filter each FS to make sure its duration exceeds min_focus_usage_dur
+    initial_fs
         AS (SELECT
                 -- get range. alternatively, a 'first'/'last' getter of a group would work
                 MIN(start) AS start,
@@ -96,19 +96,19 @@ WITH
                           AND u.end > p.range_start
                           -- filter usage if not from focus app
                           AND p.min_focus_score < coalesce(t.score, 0)
-                          -- filter usage if it intersects with any DP
+                          -- filter usage if it intersects with any DS
                           AND NOT EXISTS (SELECT 1
-                                          FROM dp
-                                          WHERE dp.start < u.end
-                                            AND dp.end > u.start)))
+                                          FROM ds
+                                          WHERE ds.start < u.end
+                                            AND ds.end > u.start)))
             GROUP BY group_number
-            -- Filter out FPs less than min_focus_usage_dur
+            -- Filter out FSs less than min_focus_usage_dur
             HAVING MAX(end) - MIN(start) >= (SELECT min_focus_usage_dur FROM params)),
 
-    -- Focus Periods: Combined if 'Close'
-    --  if adjacent FPs have a gap less than max_focus_gap and
-    --  only if that gap doesn't intersect with any DP, then combine them
-    fp
+    -- Focus Streaks: Combined if 'Close'
+    --  if adjacent FSs have a gap less than max_focus_gap and
+    --  only if that gap doesn't intersect with any DS, then combine them
+    fs
         AS (SELECT
                 -- get range. alternatively, a 'first'/'last' getter of a group would work
                 MIN(start) AS start,
@@ -120,23 +120,23 @@ WITH
                                u.end,
                                -- window is all usages in [range_start, range_end], so prev_end is NULL
                                -- only for the first usage in range, where is_group_start=1. is_group_start=1
-                               -- when this FP's start - the previous FP's end exceeds max_focus_gap, else
+                               -- when this FS's start - the previous FS's end exceeds max_focus_gap, else
                                -- is_group_start=0. this is the 'if close' metric.
                                coalesce(u.start - u.prev_end > p.max_focus_gap, 1)
                                    ||
-                                   -- or, start a new group if any DP intersects with the gap [u.prev_end, u.start]
-                                   -- i.e., don't combine these FPs together if any DP is between them
+                                   -- or, start a new group if any DS intersects with the gap [u.prev_end, u.start]
+                                   -- i.e., don't combine these FSs together if any DS is between them
                                EXISTS (SELECT 1
-                                       FROM dp
-                                       WHERE dp.start < u.start
-                                         AND dp.end > u.prev_end)
+                                       FROM ds
+                                       WHERE ds.start < u.start
+                                         AND ds.end > u.prev_end)
                                    AS is_group_start
                         FROM
                             -- push the LAG window into a subquery
                             (SELECT u.start,
                                     u.end,
                                     LAG(end) OVER (ORDER BY u.start) AS prev_end
-                             FROM initial_fp u) u
+                             FROM initial_fs u) u
                                 CROSS JOIN params p))
             GROUP BY group_number)
 
@@ -145,7 +145,7 @@ SELECT
   MAX(start, p.range_start) AS start,
   MIN(end, p.range_end) AS end,
   0 AS is_focused
-FROM dp
+FROM ds
 CROSS JOIN params p
 
 UNION ALL
@@ -154,5 +154,5 @@ SELECT
   MAX(start, p.range_start) AS start,
   MIN(end, p.range_end) AS end,
   1 AS is_focused
-FROM fp
+FROM fs
 CROSS JOIN params p

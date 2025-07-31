@@ -105,19 +105,19 @@ impl Repository {
 }
 
 impl Repository {
-    /// Gets all distractive and focused periods in the given time range, using the specified parameters.
+    /// Gets all distractive and focused streaks in the given time range, using the specified parameters.
     ///
-    /// The algorithm is described in detail in `docs/get_periods_algorithm.md`.
-    pub async fn get_periods(
+    /// The algorithm is described in detail in `docs/ALGORITHM_get_streaks.md`.
+    pub async fn get_streaks(
         &mut self,
         start: Timestamp,
         end: Timestamp,
-        focus_settings: infused::FocusPeriodSettings,
-        distractive_settings: infused::DistractivePeriodSettings,
-    ) -> Result<Vec<infused::FocusPeriod>> {
-        let query = include_str!("../queries/get_periods.sql");
+        focus_settings: infused::FocusStreakSettings,
+        distractive_settings: infused::DistractiveStreakSettings,
+    ) -> Result<Vec<infused::Streak>> {
+        let query = include_str!("../queries/get_streaks.sql");
 
-        let periods: Vec<infused::FocusPeriod> = query_as(query)
+        let streaks: Vec<infused::Streak> = query_as(query)
             .bind(start)
             .bind(end)
             .bind(focus_settings.min_focus_score)
@@ -129,6 +129,6 @@ impl Repository {
             .fetch_all(self.db.executor())
             .await?;
 
-        Ok(periods)
+        Ok(streaks)
     }
 }
