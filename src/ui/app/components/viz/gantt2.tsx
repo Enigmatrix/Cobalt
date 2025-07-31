@@ -1,4 +1,8 @@
 import AppIcon from "@/components/app/app-icon";
+import {
+  DISTRACTIVE_STREAK_BACKGROUND,
+  FOCUS_STREAK_BACKGROUND,
+} from "@/components/tag/score";
 import { DurationText } from "@/components/time/duration-text";
 import { DateTimeText } from "@/components/time/time-text";
 import { Text } from "@/components/ui/text";
@@ -414,8 +418,8 @@ export function Gantt({
           // Individual color per streak
           itemStyle: {
             color: p.isFocused
-              ? "rgba(0, 225, 0, 0.35)" // green for focus
-              : "rgba(200, 0, 0, 0.35)", // red otherwise
+              ? FOCUS_STREAK_BACKGROUND
+              : DISTRACTIVE_STREAK_BACKGROUND,
           },
         },
         {

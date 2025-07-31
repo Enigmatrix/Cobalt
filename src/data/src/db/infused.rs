@@ -454,10 +454,12 @@ impl From<DistractiveStreakSettings> for util::config::DistractiveStreakSettings
     }
 }
 
+const TICKS_PER_NANOSECOND: i64 = 100;
+
 fn to_ticks(duration: std::time::Duration) -> i64 {
-    (duration.as_nanos() / 100) as i64
+    duration.as_nanos() as i64 / TICKS_PER_NANOSECOND
 }
 
 fn from_ticks(ticks: i64) -> std::time::Duration {
-    std::time::Duration::from_nanos((ticks * 100) as u64)
+    std::time::Duration::from_nanos((ticks * TICKS_PER_NANOSECOND) as u64)
 }
