@@ -10,7 +10,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UsageChart } from "@/components/viz/usage-chart";
 import { useZodForm } from "@/hooks/use-form";
 import { useHistoryRef } from "@/hooks/use-history-state";
-import { useLastNonNull } from "@/hooks/use-last";
 import { useTargetApps } from "@/hooks/use-refresh";
 import { useAppDurationsPerPeriod } from "@/hooks/use-repo";
 import { useIntervalControlsWithDefault } from "@/hooks/use-time";
@@ -234,15 +233,8 @@ export function AppUsageBarChartView({
 }) {
   const [period, setPeriod] = useState<Period>("day");
 
-  const {
-    interval: intervalNullable,
-    setInterval,
-    canGoNext,
-    goNext,
-    canGoPrev,
-    goPrev,
-  } = useIntervalControlsWithDefault("week");
-  const interval = useLastNonNull(intervalNullable);
+  const { interval, setInterval, canGoNext, goNext, canGoPrev, goPrev } =
+    useIntervalControlsWithDefault("week");
 
   const scaledUsageLimit = useMemo(() => {
     if (!usageLimit || !timeFrame) return undefined;

@@ -22,8 +22,8 @@ import {
 import type { DateRange } from "react-day-picker";
 
 interface DateRangePickerProps {
-  value: Interval | null;
-  onChange: (value: Interval | null) => void;
+  value: Interval;
+  onChange: (value: Interval) => void;
   render?: ReactNode;
   dayGranularity?: boolean;
   className?: ClassValue;
@@ -125,7 +125,8 @@ export function DateRangePicker({
 
       setInnerInner(partial);
       if (!partial?.start || !partial?.end) {
-        onChange(null);
+        // No resetting on partial start/end - we just ignore
+        // onChange(null);
         return;
       }
 
@@ -293,16 +294,6 @@ export function DateRangePicker({
                 {range.label}
               </Button>
             ))}
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => {
-                setInner(null);
-                setOpen(false);
-              }}
-            >
-              Clear
-            </Button>
           </div>
         </div>
       </PopoverContent>

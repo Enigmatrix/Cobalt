@@ -17,7 +17,6 @@ import {
   VizCardHeader,
   VizCardTitle,
 } from "@/components/viz/viz-card";
-import { useLastNonNull } from "@/hooks/use-last";
 import {
   useAppDurationsPerPeriod,
   useAppSessionUsages,
@@ -88,14 +87,8 @@ function AppUsageBarChartCard({
   period: Period;
   xAxisLabelFormatter: (dt: DateTime) => string;
 }) {
-  const {
-    interval: intervalNullable,
-    canGoNext,
-    goNext,
-    canGoPrev,
-    goPrev,
-  } = useIntervalControlsWithDefault(timePeriod);
-  const interval = useLastNonNull(intervalNullable);
+  const { interval, canGoNext, goNext, canGoPrev, goPrev } =
+    useIntervalControlsWithDefault(timePeriod);
 
   const { isLoading, ret: appDurationsPerPeriod } = useAppDurationsPerPeriod({
     start: interval?.start,
@@ -147,15 +140,8 @@ function AppUsageBarChartCard({
 }
 
 function SessionsCard() {
-  const {
-    interval: intervalNullable,
-    canGoNext,
-    goNext,
-    canGoPrev,
-    goPrev,
-    setInterval,
-  } = useIntervalControlsWithDefault("day");
-  const interval = useLastNonNull(intervalNullable);
+  const { interval, canGoNext, goNext, canGoPrev, goPrev, setInterval } =
+    useIntervalControlsWithDefault("day");
 
   const { ret: usages, isLoading: usagesLoading } = useAppSessionUsages({
     start: interval.start,
@@ -192,7 +178,7 @@ function SessionsCard() {
               />
               <DateRangePicker
                 className="min-w-32"
-                value={intervalNullable}
+                value={interval}
                 onChange={setInterval}
               />
               <NextButton

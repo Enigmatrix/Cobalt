@@ -23,7 +23,6 @@ import { Gantt } from "@/components/viz/gantt2";
 import { GroupByPicker } from "@/components/viz/groupby-picker";
 import { UsageChart, type GroupBy } from "@/components/viz/usage-chart";
 import { VerticalLegend } from "@/components/viz/vertical-legend";
-import { useLastNonNull } from "@/hooks/use-last";
 import {
   useAppDurationsPerPeriod,
   useAppSessionUsages,
@@ -63,15 +62,8 @@ function useHistoryContext() {
 export default function History() {
   const [view, setView] = useState<View>("app-usage");
   const fullPage = useMemo(() => view === "session-history", [view]);
-  const {
-    interval: intervalNullable,
-    setInterval,
-    canGoNext,
-    goNext,
-    canGoPrev,
-    goPrev,
-  } = useIntervalControlsWithDefault("week");
-  const interval = useLastNonNull(intervalNullable);
+  const { interval, setInterval, canGoNext, goNext, canGoPrev, goPrev } =
+    useIntervalControlsWithDefault("week");
 
   const historyContextValue = useMemo(
     () => ({

@@ -29,7 +29,6 @@ import { NextButton, PrevButton, UsageCard } from "@/components/usage-card";
 import { Gantt } from "@/components/viz/gantt2";
 import Heatmap from "@/components/viz/heatmap";
 import { UsageChart } from "@/components/viz/usage-chart";
-import { useLastNonNull } from "@/hooks/use-last";
 import { useAlerts, useTag } from "@/hooks/use-refresh";
 import {
   useAppDurationsPerPeriod,
@@ -105,13 +104,12 @@ function TagPage({ tag }: { tag: Tag }) {
   }, [removeTag, navigate, tag.id]);
 
   const {
-    interval: yearIntervalNullable,
+    interval: yearInterval,
     canGoNext: yearCanGoNext,
     goNext: yearGoNext,
     canGoPrev: yearCanGoPrev,
     goPrev: yearGoPrev,
   } = useIntervalControlsWithDefault("year");
-  const yearInterval = useLastNonNull(yearIntervalNullable);
 
   const alerts = useAlerts();
   const tagAlerts = useMemo(
@@ -347,14 +345,8 @@ function TagUsageBarChartCard({
   xAxisLabelFormatter: (dt: DateTime) => string;
   tag: Tag;
 }) {
-  const {
-    interval: intervalNullable,
-    canGoNext,
-    goNext,
-    canGoPrev,
-    goPrev,
-  } = useIntervalControlsWithDefault(timePeriod);
-  const interval = useLastNonNull(intervalNullable);
+  const { interval, canGoNext, goNext, canGoPrev, goPrev } =
+    useIntervalControlsWithDefault(timePeriod);
 
   const { isLoading, ret: appDurationsPerPeriod } = useAppDurationsPerPeriod({
     start: interval.start,

@@ -21,7 +21,6 @@ import { Gantt } from "@/components/viz/gantt2";
 import Heatmap from "@/components/viz/heatmap";
 import { UsageChart } from "@/components/viz/usage-chart";
 import { useClipboard } from "@/hooks/use-clipboard";
-import { useLastNonNull } from "@/hooks/use-last";
 import { useApp, useTag } from "@/hooks/use-refresh";
 import {
   useAppDurationsPerPeriod,
@@ -78,13 +77,12 @@ function AppPage({ app }: { app: App }) {
   const { copy, hasCopied } = useClipboard();
 
   const {
-    interval: yearIntervalNullable,
+    interval: yearInterval,
     canGoNext: yearCanGoNext,
     goNext: yearGoNext,
     canGoPrev: yearCanGoPrev,
     goPrev: yearGoPrev,
   } = useIntervalControlsWithDefault("year");
-  const yearInterval = useLastNonNull(yearIntervalNullable);
 
   const { isLoading: isYearDataLoading, ret: yearUsages } =
     useAppDurationsPerPeriod({
@@ -374,14 +372,8 @@ function AppUsageBarChartCard({
   xAxisLabelFormatter: (dt: DateTime) => string;
   appId: Ref<App>;
 }) {
-  const {
-    interval: intervalNullable,
-    canGoNext,
-    goNext,
-    canGoPrev,
-    goPrev,
-  } = useIntervalControlsWithDefault(timePeriod);
-  const interval = useLastNonNull(intervalNullable);
+  const { interval, canGoNext, goNext, canGoPrev, goPrev } =
+    useIntervalControlsWithDefault(timePeriod);
 
   const { isLoading, ret: appDurationsPerPeriod } = useAppDurationsPerPeriod({
     start: interval.start,
