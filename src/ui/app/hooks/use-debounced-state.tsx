@@ -1,5 +1,4 @@
-import { error } from "@/lib/log";
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { useDebouncedCallback } from "use-debounce";
 
 export function useDebouncedState<T>(
@@ -8,13 +7,16 @@ export function useDebouncedState<T>(
   debounceMs: number,
 ) {
   const [state, setStateInner] = useState(initialState);
+  // TODO: this doesn't really debounce the promise itself, just the promise returner function
   const debouncedUpdate = useDebouncedCallback(updateFn, debounceMs);
-  useEffect(() => {
-    debouncedUpdate(state)?.catch((err) => {
-      console.error(err);
-      error("Failed to update debounced state", err);
-    });
-  }, [state, debouncedUpdate]);
 
-  return [state, setStateInner] as const;
+  const setState = useCallback(
+    async (state: T) => {
+      setStateInner(state);
+      await debouncedUpdate(state);
+    },
+    [setStateInner, debouncedUpdate],
+  );
+
+  return [state, setState] as const;
 }
