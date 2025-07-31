@@ -19,11 +19,12 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Switch } from "@/components/ui/switch";
+import { useDebouncedState } from "@/hooks/use-debounced-state";
 import { useConfig } from "@/lib/config";
 import type { Score } from "@/lib/entities";
 import { durationToTicks, ticksToDuration } from "@/lib/time";
 import { RefreshCcwIcon } from "lucide-react";
-import { type ReactNode } from "react";
+import { useCallback, type ReactNode } from "react";
 
 export function Setting({
   title,
@@ -63,10 +64,25 @@ export default function Settings() {
     resetDefaultDistractiveStreakSettings,
   } = useConfig();
 
-  const resetStreakSettings = async () => {
+  const resetStreakSettings = useCallback(async () => {
     await resetDefaultFocusStreakSettings();
     await resetDefaultDistractiveStreakSettings();
-  };
+  }, [resetDefaultFocusStreakSettings, resetDefaultDistractiveStreakSettings]);
+
+  const [minFocusScore, setMinFocusScore] = useDebouncedState(
+    defaultFocusStreakSettings.minFocusScore,
+    async (v) => {
+      await setDefaultFocusStreakSettings({ minFocusScore: v });
+    },
+    500,
+  );
+  const [maxDistractiveScore, setMaxDistractiveScore] = useDebouncedState(
+    defaultDistractiveStreakSettings.maxDistractiveScore,
+    async (v) => {
+      await setDefaultDistractiveStreakSettings({ maxDistractiveScore: v });
+    },
+    500,
+  );
 
   return (
     <>
@@ -135,10 +151,8 @@ export default function Settings() {
                 description="The minimum score of an app's tag for the app to be considered a focus app."
                 action={
                   <ScoreSettingAction
-                    score={defaultFocusStreakSettings.minFocusScore}
-                    onScoreChange={(v) =>
-                      setDefaultFocusStreakSettings({ minFocusScore: v })
-                    }
+                    score={minFocusScore}
+                    onScoreChange={setMinFocusScore}
                   />
                 }
               />
@@ -186,12 +200,8 @@ export default function Settings() {
                 description="The maximum score of an app's tag for the app to be considered a distractive app."
                 action={
                   <ScoreSettingAction
-                    score={defaultDistractiveStreakSettings.maxDistractiveScore}
-                    onScoreChange={(v) =>
-                      setDefaultDistractiveStreakSettings({
-                        maxDistractiveScore: v,
-                      })
-                    }
+                    score={maxDistractiveScore}
+                    onScoreChange={setMaxDistractiveScore}
                   />
                 }
               />
@@ -246,7 +256,6 @@ function ScoreSettingAction({
   onScoreChange,
 }: {
   score: Score;
-  // TODO: we should add some debouncing here otherwise we get too much file io
   onScoreChange: (score: Score) => void;
 }) {
   return (
