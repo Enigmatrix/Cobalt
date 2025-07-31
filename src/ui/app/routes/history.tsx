@@ -32,7 +32,7 @@ import {
 } from "@/hooks/use-repo";
 import { useIntervalControlsWithDefault } from "@/hooks/use-time";
 import type { App, Ref } from "@/lib/entities";
-import type { Interval, Period } from "@/lib/time";
+import type { Period } from "@/lib/time";
 import { cn } from "@/lib/utils";
 import { ChevronLeftIcon, ChevronRightIcon, Loader2 } from "lucide-react";
 import { Duration } from "luxon";
@@ -40,12 +40,7 @@ import { createContext, useContext, useMemo, useState } from "react";
 
 type View = "app-usage" | "session-history";
 
-type HistoryContextType = Omit<
-  ReturnType<typeof useIntervalControlsWithDefault>,
-  "interval"
-> & {
-  interval: Interval;
-};
+type HistoryContextType = ReturnType<typeof useIntervalControlsWithDefault>;
 const HistoryContext = createContext<HistoryContextType | null>(null);
 
 function useHistoryContext() {
