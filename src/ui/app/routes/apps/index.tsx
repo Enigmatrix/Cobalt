@@ -95,11 +95,10 @@ export default function Apps() {
   }, [appsFiltered, sortDirection, sortProperty]);
 
   const interval = usePeriodInterval("day");
-  const {
-    appDurationsPerPeriod,
-    start: loadStart,
-    end: loadEnd,
-  } = useAppDurationsPerPeriod({ ...interval, period: "hour" });
+  const { ret: appDurationsPerPeriod } = useAppDurationsPerPeriod({
+    ...interval,
+    period: "hour",
+  });
 
   const [scrollOffset, setScrollOffset] = useHistoryRef<number>(
     0,
@@ -118,8 +117,8 @@ export default function Apps() {
       <VirtualListItem style={style}>
         <AppListItem
           app={appsSorted[index]}
-          start={loadStart ?? interval.start}
-          end={loadEnd ?? interval.end}
+          start={interval.start}
+          end={interval.end}
           appDurationsPerPeriod={appDurationsPerPeriod}
         />
       </VirtualListItem>

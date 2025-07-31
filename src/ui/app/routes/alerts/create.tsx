@@ -25,7 +25,7 @@ import {
   InfoIcon,
   PlusIcon,
 } from "lucide-react";
-import { DateTime, Duration } from "luxon";
+import { Duration } from "luxon";
 import {
   Fragment,
   useCallback,
@@ -244,15 +244,9 @@ export function AppUsageBarChartView({
     return perHourUsageLimit * hoursInPeriod(period);
   }, [period, usageLimit, timeFrame]);
 
-  const {
-    appDurationsPerPeriod,
-    period: loadPeriod,
-    start,
-    end,
-  } = useAppDurationsPerPeriod({
-    start: interval?.start,
-    end: interval?.end,
-    period: period,
+  const { ret: appDurationsPerPeriod } = useAppDurationsPerPeriod({
+    ...interval,
+    period,
   });
 
   const [yAxisInterval, maxYIsPeriod] = useMemo(() => {
@@ -268,12 +262,7 @@ export function AppUsageBarChartView({
       default:
         throw new Error(`Unknown period: ${period}`);
     }
-    // this should take period as a dependency, but we only take in loadPeriod
-    // which is a output of useAppDurationsPerPeriod, else we get yaxis flashes
-    // with the older data's yaxis interval before the data is loading
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loadPeriod]);
+  }, [period]);
 
   const targetApps = useTargetApps(target);
   const highlightedApps = useMemo(() => {
@@ -338,9 +327,9 @@ export function AppUsageBarChartView({
                   ]
                 : undefined
             }
-            period={loadPeriod ?? period}
-            start={start ?? interval?.start ?? DateTime.now()}
-            end={end ?? interval?.end ?? DateTime.now()}
+            period={period}
+            start={interval.start}
+            end={interval.end}
             className="w-full h-full"
             maxYIsPeriod={maxYIsPeriod}
             yAxisInterval={yAxisInterval}

@@ -62,11 +62,11 @@ export interface UpdatedReminder {
   ignoreTrigger: boolean;
 }
 
-interface QueryOptions {
+export interface QueryOptions {
   now?: Timestamp;
 }
 
-function getQueryOptions(queryOptions?: QueryOptions): QueryOptions {
+export function getQueryOptions(queryOptions?: QueryOptions): QueryOptions {
   return queryOptions ?? {};
 }
 

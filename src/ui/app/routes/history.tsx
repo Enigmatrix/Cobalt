@@ -28,16 +28,14 @@ import {
   useAppSessionUsages,
   useInteractionPeriods,
   useSystemEvents,
+  useTotalUsageFromPerPeriod,
 } from "@/hooks/use-repo";
-import {
-  useIntervalControlsWithDefault,
-  usePeriodInterval,
-} from "@/hooks/use-time";
+import { useIntervalControlsWithDefault } from "@/hooks/use-time";
 import type { App, Ref } from "@/lib/entities";
 import type { Period } from "@/lib/time";
 import { cn } from "@/lib/utils";
 import { ChevronLeftIcon, ChevronRightIcon, Loader2 } from "lucide-react";
-import { DateTime, Duration } from "luxon";
+import { Duration } from "luxon";
 import { createContext, useContext, useMemo, useState } from "react";
 
 type View = "app-usage" | "session-history";
@@ -148,18 +146,11 @@ function AppUsagePerPeriodHistory() {
   const [period, setPeriod] = useState<Period>("day");
   const { interval } = useHistoryContext();
 
-  const {
-    isLoading,
-    totalUsage,
-    appDurationsPerPeriod,
-    period: loadPeriod,
-    start,
-    end,
-  } = useAppDurationsPerPeriod({
-    start: interval?.start,
-    end: interval?.end,
-    period: period,
+  const { isLoading, ret: appDurationsPerPeriod } = useAppDurationsPerPeriod({
+    ...interval,
+    period,
   });
+  const totalUsage = useTotalUsageFromPerPeriod(appDurationsPerPeriod);
 
   const [yAxisInterval, maxYIsPeriod] = useMemo(() => {
     switch (period) {
@@ -174,12 +165,7 @@ function AppUsagePerPeriodHistory() {
       default:
         throw new Error(`Unknown period: ${period}`);
     }
-    // this should take period as a dependency, but we only take in loadPeriod
-    // which is a output of useAppDurationsPerPeriod, else we get yaxis flashes
-    // with the older data's yaxis interval before the data is loading
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loadPeriod]);
+  }, [period]);
 
   // State for checked tags/apps
   const [uncheckedApps, setUncheckedApps] = useState<Record<Ref<App>, boolean>>(
@@ -214,9 +200,9 @@ function AppUsagePerPeriodHistory() {
       <div className="flex flex-1 min-h-0 overflow-hidden rounded-lg bg-card shadow-xs border border-border">
         <UsageChart
           appDurationsPerPeriod={appDurationsPerPeriod}
-          period={loadPeriod ?? period}
-          start={start ?? interval?.start ?? DateTime.now()}
-          end={end ?? interval?.end ?? DateTime.now()}
+          period={period}
+          start={interval.start}
+          end={interval.end}
           className="flex-1 h-full min-w-[400px] p-2"
           maxYIsPeriod={maxYIsPeriod}
           yAxisInterval={yAxisInterval}
@@ -237,26 +223,14 @@ function AppUsagePerPeriodHistory() {
 }
 
 function SessionHistory() {
-  const week = usePeriodInterval("week");
   const { interval } = useHistoryContext();
 
-  const effectiveInterval = interval ?? week;
-
-  const { ret: usages, isLoading: usagesLoading } = useAppSessionUsages({
-    start: effectiveInterval.start,
-    end: effectiveInterval.end,
-  });
+  const { ret: usages, isLoading: usagesLoading } =
+    useAppSessionUsages(interval);
   const { ret: interactions, isLoading: interactionPeriodsLoading } =
-    useInteractionPeriods({
-      start: effectiveInterval.start,
-      end: effectiveInterval.end,
-    });
-  const { ret: systemEvents, isLoading: systemEventsLoading } = useSystemEvents(
-    {
-      start: effectiveInterval.start,
-      end: effectiveInterval.end,
-    },
-  );
+    useInteractionPeriods(interval);
+  const { ret: systemEvents, isLoading: systemEventsLoading } =
+    useSystemEvents(interval);
 
   return (
     <div className="sticky rounded-lg bg-card shadow-xs border border-border overflow-clip">
@@ -267,7 +241,7 @@ function SessionHistory() {
         interactionPeriodsLoading={interactionPeriodsLoading}
         systemEvents={systemEvents}
         systemEventsLoading={systemEventsLoading}
-        interval={effectiveInterval}
+        interval={interval}
       />
     </div>
   );

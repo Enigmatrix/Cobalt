@@ -37,8 +37,8 @@ export interface IntervalControls {
 }
 
 export function useIntervalControls(
-  interval: Interval | null,
-  setInterval: (interval: Interval | null) => void,
+  interval: Interval,
+  setInterval: (interval: Interval) => void,
 ): IntervalControls {
   const today = useToday();
 
@@ -84,11 +84,11 @@ export function useIntervalControls(
 export function useIntervalControlsWithDefault(
   initialPeriod: Period,
 ): IntervalControls & {
-  interval: Interval | null;
-  setInterval: (interval: Interval | null) => void;
+  interval: Interval;
+  setInterval: (interval: Interval) => void;
 } {
   const initialInterval = usePeriodInterval(initialPeriod);
-  const [interval, setInterval] = useState<Interval | null>(initialInterval);
+  const [interval, setInterval] = useState<Interval>(initialInterval);
   const controls = useIntervalControls(interval, setInterval);
   return { ...controls, interval, setInterval };
 }

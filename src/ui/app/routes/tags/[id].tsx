@@ -2,6 +2,7 @@ import { ChooseMultiApps } from "@/components/app/choose-multi-apps";
 import { ColorPicker } from "@/components/color-picker";
 import { EditableText } from "@/components/editable-text";
 import { ScoreBadge, ScoreEdit } from "@/components/tag/score";
+import { DateRangePicker } from "@/components/time/date-range-picker";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,17 +30,22 @@ import { NextButton, PrevButton, UsageCard } from "@/components/usage-card";
 import { Gantt } from "@/components/viz/gantt2";
 import Heatmap from "@/components/viz/heatmap";
 import { UsageChart } from "@/components/viz/usage-chart";
-import { useLastNonNull } from "@/hooks/use-last";
+import {
+  VizCard,
+  VizCardAction,
+  VizCardContent,
+  VizCardHeader,
+  VizCardTitle,
+} from "@/components/viz/viz-card";
 import { useAlerts, useTag } from "@/hooks/use-refresh";
 import {
   useAppDurationsPerPeriod,
   useAppSessionUsages,
+  useSingleEntityUsageFromPerPeriod,
   useTagDurationsPerPeriod,
+  useTotalUsageFromPerPeriod,
 } from "@/hooks/use-repo";
-import {
-  useIntervalControlsWithDefault,
-  usePeriodInterval,
-} from "@/hooks/use-time";
+import { useIntervalControlsWithDefault } from "@/hooks/use-time";
 import type { App, Ref, Tag } from "@/lib/entities";
 import { useAppState } from "@/lib/state";
 import {
@@ -102,15 +108,6 @@ function TagPage({ tag }: { tag: Tag }) {
     await removeTag(tag.id);
   }, [removeTag, navigate, tag.id]);
 
-  const {
-    interval: yearIntervalNullable,
-    canGoNext: yearCanGoNext,
-    goNext: yearGoNext,
-    canGoPrev: yearCanGoPrev,
-    goPrev: yearGoPrev,
-  } = useIntervalControlsWithDefault("year");
-  const yearInterval = useLastNonNull(yearIntervalNullable);
-
   const alerts = useAlerts();
   const tagAlerts = useMemo(
     () =>
@@ -120,54 +117,12 @@ function TagPage({ tag }: { tag: Tag }) {
     [alerts, tag],
   );
 
-  const {
-    isLoading: isYearDataLoading,
-    tagUsage: yearUsage,
-    totalUsage: yearTotalUsage,
-    usages: yearUsages,
-    start: yearStart,
-  } = useTagDurationsPerPeriod({
-    start: yearInterval.start,
-    end: yearInterval.end,
-    period: "day",
-    tag,
-  });
-  const yearData = useMemo(() => {
-    return new Map(
-      _(yearUsages[tag.id] ?? [])
-        .map(
-          (appDur) =>
-            [+ticksToDateTime(appDur.group), appDur.duration] as const,
-        )
-        .value(),
-    );
-  }, [yearUsages, tag.id]);
-
-  const scaling = useCallback((value: number) => {
-    return _.clamp(ticksToDuration(value).rescale().hours / 8, 0.2, 1);
-  }, []);
-
   const setTagApps = useCallback(
     async (apps: Ref<App>[]) => {
       await updateTagApps(tag, apps);
     },
     [tag, updateTagApps],
   );
-
-  const day = usePeriodInterval("day");
-
-  const { ret: appSessionUsages, isLoading: appSessionUsagesLoading } =
-    useAppSessionUsages({
-      start: day.start,
-      end: day.end,
-    });
-  const tagAppSessionUsages = useMemo(() => {
-    return _(tag.apps)
-      .filter((appId) => appSessionUsages[appId] !== undefined)
-      .map((appId) => [appId, appSessionUsages[appId]] as const)
-      .fromPairs()
-      .value();
-  }, [appSessionUsages, tag]);
 
   return (
     <>
@@ -292,45 +247,9 @@ function TagPage({ tag }: { tag: Tag }) {
             />
           </div>
 
-          <UsageCard
-            usage={yearUsage}
-            totalUsage={yearTotalUsage}
-            interval={yearInterval}
-            actions={
-              <>
-                <PrevButton
-                  canGoPrev={yearCanGoPrev}
-                  isLoading={isYearDataLoading}
-                  goPrev={yearGoPrev}
-                />
-                <NextButton
-                  canGoNext={yearCanGoNext}
-                  isLoading={isYearDataLoading}
-                  goNext={yearGoNext}
-                />
-              </>
-            }
-          >
-            <div className="p-4">
-              <Heatmap
-                data={yearData}
-                scaling={scaling}
-                startDate={yearStart ?? yearInterval.start}
-                fullCellColorRgb={tag.color}
-                innerClassName="min-h-[200px]"
-                firstDayOfMonthClassName="stroke-card-foreground/50"
-                tagId={tag.id}
-              />
-            </div>
-          </UsageCard>
+          <TagUsageHeatmapCard tag={tag} />
 
-          <div className="sticky rounded-xl bg-muted/50 border border-border overflow-clip">
-            <Gantt
-              usages={tagAppSessionUsages}
-              usagesLoading={appSessionUsagesLoading}
-              interval={day}
-            />
-          </div>
+          <TagSessionsCard tag={tag} />
         </div>
       </div>
     </>
@@ -348,27 +267,20 @@ function TagUsageBarChartCard({
   xAxisLabelFormatter: (dt: DateTime) => string;
   tag: Tag;
 }) {
-  const {
-    interval: intervalNullable,
-    canGoNext,
-    goNext,
-    canGoPrev,
-    goPrev,
-  } = useIntervalControlsWithDefault(timePeriod);
-  const interval = useLastNonNull(intervalNullable);
+  const { interval, canGoNext, goNext, canGoPrev, goPrev } =
+    useIntervalControlsWithDefault(timePeriod);
 
-  const { isLoading, totalUsage, appDurationsPerPeriod, start, end } =
-    useAppDurationsPerPeriod({
-      start: interval.start,
-      end: interval.end,
-      period,
-    });
+  const { isLoading, ret: appDurationsPerPeriod } = useAppDurationsPerPeriod({
+    ...interval,
+    period,
+  });
   const { totalTagUsage } = useMemo(() => {
     const totalTagUsage = _(tag.apps)
       .flatMap((appId) => appDurationsPerPeriod[appId] ?? [])
       .sumBy("duration");
     return { totalTagUsage };
   }, [appDurationsPerPeriod, tag]);
+  const totalUsage = useTotalUsageFromPerPeriod(appDurationsPerPeriod);
 
   const children = useMemo(
     () => (
@@ -377,8 +289,8 @@ function TagUsageBarChartCard({
           appDurationsPerPeriod={appDurationsPerPeriod}
           onlyShowOneTag={tag.id}
           period={period}
-          start={start ?? interval.start}
-          end={end ?? interval.end}
+          start={interval.start}
+          end={interval.end}
           xAxisFormatter={xAxisLabelFormatter}
           className="aspect-none"
           maxYIsPeriod
@@ -386,15 +298,7 @@ function TagUsageBarChartCard({
         />
       </div>
     ),
-    [
-      appDurationsPerPeriod,
-      period,
-      xAxisLabelFormatter,
-      interval,
-      start,
-      end,
-      tag.id,
-    ],
+    [appDurationsPerPeriod, period, xAxisLabelFormatter, interval, tag.id],
   );
 
   return (
@@ -418,5 +322,122 @@ function TagUsageBarChartCard({
         </>
       }
     />
+  );
+}
+
+function TagUsageHeatmapCard({ tag }: { tag: Tag }) {
+  const { interval, canGoNext, goNext, canGoPrev, goPrev } =
+    useIntervalControlsWithDefault("year");
+
+  const { isLoading: isLoading, ret: usages } = useTagDurationsPerPeriod({
+    ...interval,
+    period: "day",
+  });
+  const totalUsage = useTotalUsageFromPerPeriod(usages);
+  const usage = useSingleEntityUsageFromPerPeriod(usages, tag.id);
+
+  const data = useMemo(() => {
+    return new Map(
+      _(usages[tag.id] ?? [])
+        .map(
+          (appDur) =>
+            [+ticksToDateTime(appDur.group), appDur.duration] as const,
+        )
+        .value(),
+    );
+  }, [usages, tag.id]);
+
+  const scaling = useCallback((value: number) => {
+    return _.clamp(ticksToDuration(value).rescale().hours / 8, 0.2, 1);
+  }, []);
+  return (
+    <UsageCard
+      usage={usage}
+      totalUsage={totalUsage}
+      interval={interval}
+      actions={
+        <>
+          <PrevButton
+            canGoPrev={canGoPrev}
+            isLoading={isLoading}
+            goPrev={goPrev}
+          />
+          <NextButton
+            canGoNext={canGoNext}
+            isLoading={isLoading}
+            goNext={goNext}
+          />
+        </>
+      }
+    >
+      <div className="p-4">
+        <Heatmap
+          data={data}
+          scaling={scaling}
+          startDate={interval.start}
+          fullCellColorRgb={tag.color}
+          innerClassName="min-h-[200px]"
+          firstDayOfMonthClassName="stroke-card-foreground/50"
+          tagId={tag.id}
+        />
+      </div>
+    </UsageCard>
+  );
+}
+
+function TagSessionsCard({ tag }: { tag: Tag }) {
+  const { interval, canGoNext, goNext, canGoPrev, goPrev, setInterval } =
+    useIntervalControlsWithDefault("day");
+
+  const { ret: usages, isLoading: usagesLoading } =
+    useAppSessionUsages(interval);
+  const tagAppSessionUsages = useMemo(() => {
+    return _(tag.apps)
+      .filter((appId) => usages[appId] !== undefined)
+      .map((appId) => [appId, usages[appId]] as const)
+      .fromPairs()
+      .value();
+  }, [usages, tag]);
+
+  const isLoading = usagesLoading;
+
+  return (
+    <VizCard>
+      <VizCardHeader className="pb-4 has-data-[slot=card-action]:grid-cols-[minmax(0,1fr)_auto]">
+        <VizCardTitle className="pl-4 pt-4 text-lg font-bold">
+          Sessions
+        </VizCardTitle>
+
+        <VizCardAction className="flex mt-3 mr-1.5">
+          {
+            <>
+              <PrevButton
+                canGoPrev={canGoPrev}
+                isLoading={isLoading}
+                goPrev={goPrev}
+              />
+              <DateRangePicker
+                className="min-w-32"
+                value={interval}
+                onChange={setInterval}
+              />
+              <NextButton
+                canGoNext={canGoNext}
+                isLoading={isLoading}
+                goNext={goNext}
+              />
+            </>
+          }
+        </VizCardAction>
+      </VizCardHeader>
+
+      <VizCardContent>
+        <Gantt
+          usages={tagAppSessionUsages}
+          usagesLoading={usagesLoading}
+          interval={interval}
+        />
+      </VizCardContent>
+    </VizCard>
   );
 }
