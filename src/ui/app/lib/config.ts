@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { Duration } from "luxon";
+import { create } from "zustand";
 
 export interface ConfigDuration {
   secs: number;
@@ -20,35 +21,47 @@ export function toDuration(duration: ConfigDuration) {
   });
 }
 
-export class Config {
-  private raw: RawConfig;
+interface ConfigReadonly {
+  trackIncognito: boolean;
 
-  constructor(raw: RawConfig) {
-    this.raw = raw;
-  }
-
-  get trackIncognito() {
-    return this.raw.trackIncognito ?? false;
-  }
-
-  get maxIdleDuration() {
-    return toDuration(this.raw.maxIdleDuration);
-  }
-
-  get pollDuration() {
-    return toDuration(this.raw.pollDuration);
-  }
-
-  get alertDuration() {
-    return toDuration(this.raw.alertDuration);
-  }
+  maxIdleDuration: Duration;
+  pollDuration: Duration;
+  alertDuration: Duration;
 }
 
-export async function readConfig() {
-  return new Config(await invoke<RawConfig>("read_config"));
+interface Config extends ConfigReadonly {
+  setTrackIncognito: (value: boolean) => Promise<void>;
 }
 
-export async function setTrackIncognito(value: boolean) {
+export const useConfig = create<Config>((set) => {
+  return {
+    trackIncognito: false,
+    maxIdleDuration: Duration.fromObject({ seconds: 0 }),
+    pollDuration: Duration.fromObject({ seconds: 0 }),
+    alertDuration: Duration.fromObject({ seconds: 0 }),
+    setTrackIncognito: async (value) => {
+      await setTrackIncognito(value);
+      set(await readConfigReadonly());
+    },
+  };
+});
+
+export async function refresh() {
+  const config = await readConfigReadonly();
+  useConfig.setState(config);
+}
+
+export async function readConfigReadonly() {
+  const raw = await invoke<RawConfig>("read_config");
+  return {
+    trackIncognito: raw.trackIncognito ?? false,
+    maxIdleDuration: toDuration(raw.maxIdleDuration),
+    pollDuration: toDuration(raw.pollDuration),
+    alertDuration: toDuration(raw.alertDuration),
+  } satisfies ConfigReadonly;
+}
+
+async function setTrackIncognito(value: boolean) {
   return await invoke("config_set_track_incognito", { value });
 }
 

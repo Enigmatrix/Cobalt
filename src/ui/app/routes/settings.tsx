@@ -10,12 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Switch } from "@/components/ui/switch";
-import {
-  readConfig,
-  setTrackIncognito as setTrackIncognitoFn,
-} from "@/lib/config";
-import { error } from "@/lib/log";
-import { useEffect, useState, type ReactNode } from "react";
+import { useConfig } from "@/lib/config";
+import { type ReactNode } from "react";
 
 export function Setting({
   title,
@@ -44,27 +40,7 @@ export function Setting({
 
 export default function Settings() {
   const { theme, setTheme } = useTheme();
-  const [trackIncognito, setTrackIncognitoInner] = useState(false);
-
-  useEffect(() => {
-    readConfig()
-      .then((config) => {
-        setTrackIncognitoInner(config.trackIncognito);
-      })
-      .catch((err) => {
-        error("Failed to read config", err);
-      });
-  }, []);
-
-  function setTrackIncognito(value: boolean) {
-    setTrackIncognitoFn(value)
-      .then(() => {
-        setTrackIncognitoInner(value);
-      })
-      .catch((err) => {
-        error("Failed to set track incognito", err);
-      });
-  }
+  const { trackIncognito, setTrackIncognito } = useConfig();
 
   return (
     <>

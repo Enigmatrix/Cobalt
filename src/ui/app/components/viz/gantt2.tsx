@@ -174,8 +174,23 @@ export function Gantt({
   const [chartInit, setChartInit] = useState(false);
   const [dataZoom, setDataZoom] = useDebounce(100, 200);
 
+  // Sort apps by total usage duration - this might be slow?
   const appIds = useMemo(() => {
-    return Object.keys(usagesPerAppSession).map((appId) => +appId as Ref<App>);
+    return _(usagesPerAppSession)
+      .mapValues(
+        (sessions, appId) =>
+          [
+            +appId as Ref<App>,
+            _(sessions)
+              .flatMap((session) =>
+                session.usages.map((usage) => usage.end - usage.start),
+              )
+              .sum(),
+          ] as const,
+      )
+      .sortBy(([, duration]) => -duration)
+      .map(([appId]) => appId)
+      .value();
   }, [usagesPerAppSession]);
   const apps = useApps(appIds);
   const appMap = useAppState((state) => state.apps);
