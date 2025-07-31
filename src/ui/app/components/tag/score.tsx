@@ -23,6 +23,9 @@ export const Colors = {
   worst: "bg-red-400 dark:bg-red-800",
 };
 
+export const FOCUS_STREAK_BACKGROUND = "rgba(0, 225, 0, 0.35)";
+export const DISTRACTIVE_STREAK_BACKGROUND = "rgba(200, 0, 0, 0.35)";
+
 /**
  * Converts a score value (-100 to 100) into a descriptive string
  * @param score A number between -100 and 100

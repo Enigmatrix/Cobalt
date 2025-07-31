@@ -402,6 +402,26 @@ pub struct FocusStreakSettings {
     pub max_focus_gap: Duration,
 }
 
+impl From<util::config::FocusStreakSettings> for FocusStreakSettings {
+    fn from(settings: util::config::FocusStreakSettings) -> Self {
+        Self {
+            min_focus_score: settings.min_focus_score.into(),
+            min_focus_usage_dur: to_ticks(settings.min_focus_usage_dur),
+            max_focus_gap: to_ticks(settings.max_focus_gap),
+        }
+    }
+}
+
+impl From<FocusStreakSettings> for util::config::FocusStreakSettings {
+    fn from(settings: FocusStreakSettings) -> Self {
+        Self {
+            min_focus_score: settings.min_focus_score.into(),
+            min_focus_usage_dur: from_ticks(settings.min_focus_usage_dur),
+            max_focus_gap: from_ticks(settings.max_focus_gap),
+        }
+    }
+}
+
 /// Settings for distractive streaks.
 #[derive(FromRow, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -412,4 +432,34 @@ pub struct DistractiveStreakSettings {
     pub min_distractive_usage_dur: Duration,
     /// The maximum gap between two distractive streaks.
     pub max_distractive_gap: Duration,
+}
+
+impl From<util::config::DistractiveStreakSettings> for DistractiveStreakSettings {
+    fn from(settings: util::config::DistractiveStreakSettings) -> Self {
+        Self {
+            max_distractive_score: settings.max_distractive_score.into(),
+            min_distractive_usage_dur: to_ticks(settings.min_distractive_usage_dur),
+            max_distractive_gap: to_ticks(settings.max_distractive_gap),
+        }
+    }
+}
+
+impl From<DistractiveStreakSettings> for util::config::DistractiveStreakSettings {
+    fn from(settings: DistractiveStreakSettings) -> Self {
+        Self {
+            max_distractive_score: settings.max_distractive_score.into(),
+            min_distractive_usage_dur: from_ticks(settings.min_distractive_usage_dur),
+            max_distractive_gap: from_ticks(settings.max_distractive_gap),
+        }
+    }
+}
+
+const TICKS_PER_NANOSECOND: i64 = 100;
+
+fn to_ticks(duration: std::time::Duration) -> i64 {
+    duration.as_nanos() as i64 / TICKS_PER_NANOSECOND
+}
+
+fn from_ticks(ticks: i64) -> std::time::Duration {
+    std::time::Duration::from_nanos((ticks * TICKS_PER_NANOSECOND) as u64)
 }

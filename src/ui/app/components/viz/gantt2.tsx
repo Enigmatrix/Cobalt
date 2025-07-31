@@ -1,4 +1,8 @@
 import AppIcon from "@/components/app/app-icon";
+import {
+  DISTRACTIVE_STREAK_BACKGROUND,
+  FOCUS_STREAK_BACKGROUND,
+} from "@/components/tag/score";
 import { DurationText } from "@/components/time/duration-text";
 import { DateTimeText } from "@/components/time/time-text";
 import { Text } from "@/components/ui/text";
@@ -14,7 +18,7 @@ import {
   type SystemEventEnum,
   type Usage,
 } from "@/lib/entities";
-import type { InteractionPeriod, SystemEvent } from "@/lib/entities";
+import type { InteractionPeriod, Streak, SystemEvent } from "@/lib/entities";
 import type { AppSessionUsages } from "@/lib/repo";
 import { useAppState } from "@/lib/state";
 import {
@@ -121,12 +125,16 @@ interface GanttProps {
   usages: AppSessionUsages;
   usagesLoading?: boolean;
 
+  streaks?: Streak[];
+  streaksLoading?: boolean;
+
   interactionPeriods?: InteractionPeriod[];
   interactionPeriodsLoading?: boolean;
 
   systemEvents?: SystemEvent[];
   systemEventsLoading?: boolean;
 
+  durationSummariesClassName?: ClassValue;
   defaultExpanded?: Record<Ref<App>, boolean>;
   interval: Interval;
   interactionInfoBarHeight?: number;
@@ -141,10 +149,13 @@ interface GanttProps {
 export function Gantt({
   usages: usagesPerAppSession,
   usagesLoading,
+  streaks,
+  streaksLoading,
   interactionPeriods,
   interactionPeriodsLoading,
   systemEvents,
   systemEventsLoading,
+  durationSummariesClassName,
   defaultExpanded,
   interval,
   infoGap = 300,
@@ -389,9 +400,56 @@ export function Gantt({
 
     const timeGap = minRenderTimeGap(interval, width, dataZoom);
     const color = getVarColorAsHex("primary");
-    const series = seriesKeys.map((key) =>
-      seriesKeyToSeries(key, timeGap, color),
-    );
+
+    // ---------------------------
+    // Focus / Distractive Streaks
+    // ---------------------------
+    // Render background areas for the provided streaks using markArea. If a streak
+    // is focused we render it in green, otherwise in red. We span the whole
+    // vertical space of the chart so that it covers every bar.
+
+    const streakMarkAreaData: echarts.MarkAreaComponentOption["data"] = (
+      streaks ?? []
+    )
+      .filter((p) => p.start && p.end)
+      .map((p) => [
+        {
+          coord: [ticksToUnixMillis(p.start), 0],
+          // Individual color per streak
+          itemStyle: {
+            color: p.isFocused
+              ? FOCUS_STREAK_BACKGROUND
+              : DISTRACTIVE_STREAK_BACKGROUND,
+          },
+        },
+        {
+          coord: [ticksToUnixMillis(p.end), seriesHeight],
+        },
+      ]);
+
+    const streakSeries: echarts.SeriesOption[] = streakMarkAreaData.length
+      ? [
+          {
+            type: "scatter", // dummy series just to host markArea
+            name: "streaks",
+            data: [],
+            silent: true,
+            markArea: {
+              silent: true,
+              z: -2000,
+              itemStyle: {
+                opacity: 0.3,
+              },
+              data: streakMarkAreaData,
+            },
+          } as echarts.ScatterSeriesOption,
+        ]
+      : [];
+
+    const series = [
+      ...streakSeries,
+      ...seriesKeys.map((key) => seriesKeyToSeries(key, timeGap, color)),
+    ];
 
     const startValue = getDataZoomYStartValue(chartInstanceRef.current!);
 
@@ -454,6 +512,7 @@ export function Gantt({
     chartInit,
     dataZoom,
     innerHeight,
+    streaks,
   ]);
 
   useEffect(() => {
@@ -749,7 +808,13 @@ export function Gantt({
         <div style={style}>
           {key.type === "interactionBar" ? (
             <InteractionInfoBar
-              loading={!!(interactionPeriodsLoading ?? systemEventsLoading)}
+              loading={
+                !!(
+                  interactionPeriodsLoading ??
+                  systemEventsLoading ??
+                  streaksLoading
+                )
+              }
               interactionInfoBarHeight={interactionInfoBarHeight}
               key={key.type + key.id}
             />
@@ -783,6 +848,7 @@ export function Gantt({
       interactionInfoBarHeight,
       interactionPeriodsLoading,
       systemEventsLoading,
+      streaksLoading,
       toggleApp,
       expanded,
       appMap,
@@ -824,10 +890,28 @@ export function Gantt({
     <div className="w-full h-full sticky">
       {/* Top bar */}
       <div
-        ref={topRef}
         className="sticky z-10 w-full border-border border-b bg-card top-0 shadow-md dark:shadow-xl"
         style={{ height: 90 }}
-      />
+      >
+        <div ref={topRef} className="w-full h-full"></div>
+
+        <div
+          className="absolute top-0 left-0 bottom-0"
+          style={{ width: infoGap }}
+        >
+          <div className="w-full h-full py-0 px-4">
+            <DurationSummaries
+              className={durationSummariesClassName}
+              usages={usagesPerAppSession}
+              usagesLoading={usagesLoading}
+              streaks={streaks}
+              streaksLoading={streaksLoading}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
       <div className="relative">
         <div
           ref={chartRef}
@@ -1105,6 +1189,87 @@ function InteractionTooltip({
         <DateTimeRange start={interaction.start} end={interaction.end} />
       </div>
     )
+  );
+}
+
+function DurationSummaries({
+  usages,
+  usagesLoading,
+
+  streaks,
+  streaksLoading,
+
+  className,
+}: {
+  usages: AppSessionUsages;
+  usagesLoading?: boolean;
+
+  streaks?: Streak[];
+  streaksLoading?: boolean;
+
+  className?: ClassValue;
+}) {
+  const [focusStreakUsage, distractiveStreakUsage] = useMemo(() => {
+    if (!streaks) {
+      return [0, 0];
+    }
+    return [
+      _(streaks)
+        .filter((streak) => streak.isFocused)
+        .sumBy((streak) => streak.end - streak.start),
+      _(streaks)
+        .filter((streak) => !streak.isFocused)
+        .sumBy((streak) => streak.end - streak.start),
+    ];
+  }, [streaks]);
+
+  const totalUsage = useMemo(() => {
+    return _(usages)
+      .flatMap((sessions) => Object.values(sessions))
+      .flatMap((session) =>
+        Object.values(session.usages).map((usage) => usage.end - usage.start),
+      )
+      .sum();
+  }, [usages]);
+
+  return (
+    <div
+      className={cn(
+        "flex items-center gap-1 text-muted-foreground text-lg font-semibold",
+        className,
+      )}
+    >
+      {streaks &&
+        (streaksLoading ? (
+          <Loader2Icon className="animate-spin" />
+        ) : (
+          <>
+            <DurationText
+              ticks={focusStreakUsage}
+              className="text-green-500/80"
+              description="Focus Streaks"
+            />
+            <div>/</div>
+            <DurationText
+              ticks={distractiveStreakUsage}
+              className="text-red-400/80"
+              description="Distractive Streaks"
+            />
+          </>
+        ))}
+      {streaks && <div>/</div>}
+      {usagesLoading ? (
+        <Loader2Icon className="animate-spin" />
+      ) : (
+        <>
+          <DurationText
+            ticks={totalUsage}
+            className="text-foreground/80"
+            description="Total Usage"
+          />
+        </>
+      )}
+    </div>
   );
 }
 

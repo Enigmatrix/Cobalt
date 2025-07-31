@@ -13,10 +13,58 @@ pub struct Config {
     ui_log_filter: String,
 
     track_incognito: Option<bool>,
+    default_focus_streak_settings: FocusStreakSettings,
+    default_distractive_streak_settings: DistractiveStreakSettings,
 
     max_idle_duration: Duration,
     poll_duration: Duration,
     alert_duration: Duration,
+}
+
+/// Settings for focus streaks.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FocusStreakSettings {
+    /// The minimum score of a focused app.
+    pub min_focus_score: f64,
+    /// The minimum duration of a focused usage.
+    pub min_focus_usage_dur: Duration,
+    /// The maximum gap between two focused streaks.
+    pub max_focus_gap: Duration,
+}
+
+impl Default for FocusStreakSettings {
+    fn default() -> Self {
+        Self {
+            min_focus_score: 0.0,
+            // harder to be focused
+            min_focus_usage_dur: Duration::from_secs(60),
+            max_focus_gap: Duration::from_secs(10),
+        }
+    }
+}
+
+/// Settings for distractive streaks.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DistractiveStreakSettings {
+    /// The maximum score of a distractive app.
+    pub max_distractive_score: f64,
+    /// The minimum duration of a distractive usage.
+    pub min_distractive_usage_dur: Duration,
+    /// The maximum gap between two distractive streaks.
+    pub max_distractive_gap: Duration,
+}
+
+impl Default for DistractiveStreakSettings {
+    fn default() -> Self {
+        Self {
+            max_distractive_score: 0.0,
+            // easier to be distracted
+            min_distractive_usage_dur: Duration::from_secs(10),
+            max_distractive_gap: Duration::from_secs(60),
+        }
+    }
 }
 
 /// The name of the config file during tests
@@ -33,6 +81,8 @@ impl Default for Config {
             engine_log_filter: "Info".to_string(),
             ui_log_filter: "Info".to_string(),
             track_incognito: Some(false),
+            default_focus_streak_settings: FocusStreakSettings::default(),
+            default_distractive_streak_settings: DistractiveStreakSettings::default(),
             max_idle_duration: Duration::from_secs(5),
             poll_duration: Duration::from_secs(1),
             alert_duration: Duration::from_secs(1),
@@ -99,6 +149,32 @@ impl Config {
             replace = true;
         }
 
+        if self.default_focus_streak_settings.min_focus_score
+            < self
+                .default_distractive_streak_settings
+                .max_distractive_score
+        {
+            replace = true;
+        }
+        if self.default_focus_streak_settings.min_focus_score < -100.0
+            || self.default_focus_streak_settings.min_focus_score > 100.0
+        {
+            replace = true;
+        }
+        if self
+            .default_distractive_streak_settings
+            .max_distractive_score
+            < -100.0
+            || self
+                .default_distractive_streak_settings
+                .max_distractive_score
+                > 100.0
+        {
+            replace = true;
+        }
+
+        // Streak durations have no real limits since it doesn't affect the engine.
+
         if replace {
             Self::replace_with_default()?;
             *self = Default::default();
@@ -155,6 +231,23 @@ impl Config {
         Ok(())
     }
 
+    /// Set default focus streak settings
+    pub fn set_default_focus_streak_settings(&mut self, value: FocusStreakSettings) -> Result<()> {
+        self.default_focus_streak_settings = value;
+        self.write()?;
+        Ok(())
+    }
+
+    /// Set default distractive streak settings
+    pub fn set_default_distractive_streak_settings(
+        &mut self,
+        value: DistractiveStreakSettings,
+    ) -> Result<()> {
+        self.default_distractive_streak_settings = value;
+        self.write()?;
+        Ok(())
+    }
+
     /// UI Log filter (tracing)
     pub fn ui_log_filter(&self) -> &str {
         &self.ui_log_filter
@@ -173,6 +266,16 @@ impl Config {
     /// How often the engine should check for alerts firing
     pub fn alert_duration(&self) -> Duration {
         self.alert_duration
+    }
+
+    /// Default focus streak settings
+    pub fn default_focus_streak_settings(&self) -> &FocusStreakSettings {
+        &self.default_focus_streak_settings
+    }
+
+    /// Default distractive streak settings
+    pub fn default_distractive_streak_settings(&self) -> &DistractiveStreakSettings {
+        &self.default_distractive_streak_settings
     }
 
     /// Write the config to the appsettings.json file
