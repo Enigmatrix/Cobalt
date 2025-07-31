@@ -9,7 +9,7 @@ import {
   getTagDurationsPerPeriod,
 } from "@/lib/repo";
 import type { EntityMap } from "@/lib/state";
-import { getScore, SCORE_SENTINEL } from "@/lib/stats";
+import { getScore } from "@/lib/stats";
 import _ from "lodash";
 import type { DateTime } from "luxon";
 import { useMemo } from "react";
@@ -75,7 +75,7 @@ export const useTagDurationsPerPeriod = makeUseRepo(
   getTagDurationsPerPeriod,
   {},
 );
-export const useScore = makeUseRepo(getScore, SCORE_SENTINEL);
+export const useScore = makeUseRepo(getScore, 0);
 
 export function useTotalUsageFromPerPeriod<T>(
   durationsPerPeriod: EntityMap<T, WithGroupedDuration<T>[]>,

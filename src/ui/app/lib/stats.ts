@@ -3,8 +3,6 @@ import { dateTimeToTicks } from "@/lib/time";
 import { invoke } from "@tauri-apps/api/core";
 import { DateTime } from "luxon";
 
-export const SCORE_SENTINEL = null as unknown as number;
-
 export async function getScore({
   options,
   start,
