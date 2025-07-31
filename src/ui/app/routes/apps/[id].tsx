@@ -3,6 +3,7 @@ import { ColorPicker } from "@/components/color-picker";
 import { EditableText } from "@/components/editable-text";
 import { ChooseTag } from "@/components/tag/choose-tag";
 import { ScoreCircle } from "@/components/tag/score";
+import { DateRangePicker } from "@/components/time/date-range-picker";
 import { Badge } from "@/components/ui/badge";
 import {
   Breadcrumb,
@@ -20,6 +21,13 @@ import { NextButton, PrevButton, UsageCard } from "@/components/usage-card";
 import { Gantt } from "@/components/viz/gantt2";
 import Heatmap from "@/components/viz/heatmap";
 import { UsageChart } from "@/components/viz/usage-chart";
+import {
+  VizCard,
+  VizCardAction,
+  VizCardContent,
+  VizCardHeader,
+  VizCardTitle,
+} from "@/components/viz/viz-card";
 import { useClipboard } from "@/hooks/use-clipboard";
 import { useApp, useTag } from "@/hooks/use-refresh";
 import {
@@ -28,10 +36,7 @@ import {
   useSingleEntityUsageFromPerPeriod,
   useTotalUsageFromPerPeriod,
 } from "@/hooks/use-repo";
-import {
-  useIntervalControlsWithDefault,
-  usePeriodInterval,
-} from "@/hooks/use-time";
+import { useIntervalControlsWithDefault } from "@/hooks/use-time";
 import { type App, type Ref, type Tag } from "@/lib/entities";
 import { useAppState } from "@/lib/state";
 import {
@@ -75,46 +80,6 @@ function AppPage({ app }: { app: App }) {
   );
 
   const { copy, hasCopied } = useClipboard();
-
-  const {
-    interval: yearInterval,
-    canGoNext: yearCanGoNext,
-    goNext: yearGoNext,
-    canGoPrev: yearCanGoPrev,
-    goPrev: yearGoPrev,
-  } = useIntervalControlsWithDefault("year");
-
-  const { isLoading: isYearDataLoading, ret: yearUsages } =
-    useAppDurationsPerPeriod({
-      ...yearInterval,
-      period: "day",
-    });
-  const yearTotalUsage = useTotalUsageFromPerPeriod(yearUsages);
-  const yearUsage = useSingleEntityUsageFromPerPeriod(yearUsages, app.id);
-
-  const yearData = useMemo(() => {
-    return new Map(
-      _(yearUsages[app.id] ?? [])
-        .map(
-          (appDur) =>
-            [+ticksToDateTime(appDur.group), appDur.duration] as const,
-        )
-        .value(),
-    );
-  }, [yearUsages, app.id]);
-
-  const scaling = useCallback((value: number) => {
-    return _.clamp(ticksToDuration(value).rescale().hours / 8, 0.2, 1);
-  }, []);
-
-  const day = usePeriodInterval("day");
-  const { ret: appSessionUsages, isLoading: appSessionUsagesLoading } =
-    useAppSessionUsages(day);
-  const onlyAppSessionUsages = useMemo(() => {
-    return appSessionUsages[app.id]
-      ? { [app.id]: appSessionUsages[app.id] }
-      : {};
-  }, [appSessionUsages, app.id]);
 
   return (
     <>
@@ -249,46 +214,9 @@ function AppPage({ app }: { app: App }) {
             />
           </div>
 
-          <UsageCard
-            usage={yearUsage}
-            totalUsage={yearTotalUsage}
-            interval={yearInterval}
-            actions={
-              <>
-                <PrevButton
-                  canGoPrev={yearCanGoPrev}
-                  isLoading={isYearDataLoading}
-                  goPrev={yearGoPrev}
-                />
-                <NextButton
-                  canGoNext={yearCanGoNext}
-                  isLoading={isYearDataLoading}
-                  goNext={yearGoNext}
-                />
-              </>
-            }
-          >
-            <div className="p-4">
-              <Heatmap
-                data={yearData}
-                scaling={scaling}
-                startDate={yearInterval.start}
-                fullCellColorRgb={app.color}
-                innerClassName="min-h-[200px]"
-                firstDayOfMonthClassName="stroke-card-foreground/50"
-                appId={app.id}
-              />
-            </div>
-          </UsageCard>
+          <AppUsageHeatmapCard app={app} />
 
-          <div className="sticky rounded-xl bg-muted/50 border border-border overflow-clip">
-            <Gantt
-              usages={onlyAppSessionUsages}
-              usagesLoading={appSessionUsagesLoading}
-              defaultExpanded={{ [app.id]: true }}
-              interval={day}
-            />
-          </div>
+          <AppSessionsCard app={app} />
         </div>
       </div>
     </>
@@ -422,5 +350,123 @@ function AppUsageBarChartCard({
         </>
       }
     />
+  );
+}
+
+function AppUsageHeatmapCard({ app }: { app: App }) {
+  const { interval, canGoNext, goNext, canGoPrev, goPrev } =
+    useIntervalControlsWithDefault("year");
+
+  const { isLoading, ret: appDurationsPerPeriod } = useAppDurationsPerPeriod({
+    ...interval,
+    period: "day",
+  });
+  const totalUsage = useTotalUsageFromPerPeriod(appDurationsPerPeriod);
+  const usage = useSingleEntityUsageFromPerPeriod(
+    appDurationsPerPeriod,
+    app.id,
+  );
+
+  const data = useMemo(() => {
+    return new Map(
+      _(appDurationsPerPeriod[app.id] ?? [])
+        .map(
+          (appDur) =>
+            [+ticksToDateTime(appDur.group), appDur.duration] as const,
+        )
+        .value(),
+    );
+  }, [appDurationsPerPeriod, app.id]);
+
+  const scaling = useCallback((value: number) => {
+    return _.clamp(ticksToDuration(value).rescale().hours / 8, 0.2, 1);
+  }, []);
+
+  return (
+    <UsageCard
+      usage={usage}
+      totalUsage={totalUsage}
+      interval={interval}
+      actions={
+        <>
+          <PrevButton
+            canGoPrev={canGoPrev}
+            isLoading={isLoading}
+            goPrev={goPrev}
+          />
+          <NextButton
+            canGoNext={canGoNext}
+            isLoading={isLoading}
+            goNext={goNext}
+          />
+        </>
+      }
+    >
+      <div className="p-4">
+        <Heatmap
+          data={data}
+          scaling={scaling}
+          startDate={interval.start}
+          fullCellColorRgb={app.color}
+          innerClassName="min-h-[200px]"
+          firstDayOfMonthClassName="stroke-card-foreground/50"
+          appId={app.id}
+        />
+      </div>
+    </UsageCard>
+  );
+}
+
+function AppSessionsCard({ app }: { app: App }) {
+  const { interval, canGoNext, goNext, canGoPrev, goPrev, setInterval } =
+    useIntervalControlsWithDefault("day");
+
+  const { ret: usages, isLoading: usagesLoading } =
+    useAppSessionUsages(interval);
+  const onlyAppSessionUsages = useMemo(() => {
+    return usages[app.id] ? { [app.id]: usages[app.id] } : {};
+  }, [usages, app.id]);
+
+  const isLoading = usagesLoading;
+
+  return (
+    <VizCard>
+      <VizCardHeader className="pb-4 has-data-[slot=card-action]:grid-cols-[minmax(0,1fr)_auto]">
+        <VizCardTitle className="pl-4 pt-4 text-lg font-bold">
+          Sessions
+        </VizCardTitle>
+
+        <VizCardAction className="flex mt-3 mr-1.5">
+          {
+            <>
+              <PrevButton
+                canGoPrev={canGoPrev}
+                isLoading={isLoading}
+                goPrev={goPrev}
+              />
+              <DateRangePicker
+                className="min-w-32"
+                value={interval}
+                onChange={setInterval}
+              />
+              <NextButton
+                canGoNext={canGoNext}
+                isLoading={isLoading}
+                goNext={goNext}
+              />
+            </>
+          }
+        </VizCardAction>
+      </VizCardHeader>
+
+      <VizCardContent>
+        <Gantt
+          usages={onlyAppSessionUsages}
+          usagesLoading={usagesLoading}
+          defaultExpanded={{ [app.id]: true }}
+          interval={interval}
+        />
+      </VizCardContent>
+    </VizCard>
   );
 }
