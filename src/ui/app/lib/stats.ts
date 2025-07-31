@@ -1,5 +1,6 @@
+import type { WithGroup } from "@/lib/entities";
 import { getQueryOptions, type QueryOptions } from "@/lib/repo";
-import { dateTimeToTicks } from "@/lib/time";
+import { dateTimeToTicks, type Period } from "@/lib/time";
 import { invoke } from "@tauri-apps/api/core";
 import { DateTime } from "luxon";
 
@@ -17,5 +18,25 @@ export async function getScore({
     queryOptions,
     start: dateTimeToTicks(start),
     end: dateTimeToTicks(end),
+  });
+}
+
+export async function getScorePerPeriod({
+  options,
+  start,
+  end,
+  period,
+}: {
+  options?: QueryOptions;
+  start: DateTime;
+  end: DateTime;
+  period: Period;
+}): Promise<WithGroup<number>[]> {
+  const queryOptions = getQueryOptions(options);
+  return await invoke("get_score_per_period", {
+    queryOptions,
+    start: dateTimeToTicks(start),
+    end: dateTimeToTicks(end),
+    period,
   });
 }

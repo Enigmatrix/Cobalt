@@ -20,6 +20,11 @@ export interface WithGroupedDuration<T> {
   group: Timestamp;
 }
 
+export interface WithGroup<T> {
+  value: T;
+  group: Timestamp;
+}
+
 export type AppIdentity =
   | { tag: "uwp"; aumid: string }
   | { tag: "win32"; path: string }

@@ -60,6 +60,7 @@ pub fn run() {
             repo::get_interaction_periods,
             repo::get_system_events,
             stats::get_score,
+            stats::get_score_per_period,
             tracing::log,
             config::read_config,
             config::config_set_track_incognito,
