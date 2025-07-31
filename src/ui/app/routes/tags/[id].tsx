@@ -122,8 +122,7 @@ function TagPage({ tag }: { tag: Tag }) {
 
   const { isLoading: isYearDataLoading, ret: yearUsages } =
     useTagDurationsPerPeriod({
-      start: yearInterval.start,
-      end: yearInterval.end,
+      ...yearInterval,
       period: "day",
     });
   const yearTotalUsage = useTotalUsageFromPerPeriod(yearUsages);
@@ -154,10 +153,7 @@ function TagPage({ tag }: { tag: Tag }) {
   const day = usePeriodInterval("day");
 
   const { ret: appSessionUsages, isLoading: appSessionUsagesLoading } =
-    useAppSessionUsages({
-      start: day.start,
-      end: day.end,
-    });
+    useAppSessionUsages(day);
   const tagAppSessionUsages = useMemo(() => {
     return _(tag.apps)
       .filter((appId) => appSessionUsages[appId] !== undefined)
@@ -349,8 +345,7 @@ function TagUsageBarChartCard({
     useIntervalControlsWithDefault(timePeriod);
 
   const { isLoading, ret: appDurationsPerPeriod } = useAppDurationsPerPeriod({
-    start: interval.start,
-    end: interval.end,
+    ...interval,
     period,
   });
   const { totalTagUsage } = useMemo(() => {

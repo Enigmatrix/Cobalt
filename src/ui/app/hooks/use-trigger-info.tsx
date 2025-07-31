@@ -19,10 +19,7 @@ export function useTriggerInfo(
   const interval = usePeriodInterval(timeFrameToPeriod(timeFrame ?? "daily"));
 
   const targetApps = useTargetApps(target);
-  const { ret: appDurations } = useAppDurations({
-    start: interval.start,
-    end: interval.end,
-  });
+  const { ret: appDurations } = useAppDurations(interval);
   const totalUsage = useMemo(() => {
     if (!targetApps) return 0;
     return targetApps.reduce(

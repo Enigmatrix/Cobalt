@@ -30,10 +30,7 @@ import {
   useSystemEvents,
   useTotalUsageFromPerPeriod,
 } from "@/hooks/use-repo";
-import {
-  useIntervalControlsWithDefault,
-  usePeriodInterval,
-} from "@/hooks/use-time";
+import { useIntervalControlsWithDefault } from "@/hooks/use-time";
 import type { App, Ref } from "@/lib/entities";
 import type { Interval, Period } from "@/lib/time";
 import { cn } from "@/lib/utils";
@@ -155,9 +152,8 @@ function AppUsagePerPeriodHistory() {
   const { interval } = useHistoryContext();
 
   const { isLoading, ret: appDurationsPerPeriod } = useAppDurationsPerPeriod({
-    start: interval.start,
-    end: interval.end,
-    period: period,
+    ...interval,
+    period,
   });
   const totalUsage = useTotalUsageFromPerPeriod(appDurationsPerPeriod);
 
@@ -232,26 +228,14 @@ function AppUsagePerPeriodHistory() {
 }
 
 function SessionHistory() {
-  const week = usePeriodInterval("week");
   const { interval } = useHistoryContext();
 
-  const effectiveInterval = interval ?? week;
-
-  const { ret: usages, isLoading: usagesLoading } = useAppSessionUsages({
-    start: effectiveInterval.start,
-    end: effectiveInterval.end,
-  });
+  const { ret: usages, isLoading: usagesLoading } =
+    useAppSessionUsages(interval);
   const { ret: interactions, isLoading: interactionPeriodsLoading } =
-    useInteractionPeriods({
-      start: effectiveInterval.start,
-      end: effectiveInterval.end,
-    });
-  const { ret: systemEvents, isLoading: systemEventsLoading } = useSystemEvents(
-    {
-      start: effectiveInterval.start,
-      end: effectiveInterval.end,
-    },
-  );
+    useInteractionPeriods(interval);
+  const { ret: systemEvents, isLoading: systemEventsLoading } =
+    useSystemEvents(interval);
 
   return (
     <div className="sticky rounded-lg bg-card shadow-xs border border-border overflow-clip">
@@ -262,7 +246,7 @@ function SessionHistory() {
         interactionPeriodsLoading={interactionPeriodsLoading}
         systemEvents={systemEvents}
         systemEventsLoading={systemEventsLoading}
-        interval={effectiveInterval}
+        interval={interval}
       />
     </div>
   );

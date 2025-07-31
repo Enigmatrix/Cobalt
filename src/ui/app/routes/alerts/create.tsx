@@ -245,8 +245,7 @@ export function AppUsageBarChartView({
   }, [period, usageLimit, timeFrame]);
 
   const { ret: appDurationsPerPeriod } = useAppDurationsPerPeriod({
-    start: interval.start,
-    end: interval.end,
+    ...interval,
     period,
   });
 

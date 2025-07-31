@@ -86,8 +86,7 @@ function AppPage({ app }: { app: App }) {
 
   const { isLoading: isYearDataLoading, ret: yearUsages } =
     useAppDurationsPerPeriod({
-      start: yearInterval.start,
-      end: yearInterval.end,
+      ...yearInterval,
       period: "day",
     });
   const yearTotalUsage = useTotalUsageFromPerPeriod(yearUsages);
@@ -110,10 +109,7 @@ function AppPage({ app }: { app: App }) {
 
   const day = usePeriodInterval("day");
   const { ret: appSessionUsages, isLoading: appSessionUsagesLoading } =
-    useAppSessionUsages({
-      start: day.start,
-      end: day.end,
-    });
+    useAppSessionUsages(day);
   const onlyAppSessionUsages = useMemo(() => {
     return appSessionUsages[app.id]
       ? { [app.id]: appSessionUsages[app.id] }
@@ -376,8 +372,7 @@ function AppUsageBarChartCard({
     useIntervalControlsWithDefault(timePeriod);
 
   const { isLoading, ret: appDurationsPerPeriod } = useAppDurationsPerPeriod({
-    start: interval.start,
-    end: interval.end,
+    ...interval,
     period,
   });
 

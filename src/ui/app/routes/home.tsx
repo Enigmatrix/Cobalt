@@ -91,8 +91,7 @@ function AppUsageBarChartCard({
     useIntervalControlsWithDefault(timePeriod);
 
   const { isLoading, ret: appDurationsPerPeriod } = useAppDurationsPerPeriod({
-    start: interval?.start,
-    end: interval?.end,
+    ...interval,
     period,
   });
   const totalUsage = useTotalUsageFromPerPeriod(appDurationsPerPeriod);
@@ -143,21 +142,13 @@ function SessionsCard() {
   const { interval, canGoNext, goNext, canGoPrev, goPrev, setInterval } =
     useIntervalControlsWithDefault("day");
 
-  const { ret: usages, isLoading: usagesLoading } = useAppSessionUsages({
-    start: interval.start,
-    end: interval.end,
-  });
+  const { ret: usages, isLoading: usagesLoading } =
+    useAppSessionUsages(interval);
   const { ret: interactions, isLoading: interactionPeriodsLoading } =
-    useInteractionPeriods({
-      start: interval.start,
-      end: interval.end,
-    });
-  const { ret: systemEvents, isLoading: systemEventsLoading } = useSystemEvents(
-    {
-      start: interval.start,
-      end: interval.end,
-    },
-  );
+    useInteractionPeriods(interval);
+  const { ret: systemEvents, isLoading: systemEventsLoading } =
+    useSystemEvents(interval);
+
   const isLoading =
     usagesLoading || interactionPeriodsLoading || systemEventsLoading;
 
