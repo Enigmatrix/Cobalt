@@ -29,6 +29,7 @@ import {
   VizCardTitle,
 } from "@/components/viz/viz-card";
 import { useClipboard } from "@/hooks/use-clipboard";
+import { useDebouncedState } from "@/hooks/use-debounced-state";
 import { useApp, useTag } from "@/hooks/use-refresh";
 import {
   useAppDurationsPerPeriod,
@@ -52,9 +53,8 @@ import type { ClassValue } from "clsx";
 import _ from "lodash";
 import { Check, ChevronsUpDown, Copy } from "lucide-react";
 import { DateTime } from "luxon";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { NavLink } from "react-router";
-import { useDebouncedCallback } from "use-debounce";
 import type { Route } from "../apps/+types/[id]";
 
 export default function Page({ params }: Route.ComponentProps) {
@@ -66,19 +66,11 @@ export default function Page({ params }: Route.ComponentProps) {
 
 function AppPage({ app }: { app: App }) {
   const updateApp = useAppState((state) => state.updateApp);
-  const [color, setColorInner] = useState(app.color);
-  const debouncedUpdateColor = useDebouncedCallback(async (color: string) => {
-    await updateApp({ ...app, color });
-  }, 500);
-
-  const setColor = useCallback(
-    async (color: string) => {
-      setColorInner(color);
-      await debouncedUpdateColor(color);
-    },
-    [setColorInner, debouncedUpdateColor],
+  const [color, setColor] = useDebouncedState(
+    app.color,
+    async (color) => await updateApp({ ...app, color }),
+    500,
   );
-
   const { copy, hasCopied } = useClipboard();
 
   return (

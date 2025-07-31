@@ -37,6 +37,7 @@ import {
   VizCardHeader,
   VizCardTitle,
 } from "@/components/viz/viz-card";
+import { useDebouncedState } from "@/hooks/use-debounced-state";
 import { useAlerts, useTag } from "@/hooks/use-refresh";
 import {
   useAppDurationsPerPeriod,
@@ -59,9 +60,8 @@ import {
 import _ from "lodash";
 import { TagIcon, TrashIcon } from "lucide-react";
 import { DateTime } from "luxon";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { NavLink, useNavigate } from "react-router";
-import { useDebouncedCallback } from "use-debounce";
 import type { Route } from "../tags/+types/[id]";
 
 export default function Page({ params }: Route.ComponentProps) {
@@ -76,30 +76,15 @@ function TagPage({ tag }: { tag: Tag }) {
   const removeTag = useAppState((state) => state.removeTag);
   const updateTagApps = useAppState((state) => state.updateTagApps);
 
-  const [color, setColorInner] = useState(tag.color);
-  const [score, setScoreInner] = useState(tag.score);
-  const debouncedUpdateColor = useDebouncedCallback(async (color: string) => {
-    await updateTag({ ...tag, color });
-  }, 500);
-
-  const debouncedUpdateScore = useDebouncedCallback(async (score: number) => {
-    await updateTag({ ...tag, score });
-  }, 500);
-
-  const setColor = useCallback(
-    async (color: string) => {
-      setColorInner(color);
-      await debouncedUpdateColor(color);
-    },
-    [setColorInner, debouncedUpdateColor],
+  const [color, setColor] = useDebouncedState(
+    tag.color,
+    async (color) => await updateTag({ ...tag, color }),
+    500,
   );
-
-  const setScore = useCallback(
-    async (score: number) => {
-      setScoreInner(score);
-      await debouncedUpdateScore(score);
-    },
-    [setScoreInner, debouncedUpdateScore],
+  const [score, setScore] = useDebouncedState(
+    tag.score,
+    async (score) => await updateTag({ ...tag, score }),
+    500,
   );
 
   const navigate = useNavigate();
