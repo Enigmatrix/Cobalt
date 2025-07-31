@@ -1,4 +1,5 @@
 import { Colors } from "@/components/tag/score";
+import type { Score } from "@/lib/entities";
 import { cn } from "@/lib/utils";
 import * as SliderPrimitive from "@radix-ui/react-slider";
 import * as React from "react";
@@ -16,9 +17,9 @@ function ScoreSlider({
   React.ComponentProps<typeof SliderPrimitive.Root>,
   "defaultValue" | "value" | "onValueChange"
 > & {
-  defaultValue?: number;
-  value?: number;
-  onValueChange?: (value: number) => void;
+  defaultValue?: Score;
+  value?: Score;
+  onValueChange?: (value: Score) => void;
 }) {
   const _values = React.useMemo(
     () =>
@@ -31,7 +32,7 @@ function ScoreSlider({
   );
 
   const handleValueChange = React.useCallback(
-    (values: number[]) => {
+    (values: Score[]) => {
       if (onValueChange) {
         onValueChange(values[0]);
       }

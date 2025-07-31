@@ -70,6 +70,16 @@ pub struct WithGroupedDuration<T: Table> {
     pub duration: Duration,
 }
 
+/// Duration grouped into target, period chunks
+#[derive(Clone, Debug, Default, PartialEq, Eq, FromRow, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WithGroup<T> {
+    /// Time Period group
+    pub group: crate::table::Timestamp,
+    /// Value
+    pub value: T,
+}
+
 /// Value per common periods
 #[derive(Debug, Default, Clone, PartialEq, Eq, Serialize, Deserialize, FromRow)]
 #[serde(rename_all = "camelCase")]

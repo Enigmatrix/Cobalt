@@ -5,6 +5,7 @@ export function newRef<T>(id: number): Ref<T> {
 export type Color = string;
 export type Timestamp = number;
 export type Duration = number;
+export type Score = number;
 type Period = "hour" | "day" | "week" | "month" | "year";
 // change the exported type so that users use the time.ts Period type instead
 export type EntityPeriod = Period;
@@ -17,6 +18,11 @@ export interface WithDuration<T> {
 export interface WithGroupedDuration<T> {
   id: Ref<T>;
   duration: Duration;
+  group: Timestamp;
+}
+
+export interface WithGroup<T> {
+  value: T;
   group: Timestamp;
 }
 
@@ -62,7 +68,7 @@ export interface Tag {
   id: Ref<Tag>;
   name: string;
   color: string;
-  score: number;
+  score: Score;
   apps: Ref<App>[];
   usages: ValuePerPeriod<Duration>;
 }

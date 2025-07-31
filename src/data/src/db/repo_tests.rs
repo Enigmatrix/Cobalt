@@ -14,9 +14,9 @@ use crate::db::tests::arrange::*;
 use crate::entities::{Reason, TimeFrame, TriggerAction};
 use crate::table::Period;
 
-const ONE_HOUR: i64 = 60 * 60 * 1000 * 10000;
-const TEST_DATE: i64 = (1735776000 * 1000 + 62_135_596_800_000) * 10000;
-static LOCAL_TEST_DATE: LazyLock<i64> = LazyLock::new(|| add_tz_shift(TEST_DATE));
+pub const ONE_HOUR: i64 = 60 * 60 * 1000 * 10000;
+pub const TEST_DATE: i64 = (1735776000 * 1000 + 62_135_596_800_000) * 10000;
+pub static LOCAL_TEST_DATE: LazyLock<i64> = LazyLock::new(|| add_tz_shift(TEST_DATE));
 
 fn add_tz_shift(ts: i64) -> i64 {
     // Get the current timezone offset in seconds

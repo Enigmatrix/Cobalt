@@ -13,6 +13,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import type { Score } from "@/lib/entities";
 import { cn } from "@/lib/utils";
 import type { ClassValue } from "clsx";
 
@@ -27,7 +28,7 @@ export const Colors = {
  * @param score A number between -100 and 100
  * @returns A string describing the focus level
  */
-export function getScoreDescription(score: number): string {
+export function getScoreDescription(score: Score): string {
   if (score < -80) return "Highly Distractive";
   if (score < -40) return "Distractive";
   if (score < 0) return "Slightly Distractive";
@@ -42,7 +43,7 @@ export function ScoreCircle({
   className,
   hoverTooltip = true,
 }: {
-  score: number;
+  score: Score;
   className?: ClassValue;
   hoverTooltip?: boolean;
 }) {
@@ -72,7 +73,7 @@ export function ScoreBadge({
   className,
   circleClassName,
 }: {
-  score: number;
+  score: Score;
   className?: ClassValue;
   circleClassName?: ClassValue;
 }) {
@@ -102,13 +103,13 @@ export function ScoreWrapper({
   className,
   children,
 }: {
-  score: number;
+  score: Score;
   className?: ClassValue;
   children?: React.ReactNode;
 }) {
   const { theme } = useTheme();
 
-  const getOpacity = (value: number) => {
+  const getOpacity = (value: Score) => {
     return Math.max(0, value / 100);
   };
 
@@ -145,8 +146,8 @@ export function ScoreEdit({
   className,
   children,
 }: {
-  score: number;
-  onScoreChange: (score: number) => void;
+  score: Score;
+  onScoreChange: (score: Score) => void;
   className?: ClassValue;
   children?: React.ReactNode;
 }) {

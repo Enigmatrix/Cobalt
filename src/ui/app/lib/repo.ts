@@ -5,6 +5,7 @@ import type {
   InteractionPeriod,
   Ref,
   Reminder,
+  Score,
   Session,
   SystemEvent,
   Tag,
@@ -23,7 +24,7 @@ import { DateTime } from "luxon";
 export interface CreateTag {
   name: string;
   color: string;
-  score: number;
+  score: Score;
   apps: Ref<App>[];
 }
 
