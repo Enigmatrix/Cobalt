@@ -133,7 +133,7 @@ interface GanttProps {
   systemEvents?: SystemEvent[];
   systemEventsLoading?: boolean;
 
-  durationSummariesClassName?: ClassValue;
+  summary?: React.ReactNode;
   defaultExpanded?: Record<Ref<App>, boolean>;
   interval: Interval;
   interactionInfoBarHeight?: number;
@@ -154,7 +154,7 @@ export function Gantt({
   interactionPeriodsLoading,
   systemEvents,
   systemEventsLoading,
-  durationSummariesClassName,
+  summary,
   defaultExpanded,
   interval,
   infoGap = 300,
@@ -895,15 +895,7 @@ export function Gantt({
           className="absolute top-0 left-0 bottom-0"
           style={{ width: infoGap }}
         >
-          <div className="w-full h-full py-0 px-4">
-            <DurationSummaries
-              className={durationSummariesClassName}
-              usages={usagesPerAppSession}
-              usagesLoading={usagesLoading}
-              streaks={streaks}
-              streaksLoading={streaksLoading}
-            />
-          </div>
+          {summary}
         </div>
       </div>
 
@@ -1188,7 +1180,7 @@ function InteractionTooltip({
   );
 }
 
-function DurationSummaries({
+export function DurationSummaries({
   usages,
   usagesLoading,
 
