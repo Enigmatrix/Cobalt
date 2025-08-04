@@ -16,7 +16,6 @@ import {
   type Ref,
   type Session,
   type SystemEventEnum,
-  type Usage,
 } from "@/lib/entities";
 import type { InteractionPeriod, Streak, SystemEvent } from "@/lib/entities";
 import type { AppSessionUsages } from "@/lib/repo";
@@ -81,7 +80,6 @@ interface CombinedUsage {
 interface AppSessionUsage {
   start: number;
   end: number;
-  usageId: Ref<Usage>;
   sessionId: Ref<Session>;
   appId: Ref<App>;
 }
@@ -218,7 +216,6 @@ export function Gantt({
                   session.usages.map((usage) => ({
                     start: usage.start,
                     end: usage.end,
-                    usageId: usage.id,
                     sessionId: session.id,
                     appId: app.id,
                   })),
@@ -303,7 +300,7 @@ export function Gantt({
             key.id,
             false,
             (usage as CombinedUsage).count,
-            (usage as AppSessionUsage).usageId,
+            undefined,
             (usage as AppSessionUsage).sessionId,
             (usage as AppSessionUsage).appId,
           ]),
@@ -313,7 +310,6 @@ export function Gantt({
           usagesPerAppSession[key.appId][key.id].usages.map((usage) => ({
             start: usage.start,
             end: usage.end,
-            usageId: usage.id,
             sessionId: key.id,
             appId: key.appId,
           })),
@@ -335,7 +331,7 @@ export function Gantt({
             key.id,
             usagesPerAppSession[key.appId][key.id].url,
             (usage as CombinedUsage).count,
-            (usage as AppSessionUsage).usageId,
+            undefined,
             (usage as AppSessionUsage).sessionId,
             (usage as AppSessionUsage).appId,
           ]),
@@ -699,7 +695,7 @@ export function Gantt({
         ,
         boolI,
         count,
-        usageId,
+        entityId,
         sessionId,
         appId,
       ] = params.data as number[];
@@ -720,7 +716,6 @@ export function Gantt({
           usage = {
             start,
             end,
-            usageId: +usageId as Ref<Usage>,
             sessionId: +sessionId as Ref<Session>,
             appId: +appId as Ref<App>,
           };
@@ -733,7 +728,7 @@ export function Gantt({
         const isSystemEvent = boolI;
         if (isSystemEvent) {
           setHoverSystemEvent({
-            id: +usageId as Ref<SystemEvent>,
+            id: +entityId as Ref<SystemEvent>,
             timestamp: start,
             event: sessionId as unknown as SystemEventEnum,
           });
@@ -756,7 +751,7 @@ export function Gantt({
             interaction = {
               start,
               end,
-              id: +usageId as Ref<InteractionPeriod>,
+              id: +entityId as Ref<InteractionPeriod>,
               mouseClicks,
               keyStrokes,
             };

@@ -57,7 +57,6 @@ export interface Session {
 }
 
 export interface Usage {
-  id: Ref<Usage>;
   start: Timestamp;
   end: Timestamp;
 }

@@ -252,7 +252,6 @@ impl Repository {
         struct AppSessionUsage {
             app_id: Ref<App>,
             session_id: Ref<Session>,
-            usage_id: Ref<Usage>,
             session_title: String,
             session_url: Option<String>,
             start: Timestamp,
@@ -263,7 +262,6 @@ impl Repository {
             "SELECT
                 s.app_id AS app_id,
                 u.session_id AS session_id,
-                u.id AS usage_id,
                 s.title AS session_title,
                 s.url AS session_url,
                 MAX(u.start, p.start) AS start,
@@ -294,8 +292,7 @@ impl Repository {
                 });
             session.start = session.start.min(usage.start);
             session.end = session.end.max(usage.end);
-            session.usages.push(Usage {
-                id: usage.usage_id,
+            session.usages.push(infused::Usage {
                 session_id: usage.session_id,
                 start: usage.start,
                 end: usage.end,
