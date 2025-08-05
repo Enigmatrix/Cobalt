@@ -69,39 +69,40 @@ WITH
     --   focus apps are grouped together to form one usage)
     -- filter each FS to make sure its duration exceeds min_focus_usage_dur
     initial_fs
-        AS (SELECT
-                -- get range. alternatively, a 'first'/'last' getter of a group would work
-                MIN(start) AS start,
-                MAX(end)   AS end
-            -- double window to do the grouping
-            -- ref: https://stackoverflow.com/questions/63473256/how-do-i-group-datetimes-with-a-sqlite-windowing-functionk
-            FROM (SELECT start, end, SUM(is_group_start) OVER (ORDER BY start) as group_number
-                  FROM (SELECT u.start,
-                               u.end,
-                               -- window is all usages in [range_start, range_end], so LAG(end) is NULL
-                               -- only for the first usage in range, where is_group_start=1. is_group_start=1
-                               -- when the previous row's end != this row's start (i.e., not contiguous), else
-                               -- is_group_start=0.
-                               coalesce(LAG(end) OVER (ORDER BY u.start) <> u.start, 1) AS is_group_start
-                        FROM (SELECT u.start, u.end, u.session_id FROM usages u) u
-                                 INNER JOIN sessions s on s.id = u.session_id
-                                 INNER JOIN apps a ON a.id = s.app_id
-                                 LEFT JOIN tags t ON t.id = a.tag_id
-                                 CROSS JOIN params p
-                        WHERE
-                          -- filter usage if not in range
-                            u.start < p.range_end
-                          AND u.end > p.range_start
-                          -- filter usage if not from focus app
-                          AND p.min_focus_score < coalesce(t.score, 0)
-                          -- filter usage if it intersects with any DS
-                          AND NOT EXISTS (SELECT 1
-                                          FROM ds
-                                          WHERE ds.start < u.end
-                                            AND ds.end > u.start)))
-            GROUP BY group_number
+        AS (SELECT u.start, u.end
+            FROM (SELECT
+                      -- get range. alternatively, a 'first'/'last' getter of a group would work
+                      MIN(start) AS start,
+                      MAX(end)   AS end
+                  -- double window to do the grouping
+                  -- ref: https://stackoverflow.com/questions/63473256/how-do-i-group-datetimes-with-a-sqlite-windowing-functionk
+                  FROM (SELECT start, end, SUM(is_group_start) OVER (ORDER BY start) as group_number
+                        FROM (SELECT u.start,
+                                     u.end,
+                                     -- window is all usages in [range_start, range_end], so LAG(end) is NULL
+                                     -- only for the first usage in range, where is_group_start=1. is_group_start=1
+                                     -- when the previous row's end != this row's start (i.e., not contiguous), else
+                                     -- is_group_start=0.
+                                     coalesce(LAG(end) OVER (ORDER BY u.start) <> u.start, 1) AS is_group_start
+                              FROM (SELECT u.start, u.end, u.session_id FROM usages u) u
+                                       INNER JOIN sessions s on s.id = u.session_id
+                                       INNER JOIN apps a ON a.id = s.app_id
+                                       LEFT JOIN tags t ON t.id = a.tag_id
+                                       CROSS JOIN params p
+                              WHERE
+                                -- filter usage if not in range
+                                  u.start < p.range_end
+                                AND u.end > p.range_start
+                                -- filter usage if not from focus app
+                                AND p.min_focus_score < coalesce(t.score, 0)))
+                  GROUP BY group_number) u
             -- Filter out FSs less than min_focus_usage_dur
-            HAVING MAX(end) - MIN(start) >= (SELECT min_focus_usage_dur FROM params)),
+            WHERE u.end - u.start >= (SELECT min_focus_usage_dur FROM params)
+              -- filter out FSs that intersects with any DS
+              AND NOT EXISTS (SELECT 1
+                              FROM ds
+                              WHERE ds.start < u.end
+                                AND ds.end > u.start)),
 
     -- Focus Streaks: Combined if 'Close'
     --  if adjacent FSs have a gap less than max_focus_gap and
