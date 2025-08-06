@@ -1,4 +1,5 @@
 import { DateRangePicker } from "@/components/time/date-range-picker";
+import { DurationText } from "@/components/time/duration-text";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -18,6 +19,7 @@ import {
   VizCardTitle,
 } from "@/components/viz/viz-card";
 import {
+  useAppDurations,
   useAppDurationsPerPeriod,
   useAppSessionUsages,
   useDefaultStreaks,
@@ -25,17 +27,44 @@ import {
   useSystemEvents,
   useTotalUsageFromPerPeriod,
 } from "@/hooks/use-repo";
-import { useIntervalControlsWithDefault } from "@/hooks/use-time";
+import {
+  useIntervalControlsWithDefault,
+  usePeriodInterval,
+  useToday,
+} from "@/hooks/use-time";
 import {
   hour24Formatter,
   monthDayFormatter,
   weekDayFormatter,
+  type Interval,
   type Period,
 } from "@/lib/time";
+import { cn } from "@/lib/utils";
+import _ from "lodash";
 import { DateTime } from "luxon";
 import { useMemo } from "react";
 
 export default function Home() {
+  const interval = usePeriodInterval("day");
+  const { ret: streaks } = useDefaultStreaks(interval);
+  const { ret: appDurationsPerPeriod } = useAppDurationsPerPeriod({
+    ...interval,
+    period: "hour",
+  });
+  const totalUsage = useTotalUsageFromPerPeriod(appDurationsPerPeriod);
+
+  const focusStreakUsage = useMemo(() => {
+    return _(streaks)
+      .filter((streak) => streak.isFocused)
+      .sumBy((streak) => streak.end - streak.start);
+  }, [streaks]);
+
+  const distractiveStreakUsage = useMemo(() => {
+    return _(streaks)
+      .filter((streak) => !streak.isFocused)
+      .sumBy((streak) => streak.end - streak.start);
+  }, [streaks]);
+
   return (
     <>
       <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
@@ -51,6 +80,38 @@ export default function Home() {
       </header>
       <div className="h-0 flex-auto overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]">
         <div className="flex flex-col gap-4 p-4">
+          <VizCard>
+            <VizCardHeader className="pb-1 has-data-[slot=card-action]:grid-cols-[minmax(0,1fr)_auto]">
+              <VizCardTitle className="pl-4 pt-4 text-lg font-bold">
+                Overview
+              </VizCardTitle>
+            </VizCardHeader>
+
+            <VizCardContent className="aspect-video flex-1 mx-1 max-w-full max-h-80 flex flex-row">
+              <div className="flex-2/3">{/* TODO: Add a chart here */}</div>
+              <div className="p-4 flex flex-col gap-2 justify-between max-w-72 flex-1/3">
+                <UsageStatItem
+                  label="Focus Streaks"
+                  usage={focusStreakUsage}
+                  color="text-green-600 dark:text-green-400"
+                  cardColor="bg-green-500/10 border-green-500/20"
+                />
+                <UsageStatItem
+                  label="Distractive Streaks"
+                  usage={distractiveStreakUsage}
+                  color="text-red-600 dark:text-red-400"
+                  cardColor="bg-red-500/10 border-red-500/20"
+                />
+                <UsageStatItem
+                  label="Total Usage"
+                  usage={totalUsage}
+                  color="text-foreground"
+                  cardColor="bg-foreground/5 border-foreground/10"
+                />
+              </div>
+            </VizCardContent>
+          </VizCard>
+
           <div className="grid auto-rows-min gap-4 grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
             <AppUsageBarChartCard
               timePeriod="day"
@@ -202,5 +263,35 @@ function SessionsCard() {
         />
       </VizCardContent>
     </VizCard>
+  );
+}
+
+// Component for displaying usage statistics
+function UsageStatItem({
+  label,
+  usage,
+  color,
+  cardColor,
+}: {
+  label: string;
+  usage: number;
+  color?: string;
+  cardColor?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-lg p-4 shadow-sm border text-right",
+        cardColor || "bg-card border-border",
+      )}
+    >
+      <div className="flex flex-col">
+        <div className={cn("text-sm font-medium", color)}>{label}</div>
+        <DurationText
+          className={cn("text-xl font-bold", color)}
+          ticks={usage}
+        />
+      </div>
+    </div>
   );
 }
