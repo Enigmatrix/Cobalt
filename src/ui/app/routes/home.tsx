@@ -50,14 +50,18 @@ import {
 } from "@/lib/time";
 import { cn } from "@/lib/utils";
 import _ from "lodash";
-import { TagIcon } from "lucide-react";
+import { Loader2, TagIcon } from "lucide-react";
 import { DateTime } from "luxon";
 import { useMemo } from "react";
 
 export default function Home() {
   const interval = usePeriodInterval("day");
-  const { ret: streaks } = useDefaultStreaks(interval);
-  const { ret: appDurationsPerPeriod } = useAppDurationsPerPeriod({
+  const { ret: streaks, isLoading: streaksLoading } =
+    useDefaultStreaks(interval);
+  const {
+    ret: appDurationsPerPeriod,
+    isLoading: appDurationsPerPeriodLoading,
+  } = useAppDurationsPerPeriod({
     ...interval,
     period: "hour",
   });
@@ -84,18 +88,21 @@ export default function Home() {
           <div className="grid auto-rows-min gap-4 grid-cols-4">
             <AlertEventItem />
             <UsageStatItem
+              isLoading={streaksLoading}
               label="Focus Streaks"
               usage={focusStreakUsage}
               color="text-green-600 dark:text-green-400"
               cardColor="bg-green-500/10 border-green-500/20"
             />
             <UsageStatItem
+              isLoading={streaksLoading}
               label="Distractive Streaks"
               usage={distractiveStreakUsage}
               color="text-red-600 dark:text-red-400"
               cardColor="bg-red-500/10 border-red-500/20"
             />
             <UsageStatItem
+              isLoading={appDurationsPerPeriodLoading}
               label="Total Usage"
               usage={totalUsage}
               color="text-foreground"
@@ -258,11 +265,13 @@ function SessionsCard() {
 
 // Component for displaying usage statistics
 function UsageStatItem({
+  isLoading,
   label,
   usage,
   color,
   cardColor,
 }: {
+  isLoading: boolean;
   label: string;
   usage: number;
   color?: string;
@@ -277,10 +286,16 @@ function UsageStatItem({
     >
       <div className="flex flex-col">
         <div className={cn("text-sm font-medium", color)}>{label}</div>
-        <DurationText
-          className={cn("text-xl font-bold self-end", color)}
-          ticks={usage}
-        />
+        {isLoading ? (
+          <Loader2
+            className={cn("h-6 w-6 mt-1 animate-spin self-end", color)}
+          />
+        ) : (
+          <DurationText
+            className={cn("text-xl font-bold self-end", color)}
+            ticks={usage}
+          />
+        )}
       </div>
     </div>
   );
@@ -300,6 +315,7 @@ function AlertEventItem() {
     <div className="rounded-lg p-4 shadow-sm border text-right bg-card border-border">
       <div className="flex flex-col">
         <div className="text-sm font-medium">Triggered Alerts</div>
+
         {triggeredAlerts.length > 0 ? (
           <TooltipProvider>
             <Tooltip>
