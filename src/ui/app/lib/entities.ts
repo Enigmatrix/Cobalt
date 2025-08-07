@@ -15,9 +15,7 @@ export interface WithDuration<T> {
   duration: Duration;
 }
 
-export interface WithGroupedDuration<T> {
-  id: Ref<T>;
-  duration: Duration;
+export interface WithGroupedDuration<T> extends WithDuration<T> {
   group: Timestamp;
 }
 
@@ -59,7 +57,6 @@ export interface Session {
 }
 
 export interface Usage {
-  id: Ref<Usage>;
   start: Timestamp;
   end: Timestamp;
 }

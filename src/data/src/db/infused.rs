@@ -372,9 +372,23 @@ pub struct Session {
     /// Maximum Usage of Usages
     pub end: Timestamp,
     /// Usages
-    pub usages: Vec<super::Usage>,
+    pub usages: Vec<Usage>,
 }
 
+/// [super::Usage] with additional information
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Usage {
+    // Remove id - we don't care about it
+    // /// Identifier
+    // pub id: Ref<super::Usage>,
+    /// Session Identifier
+    pub session_id: Ref<super::Session>,
+    /// Start time
+    pub start: Timestamp,
+    /// End time
+    pub end: Timestamp,
+}
 /// [Session]s with [Usage]s, partitioned by [App]s
 pub type AppSessionUsages = HashMap<Ref<super::App>, HashMap<Ref<super::Session>, Session>>;
 
