@@ -13,15 +13,15 @@ import { useEffect, useState } from "react";
 export const DEFAULT_ICON_SVG_URL = "data:image/svg+xml," + CircleHelpStatic;
 export const TAG_ICON_URL = "data:image/svg+xml," + TagStatic;
 
-function appIconUrl(appIcon?: string) {
-  if (!appIcon) return null;
+export function appIconUrl(appIcon?: string) {
+  if (!appIcon) return DEFAULT_ICON_SVG_URL;
   const fileName = normalize(appIcon);
   return convertFileSrc(`${iconsDir}/${fileName}`);
 }
 
 export function appIconHtmlImgElement(appIcon?: string): HTMLImageElement {
   const img = new Image();
-  img.src = appIconUrl(appIcon) ?? DEFAULT_ICON_SVG_URL;
+  img.src = appIconUrl(appIcon);
   img.onerror = () => {
     img.src = DEFAULT_ICON_SVG_URL;
     img.onerror = null;
@@ -30,7 +30,7 @@ export function appIconHtmlImgElement(appIcon?: string): HTMLImageElement {
 }
 
 // A little hack to make the tag icon color dynamic - relies on Lucide Static using currentColor for the color
-export function tagIconUrlStatic(color?: string) {
+export function tagIconUrl(color?: string) {
   return TAG_ICON_URL.replaceAll(
     "currentColor",
     color ? encodeURIComponent(color) : "currentColor",

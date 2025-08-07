@@ -1,7 +1,4 @@
-import {
-  appIconHtmlImgElement,
-  tagIconUrlStatic,
-} from "@/components/app/app-icon";
+import { appIconUrl, tagIconUrl } from "@/components/app/app-icon";
 import {
   fullKeyToString,
   stringToFullKey,
@@ -265,10 +262,8 @@ export function UsageChart({
           backgroundColor: {
             image:
               kv.key === "app"
-                ? appIconHtmlImgElement(kv.app.icon)
-                : tagIconUrlStatic(
-                    `color-mix(in srgb, ${kv.tag.color} 65%, black)`,
-                  ),
+                ? appIconUrl(kv.app.icon)
+                : tagIconUrl(`color-mix(in srgb, ${kv.tag.color} 65%, black)`),
           },
           formatter: () => {
             return `{empty|}`;
