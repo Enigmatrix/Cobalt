@@ -1,4 +1,4 @@
-import { appIconHtmlImgElement } from "@/components/app/app-icon";
+import { appIconUrl } from "@/components/app/app-icon";
 import {
   fullKeyToString,
   stringToFullKey,
@@ -195,7 +195,7 @@ export function AppUsagePieChart({
                 rotate: 0,
                 position: "middle",
                 backgroundColor: {
-                  image: appIconHtmlImgElement(data.app.icon),
+                  image: appIconUrl(data.app.icon),
                 },
                 formatter: () => {
                   return `{empty|}`;
