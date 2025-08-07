@@ -8,6 +8,7 @@ import { DateTimeText } from "@/components/time/time-text";
 import { Text } from "@/components/ui/text";
 import { VizTooltip } from "@/components/viz/viz-tooltip";
 import { useApps } from "@/hooks/use-refresh";
+import { useStreakDurations } from "@/hooks/use-repo";
 import { useWidth } from "@/hooks/use-width";
 import { getVarColorAsHex } from "@/lib/color-utils";
 import {
@@ -1204,19 +1205,8 @@ function DurationSummaries({
 
   className?: ClassValue;
 }) {
-  const [focusStreakUsage, distractiveStreakUsage] = useMemo(() => {
-    if (!streaks) {
-      return [0, 0];
-    }
-    return [
-      _(streaks)
-        .filter((streak) => streak.isFocused)
-        .sumBy((streak) => streak.end - streak.start),
-      _(streaks)
-        .filter((streak) => !streak.isFocused)
-        .sumBy((streak) => streak.end - streak.start),
-    ];
-  }, [streaks]);
+  const [focusStreakUsage, distractiveStreakUsage] =
+    useStreakDurations(streaks);
 
   const totalUsage = useMemo(() => {
     return _(usages)

@@ -1,6 +1,6 @@
 import { useRefresh } from "@/hooks/use-refresh";
 import { useConfig } from "@/lib/config";
-import type { Ref, WithGroupedDuration } from "@/lib/entities";
+import type { Ref, Streak, WithGroupedDuration } from "@/lib/entities";
 import {
   getAppDurations,
   getAppDurationsPerPeriod,
@@ -107,4 +107,19 @@ export function useSingleEntityUsageFromPerPeriod<T>(
   return useMemo(() => {
     return _(durationsPerPeriod[id]).sumBy("duration");
   }, [durationsPerPeriod, id]);
+}
+
+export function useStreakDurations(streaks?: Streak[]) {
+  return useMemo(() => {
+    if (!streaks) {
+      return [0, 0];
+    }
+    const focusStreakUsage = _(streaks)
+      .filter((streak) => streak.isFocused)
+      .sumBy((streak) => streak.end - streak.start);
+    const distractiveStreakUsage = _(streaks)
+      .filter((streak) => !streak.isFocused)
+      .sumBy((streak) => streak.end - streak.start);
+    return [focusStreakUsage, distractiveStreakUsage];
+  }, [streaks]);
 }
