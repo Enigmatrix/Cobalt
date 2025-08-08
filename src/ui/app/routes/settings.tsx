@@ -25,35 +25,11 @@ import type { Score } from "@/lib/entities";
 import { durationToTicks, ticksToDuration } from "@/lib/time";
 import { cn } from "@/lib/utils";
 import { RefreshCcwIcon } from "lucide-react";
-import { type ReactNode } from "react";
+import { useCallback, type ReactNode } from "react";
 
 export default function Settings() {
   const { theme, setTheme } = useTheme();
-  const {
-    trackIncognito,
-    defaultFocusStreakSettings,
-    defaultDistractiveStreakSettings,
-    setTrackIncognito,
-    setDefaultFocusStreakSettings,
-    setDefaultDistractiveStreakSettings,
-    resetDefaultFocusStreakSettings,
-    resetDefaultDistractiveStreakSettings,
-  } = useConfig();
-
-  const [minFocusScore, setMinFocusScore] = useDebouncedState(
-    defaultFocusStreakSettings.minFocusScore,
-    async (v) => {
-      await setDefaultFocusStreakSettings({ minFocusScore: v });
-    },
-    500,
-  );
-  const [maxDistractiveScore, setMaxDistractiveScore] = useDebouncedState(
-    defaultDistractiveStreakSettings.maxDistractiveScore,
-    async (v) => {
-      await setDefaultDistractiveStreakSettings({ maxDistractiveScore: v });
-    },
-    500,
-  );
+  const { trackIncognito, setTrackIncognito } = useConfig();
 
   return (
     <>
@@ -99,150 +75,208 @@ export default function Settings() {
               />
             </SettingContent>
           </Setting>
-          <Setting>
-            <SettingHeader>
-              <SettingTitle>
-                <div className="flex items-center">
-                  <div>Focus Streaks</div>
-                  <Button
-                    variant="outline"
-                    onClick={resetDefaultFocusStreakSettings}
-                    className="ml-auto"
-                  >
-                    <RefreshCcwIcon className="w-4 h-4 text-muted-foreground" />
-                    <div className="text-muted-foreground">Reset</div>
-                  </Button>
-                </div>
-              </SettingTitle>
-              <SettingDescription>
-                Settings for focus streak detection.
-              </SettingDescription>
-            </SettingHeader>
-            <SettingContent className="gap-4 flex flex-col">
-              <SettingItem
-                title="Minimum Score"
-                description="The minimum score of an app's tag for the app to be considered a focus app."
-                action={
-                  <ScoreSettingAction
-                    score={minFocusScore}
-                    onScoreChange={setMinFocusScore}
-                  />
-                }
-              />
 
-              <SettingItem
-                title="Minimum Usage Duration"
-                description="The minimum duration of contiguous usages from focus apps to be considered a focus streak."
-                action={
-                  <DurationPicker
-                    className="w-40"
-                    value={ticksToDuration(
-                      defaultFocusStreakSettings.minFocusUsageDur,
-                    )}
-                    onValueChange={(v) =>
-                      v !== null &&
-                      setDefaultFocusStreakSettings({
-                        minFocusUsageDur: durationToTicks(v),
-                      })
-                    }
-                  />
-                }
-              />
+          <FocusStreakSetting />
 
-              <SettingItem
-                title="Maximum Gap"
-                description="The maximum gap between focus streaks before adjacent focus streaks are combined into a longer streak."
-                action={
-                  <DurationPicker
-                    className="w-40"
-                    value={ticksToDuration(
-                      defaultFocusStreakSettings.maxFocusGap,
-                    )}
-                    onValueChange={(v) =>
-                      v !== null &&
-                      setDefaultFocusStreakSettings({
-                        maxFocusGap: durationToTicks(v),
-                      })
-                    }
-                  />
-                }
-              />
-            </SettingContent>
-          </Setting>
-
-          <Setting>
-            <SettingHeader>
-              <SettingTitle>
-                <div className="flex items-center">
-                  <div>Distractive Streaks</div>
-                  <Button
-                    variant="outline"
-                    onClick={resetDefaultDistractiveStreakSettings}
-                    className="ml-auto"
-                  >
-                    <RefreshCcwIcon className="w-4 h-4 text-muted-foreground" />
-                    <div className="text-muted-foreground">Reset</div>
-                  </Button>
-                </div>
-              </SettingTitle>
-              <SettingDescription>
-                Settings for distractive streak detection.
-              </SettingDescription>
-            </SettingHeader>
-            <SettingContent className="gap-4 flex flex-col">
-              <SettingItem
-                title="Maximum Score"
-                description="The maximum score of an app's tag for the app to be considered a distractive app."
-                action={
-                  <ScoreSettingAction
-                    score={maxDistractiveScore}
-                    onScoreChange={setMaxDistractiveScore}
-                  />
-                }
-              />
-
-              <SettingItem
-                title="Minimum Usage Duration"
-                description="The minimum duration of contiguous usages from distractive apps to be considered a distractive streak."
-                action={
-                  <DurationPicker
-                    className="w-40"
-                    value={ticksToDuration(
-                      defaultDistractiveStreakSettings.minDistractiveUsageDur,
-                    )}
-                    onValueChange={(v) =>
-                      v !== null &&
-                      setDefaultDistractiveStreakSettings({
-                        minDistractiveUsageDur: durationToTicks(v),
-                      })
-                    }
-                  />
-                }
-              />
-
-              <SettingItem
-                title="Maximum Gap"
-                description="The maximum gap between distractive streaks before adjacent distractive streaks are combined into a longer streak."
-                action={
-                  <DurationPicker
-                    className="w-40"
-                    value={ticksToDuration(
-                      defaultDistractiveStreakSettings.maxDistractiveGap,
-                    )}
-                    onValueChange={(v) =>
-                      v !== null &&
-                      setDefaultDistractiveStreakSettings({
-                        maxDistractiveGap: durationToTicks(v),
-                      })
-                    }
-                  />
-                }
-              />
-            </SettingContent>
-          </Setting>
+          <DistractiveStreakSetting />
         </div>
       </div>
     </>
+  );
+}
+
+function FocusStreakSetting() {
+  const {
+    defaultFocusStreakSettings,
+    setDefaultFocusStreakSettings,
+    resetDefaultFocusStreakSettings,
+  } = useConfig();
+
+  const [minFocusScore, setMinFocusScore, setMinFocusScoreInner] =
+    useDebouncedState(
+      defaultFocusStreakSettings.minFocusScore,
+      async (v) => {
+        await setDefaultFocusStreakSettings({ minFocusScore: v });
+      },
+      500,
+    );
+
+  const reset = useCallback(async () => {
+    await resetDefaultFocusStreakSettings();
+    // Reset the min focus score to the default value
+    setMinFocusScoreInner(defaultFocusStreakSettings.minFocusScore);
+  }, [
+    resetDefaultFocusStreakSettings,
+    setMinFocusScoreInner,
+    defaultFocusStreakSettings,
+  ]);
+
+  return (
+    <Setting>
+      <SettingHeader>
+        <SettingTitle>
+          <div className="flex items-center">
+            <div>Focus Streaks</div>
+            <Button variant="outline" onClick={reset} className="ml-auto">
+              <RefreshCcwIcon className="w-4 h-4 text-muted-foreground" />
+              <div className="text-muted-foreground">Reset</div>
+            </Button>
+          </div>
+        </SettingTitle>
+        <SettingDescription>
+          Settings for focus streak detection.
+        </SettingDescription>
+      </SettingHeader>
+      <SettingContent className="gap-4 flex flex-col">
+        <SettingItem
+          title="Minimum Score"
+          description="The minimum score of an app's tag for the app to be considered a focus app."
+          action={
+            <ScoreSettingAction
+              score={minFocusScore}
+              onScoreChange={setMinFocusScore}
+            />
+          }
+        />
+
+        <SettingItem
+          title="Minimum Usage Duration"
+          description="The minimum duration of contiguous usages from focus apps to be considered a focus streak."
+          action={
+            <DurationPicker
+              className="w-40"
+              value={ticksToDuration(
+                defaultFocusStreakSettings.minFocusUsageDur,
+              )}
+              onValueChange={(v) =>
+                v !== null &&
+                setDefaultFocusStreakSettings({
+                  minFocusUsageDur: durationToTicks(v),
+                })
+              }
+            />
+          }
+        />
+
+        <SettingItem
+          title="Maximum Gap"
+          description="The maximum gap between focus streaks before adjacent focus streaks are combined into a longer streak."
+          action={
+            <DurationPicker
+              className="w-40"
+              value={ticksToDuration(defaultFocusStreakSettings.maxFocusGap)}
+              onValueChange={(v) =>
+                v !== null &&
+                setDefaultFocusStreakSettings({
+                  maxFocusGap: durationToTicks(v),
+                })
+              }
+            />
+          }
+        />
+      </SettingContent>
+    </Setting>
+  );
+}
+
+function DistractiveStreakSetting() {
+  const {
+    defaultDistractiveStreakSettings,
+    setDefaultDistractiveStreakSettings,
+    resetDefaultDistractiveStreakSettings,
+  } = useConfig();
+
+  const [
+    maxDistractiveScore,
+    setMaxDistractiveScore,
+    setMaxDistractiveScoreInner,
+  ] = useDebouncedState(
+    defaultDistractiveStreakSettings.maxDistractiveScore,
+    async (v) => {
+      await setDefaultDistractiveStreakSettings({ maxDistractiveScore: v });
+    },
+    500,
+  );
+
+  const reset = useCallback(async () => {
+    await resetDefaultDistractiveStreakSettings();
+    // Reset the max distractive score to the default value
+    setMaxDistractiveScoreInner(
+      defaultDistractiveStreakSettings.maxDistractiveScore,
+    );
+  }, [
+    resetDefaultDistractiveStreakSettings,
+    setMaxDistractiveScoreInner,
+    defaultDistractiveStreakSettings,
+  ]);
+
+  return (
+    <Setting>
+      <SettingHeader>
+        <SettingTitle>
+          <div className="flex items-center">
+            <div>Distractive Streaks</div>
+            <Button variant="outline" onClick={reset} className="ml-auto">
+              <RefreshCcwIcon className="w-4 h-4 text-muted-foreground" />
+              <div className="text-muted-foreground">Reset</div>
+            </Button>
+          </div>
+        </SettingTitle>
+        <SettingDescription>
+          Settings for distractive streak detection.
+        </SettingDescription>
+      </SettingHeader>
+      <SettingContent className="gap-4 flex flex-col">
+        <SettingItem
+          title="Maximum Score"
+          description="The maximum score of an app's tag for the app to be considered a distractive app."
+          action={
+            <ScoreSettingAction
+              score={maxDistractiveScore}
+              onScoreChange={setMaxDistractiveScore}
+            />
+          }
+        />
+
+        <SettingItem
+          title="Minimum Usage Duration"
+          description="The minimum duration of contiguous usages from distractive apps to be considered a distractive streak."
+          action={
+            <DurationPicker
+              className="w-40"
+              value={ticksToDuration(
+                defaultDistractiveStreakSettings.minDistractiveUsageDur,
+              )}
+              onValueChange={(v) =>
+                v !== null &&
+                setDefaultDistractiveStreakSettings({
+                  minDistractiveUsageDur: durationToTicks(v),
+                })
+              }
+            />
+          }
+        />
+
+        <SettingItem
+          title="Maximum Gap"
+          description="The maximum gap between distractive streaks before adjacent distractive streaks are combined into a longer streak."
+          action={
+            <DurationPicker
+              className="w-40"
+              value={ticksToDuration(
+                defaultDistractiveStreakSettings.maxDistractiveGap,
+              )}
+              onValueChange={(v) =>
+                v !== null &&
+                setDefaultDistractiveStreakSettings({
+                  maxDistractiveGap: durationToTicks(v),
+                })
+              }
+            />
+          }
+        />
+      </SettingContent>
+    </Setting>
   );
 }
 
