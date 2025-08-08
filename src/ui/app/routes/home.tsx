@@ -20,13 +20,7 @@ import {
 import { NextButton, PrevButton, UsageCard } from "@/components/usage-card";
 import { Gantt } from "@/components/viz/gantt2";
 import { UsageChart } from "@/components/viz/usage-chart";
-import {
-  VizCard,
-  VizCardAction,
-  VizCardContent,
-  VizCardHeader,
-  VizCardTitle,
-} from "@/components/viz/viz-card";
+import { VizCard, VizCardContent } from "@/components/viz/viz-card";
 import { useAlerts, useApp, useTag } from "@/hooks/use-refresh";
 import {
   useAppDurationsPerPeriod,
@@ -218,36 +212,33 @@ function SessionsCard() {
 
   return (
     <VizCard>
-      <VizCardHeader className="pb-4 has-data-[slot=card-action]:grid-cols-[minmax(0,1fr)_auto]">
-        <VizCardTitle className="pl-4 pt-4 text-lg font-bold">
-          Sessions
-        </VizCardTitle>
-
-        <VizCardAction className="flex mt-3 mr-1.5">
-          {
-            <>
-              <PrevButton
-                canGoPrev={canGoPrev}
-                isLoading={isLoading}
-                goPrev={goPrev}
-              />
-              <DateRangePicker
-                className="min-w-32"
-                value={interval}
-                onChange={setInterval}
-              />
-              <NextButton
-                canGoNext={canGoNext}
-                isLoading={isLoading}
-                goNext={goNext}
-              />
-            </>
-          }
-        </VizCardAction>
-      </VizCardHeader>
-
       <VizCardContent>
         <Gantt
+          summary={
+            <div className="flex flex-col gap-2 my-2 mx-4">
+              <div className="text-lg font-bold flex items-center gap-2">
+                Sessions
+                {isLoading && <Loader2 className="h-5 w-5 animate-spin" />}
+              </div>
+              <div className="flex items-center -ml-2">
+                <PrevButton
+                  canGoPrev={canGoPrev}
+                  isLoading={isLoading}
+                  goPrev={goPrev}
+                />
+                <DateRangePicker
+                  className="min-w-32"
+                  value={interval}
+                  onChange={setInterval}
+                />
+                <NextButton
+                  canGoNext={canGoNext}
+                  isLoading={isLoading}
+                  goNext={goNext}
+                />
+              </div>
+            </div>
+          }
           usages={usages}
           usagesLoading={usagesLoading}
           streaks={streaks}
