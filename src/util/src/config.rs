@@ -208,6 +208,10 @@ impl Config {
     /// Returns the path to the icons directory
     pub fn icons_dir() -> Result<PathBuf> {
         let path = Self::config_path("icons")?;
+        static ICON_CREATE_GUARD: std::sync::Mutex<()> = std::sync::Mutex::new(());
+        let _icon_create_guard = ICON_CREATE_GUARD
+            .lock()
+            .expect("failed to lock icon create guard");
         if !path.exists() {
             std::fs::create_dir(&path)?;
         }
