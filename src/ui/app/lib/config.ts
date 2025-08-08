@@ -67,8 +67,8 @@ interface Config extends ConfigReadonly {
   setDefaultDistractiveStreakSettings: (
     value: Partial<DistractiveStreakSettings>,
   ) => Promise<void>;
-  resetDefaultFocusStreakSettings: () => Promise<void>;
-  resetDefaultDistractiveStreakSettings: () => Promise<void>;
+  resetDefaultFocusStreakSettings: () => Promise<ConfigReadonly>;
+  resetDefaultDistractiveStreakSettings: () => Promise<ConfigReadonly>;
 }
 
 export const useConfig = create<Config>((set) => {
@@ -132,11 +132,15 @@ export const useConfig = create<Config>((set) => {
     },
     resetDefaultFocusStreakSettings: async () => {
       await resetDefaultFocusStreakSettings();
-      set(await readConfigReadonly());
+      const config = await readConfigReadonly();
+      set(config);
+      return config;
     },
     resetDefaultDistractiveStreakSettings: async () => {
       await resetDefaultDistractiveStreakSettings();
-      set(await readConfigReadonly());
+      const config = await readConfigReadonly();
+      set(config);
+      return config;
     },
   };
 });

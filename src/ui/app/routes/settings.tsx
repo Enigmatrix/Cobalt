@@ -102,14 +102,10 @@ function FocusStreakSetting() {
     );
 
   const reset = useCallback(async () => {
-    await resetDefaultFocusStreakSettings();
+    const config = await resetDefaultFocusStreakSettings();
     // Reset the min focus score to the default value
-    setMinFocusScoreInner(defaultFocusStreakSettings.minFocusScore);
-  }, [
-    resetDefaultFocusStreakSettings,
-    setMinFocusScoreInner,
-    defaultFocusStreakSettings,
-  ]);
+    setMinFocusScoreInner(config.defaultFocusStreakSettings.minFocusScore);
+  }, [resetDefaultFocusStreakSettings, setMinFocusScoreInner]);
 
   return (
     <Setting>
@@ -199,16 +195,12 @@ function DistractiveStreakSetting() {
   );
 
   const reset = useCallback(async () => {
-    await resetDefaultDistractiveStreakSettings();
+    const config = await resetDefaultDistractiveStreakSettings();
     // Reset the max distractive score to the default value
     setMaxDistractiveScoreInner(
-      defaultDistractiveStreakSettings.maxDistractiveScore,
+      config.defaultDistractiveStreakSettings.maxDistractiveScore,
     );
-  }, [
-    resetDefaultDistractiveStreakSettings,
-    setMaxDistractiveScoreInner,
-    defaultDistractiveStreakSettings,
-  ]);
+  }, [resetDefaultDistractiveStreakSettings, setMaxDistractiveScoreInner]);
 
   return (
     <Setting>
