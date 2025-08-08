@@ -525,6 +525,7 @@ export function Gantt({
     const common = {
       animation: false,
       grid: {
+        height: Math.min(innerHeight, seriesHeight),
         right: scrollbarWidth,
         containLabel: true,
       },
@@ -537,6 +538,8 @@ export function Gantt({
         show: false,
         type: "value",
         inverse: true,
+        min: 0,
+        max: seriesHeight,
         splitLine: { show: false },
         axisLabel: {
           show: false,
