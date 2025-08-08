@@ -18,5 +18,5 @@ export function useDebouncedState<T>(
     [setStateInner, debouncedUpdate],
   );
 
-  return [state, setState] as const;
+  return [state, setState, setStateInner] as const;
 }

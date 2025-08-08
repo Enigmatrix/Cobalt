@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Gantt } from "@/components/viz/gantt2";
+import { DurationSummaries, Gantt } from "@/components/viz/gantt2";
 import { GroupByPicker } from "@/components/viz/groupby-picker";
 import { UsageChart, type GroupBy } from "@/components/viz/usage-chart";
 import { VerticalLegend } from "@/components/viz/vertical-legend";
@@ -235,20 +235,49 @@ function SessionHistory() {
   const { ret: streaks, isLoading: streaksLoading } =
     useDefaultStreaks(interval);
 
+  const isLoading =
+    usagesLoading ||
+    interactionPeriodsLoading ||
+    systemEventsLoading ||
+    streaksLoading;
+
   return (
-    <div className="sticky rounded-lg bg-card shadow-xs border border-border overflow-clip">
-      <Gantt
-        usages={usages}
-        usagesLoading={usagesLoading}
-        streaks={streaks}
-        streaksLoading={streaksLoading}
-        interactionPeriods={interactions}
-        interactionPeriodsLoading={interactionPeriodsLoading}
-        systemEvents={systemEvents}
-        systemEventsLoading={systemEventsLoading}
-        interval={interval}
-        durationSummariesClassName="mt-4"
-      />
+    <div className="flex flex-col flex-1 gap-6">
+      <div className="flex flex-wrap gap-2 font-bold items-center rounded-lg bg-card border border-border p-4 shadow-xs">
+        <FormItem>
+          <Label className="font-medium text-muted-foreground place-self-start">
+            Streaks
+          </Label>
+          <DurationSummaries
+            usages={usages}
+            usagesLoading={usagesLoading}
+            streaks={streaks}
+            streaksLoading={streaksLoading}
+          />
+        </FormItem>
+      </div>
+
+      <div className="sticky rounded-lg bg-card shadow-xs border border-border overflow-clip">
+        <Gantt
+          summary={
+            <div className="flex flex-col gap-2 my-2 mx-4">
+              <div className="text-lg font-bold flex items-center gap-2">
+                Sessions
+                {isLoading && <Loader2 className="h-5 w-5 animate-spin" />}
+              </div>
+            </div>
+          }
+          usages={usages}
+          usagesLoading={usagesLoading}
+          streaks={streaks}
+          streaksLoading={streaksLoading}
+          interactionPeriods={interactions}
+          interactionPeriodsLoading={interactionPeriodsLoading}
+          systemEvents={systemEvents}
+          systemEventsLoading={systemEventsLoading}
+          interval={interval}
+        />
+      </div>
     </div>
   );
 }

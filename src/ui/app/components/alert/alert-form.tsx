@@ -247,9 +247,13 @@ function LimitStepContent({ form }: { form: UseFormReturn<FormValues> }) {
                 showIcon={false}
                 className="w-full text-muted-foreground"
                 {...field}
-                value={value === undefined ? null : ticksToDuration(value)}
+                value={
+                  value === undefined || value === null
+                    ? null
+                    : ticksToDuration(value)
+                }
                 onValueChange={(dur) =>
-                  onChange(dur === null ? undefined : durationToTicks(dur))
+                  onChange(!dur ? null : durationToTicks(dur))
                 }
               />
             </FormControl>
@@ -310,10 +314,10 @@ function ActionStepContent({ form }: { form: UseFormReturn<FormValues> }) {
                 <FormControl>
                   <DurationPicker
                     showIcon={false}
-                    className="w-full text-foreground"
+                    className="w-full text-muted-foreground"
                     {...field}
                     value={
-                      value?.duration === undefined
+                      value?.duration === undefined || value?.duration === null
                         ? null
                         : ticksToDuration(value.duration)
                     }

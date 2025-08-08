@@ -13,7 +13,9 @@ export function VizCard({
   className,
   ...props
 }: React.ComponentProps<typeof Card>) {
-  return <Card className={cn("gap-0 p-0", className)} {...props} />;
+  return (
+    <Card className={cn("gap-0 p-0 overflow-clip", className)} {...props} />
+  );
 }
 
 export function VizCardHeader({

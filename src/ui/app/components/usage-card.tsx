@@ -36,7 +36,7 @@ export function UsageCard({
 }: UsageCardProps) {
   return (
     <VizCard>
-      <VizCardHeader className="pb-1 has-data-[slot=card-action]:grid-cols-[minmax(0,1fr)_auto]">
+      <VizCardHeader className="pb-4 has-data-[slot=card-action]:grid-cols-[minmax(0,1fr)_auto]">
         <VizCardTitle className="pl-4 pt-4">
           <UsageCardTitle
             usage={usage}
