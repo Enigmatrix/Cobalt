@@ -5,11 +5,16 @@ import {
   BreadcrumbPage,
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { refresh } from "@/lib/state";
-import { Setting } from "@/routes/settings";
+import {
+  Setting,
+  SettingContent,
+  SettingHeader,
+  SettingItem,
+  SettingTitle,
+} from "@/routes/settings";
 import { invoke } from "@tauri-apps/api/core";
 import { LoaderIcon } from "lucide-react";
 import { useTransition, type ComponentProps } from "react";
@@ -64,12 +69,12 @@ export default function Experiments() {
       </header>
       <div className="h-0 flex-auto overflow-auto [scrollbar-gutter:stable]">
         <div className="flex flex-col gap-4 p-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Database</CardTitle>
-            </CardHeader>
-            <CardContent className="gap-2 flex flex-col">
-              <Setting
+          <Setting>
+            <SettingHeader>
+              <SettingTitle>Database</SettingTitle>
+            </SettingHeader>
+            <SettingContent className="gap-2 flex flex-col">
+              <SettingItem
                 title={
                   <>
                     Copy <p className="font-mono inline">seed.db</p>
@@ -83,7 +88,7 @@ export default function Experiments() {
                 }
               />
 
-              <Setting
+              <SettingItem
                 title={<>Copy install db</>}
                 description="Replace the current database with the installed database"
                 action={
@@ -93,7 +98,7 @@ export default function Experiments() {
                 }
               />
 
-              <Setting
+              <SettingItem
                 title="Update Last Usage to Now"
                 description="Update last usage in database to Now"
                 action={
@@ -102,15 +107,15 @@ export default function Experiments() {
                   </AsyncButton>
                 }
               />
-            </CardContent>
-          </Card>
+            </SettingContent>
+          </Setting>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Refresh</CardTitle>
-            </CardHeader>
-            <CardContent className="gap-2 flex flex-col">
-              <Setting
+          <Setting>
+            <SettingHeader>
+              <SettingTitle>Refresh</SettingTitle>
+            </SettingHeader>
+            <SettingContent className="gap-2 flex flex-col">
+              <SettingItem
                 title="Refresh Now"
                 description="Refresh all app data"
                 action={
@@ -119,8 +124,8 @@ export default function Experiments() {
                   </AsyncButton>
                 }
               />
-            </CardContent>
-          </Card>
+            </SettingContent>
+          </Setting>
         </div>
       </div>
     </>

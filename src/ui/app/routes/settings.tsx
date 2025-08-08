@@ -23,33 +23,9 @@ import { useDebouncedState } from "@/hooks/use-debounced-state";
 import { useConfig } from "@/lib/config";
 import type { Score } from "@/lib/entities";
 import { durationToTicks, ticksToDuration } from "@/lib/time";
+import { cn } from "@/lib/utils";
 import { RefreshCcwIcon } from "lucide-react";
-import { useCallback, type ReactNode } from "react";
-
-export function Setting({
-  title,
-  description,
-  action,
-}: {
-  title: ReactNode;
-  description: ReactNode;
-  action: ReactNode;
-}) {
-  return (
-    <div className="flex items-center gap-2">
-      <div>
-        <h3 className="text-lg font-semibold text-card-foreground/80">
-          {title}
-        </h3>
-        <p className="text-sm text-card-foreground/50">{description}</p>
-      </div>
-
-      <div className="flex-1"></div>
-
-      {action}
-    </div>
-  );
-}
+import { type ReactNode } from "react";
 
 export default function Settings() {
   const { theme, setTheme } = useTheme();
@@ -63,11 +39,6 @@ export default function Settings() {
     resetDefaultFocusStreakSettings,
     resetDefaultDistractiveStreakSettings,
   } = useConfig();
-
-  const resetStreakSettings = useCallback(async () => {
-    await resetDefaultFocusStreakSettings();
-    await resetDefaultDistractiveStreakSettings();
-  }, [resetDefaultFocusStreakSettings, resetDefaultDistractiveStreakSettings]);
 
   const [minFocusScore, setMinFocusScore] = useDebouncedState(
     defaultFocusStreakSettings.minFocusScore,
@@ -99,24 +70,24 @@ export default function Settings() {
       </header>
       <div className="h-0 flex-auto overflow-auto [scrollbar-gutter:stable]">
         <div className="flex flex-col gap-4 p-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Appearance</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Setting
+          <Setting>
+            <SettingHeader>
+              <SettingTitle>Appearance</SettingTitle>
+            </SettingHeader>
+            <SettingContent>
+              <SettingItem
                 title="Theme"
                 description="Choose a theme for the app"
                 action={<ThemeSwitch value={theme} onValueChange={setTheme} />}
               />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>Privacy</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Setting
+            </SettingContent>
+          </Setting>
+          <Setting>
+            <SettingHeader>
+              <SettingTitle>Privacy</SettingTitle>
+            </SettingHeader>
+            <SettingContent>
+              <SettingItem
                 title="Track Incognito"
                 description="Track incognito windows (title, url) in browsers. If disabled, incognito windows will be tracked as '<Incognito>'."
                 action={
@@ -126,28 +97,30 @@ export default function Settings() {
                   />
                 }
               />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>
+            </SettingContent>
+          </Setting>
+          <Setting>
+            <SettingHeader>
+              <SettingTitle>
                 <div className="flex items-center">
-                  <div>Streaks</div>
+                  <div>Focus Streaks</div>
                   <Button
                     variant="outline"
-                    onClick={resetStreakSettings}
+                    onClick={resetDefaultFocusStreakSettings}
                     className="ml-auto"
                   >
                     <RefreshCcwIcon className="w-4 h-4 text-muted-foreground" />
                     <div className="text-muted-foreground">Reset</div>
                   </Button>
                 </div>
-              </CardTitle>
-              <CardDescription>Settings for streak detection.</CardDescription>
-            </CardHeader>
-            <CardContent className="gap-4 flex flex-col">
-              <Setting
-                title="Focus: Minimum Score"
+              </SettingTitle>
+              <SettingDescription>
+                Settings for focus streak detection.
+              </SettingDescription>
+            </SettingHeader>
+            <SettingContent className="gap-4 flex flex-col">
+              <SettingItem
+                title="Minimum Score"
                 description="The minimum score of an app's tag for the app to be considered a focus app."
                 action={
                   <ScoreSettingAction
@@ -157,8 +130,8 @@ export default function Settings() {
                 }
               />
 
-              <Setting
-                title="Focus: Minimum Usage Duration"
+              <SettingItem
+                title="Minimum Usage Duration"
                 description="The minimum duration of contiguous usages from focus apps to be considered a focus streak."
                 action={
                   <DurationPicker
@@ -176,8 +149,8 @@ export default function Settings() {
                 }
               />
 
-              <Setting
-                title="Focus: Maximum Gap"
+              <SettingItem
+                title="Maximum Gap"
                 description="The maximum gap between focus streaks before adjacent focus streaks are combined into a longer streak."
                 action={
                   <DurationPicker
@@ -194,9 +167,31 @@ export default function Settings() {
                   />
                 }
               />
+            </SettingContent>
+          </Setting>
 
-              <Setting
-                title="Distractive: Maximum Score"
+          <Setting>
+            <SettingHeader>
+              <SettingTitle>
+                <div className="flex items-center">
+                  <div>Distractive Streaks</div>
+                  <Button
+                    variant="outline"
+                    onClick={resetDefaultDistractiveStreakSettings}
+                    className="ml-auto"
+                  >
+                    <RefreshCcwIcon className="w-4 h-4 text-muted-foreground" />
+                    <div className="text-muted-foreground">Reset</div>
+                  </Button>
+                </div>
+              </SettingTitle>
+              <SettingDescription>
+                Settings for distractive streak detection.
+              </SettingDescription>
+            </SettingHeader>
+            <SettingContent className="gap-4 flex flex-col">
+              <SettingItem
+                title="Maximum Score"
                 description="The maximum score of an app's tag for the app to be considered a distractive app."
                 action={
                   <ScoreSettingAction
@@ -206,8 +201,8 @@ export default function Settings() {
                 }
               />
 
-              <Setting
-                title="Distractive: Minimum Usage Duration"
+              <SettingItem
+                title="Minimum Usage Duration"
                 description="The minimum duration of contiguous usages from distractive apps to be considered a distractive streak."
                 action={
                   <DurationPicker
@@ -225,8 +220,8 @@ export default function Settings() {
                 }
               />
 
-              <Setting
-                title="Distractive: Maximum Gap"
+              <SettingItem
+                title="Maximum Gap"
                 description="The maximum gap between distractive streaks before adjacent distractive streaks are combined into a longer streak."
                 action={
                   <DurationPicker
@@ -243,8 +238,8 @@ export default function Settings() {
                   />
                 }
               />
-            </CardContent>
-          </Card>
+            </SettingContent>
+          </Setting>
         </div>
       </div>
     </>
@@ -281,6 +276,59 @@ function ScoreSettingAction({
         value={score}
         onValueChange={onScoreChange}
       />
+    </div>
+  );
+}
+
+export function Setting(props: React.ComponentProps<typeof Card>) {
+  return <Card {...props} />;
+}
+
+export function SettingHeader({
+  className,
+  ...props
+}: React.ComponentProps<typeof CardHeader>) {
+  return <CardHeader className={cn("gap-0", className)} {...props} />;
+}
+
+export function SettingDescription(
+  props: React.ComponentProps<typeof CardDescription>,
+) {
+  return <CardDescription {...props} />;
+}
+
+export function SettingContent(
+  props: React.ComponentProps<typeof CardContent>,
+) {
+  return <CardContent {...props} />;
+}
+
+export function SettingTitle({
+  className,
+  ...props
+}: React.ComponentProps<typeof CardTitle>) {
+  return <CardTitle className={cn("text-lg", className)} {...props} />;
+}
+
+export function SettingItem({
+  title,
+  description,
+  action,
+}: {
+  title: ReactNode;
+  description: ReactNode;
+  action: ReactNode;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <div>
+        <h3 className="font-semibold text-card-foreground/80">{title}</h3>
+        <p className="text-card-foreground/50">{description}</p>
+      </div>
+
+      <div className="flex-1"></div>
+
+      {action}
     </div>
   );
 }
