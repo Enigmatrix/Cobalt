@@ -74,7 +74,7 @@ async fn main() -> Result<()> {
             let url = detect.chromium_url(&element)?;
             let incognito = detect.chromium_incognito(&element)?;
             let (name, description) = if let Some(url) = &url {
-                let base_url = web::WebsiteInfo::url_to_base_url(url)?;
+                let base_url = web::WebsiteInfo::url_to_base_url(url);
                 let website_info = web::WebsiteInfo::from_base_url(base_url.clone())
                     .await
                     .unwrap_or(web::WebsiteInfo::default_from_url(base_url));

@@ -10,7 +10,6 @@ import {
 } from "@/components/target-keys";
 import { UsageTooltipContent } from "@/components/viz/usage-tooltip";
 import { VizTooltip } from "@/components/viz/viz-tooltip";
-import { useRefresh } from "@/hooks/use-refresh";
 import { getVarColorAsHex, scaleColor } from "@/lib/color-utils";
 import type { App, Ref, Tag, WithGroupedDuration } from "@/lib/entities";
 import { untagged, useAppState, type EntityMap } from "@/lib/state";
@@ -514,8 +513,6 @@ function useUsageChartData({
   onlyShowOneApp?: Ref<App>;
   onlyShowOneTag?: Ref<Tag>;
 }) {
-  const { handleStaleApps, handleStaleTags } = useRefresh();
-
   // Get the x-axis values and a lookup from datetime tick to index
   const [xAxisValues, xAxisTickToIndexLookup] = useMemo(() => {
     const xAxisValues = getDateTimeRangePerPeriod(start, end, period);
@@ -532,7 +529,7 @@ function useUsageChartData({
     )
       // Map to apps
       .map((id) => apps[+id as Ref<App>])
-      .thru(handleStaleApps)
+      .filter((app) => app !== undefined)
       // Remove hidden apps
       .filter((app) => !hiddenApps?.[app.id])
       // Remove hidden tags
@@ -588,7 +585,7 @@ function useUsageChartData({
           const tag = tagId ? tags[tagId] : untagged;
           return (
             _([tag])
-              .thru(handleStaleTags)
+              .filter((tag) => tag !== undefined)
               // Remove hidden tags
               .filter((tag) => !hiddenTags?.[tag.id])
               .map((tag) => ({ key: "tag" as const, tag, values }))
@@ -614,8 +611,6 @@ function useUsageChartData({
     groupBy,
     apps,
     tags,
-    handleStaleApps,
-    handleStaleTags,
     xAxisTickToIndexLookup,
     onlyShowOneApp,
     onlyShowOneTag,

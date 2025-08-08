@@ -82,8 +82,8 @@ impl Sentry {
             return Ok(());
         }
 
-        let base_url = web::WebsiteInfo::url_to_base_url(&new_url)?.to_string();
-        let prev_base_url = web::WebsiteInfo::url_to_base_url(&prev_url)?.to_string();
+        let base_url = web::WebsiteInfo::url_to_base_url(&new_url).to_string();
+        let prev_base_url = web::WebsiteInfo::url_to_base_url(&prev_url).to_string();
 
         if let Some(action) = self.website_actions.get(&base_url) {
             match action {
@@ -178,9 +178,7 @@ impl Sentry {
                             return None;
                         }
 
-                        let base_url = web::WebsiteInfo::url_to_base_url(&state.last_url)
-                            .map(Some)
-                            .warn()?;
+                        let base_url = web::WebsiteInfo::url_to_base_url(&state.last_url);
                         let Some(WebsiteAction::Dim(dim_status)) =
                             self.website_actions.get(&base_url.to_string())
                         else {

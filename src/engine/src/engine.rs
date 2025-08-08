@@ -272,7 +272,7 @@ impl Engine {
         };
 
         if let Some(url) = &session.window_session.url {
-            let base_url = WebsiteInfo::url_to_base_url(url).context("url to base url")?;
+            let base_url = WebsiteInfo::url_to_base_url(url);
             let AppDetails { app: web_app, .. } = desktop_state
                 .get_or_insert_website_for_base_url(base_url.clone(), |_| async {
                     Self::create_app_for_base_url(inserter, db_pool, spawner, base_url, at).await
@@ -322,7 +322,8 @@ impl Engine {
             AppIdentity::Win32 { path }
         };
 
-        let found_app = inserter.find_or_insert_app(&identity, at).await?;
+        let app = AppInfoResolver::default_from(&identity, at);
+        let found_app = inserter.find_or_insert_app(&app).await?;
         let _identity = identity.clone();
         let app_id = match found_app {
             FoundOrInserted::Found(id) => id,
@@ -361,7 +362,8 @@ impl Engine {
         let identity = AppIdentity::Website {
             base_url: base_url.to_string(),
         };
-        let found_app = inserter.find_or_insert_app(&identity, at).await?;
+        let app = AppInfoResolver::default_from(&identity, at);
+        let found_app = inserter.find_or_insert_app(&app).await?;
 
         let _identity = identity.clone();
         let app_id = match found_app {

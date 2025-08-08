@@ -98,11 +98,6 @@ We use `zustand` to manage state in [/src/ui/app/lib/state.ts](/src/ui/app/lib/s
 
 The store can be refreshed using `refresh()`, but must be initialized via `initState()` first. Note that this function also initializes the corresponding state on the Tauri Rust side.
 
-It's possible for the state to be out-of-date with the database since new `App`s can be created via opening them for the first time, by the Engine. 
-Thus, queries that return this `App` id (e.g. `getAppDurations`) will not find a corresponding `App` in the state. Use `useRefresh()`'s `handleStaleXxx`
-functions to handle this case. Functions that rely on `useAppState(state => state.Xxx)` just need to use `handleStaleXxx` and use that in their
-`useEffect` dependencies. Or preferably, use the `useApps() / useApps([appId1, appId2, ...]) / useApp(appId)` hook to get all apps.
-
 ### Calling Rust Functions
 
 The Tauri backend exposes functions that can be called from the React frontend. These are defined in `src/ui/src-tauri/src/lib.rs` and can be called directly from JavaScript/TypeScript.

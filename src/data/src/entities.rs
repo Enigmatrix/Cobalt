@@ -31,7 +31,6 @@ pub struct App {
     /// Created at
     pub created_at: Timestamp,
     // /// set if the app details have finalized.
-    // /// else, all fields except id, identity, created_at, updated_at and initialized_at are empty
     // pub initialized_at: Timestamp,
     /// Updated at
     pub updated_at: Timestamp,

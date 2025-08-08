@@ -40,8 +40,8 @@ impl fmt::Display for BaseWebsiteUrl {
 impl WebsiteInfo {
     /// Convert a URL to a base URL. If http/https, remove www. from the host.
     /// else, if a valid url, try to make it as 'basic' as possible.
-    pub fn url_to_base_url(url: &str) -> Result<BaseWebsiteUrl> {
-        Ok(if let Ok(mut url) = Url::parse(url) {
+    pub fn url_to_base_url(url: &str) -> BaseWebsiteUrl {
+        if let Ok(mut url) = Url::parse(url) {
             // if password is present, remove it
             if url.password().is_some() {
                 // ignore any error that pops out
@@ -52,7 +52,9 @@ impl WebsiteInfo {
                 if let Some(host) = url.host_str() {
                     let host = host.to_string();
                     if let Some(host) = host.strip_prefix("www.") {
-                        url.set_host(Some(host))?;
+                        url.set_host(Some(host))
+                            .with_context(|| format!("cannot strip www. of {url}"))
+                            .warn();
                     }
                 }
                 let origin = url.origin().unicode_serialization();
@@ -64,7 +66,7 @@ impl WebsiteInfo {
             }
         } else {
             BaseWebsiteUrl::NonHttp(url.to_string())
-        })
+        }
     }
 
     fn modify_request(rb: RequestBuilder) -> RequestBuilder {

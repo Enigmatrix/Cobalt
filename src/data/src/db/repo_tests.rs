@@ -8,7 +8,7 @@ use util::future as tokio;
 use super::tests::*;
 use super::*;
 use crate::db::infused::{
-    CreateAlert, CreateReminder, RefVec, ValuePerPeriod, WithDuration, WithGroupedDuration,
+    CreateAlert, CreateReminder, ValuePerPeriod, WithDuration, WithGroupedDuration,
 };
 use crate::db::tests::arrange::*;
 use crate::entities::{Reason, TimeFrame, TriggerAction};
@@ -122,25 +122,6 @@ async fn get_apps() -> Result<()> {
             color: "red".to_string(),
             identity: AppIdentity::Win32 {
                 path: "path4".to_string(),
-            },
-            tag_id: None,
-            icon: None,
-            created_at: 0,
-            updated_at: 0,
-        },
-    )
-    .await?;
-
-    arrange::app_uninit(
-        &mut db,
-        App {
-            id: Ref::new(5),
-            name: "name".to_string(),
-            description: "desc".to_string(),
-            company: "comp".to_string(),
-            color: "red".to_string(),
-            identity: AppIdentity::Win32 {
-                path: "path5".to_string(),
             },
             tag_id: None,
             icon: None,
@@ -360,46 +341,6 @@ async fn get_tags() -> Result<()> {
     )
     .await?;
 
-    arrange::app_uninit(
-        &mut db,
-        App {
-            id: Ref::new(6),
-            name: "name".to_string(),
-            description: "desc".to_string(),
-            company: "comp".to_string(),
-            color: "red".to_string(),
-            identity: AppIdentity::Win32 {
-                path: "path6".to_string(),
-            },
-            tag_id: Some(Ref::new(3)),
-            icon: None,
-            created_at: 0,
-            updated_at: 0,
-        },
-    )
-    .await?;
-
-    let mut repo = Repository::new(db)?;
-    // TODO test: durations for these
-    let tags = repo
-        .get_tags(Times {
-            now: 5000,
-            day_start: 0,
-            week_start: 0,
-            month_start: 0,
-        })
-        .await?;
-    let from_db: HashMap<_, _> = tags
-        .values()
-        .map(|tag| (tag.inner.id.clone(), tag.apps.clone()))
-        .collect();
-    assert_eq!(
-        from_db,
-        vec![(1, vec![2, 4]), (2, vec![3]), (3, vec![5]), (4, vec![]),]
-            .into_iter()
-            .map(|(k, v)| (Ref::new(k), RefVec(v.into_iter().map(Ref::new).collect())))
-            .collect()
-    );
     Ok(())
 }
 

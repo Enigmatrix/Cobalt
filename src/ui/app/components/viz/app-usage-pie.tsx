@@ -6,7 +6,6 @@ import {
 } from "@/components/target-keys";
 import { UsageTooltipContent } from "@/components/viz/usage-tooltip";
 import { VizTooltip } from "@/components/viz/viz-tooltip";
-import { useRefresh } from "@/hooks/use-refresh";
 import type { App, Ref, Tag, WithDuration } from "@/lib/entities";
 import { untagged, useAppState, type EntityMap } from "@/lib/state";
 import { cn } from "@/lib/utils";
@@ -71,8 +70,6 @@ export function AppUsagePieChart({
 
   const apps = useAppState((state) => state.apps);
   const tags = useAppState((state) => state.tags);
-  const { handleStaleApps } = useRefresh();
-
   const totalDuration = useMemo(() => {
     return _(apps).reduce(
       (sum, app) => sum + (data[app!.id]?.duration ?? 0),
@@ -85,18 +82,17 @@ export function AppUsagePieChart({
       _(Object.keys(data))
         // Map to apps
         .map((id) => apps[+id as Ref<App>])
-        .thru(handleStaleApps)
-        .filter((app) => !hiddenApps?.[app.id])
+        .filter((app) => app !== undefined && !hiddenApps?.[app.id])
         .map((app) => ({
           key: "app" as const,
-          app,
-          duration: data[app.id]?.duration ?? 0,
+          app: app!,
+          duration: data[app!.id]?.duration ?? 0,
         }))
         .filter((app) => app.duration > 0)
         .orderBy(["app.tagId", "duration"], ["asc", "desc"]) // "null" is last
         .value()
     );
-  }, [apps, data, hiddenApps, handleStaleApps]);
+  }, [apps, data, hiddenApps]);
 
   const tagData = useMemo(() => {
     return _(appData)
@@ -109,7 +105,7 @@ export function AppUsagePieChart({
         tag: tagId === "null" ? untagged : tags[+tagId as Ref<Tag>]!,
         duration,
       }))
-      .filter((tagDur) => tagDur.duration > 0 && tagDur.tag !== undefined) // TODO: use handleStaleTags
+      .filter((tagDur) => tagDur.duration > 0 && tagDur.tag !== undefined)
       .value();
   }, [tags, appData]);
 
