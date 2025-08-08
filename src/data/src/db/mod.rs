@@ -117,22 +117,46 @@ impl UsageWriter {
     }
 
     /// Find or insert a [App] by its [AppIdentity]
-    pub async fn find_or_insert_app(
-        &mut self,
-        identity: &AppIdentity,
-        ts: impl TimeSystem,
-    ) -> Result<FoundOrInserted<App>> {
-        let (tag, text0) = Self::destructure_identity(identity);
+    pub async fn find_or_insert_app(&mut self, app: &App) -> Result<FoundOrInserted<App>> {
+        let (tag, text0) = Self::destructure_identity(&app.identity);
         let (app_id, found): (Ref<App>, bool) = query_as(
             // We set found=1 to force this query to return a result row regardless of
             // conflict result.
-            "INSERT INTO apps (identity_tag, identity_text0, created_at, updated_at) VALUES (?, ?, ?, ?) ON CONFLICT
+            "INSERT INTO apps (
+                name,
+                description,
+                company,
+                color,
+                icon,
+                tag_id,
+                identity_tag,
+                identity_text0,
+                created_at,
+                updated_at
+            ) VALUES (
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?
+            ) ON CONFLICT
                 DO UPDATE SET found = 1 RETURNING id, found",
         )
+        .bind(&app.name)
+        .bind(&app.description)
+        .bind(&app.company)
+        .bind(&app.color)
+        .bind(&app.icon)
+        .bind(&app.tag_id)
         .bind(tag)
         .bind(text0)
-        .bind(ts.now().to_ticks())
-        .bind(ts.now().to_ticks())
+        .bind(app.created_at)
+        .bind(app.updated_at)
         .fetch_one(self.db.executor())
         .await?;
 

@@ -322,7 +322,8 @@ impl Engine {
             AppIdentity::Win32 { path }
         };
 
-        let found_app = inserter.find_or_insert_app(&identity, at).await?;
+        let app = AppInfoResolver::default_from(&identity, at);
+        let found_app = inserter.find_or_insert_app(&app).await?;
         let _identity = identity.clone();
         let app_id = match found_app {
             FoundOrInserted::Found(id) => id,
@@ -361,7 +362,8 @@ impl Engine {
         let identity = AppIdentity::Website {
             base_url: base_url.to_string(),
         };
-        let found_app = inserter.find_or_insert_app(&identity, at).await?;
+        let app = AppInfoResolver::default_from(&identity, at);
+        let found_app = inserter.find_or_insert_app(&app).await?;
 
         let _identity = identity.clone();
         let app_id = match found_app {

@@ -101,6 +101,18 @@ impl AppInfo {
         }
     }
 
+    /// Create a default [AppInfo] from a UWP AUMID
+    pub fn default_from_uwp(aumid: &str) -> Self {
+        let name = aumid; // TODO: get name from company, AUMID
+        Self {
+            name: name.to_string(),
+            description: name.to_string(),
+            company: "".to_string(),
+            color: random_color(),
+            icon: None,
+        }
+    }
+
     /// Create a new [AppInfo] of a Win32 program from its path
     pub async fn from_win32(path: &str) -> Result<Self> {
         let file = AgileReference::new(&StorageFile::GetFileFromPathAsync(&path.into())?.await?)?;

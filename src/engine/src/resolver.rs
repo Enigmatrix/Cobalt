@@ -5,12 +5,36 @@ use platform::web::WebsiteInfo;
 use util::config::Config;
 use util::error::Result;
 use util::future::fs;
+use util::time::{TimeSystem, ToTicks};
 use util::tracing::{info, warn};
 
 /// Resolves application information asynchronously.
 pub struct AppInfoResolver;
 
 impl AppInfoResolver {
+    /// Basic app filled out by identity
+    pub fn default_from(identity: &AppIdentity, ts: impl TimeSystem) -> App {
+        let app_info = match identity {
+            AppIdentity::Uwp { aumid } => AppInfo::default_from_uwp(aumid),
+            AppIdentity::Win32 { path } => AppInfo::default_from_win32_path(path),
+            AppIdentity::Website { base_url } => {
+                WebsiteInfo::default_from_url(WebsiteInfo::url_to_base_url(base_url)).into()
+            }
+        };
+        App {
+            id: Ref::new(0),
+            name: app_info.name,
+            description: app_info.description,
+            company: app_info.company,
+            color: app_info.color,
+            icon: None, // app.icon might be set in app_info but we set it to None here anyway.
+            identity: identity.clone(),
+            tag_id: None,
+            created_at: ts.now().to_ticks(),
+            updated_at: ts.now().to_ticks(),
+        }
+    }
+
     /// Resolve the application information for the given [AppIdentity].
     async fn resolve(identity: &AppIdentity) -> Result<AppInfo> {
         match identity {
