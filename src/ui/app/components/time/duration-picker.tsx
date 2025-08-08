@@ -19,6 +19,7 @@ interface DurationPickerProps {
   value: Duration | null;
   onValueChange: (dur: Duration | null) => void;
   showIcon?: boolean;
+  showClear?: boolean;
 }
 
 const QUICK_DURATIONS = [
@@ -30,57 +31,52 @@ const QUICK_DURATIONS = [
   { label: "7 days", duration: Duration.fromObject({ days: 7 }) },
 ];
 
+// Helper function to break down duration into components
+const breakdownDuration = (duration: Duration | null) => {
+  if (!duration) {
+    return { days: 0, hours: 0, minutes: 0, seconds: 0 };
+  }
+
+  return {
+    days: Math.floor(duration.as("days")),
+    hours: Math.floor(duration.as("hours") % 24),
+    minutes: Math.floor(duration.as("minutes") % 60),
+    seconds: Math.floor(duration.as("seconds") % 60),
+  };
+};
+
 export function DurationPicker({
   className,
   value: duration,
   onValueChange: setDuration,
   showIcon = true,
+  showClear = true,
 }: DurationPickerProps) {
   const [open, setOpen] = React.useState(false);
-  const [days, setDays] = React.useState(
-    Math.floor(duration?.as("days") ?? 0).toString(),
-  );
-  const [hours, setHours] = React.useState(
-    Math.floor((duration?.as("hours") ?? 0) % 24).toString(),
-  );
-  const [minutes, setMinutes] = React.useState(
-    Math.floor((duration?.as("minutes") ?? 0) % 60).toString(),
-  );
-  const [seconds, setSeconds] = React.useState(
-    Math.floor((duration?.as("seconds") ?? 0) % 60).toString(),
-  );
 
-  const handleDurationChange = (
-    days: string,
-    hours: string,
-    minutes: string,
-    seconds: string,
+  // Derive the breakdown from the current duration
+  const { days, hours, minutes, seconds } = breakdownDuration(duration);
+
+  const handleInputChange = (
+    field: "days" | "hours" | "minutes" | "seconds",
+    value: string,
   ) => {
-    const d = parseInt(days) || 0;
-    const h = parseInt(hours) || 0;
-    const m = parseInt(minutes) || 0;
-    const s = parseInt(seconds) || 0;
+    const numValue = parseInt(value) || 0;
 
-    if (d === 0 && h === 0 && m === 0 && s === 0) {
-      setDuration(null);
-    } else {
-      setDuration(
-        Duration.fromObject({
-          days: d,
-          hours: h,
-          minutes: m,
-          seconds: s,
-        }),
-      );
-    }
+    // Create new duration with updated field
+    const newValues = { days, hours, minutes, seconds, [field]: numValue };
+    const newDuration = Duration.fromObject(newValues);
+
+    setDuration(newDuration);
   };
 
   const handleQuickDuration = (quickDuration: Duration) => {
     setDuration(quickDuration);
-    setDays(Math.floor(quickDuration.as("days")).toString());
-    setHours(Math.floor(quickDuration.as("hours") % 24).toString());
-    setMinutes(Math.floor(quickDuration.as("minutes") % 60).toString());
-    setSeconds(Math.floor(quickDuration.as("seconds") % 60).toString());
+    setOpen(false);
+  };
+
+  const handleClear = () => {
+    setDuration(null);
     setOpen(false);
   };
 
@@ -127,11 +123,8 @@ export function DurationPicker({
               <Label className="text-xs">Days</Label>
               <Input
                 type="number"
-                value={days}
-                onChange={(e) => {
-                  setDays(e.target.value);
-                  handleDurationChange(e.target.value, hours, minutes, seconds);
-                }}
+                value={days.toString()}
+                onChange={(e) => handleInputChange("days", e.target.value)}
                 min={0}
                 className="h-8"
               />
@@ -140,11 +133,8 @@ export function DurationPicker({
               <Label className="text-xs">Hours</Label>
               <Input
                 type="number"
-                value={hours}
-                onChange={(e) => {
-                  setHours(e.target.value);
-                  handleDurationChange(days, e.target.value, minutes, seconds);
-                }}
+                value={hours.toString()}
+                onChange={(e) => handleInputChange("hours", e.target.value)}
                 min={0}
                 max={23}
                 className="h-8"
@@ -154,11 +144,8 @@ export function DurationPicker({
               <Label className="text-xs">Mins</Label>
               <Input
                 type="number"
-                value={minutes}
-                onChange={(e) => {
-                  setMinutes(e.target.value);
-                  handleDurationChange(days, hours, e.target.value, seconds);
-                }}
+                value={minutes.toString()}
+                onChange={(e) => handleInputChange("minutes", e.target.value)}
                 min={0}
                 max={59}
                 className="h-8"
@@ -168,11 +155,8 @@ export function DurationPicker({
               <Label className="text-xs">Secs</Label>
               <Input
                 type="number"
-                value={seconds}
-                onChange={(e) => {
-                  setSeconds(e.target.value);
-                  handleDurationChange(days, hours, minutes, e.target.value);
-                }}
+                value={seconds.toString()}
+                onChange={(e) => handleInputChange("seconds", e.target.value)}
                 min={0}
                 max={59}
                 className="h-8"
@@ -180,21 +164,16 @@ export function DurationPicker({
             </div>
           </div>
 
-          <Button
-            variant="destructive"
-            size="sm"
-            className="w-full h-8"
-            onClick={() => {
-              setDuration(null);
-              setDays("0");
-              setHours("0");
-              setMinutes("0");
-              setSeconds("0");
-              setOpen(false);
-            }}
-          >
-            Clear
-          </Button>
+          {showClear && (
+            <Button
+              variant="destructive"
+              size="sm"
+              className="w-full h-8"
+              onClick={handleClear}
+            >
+              Clear
+            </Button>
+          )}
         </div>
       </PopoverContent>
     </Popover>

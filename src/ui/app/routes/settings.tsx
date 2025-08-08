@@ -140,6 +140,7 @@ function FocusStreakSetting() {
           description="The minimum duration of contiguous usages from focus apps to be considered a focus streak."
           action={
             <DurationPicker
+              showClear={false}
               className="w-40"
               value={ticksToDuration(
                 defaultFocusStreakSettings.minFocusUsageDur,
@@ -159,6 +160,7 @@ function FocusStreakSetting() {
           description="The maximum gap between focus streaks before adjacent focus streaks are combined into a longer streak."
           action={
             <DurationPicker
+              showClear={false}
               className="w-40"
               value={ticksToDuration(defaultFocusStreakSettings.maxFocusGap)}
               onValueChange={(v) =>
@@ -235,6 +237,7 @@ function DistractiveStreakSetting() {
           description="The minimum duration of contiguous usages from distractive apps to be considered a distractive streak."
           action={
             <DurationPicker
+              showClear={false}
               className="w-40"
               value={ticksToDuration(
                 defaultDistractiveStreakSettings.minDistractiveUsageDur,
@@ -254,6 +257,7 @@ function DistractiveStreakSetting() {
           description="The maximum gap between distractive streaks before adjacent distractive streaks are combined into a longer streak."
           action={
             <DurationPicker
+              showClear={false}
               className="w-40"
               value={ticksToDuration(
                 defaultDistractiveStreakSettings.maxDistractiveGap,
