@@ -272,7 +272,7 @@ impl Engine {
         };
 
         if let Some(url) = &session.window_session.url {
-            let base_url = WebsiteInfo::url_to_base_url(url).context("url to base url")?;
+            let base_url = WebsiteInfo::url_to_base_url(url);
             let AppDetails { app: web_app, .. } = desktop_state
                 .get_or_insert_website_for_base_url(base_url.clone(), |_| async {
                     Self::create_app_for_base_url(inserter, db_pool, spawner, base_url, at).await
