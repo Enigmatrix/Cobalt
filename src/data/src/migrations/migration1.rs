@@ -34,7 +34,6 @@ impl Migration for Migration1 {
         tx.execute(
             "CREATE TABLE apps (
                 id                              INTEGER PRIMARY KEY NOT NULL,
-                found                           TINYINT NOT NULL DEFAULT FALSE,
                 name                            TEXT NOT NULL,
                 description                     TEXT NOT NULL,
                 company                         TEXT NOT NULL,

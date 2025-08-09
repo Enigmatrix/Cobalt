@@ -321,7 +321,6 @@ async fn update_app() -> Result<()> {
 
 async fn insert_app_raw(
     db: &mut Database,
-    found: bool,
     name: &str,
     description: &str,
     company: &str,
@@ -334,8 +333,7 @@ async fn insert_app_raw(
     initialized_at: Option<i64>,
     updated_at: i64,
 ) -> Result<Ref<App>> {
-    let res = query("INSERT INTO apps VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
-        .bind(found)
+    let res = query("INSERT INTO apps VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
         .bind(name)
         .bind(description)
         .bind(company)
@@ -436,7 +434,6 @@ async fn target_apps() -> Result<()> {
 
         insert_app_raw(
             &mut db,
-            true,
             "name1",
             "desc1",
             "comp1",
@@ -452,7 +449,6 @@ async fn target_apps() -> Result<()> {
         .await?;
         insert_app_raw(
             &mut db,
-            true,
             "name2",
             "desc2",
             "comp2",
@@ -468,7 +464,6 @@ async fn target_apps() -> Result<()> {
         .await?;
         insert_app_raw(
             &mut db,
-            true,
             "name3",
             "desc3",
             "comp3",
@@ -484,7 +479,6 @@ async fn target_apps() -> Result<()> {
         .await?;
         insert_app_raw(
             &mut db,
-            true,
             "name4",
             "desc4",
             "comp4",
@@ -605,7 +599,6 @@ async fn insert_alert_event() -> Result<()> {
     {
         insert_app_raw(
             &mut db,
-            true,
             "name1",
             "desc1",
             "comp1",
@@ -655,7 +648,6 @@ async fn insert_reminder_event() -> Result<()> {
     {
         insert_app_raw(
             &mut db,
-            true,
             "name1",
             "desc1",
             "comp1",
@@ -754,7 +746,6 @@ pub mod arrange {
     pub async fn app(db: &mut Database, mut app: App) -> Result<App> {
         app.id = insert_app_raw(
             db,
-            false,
             &app.name,
             &app.description,
             &app.company,
