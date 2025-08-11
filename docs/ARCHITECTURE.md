@@ -19,12 +19,12 @@ graph TD
     subgraph Engine["Cobalt Engine (Rust)"]
         Sentry["Sentry (Alert Manager)"]
         Resolver["Resolver (App Info)"]
-        Cache["Cache (In-memory)"]
+        DesktopState["Desktop State (In-memory)"]
         EngineCore["Engine Core (State Machine)"]
         
         EngineCore --> Sentry
         EngineCore --> Resolver
-        EngineCore --> Cache
+        EngineCore --> DesktopState
         EngineCore --> EnginePlatform["Platform Layer"]
         EngineCore --> EngineData["Data Layer"]
     end
@@ -137,7 +137,6 @@ The SQLite database stores all tracked data and configuration. Key entities are:
 erDiagram
     apps {
         int             id PK
-        tinyint         found   "temp col, true if found by upsert"
         text            name
         text            description
         text            company
