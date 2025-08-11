@@ -1,8 +1,8 @@
 use std::fmt;
 
 use windows::Win32::Foundation::{
-    GetLastError, NO_ERROR, NTSTATUS, STATUS_INFO_LENGTH_MISMATCH, STATUS_SUCCESS, SetLastError,
-    WIN32_ERROR,
+    ERROR_INSUFFICIENT_BUFFER, GetLastError, NO_ERROR, NTSTATUS, STATUS_INFO_LENGTH_MISMATCH,
+    STATUS_SUCCESS, SetLastError, WIN32_ERROR,
 };
 
 /// Trait for converting a type to a [`Result`]
@@ -40,9 +40,23 @@ impl Win32Error {
         }
     }
 
+    /// Check if this error is due to insufficient buffer size
+    pub fn insufficient_size(&self) -> bool {
+        self.inner == ERROR_INSUFFICIENT_BUFFER
+    }
+
     /// Clear the last error (per-thread)
     pub fn clear_last_err() {
         unsafe { SetLastError(NO_ERROR) }
+    }
+
+    /// Convert into result
+    pub fn into_result(self) -> Result<(), Self> {
+        if self.inner == NO_ERROR {
+            Ok(())
+        } else {
+            Err(self)
+        }
     }
 }
 
@@ -59,6 +73,19 @@ impl fmt::Debug for Win32Error {
 }
 
 impl std::error::Error for Win32Error {}
+
+impl From<WIN32_ERROR> for Win32Error {
+    fn from(code: WIN32_ERROR) -> Self {
+        Self { inner: code }
+    }
+}
+
+impl IntoResult for WIN32_ERROR {
+    type Err = Win32Error;
+    fn into_result(self) -> Result<(), Self::Err> {
+        Win32Error::from(self).into_result()
+    }
+}
 
 /// [`NTSTATUS`] Error (from return code)
 #[derive(Clone)]
@@ -152,19 +179,45 @@ macro_rules! win32 {
 /// until a limit.
 #[macro_export]
 macro_rules! adapt_size {
-    ($szi:ident, $bufi:ident -> $e: expr, $max_sz: expr) => {{
+    ($ty:ty, $sz1i:ident: $sz1v:expr => $sz1e:expr, $buf1i:ident, $e: expr) => {{
         use $crate::buf::Buffer;
 
-        let mut $szi = 0;
-        let $bufi = std::ptr::null_mut();
+        let mut $sz1i = $sz1v;
+        let mut $buf1i = $crate::buf::buf::<$ty>($sz1i as usize);
         let res: Result<_, _> = $e;
         if let Err(err) = &res {
             if err.insufficient_size() {
-                if $szi > $max_sz {
+                if $sz1i > $sz1e {
                     util::error::bail!("exceeded max size");
                 }
-                let mut _buf = $crate::buf::buf::<u8>($szi as usize);
-                let $bufi = _buf.as_mut_void();
+                let mut $buf1i = $crate::buf::buf::<$ty>($sz1i as usize);
+                $e
+            } else { res }
+        } else {
+            res
+        }
+    }};
+}
+
+/// Macro to repeatedly call a function with two buffers, increasing their sizes until it succeeds.
+/// This is useful for Windows API functions that return data in two separate buffers.
+#[macro_export]
+macro_rules! adapt_size2 {
+    ($ty:ty, $sz1i:ident: $sz1v:expr => $sz1e:expr, $buf1i:ident, $sz2i:ident: $sz2v:expr => $sz2e:expr, $buf2i:ident, $e: expr) => {{
+        use $crate::buf::Buffer;
+
+        let mut $sz1i = $sz1v;
+        let mut $sz2i = $sz2v;
+        let mut $buf1i = $crate::buf::buf::<$ty>($sz1i as usize);
+        let mut $buf2i = $crate::buf::buf::<$ty>($sz2i as usize);
+        let res: Result<_, _> = $e;
+        if let Err(err) = &res {
+            if err.insufficient_size() {
+                if $sz1i > $sz1e || $sz2i > $sz2e {
+                    util::error::bail!("exceeded max size");
+                }
+                let mut $buf1i = $crate::buf::buf::<$ty>($sz1i as usize);
+                let mut $buf2i = $crate::buf::buf::<$ty>($sz2i as usize);
                 $e
             } else { res }
         } else {

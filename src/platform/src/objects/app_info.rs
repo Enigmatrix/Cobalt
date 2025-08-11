@@ -9,8 +9,14 @@ use windows::Foundation::Size;
 use windows::Storage::FileProperties::ThumbnailMode;
 use windows::Storage::StorageFile;
 use windows::Storage::Streams::DataReader;
-use windows::core::AgileReference;
+use windows::Win32::Storage::Packaging::Appx::{
+    PackageNameAndPublisherIdFromFamilyName, ParseApplicationUserModelId,
+};
+use windows::core::{AgileReference, HSTRING, PCWSTR, PWSTR};
 
+use crate::adapt_size2;
+use crate::buf::WideBuffer;
+use crate::error::IntoResult;
 use crate::objects::FileVersionInfo;
 
 /// Information about an App
@@ -103,13 +109,24 @@ impl AppInfo {
 
     /// Create a default [AppInfo] from a UWP AUMID
     pub fn default_from_uwp(aumid: &str) -> Self {
-        let name = aumid; // TODO: get name from company, AUMID
-        Self {
-            name: name.to_string(),
-            description: name.to_string(),
-            company: "".to_string(),
-            color: random_color(),
-            icon: None,
+        // Try to parse the AUMID to extract meaningful information
+        if let Ok(parsed) = Aumid::parse(aumid) {
+            Self {
+                name: parsed.package_name.clone(),
+                description: parsed.package_name.clone(),
+                company: parsed.publisher_id,
+                color: random_color(),
+                icon: None,
+            }
+        } else {
+            // Fallback to original behavior if parsing fails
+            Self {
+                name: aumid.to_string(),
+                description: aumid.to_string(),
+                company: "".to_string(),
+                color: random_color(),
+                icon: None,
+            }
         }
     }
 
@@ -209,6 +226,78 @@ impl AppInfo {
     }
 }
 
+/// Parsed components of an Application User Model ID (AUMID)
+pub struct Aumid {
+    /// Package family name (e.g., "Microsoft.Windows.Calculator_8wekyb3d8bbwe")
+    pub package_family_name: String,
+    /// Package relative application ID (e.g., "App")
+    pub package_relative_app_id: String,
+    /// Package name (e.g., "Microsoft.Windows.Calculator")
+    pub package_name: String,
+    /// Publisher ID (e.g., "8wekyb3d8bbwe")
+    pub publisher_id: String,
+}
+
+impl Aumid {
+    /// Parse an Application User Model ID (AUMID) into its components using Windows API
+    pub fn parse(aumid: &str) -> Result<Self> {
+        let aumid_hstring = HSTRING::from(aumid);
+        let aumid_pcwstr = PCWSTR::from_raw(aumid_hstring.as_ptr());
+
+        // Parse the AUMID to get package family name and package relative app ID
+        let (package_family_name, package_relative_app_id) = adapt_size2!(
+            u16,
+            package_family_name_length: 0 => 1024,
+            package_family_name,
+            package_relative_app_id_length: 0 => 1024,
+            package_relative_app_id,
+            unsafe {
+                ParseApplicationUserModelId(
+                    aumid_pcwstr,
+                    &mut package_family_name_length,
+                    Some(PWSTR(package_family_name.as_mut_ptr())),
+                    &mut package_relative_app_id_length,
+                    Some(PWSTR(package_relative_app_id.as_mut_ptr())),
+                )
+            }.into_result().map(|_| {
+                (package_family_name.with_length(package_family_name_length as usize).to_string_lossy_except_null_terminator(),
+                package_relative_app_id.with_length(package_relative_app_id_length as usize).to_string_lossy_except_null_terminator())
+            })
+        )?;
+
+        // Parse the package family name to get package name and publisher ID
+        let package_family_name_hstring = HSTRING::from(&package_family_name);
+        let package_family_name_pcwstr = PCWSTR::from_raw(package_family_name_hstring.as_ptr());
+
+        let (package_name, publisher_id) = adapt_size2!(
+            u16,
+            package_name_length: 0 => 1024,
+            package_name,
+            publisher_id_length: 0 => 1024,
+            publisher_id,
+            unsafe {
+                PackageNameAndPublisherIdFromFamilyName(
+                    package_family_name_pcwstr,
+                    &mut package_name_length,
+                    Some(PWSTR(package_name.as_mut_ptr())),
+                    &mut publisher_id_length,
+                    Some(PWSTR(publisher_id.as_mut_ptr())),
+                )
+            }.into_result().map(|_| {
+                (package_name.with_length(package_name_length as usize).to_string_lossy_except_null_terminator(),
+                publisher_id.with_length(publisher_id_length as usize).to_string_lossy_except_null_terminator())
+            })
+        )?;
+
+        Ok(Aumid {
+            package_family_name,
+            package_relative_app_id,
+            package_name,
+            publisher_id,
+        })
+    }
+}
+
 /// Generate a random color
 pub fn random_color() -> String {
     // ref: https://github.com/catppuccin/catppuccin
@@ -251,5 +340,43 @@ mod tests {
         assert_eq!("Microsoft", app_info.company);
         assert_ne!(0, app_info.icon.unwrap().data.len());
         Ok(())
+    }
+
+    #[test]
+    fn test_parse_aumid() -> Result<()> {
+        let aumid = "Microsoft.Windows.NarratorQuickStart_8wekyb3d8bbwe!App";
+        let parsed = Aumid::parse(aumid)?;
+
+        assert_eq!(
+            parsed.package_family_name,
+            "Microsoft.Windows.NarratorQuickStart_8wekyb3d8bbwe"
+        );
+        assert_eq!(parsed.package_relative_app_id, "App");
+        assert_eq!(parsed.package_name, "Microsoft.Windows.NarratorQuickStart");
+        assert_eq!(parsed.publisher_id, "8wekyb3d8bbwe");
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_default_from_uwp_with_parsing() {
+        let aumid = "Microsoft.Windows.Calculator_8wekyb3d8bbwe!App";
+        let app_info = AppInfo::default_from_uwp(aumid);
+
+        // Should use parsed information
+        assert_eq!(app_info.name, "Microsoft.Windows.Calculator");
+        assert_eq!(app_info.description, "Microsoft.Windows.Calculator");
+        assert_eq!(app_info.company, "8wekyb3d8bbwe");
+    }
+
+    #[test]
+    fn test_default_from_uwp_fallback() {
+        let invalid_aumid = "InvalidAUMID";
+        let app_info = AppInfo::default_from_uwp(invalid_aumid);
+
+        // Should fallback to original behavior
+        assert_eq!(app_info.name, "InvalidAUMID");
+        assert_eq!(app_info.description, "InvalidAUMID");
+        assert_eq!(app_info.company, "");
     }
 }
