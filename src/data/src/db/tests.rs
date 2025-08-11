@@ -1,5 +1,5 @@
 use sqlx::prelude::FromRow;
-use sqlx::{Row, query};
+use sqlx::query;
 use util::future as tokio;
 
 use super::*;
@@ -28,31 +28,29 @@ async fn test_up() -> Result<()> {
 async fn insert_new_app() -> Result<()> {
     let db = test_db().await?;
     let mut writer = UsageWriter::new(db)?;
-    let res = writer
-        .find_or_insert_app(
-            &AppIdentity::Win32 {
-                path: "notepad.exe".to_string(),
-            },
-            Times {
-                now: 400,
-                ..Default::default()
-            },
-        )
-        .await?;
+    let mut app = App {
+        id: Ref::new(0),
+        name: "notepad.exe".to_string(),
+        description: "notepad.exe".to_string(),
+        company: "".to_string(),
+        color: "red".to_string(),
+        icon: None,
+        identity: AppIdentity::Win32 {
+            path: "notepad.exe".to_string(),
+        },
+        tag_id: None,
+        created_at: 400,
+        updated_at: 400,
+    };
+    let res = writer.find_or_insert_app(&app).await?;
     assert_eq!(res, FoundOrInserted::Inserted(Ref::<App>::new(1)));
 
-    let res: Vec<(Option<i64>, i64, String)> = query("SELECT * FROM apps")
-        .map(|r: SqliteRow| {
-            (
-                r.get("initialized_at"),
-                r.get("created_at"),
-                r.get("identity_text0"),
-            )
-        })
+    let res: Vec<App> = query_as("SELECT * FROM apps")
         .fetch_all(writer.db.executor())
         .await?;
 
-    assert_eq!(vec![(None, 400, "notepad.exe".to_string())], res);
+    app.id = Ref::new(1); // newly inserted app has id 1
+    assert_eq!(vec![app], res);
     Ok(())
 }
 
@@ -60,43 +58,46 @@ async fn insert_new_app() -> Result<()> {
 async fn found_old_app() -> Result<()> {
     let db = test_db().await?;
     let mut writer = UsageWriter::new(db)?;
-    let res = writer
-        .find_or_insert_app(
-            &AppIdentity::Win32 {
-                path: "notepad.exe".to_string(),
-            },
-            Times {
-                now: 400,
-                ..Default::default()
-            },
-        )
-        .await?;
+    let mut app1 = App {
+        id: Ref::new(0),
+        name: "notepad.exe".to_string(),
+        description: "notepad.exe".to_string(),
+        company: "".to_string(),
+        color: "red".to_string(),
+        icon: None,
+        identity: AppIdentity::Win32 {
+            path: "notepad.exe".to_string(),
+        },
+        tag_id: None,
+        created_at: 400,
+        updated_at: 400,
+    };
+    let res = writer.find_or_insert_app(&app1).await?;
     assert_eq!(res, FoundOrInserted::Inserted(Ref::<App>::new(1)));
-    let res = writer
-        .find_or_insert_app(
-            &AppIdentity::Win32 {
-                path: "notepad.exe".to_string(),
-            },
-            Times {
-                now: 500,
-                ..Default::default()
-            },
-        )
-        .await?;
+
+    let app2 = App {
+        id: Ref::new(0),
+        name: "notepad.exe".to_string(),
+        description: "notepad.exe".to_string(),
+        company: "".to_string(),
+        color: "red".to_string(),
+        icon: None,
+        identity: AppIdentity::Win32 {
+            path: "notepad.exe".to_string(),
+        },
+        tag_id: None,
+        created_at: 500,
+        updated_at: 500,
+    };
+    let res = writer.find_or_insert_app(&app2).await?;
     assert_eq!(res, FoundOrInserted::Found(Ref::<App>::new(1)));
 
-    let res: Vec<(Option<i64>, i64, String)> = query("SELECT * FROM apps")
-        .map(|r: SqliteRow| {
-            (
-                r.get("initialized_at"),
-                r.get("created_at"),
-                r.get("identity_text0"),
-            )
-        })
+    let res: Vec<App> = query_as("SELECT * FROM apps")
         .fetch_all(writer.db.executor())
         .await?;
 
-    assert_eq!(vec![(None, 400, "notepad.exe".to_string())], res);
+    app1.id = Ref::new(1); // newly inserted app has id 1
+    assert_eq!(vec![app1], res);
     Ok(())
 }
 
@@ -104,14 +105,21 @@ async fn found_old_app() -> Result<()> {
 async fn insert_session() -> Result<()> {
     let db = test_db().await?;
     let mut writer = UsageWriter::new(db)?;
-    writer
-        .find_or_insert_app(
-            &AppIdentity::Win32 {
-                path: "notepad.exe".to_string(),
-            },
-            Times::default(),
-        )
-        .await?;
+    let app = App {
+        id: Ref::new(0),
+        name: "notepad.exe".to_string(),
+        description: "notepad.exe".to_string(),
+        company: "".to_string(),
+        color: "red".to_string(),
+        icon: None,
+        identity: AppIdentity::Win32 {
+            path: "notepad.exe".to_string(),
+        },
+        tag_id: None,
+        created_at: 400,
+        updated_at: 400,
+    };
+    writer.find_or_insert_app(&app).await?;
     let mut sess = Session {
         id: Default::default(),
         app_id: Ref::new(1),
@@ -132,14 +140,22 @@ async fn insert_session() -> Result<()> {
 async fn insert_usage() -> Result<()> {
     let db = test_db().await?;
     let mut writer = UsageWriter::new(db)?;
-    writer
-        .find_or_insert_app(
-            &AppIdentity::Win32 {
-                path: "notepad.exe".to_string(),
-            },
-            Times::default(),
-        )
-        .await?;
+
+    let app = App {
+        id: Ref::new(0),
+        name: "notepad.exe".to_string(),
+        description: "notepad.exe".to_string(),
+        company: "".to_string(),
+        color: "red".to_string(),
+        icon: None,
+        identity: AppIdentity::Win32 {
+            path: "notepad.exe".to_string(),
+        },
+        tag_id: None,
+        created_at: 400,
+        updated_at: 400,
+    };
+    writer.find_or_insert_app(&app).await?;
     let mut sess = Session {
         id: Default::default(),
         app_id: Ref::new(1),
@@ -166,14 +182,22 @@ async fn insert_usage() -> Result<()> {
 async fn update_usage_after_insert_usage() -> Result<()> {
     let db = test_db().await?;
     let mut writer = UsageWriter::new(db)?;
-    writer
-        .find_or_insert_app(
-            &AppIdentity::Win32 {
-                path: "notepad.exe".to_string(),
-            },
-            Times::default(),
-        )
-        .await?;
+
+    let app = App {
+        id: Ref::new(0),
+        name: "notepad.exe".to_string(),
+        description: "notepad.exe".to_string(),
+        company: "".to_string(),
+        color: "red".to_string(),
+        icon: None,
+        identity: AppIdentity::Win32 {
+            path: "notepad.exe".to_string(),
+        },
+        tag_id: None,
+        created_at: 400,
+        updated_at: 400,
+    };
+    writer.find_or_insert_app(&app).await?;
     let mut sess = Session {
         id: Default::default(),
         app_id: Ref::new(1),
@@ -203,14 +227,22 @@ async fn update_usage_after_insert_usage() -> Result<()> {
 async fn insert_interaction_period() -> Result<()> {
     let db = test_db().await?;
     let mut writer = UsageWriter::new(db)?;
-    writer
-        .find_or_insert_app(
-            &AppIdentity::Win32 {
-                path: "notepad.exe".to_string(),
-            },
-            Times::default(),
-        )
-        .await?;
+
+    let app = App {
+        id: Ref::new(0),
+        name: "notepad.exe".to_string(),
+        description: "notepad.exe".to_string(),
+        company: "".to_string(),
+        color: "red".to_string(),
+        icon: None,
+        identity: AppIdentity::Win32 {
+            path: "notepad.exe".to_string(),
+        },
+        tag_id: None,
+        created_at: 400,
+        updated_at: 400,
+    };
+    writer.find_or_insert_app(&app).await?;
     let mut ip = InteractionPeriod {
         id: Default::default(),
         start: 42,
@@ -232,18 +264,21 @@ async fn insert_interaction_period() -> Result<()> {
 async fn update_app() -> Result<()> {
     let db = test_db().await?;
     let mut writer = UsageWriter::new(db)?;
-    let identity = AppIdentity::Win32 {
-        path: "notepad.exe".to_string(),
+    let app = App {
+        id: Ref::new(0),
+        name: "notepad.exe".to_string(),
+        description: "notepad.exe".to_string(),
+        company: "".to_string(),
+        color: "red".to_string(),
+        icon: None,
+        identity: AppIdentity::Win32 {
+            path: "notepad.exe".to_string(),
+        },
+        tag_id: None,
+        created_at: 400,
+        updated_at: 400,
     };
-    writer
-        .find_or_insert_app(
-            &identity,
-            Times {
-                now: 400,
-                ..Default::default()
-            },
-        )
-        .await?;
+    writer.find_or_insert_app(&app).await?;
 
     let mut updater = AppUpdater::new(writer.db)?;
     let icon = "icon1".to_string();
@@ -253,7 +288,7 @@ async fn update_app() -> Result<()> {
         description: "desc".to_string(),
         company: "comp".to_string(),
         color: "red".to_string(),
-        identity: identity.clone(), // ignored by query
+        identity: app.identity.clone(), // ignored by query
         icon: Some(icon.clone()),
         tag_id: None,
         created_at: 400,
@@ -286,7 +321,6 @@ async fn update_app() -> Result<()> {
 
 async fn insert_app_raw(
     db: &mut Database,
-    found: bool,
     name: &str,
     description: &str,
     company: &str,
@@ -299,8 +333,7 @@ async fn insert_app_raw(
     initialized_at: Option<i64>,
     updated_at: i64,
 ) -> Result<Ref<App>> {
-    let res = query("INSERT INTO apps VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
-        .bind(found)
+    let res = query("INSERT INTO apps VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
         .bind(name)
         .bind(description)
         .bind(company)
@@ -401,7 +434,6 @@ async fn target_apps() -> Result<()> {
 
         insert_app_raw(
             &mut db,
-            true,
             "name1",
             "desc1",
             "comp1",
@@ -417,7 +449,6 @@ async fn target_apps() -> Result<()> {
         .await?;
         insert_app_raw(
             &mut db,
-            true,
             "name2",
             "desc2",
             "comp2",
@@ -433,7 +464,6 @@ async fn target_apps() -> Result<()> {
         .await?;
         insert_app_raw(
             &mut db,
-            true,
             "name3",
             "desc3",
             "comp3",
@@ -449,7 +479,6 @@ async fn target_apps() -> Result<()> {
         .await?;
         insert_app_raw(
             &mut db,
-            true,
             "name4",
             "desc4",
             "comp4",
@@ -570,7 +599,6 @@ async fn insert_alert_event() -> Result<()> {
     {
         insert_app_raw(
             &mut db,
-            true,
             "name1",
             "desc1",
             "comp1",
@@ -620,7 +648,6 @@ async fn insert_reminder_event() -> Result<()> {
     {
         insert_app_raw(
             &mut db,
-            true,
             "name1",
             "desc1",
             "comp1",
@@ -719,7 +746,6 @@ pub mod arrange {
     pub async fn app(db: &mut Database, mut app: App) -> Result<App> {
         app.id = insert_app_raw(
             db,
-            false,
             &app.name,
             &app.description,
             &app.company,
@@ -738,34 +764,6 @@ pub mod arrange {
             app.icon.clone(),
             0,
             Some(0),
-            0,
-        )
-        .await?;
-        Ok(app)
-    }
-
-    pub async fn app_uninit(db: &mut Database, mut app: App) -> Result<App> {
-        app.id = insert_app_raw(
-            db,
-            false,
-            &app.name,
-            &app.description,
-            &app.company,
-            &app.color,
-            app.tag_id.as_ref().map(|id| id.0),
-            if let AppIdentity::Win32 { .. } = app.identity {
-                1
-            } else {
-                0
-            },
-            match &app.identity {
-                AppIdentity::Win32 { path } => path,
-                AppIdentity::Uwp { aumid } => aumid,
-                AppIdentity::Website { base_url } => base_url,
-            },
-            app.icon.clone(),
-            0,
-            None,
             0,
         )
         .await?;

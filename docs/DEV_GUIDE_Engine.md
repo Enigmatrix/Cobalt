@@ -20,7 +20,7 @@ src/
 │   │   ├── engine.rs    # Core state machine
 │   │   ├── sentry.rs    # Alert manager
 │   │   ├── resolver.rs  # App information resolver
-│   │   ├── cache.rs     # In-memory cache - state of the Desktop
+│   │   ├── desktop.rs   # In-memory state of the Desktop
 │   │   ├── ...
 │   └── Cargo.toml
 ├── platform/            # Platform-specific abstractions
@@ -69,9 +69,9 @@ Key responsibilities:
 - Resolving application metadata (name, description, company, icon)
 - Storing resolved information in the database
 
-### Cache
+### Desktop State
 
-[Cache](/src/engine/src/cache.rs) is a simple in-memory cache that stores the resolved information about apps and sessions, along with their associated processes and windows. There is only one instance of this cache around, and it is accessed by the `Engine` and `Resolver`.
+[DesktopState](/src/engine/src/desktop.rs) is a simple in-memory cache that stores the resolved information about apps and sessions, along with their associated processes and windows. There is only one instance of this cache around, and it is accessed by the `Engine` and `Resolver`.
 It is essentially the current state of the desktop.
 
 Key responsibilities:

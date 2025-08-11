@@ -52,6 +52,18 @@ pub trait WideBuffer: Buffer<u16> {
     fn to_string_lossy(&mut self) -> String {
         String::from_utf16_lossy(self.as_bytes())
     }
+
+    /// Convert this [`WideBuffer`] to a [`String`] using [`String::from_utf16_lossy`].
+    /// Notably, invalid data is replaced with the replacement character (U+FFFD).
+    /// If the last byte is a null terminator, it is removed.
+    fn to_string_lossy_except_null_terminator(&mut self) -> String {
+        let mut bytes = self.as_bytes();
+        if let Some(0) = bytes.last() {
+            let len = bytes.len() - 1;
+            bytes = &mut bytes[..len];
+        }
+        String::from_utf16_lossy(bytes)
+    }
 }
 
 impl<T: Buffer<u16>> WideBuffer for T {}

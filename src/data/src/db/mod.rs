@@ -117,30 +117,50 @@ impl UsageWriter {
     }
 
     /// Find or insert a [App] by its [AppIdentity]
-    pub async fn find_or_insert_app(
-        &mut self,
-        identity: &AppIdentity,
-        ts: impl TimeSystem,
-    ) -> Result<FoundOrInserted<App>> {
-        let (tag, text0) = Self::destructure_identity(identity);
-        let (app_id, found): (Ref<App>, bool) = query_as(
-            // We set found=1 to force this query to return a result row regardless of
-            // conflict result.
-            "INSERT INTO apps (identity_tag, identity_text0, created_at, updated_at) VALUES (?, ?, ?, ?) ON CONFLICT
-                DO UPDATE SET found = 1 RETURNING id, found",
+    ///
+    /// Uses a transaction to ensure atomicity between SELECT and INSERT operations.
+    /// This prevents race conditions where another thread might insert the same app
+    /// between our SELECT and INSERT queries.
+    pub async fn find_or_insert_app(&mut self, app: &App) -> Result<FoundOrInserted<App>> {
+        let (tag, text0) = Self::destructure_identity(&app.identity);
+        let mut tx = self.db.transaction().await?;
+
+        // First, try to find existing app by identity
+        if let Some((existing_id,)) = query_as::<_, (Ref<App>,)>(
+            "SELECT id FROM apps WHERE identity_tag = ? AND identity_text0 = ?",
         )
         .bind(tag)
         .bind(text0)
-        .bind(ts.now().to_ticks())
-        .bind(ts.now().to_ticks())
-        .fetch_one(self.db.executor())
+        .fetch_optional(&mut *tx)
+        .await?
+        {
+            // Found existing app
+            tx.commit().await?;
+            return Ok(FoundOrInserted::Found(existing_id));
+        }
+
+        // No existing app found, insert new one
+        let (new_id,): (Ref<App>,) = query_as(
+            "INSERT INTO apps (
+                name, description, company, color, icon, tag_id,
+                identity_tag, identity_text0, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
+        )
+        .bind(&app.name)
+        .bind(&app.description)
+        .bind(&app.company)
+        .bind(&app.color)
+        .bind(&app.icon)
+        .bind(&app.tag_id)
+        .bind(tag)
+        .bind(text0)
+        .bind(app.created_at)
+        .bind(app.updated_at)
+        .fetch_one(&mut *tx)
         .await?;
 
-        Ok(if found {
-            FoundOrInserted::Found(app_id)
-        } else {
-            FoundOrInserted::Inserted(app_id)
-        })
+        tx.commit().await?;
+        Ok(FoundOrInserted::Inserted(new_id))
     }
 
     /// Insert a [Session] into the [Database]

@@ -171,14 +171,14 @@ impl Process {
         cb: F,
         max_size: u32,
     ) -> Result<R> {
-        Ok(adapt_size!(len, buf -> unsafe {
-            NtQueryInformationProcess(self.handle, cls, buf, len, &mut len).into_result().map(|_| {
+        Ok(adapt_size!(u8, len: 0 => max_size, buf, unsafe {
+            NtQueryInformationProcess(self.handle, cls, buf.as_mut_void(), len, &mut len).into_result().map(|_| {
                 // unwrap will always succeed as otherwise NtQueryInformationProcess would have failed
-                // and we would have exited.
-                let us = buf.cast::<T>().as_mut().unwrap();
+                // and we would have exited. More importantly, T must be repr-C compatible
+                let us = buf.as_mut_void().cast::<T>().as_mut().unwrap();
                 cb(us)
             })
-        }, max_size)?)
+        })?)
     }
 
     /// List all running processes on the system
