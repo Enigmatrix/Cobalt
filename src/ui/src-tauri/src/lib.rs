@@ -59,6 +59,8 @@ pub fn run() {
             repo::get_app_session_usages,
             repo::get_interaction_periods,
             repo::get_system_events,
+            repo::get_alert_events,
+            repo::get_alert_reminder_events,
             stats::get_score,
             stats::get_score_per_period,
             stats::get_streaks,

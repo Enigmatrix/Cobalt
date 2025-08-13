@@ -997,4 +997,61 @@ impl Repository {
 
         Ok(events)
     }
+
+    /// Gets all [AlertEvent]s for a specific alert in a time range
+    pub async fn get_alert_events(
+        &mut self,
+        start: Timestamp,
+        end: Timestamp,
+        alert_id: Ref<Alert>,
+    ) -> Result<Vec<AlertEvent>> {
+        let events: Vec<AlertEvent> = query_as(
+            "SELECT
+                e.id,
+                e.alert_id,
+                e.timestamp,
+                e.reason
+            FROM alert_events e, (SELECT ? AS start, ? AS end) p
+            WHERE e.alert_id = ? 
+                AND e.timestamp > p.start 
+                AND e.timestamp <= p.end
+            ORDER BY e.timestamp ASC",
+        )
+        .bind(start)
+        .bind(end)
+        .bind(alert_id)
+        .fetch_all(self.db.executor())
+        .await?;
+
+        Ok(events)
+    }
+
+    /// Gets all [ReminderEvent]s for reminders of a specific alert in a time range
+    pub async fn get_alert_reminder_events(
+        &mut self,
+        start: Timestamp,
+        end: Timestamp,
+        alert_id: Ref<Alert>,
+    ) -> Result<Vec<ReminderEvent>> {
+        let events: Vec<ReminderEvent> = query_as(
+            "SELECT
+                e.id,
+                e.reminder_id,
+                e.timestamp,
+                e.reason
+            FROM reminder_events e
+            INNER JOIN reminders r ON e.reminder_id = r.id
+            WHERE r.alert_id = ?
+                AND e.timestamp > ?
+                AND e.timestamp <= ?
+            ORDER BY e.timestamp ASC",
+        )
+        .bind(alert_id)
+        .bind(start)
+        .bind(end)
+        .fetch_all(self.db.executor())
+        .await?;
+
+        Ok(events)
+    }
 }
