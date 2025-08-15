@@ -28,13 +28,20 @@ import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Text } from "@/components/ui/text";
 import { NextButton, PrevButton } from "@/components/usage-card";
-import { VizCard, VizCardContent } from "@/components/viz/viz-card";
+import {
+  VizCard,
+  VizCardAction,
+  VizCardContent,
+  VizCardHeader,
+  VizCardTitle,
+} from "@/components/viz/viz-card";
 import { useAlert, useApp, useTag } from "@/hooks/use-refresh";
 import { useAlertEvents, useAlertReminderEvents } from "@/hooks/use-repo";
 import { useIntervalControlsWithDefault } from "@/hooks/use-time";
 import type { Alert, App, Ref, Tag, TriggerAction } from "@/lib/entities";
 import { useAppState } from "@/lib/state";
 import { cn } from "@/lib/utils";
+import _ from "lodash";
 import {
   AlertCircleIcon,
   BellIcon,
@@ -289,14 +296,14 @@ function TriggerActionDisplay({ action }: { action: TriggerAction }) {
     case "kill":
       return (
         <div className="flex items-center gap-2">
-          <ZapIcon className="w-4 h-4 text-red-500" />
+          <ZapIcon className="w-4 h-4 shrink-0 text-red-500" />
           <Text>Kill</Text>
         </div>
       );
     case "dim":
       return (
         <div className="flex items-center gap-2">
-          <SunDimIcon className="w-4 h-4 text-orange-500" />
+          <SunDimIcon className="w-4 h-4 shrink-0 text-orange-500" />
           <div className="flex items-center gap-1">
             <Text>Dim over</Text>
             <DurationText ticks={action.duration ?? 0} />
@@ -306,8 +313,8 @@ function TriggerActionDisplay({ action }: { action: TriggerAction }) {
     case "message":
       return (
         <div className="flex items-center gap-2">
-          <MessageSquareIcon className="w-4 h-4 text-blue-500" />
-          <Text>Show Message</Text>
+          <MessageSquareIcon className="w-4 h-4 shrink-0 text-blue-500" />
+          <Text>{action.content}</Text>
         </div>
       );
     default:
@@ -336,17 +343,21 @@ function CurrentProgressCard({ alert }: { alert: Alert }) {
 
   return (
     <VizCard>
-      <VizCardContent className="p-6">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <Text className="font-semibold">Current Progress</Text>
-            <div className="flex items-center gap-1 text-sm text-muted-foreground">
-              <DurationText ticks={currentUsage ?? 0} />
-              <Text>/</Text>
-              <DurationText ticks={limit ?? 0} />
-            </div>
+      <VizCardHeader className="px-4 pt-4">
+        <VizCardTitle className="flex items-center gap-2 mt-2 ml-2 font-semibold">
+          Current Progress
+        </VizCardTitle>
+        <VizCardAction className="flex items-center">
+          <div className="flex items-center gap-1 text-sm text-muted-foreground mr-2 mt-2">
+            <DurationText ticks={currentUsage ?? 0} />
+            <Text>/</Text>
+            <DurationText ticks={limit ?? 0} />
           </div>
-          <Progress value={progress} className="h-3" />
+        </VizCardAction>
+      </VizCardHeader>
+      <VizCardContent className="p-4 px-6">
+        <div className="space-y-4">
+          <Progress value={progress} className="h-3 rounded-sm" />
           <div className="flex justify-between text-sm text-muted-foreground">
             <Text>0%</Text>
             <Text>{`${Math.round(progress)}%`}</Text>
@@ -361,9 +372,13 @@ function CurrentProgressCard({ alert }: { alert: Alert }) {
 function RemindersCard({ alert }: { alert: Alert }) {
   return (
     <VizCard>
-      <VizCardContent className="p-6">
-        <div className="space-y-4">
-          <Text className="font-semibold">Reminders</Text>
+      <VizCardHeader className="px-4 pt-4">
+        <VizCardTitle className="flex items-center gap-2 mt-2 ml-2 font-semibold">
+          Reminders
+        </VizCardTitle>
+      </VizCardHeader>
+      <VizCardContent className="p-4">
+        <div>
           {alert.reminders.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <ClockAlert className="w-8 h-8 mx-auto mb-2 opacity-50" />
@@ -374,8 +389,8 @@ function RemindersCard({ alert }: { alert: Alert }) {
             </div>
           ) : (
             <div className="space-y-4">
-              {alert.reminders
-                .sort((a, b) => a.threshold - b.threshold)
+              {_(alert.reminders)
+                .sortBy((r) => r.threshold)
                 .map((reminder) => {
                   const triggerDuration = reminder.threshold * alert.usageLimit;
 
@@ -421,7 +436,8 @@ function RemindersCard({ alert }: { alert: Alert }) {
                       </div>
                     </div>
                   );
-                })}
+                })
+                .value()}
             </div>
           )}
         </div>
@@ -456,100 +472,99 @@ function AlertTimelineCard({ alert }: { alert: Alert }) {
       ...reminderEvents.map((e) => ({ ...e, type: "reminder" as const })),
     ];
 
-    return combined.sort((a, b) => b.timestamp - a.timestamp); // Most recent first
+    return _(combined)
+      .sortBy((e) => e.timestamp)
+      .value(); // Most recent first
   }, [alertEvents, reminderEvents]);
 
   return (
     <VizCard>
-      <VizCardContent className="p-6">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Text className="font-semibold">Recent Events</Text>
-              {isLoading && (
-                <div className="w-4 h-4 border-2 border-muted border-t-blue-500 rounded-full animate-spin" />
-              )}
+      <VizCardHeader className="p-4">
+        <VizCardTitle className="flex items-center gap-2 mt-2 ml-2">
+          <div className="font-semibold">Events</div>
+          {isLoading && (
+            <div className="w-4 h-4 border-2 border-muted border-t-blue-500 rounded-full animate-spin" />
+          )}
+        </VizCardTitle>
+        <VizCardAction className="flex items-center">
+          <PrevButton
+            canGoPrev={canGoPrev}
+            isLoading={isLoading}
+            goPrev={goPrev}
+          />
+          <DateRangePicker
+            className="min-w-32"
+            value={interval}
+            onChange={setInterval}
+          />
+          <NextButton
+            canGoNext={canGoNext}
+            isLoading={isLoading}
+            goNext={goNext}
+          />
+        </VizCardAction>
+      </VizCardHeader>
+      <VizCardContent className="px-6">
+        <div>
+          {timelineEvents.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <ClockIcon className="w-8 h-8 mx-auto mb-2 opacity-50" />
+              <Text className="text-sm">No events in this period</Text>
             </div>
-            <div className="flex items-center -mr-2">
-              <PrevButton
-                canGoPrev={canGoPrev}
-                isLoading={isLoading}
-                goPrev={goPrev}
-              />
-              <DateRangePicker
-                className="min-w-32"
-                value={interval}
-                onChange={setInterval}
-              />
-              <NextButton
-                canGoNext={canGoNext}
-                isLoading={isLoading}
-                goNext={goNext}
-              />
-            </div>
-          </div>
+          ) : (
+            <div className="relative">
+              {/* Timeline line */}
+              <div className="absolute left-4 top-0 bottom-0 w-px bg-border" />
 
-          <div className="space-y-3">
-            {timelineEvents.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <ClockIcon className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                <Text className="text-sm">No events in this period</Text>
-              </div>
-            ) : (
-              <div className="relative">
-                {/* Timeline line */}
-                <div className="absolute left-4 top-0 bottom-0 w-px bg-border" />
-
-                {timelineEvents.map((event) => (
+              {timelineEvents.map((event) => (
+                <div
+                  key={`${event.type}-${event.id}`}
+                  className="relative flex items-start gap-4 pb-4"
+                >
+                  {/* Timeline dot */}
                   <div
-                    key={`${event.type}-${event.id}`}
-                    className="relative flex items-start gap-4 pb-4"
+                    className={cn(
+                      "relative z-10 flex h-8 w-8 items-center justify-center rounded-full outline-1 bg-card",
+                      event.type === "alert"
+                        ? event.reason === "hit"
+                          ? "outline-orange-400 text-orange-400"
+                          : "outline-gray-300 text-gray-300"
+                        : event.reason === "hit"
+                          ? "outline-yellow-300 text-yellow-300"
+                          : "outline-gray-300 text-gray-300",
+                    )}
                   >
-                    {/* Timeline dot */}
-                    <div
-                      className={cn(
-                        "relative z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 bg-background",
-                        event.type === "alert"
-                          ? event.reason === "hit"
-                            ? "border-orange-500 text-orange-500"
-                            : "border-gray-400 text-gray-400"
-                          : event.reason === "hit"
-                            ? "border-yellow-500 text-yellow-500"
-                            : "border-gray-400 text-gray-400",
-                      )}
-                    >
-                      {event.type === "alert" ? (
-                        event.reason === "hit" ? (
-                          <BellIcon className="w-4 h-4" />
-                        ) : (
-                          <XCircleIcon className="w-4 h-4" />
-                        )
-                      ) : event.reason === "hit" ? (
-                        <ClockAlert className="w-4 h-4" />
+                    {event.type === "alert" ? (
+                      event.reason === "hit" ? (
+                        <BellIcon className="w-4 h-4" />
                       ) : (
                         <XCircleIcon className="w-4 h-4" />
-                      )}
-                    </div>
-
-                    {/* Event content */}
-                    <div className="flex-1 min-w-0 pb-4">
-                      <div className="flex items-center justify-start gap-2 mb-1">
-                        <Text className="text-sm font-medium">
-                          {event.type === "alert"
-                            ? `Alert${event.reason === "hit" ? "" : " Ignored"}`
-                            : `Reminder${event.reason === "hit" ? "" : " Ignored"}`}
-                        </Text>
-                      </div>
-                      <DateTimeText
-                        ticks={event.timestamp}
-                        className="text-xs text-muted-foreground w-fit"
-                      />
-                    </div>
+                      )
+                    ) : event.reason === "hit" ? (
+                      <ClockAlert className="w-4 h-4" />
+                    ) : (
+                      <XCircleIcon className="w-4 h-4" />
+                    )}
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
+
+                  {/* Event content */}
+                  <div className="flex-1 min-w-0 pb-4">
+                    <div className="flex items-center justify-start gap-2 mb-1">
+                      <Text className="text-sm font-medium">
+                        {event.type === "alert"
+                          ? `Alert${event.reason === "hit" ? "" : " Ignored"}`
+                          : `Reminder${event.reason === "hit" ? "" : " Ignored"}`}
+                      </Text>
+                    </div>
+                    <DateTimeText
+                      ticks={event.timestamp}
+                      className="text-xs text-muted-foreground w-fit"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </VizCardContent>
     </VizCard>
