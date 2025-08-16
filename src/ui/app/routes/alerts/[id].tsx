@@ -44,6 +44,7 @@ import { cn } from "@/lib/utils";
 import _ from "lodash";
 import {
   AlertCircleIcon,
+  Ban,
   BellIcon,
   CheckCircleIcon,
   ClockAlert,
@@ -69,6 +70,7 @@ export default function Page({ params }: Route.ComponentProps) {
 
 function AlertPage({ alert }: { alert: Alert }) {
   const removeAlert = useAppState((state) => state.removeAlert);
+  const ignoreAlert = useAppState((state) => state.ignoreAlert);
   const navigate = useNavigate();
   const remove = useCallback(async () => {
     await navigate("/alerts");
@@ -118,7 +120,13 @@ function AlertPage({ alert }: { alert: Alert }) {
       <div className="h-0 flex-auto overflow-auto [scrollbar-gutter:stable]">
         <div className="flex flex-col gap-4 p-4">
           {/* Alert Configuration */}
-          <AlertInfoCard alert={alert} app={app} tag={tag} onRemove={remove} />
+          <AlertInfoCard
+            alert={alert}
+            app={app}
+            tag={tag}
+            onRemove={remove}
+            onIgnore={() => ignoreAlert(alert.id)}
+          />
 
           {/* Current Progress */}
           <CurrentProgressCard alert={alert} />
@@ -139,11 +147,13 @@ function AlertInfoCard({
   app,
   tag,
   onRemove,
+  onIgnore,
 }: {
   alert: Alert;
   app: App | null;
   tag: Tag | null;
   onRemove: () => void;
+  onIgnore: () => void;
 }) {
   const targetEntity = app ?? tag;
   const timeFrameText =
@@ -190,6 +200,15 @@ function AlertInfoCard({
             </div>
             <div className="flex-1" />
             <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={alert.status.tag === "ignored"}
+                onClick={onIgnore}
+              >
+                <Ban className="w-4 h-4 mr-1" />
+                Ignore
+              </Button>
               <Button variant="outline" size="icon" asChild>
                 <NavLink to={`/alerts/edit/${alert.id}`}>
                   <Edit2Icon className="w-4 h-4" />
@@ -279,7 +298,7 @@ function StatusBadge({ status }: { status: Alert["status"] }) {
       return (
         <Badge
           variant="outline"
-          className="text-gray-600/80 border-gray-600/20 bg-gray-50/50"
+          className="text-gray-500/80 border-gray-500/50 bg-gray-500/10"
         >
           <EyeOffIcon className="w-3 h-3 mr-1" />
           Ignored

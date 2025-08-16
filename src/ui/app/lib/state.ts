@@ -4,6 +4,7 @@ import type { Alert, App, Ref, Tag } from "@/lib/entities";
 import { info } from "@/lib/log";
 import {
   createAlert,
+  createAlertEventIgnore,
   createTag,
   getAlerts,
   getApps,
@@ -92,6 +93,7 @@ interface AppState {
   createAlert: (tag: CreateAlert) => Promise<Ref<Alert>>;
   updateAlert: (prev: Alert, next: UpdatedAlert) => Promise<Ref<Alert>>;
   removeAlert: (tagId: Ref<Alert>) => Promise<void>;
+  ignoreAlert: (alertId: Ref<Alert>) => Promise<void>;
 }
 
 export const useAppState = create<AppState>((set) => {
@@ -224,6 +226,16 @@ export const useAppState = create<AppState>((set) => {
           delete draft.alerts[alertId];
         })(state),
       );
+    },
+    ignoreAlert: async (alertId) => {
+      const now = DateTime.now();
+      const timestamp = dateTimeToTicks(now);
+      const options = { now: timestamp };
+      await createAlertEventIgnore(alertId, timestamp);
+      // TODO: this doesn't refresh the alert_events and reminder_events
+      // in the range (in the timeline card)
+      const alerts = await getAlerts({ options });
+      set({ alerts });
     },
   };
 });

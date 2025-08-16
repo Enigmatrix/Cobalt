@@ -212,8 +212,8 @@ export async function removeAlert(alertId: Ref<Alert>): Promise<void> {
 
 export async function createAlertEventIgnore(
   alertId: Ref<Alert>,
+  timestamp: Timestamp,
 ): Promise<void> {
-  const timestamp = dateTimeToTicks(DateTime.now());
   return await invoke("create_alert_event_ignore", { alertId, timestamp });
 }
 
