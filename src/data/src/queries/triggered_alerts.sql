@@ -34,9 +34,7 @@ dur(alert_id, range_start, dur) AS (
 latest_alert_event(alert_id, timestamp, reason) AS (
     SELECT ae.alert_id, ae.timestamp, ae.reason
     FROM alert_events ae
-    INNER JOIN range_start rs ON rs.alert_id = ae.alert_id
-    WHERE ae.timestamp >= rs.range_start
-    AND ae.timestamp = (
+    WHERE ae.timestamp = (
         SELECT MAX(ae2.timestamp) 
         FROM alert_events ae2
         INNER JOIN range_start rs2 ON rs2.alert_id = ae2.alert_id

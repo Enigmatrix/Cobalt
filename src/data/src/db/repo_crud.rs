@@ -138,15 +138,15 @@ impl Repository {
                     FROM alerts al
                 ),
                 trigger_status(id, status, timestamp) AS (
-                    SELECT al.id,
+                    SELECT t.id,
                         e.reason,
                         e.timestamp
-                    FROM alerts al
-                    INNER JOIN range_start t
-                        ON t.id = al.id
+                    FROM range_start t
                     LEFT JOIN alert_events e
-                        ON e.alert_id = al.id
-                        AND e.timestamp >= t.range_start
+                        ON t.id = e.alert_id AND e.timestamp = (
+                            SELECT MAX(e.timestamp)
+                            FROM alert_events e
+                            WHERE e.alert_id = t.id AND e.timestamp >= t.range_start)
                 ),
                 events_today(id, count) AS ({ALERT_EVENT_COUNT}),
                 events_week(id, count) AS ({ALERT_EVENT_COUNT}),
@@ -196,8 +196,10 @@ impl Repository {
                         0 AS alert_ignored
                     FROM range_start t
                     LEFT JOIN reminder_events e
-                        ON e.reminder_id = t.id
-                        AND e.timestamp >= t.range_start
+                        ON t.id = e.reminder_id AND e.timestamp = (
+                            SELECT MAX(e.timestamp)
+                            FROM reminder_events e
+                            WHERE e.reminder_id = t.id AND e.timestamp >= t.range_start)
                 ),
                 -- alert trigger status for matching alert_events that are ignored
                 alert_trigger_status(id, status, timestamp, alert_ignored) AS (
