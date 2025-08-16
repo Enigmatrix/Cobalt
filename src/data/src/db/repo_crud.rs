@@ -189,36 +189,42 @@ impl Repository {
                     FROM reminders r
                         INNER JOIN alerts al ON r.alert_id = al.id
                 ),
-                trigger_status(id, status, timestamp, alert_ignored) AS (
-                    SELECT r.id,
+                reminder_trigger_status(id, status, timestamp, alert_ignored) AS (
+                    SELECT t.id,
                         e.reason,
                         e.timestamp,
-                        COALESCE((SELECT ae.reason
-                            FROM alert_events ae
-                            WHERE ae.alert_id = r.alert_id
-                                AND ae.reason = 1
-                                AND ae.timestamp >= t.range_start
-                            LIMIT 1), 0)
-                        AS alert_ignored
-                    FROM reminders r
-                    INNER JOIN range_start t
-                        ON t.id = r.id
+                        0 AS alert_ignored
+                    FROM range_start t
                     LEFT JOIN reminder_events e
-                        ON e.reminder_id = r.id
+                        ON e.reminder_id = t.id
                         AND e.timestamp >= t.range_start
+                ),
+                -- alert trigger status for matching alert_events that are ignored
+                alert_trigger_status(id, status, timestamp, alert_ignored) AS (
+                    SELECT t.id,
+                        e.reason,
+                        e.timestamp,
+                        1 AS alert_ignored
+                    FROM range_start t
+                    INNER JOIN reminders r ON t.id = r.id
+                    LEFT JOIN alert_events e
+                        ON e.alert_id = r.alert_id
+                        AND e.timestamp >= t.range_start
+                        AND e.reason = 1
                 ),
                 events_today(id, count) AS ({REMINDER_EVENT_COUNT}),
                 events_week(id, count) AS ({REMINDER_EVENT_COUNT}),
                 events_month(id, count) AS ({REMINDER_EVENT_COUNT})
             SELECT r.*,
-                COALESCE(ts.status, 2) AS reminder_status,
-                ts.timestamp AS reminder_status_timestamp,
-                ts.alert_ignored AS reminder_status_alert_ignored,
+                COALESCE(rts.status, ats.status, 2) AS reminder_status,
+                COALESCE(rts.timestamp, ats.timestamp) AS reminder_status_timestamp,
+                COALESCE(rts.alert_ignored, ats.alert_ignored) AS reminder_status_alert_ignored,
                 COALESCE(t.count, 0) AS today,
                 COALESCE(w.count, 0) AS week,
                 COALESCE(m.count, 0) AS month
             FROM reminders r
-                LEFT JOIN trigger_status ts ON ts.id = r.id
+                LEFT JOIN reminder_trigger_status rts ON rts.id = r.id
+                LEFT JOIN alert_trigger_status ats ON ats.id = r.id
                 LEFT JOIN events_today t ON t.id = r.id
                 LEFT JOIN events_week w ON w.id = r.id
                 LEFT JOIN events_month m ON m.id = r.id
