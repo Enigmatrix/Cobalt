@@ -105,25 +105,15 @@ export const useAppState = create<AppState>((set) => {
     updateApp: async (app) => {
       await updateApp(app);
 
-      set((state) =>
-        produce((draft: AppState) => {
-          const oldTagId = draft.apps[app.id]?.tagId;
-          const newTagId = app.tagId;
-          if (oldTagId) {
-            const apps = draft.tags[oldTagId]?.apps;
-            if (apps) {
-              apps.splice(apps.indexOf(app.id), 1);
-            }
-          }
-          if (newTagId) {
-            const apps = draft.tags[newTagId]?.apps;
-            if (apps) {
-              apps.push(app.id);
-            }
-          }
-          draft.apps[app.id] = { ...draft.apps[app.id], ...app };
-        })(state),
-      );
+      // just refresh ... we need update apps' tags
+      // and then durations etc, very annoying
+      const now = DateTime.now();
+      const options = { now: dateTimeToTicks(now) };
+      const [tags, apps] = await Promise.all([
+        getTags({ options }),
+        getApps({ options }),
+      ]);
+      set({ tags, apps, lastRefresh: now });
     },
     updateTag: async (tag) => {
       await updateTag(tag);
@@ -134,49 +124,29 @@ export const useAppState = create<AppState>((set) => {
         })(state),
       );
     },
-    updateTagApps: async (tag, apps) => {
-      const removedApps = tag.apps.filter((id) => !apps.includes(id));
-      const addedApps = apps.filter((id) => !tag.apps.includes(id));
+    updateTagApps: async (tag, newApps) => {
+      const removedApps = tag.apps.filter((id) => !newApps.includes(id));
+      const addedApps = newApps.filter((id) => !tag.apps.includes(id));
       await updateTagApps(tag.id, removedApps, addedApps);
 
-      set((state) =>
-        produce((draft: AppState) => {
-          removedApps.forEach((appId) => {
-            draft.apps[appId]!.tagId = null;
-          });
-
-          addedApps.forEach((appId) => {
-            const oldTagId = draft.apps[appId]!.tagId;
-            draft.apps[appId]!.tagId = tag.id;
-            if (oldTagId) {
-              const tag = draft.tags[oldTagId]!;
-
-              // remove app from previous tag's app list
-              tag.apps.splice(tag.apps.indexOf(appId), 1);
-            }
-          });
-
-          draft.tags[tag.id]!.apps = apps;
-        })(state),
-      );
+      // just refresh ... we need update apps' tags
+      // and then durations etc, very annoying
+      const now = DateTime.now();
+      const options = { now: dateTimeToTicks(now) };
+      const [tags, apps] = await Promise.all([
+        getTags({ options }),
+        getApps({ options }),
+      ]);
+      set({ tags, apps, lastRefresh: now });
     },
     createTag: async (tag) => {
       const newTag = await createTag(tag);
-      set((state) =>
-        produce((draft: AppState) => {
-          draft.tags[newTag.id] = newTag;
-          newTag.apps.forEach((appId) => {
-            const oldTagId = draft.apps[appId]!.tagId;
-            draft.apps[appId]!.tagId = newTag.id;
-            if (oldTagId) {
-              const tag = draft.tags[oldTagId]!;
-
-              // remove app from previous tag's app list
-              tag.apps.splice(tag.apps.indexOf(appId), 1);
-            }
-          });
-        })(state),
-      );
+      // just refresh ... we need update apps' tags
+      // and then durations etc, very annoying
+      const now = DateTime.now();
+      const options = { now: dateTimeToTicks(now) };
+      const tags = await getTags({ options });
+      set({ tags, lastRefresh: now });
       return newTag.id;
     },
     removeTag: async (tagId) => {
@@ -211,12 +181,10 @@ export const useAppState = create<AppState>((set) => {
     },
     updateAlert: async (prev, next) => {
       const newAlert = await updateAlert(prev, next);
-      set((state) =>
-        produce((draft: AppState) => {
-          delete draft.alerts[prev.id];
-          draft.alerts[newAlert.id] = newAlert;
-        })(state),
-      );
+      const now = DateTime.now();
+      const timestamp = dateTimeToTicks(now);
+      const alerts = await getAlerts({ options: { now: timestamp } });
+      set({ alerts, lastRefresh: now });
       return newAlert.id;
     },
     removeAlert: async (alertId) => {
@@ -230,12 +198,9 @@ export const useAppState = create<AppState>((set) => {
     ignoreAlert: async (alertId) => {
       const now = DateTime.now();
       const timestamp = dateTimeToTicks(now);
-      const options = { now: timestamp };
       await createAlertEventIgnore(alertId, timestamp);
-      // TODO: this doesn't refresh the alert_events and reminder_events
-      // in the range (in the timeline card)
-      const alerts = await getAlerts({ options });
-      set({ alerts });
+      const alerts = await getAlerts({ options: { now: timestamp } });
+      set({ alerts, lastRefresh: now });
     },
   };
 });
