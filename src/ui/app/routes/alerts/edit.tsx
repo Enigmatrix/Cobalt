@@ -20,8 +20,11 @@ import type { Route } from "../alerts/+types/edit";
 export default function EditAlerts({ params }: Route.ComponentProps) {
   const id = +params.id as Ref<AlertEntity>;
   const alert = useAlert(id);
-  if (!alert) throw new Error("Alert not found");
+  if (!alert) return null;
+  return <EditAlertPage alert={alert} />;
+}
 
+function EditAlertPage({ alert }: { alert: AlertEntity }) {
   const defaultFormValues = {
     ...alert,
     ignoreTrigger: false,
@@ -77,8 +80,8 @@ export default function EditAlerts({ params }: Route.ComponentProps) {
         });
       }
 
-      await updateAlert(alert, object);
-      await navigate(`/alerts/${alert.id}`);
+      const newAlertId = await updateAlert(alert, object);
+      await navigate(`/alerts/${newAlertId}`, { replace: true });
     },
     [updateAlert, navigate, triggerInfo, alert],
   );

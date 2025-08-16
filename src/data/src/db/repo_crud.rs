@@ -520,7 +520,7 @@ impl Repository {
     pub async fn update_alert(
         &mut self,
         prev: infused::Alert,
-        mut next: infused::UpdatedAlert,
+        next: infused::UpdatedAlert,
         ts: impl TimeSystem,
     ) -> Result<infused::Alert> {
         let mut tx = self.db.transaction().await?;
@@ -553,7 +553,7 @@ impl Repository {
         // only upgrades of alerts/reminders can get an ignore xxx event when ignore_trigger=true
 
         if should_upgrade_alert {
-            next.id = Self::upgrade_alert_only(&mut tx, &prev, &next, &ts).await?;
+            next_alert.id = Self::upgrade_alert_only(&mut tx, &prev, &next, &ts).await?;
 
             if next.ignore_trigger {
                 Self::insert_alert_event(
@@ -580,7 +580,7 @@ impl Repository {
                     .await?;
                 next_alert.reminders.push(infused::Reminder {
                     id: reminder.id.clone().unwrap(), // insert_reminder updates id to Some
-                    alert_id: next.id.clone(),
+                    alert_id: next_alert.id.clone(),
                     threshold: reminder.threshold,
                     message: reminder.message,
                     created_at: prev_reminder
@@ -683,6 +683,7 @@ impl Repository {
                         Self::update_reminder_only(&mut *tx, prev_reminder, &mut reminder, &ts)
                             .await?;
                         next_reminder.id = id;
+                        next_reminder.created_at = prev_reminder.created_at;
                         next_reminder.events = prev_reminder.events.clone();
                         next_reminder.status = prev_reminder.status.clone();
                         // no change to trigger status, no need to bother looking at ignore_trigger.
