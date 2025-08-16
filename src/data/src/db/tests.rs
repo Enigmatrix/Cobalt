@@ -1407,6 +1407,103 @@ mod triggered_alerts {
     }
 
     #[tokio::test]
+    async fn multiple_alert_events_after_start() -> Result<()> {
+        let mut db = test_db().await?;
+
+        let app = arrange::app(
+            &mut db,
+            App {
+                id: Ref::default(),
+                name: "name".to_string(),
+                description: "desc".to_string(),
+                company: "comp".to_string(),
+                color: "red".to_string(),
+                identity: AppIdentity::Win32 {
+                    path: "path".to_string(),
+                },
+                tag_id: None,
+                icon: None,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        let session = arrange::session(
+            &mut db,
+            Session {
+                id: Ref::default(),
+                app_id: app.id.clone(),
+                title: "title".to_string(),
+                url: None,
+            },
+        )
+        .await?;
+
+        let _usage = arrange::usage(
+            &mut db,
+            Usage {
+                id: Ref::default(),
+                session_id: session.id.clone(),
+                start: 0,
+                end: 100,
+            },
+        )
+        .await?;
+
+        let alert = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(1),
+                target: Target::App {
+                    id: (app.id.clone()),
+                },
+                usage_limit: 50,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        let _alert_event = arrange::alert_event(
+            &mut db,
+            AlertEvent {
+                id: Ref::default(),
+                alert_id: alert.id.clone(),
+                timestamp: 75,
+                reason: Reason::Hit,
+            },
+        )
+        .await?;
+
+        let _alert_event = arrange::alert_event(
+            &mut db,
+            AlertEvent {
+                id: Ref::default(),
+                alert_id: alert.id.clone(),
+                timestamp: 150,
+                reason: Reason::Ignored,
+            },
+        )
+        .await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let alerts = mgr
+            .triggered_alerts(&Times {
+                now: 100,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+        assert_eq!(alerts, vec![]);
+        Ok(())
+    }
+
+    #[tokio::test]
     async fn alert_event_before_start() -> Result<()> {
         let mut db = test_db().await?;
 

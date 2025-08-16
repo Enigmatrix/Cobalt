@@ -138,15 +138,15 @@ impl Repository {
                     FROM alerts al
                 ),
                 trigger_status(id, status, timestamp) AS (
-                    SELECT al.id,
+                    SELECT t.id,
                         e.reason,
                         e.timestamp
-                    FROM alerts al
-                    INNER JOIN range_start t
-                        ON t.id = al.id
+                    FROM range_start t
                     LEFT JOIN alert_events e
-                        ON e.alert_id = al.id
-                        AND e.timestamp >= t.range_start
+                        ON t.id = e.alert_id AND e.timestamp = (
+                            SELECT MAX(e.timestamp)
+                            FROM alert_events e
+                            WHERE e.alert_id = t.id AND e.timestamp >= t.range_start)
                 ),
                 events_today(id, count) AS ({ALERT_EVENT_COUNT}),
                 events_week(id, count) AS ({ALERT_EVENT_COUNT}),
@@ -189,36 +189,44 @@ impl Repository {
                     FROM reminders r
                         INNER JOIN alerts al ON r.alert_id = al.id
                 ),
-                trigger_status(id, status, timestamp, alert_ignored) AS (
-                    SELECT r.id,
+                reminder_trigger_status(id, status, timestamp, alert_ignored) AS (
+                    SELECT t.id,
                         e.reason,
                         e.timestamp,
-                        COALESCE((SELECT ae.reason
-                            FROM alert_events ae
-                            WHERE ae.alert_id = r.alert_id
-                                AND ae.reason = 1
-                                AND ae.timestamp >= t.range_start
-                            LIMIT 1), 0)
-                        AS alert_ignored
-                    FROM reminders r
-                    INNER JOIN range_start t
-                        ON t.id = r.id
+                        0 AS alert_ignored
+                    FROM range_start t
                     LEFT JOIN reminder_events e
-                        ON e.reminder_id = r.id
+                        ON t.id = e.reminder_id AND e.timestamp = (
+                            SELECT MAX(e.timestamp)
+                            FROM reminder_events e
+                            WHERE e.reminder_id = t.id AND e.timestamp >= t.range_start)
+                ),
+                -- alert trigger status for matching alert_events that are ignored
+                alert_trigger_status(id, status, timestamp, alert_ignored) AS (
+                    SELECT t.id,
+                        e.reason,
+                        e.timestamp,
+                        1 AS alert_ignored
+                    FROM range_start t
+                    INNER JOIN reminders r ON t.id = r.id
+                    LEFT JOIN alert_events e
+                        ON e.alert_id = r.alert_id
                         AND e.timestamp >= t.range_start
+                        AND e.reason = 1
                 ),
                 events_today(id, count) AS ({REMINDER_EVENT_COUNT}),
                 events_week(id, count) AS ({REMINDER_EVENT_COUNT}),
                 events_month(id, count) AS ({REMINDER_EVENT_COUNT})
             SELECT r.*,
-                COALESCE(ts.status, 2) AS reminder_status,
-                ts.timestamp AS reminder_status_timestamp,
-                ts.alert_ignored AS reminder_status_alert_ignored,
+                COALESCE(rts.status, ats.status, 2) AS reminder_status,
+                COALESCE(rts.timestamp, ats.timestamp) AS reminder_status_timestamp,
+                COALESCE(rts.alert_ignored, ats.alert_ignored) AS reminder_status_alert_ignored,
                 COALESCE(t.count, 0) AS today,
                 COALESCE(w.count, 0) AS week,
                 COALESCE(m.count, 0) AS month
             FROM reminders r
-                LEFT JOIN trigger_status ts ON ts.id = r.id
+                LEFT JOIN reminder_trigger_status rts ON rts.id = r.id
+                LEFT JOIN alert_trigger_status ats ON ats.id = r.id
                 LEFT JOIN events_today t ON t.id = r.id
                 LEFT JOIN events_week w ON w.id = r.id
                 LEFT JOIN events_month m ON m.id = r.id
@@ -514,7 +522,7 @@ impl Repository {
     pub async fn update_alert(
         &mut self,
         prev: infused::Alert,
-        mut next: infused::UpdatedAlert,
+        next: infused::UpdatedAlert,
         ts: impl TimeSystem,
     ) -> Result<infused::Alert> {
         let mut tx = self.db.transaction().await?;
@@ -547,7 +555,7 @@ impl Repository {
         // only upgrades of alerts/reminders can get an ignore xxx event when ignore_trigger=true
 
         if should_upgrade_alert {
-            next.id = Self::upgrade_alert_only(&mut tx, &prev, &next, &ts).await?;
+            next_alert.id = Self::upgrade_alert_only(&mut tx, &prev, &next, &ts).await?;
 
             if next.ignore_trigger {
                 Self::insert_alert_event(
@@ -574,7 +582,7 @@ impl Repository {
                     .await?;
                 next_alert.reminders.push(infused::Reminder {
                     id: reminder.id.clone().unwrap(), // insert_reminder updates id to Some
-                    alert_id: next.id.clone(),
+                    alert_id: next_alert.id.clone(),
                     threshold: reminder.threshold,
                     message: reminder.message,
                     created_at: prev_reminder
@@ -677,6 +685,7 @@ impl Repository {
                         Self::update_reminder_only(&mut *tx, prev_reminder, &mut reminder, &ts)
                             .await?;
                         next_reminder.id = id;
+                        next_reminder.created_at = prev_reminder.created_at;
                         next_reminder.events = prev_reminder.events.clone();
                         next_reminder.status = prev_reminder.status.clone();
                         // no change to trigger status, no need to bother looking at ignore_trigger.
@@ -990,6 +999,69 @@ impl Repository {
             WHERE e.timestamp > p.start AND e.timestamp <= p.end
             ORDER BY e.timestamp ASC",
         )
+        .bind(start)
+        .bind(end)
+        .fetch_all(self.db.executor())
+        .await?;
+
+        Ok(events)
+    }
+
+    /// Gets all [AlertEvent]s for a specific alert in a time range
+    pub async fn get_alert_events(
+        &mut self,
+        start: Timestamp,
+        end: Timestamp,
+        alert_id: Ref<Alert>,
+    ) -> Result<Vec<AlertEvent>> {
+        let events: Vec<AlertEvent> = query_as(
+            "SELECT
+                e.id,
+                e.alert_id,
+                e.timestamp,
+                e.reason
+            FROM alert_events e, (SELECT ? AS start, ? AS end) p
+            WHERE e.alert_id = ? 
+                AND e.timestamp > p.start 
+                AND e.timestamp <= p.end
+            ORDER BY e.timestamp ASC",
+        )
+        .bind(start)
+        .bind(end)
+        .bind(alert_id)
+        .fetch_all(self.db.executor())
+        .await?;
+
+        Ok(events)
+    }
+
+    /// Gets all [infused::ReminderEvent]s for reminders of a specific alert in a time range
+    pub async fn get_alert_reminder_events(
+        &mut self,
+        start: Timestamp,
+        end: Timestamp,
+        alert_id: Ref<Alert>,
+    ) -> Result<Vec<infused::ReminderEvent>> {
+        let events: Vec<infused::ReminderEvent> = query_as(
+            "SELECT
+                e.id,
+                e.reminder_id,
+                e.timestamp,
+                e.reason,
+                r.alert_id,
+                r.threshold,
+                a.usage_limit * r.threshold AS threshold_duration,
+                r.message,
+                r.active
+            FROM reminder_events e
+            INNER JOIN reminders r ON e.reminder_id = r.id
+            INNER JOIN alerts a ON r.alert_id = a.id
+            WHERE r.alert_id = ?
+                AND e.timestamp > ?
+                AND e.timestamp <= ?
+            ORDER BY e.timestamp ASC",
+        )
+        .bind(alert_id)
         .bind(start)
         .bind(end)
         .fetch_all(self.db.executor())

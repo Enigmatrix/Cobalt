@@ -172,6 +172,28 @@ export interface SystemEvent {
   event: SystemEventEnum;
 }
 
+export type Reason = "hit" | "ignored";
+
+export interface AlertEvent {
+  id: Ref<AlertEvent>;
+  alertId: Ref<Alert>;
+  timestamp: Timestamp;
+  reason: Reason;
+}
+
+export interface ReminderEvent {
+  id: Ref<ReminderEvent>;
+  reminderId: Ref<Reminder>;
+  timestamp: Timestamp;
+  reason: Reason;
+
+  alertId: Ref<Alert>;
+  threshold: number;
+  thresholdDuration: Duration;
+  message: string;
+  active: boolean;
+}
+
 export interface Streak {
   start: Timestamp;
   end: Timestamp;

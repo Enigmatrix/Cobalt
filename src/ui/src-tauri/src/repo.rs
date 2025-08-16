@@ -2,7 +2,9 @@ use std::collections::HashMap;
 use std::path::Path;
 
 use data::db::infused;
-use data::entities::{Alert, App, InteractionPeriod, Period, Ref, SystemEvent, Tag, Timestamp};
+use data::entities::{
+    Alert, AlertEvent, App, InteractionPeriod, Period, Ref, SystemEvent, Tag, Timestamp,
+};
 use tauri::State;
 use util::error::Context;
 use util::time::ToTicks;
@@ -441,4 +443,34 @@ pub async fn get_system_events(
         state.assume_init().get_repo().await?
     };
     Ok(repo.get_system_events(start, end).await?)
+}
+
+#[tauri::command]
+#[tracing::instrument(err, skip(state))]
+pub async fn get_alert_events(
+    state: State<'_, AppState>,
+    start: Timestamp,
+    end: Timestamp,
+    alert_id: Ref<Alert>,
+) -> AppResult<Vec<AlertEvent>> {
+    let mut repo = {
+        let state = state.read().await;
+        state.assume_init().get_repo().await?
+    };
+    Ok(repo.get_alert_events(start, end, alert_id).await?)
+}
+
+#[tauri::command]
+#[tracing::instrument(err, skip(state))]
+pub async fn get_alert_reminder_events(
+    state: State<'_, AppState>,
+    start: Timestamp,
+    end: Timestamp,
+    alert_id: Ref<Alert>,
+) -> AppResult<Vec<infused::ReminderEvent>> {
+    let mut repo = {
+        let state = state.read().await;
+        state.assume_init().get_repo().await?
+    };
+    Ok(repo.get_alert_reminder_events(start, end, alert_id).await?)
 }

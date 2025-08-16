@@ -2,6 +2,8 @@ import { useRefresh } from "@/hooks/use-refresh";
 import { useConfig } from "@/lib/config";
 import type { Ref, Streak, WithGroupedDuration } from "@/lib/entities";
 import {
+  getAlertEvents,
+  getAlertReminderEvents,
   getAppDurations,
   getAppDurationsPerPeriod,
   getAppSessionUsages,
@@ -68,6 +70,8 @@ export const useAppDurations = makeUseRepo(getAppDurations, {});
 export const useAppSessionUsages = makeUseRepo(getAppSessionUsages, {});
 export const useInteractionPeriods = makeUseRepo(getInteractionPeriods, []);
 export const useSystemEvents = makeUseRepo(getSystemEvents, []);
+export const useAlertEvents = makeUseRepo(getAlertEvents, []);
+export const useAlertReminderEvents = makeUseRepo(getAlertReminderEvents, []);
 export const useAppDurationsPerPeriod = makeUseRepo(
   getAppDurationsPerPeriod,
   {},
