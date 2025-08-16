@@ -3,8 +3,7 @@ use std::path::Path;
 
 use data::db::infused;
 use data::entities::{
-    Alert, AlertEvent, App, InteractionPeriod, Period, Ref, ReminderEvent, SystemEvent, Tag,
-    Timestamp,
+    Alert, AlertEvent, App, InteractionPeriod, Period, Ref, SystemEvent, Tag, Timestamp,
 };
 use tauri::State;
 use util::error::Context;
@@ -468,7 +467,7 @@ pub async fn get_alert_reminder_events(
     start: Timestamp,
     end: Timestamp,
     alert_id: Ref<Alert>,
-) -> AppResult<Vec<ReminderEvent>> {
+) -> AppResult<Vec<infused::ReminderEvent>> {
     let mut repo = {
         let state = state.read().await;
         state.assume_init().get_repo().await?

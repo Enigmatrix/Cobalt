@@ -1026,21 +1026,27 @@ impl Repository {
         Ok(events)
     }
 
-    /// Gets all [ReminderEvent]s for reminders of a specific alert in a time range
+    /// Gets all [infused::ReminderEvent]s for reminders of a specific alert in a time range
     pub async fn get_alert_reminder_events(
         &mut self,
         start: Timestamp,
         end: Timestamp,
         alert_id: Ref<Alert>,
-    ) -> Result<Vec<ReminderEvent>> {
-        let events: Vec<ReminderEvent> = query_as(
+    ) -> Result<Vec<infused::ReminderEvent>> {
+        let events: Vec<infused::ReminderEvent> = query_as(
             "SELECT
                 e.id,
                 e.reminder_id,
                 e.timestamp,
-                e.reason
+                e.reason,
+                r.alert_id,
+                r.threshold,
+                a.usage_limit * r.threshold AS threshold_duration,
+                r.message,
+                r.active
             FROM reminder_events e
             INNER JOIN reminders r ON e.reminder_id = r.id
+            INNER JOIN alerts a ON r.alert_id = a.id
             WHERE r.alert_id = ?
                 AND e.timestamp > ?
                 AND e.timestamp <= ?

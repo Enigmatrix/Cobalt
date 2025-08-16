@@ -186,6 +186,12 @@ export interface ReminderEvent {
   reminderId: Ref<Reminder>;
   timestamp: Timestamp;
   reason: Reason;
+
+  alertId: Ref<Alert>;
+  threshold: number;
+  thresholdDuration: Duration;
+  message: string;
+  active: boolean;
 }
 
 export interface Streak {

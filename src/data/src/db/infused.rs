@@ -265,6 +265,30 @@ pub struct Reminder {
     pub events: ValuePerPeriod<i64>,
 }
 
+/// [super::ReminderEvent] with additional information
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, FromRow)]
+#[serde(rename_all = "camelCase")]
+pub struct ReminderEvent {
+    /// Identifier
+    pub id: Ref<super::ReminderEvent>,
+    /// Link to [super::Reminder]
+    pub reminder_id: Ref<super::Reminder>,
+    /// Timestamp of the [super::Reminder] trigger
+    pub timestamp: Timestamp,
+    /// Reason for the [super::ReminderEvent]
+    pub reason: crate::entities::Reason,
+    /// Link to [super::Alert]
+    pub alert_id: Ref<super::Alert>,
+    /// Threshold of the associated reminder
+    pub threshold: Real,
+    /// Threshold duration of the associated reminder
+    pub threshold_duration: Real,
+    /// Message from the associated reminder
+    pub message: String,
+    /// Whether the associated reminder is active
+    pub active: bool,
+}
+
 /// Options to create a new [super::Tag]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
