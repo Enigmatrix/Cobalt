@@ -410,7 +410,7 @@ function RemindersCard({ alert }: { alert: Alert }) {
                         <div className="flex items-center gap-3 flex-wrap">
                           <div className="flex items-center gap-2 text-xs text-muted-foreground">
                             <Text>{`${Math.round(reminder.threshold * 100)}%`}</Text>
-                            <Text>·</Text>
+                            <Text>-</Text>
                             <DurationText ticks={triggerDuration} />
                           </div>
 
@@ -553,7 +553,7 @@ function AlertTimelineCard({ alert }: { alert: Alert }) {
                       <Text className="text-sm font-medium">
                         {event.type === "alert"
                           ? `Alert${event.reason === "hit" ? "" : " Ignored"}`
-                          : `Reminder${event.reason === "hit" ? "" : " Ignored"}`}
+                          : `Reminder${event.reason === "hit" ? "" : " Ignored"}: ${event.message}`}
                       </Text>
                     </div>
                     <DateTimeText
