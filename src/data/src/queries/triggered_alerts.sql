@@ -29,6 +29,20 @@ dur(alert_id, range_start, dur) AS (
     FROM alerts al
     INNER JOIN range_start t
         ON t.alert_id = al.id
+),
+
+latest_alert_event(alert_id, timestamp, reason) AS (
+    SELECT ae.alert_id, ae.timestamp, ae.reason
+    FROM alert_events ae
+    INNER JOIN range_start rs ON rs.alert_id = ae.alert_id
+    WHERE ae.timestamp >= rs.range_start
+    AND ae.timestamp = (
+        SELECT MAX(ae2.timestamp) 
+        FROM alert_events ae2
+        INNER JOIN range_start rs2 ON rs2.alert_id = ae2.alert_id
+        WHERE ae2.alert_id = ae.alert_id
+        AND ae2.timestamp >= rs2.range_start
+    )
 )
 
 SELECT al.*, ae.timestamp, (CASE WHEN al.app_id IS NOT NULL THEN (
@@ -39,8 +53,8 @@ SELECT al.*, ae.timestamp, (CASE WHEN al.app_id IS NOT NULL THEN (
     FROM alerts al
     INNER JOIN dur d
         ON al.id = d.alert_id
-    LEFT JOIN alert_events ae
+    LEFT JOIN latest_alert_event ae
         ON al.id = ae.alert_id
-        AND ae.timestamp >= d.range_start
-    WHERE d.dur >= al.usage_limit AND al.active <> 0
+    WHERE d.dur >= al.usage_limit AND al.active <> 0 AND
+        (ae.reason IS NULL OR ae.reason = 0)
     GROUP BY al.id

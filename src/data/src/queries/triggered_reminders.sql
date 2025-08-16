@@ -43,6 +43,7 @@ SELECT r.*, (CASE WHEN al.app_id IS NOT NULL THEN (
         ON al.id = r.alert_id
         AND d.dur >= al.usage_limit * r.threshold
     WHERE al.active <> 0 AND r.active <> 0 AND
+        -- works regardless of alert_event/reminder_event's reason
         d.range_start >
             (SELECT COALESCE(MAX(re.timestamp), 0) FROM reminder_events re
                 WHERE r.id = re.reminder_id) AND
