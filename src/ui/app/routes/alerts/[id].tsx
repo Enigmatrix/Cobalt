@@ -54,7 +54,6 @@ import {
   SunDimIcon,
   TagIcon,
   TrashIcon,
-  XCircleIcon,
   ZapIcon,
 } from "lucide-react";
 import { useCallback, useMemo } from "react";
@@ -535,15 +534,9 @@ function AlertTimelineCard({ alert }: { alert: Alert }) {
                     )}
                   >
                     {event.type === "alert" ? (
-                      event.reason === "hit" ? (
-                        <BellIcon className="w-4 h-4" />
-                      ) : (
-                        <XCircleIcon className="w-4 h-4" />
-                      )
-                    ) : event.reason === "hit" ? (
-                      <ClockAlert className="w-4 h-4" />
+                      <BellIcon className="w-4 h-4" />
                     ) : (
-                      <XCircleIcon className="w-4 h-4" />
+                      <ClockAlert className="w-4 h-4" />
                     )}
                   </div>
 

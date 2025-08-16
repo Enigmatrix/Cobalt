@@ -33,6 +33,7 @@ import type { TriggerInfo } from "@/hooks/use-trigger-info";
 import { alertSchema } from "@/lib/schema";
 import { durationToTicks, ticksToDuration } from "@/lib/time";
 import { TriangleAlertIcon } from "lucide-react";
+import { useMemo } from "react";
 import type { FieldArrayWithId, UseFormReturn } from "react-hook-form";
 import type { z } from "zod";
 
@@ -53,6 +54,17 @@ export function AlertForm({
   remindersAppend: (value: { threshold: number; message: string }) => void;
   remindersRemove: (index: number) => void;
 }) {
+  const timeFrame = form.watch("timeFrame");
+  const timeFrameText = useMemo(() => {
+    switch (timeFrame) {
+      case "daily":
+        return "today";
+      case "weekly":
+        return "this week";
+      case "monthly":
+        return "this month";
+    }
+  }, [timeFrame]);
   const items = [
     {
       id: 1,
@@ -140,7 +152,7 @@ export function AlertForm({
                         {...field}
                       />
                     </FormControl>
-                    <FormLabel>Ignore for current period</FormLabel>
+                    <FormLabel>Ignore for {timeFrameText}</FormLabel>
                     <FormMessage />
                   </FormItem>
                 )}

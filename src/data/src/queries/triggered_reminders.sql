@@ -50,3 +50,4 @@ SELECT r.*, (CASE WHEN al.app_id IS NOT NULL THEN (
             (SELECT COALESCE(MAX(ae.timestamp), 0) FROM alert_events ae
                 WHERE al.id = ae.alert_id)
     GROUP BY r.id
+    ORDER BY r.threshold ASC

@@ -38,7 +38,10 @@ export function useTriggerInfo(
       trigger: totalUsage > reminder.threshold * usageLimit,
     }));
     return { alert, reminders: reminderTriggers, currentUsage: totalUsage };
-  }, [totalUsage, target, timeFrame, usageLimit, reminders]);
+    // reminders is a dependency, but when threshold is updated the instance value is the same
+    // so better to stringify it
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [totalUsage, target, timeFrame, usageLimit, JSON.stringify(reminders)]);
 
   return triggerInfo;
 }
