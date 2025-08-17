@@ -981,6 +981,12 @@ async fn create_alert() -> Result<()> {
     };
     let ts = Times::default();
     let created1 = repo.create_alert(alert1.clone(), ts.clone()).await?;
+    let all_alerts = repo.get_alerts(ts.clone()).await?;
+    let created1 = all_alerts
+        .iter()
+        .find(|(id, _)| id == &&created1)
+        .unwrap()
+        .1;
     assert_eq!(
         infused_to_alert(created1.clone()),
         create_to_alert(alert1, 1)
@@ -1001,16 +1007,21 @@ async fn create_alert() -> Result<()> {
         ignore_trigger: false,
     };
     let created2 = repo.create_alert(alert2.clone(), ts.clone()).await?;
-    let created2id = Ref::new(2);
+    let all_alerts = repo.get_alerts(ts.clone()).await?;
+    let created2 = all_alerts
+        .iter()
+        .find(|(id, _)| id == &&created2)
+        .unwrap()
+        .1;
     assert_eq!(
         infused_to_alert(created2.clone()),
-        create_to_alert(alert2.clone(), created2id.0)
+        create_to_alert(alert2.clone(), created2.id.0)
     );
     created2
         .reminders
         .iter()
         .cloned()
-        .zip(to_reminders(alert2.reminders, 1, created2id))
+        .zip(to_reminders(alert2.reminders, 1, created2.id.clone()))
         .for_each(|(a, b)| reminders_eq(a, b));
     assert_eq!(created2.reminders.len(), 1);
 
@@ -1043,16 +1054,21 @@ async fn create_alert() -> Result<()> {
     };
 
     let created3 = repo.create_alert(alert3.clone(), ts.clone()).await?;
-    let created3id = Ref::new(3);
+    let all_alerts = repo.get_alerts(ts.clone()).await?;
+    let created3 = all_alerts
+        .iter()
+        .find(|(id, _)| id == &&created3)
+        .unwrap()
+        .1;
     assert_eq!(
         infused_to_alert(created3.clone()),
-        create_to_alert(alert3.clone(), created3id.0)
+        create_to_alert(alert3.clone(), created3.id.0)
     );
     created3
         .reminders
         .iter()
         .cloned()
-        .zip(to_reminders(alert3.reminders, 2, created3id))
+        .zip(to_reminders(alert3.reminders, 2, created3.id.clone()))
         .for_each(|(a, b)| reminders_eq(a, b));
     assert_eq!(created3.reminders.len(), 3);
 

@@ -355,7 +355,7 @@ pub async fn remove_tag(state: State<'_, AppState>, tag_id: Ref<Tag>) -> AppResu
 pub async fn create_alert(
     state: State<'_, AppState>,
     alert: infused::CreateAlert,
-) -> AppResult<infused::Alert> {
+) -> AppResult<Ref<Alert>> {
     let now = platform::objects::Timestamp::now();
     let mut repo = {
         let state = state.read().await;

@@ -426,7 +426,7 @@ impl Repository {
         &mut self,
         alert: infused::CreateAlert,
         ts: impl TimeSystem,
-    ) -> Result<infused::Alert> {
+    ) -> Result<Ref<Alert>> {
         let mut tx = self.db.transaction().await?;
 
         let (app_id, tag_id) = Self::destructure_target(&alert.target);
@@ -463,20 +463,19 @@ impl Repository {
             .await?;
         }
 
-        let mut reminders = Vec::new();
-
         // Insert the reminders
         for reminder in alert.reminders {
-            let id = query("INSERT INTO reminders VALUES (NULL, ?, ?, ?, ?, ?, ?) RETURNING id")
-                .bind(&alert_id)
-                .bind(reminder.threshold)
-                .bind(&reminder.message)
-                .bind(true)
-                .bind(ts.now().to_ticks())
-                .bind(ts.now().to_ticks())
-                .fetch_one(&mut *tx)
-                .await?
-                .get(0);
+            let id: Ref<Reminder> =
+                query("INSERT INTO reminders VALUES (NULL, ?, ?, ?, ?, ?, ?) RETURNING id")
+                    .bind(&alert_id)
+                    .bind(reminder.threshold)
+                    .bind(&reminder.message)
+                    .bind(true)
+                    .bind(ts.now().to_ticks())
+                    .bind(ts.now().to_ticks())
+                    .fetch_one(&mut *tx)
+                    .await?
+                    .get(0);
 
             if reminder.ignore_trigger {
                 query("INSERT INTO reminder_events VALUES (NULL, ?, ?, ?)")
@@ -486,36 +485,11 @@ impl Repository {
                     .execute(&mut *tx)
                     .await?;
             }
-
-            let reminder = infused::Reminder {
-                id,
-                alert_id: alert_id.clone(),
-                threshold: reminder.threshold,
-                message: reminder.message,
-                created_at: ts.now().to_ticks(),
-                updated_at: ts.now().to_ticks(),
-                status: infused::ReminderTriggerStatus::Untriggered,
-                events: infused::ValuePerPeriod::default(),
-            };
-            reminders.push(reminder);
         }
 
         tx.commit().await?;
 
-        let alert = infused::Alert {
-            id: alert_id,
-            target: alert.target,
-            usage_limit: alert.usage_limit,
-            time_frame: alert.time_frame,
-            trigger_action: alert.trigger_action,
-            created_at: ts.now().to_ticks(),
-            updated_at: ts.now().to_ticks(),
-            reminders,
-            status: infused::AlertTriggerStatus::Untriggered,
-            events: infused::ValuePerPeriod::default(),
-        };
-
-        Ok(alert)
+        Ok(alert_id)
     }
 
     /// Updates a [Alert]. Assumes the id of prev and next are the same for alert and reminders.
