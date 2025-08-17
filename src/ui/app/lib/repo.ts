@@ -195,7 +195,7 @@ export async function removeTag(tagId: Ref<Tag>): Promise<void> {
   return await invoke("remove_tag", { tagId });
 }
 
-export async function createAlert(alert: CreateAlert): Promise<Alert> {
+export async function createAlert(alert: CreateAlert): Promise<Ref<Alert>> {
   return await invoke("create_alert", { alert });
 }
 

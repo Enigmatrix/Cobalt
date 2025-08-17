@@ -172,12 +172,11 @@ export const useAppState = create<AppState>((set) => {
     },
     createAlert: async (alert) => {
       const newAlert = await createAlert(alert);
-      set((state) =>
-        produce((draft: AppState) => {
-          draft.alerts[newAlert.id] = newAlert;
-        })(state),
-      );
-      return newAlert.id;
+      const now = DateTime.now();
+      const timestamp = dateTimeToTicks(now);
+      const alerts = await getAlerts({ options: { now: timestamp } });
+      set({ alerts, lastRefresh: now });
+      return newAlert;
     },
     updateAlert: async (prev, next) => {
       const newAlert = await updateAlert(prev, next);
