@@ -59,6 +59,32 @@ export async function refresh() {
   info("refresh completed");
 }
 
+async function refreshParts(
+  now: DateTime,
+  set: (state: Partial<AppState>) => void,
+  {
+    refreshApps = false,
+    refreshTags = false,
+    refreshAlerts = false,
+  }: {
+    refreshApps?: boolean;
+    refreshTags?: boolean;
+    refreshAlerts?: boolean;
+  } = {},
+) {
+  const options = { now: dateTimeToTicks(now) };
+  const [apps, tags, alerts] = await Promise.all([
+    refreshApps ? getApps({ options }) : Promise.resolve(undefined),
+    refreshTags ? getTags({ options }) : Promise.resolve(undefined),
+    refreshAlerts ? getAlerts({ options }) : Promise.resolve(undefined),
+  ]);
+  const obj: Partial<AppState> = { lastRefresh: now };
+  if (refreshApps) obj.apps = apps;
+  if (refreshTags) obj.tags = tags;
+  if (refreshAlerts) obj.alerts = alerts;
+  set(obj);
+}
+
 export const untagged: Tag = {
   id: -1 as unknown as Ref<Tag>,
   name: "Untagged",
@@ -107,13 +133,10 @@ export const useAppState = create<AppState>((set) => {
 
       // just refresh ... we need update apps' tags
       // and then durations etc, very annoying
-      const now = DateTime.now();
-      const options = { now: dateTimeToTicks(now) };
-      const [tags, apps] = await Promise.all([
-        getTags({ options }),
-        getApps({ options }),
-      ]);
-      set({ tags, apps, lastRefresh: now });
+      refreshParts(DateTime.now(), set, {
+        refreshApps: true,
+        refreshTags: true,
+      });
     },
     updateTag: async (tag) => {
       await updateTag(tag);
@@ -131,22 +154,19 @@ export const useAppState = create<AppState>((set) => {
 
       // just refresh ... we need update apps' tags
       // and then durations etc, very annoying
-      const now = DateTime.now();
-      const options = { now: dateTimeToTicks(now) };
-      const [tags, apps] = await Promise.all([
-        getTags({ options }),
-        getApps({ options }),
-      ]);
-      set({ tags, apps, lastRefresh: now });
+      refreshParts(DateTime.now(), set, {
+        refreshApps: true,
+        refreshTags: true,
+      });
     },
     createTag: async (tag) => {
       const newTag = await createTag(tag);
       // just refresh ... we need update apps' tags
       // and then durations etc, very annoying
-      const now = DateTime.now();
-      const options = { now: dateTimeToTicks(now) };
-      const tags = await getTags({ options });
-      set({ tags, lastRefresh: now });
+      refreshParts(DateTime.now(), set, {
+        refreshApps: true,
+        refreshTags: true,
+      });
       return newTag.id;
     },
     removeTag: async (tagId) => {
@@ -172,18 +192,12 @@ export const useAppState = create<AppState>((set) => {
     },
     createAlert: async (alert) => {
       const newAlert = await createAlert(alert);
-      const now = DateTime.now();
-      const timestamp = dateTimeToTicks(now);
-      const alerts = await getAlerts({ options: { now: timestamp } });
-      set({ alerts, lastRefresh: now });
+      refreshParts(DateTime.now(), set, { refreshAlerts: true });
       return newAlert;
     },
     updateAlert: async (prev, next) => {
       const newAlert = await updateAlert(prev, next);
-      const now = DateTime.now();
-      const timestamp = dateTimeToTicks(now);
-      const alerts = await getAlerts({ options: { now: timestamp } });
-      set({ alerts, lastRefresh: now });
+      refreshParts(DateTime.now(), set, { refreshAlerts: true });
       return newAlert.id;
     },
     removeAlert: async (alertId) => {
@@ -196,10 +210,7 @@ export const useAppState = create<AppState>((set) => {
     },
     ignoreAlert: async (alertId) => {
       const now = DateTime.now();
-      const timestamp = dateTimeToTicks(now);
-      await createAlertEventIgnore(alertId, timestamp);
-      const alerts = await getAlerts({ options: { now: timestamp } });
-      set({ alerts, lastRefresh: now });
+      refreshParts(DateTime.now(), set, { refreshAlerts: true });
     },
   };
 });
