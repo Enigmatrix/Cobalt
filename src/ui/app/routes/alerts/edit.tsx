@@ -6,11 +6,15 @@ import { useZodForm } from "@/hooks/use-form";
 import { useHistoryRef } from "@/hooks/use-history-state";
 import { useAlert } from "@/hooks/use-refresh";
 import { useTriggerInfo } from "@/hooks/use-trigger-info";
-import type { Alert as AlertEntity, Ref } from "@/lib/entities";
+import type { Alert as AlertEntity, Ref, TriggerAction } from "@/lib/entities";
 import type { UpdatedAlert } from "@/lib/repo";
 import { alertSchema } from "@/lib/schema";
 import { useAppState } from "@/lib/state";
-import { AppUsageBarChartView, TimeProgressBar } from "@/routes/alerts/create";
+import {
+  ActionsVideos,
+  AppUsageBarChartView,
+  TimeProgressBar,
+} from "@/routes/alerts/create";
 import { InfoIcon } from "lucide-react";
 import { useCallback, useEffect } from "react";
 import { useFieldArray } from "react-hook-form";
@@ -93,6 +97,13 @@ function EditAlertPage({ alert }: { alert: AlertEntity }) {
     [update, reminders],
   );
 
+  const setTriggerAction = useCallback(
+    (action: TriggerAction) => {
+      form.setValue("triggerAction", action);
+    },
+    [form],
+  );
+
   return (
     <>
       <main className="grid grid-cols-[360px_minmax(0,1fr)] h-full ">
@@ -121,7 +132,7 @@ function EditAlertPage({ alert }: { alert: AlertEntity }) {
               />
             </TabsContent>
             <TabsContent value="actions">
-              <div>TODO show action video</div>
+              <ActionsVideos setTriggerAction={setTriggerAction} />
             </TabsContent>
             <TabsContent value="reminders">
               <div className="flex h-full">

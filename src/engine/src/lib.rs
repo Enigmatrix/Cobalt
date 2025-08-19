@@ -13,13 +13,15 @@ use engine::{Engine, Event};
 use platform::events::{
     ForegroundEventWatcher, ForegroundWindowSessionInfo, InteractionWatcher, SystemEventWatcher,
 };
-use platform::objects::{Duration, EventLoop, MessageWindow, Timer, Timestamp, User};
+use platform::objects::{
+    Duration, EventLoop, MessageWindow, SingleInstance, Timer, Timestamp, User,
+};
 use platform::web;
 use resolver::AppInfoResolver;
 use sentry::Sentry;
 use util::channels::{self, Receiver, Sender};
 use util::config::{self, Config};
-use util::error::{Context, Result};
+use util::error::{Context, Result, bail};
 use util::future::runtime::{Builder, Handle, Runtime};
 use util::future::sync::Mutex;
 use util::future::task::JoinHandle;
@@ -48,6 +50,8 @@ pub fn main() {
         }
     };
 
+    let _instance = single_instance().expect("setup single instance");
+
     let web_state = web::default_state();
     let desktop_state = desktop::new_desktop_state(web_state.clone());
 
@@ -55,6 +59,19 @@ pub fn main() {
         error!("fatal error caught in main: {:?}", report);
         std::process::exit(1);
     }
+}
+
+fn single_instance() -> Result<impl Drop> {
+    #[cfg(debug_assertions)]
+    const SINGLE_INSTANCE_NAME: &str = r"Global\Cobalt_Dev_Engine_Mutex";
+    #[cfg(not(debug_assertions))]
+    const SINGLE_INSTANCE_NAME: &str = r"Global\Cobalt_Engine_Mutex";
+
+    let instance = SingleInstance::new(SINGLE_INSTANCE_NAME)?;
+    let Some(instance) = instance else {
+        bail!("another instance of Cobalt is already running");
+    };
+    Ok(instance)
 }
 
 fn setup() -> Result<(Config, Runtime)> {

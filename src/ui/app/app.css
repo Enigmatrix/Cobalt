@@ -162,3 +162,48 @@
     @apply bg-background text-foreground;
   }
 }
+
+@keyframes cycleGlow {
+  0% {
+    border-color: #fbbf24; /* amber-400 */
+    box-shadow:
+      0 0 12px rgba(251, 191, 36, 0.6),
+      0 0 24px rgba(251, 191, 36, 0.3);
+  }
+  16.5% {
+    border-color: #f59e0b; /* amber-500 */
+    box-shadow:
+      0 0 12px rgba(245, 158, 11, 0.6),
+      0 0 24px rgba(245, 158, 11, 0.3);
+  }
+  33% {
+    border-color: #ec4899; /* pink-500 */
+    box-shadow:
+      0 0 12px rgba(236, 72, 153, 0.6),
+      0 0 24px rgba(236, 72, 153, 0.3);
+  }
+  49.5% {
+    border-color: #db2777; /* pink-600 */
+    box-shadow:
+      0 0 12px rgba(219, 39, 119, 0.6),
+      0 0 24px rgba(219, 39, 119, 0.3);
+  }
+  66% {
+    border-color: #a855f7; /* purple-500 */
+    box-shadow:
+      0 0 12px rgba(168, 85, 247, 0.6),
+      0 0 24px rgba(168, 85, 247, 0.3);
+  }
+  82.5% {
+    border-color: #9333ea; /* purple-600 */
+    box-shadow:
+      0 0 12px rgba(147, 51, 234, 0.6),
+      0 0 24px rgba(147, 51, 234, 0.3);
+  }
+  100% {
+    border-color: #fbbf24; /* amber-400 */
+    box-shadow:
+      0 0 12px rgba(251, 191, 36, 0.6),
+      0 0 24px rgba(251, 191, 36, 0.3);
+  }
+}

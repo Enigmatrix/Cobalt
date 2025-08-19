@@ -13,7 +13,7 @@ pub trait IntoResult {
 
 /// Win32 Error (from GetLastError)
 pub struct Win32Error {
-    inner: WIN32_ERROR,
+    pub(crate) inner: WIN32_ERROR,
 }
 
 impl Win32Error {

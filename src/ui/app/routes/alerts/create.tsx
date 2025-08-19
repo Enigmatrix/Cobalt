@@ -1,9 +1,20 @@
 import { AlertForm, type FormValues } from "@/components/alert/alert-form";
+import dimVideo from "@/components/alert/dim.mp4";
+import killVideo from "@/components/alert/kill.mp4";
+import messageVideo from "@/components/alert/message.mp4";
 import { DateRangePicker } from "@/components/time/date-range-picker";
 import { DurationText } from "@/components/time/duration-text";
 import { PeriodPicker } from "@/components/time/period-picker";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+  type CarouselApi,
+} from "@/components/ui/carousel";
 import { FormItem } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -14,16 +25,22 @@ import { useTargetApps } from "@/hooks/use-refresh";
 import { useAppDurationsPerPeriod } from "@/hooks/use-repo";
 import { useIntervalControlsWithDefault } from "@/hooks/use-time";
 import { useTriggerInfo } from "@/hooks/use-trigger-info";
-import { timeFrameToPeriod, type Target, type TimeFrame } from "@/lib/entities";
+import {
+  timeFrameToPeriod,
+  type Target,
+  type TimeFrame,
+  type TriggerAction,
+} from "@/lib/entities";
 import type { CreateAlert } from "@/lib/repo";
 import { alertSchema } from "@/lib/schema";
 import { useAppState } from "@/lib/state";
-import type { Period } from "@/lib/time";
+import { durationToTicks, type Period } from "@/lib/time";
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
   InfoIcon,
   PlusIcon,
+  PointerIcon,
 } from "lucide-react";
 import { Duration } from "luxon";
 import {
@@ -33,6 +50,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type ReactNode,
 } from "react";
 import { useFieldArray } from "react-hook-form";
 import { useNavigate } from "react-router";
@@ -106,6 +124,13 @@ export default function CreateAlerts() {
     [update, reminders],
   );
 
+  const setTriggerAction = useCallback(
+    (action: TriggerAction) => {
+      form.setValue("triggerAction", action);
+    },
+    [form],
+  );
+
   return (
     <>
       <main className="grid grid-cols-[360px_minmax(0,1fr)] h-full ">
@@ -134,7 +159,7 @@ export default function CreateAlerts() {
               />
             </TabsContent>
             <TabsContent value="actions">
-              <div>TODO show action video</div>
+              <ActionsVideos setTriggerAction={setTriggerAction} />
             </TabsContent>
             <TabsContent value="reminders">
               <div className="flex h-full">
@@ -533,6 +558,216 @@ export function TimeProgressBar({
 
       {/* Reminder markers */}
       {reminders.map((reminder, index) => renderReminder(reminder, index))}
+    </div>
+  );
+}
+
+const videos = [
+  {
+    src: dimVideo,
+    title: "Dim",
+    action: {
+      tag: "dim",
+      duration: durationToTicks(Duration.fromObject({ minutes: 30 })),
+    },
+    messages: [
+      { start: 0.5, end: 15, message: "Websites and apps dim gradually" },
+      {
+        start: 16,
+        end: 20,
+        message: "Switching to other websites changes dim",
+      },
+      { start: 22, end: 26, message: "Works on newly opened websites" },
+    ],
+  },
+  {
+    src: killVideo,
+    title: "Kill",
+    action: { tag: "kill" },
+    messages: [
+      {
+        start: 2,
+        end: 6,
+        message: "Apps are closed immediately, and when re-opened",
+      },
+      { start: 6, end: 8, message: "Websites are closed when opened" },
+      { start: 11, end: 14, message: "Works on newly opened websites" },
+    ],
+  },
+  {
+    src: messageVideo,
+    title: "Message",
+    action: { tag: "message", content: "" },
+    messages: [
+      { start: 1, end: 6, message: "Notification appears with sound" },
+    ],
+  },
+] satisfies {
+  src: string;
+  title: string;
+  action: TriggerAction;
+  messages: { start: number; end: number; message: ReactNode }[];
+}[];
+
+export function ActionsVideos({
+  setTriggerAction,
+}: {
+  setTriggerAction: (action: TriggerAction) => void;
+}) {
+  const [api, setApi] = useState<CarouselApi>();
+  const [current, setCurrent] = useState(0);
+  const [showControls, setShowControls] = useState(false);
+  const [currentMessages, setCurrentMessages] = useState<React.ReactNode[]>([]);
+  const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
+
+  useEffect(() => {
+    if (!api) return;
+
+    api.on("select", () => {
+      setCurrent(api.selectedScrollSnap());
+    });
+  }, [api]);
+
+  const handleVideoEnd = useCallback(() => {
+    if (api) {
+      const nextIndex = (current + 1) % videos.length;
+      api.scrollTo(nextIndex);
+    }
+  }, [api, current]);
+
+  const handleTimeUpdate = useCallback(
+    (event: React.SyntheticEvent<HTMLVideoElement>) => {
+      const video = event.currentTarget;
+      const currentTime = video.currentTime;
+      const videoIndex = parseInt(video.dataset.videoIndex ?? "0");
+
+      if (videoIndex === current) {
+        const videoData = videos[videoIndex];
+        const activeMessages = videoData.messages
+          .filter((msg) => currentTime >= msg.start && currentTime < msg.end)
+          .map((msg) => msg.message);
+
+        setCurrentMessages(activeMessages);
+      }
+    },
+    [current],
+  );
+
+  useEffect(() => {
+    // Pause and reset all videos except current
+    videoRefs.current.forEach((videoRef, index) => {
+      if (videoRef) {
+        if (index === current) {
+          videoRef.play().catch(console.error);
+        } else {
+          videoRef.pause();
+          videoRef.currentTime = 0;
+        }
+      }
+    });
+
+    // Clear messages when video changes
+    setCurrentMessages([]);
+  }, [current]);
+
+  return (
+    <div className="flex flex-col items-center justify-center h-full space-y-4 px-8">
+      <div className="relative w-full">
+        <Carousel
+          setApi={setApi}
+          className="w-full"
+          opts={{
+            align: "start",
+            loop: true,
+          }}
+        >
+          <CarouselContent>
+            {videos.map((video, index) => (
+              <CarouselItem key={index}>
+                <div
+                  className="aspect-video rounded-lg overflow-hidden relative"
+                  onMouseEnter={() => setShowControls(true)}
+                  onMouseLeave={() => setShowControls(false)}
+                >
+                  <video
+                    ref={(el) => {
+                      videoRefs.current[index] = el;
+                    }}
+                    data-video-index={index}
+                    className="w-full object-fill aspect-video"
+                    autoPlay={index === current}
+                    muted
+                    loop={false}
+                    onEnded={handleVideoEnd}
+                    onTimeUpdate={handleTimeUpdate}
+                    playsInline
+                    controls={showControls}
+                    controlsList="nodownload nofullscreen noplaybackrate noremoteplayback"
+                    disablePictureInPicture
+                    disableRemotePlayback
+                  >
+                    <source src={video.src} type="video/mp4" />
+                    Your browser does not support the video tag.
+                  </video>
+
+                  {/* Messages overlay */}
+                  {index === current && currentMessages.length > 0 && (
+                    <div className="absolute top-4 right-4 z-10 space-y-2">
+                      {currentMessages.map((message, msgIndex) => (
+                        <div
+                          key={msgIndex}
+                          className="bg-background/70 transition-all backdrop-blur-sm border-1 rounded-lg px-2 py-2 text-sm text-foreground inline-flex items-center gap-2 relative"
+                          style={{
+                            animation: "cycleGlow 4s ease-in-out infinite",
+                          }}
+                        >
+                          <div className="relative z-10 flex items-center gap-2">
+                            <InfoIcon className="size-5 shrink-0 text-blue-400" />
+                            {message}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+          <CarouselPrevious />
+          <CarouselNext />
+        </Carousel>
+
+        {/* Navigation dots */}
+        <div className="flex justify-center space-x-2 mt-4">
+          {videos.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => api?.scrollTo(index)}
+              className={`w-3 h-3 rounded-full transition-colors ${
+                index === current
+                  ? "bg-primary"
+                  : "bg-primary/25 hover:bg-primary/50"
+              }`}
+              aria-label={`Go to video ${videos[index].title}`}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Video counter */}
+      <div className="text-sm text-muted-foreground flex gap-4 place-items-center">
+        <Button
+          variant="outline"
+          size="sm"
+          className="text-xs py-1 px-2 gap-1"
+          onClick={() => setTriggerAction(videos[current].action)}
+        >
+          <PointerIcon className="size-3 shrink-0 mr-1" />
+          Use
+          <div className="text-xs font-bold">{videos[current].title}</div>
+          action
+        </Button>
+      </div>
     </div>
   );
 }

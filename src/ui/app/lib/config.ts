@@ -2,10 +2,10 @@ import type {
   DistractiveStreakSettings,
   FocusStreakSettings,
 } from "@/lib/entities";
+import { durationToTicks, ticksToDuration } from "@/lib/time";
 import { invoke } from "@tauri-apps/api/core";
 import { Duration } from "luxon";
 import { create } from "zustand";
-import { durationToTicks, ticksToDuration } from "./time";
 
 export interface ConfigDuration {
   secs: number;
