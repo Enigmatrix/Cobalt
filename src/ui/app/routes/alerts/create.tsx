@@ -588,7 +588,7 @@ const videos = [
       {
         start: 2,
         end: 6,
-        message: "Apps are closed immediately, and when re-opened",
+        message: "Apps are closed immediately",
       },
       { start: 6, end: 8, message: "Websites are closed when opened" },
       { start: 11, end: 14, message: "Works on newly opened websites" },
