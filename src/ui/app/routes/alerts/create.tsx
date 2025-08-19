@@ -50,6 +50,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type ReactNode,
 } from "react";
 import { useFieldArray } from "react-hook-form";
 import { useNavigate } from "react-router";
@@ -569,21 +570,39 @@ const videos = [
       tag: "dim",
       duration: durationToTicks(Duration.fromObject({ minutes: 30 })),
     },
+    messages: [
+      { start: 0.5, end: 15, message: "Websites and apps dim gradually" },
+      {
+        start: 16,
+        end: 20,
+        message: "Switching to other websites changes dim",
+      },
+      { start: 22, end: 26, message: "Works on newly opened websites" },
+    ],
   },
   {
     src: killVideo,
     title: "Kill",
     action: { tag: "kill" },
+    messages: [
+      { start: 2, end: 6, message: "Closes apps" },
+      { start: 6, end: 8, message: "Websites are closed when opened" },
+      { start: 11, end: 14, message: "Works on newly opened websites" },
+    ],
   },
   {
     src: messageVideo,
     title: "Message",
     action: { tag: "message", content: "" },
+    messages: [
+      { start: 1, end: 6, message: "Notification appears with sound" },
+    ],
   },
 ] satisfies {
   src: string;
   title: string;
   action: TriggerAction;
+  messages: { start: number; end: number; message: ReactNode }[];
 }[];
 
 export function ActionsVideos({
@@ -594,6 +613,7 @@ export function ActionsVideos({
   const [api, setApi] = useState<CarouselApi>();
   const [current, setCurrent] = useState(0);
   const [showControls, setShowControls] = useState(false);
+  const [currentMessages, setCurrentMessages] = useState<React.ReactNode[]>([]);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
 
   useEffect(() => {
@@ -611,6 +631,24 @@ export function ActionsVideos({
     }
   }, [api, current]);
 
+  const handleTimeUpdate = useCallback(
+    (event: React.SyntheticEvent<HTMLVideoElement>) => {
+      const video = event.currentTarget;
+      const currentTime = video.currentTime;
+      const videoIndex = parseInt(video.dataset.videoIndex ?? "0");
+
+      if (videoIndex === current) {
+        const videoData = videos[videoIndex];
+        const activeMessages = videoData.messages
+          .filter((msg) => currentTime >= msg.start && currentTime < msg.end)
+          .map((msg) => msg.message);
+
+        setCurrentMessages(activeMessages);
+      }
+    },
+    [current],
+  );
+
   useEffect(() => {
     // Pause and reset all videos except current
     videoRefs.current.forEach((videoRef, index) => {
@@ -623,6 +661,9 @@ export function ActionsVideos({
         }
       }
     });
+
+    // Clear messages when video changes
+    setCurrentMessages([]);
   }, [current]);
 
   return (
@@ -648,11 +689,13 @@ export function ActionsVideos({
                     ref={(el) => {
                       videoRefs.current[index] = el;
                     }}
+                    data-video-index={index}
                     className="w-full object-fill aspect-video"
                     autoPlay={index === current}
                     muted
                     loop={false}
                     onEnded={handleVideoEnd}
+                    onTimeUpdate={handleTimeUpdate}
                     playsInline
                     controls={showControls}
                     controlsList="nodownload nofullscreen noplaybackrate noremoteplayback"
@@ -662,6 +705,21 @@ export function ActionsVideos({
                     <source src={video.src} type="video/mp4" />
                     Your browser does not support the video tag.
                   </video>
+
+                  {/* Messages overlay */}
+                  {index === current && currentMessages.length > 0 && (
+                    <div className="absolute top-4 right-4 z-10 space-y-2">
+                      {currentMessages.map((message, msgIndex) => (
+                        <div
+                          key={msgIndex}
+                          className="bg-background/70 transition-all backdrop-blur-sm border border-border shadow-lg rounded-lg px-2 py-2 text-sm text-foreground inline-flex items-center gap-2"
+                        >
+                          <InfoIcon className="size-5 shrink-0 text-blue-400" />
+                          {message}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </CarouselItem>
             ))}
