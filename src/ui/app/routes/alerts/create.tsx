@@ -1,9 +1,20 @@
 import { AlertForm, type FormValues } from "@/components/alert/alert-form";
+import dimVideo from "@/components/alert/dim.mp4";
+import killVideo from "@/components/alert/kill.mp4";
+import messageVideo from "@/components/alert/message.mp4";
 import { DateRangePicker } from "@/components/time/date-range-picker";
 import { DurationText } from "@/components/time/duration-text";
 import { PeriodPicker } from "@/components/time/period-picker";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+  type CarouselApi,
+} from "@/components/ui/carousel";
 import { FormItem } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -14,16 +25,22 @@ import { useTargetApps } from "@/hooks/use-refresh";
 import { useAppDurationsPerPeriod } from "@/hooks/use-repo";
 import { useIntervalControlsWithDefault } from "@/hooks/use-time";
 import { useTriggerInfo } from "@/hooks/use-trigger-info";
-import { timeFrameToPeriod, type Target, type TimeFrame } from "@/lib/entities";
+import {
+  timeFrameToPeriod,
+  type Target,
+  type TimeFrame,
+  type TriggerAction,
+} from "@/lib/entities";
 import type { CreateAlert } from "@/lib/repo";
 import { alertSchema } from "@/lib/schema";
 import { useAppState } from "@/lib/state";
-import type { Period } from "@/lib/time";
+import { durationToTicks, type Period } from "@/lib/time";
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
   InfoIcon,
   PlusIcon,
+  PointerIcon,
 } from "lucide-react";
 import { Duration } from "luxon";
 import {
@@ -106,6 +123,13 @@ export default function CreateAlerts() {
     [update, reminders],
   );
 
+  const setTriggerAction = useCallback(
+    (action: TriggerAction) => {
+      form.setValue("triggerAction", action);
+    },
+    [form],
+  );
+
   return (
     <>
       <main className="grid grid-cols-[360px_minmax(0,1fr)] h-full ">
@@ -134,7 +158,7 @@ export default function CreateAlerts() {
               />
             </TabsContent>
             <TabsContent value="actions">
-              <div>TODO show action video</div>
+              <ActionsVideos setTriggerAction={setTriggerAction} />
             </TabsContent>
             <TabsContent value="reminders">
               <div className="flex h-full">
@@ -533,6 +557,150 @@ export function TimeProgressBar({
 
       {/* Reminder markers */}
       {reminders.map((reminder, index) => renderReminder(reminder, index))}
+    </div>
+  );
+}
+
+const videos = [
+  {
+    src: dimVideo,
+    title: "Dim",
+    action: {
+      tag: "dim",
+      duration: durationToTicks(Duration.fromObject({ minutes: 30 })),
+    },
+  },
+  {
+    src: killVideo,
+    title: "Kill",
+    action: { tag: "kill" },
+  },
+  {
+    src: messageVideo,
+    title: "Message",
+    action: { tag: "message", content: "" },
+  },
+] satisfies {
+  src: string;
+  title: string;
+  action: TriggerAction;
+}[];
+
+export function ActionsVideos({
+  setTriggerAction,
+}: {
+  setTriggerAction: (action: TriggerAction) => void;
+}) {
+  const [api, setApi] = useState<CarouselApi>();
+  const [current, setCurrent] = useState(0);
+  const [showControls, setShowControls] = useState(false);
+  const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
+
+  useEffect(() => {
+    if (!api) return;
+
+    api.on("select", () => {
+      setCurrent(api.selectedScrollSnap());
+    });
+  }, [api]);
+
+  const handleVideoEnd = useCallback(() => {
+    if (api) {
+      const nextIndex = (current + 1) % videos.length;
+      api.scrollTo(nextIndex);
+    }
+  }, [api, current]);
+
+  useEffect(() => {
+    // Pause and reset all videos except current
+    videoRefs.current.forEach((videoRef, index) => {
+      if (videoRef) {
+        if (index === current) {
+          videoRef.play().catch(console.error);
+        } else {
+          videoRef.pause();
+          videoRef.currentTime = 0;
+        }
+      }
+    });
+  }, [current]);
+
+  return (
+    <div className="flex flex-col items-center justify-center h-full space-y-4 px-8">
+      <div className="relative w-full">
+        <Carousel
+          setApi={setApi}
+          className="w-full"
+          opts={{
+            align: "start",
+            loop: true,
+          }}
+        >
+          <CarouselContent>
+            {videos.map((video, index) => (
+              <CarouselItem key={index}>
+                <div
+                  className="aspect-video rounded-lg overflow-hidden relative"
+                  onMouseEnter={() => setShowControls(true)}
+                  onMouseLeave={() => setShowControls(false)}
+                >
+                  <video
+                    ref={(el) => {
+                      videoRefs.current[index] = el;
+                    }}
+                    className="w-full object-fill aspect-video"
+                    autoPlay={index === current}
+                    muted
+                    loop={false}
+                    onEnded={handleVideoEnd}
+                    playsInline
+                    controls={showControls}
+                    controlsList="nodownload nofullscreen noplaybackrate noremoteplayback"
+                    disablePictureInPicture
+                    disableRemotePlayback
+                  >
+                    <source src={video.src} type="video/mp4" />
+                    Your browser does not support the video tag.
+                  </video>
+                </div>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+          <CarouselPrevious />
+          <CarouselNext />
+        </Carousel>
+
+        {/* Navigation dots */}
+        <div className="flex justify-center space-x-2 mt-4">
+          {videos.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => api?.scrollTo(index)}
+              className={`w-3 h-3 rounded-full transition-colors ${
+                index === current
+                  ? "bg-primary"
+                  : "bg-primary/25 hover:bg-primary/50"
+              }`}
+              aria-label={`Go to video ${videos[index].title}`}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Video counter */}
+      <div className="text-sm text-muted-foreground flex gap-4 place-items-center">
+        <Button
+          variant="outline"
+          size="sm"
+          className="text-xs py-1 px-2 gap-1"
+          onClick={() => setTriggerAction(videos[current].action)}
+        >
+          <PointerIcon className="size-3 shrink-0 mr-1" />
+          Use
+          <div className="text-xs font-bold">{videos[current].title}</div>
+          action
+        </Button>
+      </div>
     </div>
   );
 }
