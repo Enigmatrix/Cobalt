@@ -585,7 +585,11 @@ const videos = [
     title: "Kill",
     action: { tag: "kill" },
     messages: [
-      { start: 2, end: 6, message: "Closes apps" },
+      {
+        start: 2,
+        end: 6,
+        message: "Apps are closed immediately, and when re-opened",
+      },
       { start: 6, end: 8, message: "Websites are closed when opened" },
       { start: 11, end: 14, message: "Works on newly opened websites" },
     ],
@@ -712,10 +716,15 @@ export function ActionsVideos({
                       {currentMessages.map((message, msgIndex) => (
                         <div
                           key={msgIndex}
-                          className="bg-background/70 transition-all backdrop-blur-sm border border-border shadow-lg rounded-lg px-2 py-2 text-sm text-foreground inline-flex items-center gap-2"
+                          className="bg-background/70 transition-all backdrop-blur-sm border-1 rounded-lg px-2 py-2 text-sm text-foreground inline-flex items-center gap-2 relative"
+                          style={{
+                            animation: "cycleGlow 4s ease-in-out infinite",
+                          }}
                         >
-                          <InfoIcon className="size-5 shrink-0 text-blue-400" />
-                          {message}
+                          <div className="relative z-10 flex items-center gap-2">
+                            <InfoIcon className="size-5 shrink-0 text-blue-400" />
+                            {message}
+                          </div>
                         </div>
                       ))}
                     </div>
