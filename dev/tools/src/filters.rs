@@ -123,10 +123,18 @@ pub fn match_running_windows(
     let mut windows = Window::get_all_visible_windows()?
         .into_iter()
         .map(|window| {
+            let ptid = window.ptid()?;
+            let process = Process::new(ptid.pid)?;
             Ok(WindowDetails {
+                ptid,
                 title: window.title()?,
-                ptid: window.ptid()?,
-                aumid: window.aumid().ok(),
+                aumid: if let Some(aumid) = process.aumid()? {
+                    Some(aumid)
+                } else if process.is_uwp(None)? {
+                    window.aumid().ok()
+                } else {
+                    None
+                },
                 window,
             })
         })
