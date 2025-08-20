@@ -29,6 +29,7 @@ class Database:
         icon: Optional[str],
         identity_tag: int,
         identity_text0: str,
+        identity_text1: str,
         tag_id: Optional[int],
         created_at: int,
         updated_at: int,
@@ -38,8 +39,8 @@ class Database:
         cursor.execute(
             """
             INSERT OR REPLACE INTO apps (name, description, company, color, icon, tag_id, 
-                             identity_tag, identity_text0, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                             identity_tag, identity_text0, identity_text1, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
             (
                 name,
@@ -50,6 +51,7 @@ class Database:
                 tag_id,
                 identity_tag,
                 identity_text0,
+                identity_text1,
                 created_at,
                 updated_at,
             ),

@@ -142,8 +142,9 @@ erDiagram
         text            company
         text            color
         int_nullable    tag_id FK
-        int             identity_tag     UK "UNIQUE(identity_tag, identity_text0)"
-        text            identity_text0   UK "UNIQUE(identity_tag, identity_text0)"
+        int             identity_tag     UK "UNIQUE(identity_tag, identity_text0, identity_text1)"
+        text            identity_text0   UK "UNIQUE(identity_tag, identity_text0, identity_text1)"
+        text            identity_text1   UK "UNIQUE(identity_tag, identity_text0, identity_text1)"
         int             created_at
         int_nullable    initialized_at "set if details are set"
         int             updated_at
