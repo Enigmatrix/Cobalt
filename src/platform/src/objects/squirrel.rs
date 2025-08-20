@@ -2,11 +2,11 @@ use std::path::{Path, PathBuf};
 
 use semver::Version;
 use util::config::data_local_dir;
-use util::error::{ContextCompat, Result, bail};
+use util::error::{Context, ContextCompat, Result, bail};
 
 /// Squirrel executable e.g. %LOCALAPPDATA%\{identifier}\app-{version}\{file}
 /// ref: https://github.com/Squirrel/Squirrel.Windows/blob/51f5e2cb01add79280a53d51e8d0cfa20f8c9f9f/docs/getting-started/4-installing.md
-/// for guarentees on format, including ref: https://github.com/Squirrel/Squirrel.Windows/issues/1002 for guarentees on %LOCALAPPDATA%.
+/// for guarantees on format, including ref: https://github.com/Squirrel/Squirrel.Windows/issues/1002 for guarantees on %LOCALAPPDATA%.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SquirrelExe {
     /// Base directory e.g. %LOCALAPPDATA%\{identifier}
@@ -100,19 +100,22 @@ impl SquirrelBaseDir {
         // Algorithm in https://github.com/Squirrel/Squirrel.Windows/blob/51f5e2cb01add79280a53d51e8d0cfa20f8c9f9f/src/StubExecutable/StubExecutable.cpp#L48
         // Note that they skip directories that have a .not-finished file inside but we don't really care :)
         let path = self.directory()?;
-        let versions = path.read_dir()?.filter_map(|entry| {
-            // all Errs are filtered out and not logged!
-            let path = entry.ok()?.path();
+        let versions = path
+            .read_dir()
+            .with_context(|| format!("read dir for {path:?}"))?
+            .filter_map(|entry| {
+                // all errors are silently ignored by converting Results into Options
+                let path = entry.ok()?.path();
 
-            if !path.is_dir() {
-                return None;
-            }
+                if !path.is_dir() {
+                    return None;
+                }
 
-            path.file_name()?
-                .to_string_lossy()
-                .strip_prefix("app-")
-                .and_then(|s| Version::parse(s).ok())
-        });
+                path.file_name()?
+                    .to_string_lossy()
+                    .strip_prefix("app-")
+                    .and_then(|s| Version::parse(s).ok())
+            });
         versions.max().context("no versions found")
     }
 

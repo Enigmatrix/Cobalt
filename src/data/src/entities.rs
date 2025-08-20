@@ -9,7 +9,7 @@ pub use crate::table::{Color, Duration, Id, Period, Real, Ref, Score, Timestamp}
 #[derive(Default, Debug, Clone, PartialEq, Eq, FromRow, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct App {
-    /// Identified
+    /// Identifier
     pub id: Ref<Self>,
     // /// only used for [UsageWriter::find_or_insert_app]
     // pub found: bool,
@@ -62,7 +62,7 @@ pub enum AppIdentity {
     /// Squirrel App
     #[serde(rename_all = "camelCase")]
     Squirrel {
-        /// Identfier e.g. software name / company
+        /// Identifier e.g. software name / company
         identifier: String,
         /// File name
         file: String,
@@ -115,7 +115,7 @@ pub struct Tag {
 #[derive(Default, Debug, Clone, PartialEq, Eq, FromRow, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Session {
-    /// Identified
+    /// Identifier
     pub id: Ref<Self>,
     /// Link to [App]
     pub app_id: Ref<App>,
