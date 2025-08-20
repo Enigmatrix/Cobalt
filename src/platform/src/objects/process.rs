@@ -10,7 +10,10 @@ use windows::System::AppDiagnosticInfo;
 use windows::Wdk::System::Threading::{
     NtQueryInformationProcess, PROCESSINFOCLASS, ProcessImageFileNameWin32,
 };
-use windows::Win32::Foundation::{CloseHandle, HANDLE, UNICODE_STRING, WAIT_TIMEOUT};
+use windows::Win32::Foundation::{
+    APPMODEL_ERROR_NO_APPLICATION, CloseHandle, HANDLE, UNICODE_STRING, WAIT_TIMEOUT,
+};
+use windows::Win32::Storage::Packaging::Appx::GetApplicationUserModelId;
 use windows::Win32::System::ProcessStatus::K32EnumProcesses;
 use windows::Win32::System::Threading::{
     IsImmersiveProcess, OpenProcess, PROCESS_QUERY_LIMITED_INFORMATION, PROCESS_TERMINATE,
@@ -18,6 +21,7 @@ use windows::Win32::System::Threading::{
 };
 use windows::Win32::UI::Shell::DoEnvironmentSubstW;
 use windows::core::HSTRING;
+use windows_core::PWSTR;
 
 use crate::adapt_size;
 use crate::buf::WideBuffer;
@@ -130,6 +134,24 @@ impl Process {
                     .context("get process path for is_uwp")?
                     .eq_ignore_ascii_case(APPLICATION_FRAME_HOST)
             })
+    }
+
+    /// Get Process AUMID. Oddly enough this doesn't work on Windows Store apps since they run as
+    /// ApplicationFrameHost.exe (e.g. Settings, Photos, Notifications Visualizer) and this returns
+    /// APPMODEL_ERROR_NO_APPLICATION. However, this does work for Desktop UWP apps (e.g. Terminal
+    /// Clipchamp).
+    pub fn aumid(&self) -> Result<Option<String>> {
+        let res = adapt_size!(u16, len: 0 => 1024, buf, unsafe {
+            GetApplicationUserModelId(self.handle, &mut len, Some(PWSTR(buf.as_mut_ptr()))).into_result().map(|_| {
+                buf.with_length(len as usize).to_string_lossy_except_null_terminator()
+            })
+        });
+        match res {
+            Ok(aumid) => Ok(Some(aumid)),
+            Err(e) if e.inner == APPMODEL_ERROR_NO_APPLICATION => Ok(None),
+            Err(e) => Err(e),
+        }
+        .context("get process aumid")
     }
 
     /// Get the executable path of this [Process]

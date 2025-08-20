@@ -314,10 +314,13 @@ impl Engine {
             process.path()?
         };
 
-        let identity = if process.is_uwp(Some(&path))? {
-            AppIdentity::Uwp {
-                aumid: window.aumid()?,
-            }
+        let identity = if let Some(aumid) = process.aumid()? {
+            debug!("desktop aumid: {aumid}");
+            AppIdentity::Uwp { aumid }
+        } else if process.is_uwp(Some(&path))? {
+            let aumid = window.aumid()?;
+            debug!("store aumid: {aumid}");
+            AppIdentity::Uwp { aumid }
         } else {
             AppIdentity::Win32 { path }
         };
