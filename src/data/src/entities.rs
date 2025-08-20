@@ -59,6 +59,14 @@ pub enum AppIdentity {
         /// Base URL of the Website
         base_url: String,
     },
+    /// Squirrel App
+    #[serde(rename_all = "camelCase")]
+    Squirrel {
+        /// Identfier e.g. software name / company
+        identifier: String,
+        /// File name
+        file: String,
+    },
 }
 
 impl FromRow<'_, SqliteRow> for AppIdentity {
@@ -68,6 +76,10 @@ impl FromRow<'_, SqliteRow> for AppIdentity {
             0 => AppIdentity::Uwp { aumid: text0 },
             1 => AppIdentity::Win32 { path: text0 },
             2 => AppIdentity::Website { base_url: text0 },
+            3 => AppIdentity::Squirrel {
+                identifier: text0,
+                file: row.get("identity_text1"),
+            },
             _ => panic!("Unknown identity type"),
         })
     }

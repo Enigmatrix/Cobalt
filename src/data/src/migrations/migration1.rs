@@ -30,7 +30,6 @@ impl Migration for Migration1 {
         .await
         .context("create table tags")?;
 
-        // all information fields of app are nullable, except identity
         tx.execute(
             "CREATE TABLE apps (
                 id                              INTEGER PRIMARY KEY NOT NULL,
@@ -42,6 +41,7 @@ impl Migration for Migration1 {
                 tag_id                          INTEGER REFERENCES tags(id) ON DELETE SET NULL,
                 identity_tag                    INTEGER NOT NULL,
                 identity_text0                  TEXT NOT NULL,
+                identity_text1                  TEXT NOT NULL,
                 created_at                      INTEGER NOT NULL,
                 initialized_at                  INTEGER,
                 updated_at                      INTEGER NOT NULL
@@ -161,7 +161,7 @@ impl Migration for Migration1 {
             .await
             .context("create index interaction_period")?;
 
-        tx.execute("CREATE UNIQUE INDEX app_identity ON apps(identity_tag, identity_text0)")
+        tx.execute("CREATE UNIQUE INDEX app_identity ON apps(identity_tag, identity_text0, identity_text1)")
             .await
             .context("create unique index app_identity")?;
 

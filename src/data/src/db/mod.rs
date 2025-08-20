@@ -122,15 +122,16 @@ impl UsageWriter {
     /// This prevents race conditions where another thread might insert the same app
     /// between our SELECT and INSERT queries.
     pub async fn find_or_insert_app(&mut self, app: &App) -> Result<FoundOrInserted<App>> {
-        let (tag, text0) = Self::destructure_identity(&app.identity);
+        let (tag, text0, text1) = Self::destructure_identity(&app.identity);
         let mut tx = self.db.transaction().await?;
 
         // First, try to find existing app by identity
         if let Some((existing_id,)) = query_as::<_, (Ref<App>,)>(
-            "SELECT id FROM apps WHERE identity_tag = ? AND identity_text0 = ?",
+            "SELECT id FROM apps WHERE identity_tag = ? AND identity_text0 = ? AND identity_text1 = ?",
         )
         .bind(tag)
         .bind(text0)
+        .bind(text1)
         .fetch_optional(&mut *tx)
         .await?
         {
@@ -143,8 +144,8 @@ impl UsageWriter {
         let (new_id,): (Ref<App>,) = query_as(
             "INSERT INTO apps (
                 name, description, company, color, icon, tag_id,
-                identity_tag, identity_text0, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
+                identity_tag, identity_text0, identity_text1, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
         )
         .bind(&app.name)
         .bind(&app.description)
@@ -154,6 +155,7 @@ impl UsageWriter {
         .bind(&app.tag_id)
         .bind(tag)
         .bind(text0)
+        .bind(text1)
         .bind(app.created_at)
         .bind(app.updated_at)
         .fetch_one(&mut *tx)
@@ -220,11 +222,12 @@ impl UsageWriter {
         Ok(())
     }
 
-    fn destructure_identity(identity: &AppIdentity) -> (i64, &str) {
+    fn destructure_identity(identity: &AppIdentity) -> (i64, &str, &str) {
         match identity {
-            AppIdentity::Uwp { aumid } => (0, aumid),
-            AppIdentity::Win32 { path } => (1, path),
-            AppIdentity::Website { base_url } => (2, base_url),
+            AppIdentity::Uwp { aumid } => (0, aumid, ""),
+            AppIdentity::Win32 { path } => (1, path, ""),
+            AppIdentity::Website { base_url } => (2, base_url, ""),
+            AppIdentity::Squirrel { identifier, file } => (3, identifier, file),
         }
     }
 }
@@ -253,7 +256,7 @@ impl AppUpdater {
     /// Get all [App]s that need to be updated
     pub async fn get_apps_to_update(&mut self) -> Result<Vec<UnresolvedApp>> {
         let apps = query_as(
-            "SELECT id, identity_tag, identity_text0 FROM apps WHERE initialized_at IS NULL",
+            "SELECT id, identity_tag, identity_text0, identity_text1 FROM apps WHERE initialized_at IS NULL",
         )
         .fetch_all(self.db.executor())
         .await?;
