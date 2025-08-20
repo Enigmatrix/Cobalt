@@ -147,7 +147,9 @@ function AppPage({ app }: { app: App }) {
                     ? "UWP"
                     : app.identity.tag === "win32"
                       ? "Win32"
-                      : "Web"}
+                      : app.identity.tag === "website"
+                        ? "Web"
+                        : "Squirrel"}
                 </div>
 
                 <Text className="font-mono pl-3 pr-1 py-1.5 text-muted-foreground">
@@ -155,18 +157,22 @@ function AppPage({ app }: { app: App }) {
                     ? app.identity.aumid
                     : app.identity.tag === "win32"
                       ? app.identity.path
-                      : app.identity.baseUrl}
+                      : app.identity.tag === "website"
+                        ? app.identity.baseUrl
+                        : squirrelIdentityText(app.identity)}
                 </Text>
                 <Button
                   variant="ghost"
                   className="h-auto p-2 rounded-none rounded-r-lg text-muted-foreground"
-                  onClick={() =>
-                    copy(
+                  onClick={async () =>
+                    await copy(
                       app.identity.tag === "uwp"
                         ? app.identity.aumid
                         : app.identity.tag === "win32"
                           ? app.identity.path
-                          : app.identity.baseUrl,
+                          : app.identity.tag === "website"
+                            ? app.identity.baseUrl
+                            : squirrelIdentityText(app.identity),
                     )
                   }
                 >
@@ -207,6 +213,16 @@ function AppPage({ app }: { app: App }) {
       </div>
     </>
   );
+}
+
+function squirrelIdentityText({
+  identifier,
+  file,
+}: {
+  identifier: string;
+  file: string;
+}) {
+  return `${identifier} (${file})`;
 }
 
 function TagSelect({
