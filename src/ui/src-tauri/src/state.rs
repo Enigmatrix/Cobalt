@@ -51,7 +51,7 @@ impl AppStateInner {
     pub async fn new() -> Result<Self> {
         let config = get_config()?;
         util::setup(&config)?;
-        let db_pool = DatabasePool::new(&config).await?;
+        let db_pool = DatabasePool::new(&config.connection_string()?).await?;
         Ok(Self { db_pool, config })
     }
 

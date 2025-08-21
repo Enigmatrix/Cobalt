@@ -91,17 +91,17 @@ impl Default for Config {
 }
 
 impl Config {
-    /// Get the config path from dir
-    pub fn config_path(segment: &str) -> Result<PathBuf> {
+    /// Get the config base path dir
+    pub fn config_base_dir() -> Result<PathBuf> {
         #[cfg(debug_assertions)]
         {
             use crate::{TARGET, Target};
 
             let target = TARGET.lock().unwrap().clone();
             match target {
-                Target::Engine => Ok(PathBuf::from(segment)),
-                Target::Ui => Ok(PathBuf::from("../../../").join(segment)),
-                Target::Tool { .. } => Ok(PathBuf::from(segment)),
+                Target::Engine => Ok(PathBuf::from(".")),
+                Target::Ui => Ok(PathBuf::from("../../../")),
+                Target::Tool { .. } => Ok(PathBuf::from(".")),
             }
         }
 
@@ -118,8 +118,13 @@ impl Config {
                 std::fs::create_dir(&parent)?;
             }
 
-            Ok(parent.join(segment))
+            Ok(parent)
         }
+    }
+
+    /// Get the config path from dir
+    pub fn config_path(segment: &str) -> Result<PathBuf> {
+        Ok(Self::config_base_dir()?.join(segment))
     }
 
     /// Validate the config and replace any missing values with defaults
@@ -318,7 +323,7 @@ fn combined_extract_fields() -> Result<()> {
     std::env::set_current_dir("../../")?;
     let config = get_config()?;
     assert_eq!(
-        "main.db",
+        ".\\main.db",
         config.connection_string()?.to_string_lossy().to_string()
     );
     std::fs::remove_file(Config::config_path(CONFIG_FILE)?).expect("failed to remove file");

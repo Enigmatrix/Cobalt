@@ -313,7 +313,7 @@ struct ProcessorArgs {
 
 /// Runs the [Engine] and [Sentry] loops in an asynchronous executor.
 async fn processor(args: ProcessorArgs) -> Result<()> {
-    let db_pool = DatabasePool::new(&args.config).await?;
+    let db_pool = DatabasePool::new(&args.config.connection_string()?).await?;
 
     // re-run failed app info updates
     let _db_pool = db_pool.clone();

@@ -1,3 +1,4 @@
+use std::path::Path;
 use std::time::Duration;
 
 use sqlx::pool::PoolConnection;
@@ -55,8 +56,7 @@ pub struct DatabasePool {
 
 impl DatabasePool {
     /// Create a new [DatabasePool] from a [Config]
-    pub async fn new(config: &Config) -> Result<Self> {
-        let path = config.connection_string()?;
+    pub async fn new(path: impl AsRef<Path>) -> Result<Self> {
         let opts = SqliteConnectOptions::new()
             .filename(path)
             .create_if_missing(true)
@@ -95,12 +95,12 @@ impl Database {
     }
 
     /// Expose the inner [Executor]
-    pub(crate) fn executor(&mut self) -> impl Executor<'_, Database = Sqlite> {
+    pub fn executor(&mut self) -> impl Executor<'_, Database = Sqlite> {
         &mut *self.conn
     }
 
     /// Start a new [Transaction]
-    pub(crate) async fn transaction(&mut self) -> Result<Transaction<'_, Sqlite>> {
+    pub async fn transaction(&mut self) -> Result<Transaction<'_, Sqlite>> {
         self.conn.begin().await.context("begin transaction")
     }
 }

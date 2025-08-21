@@ -10,12 +10,15 @@ workspace = true
 
 [dependencies]
 clap = { version = "4.4", features = ["derive"] }
+data = { path = "../../src/data" }
 util = { path = "../../src/util" }
 platform = { path = "../../src/platform" }
 engine = { path = "../../src/engine" }
 dialoguer = "0.11.0"
+inquire = "0.6"
 serde = "1.0.219"
 serde_json = "1.0.140"
+sqlx = { version = "0.8", features = [ "runtime-tokio", "sqlite", "derive", "macros" ] }
 
 [dependencies.windows-core]
 version = "0.59"
@@ -46,4 +49,8 @@ path = "src/bin/kill.rs"
 
 [[bin]]
 name = "tab_switch"
-path = "src/bin/tab_switch.rs" 
+path = "src/bin/tab_switch.rs"
+
+[[bin]]
+name = "merge_apps"
+path = "src/bin/merge_apps.rs" 
