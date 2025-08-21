@@ -3,9 +3,10 @@
 use std::path::Path;
 
 use clap::Parser;
+use dialoguer::Confirm;
 use tools::db::Source;
 use util::error::{Context, Result, bail};
-use util::tracing::{debug, warn};
+use util::tracing::warn;
 use util::{Target, config, future as tokio};
 
 #[derive(Parser, Debug, Clone)]
@@ -32,23 +33,26 @@ async fn main() -> Result<()> {
     let source_path = args
         .source
         .dir_path()
-        .context("failed to resolve source path")?
-        .canonicalize()?;
+        .context("failed to resolve source path")?;
     let target_path = args
         .target
         .dir_path()
-        .context("failed to resolve target path")?
-        .canonicalize()?;
+        .context("failed to resolve target path")?;
 
-    if source_path == target_path {
+    if source_path.canonicalize()? == target_path.canonicalize()? {
         bail!("source and target are the same");
     }
 
-    debug!(
-        "Copying from {} to {}",
-        source_path.display(),
-        target_path.display()
-    );
+    let confirmed = Confirm::new()
+        .with_prompt(format!(
+            "Are you sure you want to copy from {:?} to {:?}?",
+            args.source, args.target
+        ))
+        .interact()
+        .context("failed to confirm")?;
+    if !confirmed {
+        return Ok(());
+    }
 
     remove_icon_files(&target_path)?;
     remove_db_files(&target_path)?;
