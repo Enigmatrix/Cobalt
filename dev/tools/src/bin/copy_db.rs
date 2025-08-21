@@ -1,10 +1,10 @@
 //! Copy database from source to target
 
-use std::path::{Path, PathBuf};
-use std::str::FromStr;
+use std::path::Path;
 
 use clap::Parser;
-use util::error::{Context, ContextCompat, Result, bail};
+use tools::db::Source;
+use util::error::{Context, Result, bail};
 use util::tracing::{debug, warn};
 use util::{Target, config, future as tokio};
 
@@ -13,54 +13,10 @@ use util::{Target, config, future as tokio};
 struct Args {
     /// Database source ('seed', 'install', or custom path)
     #[arg(short, long)]
-    source: String,
+    source: Source,
     /// Database target ('seed', 'install', or custom path)
     #[arg(short, long)]
-    target: String,
-}
-
-#[derive(Debug, Clone, Eq, PartialEq)]
-/// Source of the database
-pub enum Source {
-    // /// Seed database
-    // Seed,
-    /// Install location
-    Install,
-    /// Current directory
-    Current,
-    /// Custom path
-    Custom(String),
-}
-
-impl FromStr for Source {
-    type Err = std::convert::Infallible;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s.to_lowercase().as_str() {
-            // "seed" => Ok(Source::Seed),
-            "install" => Ok(Source::Install),
-            "." => Ok(Source::Current),
-            _ => Ok(Source::Custom(s.to_string())),
-        }
-    }
-}
-
-impl Source {
-    /// Convert the source to a PathBuf
-    pub fn to_path(&self) -> Result<PathBuf> {
-        let path = match self {
-            // Source::Seed => Ok(PathBuf::from("./dev/seed.db")),
-            Source::Install => util::config::data_local_dir()
-                .context("data local dir")?
-                .join("me.enigmatrix.cobalt"),
-            Source::Current => PathBuf::from("."),
-            Source::Custom(path) => PathBuf::from(path),
-        };
-        if !path.is_dir() {
-            bail!("{} is not a directory", path.display());
-        }
-        Ok(path)
-    }
+    target: Source,
 }
 
 #[tokio::main]
@@ -73,15 +29,14 @@ async fn main() -> Result<()> {
     platform::setup()?;
 
     let args = Args::parse();
-    let source: Source = args.source.parse().context("failed to parse source")?;
-    let target: Source = args.target.parse().context("failed to parse target")?;
-
-    let source_path = source
-        .to_path()
+    let source_path = args
+        .source
+        .dir_path()
         .context("failed to resolve source path")?
         .canonicalize()?;
-    let target_path = target
-        .to_path()
+    let target_path = args
+        .target
+        .dir_path()
         .context("failed to resolve target path")?
         .canonicalize()?;
 

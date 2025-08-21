@@ -10,6 +10,7 @@ use data::db::{Database, DatabasePool, infused};
 use data::entities::{App, Ref};
 use inquire::MultiSelect as InquireMultiSelect;
 use platform::objects::Timestamp;
+use tools::db::Source;
 use util::error::{Context, ContextCompat, Result};
 use util::tracing::{debug, error, info};
 use util::{Target, config, future as tokio};
@@ -19,7 +20,7 @@ use util::{Target, config, future as tokio};
 struct Args {
     /// Database path
     #[arg()]
-    db_path: Option<String>,
+    db: Option<Source>,
 
     /// Target app ID to merge into
     #[arg(long)]
@@ -41,10 +42,11 @@ async fn main() -> Result<()> {
     util::setup(&config)?;
     platform::setup()?;
     let db_path = args
-        .db_path
-        .map(PathBuf::from)
-        .context("db path not provided")
-        .or_else(|_| config.connection_string())?;
+        .db
+        .as_ref()
+        .unwrap_or(&Source::Current)
+        .dir_path()?
+        .join("main.db");
     debug!("db path: {}", db_path.display());
 
     let db_pool = DatabasePool::new(&db_path).await?;
@@ -120,8 +122,14 @@ async fn main() -> Result<()> {
         .collect::<Vec<_>>()
         .join(",");
     debug!(
-        "cargo run --bin merge_apps -- --apps {} --target {}",
-        selected_app_ids, target_app.0
+        "cargo run --bin merge_apps -- --apps {} --target {}{}",
+        selected_app_ids,
+        target_app.0,
+        if let Some(db) = args.db {
+            db.to_string()
+        } else {
+            "".to_string()
+        }
     );
 
     Ok(())
