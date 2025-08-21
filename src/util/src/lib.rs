@@ -8,6 +8,8 @@ pub mod config;
 pub mod ds;
 /// Error base
 pub mod error;
+/// File system helpers
+pub mod fs;
 /// Async base
 pub mod future;
 /// Number types
