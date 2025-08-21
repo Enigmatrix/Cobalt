@@ -323,7 +323,7 @@ fn combined_extract_fields() -> Result<()> {
     std::env::set_current_dir("../../")?;
     let config = get_config()?;
     assert_eq!(
-        "main.db",
+        ".\\main.db",
         config.connection_string()?.to_string_lossy().to_string()
     );
     std::fs::remove_file(Config::config_path(CONFIG_FILE)?).expect("failed to remove file");

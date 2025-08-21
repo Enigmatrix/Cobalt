@@ -153,6 +153,9 @@ fn select_apps(apps: Vec<infused::App>) -> Result<Vec<infused::App>> {
                 data::entities::AppIdentity::Website { base_url } => {
                     format!("Website: {}", base_url.trim())
                 }
+                data::entities::AppIdentity::Squirrel { identifier, file } => {
+                    format!("Squirrel: {} - {}", identifier.trim(), file.trim())
+                }
             };
 
             DisplayFirst {

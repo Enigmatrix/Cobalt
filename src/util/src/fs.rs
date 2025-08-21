@@ -42,7 +42,12 @@ pub fn check_and_copy_file(source_dir: &Path, target_dir: &Path, file: &str) -> 
 }
 
 /// Check if source dir exists then copy it
-pub fn check_and_copy_dir(source_dir: &Path, target_dir: &Path, file: &str) -> Result<()> {
+pub fn check_and_copy_dir(
+    source_dir: &Path,
+    target_dir: &Path,
+    file: impl AsRef<Path>,
+) -> Result<()> {
+    let file = file.as_ref().file_name().expect("file name is ..");
     let from_dir = source_dir.join(file);
     let to_dir = target_dir.join(file);
     if fs::metadata(&from_dir).map(|f| f.is_dir()).unwrap_or(false) {
@@ -55,8 +60,7 @@ pub fn check_and_copy_dir(source_dir: &Path, target_dir: &Path, file: &str) -> R
         for entry in fs::read_dir(&from_dir).context(format!("read dir {}", from_dir.display()))? {
             let entry = entry.context("read dir entry")?;
             let entry_path = entry.path();
-            let file_name = entry_path.file_name().unwrap();
-            let dest_path = to_dir.join(file_name);
+            let dest_path = to_dir.join(entry_path.file_name().expect("file name is .."));
 
             if entry_path.is_file() {
                 fs::copy(&entry_path, &dest_path).context(format!(
@@ -65,12 +69,11 @@ pub fn check_and_copy_dir(source_dir: &Path, target_dir: &Path, file: &str) -> R
                     dest_path.display()
                 ))?;
             } else if entry_path.is_dir() {
-                // Recursively copy subdirectories
-                check_and_copy_dir(&from_dir, &to_dir, file_name.to_str().unwrap())?;
+                warn!("dir {} is not a file", entry_path.display());
             }
         }
     } else {
-        warn!("dir {} not found", file);
+        warn!("dir {} not found", file.display());
     }
     Ok(())
 }

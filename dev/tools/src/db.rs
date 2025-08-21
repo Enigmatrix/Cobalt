@@ -39,7 +39,7 @@ impl Source {
                 .context("data local dir")?
                 .join("me.enigmatrix.cobalt"),
             Source::Current => PathBuf::from("."),
-            Source::Custom(path) => PathBuf::from(path),
+            Source::Custom(path) => path.clone(),
         };
         if !path.is_dir() {
             bail!("{} is not a directory", path.display());
