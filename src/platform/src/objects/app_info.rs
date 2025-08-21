@@ -17,7 +17,7 @@ use windows::core::{AgileReference, HSTRING, PCWSTR, PWSTR};
 use crate::adapt_size2;
 use crate::buf::WideBuffer;
 use crate::error::IntoResult;
-use crate::objects::FileVersionInfo;
+use crate::objects::{FileVersionInfo, SquirrelBaseDir};
 
 /// Information about an App
 pub struct AppInfo {
@@ -130,6 +130,17 @@ impl AppInfo {
         }
     }
 
+    /// Create a default [AppInfo] from a Squirrel identifier and file
+    pub fn default_from_squirrel(identifier: &str, file: &str) -> Self {
+        Self {
+            name: file.to_string(),
+            description: file.to_string(),
+            company: identifier.to_string(),
+            color: random_color(),
+            icon: None,
+        }
+    }
+
     /// Create a new [AppInfo] of a Win32 program from its path
     pub async fn from_win32(path: &str) -> Result<Self> {
         let file = AgileReference::new(&StorageFile::GetFileFromPathAsync(&path.into())?.await?)?;
@@ -178,6 +189,15 @@ impl AppInfo {
             color: random_color(),
             icon,
         })
+    }
+
+    /// Create a new [AppInfo] of a given Squirrel app from its identifier and file
+    pub async fn from_squirrel(identifier: &str, file: &str) -> Result<Self> {
+        let base_dir = SquirrelBaseDir::new(identifier.to_string())?;
+        let exe = base_dir.latest_exe(file)?;
+        Self::from_win32(exe.path()?.to_string_lossy().as_ref())
+            .await
+            .with_context(|| format!("call from_win32 for squirrel exe {exe:?}"))
     }
 
     async fn win32_icon(file: &AgileReference<StorageFile>) -> Result<Icon> {

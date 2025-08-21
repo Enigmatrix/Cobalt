@@ -328,12 +328,13 @@ async fn insert_app_raw(
     tag_id: Option<i64>,
     identity_tag: u32,
     identity_text0: &str,
+    identity_text1: &str,
     icon: Option<String>,
     created_at: i64,
     initialized_at: Option<i64>,
     updated_at: i64,
 ) -> Result<Ref<App>> {
-    let res = query("INSERT INTO apps VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+    let res = query("INSERT INTO apps VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
         .bind(name)
         .bind(description)
         .bind(company)
@@ -342,6 +343,7 @@ async fn insert_app_raw(
         .bind(tag_id)
         .bind(identity_tag)
         .bind(identity_text0)
+        .bind(identity_text1)
         .bind(created_at)
         .bind(initialized_at)
         .bind(updated_at)
@@ -441,6 +443,7 @@ async fn target_apps() -> Result<()> {
             None,
             1,
             "path1",
+            "",
             None,
             0,
             Some(0),
@@ -456,6 +459,7 @@ async fn target_apps() -> Result<()> {
             Some(2),
             0,
             "aumid2",
+            "",
             None,
             0,
             Some(0),
@@ -471,6 +475,7 @@ async fn target_apps() -> Result<()> {
             Some(3),
             1,
             "path3",
+            "",
             None,
             0,
             Some(0),
@@ -486,6 +491,7 @@ async fn target_apps() -> Result<()> {
             Some(2),
             1,
             "path4",
+            "",
             None,
             0,
             Some(0),
@@ -606,6 +612,7 @@ async fn insert_alert_event() -> Result<()> {
             None,
             1,
             "path1",
+            "",
             None,
             0,
             Some(0),
@@ -655,6 +662,7 @@ async fn insert_reminder_event() -> Result<()> {
             None,
             1,
             "path1",
+            "",
             None,
             0,
             Some(0),
@@ -760,6 +768,11 @@ pub mod arrange {
                 AppIdentity::Win32 { path } => path,
                 AppIdentity::Uwp { aumid } => aumid,
                 AppIdentity::Website { base_url } => base_url,
+                AppIdentity::Squirrel { identifier, .. } => identifier,
+            },
+            match &app.identity {
+                AppIdentity::Squirrel { file, .. } => file,
+                _ => "",
             },
             app.icon.clone(),
             0,

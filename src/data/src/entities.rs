@@ -9,7 +9,7 @@ pub use crate::table::{Color, Duration, Id, Period, Real, Ref, Score, Timestamp}
 #[derive(Default, Debug, Clone, PartialEq, Eq, FromRow, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct App {
-    /// Identified
+    /// Identifier
     pub id: Ref<Self>,
     // /// only used for [UsageWriter::find_or_insert_app]
     // pub found: bool,
@@ -59,6 +59,14 @@ pub enum AppIdentity {
         /// Base URL of the Website
         base_url: String,
     },
+    /// Squirrel App
+    #[serde(rename_all = "camelCase")]
+    Squirrel {
+        /// Identifier e.g. software name / company
+        identifier: String,
+        /// File name
+        file: String,
+    },
 }
 
 impl FromRow<'_, SqliteRow> for AppIdentity {
@@ -68,6 +76,10 @@ impl FromRow<'_, SqliteRow> for AppIdentity {
             0 => AppIdentity::Uwp { aumid: text0 },
             1 => AppIdentity::Win32 { path: text0 },
             2 => AppIdentity::Website { base_url: text0 },
+            3 => AppIdentity::Squirrel {
+                identifier: text0,
+                file: row.get("identity_text1"),
+            },
             _ => panic!("Unknown identity type"),
         })
     }
@@ -103,7 +115,7 @@ pub struct Tag {
 #[derive(Default, Debug, Clone, PartialEq, Eq, FromRow, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Session {
-    /// Identified
+    /// Identifier
     pub id: Ref<Self>,
     /// Link to [App]
     pub app_id: Ref<App>,

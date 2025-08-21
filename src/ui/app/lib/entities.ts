@@ -27,7 +27,8 @@ export interface WithGroup<T> {
 export type AppIdentity =
   | { tag: "uwp"; aumid: string }
   | { tag: "win32"; path: string }
-  | { tag: "website"; baseUrl: string };
+  | { tag: "website"; baseUrl: string }
+  | { tag: "squirrel"; identifier: string; file: string };
 
 export interface ValuePerPeriod<T> {
   today: T;

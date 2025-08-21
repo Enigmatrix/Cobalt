@@ -5,7 +5,7 @@ use data::entities::{
 use platform::events::{
     ForegroundChangedEvent, ForegroundWindowSessionInfo, InteractionChangedEvent, SystemStateEvent,
 };
-use platform::objects::{Process, ProcessThreadId, Timestamp, Window};
+use platform::objects::{Process, ProcessThreadId, SquirrelExe, Timestamp, Window};
 use platform::web::{self, BaseWebsiteUrl, WebsiteInfo};
 use scoped_futures::ScopedFutureExt;
 use util::config::Config;
@@ -314,9 +314,18 @@ impl Engine {
             process.path()?
         };
 
-        let identity = if process.is_uwp(Some(&path))? {
-            AppIdentity::Uwp {
-                aumid: window.aumid()?,
+        let identity = if let Some(aumid) = process.aumid()? {
+            debug!("desktop aumid: {aumid}");
+            AppIdentity::Uwp { aumid }
+        } else if process.is_uwp(Some(&path))? {
+            let aumid = window.aumid()?;
+            debug!("store aumid: {aumid}");
+            AppIdentity::Uwp { aumid }
+        } else if let Some(squirrel_exe) = SquirrelExe::new(&path) {
+            debug!("squirrel exe: {squirrel_exe:?}");
+            AppIdentity::Squirrel {
+                identifier: squirrel_exe.base_dir.identifier,
+                file: squirrel_exe.file,
             }
         } else {
             AppIdentity::Win32 { path }

@@ -20,6 +20,9 @@ impl AppInfoResolver {
             AppIdentity::Website { base_url } => {
                 WebsiteInfo::default_from_url(WebsiteInfo::url_to_base_url(base_url)).into()
             }
+            AppIdentity::Squirrel { identifier, file } => {
+                AppInfo::default_from_squirrel(identifier, file)
+            }
         };
         App {
             id: Ref::new(0),
@@ -40,7 +43,7 @@ impl AppInfoResolver {
         match identity {
             AppIdentity::Win32 { path } => {
                 Ok(AppInfo::from_win32(path).await.unwrap_or_else(|e| {
-                    warn!("failed to get app info for {path}, using default: {e:?}");
+                    warn!("failed to get app info for win32 {path}, using default: {e:?}");
                     AppInfo::default_from_win32_path(path)
                 }))
             }
@@ -55,6 +58,16 @@ impl AppInfoResolver {
                     })
                     .into())
             }
+            AppIdentity::Squirrel { identifier, file } => Ok(AppInfo::from_squirrel(
+                identifier, file,
+            )
+            .await
+            .unwrap_or_else(|e| {
+                warn!(
+                    "failed to get app info for squirrel {identifier}, {file}, using default: {e:?}"
+                );
+                AppInfo::default_from_squirrel(identifier, file)
+            })),
         }
     }
 

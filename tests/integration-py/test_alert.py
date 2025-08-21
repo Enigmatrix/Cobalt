@@ -127,6 +127,7 @@ def test_alert_dim_between_tabs(
             icon=None,
             identity_tag=2,  # Website
             identity_text0=info["base_url"],
+            identity_text1="",
             tag_id=None,
             created_at=now,
             updated_at=now,
