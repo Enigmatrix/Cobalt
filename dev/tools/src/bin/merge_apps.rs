@@ -1,6 +1,5 @@
 //! Merge apps in database (user can select)
 
-use std::collections::HashSet;
 use std::fmt::{self, Display};
 use std::path::PathBuf;
 
@@ -10,8 +9,8 @@ use data::db::{Database, DatabasePool, infused};
 use data::entities::{App, Ref};
 use inquire::MultiSelect as InquireMultiSelect;
 use platform::objects::Timestamp;
-use util::error::{ContextCompat, Result};
-use util::tracing::debug;
+use util::error::{Context, ContextCompat, Result};
+use util::tracing::{debug, error, info};
 use util::{Target, config, future as tokio};
 
 #[derive(Parser, Debug, Clone)]
@@ -39,7 +38,7 @@ async fn main() -> Result<()> {
         .or_else(|_| config.connection_string())?;
     debug!("db path: {}", db_path.display());
 
-    let db_pool = DatabasePool::new(db_path).await?;
+    let db_pool = DatabasePool::new(&db_path).await?;
     let ts = Timestamp::now();
 
     let db = db_pool.get_db().await?;
@@ -50,26 +49,33 @@ async fn main() -> Result<()> {
     let selected_apps = select_apps(apps.clone())?;
 
     if selected_apps.is_empty() {
-        println!("No apps selected for merging. Exiting.");
+        error!("No apps selected for merging. Exiting.");
         return Ok(());
     }
 
     // Select the app with the lowest id as the target
     let target_app = selected_apps
         .iter()
-        .min_by_key(|app| app.0)
+        .map(|app| app.inner.id.clone())
+        .min_by_key(|id| id.0)
         .unwrap()
         .clone();
 
-    merge_apps(&mut db_pool.get_db().await?, selected_apps, target_app).await?;
+    merge_apps(
+        &mut db_pool.get_db().await?,
+        db_path,
+        selected_apps,
+        target_app,
+    )
+    .await?;
 
     Ok(())
 }
 
-fn select_apps(apps: Vec<infused::App>) -> Result<HashSet<Ref<App>>> {
+fn select_apps(apps: Vec<infused::App>) -> Result<Vec<infused::App>> {
     if apps.is_empty() {
-        println!("No apps found in the database.");
-        return Ok(HashSet::new());
+        error!("No apps found in the database.");
+        return Ok(Vec::new());
     }
 
     // Create display strings for current apps
@@ -102,13 +108,10 @@ fn select_apps(apps: Vec<infused::App>) -> Result<HashSet<Ref<App>>> {
         InquireMultiSelect::new("Select apps to merge:", app_display_strings).prompt()?;
 
     // Convert selected indices to HashSet of Ref<App>
-    let selected_apps: HashSet<Ref<App>> = selected_indices
-        .into_iter()
-        .map(|app| app.second.inner.id)
-        .collect();
+    let selected_apps: Vec<_> = selected_indices.into_iter().map(|app| app.second).collect();
 
-    println!("Selected {} apps for merging.", selected_apps.len());
-    return Ok(selected_apps);
+    info!("Selected {} apps for merging.", selected_apps.len());
+    Ok(selected_apps)
 }
 
 struct DisplayFirst<T1, T2> {
@@ -124,15 +127,19 @@ impl<T1: Display, T2> Display for DisplayFirst<T1, T2> {
 
 async fn merge_apps(
     db: &mut Database,
-    mut apps: HashSet<Ref<App>>,
+    db_path: PathBuf,
+    apps: Vec<infused::App>,
     target: Ref<App>,
 ) -> Result<()> {
     let mut tx = db.transaction().await?;
 
     // Remove the target app from the set
-    apps.remove(&target);
+    let apps: Vec<_> = apps
+        .into_iter()
+        .filter(|app| app.inner.id != target)
+        .collect();
 
-    let app_ids: Vec<i64> = apps.iter().map(|app| **app).collect();
+    let app_ids: Vec<i64> = apps.iter().map(|app| app.inner.id.0).collect();
 
     if app_ids.is_empty() {
         tx.commit().await?;
@@ -140,8 +147,7 @@ async fn merge_apps(
     }
 
     // Build the placeholders for the IN clause
-    let placeholders = std::iter::repeat("?")
-        .take(app_ids.len())
+    let placeholders = std::iter::repeat_n("?", app_ids.len())
         .collect::<Vec<_>>()
         .join(",");
 
@@ -167,6 +173,13 @@ async fn merge_apps(
     let delete_apps_query = sqlx::query(&delete_apps_sql);
     let delete_apps_query = app_ids.iter().fold(delete_apps_query, |q, id| q.bind(id));
     delete_apps_query.execute(&mut *tx).await?;
+
+    // Delete icons of the merged {apps} except {target}
+    for app in apps {
+        let Some(icon) = app.inner.icon else { continue };
+        let path = db_path.join("..").join("icons").join(icon);
+        std::fs::remove_file(&path).with_context(|| format!("remove icon {}", path.display()))?;
+    }
 
     // Commit the transaction
     tx.commit().await?;
