@@ -1,0 +1,45 @@
+---
+alwaysApply: true
+---
+## Project Structure Guide
+
+- **Workspace roots**:
+  - `Cargo.toml`, `Cargo.lock` for Rust workspace
+  - `package.json` at root for JS tooling shared scripts (bun workspace)
+  - `appsettings.json` for runtime configuration (overrides in `dev/appsettings.Debug.json`)
+
+- **Crates** (under `src/`):
+  - **`src/data`**: database layer, entities, queries, and migrations
+    - Queries: `src/data/src/queries/`
+    - Migrations: `src/data/src/migrations/`
+  - **`src/engine`**: core engine orchestration and resolution
+  - **`src/platform`**: platform-specific objects and integrations
+  - **`src/util`**: shared utilities
+
+- **UI (Tauri + Vite + React/TS)**:
+  - Source: `src/ui/` (bun workspace member)
+  - Configs: `src/ui/vite.config.ts`, `src/ui/tsconfig.json`, `src/ui/package.json`, `src/ui/postcss.config.js`, `src/ui/prettier.config.js`
+  - Router: `src/ui/react-router.config.ts`
+
+- **Python integration tests**: `tests/integration-py/`
+
+- **Logs**: `logs/` (engine, ui, and tool logs)
+
+- **Docs**: `docs/` (architecture, dev guides, security)
+  - Architecture: [docs/ARCHITECTURE.md](mdc:docs/ARCHITECTURE.md)
+  - Development Guide: [docs/DEV_GUIDE.md](mdc:docs/DEV_GUIDE.md)
+  - UI Development: [docs/DEV_GUIDE_UI.md](mdc:docs/DEV_GUIDE_UI.md)
+  - Engine Development: [docs/DEV_GUIDE_Engine.md](mdc:docs/DEV_GUIDE_Engine.md)
+  - Security: [docs/SECURITY.md](mdc:docs/SECURITY.md)
+  - Algorithm Documentation: [docs/ALGORITHM_get_streaks.md](mdc:docs/ALGORITHM_get_streaks.md)
+
+### Quick Links
+
+- Root cargo: [Cargo.toml](mdc:Cargo.toml)
+- Data crate: [src/data/Cargo.toml](mdc:src/data/Cargo.toml)
+- Engine crate: [src/engine/Cargo.toml](mdc:src/engine/Cargo.toml)
+- Platform crate: [src/platform/Cargo.toml](mdc:src/platform/Cargo.toml)
+- Util crate: [src/util/Cargo.toml](mdc:src/util/Cargo.toml)
+- UI config: [src/ui/vite.config.ts](mdc:src/ui/vite.config.ts)
+- Integration tests: [tests/integration-py/README.md](mdc:tests/integration-py/README.md)
+
