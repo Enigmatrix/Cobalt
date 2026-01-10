@@ -47,6 +47,9 @@ export function useRepo<
     ({ fn, args }: RepoKey<Args, Result>) => {
       return fn(args);
     },
+    // on app refresh, this doesn't reset the data to the default
+    // value (so prevents a lot of screen flashes)
+    { keepPreviousData: true },
   );
   const ret = useMemo(() => {
     const { data, ...rest } = swrResult;

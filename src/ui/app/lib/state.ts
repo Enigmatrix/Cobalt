@@ -28,6 +28,8 @@ import _ from "lodash";
 import { DateTime } from "luxon";
 import { create } from "zustand";
 
+const REFRESH_GAP_MS = 60_000;
+
 export async function initState() {
   const theme = getTheme();
 
@@ -43,7 +45,7 @@ export async function initState() {
     checkForUpdatesBackground();
   }
 
-  createRefreshTimer(60_000);
+  createRefreshTimer(REFRESH_GAP_MS);
 }
 
 export let iconsDir: string;
