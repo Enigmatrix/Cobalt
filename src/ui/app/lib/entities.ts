@@ -88,6 +88,30 @@ export function timeFrameToPeriod(timeFrame: TimeFrame): Period {
   }
 }
 
+/** Get short label for timeFrame (e.g., "Day", "Week", "Month") */
+export function timeFrameToLabel(timeFrame: TimeFrame): string {
+  switch (timeFrame) {
+    case "daily":
+      return "Day";
+    case "weekly":
+      return "Week";
+    case "monthly":
+      return "Month";
+  }
+}
+
+/** Get adjective form of timeFrame (e.g., "Daily", "Weekly", "Monthly") */
+export function timeFrameToAdjective(timeFrame: TimeFrame): string {
+  switch (timeFrame) {
+    case "daily":
+      return "Daily";
+    case "weekly":
+      return "Weekly";
+    case "monthly":
+      return "Monthly";
+  }
+}
+
 export type TriggerAction =
   | { tag: "kill" }
   | { tag: "dim"; duration: number }

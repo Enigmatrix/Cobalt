@@ -1,14 +1,6 @@
 import type { Alert, App, Ref, Tag, Target } from "@/lib/entities";
-import { refresh, useAppState } from "@/lib/state";
+import { useAppState } from "@/lib/state";
 import { useMemo } from "react";
-
-export function useRefresh() {
-  const lastRefresh = useAppState((state) => state.lastRefresh);
-  return {
-    refreshToken: lastRefresh,
-    refresh,
-  };
-}
 
 export function useApps(appIds?: Ref<App>[]): App[] {
   const allApps = useAppState((state) => state.apps);

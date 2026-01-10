@@ -1,3 +1,4 @@
+import { TriggerActionIndicator } from "@/components/alert/trigger-action";
 import AppIcon from "@/components/app/app-icon";
 import { NoAlerts, NoAlertsFound } from "@/components/empty-states";
 import { HorizontalOverflowList } from "@/components/overflow-list";
@@ -24,6 +25,7 @@ import { useHistoryRef } from "@/hooks/use-history-state";
 import { useAlerts, useApp, useApps, useTag } from "@/hooks/use-refresh";
 import { useAlertsSearch } from "@/hooks/use-search";
 import type { Alert, Reminder } from "@/lib/entities";
+import { timeFrameToLabel } from "@/lib/entities";
 import { cn } from "@/lib/utils";
 import { MiniTagItem } from "@/routes/apps";
 import { MiniAppItem } from "@/routes/tags";
@@ -237,29 +239,10 @@ function AlertListItem({ alert }: { alert: Alert }) {
         <div className="flex-1" />
 
         <div className="flex flex-col items-end ml-auto py-2 ">
-          <div className="text-sm flex gap-1 items-center">
-            <span>
-              {alert.triggerAction.tag === "dim"
-                ? "Dim"
-                : alert.triggerAction.tag === "message"
-                  ? "Message"
-                  : "Kill"}
-            </span>
-            {alert.triggerAction.tag === "dim" && (
-              <div className="flex items-center">
-                <span>(</span>
-                <DurationText ticks={alert.triggerAction.duration} />
-                <span>)</span>
-              </div>
-            )}
-            {alert.triggerAction.tag === "message" && (
-              <div className="flex items-center">
-                <span>(</span>
-                <Text className="max-w-24">{alert.triggerAction.content}</Text>
-                <span>)</span>
-              </div>
-            )}
-          </div>
+          <TriggerActionIndicator
+            action={alert.triggerAction}
+            className="text-sm"
+          />
 
           <div className="flex items-baseline text-card-foreground/50">
             <DurationText
@@ -271,14 +254,8 @@ function AlertListItem({ alert }: { alert: Alert }) {
               className="text-center whitespace-nowrap"
               ticks={alert.usageLimit}
             />
-            <span className="mr-1">,</span>
-            <span>
-              {alert.timeFrame === "daily"
-                ? "Daily"
-                : alert.timeFrame === "weekly"
-                  ? "Weekly"
-                  : "Monthly"}
-            </span>
+            <span className="mx-1">/</span>
+            <span>{timeFrameToLabel(alert.timeFrame)}</span>
           </div>
         </div>
       </div>
