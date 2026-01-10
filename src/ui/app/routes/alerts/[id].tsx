@@ -1,3 +1,5 @@
+import { StatusBadge } from "@/components/alert/status-badge";
+import { TriggerActionIndicator } from "@/components/alert/trigger-action";
 import AppIcon from "@/components/app/app-icon";
 import { DateRangePicker } from "@/components/time/date-range-picker";
 import { DurationText } from "@/components/time/duration-text";
@@ -13,7 +15,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -38,26 +39,21 @@ import {
 import { useAlert, useApp, useTag } from "@/hooks/use-refresh";
 import { useAlertEvents, useAlertReminderEvents } from "@/hooks/use-repo";
 import { useIntervalControlsWithDefault } from "@/hooks/use-time";
-import type { Alert, App, Ref, Tag, TriggerAction } from "@/lib/entities";
+import type { Alert, App, Ref, Tag } from "@/lib/entities";
+import { timeFrameToLabel } from "@/lib/entities";
 import { useAppState } from "@/lib/state";
 import { ticksToDateTime } from "@/lib/time";
 import { cn } from "@/lib/utils";
 import _ from "lodash";
 import {
-  AlertCircleIcon,
   Ban,
   BellIcon,
   BellOffIcon,
-  CheckCircleIcon,
   ClockAlert,
   ClockIcon,
   Edit2Icon,
-  EyeOffIcon,
-  MessageSquareIcon,
-  SunIcon,
   TagIcon,
   TrashIcon,
-  ZapIcon,
 } from "lucide-react";
 import { useCallback, useMemo } from "react";
 import { NavLink, useNavigate } from "react-router";
@@ -141,6 +137,24 @@ function AlertPage({ alert }: { alert: Alert }) {
   );
 }
 
+/** Get current usage for an alert based on its timeFrame */
+function getCurrentUsage(
+  alert: Alert,
+  app: App | null,
+  tag: Tag | null,
+): number {
+  const usages = alert.target.tag === "app" ? app?.usages : tag?.usages;
+  if (!usages) return 0;
+  switch (alert.timeFrame) {
+    case "daily":
+      return usages.today;
+    case "weekly":
+      return usages.week;
+    case "monthly":
+      return usages.month;
+  }
+}
+
 function AlertInfoCard({
   alert,
   app,
@@ -155,55 +169,35 @@ function AlertInfoCard({
   onIgnore: () => void;
 }) {
   const targetEntity = app ?? tag;
-  const timeFrameText =
-    alert.timeFrame === "daily"
-      ? "Day"
-      : alert.timeFrame === "weekly"
-        ? "Week"
-        : "Month";
-
-  // Calculate current progress
-  const currentUsage = useMemo(() => {
-    const usages = alert.target.tag === "app" ? app?.usages : tag?.usages;
-    if (!usages) return 0;
-    switch (alert.timeFrame) {
-      case "daily":
-        return usages.today;
-      case "weekly":
-        return usages.week;
-      case "monthly":
-        return usages.month;
-    }
-  }, [app, tag, alert]);
-
+  const currentUsage = useMemo(
+    () => getCurrentUsage(alert, app, tag),
+    [alert, app, tag],
+  );
   const limit = alert.usageLimit;
-  // if limit = 0, set to 1 to avoid division by zero. currentUsage is integer ticks, so progress is either 100 or 0.
   const progress = Math.min((currentUsage / (limit || 1)) * 100, 100);
+  const targetLink = app ? `/apps/${app.id}` : tag ? `/tags/${tag.id}` : "#";
 
   return (
     <div className="rounded-xl bg-card border border-border px-6 pt-6 pb-4">
       <div className="flex flex-col gap-4">
         {/* Header with name and icon */}
         <div className="flex items-center gap-4">
-          {app && (
-            <NavLink to={`/apps/${app.id}`}>
+          <NavLink to={targetLink}>
+            {app ? (
               <AppIcon
                 appIcon={app.icon}
                 className="w-12 h-12 shrink-0 hover:opacity-80 transition-opacity"
               />
-            </NavLink>
-          )}
-          {tag && (
-            <NavLink to={`/tags/${tag.id}`}>
+            ) : tag ? (
               <TagIcon
                 className="w-12 h-12 shrink-0 hover:opacity-80 transition-opacity"
                 style={{ color: tag.color }}
               />
-            </NavLink>
-          )}
+            ) : null}
+          </NavLink>
           <div className="min-w-0 shrink flex flex-col gap-1">
             <NavLink
-              to={app ? `/apps/${app.id}` : tag ? `/tags/${tag.id}` : "#"}
+              to={targetLink}
               className="hover:opacity-80 transition-opacity"
             >
               <Text className="text-2xl font-semibold">
@@ -213,143 +207,110 @@ function AlertInfoCard({
             <StatusBadge status={alert.status} />
           </div>
           <div className="flex-1" />
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={alert.status.tag === "ignored"}
-              onClick={onIgnore}
-            >
-              <Ban className="w-4 h-4 mr-1" />
-              Ignore
-            </Button>
-            <Button variant="outline" size="icon" asChild>
-              <NavLink to={`/alerts/edit/${alert.id}`}>
-                <Edit2Icon className="w-4 h-4" />
-              </NavLink>
-            </Button>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button size="icon" variant="outline">
-                  <TrashIcon className="w-4 h-4" />
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Remove Alert?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This action cannot be undone. All alert history will be
-                    removed.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={onRemove}
-                    className={buttonVariants({ variant: "destructive" })}
-                  >
-                    Remove
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
+          <AlertActions alert={alert} onRemove={onRemove} onIgnore={onIgnore} />
         </div>
 
         {/* Progress bar with usage */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <DurationText
-                ticks={currentUsage}
-                className="font-semibold"
-                symbolForZero="No Usage"
-              />
-              <span className="text-muted-foreground">
-                ({Math.round(progress)}%)
-              </span>
-              <span className="text-muted-foreground">/</span>
-              <DurationText ticks={limit} className="text-muted-foreground" />
-              <span className="text-muted-foreground">/</span>
-              <span className="text-muted-foreground">{timeFrameText}</span>
-            </div>
-
-            {/* Trigger action indicator at the end of the row */}
-            <TriggerActionIndicator action={alert.triggerAction} />
-          </div>
-          <Progress value={progress} className="h-2 rounded-sm" />
-        </div>
+        <UsageProgressBar
+          currentUsage={currentUsage}
+          limit={limit}
+          progress={progress}
+          timeFrameLabel={timeFrameToLabel(alert.timeFrame)}
+          action={alert.triggerAction}
+        />
       </div>
     </div>
   );
 }
 
-function StatusBadge({ status }: { status: Alert["status"] }) {
-  switch (status.tag) {
-    case "untriggered":
-      return (
-        <Badge
-          variant="outline"
-          className="text-green-600 dark:text-green-400 border-green-600/50 dark:border-green-400/50 bg-green-500/10"
-        >
-          <CheckCircleIcon className="w-3 h-3 mr-1" />
-          Untriggered
-        </Badge>
-      );
-    case "hit":
-      return (
-        <Badge
-          variant="outline"
-          className="text-destructive border-destructive/50 bg-destructive/10"
-        >
-          <AlertCircleIcon className="w-3 h-3 mr-1" />
-          Triggered
-        </Badge>
-      );
-    case "ignored":
-      return (
-        <Badge
-          variant="outline"
-          className="text-muted-foreground border-muted-foreground/50 bg-muted-foreground/10"
-        >
-          <EyeOffIcon className="w-3 h-3 mr-1" />
-          Ignored
-        </Badge>
-      );
-    default:
-      return null;
-  }
+function AlertActions({
+  alert,
+  onRemove,
+  onIgnore,
+}: {
+  alert: Alert;
+  onRemove: () => void;
+  onIgnore: () => void;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <Button
+        variant="outline"
+        size="sm"
+        disabled={alert.status.tag === "ignored"}
+        onClick={onIgnore}
+      >
+        <Ban className="w-4 h-4 mr-1" />
+        Ignore
+      </Button>
+      <Button variant="outline" size="icon" asChild>
+        <NavLink to={`/alerts/edit/${alert.id}`}>
+          <Edit2Icon className="w-4 h-4" />
+        </NavLink>
+      </Button>
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <Button size="icon" variant="outline">
+            <TrashIcon className="w-4 h-4" />
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Alert?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. All alert history will be removed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={onRemove}
+              className={buttonVariants({ variant: "destructive" })}
+            >
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
 }
 
-function TriggerActionIndicator({ action }: { action: TriggerAction }) {
-  switch (action.tag) {
-    case "kill":
-      return (
-        <div className="flex items-center gap-1.5 text-red-600 dark:text-red-400">
-          <ZapIcon className="size-4 shrink-0" />
-          <span>Kill</span>
+function UsageProgressBar({
+  currentUsage,
+  limit,
+  progress,
+  timeFrameLabel,
+  action,
+}: {
+  currentUsage: number;
+  limit: number;
+  progress: number;
+  timeFrameLabel: string;
+  action: Alert["triggerAction"];
+}) {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <DurationText
+            ticks={currentUsage}
+            className="font-semibold"
+            symbolForZero="No Usage"
+          />
+          <span className="text-muted-foreground">
+            ({Math.round(progress)}%)
+          </span>
+          <span className="text-muted-foreground">/</span>
+          <DurationText ticks={limit} className="text-muted-foreground" />
+          <span className="text-muted-foreground">/</span>
+          <span className="text-muted-foreground">{timeFrameLabel}</span>
         </div>
-      );
-    case "dim":
-      return (
-        <div className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
-          <SunIcon className="size-4 shrink-0" />
-          <span>Dim over</span>
-          <DurationText ticks={action.duration ?? 0} />
-        </div>
-      );
-    case "message":
-      return (
-        <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 min-w-0 max-w-64">
-          <MessageSquareIcon className="size-4 shrink-0" />
-          <Text className="text-blue-600/70 dark:text-blue-400/70 min-w-0">
-            {action.content}
-          </Text>
-        </div>
-      );
-    default:
-      return null;
-  }
+        <TriggerActionIndicator action={action} />
+      </div>
+      <Progress value={progress} className="h-2 rounded-sm" />
+    </div>
+  );
 }
 
 function RemindersCard({ alert }: { alert: Alert }) {
@@ -392,24 +353,12 @@ function RemindersCard({ alert }: { alert: Alert }) {
                           <Text>-</Text>
                           <DurationText ticks={triggerDuration} />
                         </div>
-                        <Badge
-                          variant="outline"
-                          className={cn(
-                            "text-xs h-5",
-                            reminder.status.tag === "untriggered" &&
-                              "text-green-600 dark:text-green-400 border-green-600/50 dark:border-green-400/50 bg-green-500/10",
-                            reminder.status.tag === "hit" &&
-                              "text-amber-600 dark:text-amber-400 border-amber-600/50 dark:border-amber-400/50 bg-amber-500/10",
-                            reminder.status.tag === "ignored" &&
-                              "text-muted-foreground border-muted-foreground/50 bg-muted-foreground/10",
-                          )}
-                        >
-                          {reminder.status.tag === "untriggered"
-                            ? "Untriggered"
-                            : reminder.status.tag === "hit"
-                              ? "Triggered"
-                              : "Ignored"}
-                        </Badge>
+                        <StatusBadge
+                          status={reminder.status}
+                          variant="reminder"
+                          className="text-xs h-5"
+                          showIcon={false}
+                        />
                       </div>
                     </div>
                   </div>

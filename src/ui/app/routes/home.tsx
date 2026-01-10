@@ -1,3 +1,4 @@
+import { TriggerActionIndicator } from "@/components/alert/trigger-action";
 import AppIcon from "@/components/app/app-icon";
 import { ScoreCircle } from "@/components/tag/score";
 import { DateRangePicker } from "@/components/time/date-range-picker";
@@ -10,7 +11,6 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Text } from "@/components/ui/text";
 import {
   Tooltip,
   TooltipContent,
@@ -35,7 +35,8 @@ import {
   useIntervalControlsWithDefault,
   usePeriodInterval,
 } from "@/hooks/use-time";
-import type { Alert, TimeFrame } from "@/lib/entities";
+import type { Alert } from "@/lib/entities";
+import { timeFrameToLabel } from "@/lib/entities";
 import {
   hour24Formatter,
   monthDayFormatter,
@@ -315,7 +316,7 @@ function AlertEventItem() {
                   {triggeredAlerts.length}
                 </div>
               </TooltipTrigger>
-              <TooltipContent className="gap-2">
+              <TooltipContent className="flex flex-col gap-1.5">
                 {triggeredAlerts.map((alert) => (
                   <MiniAlertItem key={alert.id} alert={alert} />
                 ))}
@@ -332,23 +333,19 @@ function AlertEventItem() {
 
 function MiniAlertItem({ alert }: { alert: Alert }) {
   return (
-    <div className="shadow-lg p-1 rounded-md bg-card border border-border flex flex-row gap-2 items-center">
+    <div className="shadow-lg p-1 rounded-md bg-card border border-border grid grid-cols-[1fr_auto_auto] gap-2 items-center">
       <MiniTargetItem alert={alert} />
-      <div className="flex flex-row gap-1 items-center text-xs text-muted-foreground">
+      <div className="flex gap-1 items-center text-xs text-muted-foreground whitespace-nowrap">
         <DurationText ticks={alert.usageLimit} />
-        <div className="">{" / " + timeFrameToString(alert.timeFrame)}</div>
+        <span>/</span>
+        <span>{timeFrameToLabel(alert.timeFrame)}</span>
       </div>
-      <MiniAlertTriggerAction alert={alert} />
+      <TriggerActionIndicator
+        action={alert.triggerAction}
+        className="text-xs whitespace-nowrap"
+      />
     </div>
   );
-}
-
-function timeFrameToString(timeFrame: TimeFrame) {
-  return timeFrame === "daily"
-    ? "day"
-    : timeFrame === "weekly"
-      ? "week"
-      : "month";
 }
 
 function MiniTargetItem({ alert }: { alert: Alert }) {
@@ -367,32 +364,4 @@ function MiniTargetItem({ alert }: { alert: Alert }) {
       <ScoreCircle score={tag.score} />
     </div>
   ) : null;
-}
-
-function MiniAlertTriggerAction({ alert }: { alert: Alert }) {
-  return (
-    <div className="flex gap-1 items-center text-xs text-muted-foreground">
-      <span>
-        {alert.triggerAction.tag === "dim"
-          ? "Dim"
-          : alert.triggerAction.tag === "message"
-            ? "Message"
-            : "Kill"}
-      </span>
-      {alert.triggerAction.tag === "dim" && (
-        <div className="flex items-center">
-          <span>(</span>
-          <DurationText ticks={alert.triggerAction.duration} />
-          <span>)</span>
-        </div>
-      )}
-      {alert.triggerAction.tag === "message" && (
-        <div className="flex items-center">
-          <span>(</span>
-          <Text className="max-w-24">{alert.triggerAction.content}</Text>
-          <span>)</span>
-        </div>
-      )}
-    </div>
-  );
 }
