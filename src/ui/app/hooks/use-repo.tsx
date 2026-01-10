@@ -1,4 +1,3 @@
-import { useRefresh } from "@/hooks/use-refresh";
 import { useConfig } from "@/lib/config";
 import type { Ref, Streak, WithGroupedDuration } from "@/lib/entities";
 import {
@@ -22,7 +21,6 @@ type RepoFn<Args, Result> = (args: Args) => Promise<Result>;
 
 interface RepoKey<Args, Result> {
   fn: RepoFn<Args, Result>;
-  refreshToken: DateTime;
   args: Args;
 }
 
@@ -31,19 +29,16 @@ export function useRepo<
   // eslint-disable-next-line @typescript-eslint/no-empty-object-type
   Result extends {},
 >(fn: RepoFn<Args, Result>, args: Args, def: Result) {
-  const { refreshToken } = useRefresh();
   // ref: https://swr.vercel.app/docs/revalidation#disable-automatic-revalidations
   // SWRImmutable is used to disable automatic revalidations - since we only rely
-  // on our own manual refresh using the refreshToken.
+  // on our own manual refresh the global SWR cache mutate().
   // Object keys are allowed: https://swr.vercel.app/docs/arguments#passing-objects
   // note that they are serialized so it's deep equality
   const swrResult = useSWRImmutable<Result>(
     {
       fn,
-      refreshToken,
       args,
     } as RepoKey<Args, Result>,
-    // ignore refreshToken
     ({ fn, args }: RepoKey<Args, Result>) => {
       return fn(args);
     },

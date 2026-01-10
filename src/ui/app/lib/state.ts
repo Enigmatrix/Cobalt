@@ -26,6 +26,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { produce } from "immer";
 import _ from "lodash";
 import { DateTime } from "luxon";
+import { mutate } from "swr";
 import { create } from "zustand";
 
 const REFRESH_GAP_MS = 60_000;
@@ -64,6 +65,10 @@ export function createRefreshTimer(gapMs: number) {
 
 export async function refresh() {
   const now = DateTime.now();
+
+  // Refresh every SWR cache
+  await mutate(() => true);
+
   const options = { now: dateTimeToTicks(now) };
   const [apps, tags, alerts] = await Promise.all([
     getApps({ options }),
@@ -99,6 +104,9 @@ async function refreshParts(
   if (refreshTags) obj.tags = tags;
   if (refreshAlerts) obj.alerts = alerts;
   set(obj);
+
+  // Refresh every SWR cache
+  await mutate(() => true);
 }
 
 export const untagged: Tag = {
