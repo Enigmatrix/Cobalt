@@ -27,3 +27,7 @@ globs: src/ui/**/*.ts,src/ui/**/*.tsx
     - `bun lint:fix` - auto-fix linting issues
   - Use `bun --cwd src/ui` for UI-specific commands when needed.
 
+## Tauri
+
+- Make sure to use secure Tauri APIs and plugins when possible.
+- The Tauri MCP is available and can be used to interact with the app instead of browser MCPs.
