@@ -15,7 +15,7 @@ pub fn run() {
     util::set_target(Target::Ui);
 
     #[cfg(debug_assertions)]
-    let builder = tauri::Builder::default();
+    let builder = tauri::Builder::default().plugin(tauri_plugin_mcp_bridge::init());
     #[cfg(not(debug_assertions))]
     let builder =
         tauri::Builder::default().plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
