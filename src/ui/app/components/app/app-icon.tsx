@@ -45,7 +45,14 @@ export default function AppIcon({
   className?: ClassValue;
 }) {
   const [hasError, setHasError] = useState(false);
-  const [icon, setIcon] = useState<string | null>(null);
+  const [icon, setIcon] = useState<string | null>(() => appIconUrl(appIcon));
+  // We assume that this useEffect runs before the setHasError(true) call
+  // i.e. this is not possible:
+  // 1. initial mount <--- img is shown
+  // 2. img load fails, and setHasError(true) is called <--- img error icon is flashed, then CircleHelp is shown
+  // 3. useEffect runs, and setHasError(false) is called <--- img is shown, img error icon is flashed
+  //
+  // 4. img load fails (again), and setHasError(true) is called <--- CircleHelp is shown
   useEffect(() => {
     setHasError(false);
     setIcon(appIconUrl(appIcon));
