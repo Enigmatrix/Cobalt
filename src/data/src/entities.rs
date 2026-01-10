@@ -223,11 +223,12 @@ pub enum TimeFrame {
 }
 
 /// Action to take once the [Alert]'s Usage Limit has been reached.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[serde(tag = "tag")]
 pub enum TriggerAction {
     /// Kill the offending App / App in Tags
+    #[default]
     Kill,
     /// Dim the windows of the offending App / App in Tags
     #[serde(rename_all = "camelCase")]
@@ -258,12 +259,6 @@ impl FromRow<'_, SqliteRow> for TriggerAction {
                 format!("Unknown trigger action tag = {tag}").into(),
             )),
         }
-    }
-}
-
-impl Default for TriggerAction {
-    fn default() -> Self {
-        Self::Kill
     }
 }
 

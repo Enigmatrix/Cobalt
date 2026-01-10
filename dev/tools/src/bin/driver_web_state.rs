@@ -5,7 +5,7 @@ use std::io::Write;
 use std::thread;
 use std::time::{Duration, UNIX_EPOCH};
 
-use clap::{Parser, command};
+use clap::Parser;
 use engine::desktop;
 use platform::objects::Window;
 use platform::web;
