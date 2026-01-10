@@ -80,6 +80,16 @@ The development server includes:
 - Automatic rebuilding of Rust code when changed
 - Source maps for debugging
 
+# MCP Usage
+
+In dev mode, we can setup the Tauri MCP server (https://github.com/hypothesi/mcp-server-tauri) and let Cursor use it. The Tauri side is already setup (MCP Bridge plugin).
+
+```bash
+npx -y install-mcp @hypothesi/tauri-mcp-server --client cursor
+```
+
+Running `bun dev` will start the MCP server and make it available to Cursor. See their docs to see what's possible via MCP.
+
 ### Recommended VS Code Extensions
 
 - Tailwind CSS IntelliSense

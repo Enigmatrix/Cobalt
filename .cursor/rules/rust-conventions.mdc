@@ -1,0 +1,50 @@
+---
+globs: src/**/*.rs
+description: Rust style and data layer conventions
+---
+## Rust Conventions
+
+- **Code style**:
+  - Favor explicit, descriptive names; avoid 1–2 character identifiers.
+  - Use early returns and guard clauses; avoid deep nesting.
+  - Do not catch errors without meaningful handling.
+  - Keep functions focused; split large functions.
+
+- **Types and APIs**:
+  - Annotate public APIs and exported functions explicitly.
+  - Avoid `unwrap()`/`expect()` outside tests and one-off tools; use `Result` propagation.
+  - Prefer `&str` over `String` for parameters where possible.
+
+- **Error handling**:
+  - Use `color-eyre` via `util` crate (e.g. `util::error::Result<T, E>`) for application-level error handling.
+  - Use `context()` and `with_context()` to add context to errors.
+  - Propagate errors with `?` operator; avoid catching without meaningful handling.
+
+- **Logging and tracing**:
+  - Use `tracing` via `util::tracing::{info, error, warn, debug, trace}` for structured logging.
+  - Add meaningful spans and events for debugging.
+
+- **Platform integration**:
+  - Use `windows-rs` for Windows API integration (see `src/platform/Cargo.toml`), add feature flags for the features you need if you get build errors when using Windows APIs.
+  - Use appropriate Windows features for UI, system services, and file operations.
+
+- **Data crate (`src/data`)**:
+  - Entities in `entities.rs`; queries in `queries/*.sql`; migrations in `migrations/`.
+  - Use `sqlx` with async/await for database operations.
+  - Keep long SQL in `.sql` files; map results in Rust clearly.
+  - Run tests with `cargo test -p data`.
+
+- **Engine and platform crates**:
+  - Isolate platform-specific code under `src/platform`.
+  - Keep resolver/orchestrator logic in `src/engine` small and composable.
+
+- **Cargo workspace**:
+  - This is a Cargo workspace with members: `src/*`, `src/ui/src-tauri`, `dev/tools`.
+  - Use workspace-level commands: `cargo check`, `cargo +nightly fmt`, `cargo +nightly clippy`, `cargo test`.
+  - Target specific crates when needed: `cargo test -p data`, `cargo check -p engine`, etc.
+
+- **Comments**:
+  - Add comments for complex logic explaining the "why" not the "how".
+  - Avoid trivial inline comments.
+  - Document public APIs with doc comments.
+

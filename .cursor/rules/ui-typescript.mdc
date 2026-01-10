@@ -1,0 +1,29 @@
+---
+globs: src/ui/**/*.ts,src/ui/**/*.tsx
+---
+## UI and TypeScript Conventions
+
+- **Theming and colors**:
+  - Use shadcn/ui for styling and tailwindcss for styling.
+  - Match text colors to card backgrounds; avoid hardcoded colors.
+  - Use opacity-based utility classes and theme tokens to support light/dark modes.
+  - Prefer design tokens/variables over literals in styles.
+
+- **Code style**:
+  - Prefer existing libraries over custom complex code.
+  - Keep components small and composable; extract hooks for logic.
+  - Use explicit prop types and avoid `any`.
+
+- **Routing and structure**:
+  - Router config in `src/ui/react-router.config.ts` is the source of truth.
+  - Co-locate component styles and tests with components when practical.
+
+- **Package management and scripts**:
+  - `src/ui/` is a bun workspace member (see root `package.json`).
+  - Use `bun` instead of `npm` for all package operations.
+  - Run formatting and linting from root directory:
+    - `bun format:fix` - format all code
+    - `bun lint` - run linting
+    - `bun lint:fix` - auto-fix linting issues
+  - Use `bun --cwd src/ui` for UI-specific commands when needed.
+

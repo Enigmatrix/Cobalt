@@ -10,6 +10,7 @@
     "beforeBuildCommand": "bun run build"
   },
   "app": {
+    "withGlobalTauri": true,
     "windows": [
       {
         "title": "Cobalt",
