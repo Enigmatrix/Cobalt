@@ -316,7 +316,7 @@ function AlertEventItem() {
                   {triggeredAlerts.length}
                 </div>
               </TooltipTrigger>
-              <TooltipContent className="flex flex-col gap-1.5">
+              <TooltipContent className="grid grid-cols-[1fr_auto_auto] gap-x-2 gap-y-1.5">
                 {triggeredAlerts.map((alert) => (
                   <MiniAlertItem key={alert.id} alert={alert} />
                 ))}
@@ -333,17 +333,19 @@ function AlertEventItem() {
 
 function MiniAlertItem({ alert }: { alert: Alert }) {
   return (
-    <div className="shadow-lg p-1 rounded-md bg-card border border-border grid grid-cols-[1fr_auto_auto] gap-2 items-center">
+    <div className="shadow-lg p-1 rounded-md bg-card border border-border grid grid-cols-subgrid col-span-full gap-3 items-center">
       <MiniTargetItem alert={alert} />
       <div className="flex gap-1 items-center text-xs text-muted-foreground whitespace-nowrap">
         <DurationText ticks={alert.usageLimit} />
         <span>/</span>
         <span>{timeFrameToLabel(alert.timeFrame)}</span>
       </div>
-      <TriggerActionIndicator
-        action={alert.triggerAction}
-        className="text-xs whitespace-nowrap"
-      />
+      <div className="flex justify-end">
+        <TriggerActionIndicator
+          action={alert.triggerAction}
+          className="text-xs whitespace-nowrap"
+        />
+      </div>
     </div>
   );
 }
