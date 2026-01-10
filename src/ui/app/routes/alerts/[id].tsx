@@ -40,19 +40,21 @@ import { useAlertEvents, useAlertReminderEvents } from "@/hooks/use-repo";
 import { useIntervalControlsWithDefault } from "@/hooks/use-time";
 import type { Alert, App, Ref, Tag, TriggerAction } from "@/lib/entities";
 import { useAppState } from "@/lib/state";
+import { ticksToDateTime } from "@/lib/time";
 import { cn } from "@/lib/utils";
 import _ from "lodash";
 import {
   AlertCircleIcon,
   Ban,
   BellIcon,
+  BellOffIcon,
   CheckCircleIcon,
   ClockAlert,
   ClockIcon,
   Edit2Icon,
   EyeOffIcon,
   MessageSquareIcon,
-  SunDimIcon,
+  SunIcon,
   TagIcon,
   TrashIcon,
   ZapIcon,
@@ -128,9 +130,6 @@ function AlertPage({ alert }: { alert: Alert }) {
             onIgnore={() => ignoreAlert(alert.id)}
           />
 
-          {/* Current Progress */}
-          <CurrentProgressCard alert={alert} />
-
           {/* Reminders */}
           <RemindersCard alert={alert} />
 
@@ -158,117 +157,130 @@ function AlertInfoCard({
   const targetEntity = app ?? tag;
   const timeFrameText =
     alert.timeFrame === "daily"
-      ? "Daily"
+      ? "Day"
       : alert.timeFrame === "weekly"
-        ? "Weekly"
-        : "Monthly";
+        ? "Week"
+        : "Month";
+
+  // Calculate current progress
+  const currentUsage = useMemo(() => {
+    const usages = alert.target.tag === "app" ? app?.usages : tag?.usages;
+    if (!usages) return 0;
+    switch (alert.timeFrame) {
+      case "daily":
+        return usages.today;
+      case "weekly":
+        return usages.week;
+      case "monthly":
+        return usages.month;
+    }
+  }, [app, tag, alert]);
+
+  const limit = alert.usageLimit;
+  // if limit = 0, set to 1 to avoid division by zero. currentUsage is integer ticks, so progress is either 100 or 0.
+  const progress = Math.min((currentUsage / (limit || 1)) * 100, 100);
 
   return (
-    <VizCard>
-      <VizCardContent className="p-6">
-        <div className="flex flex-col gap-6">
-          {/* Header */}
-          <div className="flex items-start gap-4">
-            <div className="flex items-center gap-4">
-              {app && (
-                <NavLink to={`/apps/${app.id}`}>
-                  <AppIcon
-                    appIcon={app.icon}
-                    className="w-12 h-12 shrink-0 hover:opacity-80 transition-opacity"
-                  />
-                </NavLink>
-              )}
-              {tag && (
-                <NavLink to={`/tags/${tag.id}`}>
-                  <TagIcon
-                    className="w-12 h-12 shrink-0 hover:opacity-80 transition-opacity"
-                    style={{ color: tag.color }}
-                  />
-                </NavLink>
-              )}
-              <div className="flex flex-col gap-2">
-                <NavLink
-                  to={app ? `/apps/${app.id}` : tag ? `/tags/${tag.id}` : "#"}
-                  className="hover:opacity-80 transition-opacity"
-                >
-                  <Text className="text-2xl font-semibold">
-                    {targetEntity?.name ?? "Unknown"}
-                  </Text>
-                </NavLink>
-                <StatusBadge status={alert.status} />
-              </div>
-            </div>
-            <div className="flex-1" />
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={alert.status.tag === "ignored"}
-                onClick={onIgnore}
-              >
-                <Ban className="w-4 h-4 mr-1" />
-                Ignore
-              </Button>
-              <Button variant="outline" size="icon" asChild>
-                <NavLink to={`/alerts/edit/${alert.id}`}>
-                  <Edit2Icon className="w-4 h-4" />
-                </NavLink>
-              </Button>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button size="icon" variant="outline">
-                    <TrashIcon className="w-4 h-4" />
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Remove Alert?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This action cannot be undone. All alert history will be
-                      removed.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={onRemove}
-                      className={buttonVariants({ variant: "destructive" })}
-                    >
-                      Remove
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
+    <div className="rounded-xl bg-card border border-border px-6 pt-6 pb-4">
+      <div className="flex flex-col gap-4">
+        {/* Header with name and icon */}
+        <div className="flex items-center gap-4">
+          {app && (
+            <NavLink to={`/apps/${app.id}`}>
+              <AppIcon
+                appIcon={app.icon}
+                className="w-12 h-12 shrink-0 hover:opacity-80 transition-opacity"
+              />
+            </NavLink>
+          )}
+          {tag && (
+            <NavLink to={`/tags/${tag.id}`}>
+              <TagIcon
+                className="w-12 h-12 shrink-0 hover:opacity-80 transition-opacity"
+                style={{ color: tag.color }}
+              />
+            </NavLink>
+          )}
+          <div className="min-w-0 shrink flex flex-col gap-1">
+            <NavLink
+              to={app ? `/apps/${app.id}` : tag ? `/tags/${tag.id}` : "#"}
+              className="hover:opacity-80 transition-opacity"
+            >
+              <Text className="text-2xl font-semibold">
+                {targetEntity?.name ?? "Unknown"}
+              </Text>
+            </NavLink>
+            <StatusBadge status={alert.status} />
           </div>
-
-          {/* Configuration Details */}
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="space-y-2">
-              <Text className="text-sm font-medium text-muted-foreground">
-                Usage Limit
-              </Text>
-              <div className="flex items-center gap-2">
-                <ClockIcon className="w-4 h-4 text-muted-foreground" />
-                <DurationText ticks={alert.usageLimit} />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Text className="text-sm font-medium text-muted-foreground">
-                Time Frame
-              </Text>
-              <Text>{timeFrameText}</Text>
-            </div>
-            <div className="space-y-2">
-              <Text className="text-sm font-medium text-muted-foreground">
-                Action
-              </Text>
-              <TriggerActionDisplay action={alert.triggerAction} />
-            </div>
+          <div className="flex-1" />
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={alert.status.tag === "ignored"}
+              onClick={onIgnore}
+            >
+              <Ban className="w-4 h-4 mr-1" />
+              Ignore
+            </Button>
+            <Button variant="outline" size="icon" asChild>
+              <NavLink to={`/alerts/edit/${alert.id}`}>
+                <Edit2Icon className="w-4 h-4" />
+              </NavLink>
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button size="icon" variant="outline">
+                  <TrashIcon className="w-4 h-4" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Remove Alert?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. All alert history will be
+                    removed.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={onRemove}
+                    className={buttonVariants({ variant: "destructive" })}
+                  >
+                    Remove
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </div>
-      </VizCardContent>
-    </VizCard>
+
+        {/* Progress bar with usage */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <DurationText
+                ticks={currentUsage}
+                className="font-semibold"
+                symbolForZero="No Usage"
+              />
+              <span className="text-muted-foreground">
+                ({Math.round(progress)}%)
+              </span>
+              <span className="text-muted-foreground">/</span>
+              <DurationText ticks={limit} className="text-muted-foreground" />
+              <span className="text-muted-foreground">/</span>
+              <span className="text-muted-foreground">{timeFrameText}</span>
+            </div>
+
+            {/* Trigger action indicator at the end of the row */}
+            <TriggerActionIndicator action={alert.triggerAction} />
+          </div>
+          <Progress value={progress} className="h-2 rounded-sm" />
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -278,7 +290,7 @@ function StatusBadge({ status }: { status: Alert["status"] }) {
       return (
         <Badge
           variant="outline"
-          className="text-green-500/80 border-green-500/50 bg-green-500/10"
+          className="text-green-600 dark:text-green-400 border-green-600/50 dark:border-green-400/50 bg-green-500/10"
         >
           <CheckCircleIcon className="w-3 h-3 mr-1" />
           Untriggered
@@ -288,7 +300,7 @@ function StatusBadge({ status }: { status: Alert["status"] }) {
       return (
         <Badge
           variant="outline"
-          className="text-red-500/80 border-red-500/50 bg-red-500/10"
+          className="text-destructive border-destructive/50 bg-destructive/10"
         >
           <AlertCircleIcon className="w-3 h-3 mr-1" />
           Triggered
@@ -298,7 +310,7 @@ function StatusBadge({ status }: { status: Alert["status"] }) {
       return (
         <Badge
           variant="outline"
-          className="text-gray-500/80 border-gray-500/50 bg-gray-500/10"
+          className="text-muted-foreground border-muted-foreground/50 bg-muted-foreground/10"
         >
           <EyeOffIcon className="w-3 h-3 mr-1" />
           Ignored
@@ -309,156 +321,103 @@ function StatusBadge({ status }: { status: Alert["status"] }) {
   }
 }
 
-function TriggerActionDisplay({ action }: { action: TriggerAction }) {
+function TriggerActionIndicator({ action }: { action: TriggerAction }) {
   switch (action.tag) {
     case "kill":
       return (
-        <div className="flex items-center gap-2">
-          <ZapIcon className="w-4 h-4 shrink-0 text-red-500" />
-          <Text>Kill</Text>
+        <div className="flex items-center gap-1.5 text-red-600 dark:text-red-400">
+          <ZapIcon className="size-4 shrink-0" />
+          <span>Kill</span>
         </div>
       );
     case "dim":
       return (
-        <div className="flex items-center gap-2">
-          <SunDimIcon className="w-4 h-4 shrink-0 text-orange-500" />
-          <div className="flex items-center gap-1">
-            <Text>Dim over</Text>
-            <DurationText ticks={action.duration ?? 0} />
-          </div>
+        <div className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
+          <SunIcon className="size-4 shrink-0" />
+          <span>Dim over</span>
+          <DurationText ticks={action.duration ?? 0} />
         </div>
       );
     case "message":
       return (
-        <div className="flex items-center gap-2">
-          <MessageSquareIcon className="w-4 h-4 shrink-0 text-blue-500" />
-          <Text>{action.content}</Text>
+        <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 min-w-0 max-w-64">
+          <MessageSquareIcon className="size-4 shrink-0" />
+          <Text className="text-blue-600/70 dark:text-blue-400/70 min-w-0">
+            {action.content}
+          </Text>
         </div>
       );
     default:
-      return <Text>Unknown Action</Text>;
+      return null;
   }
-}
-
-function CurrentProgressCard({ alert }: { alert: Alert }) {
-  const app = useApp(alert.target.tag === "app" ? alert.target.id : null);
-  const tag = useTag(alert.target.tag === "tag" ? alert.target.id : null);
-
-  const currentUsage = useMemo(() => {
-    const usages = alert.target.tag === "app" ? app?.usages : tag?.usages;
-    switch (alert.timeFrame) {
-      case "daily":
-        return usages!.today;
-      case "weekly":
-        return usages!.week;
-      case "monthly":
-        return usages!.month;
-    }
-  }, [app, tag, alert]);
-
-  const limit = alert.usageLimit;
-  const progress = limit > 0 ? Math.min((currentUsage / limit) * 100, 100) : 0;
-
-  return (
-    <VizCard>
-      <VizCardHeader className="px-4 pt-4">
-        <VizCardTitle className="flex items-center gap-2 mt-2 ml-2 font-semibold">
-          Current Progress
-        </VizCardTitle>
-        <VizCardAction className="flex items-center">
-          <div className="flex items-center gap-1 text-sm text-muted-foreground mr-2 mt-2">
-            <DurationText ticks={currentUsage ?? 0} />
-            <Text>/</Text>
-            <DurationText ticks={limit ?? 0} />
-          </div>
-        </VizCardAction>
-      </VizCardHeader>
-      <VizCardContent className="p-4 px-6">
-        <div className="space-y-4">
-          <Progress value={progress} className="h-3 rounded-sm" />
-          <div className="flex justify-between text-sm text-muted-foreground">
-            <Text>0%</Text>
-            <Text>{`${Math.round(progress)}%`}</Text>
-            <Text>100%</Text>
-          </div>
-        </div>
-      </VizCardContent>
-    </VizCard>
-  );
 }
 
 function RemindersCard({ alert }: { alert: Alert }) {
   return (
     <VizCard>
-      <VizCardHeader className="px-4 pt-4">
-        <VizCardTitle className="flex items-center gap-2 mt-2 ml-2 font-semibold">
+      <VizCardHeader className="pb-4">
+        <VizCardTitle className="pl-4 pt-4 font-semibold">
           Reminders
         </VizCardTitle>
       </VizCardHeader>
-      <VizCardContent className="p-4">
-        <div>
-          {alert.reminders.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <ClockAlert className="w-8 h-8 mx-auto mb-2 opacity-50" />
-              <Text className="text-sm">No reminders configured</Text>
-              <Text className="text-xs mt-1">
-                Edit this alert to add reminders
-              </Text>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {_(alert.reminders)
-                .sortBy((r) => r.threshold)
-                .map((reminder) => {
-                  const triggerDuration = reminder.threshold * alert.usageLimit;
+      <VizCardContent className="px-4 pb-4">
+        {alert.reminders.length === 0 ? (
+          <div className="text-center py-6 text-muted-foreground">
+            <ClockAlert className="w-8 h-8 mx-auto mb-2 opacity-50" />
+            <Text className="text-sm">No reminders configured</Text>
+            <Text className="text-xs mt-1">
+              Edit this alert to add reminders
+            </Text>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {_(alert.reminders)
+              .sortBy((r) => r.threshold)
+              .map((reminder) => {
+                const triggerDuration = reminder.threshold * alert.usageLimit;
 
-                  return (
-                    <div
-                      key={reminder.id}
-                      className="flex items-start gap-3 p-3 rounded-lg border border-border bg-muted/20"
-                    >
-                      <ClockAlert className="w-4 h-4 text-muted-foreground shrink-0 mt-1" />
-                      <div className="flex-1 min-w-0 space-y-1.5">
-                        {/* Primary message */}
-                        <Text className="font-medium leading-snug">
-                          {reminder.message}
-                        </Text>
-
-                        {/* Secondary info */}
-                        <div className="flex items-center gap-3 flex-wrap">
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <Text>{`${Math.round(reminder.threshold * 100)}%`}</Text>
-                            <Text>-</Text>
-                            <DurationText ticks={triggerDuration} />
-                          </div>
-
-                          <Badge
-                            variant="outline"
-                            className={cn(
-                              "text-xs h-5",
-                              reminder.status.tag === "untriggered" &&
-                                "text-green-500/80 border-green-500/50 bg-green-500/10",
-                              reminder.status.tag === "hit" &&
-                                "text-orange-500/80 border-orange-500/50 bg-orange-500/10",
-                              reminder.status.tag === "ignored" &&
-                                "text-gray-500/80 border-gray-500/50 bg-gray-500/10",
-                            )}
-                          >
-                            {reminder.status.tag === "untriggered"
-                              ? "Untriggered"
-                              : reminder.status.tag === "hit"
-                                ? "Triggered"
-                                : "Ignored"}
-                          </Badge>
+                return (
+                  <div
+                    key={reminder.id}
+                    className="flex items-start gap-3 p-3 rounded-lg border border-border bg-muted/20"
+                  >
+                    <ClockAlert className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
+                    <div className="flex-1 min-w-0 space-y-1">
+                      <Text className="font-medium leading-snug">
+                        {reminder.message}
+                      </Text>
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <Text>{`${Math.round(reminder.threshold * 100)}%`}</Text>
+                          <Text>-</Text>
+                          <DurationText ticks={triggerDuration} />
                         </div>
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "text-xs h-5",
+                            reminder.status.tag === "untriggered" &&
+                              "text-green-600 dark:text-green-400 border-green-600/50 dark:border-green-400/50 bg-green-500/10",
+                            reminder.status.tag === "hit" &&
+                              "text-amber-600 dark:text-amber-400 border-amber-600/50 dark:border-amber-400/50 bg-amber-500/10",
+                            reminder.status.tag === "ignored" &&
+                              "text-muted-foreground border-muted-foreground/50 bg-muted-foreground/10",
+                          )}
+                        >
+                          {reminder.status.tag === "untriggered"
+                            ? "Untriggered"
+                            : reminder.status.tag === "hit"
+                              ? "Triggered"
+                              : "Ignored"}
+                        </Badge>
                       </div>
                     </div>
-                  );
-                })
-                .value()}
-            </div>
-          )}
-        </div>
+                  </div>
+                );
+              })
+              .value()}
+          </div>
+        )}
       </VizCardContent>
     </VizCard>
   );
@@ -491,20 +450,20 @@ function AlertTimelineCard({ alert }: { alert: Alert }) {
     ];
 
     return _(combined)
-      .sortBy((e) => e.timestamp)
+      .sortBy((e) => -e.timestamp)
       .value(); // Most recent first
   }, [alertEvents, reminderEvents]);
 
   return (
     <VizCard>
-      <VizCardHeader className="p-4">
-        <VizCardTitle className="flex items-center gap-2 mt-2 ml-2">
-          <div className="font-semibold">Events</div>
+      <VizCardHeader className="pb-4">
+        <VizCardTitle className="pl-4 pt-4 flex items-center gap-2">
+          <span className="font-semibold">Events</span>
           {isLoading && (
-            <div className="w-4 h-4 border-2 border-muted border-t-blue-500 rounded-full animate-spin" />
+            <div className="w-4 h-4 border-2 border-muted border-t-primary rounded-full animate-spin" />
           )}
         </VizCardTitle>
-        <VizCardAction className="flex items-center">
+        <VizCardAction className="mt-4 mr-1.5 flex">
           <PrevButton
             canGoPrev={canGoPrev}
             isLoading={isLoading}
@@ -522,62 +481,110 @@ function AlertTimelineCard({ alert }: { alert: Alert }) {
           />
         </VizCardAction>
       </VizCardHeader>
-      <VizCardContent className="px-6">
-        <div>
-          {timelineEvents.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <ClockIcon className="w-8 h-8 mx-auto mb-2 opacity-50" />
-              <Text className="text-sm">No events in this period</Text>
-            </div>
-          ) : (
-            <div className="relative">
-              {/* Timeline line */}
-              <div className="absolute left-4 top-0 bottom-0 w-px bg-border" />
+      <VizCardContent className="px-4 pb-4">
+        {timelineEvents.length === 0 ? (
+          <div className="text-center py-6 text-muted-foreground">
+            <ClockIcon className="w-8 h-8 mx-auto mb-2 opacity-50" />
+            <Text className="text-sm">No events in this period</Text>
+          </div>
+        ) : (
+          <div className="relative">
+            {/* Timeline line */}
+            <div className="absolute left-3.5 top-0 bottom-0 w-px bg-border" />
 
-              {timelineEvents.map((event) => (
+            {timelineEvents.map((event, index) => {
+              const isIgnored = event.reason !== "hit";
+              const isAlert = event.type === "alert";
+
+              // Check if this event is on a different day than the previous one
+              const prevEvent = index > 0 ? timelineEvents[index - 1] : null;
+              const currentDay = ticksToDateTime(event.timestamp).startOf(
+                "day",
+              );
+              const prevDay = prevEvent
+                ? ticksToDateTime(prevEvent.timestamp).startOf("day")
+                : null;
+              const isDifferentDay =
+                prevDay !== null && !currentDay.equals(prevDay);
+
+              return (
                 <div
                   key={`${event.type}-${event.id}`}
-                  className="relative flex items-start gap-4 pb-4"
+                  className={cn(
+                    "relative flex items-center gap-3 pb-3",
+                    isDifferentDay && "mt-5",
+                  )}
                 >
                   {/* Timeline dot */}
                   <div
                     className={cn(
-                      "relative z-10 flex h-8 w-8 items-center justify-center rounded-full outline-1 bg-card",
-                      event.type === "alert"
-                        ? event.reason === "hit"
-                          ? "outline-orange-400 text-orange-400"
-                          : "outline-gray-300 text-gray-300"
-                        : event.reason === "hit"
-                          ? "outline-yellow-300 text-yellow-300"
-                          : "outline-gray-300 text-gray-300",
+                      "relative z-10 flex h-9 w-9 items-center justify-center rounded-full outline-1 bg-card",
+                      isIgnored
+                        ? "outline-zinc-500 dark:outline-zinc-400 text-zinc-500 dark:text-zinc-400"
+                        : isAlert
+                          ? "outline-orange-600 dark:outline-orange-400 text-orange-600 dark:text-orange-400"
+                          : "outline-yellow-600 dark:outline-yellow-400 text-yellow-600 dark:text-yellow-400",
                     )}
                   >
-                    {event.type === "alert" ? (
-                      <BellIcon className="w-4 h-4" />
+                    {isAlert ? (
+                      isIgnored ? (
+                        <BellOffIcon className="size-5" />
+                      ) : (
+                        <BellIcon className="size-5" />
+                      )
                     ) : (
-                      <ClockAlert className="w-4 h-4" />
+                      <ClockAlert className="size-5" />
                     )}
                   </div>
 
                   {/* Event content */}
-                  <div className="flex-1 min-w-0 pb-4">
-                    <div className="flex items-center justify-start gap-2 mb-1">
-                      <Text className="text-sm font-medium">
-                        {event.type === "alert"
-                          ? `Alert${event.reason === "hit" ? "" : " Ignored"}`
-                          : `Reminder${event.reason === "hit" ? "" : " Ignored"}: ${event.message}`}
-                      </Text>
+                  <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+                    <div className="text-xs text-muted-foreground flex">
+                      <DateTimeText ticks={event.timestamp} />
                     </div>
-                    <DateTimeText
-                      ticks={event.timestamp}
-                      className="text-xs text-muted-foreground w-fit"
-                    />
+                    <div className="flex items-center gap-2 min-w-0">
+                      {isAlert ? (
+                        <span
+                          className={cn(
+                            "text-sm font-medium",
+                            isIgnored
+                              ? "text-zinc-600 dark:text-zinc-300"
+                              : "text-orange-600 dark:text-orange-400",
+                          )}
+                        >
+                          {isIgnored ? "Ignored" : "Triggered"}
+                        </span>
+                      ) : (
+                        <>
+                          <span
+                            className={cn(
+                              "text-sm font-medium shrink-0",
+                              isIgnored
+                                ? "text-zinc-500 dark:text-zinc-400"
+                                : "text-yellow-600 dark:text-yellow-400",
+                            )}
+                          >
+                            {Math.round(event.threshold * 100)}%
+                          </span>
+                          <Text
+                            className={cn(
+                              "text-sm min-w-0",
+                              isIgnored
+                                ? "text-zinc-500 dark:text-zinc-400"
+                                : "text-foreground",
+                            )}
+                          >
+                            {event.message}
+                          </Text>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </VizCardContent>
     </VizCard>
   );

@@ -18,11 +18,15 @@ export function DurationText({
   duration,
   className,
   description,
+  symbolForZero,
+  showSymbolForZero,
 }: {
   ticks?: number;
   duration?: Duration;
   className?: ClassValue;
   description?: string;
+  symbolForZero?: string;
+  showSymbolForZero?: boolean;
 }) {
   return (
     <TooltipProvider>
@@ -34,12 +38,20 @@ export function DurationText({
               className,
             )}
           >
-            {toHumanDuration(ticks ?? durationToTicks(duration!))}
+            {toHumanDuration(
+              ticks ?? durationToTicks(duration!),
+              showSymbolForZero,
+              symbolForZero,
+            )}
           </div>
         </TooltipTrigger>
         <TooltipContent>
           {description ? `${description}: ` : ""}
-          {toHumanDurationFull(ticks ?? durationToTicks(duration!))}
+          {toHumanDurationFull(
+            ticks ?? durationToTicks(duration!),
+            showSymbolForZero,
+            symbolForZero,
+          )}
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
