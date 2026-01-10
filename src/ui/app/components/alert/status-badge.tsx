@@ -16,7 +16,8 @@ const statusConfig = {
   hit: {
     label: "Triggered",
     icon: AlertCircleIcon,
-    className: "text-destructive border-destructive/50 bg-destructive/10",
+    className:
+      "text-red-600 dark:text-red-400 border-red-600/50 dark:border-red-400/50 bg-red-500/10",
   },
   ignored: {
     label: "Ignored",
@@ -58,7 +59,7 @@ export function StatusBadge({
 
   return (
     <Badge variant="outline" className={cn(statusClassName, className)}>
-      {showIcon && <Icon className="w-3 h-3 mr-1" />}
+      {showIcon && <Icon className="size-3 mr-1 shrink-0" />}
       {label}
     </Badge>
   );

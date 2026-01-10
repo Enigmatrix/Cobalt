@@ -471,8 +471,8 @@ function AlertTimelineCard({ alert }: { alert: Alert }) {
                       isIgnored
                         ? "outline-zinc-500 dark:outline-zinc-400 text-zinc-500 dark:text-zinc-400"
                         : isAlert
-                          ? "outline-orange-600 dark:outline-orange-400 text-orange-600 dark:text-orange-400"
-                          : "outline-yellow-600 dark:outline-yellow-400 text-yellow-600 dark:text-yellow-400",
+                          ? "outline-red-600 dark:outline-red-400 text-red-600 dark:text-red-400"
+                          : "outline-amber-600 dark:outline-amber-400 text-amber-600 dark:text-amber-400",
                     )}
                   >
                     {isAlert ? (
@@ -498,7 +498,7 @@ function AlertTimelineCard({ alert }: { alert: Alert }) {
                             "text-sm font-medium",
                             isIgnored
                               ? "text-zinc-600 dark:text-zinc-300"
-                              : "text-orange-600 dark:text-orange-400",
+                              : "text-red-600 dark:text-red-400",
                           )}
                         >
                           {isIgnored ? "Ignored" : "Triggered"}
@@ -510,7 +510,7 @@ function AlertTimelineCard({ alert }: { alert: Alert }) {
                               "text-sm font-medium shrink-0",
                               isIgnored
                                 ? "text-zinc-500 dark:text-zinc-400"
-                                : "text-yellow-600 dark:text-yellow-400",
+                                : "text-amber-600 dark:text-amber-400",
                             )}
                           >
                             {Math.round(event.threshold * 100)}%
