@@ -301,7 +301,11 @@ function AppUsageBarChartCard({
   const { interval, canGoNext, goNext, canGoPrev, goPrev } =
     useIntervalControlsWithDefault(timePeriod);
 
-  const { isLoading, ret: appDurationsPerPeriod } = useAppDurationsPerPeriod({
+  const {
+    isLoading,
+    isValidating,
+    ret: appDurationsPerPeriod,
+  } = useAppDurationsPerPeriod({
     ...interval,
     period,
   });
@@ -342,11 +346,13 @@ function AppUsageBarChartCard({
           <PrevButton
             canGoPrev={canGoPrev}
             isLoading={isLoading}
+            isValidating={isValidating}
             goPrev={goPrev}
           />
           <NextButton
             canGoNext={canGoNext}
             isLoading={isLoading}
+            isValidating={isValidating}
             goNext={goNext}
           />
         </>
@@ -359,7 +365,11 @@ function AppUsageHeatmapCard({ app }: { app: App }) {
   const { interval, canGoNext, goNext, canGoPrev, goPrev } =
     useIntervalControlsWithDefault("year");
 
-  const { isLoading, ret: appDurationsPerPeriod } = useAppDurationsPerPeriod({
+  const {
+    isLoading,
+    isValidating,
+    ret: appDurationsPerPeriod,
+  } = useAppDurationsPerPeriod({
     ...interval,
     period: "day",
   });
@@ -394,11 +404,13 @@ function AppUsageHeatmapCard({ app }: { app: App }) {
           <PrevButton
             canGoPrev={canGoPrev}
             isLoading={isLoading}
+            isValidating={isValidating}
             goPrev={goPrev}
           />
           <NextButton
             canGoNext={canGoNext}
             isLoading={isLoading}
+            isValidating={isValidating}
             goNext={goNext}
           />
         </>
@@ -423,13 +435,17 @@ function AppSessionsCard({ app }: { app: App }) {
   const { interval, canGoNext, goNext, canGoPrev, goPrev, setInterval } =
     useIntervalControlsWithDefault("day");
 
-  const { ret: usages, isLoading: usagesLoading } =
-    useAppSessionUsages(interval);
+  const {
+    ret: usages,
+    isLoading: usagesLoading,
+    isValidating: usagesValidating,
+  } = useAppSessionUsages(interval);
   const onlyAppSessionUsages = useMemo(() => {
     return usages[app.id] ? { [app.id]: usages[app.id] } : {};
   }, [usages, app.id]);
 
   const isLoading = usagesLoading;
+  const isValidating = usagesValidating;
 
   return (
     <VizCard>
@@ -439,12 +455,15 @@ function AppSessionsCard({ app }: { app: App }) {
             <div className="flex flex-col gap-2 my-2 mx-4">
               <div className="text-lg font-bold flex items-center gap-2">
                 Sessions
-                {isLoading && <Loader2 className="h-5 w-5 animate-spin" />}
+                {(isLoading || isValidating) && (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                )}
               </div>
               <div className="flex items-center -ml-2">
                 <PrevButton
                   canGoPrev={canGoPrev}
                   isLoading={isLoading}
+                  isValidating={isValidating}
                   goPrev={goPrev}
                 />
                 <DateRangePicker
@@ -455,6 +474,7 @@ function AppSessionsCard({ app }: { app: App }) {
                 <NextButton
                   canGoNext={canGoNext}
                   isLoading={isLoading}
+                  isValidating={isValidating}
                   goNext={goNext}
                 />
               </div>
@@ -462,6 +482,7 @@ function AppSessionsCard({ app }: { app: App }) {
           }
           usages={onlyAppSessionUsages}
           usagesLoading={usagesLoading}
+          usagesValidating={usagesValidating}
           defaultExpanded={{ [app.id]: true }}
           interval={interval}
         />

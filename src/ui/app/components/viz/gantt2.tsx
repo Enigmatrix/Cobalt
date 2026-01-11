@@ -123,15 +123,19 @@ type SeriesKey = (SessionSeriesKey | AppSeriesKey | InteractionBarSeriesKey) & {
 interface GanttProps {
   usages: AppSessionUsages;
   usagesLoading?: boolean;
+  usagesValidating?: boolean;
 
   streaks?: Streak[];
   streaksLoading?: boolean;
+  streaksValidating?: boolean;
 
   interactionPeriods?: InteractionPeriod[];
   interactionPeriodsLoading?: boolean;
+  interactionPeriodsValidating?: boolean;
 
   systemEvents?: SystemEvent[];
   systemEventsLoading?: boolean;
+  systemEventsValidating?: boolean;
 
   summary?: React.ReactNode;
   defaultExpanded?: Record<Ref<App>, boolean>;
@@ -148,12 +152,16 @@ interface GanttProps {
 export function Gantt({
   usages: usagesPerAppSession,
   usagesLoading,
+  usagesValidating,
   streaks,
   streaksLoading,
+  streaksValidating,
   interactionPeriods,
   interactionPeriodsLoading,
+  interactionPeriodsValidating,
   systemEvents,
   systemEventsLoading,
+  systemEventsValidating,
   summary,
   defaultExpanded,
   interval,
@@ -809,9 +817,16 @@ export function Gantt({
             <InteractionInfoBar
               loading={
                 !!(
-                  interactionPeriodsLoading ??
-                  systemEventsLoading ??
+                  interactionPeriodsLoading ||
+                  systemEventsLoading ||
                   streaksLoading
+                )
+              }
+              validating={
+                !!(
+                  interactionPeriodsValidating ||
+                  systemEventsValidating ||
+                  streaksValidating
                 )
               }
               interactionInfoBarHeight={interactionInfoBarHeight}
@@ -848,6 +863,9 @@ export function Gantt({
       interactionPeriodsLoading,
       systemEventsLoading,
       streaksLoading,
+      interactionPeriodsValidating,
+      systemEventsValidating,
+      streaksValidating,
       toggleApp,
       expanded,
       appMap,
@@ -1014,10 +1032,12 @@ export function Gantt({
 
 function InteractionInfoBar({
   loading,
+  validating,
   interactionInfoBarHeight,
   className,
 }: {
   loading: boolean;
+  validating: boolean;
   interactionInfoBarHeight: number;
   className?: ClassValue;
 }) {
@@ -1029,7 +1049,9 @@ function InteractionInfoBar({
       >
         <LaptopIcon className="w-6 h-6 ml-6" />
         <Text className="font-semibold ml-4">Interactions</Text>
-        {loading && <Loader2Icon className="animate-spin ml-4" />}
+        {(loading || validating) && (
+          <Loader2Icon className="animate-spin ml-4" />
+        )}
       </div>
       <div className="h-px bg-border absolute bottom-[-0.5px] left-0 right-0" />
     </div>
@@ -1186,17 +1208,21 @@ function InteractionTooltip({
 export function DurationSummaries({
   usages,
   usagesLoading,
+  usagesValidating,
 
   streaks,
   streaksLoading,
+  streaksValidating,
 
   className,
 }: {
   usages: AppSessionUsages;
   usagesLoading?: boolean;
+  usagesValidating?: boolean;
 
   streaks?: Streak[];
   streaksLoading?: boolean;
+  streaksValidating?: boolean;
 
   className?: ClassValue;
 }) {
@@ -1221,7 +1247,11 @@ export function DurationSummaries({
     >
       {streaks &&
         (streaksLoading ? (
-          <Loader2Icon className="animate-spin" />
+          <>
+            <Loader2Icon className="animate-spin" />
+            <div>/</div>
+            <Loader2Icon className="animate-spin" />
+          </>
         ) : (
           <>
             <DurationText
@@ -1229,12 +1259,14 @@ export function DurationSummaries({
               className="text-green-500/80"
               description="Focus Streaks"
             />
+            {streaksValidating && <Loader2Icon className="animate-spin" />}
             <div>/</div>
             <DurationText
               ticks={distractiveStreakUsage}
               className="text-red-400/80"
               description="Distractive Streaks"
             />
+            {streaksValidating && <Loader2Icon className="animate-spin" />}
           </>
         ))}
       {streaks && <div>/</div>}
@@ -1247,6 +1279,7 @@ export function DurationSummaries({
             className="text-foreground/80"
             description="Total Usage"
           />
+          {usagesValidating && <Loader2Icon className="animate-spin" />}
         </>
       )}
     </div>

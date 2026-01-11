@@ -147,7 +147,11 @@ function AppUsagePerPeriodHistory() {
   const [period, setPeriod] = useState<Period>("day");
   const { interval } = useHistoryContext();
 
-  const { isLoading, ret: appDurationsPerPeriod } = useAppDurationsPerPeriod({
+  const {
+    isLoading,
+    isValidating,
+    ret: appDurationsPerPeriod,
+  } = useAppDurationsPerPeriod({
     ...interval,
     period,
   });
@@ -182,7 +186,9 @@ function AppUsagePerPeriodHistory() {
           <Label className="font-medium text-muted-foreground">Usage</Label>
           <DurationText ticks={totalUsage} className="text-lg font-semibold" />
         </div>
-        {isLoading && <Loader2 className="animate-spin w-4 h-4" />}
+        {(isLoading || isValidating) && (
+          <Loader2 className="animate-spin w-4 h-4" />
+        )}
         <div className="flex-1 md:min-w-0" />
         <FormItem>
           <Label className="font-medium text-muted-foreground place-self-end">
@@ -226,20 +232,38 @@ function AppUsagePerPeriodHistory() {
 function SessionHistory() {
   const { interval } = useHistoryContext();
 
-  const { ret: usages, isLoading: usagesLoading } =
-    useAppSessionUsages(interval);
-  const { ret: interactions, isLoading: interactionPeriodsLoading } =
-    useInteractionPeriods(interval);
-  const { ret: systemEvents, isLoading: systemEventsLoading } =
-    useSystemEvents(interval);
-  const { ret: streaks, isLoading: streaksLoading } =
-    useDefaultStreaks(interval);
+  const {
+    ret: usages,
+    isLoading: usagesLoading,
+    isValidating: usagesValidating,
+  } = useAppSessionUsages(interval);
+  const {
+    ret: interactions,
+    isLoading: interactionPeriodsLoading,
+    isValidating: interactionPeriodsValidating,
+  } = useInteractionPeriods(interval);
+  const {
+    ret: systemEvents,
+    isLoading: systemEventsLoading,
+    isValidating: systemEventsValidating,
+  } = useSystemEvents(interval);
+  const {
+    ret: streaks,
+    isLoading: streaksLoading,
+    isValidating: streaksValidating,
+  } = useDefaultStreaks(interval);
 
   const isLoading =
     usagesLoading ||
     interactionPeriodsLoading ||
     systemEventsLoading ||
     streaksLoading;
+
+  const isValidating =
+    usagesValidating ||
+    interactionPeriodsValidating ||
+    systemEventsValidating ||
+    streaksValidating;
 
   return (
     <div className="flex flex-col flex-1 gap-6">
@@ -251,8 +275,10 @@ function SessionHistory() {
           <DurationSummaries
             usages={usages}
             usagesLoading={usagesLoading}
+            usagesValidating={usagesValidating}
             streaks={streaks}
             streaksLoading={streaksLoading}
+            streaksValidating={streaksValidating}
           />
         </FormItem>
       </div>
@@ -263,18 +289,24 @@ function SessionHistory() {
             <div className="flex flex-col gap-2 my-2 mx-4">
               <div className="text-lg font-bold flex items-center gap-2">
                 Sessions
-                {isLoading && <Loader2 className="h-5 w-5 animate-spin" />}
+                {(isLoading || isValidating) && (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                )}
               </div>
             </div>
           }
           usages={usages}
           usagesLoading={usagesLoading}
+          usagesValidating={usagesValidating}
           streaks={streaks}
           streaksLoading={streaksLoading}
+          streaksValidating={streaksValidating}
           interactionPeriods={interactions}
           interactionPeriodsLoading={interactionPeriodsLoading}
+          interactionPeriodsValidating={interactionPeriodsValidating}
           systemEvents={systemEvents}
           systemEventsLoading={systemEventsLoading}
+          systemEventsValidating={systemEventsValidating}
           interval={interval}
         />
       </div>

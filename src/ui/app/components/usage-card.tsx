@@ -56,10 +56,12 @@ export function UsageCard({
 export function PrevButton({
   canGoPrev,
   isLoading,
+  isValidating,
   goPrev,
 }: {
   canGoPrev: boolean;
   isLoading: boolean;
+  isValidating: boolean;
   goPrev: () => void;
 }) {
   return (
@@ -67,7 +69,7 @@ export function PrevButton({
       variant="ghost"
       size="icon"
       onClick={goPrev}
-      disabled={!canGoPrev || isLoading}
+      disabled={!canGoPrev || isLoading || isValidating}
     >
       <ChevronLeft />
     </Button>
@@ -77,10 +79,12 @@ export function PrevButton({
 export function NextButton({
   canGoNext,
   isLoading,
+  isValidating,
   goNext,
 }: {
   canGoNext: boolean;
   isLoading: boolean;
+  isValidating: boolean;
   goNext: () => void;
 }) {
   return (
@@ -88,7 +92,7 @@ export function NextButton({
       variant="ghost"
       size="icon"
       onClick={goNext}
-      disabled={!canGoNext || isLoading}
+      disabled={!canGoNext || isLoading || isValidating}
     >
       <ChevronRight />
     </Button>

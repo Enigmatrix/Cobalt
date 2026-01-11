@@ -249,7 +249,11 @@ function TagUsageBarChartCard({
   const { interval, canGoNext, goNext, canGoPrev, goPrev } =
     useIntervalControlsWithDefault(timePeriod);
 
-  const { isLoading, ret: appDurationsPerPeriod } = useAppDurationsPerPeriod({
+  const {
+    isLoading,
+    isValidating,
+    ret: appDurationsPerPeriod,
+  } = useAppDurationsPerPeriod({
     ...interval,
     period,
   });
@@ -291,11 +295,13 @@ function TagUsageBarChartCard({
           <PrevButton
             canGoPrev={canGoPrev}
             isLoading={isLoading}
+            isValidating={isValidating}
             goPrev={goPrev}
           />
           <NextButton
             canGoNext={canGoNext}
             isLoading={isLoading}
+            isValidating={isValidating}
             goNext={goNext}
           />
         </>
@@ -308,7 +314,11 @@ function TagUsageHeatmapCard({ tag }: { tag: Tag }) {
   const { interval, canGoNext, goNext, canGoPrev, goPrev } =
     useIntervalControlsWithDefault("year");
 
-  const { isLoading: isLoading, ret: usages } = useTagDurationsPerPeriod({
+  const {
+    isLoading,
+    isValidating,
+    ret: usages,
+  } = useTagDurationsPerPeriod({
     ...interval,
     period: "day",
   });
@@ -339,11 +349,13 @@ function TagUsageHeatmapCard({ tag }: { tag: Tag }) {
           <PrevButton
             canGoPrev={canGoPrev}
             isLoading={isLoading}
+            isValidating={isValidating}
             goPrev={goPrev}
           />
           <NextButton
             canGoNext={canGoNext}
             isLoading={isLoading}
+            isValidating={isValidating}
             goNext={goNext}
           />
         </>
@@ -368,8 +380,11 @@ function TagSessionsCard({ tag }: { tag: Tag }) {
   const { interval, canGoNext, goNext, canGoPrev, goPrev, setInterval } =
     useIntervalControlsWithDefault("day");
 
-  const { ret: usages, isLoading: usagesLoading } =
-    useAppSessionUsages(interval);
+  const {
+    ret: usages,
+    isLoading: usagesLoading,
+    isValidating: usagesValidating,
+  } = useAppSessionUsages(interval);
   const tagAppSessionUsages = useMemo(() => {
     return _(tag.apps)
       .filter((appId) => usages[appId] !== undefined)
@@ -379,6 +394,7 @@ function TagSessionsCard({ tag }: { tag: Tag }) {
   }, [usages, tag]);
 
   const isLoading = usagesLoading;
+  const isValidating = usagesValidating;
 
   return (
     <VizCard>
@@ -388,12 +404,15 @@ function TagSessionsCard({ tag }: { tag: Tag }) {
             <div className="flex flex-col gap-2 my-2 mx-4">
               <div className="text-lg font-bold flex items-center gap-2">
                 Sessions
-                {isLoading && <Loader2 className="h-5 w-5 animate-spin" />}
+                {(isLoading || isValidating) && (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                )}
               </div>
               <div className="flex items-center -ml-2">
                 <PrevButton
                   canGoPrev={canGoPrev}
                   isLoading={isLoading}
+                  isValidating={isValidating}
                   goPrev={goPrev}
                 />
                 <DateRangePicker
@@ -404,6 +423,7 @@ function TagSessionsCard({ tag }: { tag: Tag }) {
                 <NextButton
                   canGoNext={canGoNext}
                   isLoading={isLoading}
+                  isValidating={isValidating}
                   goNext={goNext}
                 />
               </div>
@@ -411,6 +431,7 @@ function TagSessionsCard({ tag }: { tag: Tag }) {
           }
           usages={tagAppSessionUsages}
           usagesLoading={usagesLoading}
+          usagesValidating={usagesValidating}
           interval={interval}
         />
       </VizCardContent>
