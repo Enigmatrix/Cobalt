@@ -376,20 +376,28 @@ function AlertTimelineCard({ alert }: { alert: Alert }) {
   const { interval, canGoNext, goNext, canGoPrev, goPrev, setInterval } =
     useIntervalControlsWithDefault("week");
 
-  const { ret: alertEvents, isLoading: eventsLoading } = useAlertEvents({
+  const {
+    ret: alertEvents,
+    isLoading: eventsLoading,
+    isValidating: eventsValidating,
+  } = useAlertEvents({
     start: interval.start,
     end: interval.end,
     alertId: alert.id,
   });
 
-  const { ret: reminderEvents, isLoading: reminderLoading } =
-    useAlertReminderEvents({
-      start: interval.start,
-      end: interval.end,
-      alertId: alert.id,
-    });
+  const {
+    ret: reminderEvents,
+    isLoading: reminderLoading,
+    isValidating: reminderValidating,
+  } = useAlertReminderEvents({
+    start: interval.start,
+    end: interval.end,
+    alertId: alert.id,
+  });
 
   const isLoading = eventsLoading || reminderLoading;
+  const isValidating = eventsValidating || reminderValidating;
 
   // Combine and sort events chronologically
   const timelineEvents = useMemo(() => {
@@ -408,7 +416,7 @@ function AlertTimelineCard({ alert }: { alert: Alert }) {
       <VizCardHeader className="pb-4">
         <VizCardTitle className="pl-4 pt-4 flex items-center gap-2">
           <span className="font-semibold">Events</span>
-          {isLoading && (
+          {(isLoading || isValidating) && (
             <div className="w-4 h-4 border-2 border-muted border-t-primary rounded-full animate-spin" />
           )}
         </VizCardTitle>
@@ -416,6 +424,7 @@ function AlertTimelineCard({ alert }: { alert: Alert }) {
           <PrevButton
             canGoPrev={canGoPrev}
             isLoading={isLoading}
+            isValidating={isValidating}
             goPrev={goPrev}
           />
           <DateRangePicker
@@ -426,6 +435,7 @@ function AlertTimelineCard({ alert }: { alert: Alert }) {
           <NextButton
             canGoNext={canGoNext}
             isLoading={isLoading}
+            isValidating={isValidating}
             goNext={goNext}
           />
         </VizCardAction>

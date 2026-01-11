@@ -51,15 +51,16 @@ import { useMemo } from "react";
 
 export default function Home() {
   const interval = usePeriodInterval("day");
-  const { ret: streaks, isLoading: streaksLoading } =
-    useDefaultStreaks(interval);
+  const {
+    ret: streaks,
+    isLoading: streaksLoading,
+    isValidating: streaksValidating,
+  } = useDefaultStreaks(interval);
   const {
     ret: appDurationsPerPeriod,
     isLoading: appDurationsPerPeriodLoading,
-  } = useAppDurationsPerPeriod({
-    ...interval,
-    period: "hour",
-  });
+    isValidating: appDurationsPerPeriodValidating,
+  } = useAppDurationsPerPeriod({ ...interval, period: "hour" });
 
   const [focusStreakUsage, distractiveStreakUsage] =
     useStreakDurations(streaks);
@@ -84,6 +85,7 @@ export default function Home() {
             <AlertEventItem />
             <UsageStatItem
               isLoading={streaksLoading}
+              isValidating={streaksValidating}
               label="Focus Streaks"
               usage={focusStreakUsage}
               color="text-green-600 dark:text-green-400"
@@ -91,6 +93,7 @@ export default function Home() {
             />
             <UsageStatItem
               isLoading={streaksLoading}
+              isValidating={streaksValidating}
               label="Distractive Streaks"
               usage={distractiveStreakUsage}
               color="text-red-600 dark:text-red-400"
@@ -98,6 +101,7 @@ export default function Home() {
             />
             <UsageStatItem
               isLoading={appDurationsPerPeriodLoading}
+              isValidating={appDurationsPerPeriodValidating}
               label="Total Usage"
               usage={totalUsage}
               color="text-foreground"
@@ -144,7 +148,11 @@ function AppUsageBarChartCard({
   const { interval, canGoNext, goNext, canGoPrev, goPrev } =
     useIntervalControlsWithDefault(timePeriod);
 
-  const { isLoading, ret: appDurationsPerPeriod } = useAppDurationsPerPeriod({
+  const {
+    isLoading,
+    isValidating,
+    ret: appDurationsPerPeriod,
+  } = useAppDurationsPerPeriod({
     ...interval,
     period,
   });
@@ -174,16 +182,20 @@ function AppUsageBarChartCard({
       interval={interval}
       totalUsage={totalUsage}
       children={children}
+      isLoading={isLoading}
+      isValidating={isValidating}
       actions={
         <>
           <PrevButton
             canGoPrev={canGoPrev}
             isLoading={isLoading}
+            isValidating={isValidating}
             goPrev={goPrev}
           />
           <NextButton
             canGoNext={canGoNext}
             isLoading={isLoading}
+            isValidating={isValidating}
             goNext={goNext}
           />
         </>
@@ -196,20 +208,38 @@ function SessionsCard() {
   const { interval, canGoNext, goNext, canGoPrev, goPrev, setInterval } =
     useIntervalControlsWithDefault("day");
 
-  const { ret: usages, isLoading: usagesLoading } =
-    useAppSessionUsages(interval);
-  const { ret: interactions, isLoading: interactionPeriodsLoading } =
-    useInteractionPeriods(interval);
-  const { ret: systemEvents, isLoading: systemEventsLoading } =
-    useSystemEvents(interval);
-  const { ret: streaks, isLoading: streaksLoading } =
-    useDefaultStreaks(interval);
+  const {
+    ret: usages,
+    isLoading: usagesLoading,
+    isValidating: usagesValidating,
+  } = useAppSessionUsages(interval);
+  const {
+    ret: interactions,
+    isLoading: interactionPeriodsLoading,
+    isValidating: interactionPeriodsValidating,
+  } = useInteractionPeriods(interval);
+  const {
+    ret: systemEvents,
+    isLoading: systemEventsLoading,
+    isValidating: systemEventsValidating,
+  } = useSystemEvents(interval);
+  const {
+    ret: streaks,
+    isLoading: streaksLoading,
+    isValidating: streaksValidating,
+  } = useDefaultStreaks(interval);
 
   const isLoading =
     usagesLoading ||
     interactionPeriodsLoading ||
     systemEventsLoading ||
     streaksLoading;
+
+  const isValidating =
+    usagesValidating ||
+    interactionPeriodsValidating ||
+    systemEventsValidating ||
+    streaksValidating;
 
   return (
     <VizCard>
@@ -219,12 +249,15 @@ function SessionsCard() {
             <div className="flex flex-col gap-2 my-2 mx-4">
               <div className="text-lg font-bold flex items-center gap-2">
                 Sessions
-                {isLoading && <Loader2 className="h-5 w-5 animate-spin" />}
+                {(isLoading || isValidating) && (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                )}
               </div>
               <div className="flex items-center -ml-2">
                 <PrevButton
                   canGoPrev={canGoPrev}
                   isLoading={isLoading}
+                  isValidating={isValidating}
                   goPrev={goPrev}
                 />
                 <DateRangePicker
@@ -235,6 +268,7 @@ function SessionsCard() {
                 <NextButton
                   canGoNext={canGoNext}
                   isLoading={isLoading}
+                  isValidating={isValidating}
                   goNext={goNext}
                 />
               </div>
@@ -242,12 +276,16 @@ function SessionsCard() {
           }
           usages={usages}
           usagesLoading={usagesLoading}
+          usagesValidating={usagesValidating}
           streaks={streaks}
           streaksLoading={streaksLoading}
+          streaksValidating={streaksValidating}
           interactionPeriods={interactions}
           interactionPeriodsLoading={interactionPeriodsLoading}
+          interactionPeriodsValidating={interactionPeriodsValidating}
           systemEvents={systemEvents}
           systemEventsLoading={systemEventsLoading}
+          systemEventsValidating={systemEventsValidating}
           interval={interval}
         />
       </VizCardContent>
@@ -258,12 +296,14 @@ function SessionsCard() {
 // Component for displaying usage statistics
 function UsageStatItem({
   isLoading,
+  isValidating,
   label,
   usage,
   color,
   cardColor,
 }: {
   isLoading: boolean;
+  isValidating: boolean;
   label: string;
   usage: number;
   color?: string;
@@ -283,10 +323,15 @@ function UsageStatItem({
             className={cn("h-6 w-6 mt-1 animate-spin self-end", color)}
           />
         ) : (
-          <DurationText
-            className={cn("text-xl font-bold self-end", color)}
-            ticks={usage}
-          />
+          <div className="flex items-center gap-1 justify-end">
+            {isValidating && (
+              <Loader2 className="h-6 w-6 mt-1 animate-spin self-end" />
+            )}
+            <DurationText
+              className={cn("text-xl font-bold self-end", color)}
+              ticks={usage}
+            />
+          </div>
         )}
       </div>
     </div>

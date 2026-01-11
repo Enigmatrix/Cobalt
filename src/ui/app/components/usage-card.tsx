@@ -15,7 +15,7 @@ import {
 } from "@/components/viz/viz-card";
 import { useToday } from "@/hooks/use-time";
 import { toHumanInterval, type Interval } from "@/lib/time";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { useMemo } from "react";
 
 export interface UsageCardProps {
@@ -25,10 +25,15 @@ export interface UsageCardProps {
   totalUsage: number;
   children: React.ReactNode;
   actions: React.ReactNode;
+
+  isLoading?: boolean;
+  isValidating?: boolean;
 }
 
 export function UsageCard({
   interval,
+  isLoading,
+  isValidating,
   usage,
   totalUsage,
   children,
@@ -42,6 +47,8 @@ export function UsageCard({
             usage={usage}
             totalUsage={totalUsage}
             interval={interval}
+            isLoading={isLoading}
+            isValidating={isValidating}
           />
         </VizCardTitle>
 
@@ -56,10 +63,12 @@ export function UsageCard({
 export function PrevButton({
   canGoPrev,
   isLoading,
+  isValidating,
   goPrev,
 }: {
   canGoPrev: boolean;
   isLoading: boolean;
+  isValidating: boolean;
   goPrev: () => void;
 }) {
   return (
@@ -67,7 +76,7 @@ export function PrevButton({
       variant="ghost"
       size="icon"
       onClick={goPrev}
-      disabled={!canGoPrev || isLoading}
+      disabled={!canGoPrev || isLoading || isValidating}
     >
       <ChevronLeft />
     </Button>
@@ -77,10 +86,12 @@ export function PrevButton({
 export function NextButton({
   canGoNext,
   isLoading,
+  isValidating,
   goNext,
 }: {
   canGoNext: boolean;
   isLoading: boolean;
+  isValidating: boolean;
   goNext: () => void;
 }) {
   return (
@@ -88,7 +99,7 @@ export function NextButton({
       variant="ghost"
       size="icon"
       onClick={goNext}
-      disabled={!canGoNext || isLoading}
+      disabled={!canGoNext || isLoading || isValidating}
     >
       <ChevronRight />
     </Button>
@@ -99,10 +110,14 @@ export function UsageCardTitle({
   usage,
   totalUsage,
   interval,
+  isLoading,
+  isValidating,
 }: {
   usage?: number;
   totalUsage: number;
   interval: Interval;
+  isLoading?: boolean;
+  isValidating?: boolean;
 }) {
   const today = useToday();
   const title = useMemo(
@@ -115,8 +130,11 @@ export function UsageCardTitle({
       {/* TODO: create a interval range component? */}
       <TooltipProvider>
         <Tooltip>
-          <TooltipTrigger className="max-w-full text-base text-card-foreground/50 truncate">
+          <TooltipTrigger className="max-w-full text-base flex items-center gap-1.5 text-card-foreground/50 truncate">
             {title}
+            {((isLoading ?? false) || (isValidating ?? false)) && (
+              <Loader2 className="size-4 animate-spin" />
+            )}
           </TooltipTrigger>
           <TooltipContent>
             <div>{title}</div>

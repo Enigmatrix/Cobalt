@@ -284,12 +284,7 @@ export function UsageChart({
     hasAnyHighlighted,
   ]);
 
-  useEffect(() => {
-    if (!chartRef.current) return;
-
-    const chart = echarts.init(chartRef.current, undefined, {});
-    chartInstanceRef.current = chart;
-
+  const option = useMemo(() => {
     // Period ticks
     const periodTicks = durationToTicks(periodToDuration(period));
 
@@ -402,21 +397,84 @@ export function UsageChart({
       ],
     } satisfies echarts.EChartsOption;
 
-    chart.getZr().on("mousemove", (params) => {
+    return option;
+  }, [
+    series,
+    apps,
+    tags,
+    xAxisValues,
+    animationsEnabled,
+    hideXAxis,
+    hideYAxis,
+    maxYIsPeriod,
+    yAxisInterval,
+    markerLines,
+    period,
+    xAxisFormatter,
+  ]);
+
+  useEffect(() => {
+    if (!chartRef.current) return;
+
+    if (!chartInstanceRef.current) {
+      chartInstanceRef.current = echarts.init(chartRef.current, undefined, {});
+    }
+    const chart = chartInstanceRef.current;
+
+    const resizeObserver = new ResizeObserver(() => {
+      requestAnimationFrame(() => chart.resize());
+    });
+
+    chart.on("finished", () => {
+      resizeObserver.observe(chartRef.current!);
+    });
+
+    // first set option to get the chart initialized
+    chart.setOption(option);
+
+    return () => {
+      chart.dispose();
+      chartInstanceRef.current = null;
+      resizeObserver.disconnect();
+    };
+    // we don't need to re-render the chart when the option changes
+    // - it's handled by the useEffect below
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!chartInstanceRef.current) return;
+    const chart = chartInstanceRef.current;
+    // reset the options, don't merge them
+    // if a series that previously had data but now doesn't, it will be removed
+    // due to this notMerge option, otherwise it will show the wrong data.
+    chart.setOption(option, { notMerge: true });
+  }, [option]);
+
+  useEffect(() => {
+    if (!chartInstanceRef.current) return;
+    const chart = chartInstanceRef.current;
+
+    function zrMouseMove(params: echarts.ElementEvent) {
       const pos = [params.offsetX, params.offsetY];
       const isInGrid = chart.containPixel("grid", pos);
       if (isInGrid) {
         const pointerData = chart.convertFromPixel("grid", pos);
-        setHoveredData({
-          at: ticksToDateTime(xAxisValues[pointerData[0]]),
-        });
+        const at = ticksToDateTime(xAxisValues[pointerData[0]]);
+        setHoveredData((hoverData) => ({
+          ...(hoverData ?? {}),
+          hovered: undefined,
+          at,
+        }));
       } else if (!isInGrid) {
         setHoveredData(null);
         onHover?.(undefined);
       }
-    });
+    }
 
-    chart.on("mousemove", (params) => {
+    chart.getZr().on("mousemove", zrMouseMove);
+
+    function mouseMove(params: echarts.ECElementEvent) {
       const ticks = +params.name;
       const at = ticksToDateTime(ticks);
       const duration = (params.data as DataItem)[1];
@@ -433,37 +491,14 @@ export function UsageChart({
         group: ticks,
         duration,
       });
-    });
+    }
 
-    const resizeObserver = new ResizeObserver(() => {
-      requestAnimationFrame(() => chart.resize());
-    });
-
-    chart.on("finished", () => {
-      resizeObserver.observe(chartRef.current!);
-    });
-
-    chart.setOption(option);
-
+    chart.on("mousemove", mouseMove);
     return () => {
-      chart.dispose();
-      resizeObserver.disconnect();
+      chart.off("mousemove", mouseMove);
+      chart.getZr()?.off("mousemove", zrMouseMove);
     };
-  }, [
-    series,
-    apps,
-    tags,
-    xAxisValues,
-    animationsEnabled,
-    hideXAxis,
-    hideYAxis,
-    maxYIsPeriod,
-    yAxisInterval,
-    markerLines,
-    period,
-    xAxisFormatter,
-    onHover,
-  ]);
+  }, [apps, tags, xAxisValues, onHover]);
 
   return (
     <div ref={chartRef} className={cn("w-full h-full", className)}>
