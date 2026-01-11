@@ -182,6 +182,8 @@ function AppUsageBarChartCard({
       interval={interval}
       totalUsage={totalUsage}
       children={children}
+      isLoading={isLoading}
+      isValidating={isValidating}
       actions={
         <>
           <PrevButton

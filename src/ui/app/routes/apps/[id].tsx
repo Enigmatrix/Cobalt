@@ -341,6 +341,8 @@ function AppUsageBarChartCard({
       usage={totalAppUsage}
       totalUsage={totalUsage}
       children={children}
+      isLoading={isLoading}
+      isValidating={isValidating}
       actions={
         <>
           <PrevButton
@@ -399,6 +401,8 @@ function AppUsageHeatmapCard({ app }: { app: App }) {
       usage={usage}
       totalUsage={totalUsage}
       interval={interval}
+      isLoading={isLoading}
+      isValidating={isValidating}
       actions={
         <>
           <PrevButton

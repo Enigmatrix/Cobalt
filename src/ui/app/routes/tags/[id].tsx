@@ -290,6 +290,8 @@ function TagUsageBarChartCard({
       usage={totalTagUsage}
       totalUsage={totalUsage}
       children={children}
+      isLoading={isLoading}
+      isValidating={isValidating}
       actions={
         <>
           <PrevButton
@@ -344,6 +346,8 @@ function TagUsageHeatmapCard({ tag }: { tag: Tag }) {
       usage={usage}
       totalUsage={totalUsage}
       interval={interval}
+      isLoading={isLoading}
+      isValidating={isValidating}
       actions={
         <>
           <PrevButton
