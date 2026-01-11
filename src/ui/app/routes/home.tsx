@@ -323,7 +323,7 @@ function UsageStatItem({
             className={cn("h-6 w-6 mt-1 animate-spin self-end", color)}
           />
         ) : (
-          <div className="flex items-center gap-1  justify-end">
+          <div className="flex items-center gap-1 justify-end">
             {isValidating && (
               <Loader2 className="h-6 w-6 mt-1 animate-spin self-end" />
             )}

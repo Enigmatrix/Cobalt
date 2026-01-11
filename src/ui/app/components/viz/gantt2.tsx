@@ -152,7 +152,8 @@ interface GanttProps {
 export function Gantt({
   usages: usagesPerAppSession,
   usagesLoading,
-  usagesValidating,
+  // we don't actually use this - the indicator is in the Session cards instead
+  // usagesValidating,
   streaks,
   streaksLoading,
   streaksValidating,
@@ -816,18 +817,14 @@ export function Gantt({
           {key.type === "interactionBar" ? (
             <InteractionInfoBar
               loading={
-                !!(
-                  interactionPeriodsLoading ||
-                  systemEventsLoading ||
-                  streaksLoading
-                )
+                (interactionPeriodsLoading ?? false) ||
+                (systemEventsLoading ?? false) ||
+                (streaksLoading ?? false)
               }
               validating={
-                !!(
-                  interactionPeriodsValidating ||
-                  systemEventsValidating ||
-                  streaksValidating
-                )
+                (interactionPeriodsValidating ?? false) ||
+                (systemEventsValidating ?? false) ||
+                (streaksValidating ?? false)
               }
               interactionInfoBarHeight={interactionInfoBarHeight}
               key={key.type + key.id}

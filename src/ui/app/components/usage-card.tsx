@@ -132,7 +132,7 @@ export function UsageCardTitle({
         <Tooltip>
           <TooltipTrigger className="max-w-full text-base flex items-center gap-1.5 text-card-foreground/50 truncate">
             {title}
-            {(isLoading || isValidating) && (
+            {((isLoading ?? false) || (isValidating ?? false)) && (
               <Loader2 className="size-4 animate-spin" />
             )}
           </TooltipTrigger>
