@@ -28,10 +28,6 @@ thread_local! {
 pub struct InteractionWatcher {
     max_idle_duration: Duration,
     active_start: Option<Timestamp>,
-
-    // Windows Hooks
-    _mouse_hook: WindowsHook<MouseLL>,
-    _keyboard_hook: WindowsHook<KeyboardLL>,
 }
 
 // THIS IS WRONG!
@@ -52,6 +48,7 @@ pub struct InteractionChangedEvent {
 
 impl InteractionWatcher {
     /// Create a new [InteractionWatcher] with the specified [Config] and current [Timestamp].
+    /// Requires that [InteractionWatcherHooks] is running at some point in time, else the values will be wrong.
     pub fn init(config: &Config, at: Timestamp) -> Result<Rc<RefCell<Option<Self>>>> {
         // Check if already initialized
         if INTERACTION_INSTANCE.with(|instance| instance.borrow().is_some()) {
@@ -62,8 +59,6 @@ impl InteractionWatcher {
         let instance = Self {
             max_idle_duration: config.max_idle_duration().into(),
             active_start: Some(at),
-            _mouse_hook: WindowsHook::global().context("mouse ll windows hook")?,
-            _keyboard_hook: WindowsHook::global().context("keyboard ll windows hook")?,
         };
 
         // Initialize the global instance if not already done
@@ -124,6 +119,22 @@ impl InteractionWatcher {
             self.active_start = Some(at);
         }
         Ok(None)
+    }
+}
+
+/// Windows Hooks for the [InteractionWatcher]
+pub struct InteractionWatcherHooks {
+    _mouse_hook: WindowsHook<MouseLL>,
+    _keyboard_hook: WindowsHook<KeyboardLL>,
+}
+
+impl InteractionWatcherHooks {
+    /// Create a new [InteractionWatcherHooks]
+    pub fn new() -> Result<Self> {
+        Ok(Self {
+            _mouse_hook: WindowsHook::global().context("mouse ll windows hook")?,
+            _keyboard_hook: WindowsHook::global().context("keyboard ll windows hook")?,
+        })
     }
 }
 
