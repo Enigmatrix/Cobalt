@@ -3,7 +3,7 @@ use std::path::Path;
 
 use rand::seq::IndexedMutRandom;
 use util::error::{Context, Result};
-use util::tracing::ResultTraceExt;
+use util::tracing::{ResultTraceExt, warn};
 use windows::ApplicationModel::{AppDisplayInfo, AppInfo as UWPAppInfo};
 use windows::Foundation::Size;
 use windows::Storage::FileProperties::ThumbnailMode;
@@ -242,6 +242,10 @@ impl AppInfo {
         // Try shell method first for better icon quality
         if let Ok(icon) = Self::uwp_icon_from_shell(aumid) {
             return Ok(icon);
+        } else {
+            warn!(
+                "failed to get uwp icon from shell for {aumid:?}, falling back to GetLogo method"
+            );
         }
 
         // Fall back to GetLogo method if shell method fails
@@ -411,8 +415,8 @@ impl AppInfo {
 
         Ok(Icon {
             data: png_data,
-            ext: None,
-            mime: None, // Set mime to None as requested
+            ext: Some("png".to_string()),
+            mime: Some("image/png".to_string()),
         })
     }
 }
