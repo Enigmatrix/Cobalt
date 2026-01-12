@@ -11,7 +11,8 @@ use std::thread;
 use data::db::{AppUpdater, DatabasePool};
 use engine::{Engine, Event};
 use platform::events::{
-    ForegroundEventWatcher, ForegroundWindowSessionInfo, InteractionWatcher, SystemEventWatcher,
+    ForegroundEventWatcher, ForegroundWindowSessionInfo, InteractionWatcher,
+    InteractionWatcherHooks, SystemEventWatcher,
 };
 use platform::objects::{
     Duration, EventLoop, MessageWindow, SingleInstance, Timer, Timestamp, User,
@@ -104,6 +105,16 @@ pub fn run(
     let start = Timestamp::now();
     let session = foreground_window_session(config, web_state.clone())?;
 
+    // Interaction event loop thread to poll for mouse/kb events
+    let it_ev_thread = thread::Builder::new()
+        .name("interaction_event_loop_thread".to_string())
+        .spawn(move || {
+            let ev = EventLoop::new();
+            let _hooks = InteractionWatcherHooks::new().expect("create interaction watcher hooks");
+            ev.run();
+        })?;
+
+    // Main event loop thread to poll for foreground/system etc. events
     let ev_thread = {
         let config = config.clone();
         let session = session.clone();
@@ -136,8 +147,9 @@ pub fn run(
         alert_rx,
         web_change_rx,
     }))?;
-    // can't turn this to util::error::Result :/
+    // can't turn these to [util::error::Result]s :/
     ev_thread.join().expect("event loop thread");
+    it_ev_thread.join().expect("interaction event loop thread");
     Ok(())
 }
 
