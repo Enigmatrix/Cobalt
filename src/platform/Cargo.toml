@@ -19,6 +19,7 @@ util = { path = "../util" }
 mime2ext = "0.1.52"
 infer = "0.15.0"
 semver = "1.0.26"
+image = "0.24"
 
 [dependencies.windows-core]
 version = "0.59"
@@ -30,6 +31,7 @@ features = [
     "Win32_UI_WindowsAndMessaging",
     "Win32_Security",
     "Win32_UI_Shell_PropertiesSystem",
+    "Win32_UI_Shell",
     "Win32_Storage_EnhancedStorage",
     "Win32_System_Com_StructuredStorage",
     "Win32_System_Threading",
@@ -40,12 +42,15 @@ features = [
     "Win32_System_WinRT",
     "Win32_System_Time",
     "Win32_Graphics_Gdi",
+    "Win32_Graphics_Imaging",
     "Win32_System_RemoteDesktop",
     "Win32_System_Power",
     "Win32_System_SystemServices",
     "Win32_System_WindowsProgramming",
     "Win32_UI_Accessibility",
     "Win32_System_Com",
+    "Win32_System_Com_StructuredStorage",
+    "Win32_System_Memory",
     "Win32_System_Ole",
     "Win32_System_ProcessStatus",
     "Win32_System_Variant",
