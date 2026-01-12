@@ -19,7 +19,6 @@ util = { path = "../util" }
 mime2ext = "0.1.52"
 infer = "0.15.0"
 semver = "1.0.26"
-image = "0.24"
 
 [dependencies.windows-core]
 version = "0.59"

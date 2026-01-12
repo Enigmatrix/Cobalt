@@ -10,10 +10,10 @@ use windows::Storage::FileProperties::ThumbnailMode;
 use windows::Storage::StorageFile;
 use windows::Storage::Streams::DataReader;
 use windows::Win32::Foundation::{HGLOBAL, SIZE};
-use windows::Win32::Graphics::Gdi::{DeleteObject, HGDIOBJ, HPALETTE};
+use windows::Win32::Graphics::Gdi::{DeleteObject, HBITMAP, HGDIOBJ, HPALETTE};
 use windows::Win32::Graphics::Imaging::{
     self, CLSID_WICImagingFactory, GUID_ContainerFormatPng, IWICBitmap, IWICBitmapEncoder,
-    IWICBitmapFrameEncode, IWICImagingFactory, WICBitmapAlphaChannelOption,
+    IWICBitmapFrameEncode, IWICImagingFactory, WICBitmapUseAlpha,
 };
 use windows::Win32::Storage::Packaging::Appx::{
     PackageNameAndPublisherIdFromFamilyName, ParseApplicationUserModelId,
@@ -240,12 +240,12 @@ impl AppInfo {
 
     async fn uwp_icon(aumid: &str, display_info: &AppDisplayInfo) -> Result<Icon> {
         // Try shell method first for better icon quality
-        if let Ok(icon) = Self::uwp_icon_from_shell(aumid) {
-            return Ok(icon);
-        } else {
-            warn!(
+        match Self::uwp_icon_from_shell(aumid) {
+            Ok(icon) => return Ok(icon),
+            Err(e) => warn!(
+                ?e,
                 "failed to get uwp icon from shell for {aumid:?}, falling back to GetLogo method"
-            );
+            ),
         }
 
         // Fall back to GetLogo method if shell method fails
@@ -274,7 +274,7 @@ impl AppInfo {
 
     fn uwp_icon_from_shell(aumid: &str) -> Result<Icon> {
         // Construct the parsing name: shell:AppsFolder\<AUMID>
-        let parsing_name = format!("shell:AppsFolder\\{}", aumid);
+        let parsing_name = format!("shell:AppsFolder\\{aumid}");
         let parsing_name_hstring = HSTRING::from(&parsing_name);
         let parsing_name_pcwstr = PCWSTR::from_raw(parsing_name_hstring.as_ptr());
 
@@ -290,7 +290,7 @@ impl AppInfo {
             .context("Failed to cast to IShellItemImageFactory")?;
 
         // Get the image as HBITMAP
-        let hbitmap = unsafe {
+        let hbitmap = HBitmapManaged::new(unsafe {
             image_factory
                 .GetImage(
                     SIZE {
@@ -300,7 +300,7 @@ impl AppInfo {
                     SIIGBF_BIGGERSIZEOK | SIIGBF_ICONONLY,
                 )
                 .context("GetImage failed")?
-        };
+        });
 
         // Use WIC to convert HBITMAP to PNG
         let wic_factory: IWICImagingFactory = unsafe {
@@ -308,21 +308,15 @@ impl AppInfo {
                 .context("Failed to create WIC factory")?
         };
 
-        // Create WIC bitmap from HBITMAP (use default palette and alpha channel)
+        // Create WIC bitmap from HBITMAP (use default palette and forced alpha channel)
         let wic_bitmap: IWICBitmap = unsafe {
             wic_factory
-                .CreateBitmapFromHBITMAP(
-                    hbitmap,
-                    HPALETTE::default(),
-                    WICBitmapAlphaChannelOption::default(),
-                )
+                .CreateBitmapFromHBITMAP(hbitmap.inner, HPALETTE::default(), WICBitmapUseAlpha)
                 .context("Failed to create WIC bitmap")?
         };
 
         // Clean up HBITMAP (WIC has its own copy)
-        unsafe {
-            let _ = DeleteObject(HGDIOBJ(hbitmap.0));
-        }
+        drop(hbitmap);
 
         // Create in-memory stream using CreateStreamOnHGlobal
         let stream = unsafe {
@@ -409,8 +403,8 @@ impl AppInfo {
         };
 
         unsafe {
+            // ignore the error
             let _ = GlobalUnlock(stream_hglobal);
-            // Note: hglobal is freed automatically when stream is dropped
         }
 
         Ok(Icon {
@@ -573,5 +567,26 @@ mod tests {
         assert_eq!(app_info.name, "InvalidAUMID");
         assert_eq!(app_info.description, "InvalidAUMID");
         assert_eq!(app_info.company, "");
+    }
+}
+
+struct HBitmapManaged {
+    inner: HBITMAP,
+}
+
+impl HBitmapManaged {
+    pub fn new(hbitmap: HBITMAP) -> Self {
+        Self { inner: hbitmap }
+    }
+}
+
+impl Drop for HBitmapManaged {
+    fn drop(&mut self) {
+        unsafe {
+            DeleteObject(HGDIOBJ(self.inner.0))
+                .ok()
+                .context("Failed to delete HBITMAP")
+                .error();
+        }
     }
 }
