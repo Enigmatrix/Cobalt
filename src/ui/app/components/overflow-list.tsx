@@ -24,29 +24,47 @@ export function HorizontalOverflowList<T>({
   renderItem,
   renderOverflowItem,
   renderOverflowSign,
+  maxItemCount,
 }: {
   className: ClassValue;
   items: T[];
   renderItem: (item: T) => ReactNode;
   renderOverflowItem: (item: T) => ReactNode;
   renderOverflowSign: (overflowItems: T[]) => ReactNode;
+  maxItemCount?: number;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const width = useWidth(ref);
   useLayoutEffect(() => {
     if (!ref.current) return;
-    const items = ref.current.children;
-    const firstItem = items.item(0) as HTMLElement;
+    const renderItems = ref.current.children;
+    const firstItem = renderItems.item(0) as HTMLElement;
     const offsetLeft = firstItem?.offsetLeft;
     const offsetTop = firstItem?.offsetTop;
+    // find the index of the item that wrapped to the next line
     const overflowIndex = _.findIndex(
-      items,
+      renderItems,
       (item) =>
         (item as HTMLElement).offsetLeft === offsetLeft &&
         (item as HTMLElement).offsetTop !== offsetTop,
     );
-    setOverflowIndex(overflowIndex);
-  }, [width]);
+    if (
+      // everything has been rendered on the same line
+      overflowIndex === -1 &&
+      // but there are more items than the maxItemCount
+      maxItemCount !== undefined &&
+      items.length > maxItemCount
+    ) {
+      // we need to show the overflow counter manually
+      setOverflowIndex(maxItemCount);
+    } else {
+      // handles the case when
+      // - everything has been rendered on the same line (no overflow)
+      // - there has been an overflow and items have wrapped to the next line
+      setOverflowIndex(overflowIndex);
+    }
+  }, [width, maxItemCount, items.length]);
+
   const [overflowIndex, setOverflowIndex] = useState(0);
   const overflowItems = useMemo(
     () => items.slice(overflowIndex),
@@ -58,7 +76,7 @@ export function HorizontalOverflowList<T>({
       ref={ref}
       className={cn("flex flex-wrap items-center overflow-hidden", className)}
     >
-      {items.map((item, index) => (
+      {items.slice(0, maxItemCount).map((item, index) => (
         <div className="flex items-center" key={index}>
           {renderItem(item)}
 
