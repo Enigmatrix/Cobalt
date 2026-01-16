@@ -218,6 +218,9 @@ function AlertListItem({ alert }: { alert: Alert }) {
                 <HorizontalOverflowList
                   className="gap-1 h-6"
                   items={tagApps}
+                  // no need to ever render more than 25 apps,
+                  // the screen size will likely never be large enough
+                  maxItemCount={25}
                   renderItem={(app) => <MiniAppItem key={app.id} app={app} />}
                   renderOverflowItem={(app) => (
                     <MiniAppItem key={app.id} app={app} />
