@@ -63,14 +63,7 @@ import {
   ZapIcon,
 } from "lucide-react";
 import { Duration } from "luxon";
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   FormProvider,
   useFieldArray,
@@ -213,28 +206,43 @@ const actionTypes = [
     description: "Screen gradually dims to discourage usage",
     icon: SunIcon,
     defaultAction: {
-      tag: "dim",
-      duration: undefined,
+      tag: "dim" as const,
+      duration: durationToTicks(Duration.fromObject({ minutes: 30 })),
     },
+    videoSrc: dimVideo,
+    videoMessages: [
+      { start: 0.5, end: 15, message: "Websites and apps dim gradually" },
+      {
+        start: 16,
+        end: 20,
+        message: "Switching to other websites changes dim",
+      },
+      { start: 22, end: 26, message: "Works on newly opened websites" },
+    ],
   },
   {
     tag: "message" as const,
     title: "Message",
     description: "Shows a notification with custom message",
     icon: MessageSquareIcon,
-    defaultAction: {
-      tag: "message",
-      content: "",
-    },
+    defaultAction: { tag: "message" as const, content: "" },
+    videoSrc: messageVideo,
+    videoMessages: [
+      { start: 1, end: 6, message: "Notification appears with sound" },
+    ],
   },
   {
     tag: "kill" as const,
     title: "Kill",
     description: "Apps and websites are forcefully closed",
     icon: ZapIcon,
-    defaultAction: {
-      tag: "kill",
-    },
+    defaultAction: { tag: "kill" as const },
+    videoSrc: killVideo,
+    videoMessages: [
+      { start: 2, end: 6, message: "Apps are closed immediately" },
+      { start: 6, end: 8, message: "Websites are closed when opened" },
+      { start: 11, end: 14, message: "Works on newly opened websites" },
+    ],
   },
 ];
 
@@ -1052,57 +1060,6 @@ export function TimeProgressBar({
   );
 }
 
-const videos = [
-  {
-    src: dimVideo,
-    title: "Dim",
-    action: {
-      tag: "dim",
-      duration: durationToTicks(Duration.fromObject({ minutes: 30 })),
-    },
-    description: "Screen gradually dims to discourage usage",
-    messages: [
-      { start: 0.5, end: 15, message: "Websites and apps dim gradually" },
-      {
-        start: 16,
-        end: 20,
-        message: "Switching to other websites changes dim",
-      },
-      { start: 22, end: 26, message: "Works on newly opened websites" },
-    ],
-  },
-  {
-    src: killVideo,
-    title: "Kill",
-    action: { tag: "kill" },
-    description: "Apps and websites are forcefully closed",
-    messages: [
-      {
-        start: 2,
-        end: 6,
-        message: "Apps are closed immediately",
-      },
-      { start: 6, end: 8, message: "Websites are closed when opened" },
-      { start: 11, end: 14, message: "Works on newly opened websites" },
-    ],
-  },
-  {
-    src: messageVideo,
-    title: "Message",
-    action: { tag: "message", content: "" },
-    description: "Shows a notification with custom message",
-    messages: [
-      { start: 1, end: 6, message: "Notification appears with sound" },
-    ],
-  },
-] satisfies {
-  src: string;
-  title: string;
-  action: TriggerAction;
-  description: string;
-  messages: { start: number; end: number; message: ReactNode }[];
-}[];
-
 export function ActionsVideos({
   setTriggerAction,
 }: {
@@ -1111,7 +1068,7 @@ export function ActionsVideos({
   const [api, setApi] = useState<CarouselApi>();
   const [current, setCurrent] = useState(0);
   const [showControls, setShowControls] = useState(false);
-  const [currentMessages, setCurrentMessages] = useState<React.ReactNode[]>([]);
+  const [currentMessages, setCurrentMessages] = useState<string[]>([]);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
 
   useEffect(() => {
@@ -1124,7 +1081,7 @@ export function ActionsVideos({
 
   const handleVideoEnd = useCallback(() => {
     if (api) {
-      const nextIndex = (current + 1) % videos.length;
+      const nextIndex = (current + 1) % actionTypes.length;
       api.scrollTo(nextIndex);
     }
   }, [api, current]);
@@ -1136,8 +1093,8 @@ export function ActionsVideos({
       const videoIndex = parseInt(video.dataset.videoIndex ?? "0");
 
       if (videoIndex === current) {
-        const videoData = videos[videoIndex];
-        const activeMessages = videoData.messages
+        const actionData = actionTypes[videoIndex];
+        const activeMessages = actionData.videoMessages
           .filter((msg) => currentTime >= msg.start && currentTime < msg.end)
           .map((msg) => msg.message);
 
@@ -1173,10 +1130,10 @@ export function ActionsVideos({
           size="sm"
           type="button"
           className="text-xs gap-1.5"
-          onClick={() => setTriggerAction(videos[current].action)}
+          onClick={() => setTriggerAction(actionTypes[current].defaultAction)}
         >
           <PointerIcon className="size-3" />
-          Use {videos[current].title}
+          Use {actionTypes[current].title}
         </Button>
       </div>
 
@@ -1189,7 +1146,7 @@ export function ActionsVideos({
         }}
       >
         <CarouselContent>
-          {videos.map((video, index) => (
+          {actionTypes.map((action, index) => (
             <CarouselItem key={index}>
               <div
                 className="aspect-video rounded-lg overflow-hidden relative bg-black"
@@ -1213,7 +1170,7 @@ export function ActionsVideos({
                   disablePictureInPicture
                   disableRemotePlayback
                 >
-                  <source src={video.src} type="video/mp4" />
+                  <source src={action.videoSrc} type="video/mp4" />
                   Your browser does not support the video tag.
                 </video>
 
@@ -1242,7 +1199,7 @@ export function ActionsVideos({
       {/* Navigation dots and info */}
       <div className="flex items-center justify-between">
         <div className="flex gap-1.5">
-          {videos.map((video, index) => (
+          {actionTypes.map((action, index) => (
             <button
               key={index}
               type="button"
@@ -1253,14 +1210,14 @@ export function ActionsVideos({
                   ? "bg-primary"
                   : "bg-primary/25 hover:bg-primary/50",
               )}
-              aria-label={`Go to ${video.title}`}
+              aria-label={`Go to ${action.title}`}
             />
           ))}
         </div>
         <div className="text-xs text-muted-foreground">
-          <span className="font-medium">{videos[current].title}</span>
+          <span className="font-medium">{actionTypes[current].title}</span>
           <span className="mx-1">—</span>
-          <span>{videos[current].description}</span>
+          <span>{actionTypes[current].description}</span>
         </div>
       </div>
     </div>
