@@ -1,24 +1,30 @@
-import { AlertForm, type FormValues } from "@/components/alert/alert-form";
-import { DurationText } from "@/components/time/duration-text";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  AlertFormContainer,
+  type FormValues,
+} from "@/components/alert/alert-form";
+import AppIcon from "@/components/app/app-icon";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import { Separator } from "@/components/ui/separator";
+import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Text } from "@/components/ui/text";
 import { useZodForm } from "@/hooks/use-form";
 import { useHistoryRef } from "@/hooks/use-history-state";
-import { useAlert } from "@/hooks/use-refresh";
+import { useAlert, useApp, useTag } from "@/hooks/use-refresh";
 import { useTriggerInfo } from "@/hooks/use-trigger-info";
-import type { Alert as AlertEntity, Ref, TriggerAction } from "@/lib/entities";
+import type { Alert as AlertEntity, Ref } from "@/lib/entities";
 import type { UpdatedAlert } from "@/lib/repo";
 import { alertSchema } from "@/lib/schema";
 import { useAppState } from "@/lib/state";
-import {
-  ActionsVideos,
-  AppUsageBarChartView,
-  TimeProgressBar,
-} from "@/routes/alerts/create";
-import { InfoIcon } from "lucide-react";
+import { TagIcon } from "lucide-react";
 import { useCallback, useEffect } from "react";
-import { useFieldArray } from "react-hook-form";
-import { useNavigate } from "react-router";
+import { NavLink, useNavigate } from "react-router";
 import type { Route } from "../alerts/+types/edit";
 
 export default function EditAlerts({ params }: Route.ComponentProps) {
@@ -50,16 +56,19 @@ function EditAlertPage({ alert }: { alert: AlertEntity }) {
 
   const updateAlert = useAppState((state) => state.updateAlert);
   const navigate = useNavigate();
+
+  // For computing trigger info in onSubmit
   const target = form.watch("target");
   const usageLimit = form.watch("usageLimit");
   const timeFrame = form.watch("timeFrame");
   const reminders = form.watch("reminders");
-  const { fields, append, remove, update } = useFieldArray({
-    control: form.control,
-    name: "reminders",
-  });
-
   const triggerInfo = useTriggerInfo(target, usageLimit, timeFrame, reminders);
+
+  // Get target entity for breadcrumb
+  const app = useApp(alert.target.tag === "app" ? alert.target.id : null);
+  const tag = useTag(alert.target.tag === "tag" ? alert.target.id : null);
+  const targetEntity = app ?? tag;
+  const targetName = targetEntity?.name ?? "Unknown";
 
   const onSubmit = useCallback(
     async (values: FormValues) => {
@@ -90,115 +99,58 @@ function EditAlertPage({ alert }: { alert: AlertEntity }) {
     [updateAlert, navigate, triggerInfo, alert],
   );
 
-  const handleReminderUpdate = useCallback(
-    (index: number, threshold: number) => {
-      update(index, { threshold, message: reminders[index].message });
-    },
-    [update, reminders],
-  );
-
-  const setTriggerAction = useCallback(
-    (action: TriggerAction) => {
-      form.setValue("triggerAction", action);
-    },
-    [form],
-  );
-
   return (
     <>
-      <main className="grid grid-cols-[360px_minmax(0,1fr)] h-full ">
-        <div className="max-h-screen overflow-y-auto my-auto">
-          <AlertForm
+      <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+        <SidebarTrigger className="-ml-1" />
+        <Separator orientation="vertical" className="mr-2 h-4" />
+        <Breadcrumb className="overflow-hidden">
+          <BreadcrumbList className="flex-nowrap overflow-hidden">
+            <BreadcrumbItem className="hidden md:block">
+              <BreadcrumbLink asChild>
+                <NavLink to="/alerts">Alerts</NavLink>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator className="hidden md:block" />
+            <BreadcrumbItem className="overflow-hidden">
+              <BreadcrumbLink asChild>
+                <NavLink
+                  to={`/alerts/${alert.id}`}
+                  className="inline-flex items-center overflow-hidden"
+                >
+                  {app && (
+                    <AppIcon
+                      appIcon={app.icon}
+                      className="w-5 h-5 mr-2 shrink-0"
+                    />
+                  )}
+                  {tag && (
+                    <TagIcon
+                      className="w-5 h-5 mr-2 shrink-0"
+                      style={{ color: tag.color }}
+                    />
+                  )}
+                  <Text>{targetName}</Text>
+                </NavLink>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator className="hidden md:block" />
+            <BreadcrumbItem className="overflow-hidden">
+              <BreadcrumbPage>Edit</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+      </header>
+
+      <div className="h-0 flex-auto overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]">
+        <div className="max-w-3xl mx-auto p-4">
+          <AlertFormContainer
             onSubmit={onSubmit}
             form={form}
-            triggerInfo={triggerInfo}
-            remindersFields={fields}
-            remindersAppend={append}
-            remindersRemove={remove}
+            submitButtonText="Save Changes"
           />
         </div>
-        <div className="flex flex-col p-8">
-          <Tabs defaultValue="usage" className="flex-1 flex flex-col">
-            <TabsList className="self-center">
-              <TabsTrigger value="usage">Usage</TabsTrigger>
-              <TabsTrigger value="actions">Actions</TabsTrigger>
-              <TabsTrigger value="reminders">Reminders</TabsTrigger>
-            </TabsList>
-            <TabsContent value="usage" className="flex-1 flex flex-col">
-              <AppUsageBarChartView
-                target={target}
-                usageLimit={usageLimit}
-                timeFrame={timeFrame}
-              />
-            </TabsContent>
-            <TabsContent value="actions">
-              <ActionsVideos setTriggerAction={setTriggerAction} />
-            </TabsContent>
-            <TabsContent value="reminders">
-              <div className="flex h-full">
-                {!usageLimit || !timeFrame || !target ? (
-                  <Alert className="m-auto">
-                    <InfoIcon className="size-4" />
-                    <AlertTitle>Choose options first</AlertTitle>
-                    <AlertDescription>
-                      Select target, period and usage limit to show reminder and
-                      usage progress.
-                    </AlertDescription>
-                  </Alert>
-                ) : (
-                  <div className="flex-1 flex flex-col gap-2 my-auto">
-                    <div className="grid grid-cols-2 gap-4 mb-1">
-                      <div className="flex flex-col">
-                        <span className="text-sm font-medium text-muted-foreground">
-                          Current Usage
-                        </span>
-                        <div className="flex items-baseline gap-2">
-                          <DurationText
-                            className="text-lg font-semibold pr-1"
-                            ticks={triggerInfo.currentUsage}
-                          />
-                          {triggerInfo.currentUsage !== 0 && (
-                            <span
-                              className={`text-sm tabular-nums ${
-                                triggerInfo.currentUsage / usageLimit >= 1
-                                  ? "text-destructive"
-                                  : "text-muted-foreground"
-                              }`}
-                            >
-                              {Math.min(
-                                100,
-                                (triggerInfo.currentUsage / usageLimit) * 100,
-                              ).toFixed(0)}
-                              %
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex flex-col items-end">
-                        <span className="text-sm font-medium text-muted-foreground">
-                          Usage Limit
-                        </span>
-                        <DurationText
-                          className="text-lg font-semibold pl-1"
-                          ticks={usageLimit}
-                        />
-                      </div>
-                    </div>
-                    <TimeProgressBar
-                      usageLimit={usageLimit}
-                      currentUsage={triggerInfo.currentUsage}
-                      reminders={reminders}
-                      circleRadius={12}
-                      onReminderAdd={(v) => append({ ...v })}
-                      onReminderUpdate={handleReminderUpdate}
-                    />
-                  </div>
-                )}
-              </div>
-            </TabsContent>
-          </Tabs>
-        </div>
-      </main>
+      </div>
     </>
   );
 }
