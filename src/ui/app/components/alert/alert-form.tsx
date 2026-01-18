@@ -1,8 +1,29 @@
 import { ChooseTarget } from "@/components/alert/choose-target";
+import dimVideo from "@/components/alert/dim.mp4";
+import killVideo from "@/components/alert/kill.mp4";
+import messageVideo from "@/components/alert/message.mp4";
+import { DateRangePicker } from "@/components/time/date-range-picker";
 import { DurationPicker } from "@/components/time/duration-picker";
+import { DurationText } from "@/components/time/duration-text";
+import { PeriodPicker } from "@/components/time/period-picker";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+  type CarouselApi,
+} from "@/components/ui/carousel";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
@@ -20,41 +41,459 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Timeline,
-  TimelineContent,
-  TimelineHeader,
-  TimelineIndicator,
-  TimelineItem,
-  TimelineSeparator,
-  TimelineTitle,
-} from "@/components/ui/timeline";
-import type { TriggerInfo } from "@/hooks/use-trigger-info";
+import { UsageChart } from "@/components/viz/usage-chart";
+import { useTargetApps } from "@/hooks/use-refresh";
+import { useAppDurationsPerPeriod } from "@/hooks/use-repo";
+import { useIntervalControlsWithDefault } from "@/hooks/use-time";
+import { useTriggerInfo } from "@/hooks/use-trigger-info";
+import { timeFrameToPeriod, type TriggerAction } from "@/lib/entities";
 import { alertSchema } from "@/lib/schema";
-import { durationToTicks, ticksToDuration } from "@/lib/time";
-import { TriangleAlertIcon } from "lucide-react";
-import { useMemo } from "react";
-import type { FieldArrayWithId, UseFormReturn } from "react-hook-form";
+import { durationToTicks, ticksToDuration, type Period } from "@/lib/time";
+import { cn } from "@/lib/utils";
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  InfoIcon,
+  PlusIcon,
+  PointerIcon,
+  TriangleAlertIcon,
+  XIcon,
+} from "lucide-react";
+import { Duration } from "luxon";
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
+import {
+  FormProvider,
+  useFieldArray,
+  useFormContext,
+  useWatch,
+  type UseFormReturn,
+} from "react-hook-form";
 import type { z } from "zod";
 
 export type FormValues = z.infer<typeof alertSchema>;
 
-export function AlertForm({
+export function AlertFormContainer({
   onSubmit,
   form,
-  triggerInfo,
-  remindersFields: fields,
-  remindersAppend: append,
-  remindersRemove: remove,
+  submitButtonText = "Create Alert",
 }: {
   onSubmit: (values: FormValues) => void;
   form: UseFormReturn<FormValues>;
-  triggerInfo: TriggerInfo;
-  remindersFields: FieldArrayWithId<FormValues, "reminders", "id">[];
-  remindersAppend: (value: { threshold: number; message: string }) => void;
-  remindersRemove: (index: number) => void;
+  submitButtonText?: string;
 }) {
-  const timeFrame = form.watch("timeFrame");
+  return (
+    <FormProvider {...form}>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          {/* Card 1: Target, Usage Limit, Time Period with Usage Preview */}
+          <TargetAndUsageCard />
+
+          {/* Card 2: Action with Preview */}
+          <ActionCard />
+
+          {/* Card 3: Reminders with Preview */}
+          <RemindersCard />
+
+          {/* Submit Section */}
+          <SubmitSection submitButtonText={submitButtonText} />
+        </form>
+      </Form>
+    </FormProvider>
+  );
+}
+
+function TargetAndUsageCard() {
+  const { control } = useFormContext<FormValues>();
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Target & Limits</CardTitle>
+        <CardDescription>
+          Choose what to target and set usage limits
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {/* Target Selection */}
+        <FormField
+          control={control}
+          name="target"
+          render={({ field: { value, onChange, ...field } }) => (
+            <FormItem>
+              <FormLabel>Target</FormLabel>
+              <FormControl>
+                <ChooseTarget
+                  {...field}
+                  value={value}
+                  onValueChanged={onChange}
+                  className="w-full justify-start"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Time Period and Usage Limit in a row */}
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={control}
+            name="timeFrame"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Period</FormLabel>
+                <FormControl>
+                  <Select
+                    {...field}
+                    value={field.value}
+                    onValueChange={field.onChange}
+                  >
+                    <SelectTrigger className="hover:bg-muted w-full">
+                      <SelectValue placeholder="Period" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="daily">Daily</SelectItem>
+                      <SelectItem value="weekly">Weekly</SelectItem>
+                      <SelectItem value="monthly">Monthly</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={control}
+            name="usageLimit"
+            render={({ field: { value, onChange, ...field } }) => (
+              <FormItem>
+                <FormLabel>Limit</FormLabel>
+                <FormControl>
+                  <DurationPicker
+                    showIcon={false}
+                    className="w-full text-muted-foreground"
+                    {...field}
+                    value={
+                      value === undefined || value === null
+                        ? null
+                        : ticksToDuration(value)
+                    }
+                    onValueChange={(dur) =>
+                      onChange(!dur ? null : durationToTicks(dur))
+                    }
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        {/* Usage Preview Chart */}
+        <UsagePreview />
+      </CardContent>
+    </Card>
+  );
+}
+
+function ActionCard() {
+  const { control, setValue } = useFormContext<FormValues>();
+
+  const setTriggerAction = useCallback(
+    (action: TriggerAction) => {
+      setValue("triggerAction", action);
+    },
+    [setValue],
+  );
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Action</CardTitle>
+        <CardDescription>
+          What to do when the usage limit is reached
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {/* Action Selection */}
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={control}
+            name="triggerAction"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Type</FormLabel>
+                <FormControl>
+                  <Select
+                    {...field}
+                    value={field.value?.tag}
+                    onValueChange={(v) => {
+                      if (v === "kill") {
+                        field.onChange({ tag: v });
+                      } else if (v === "dim") {
+                        field.onChange({ tag: v, duration: undefined });
+                      } else if (v === "message") {
+                        field.onChange({ tag: v, content: "" });
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="hover:bg-muted w-full">
+                      <SelectValue placeholder="Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="dim">Dim</SelectItem>
+                      <SelectItem value="message">Message</SelectItem>
+                      <SelectItem value="kill">Kill</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Dim Duration Field */}
+          <FormField
+            control={control}
+            name="triggerAction"
+            render={({ field: { value, onChange, ...field } }) => (
+              <>
+                {value?.tag === "dim" && (
+                  <FormItem>
+                    <FormLabel>Dim Duration</FormLabel>
+                    <FormControl>
+                      <DurationPicker
+                        showIcon={false}
+                        className="w-full text-muted-foreground"
+                        {...field}
+                        value={
+                          value?.duration === undefined ||
+                          value?.duration === null
+                            ? null
+                            : ticksToDuration(value.duration)
+                        }
+                        onValueChange={(dur) =>
+                          onChange({
+                            tag: "dim",
+                            duration:
+                              dur === null ? undefined : durationToTicks(dur),
+                          })
+                        }
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              </>
+            )}
+          />
+        </div>
+
+        {/* Message Content Field */}
+        <FormField
+          control={control}
+          name="triggerAction"
+          render={({ field }) => (
+            <>
+              {field.value?.tag === "message" && (
+                <FormItem>
+                  <FormLabel>Message Content</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      value={field.value.content ?? ""}
+                      onChange={(e) =>
+                        field.onChange({
+                          tag: "message",
+                          content: e.target.value,
+                        })
+                      }
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            </>
+          )}
+        />
+
+        {/* Action Videos Preview */}
+        <ActionsVideos setTriggerAction={setTriggerAction} />
+      </CardContent>
+    </Card>
+  );
+}
+
+function RemindersCard() {
+  const { fields, append, remove, update } = useFieldArray<
+    FormValues,
+    "reminders"
+  >({
+    name: "reminders",
+  });
+
+  const reminders = useWatch<FormValues, "reminders">({ name: "reminders" });
+
+  const handleReminderUpdate = useCallback(
+    (index: number, threshold: number) => {
+      update(index, { threshold, message: reminders[index].message });
+    },
+    [update, reminders],
+  );
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-1">
+            <CardTitle>Reminders</CardTitle>
+            <CardDescription>
+              Get notified before reaching your limit
+            </CardDescription>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            type="button"
+            className="shrink-0"
+            onClick={() => append({ threshold: 0.5, message: "" })}
+          >
+            <PlusIcon className="size-4 mr-1" />
+            Add
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {/* Reminders List */}
+        {fields.length > 0 && (
+          <div className="space-y-3">
+            {fields.map((field, index) => (
+              <ReminderItem key={field.id} index={index} remove={remove} />
+            ))}
+          </div>
+        )}
+
+        {/* Reminder Preview */}
+        <ReminderPreview
+          onReminderAdd={(v) => append({ ...v })}
+          onReminderUpdate={handleReminderUpdate}
+        />
+      </CardContent>
+    </Card>
+  );
+}
+
+function ReminderItem({
+  index,
+  remove,
+}: {
+  index: number;
+  remove: (index: number) => void;
+}) {
+  const { control } = useFormContext<FormValues>();
+  const target = useWatch<FormValues, "target">({ name: "target" });
+  const usageLimit = useWatch<FormValues, "usageLimit">({ name: "usageLimit" });
+  const timeFrame = useWatch<FormValues, "timeFrame">({ name: "timeFrame" });
+  const reminders = useWatch<FormValues, "reminders">({ name: "reminders" });
+
+  const triggerInfo = useTriggerInfo(target, usageLimit, timeFrame, reminders);
+  const willTrigger = triggerInfo.reminders[index]?.trigger;
+
+  return (
+    <div
+      className={cn(
+        "flex flex-col gap-3 p-3 rounded-lg border",
+        willTrigger
+          ? "border-amber-500/50 bg-amber-500/5"
+          : "border-border bg-muted/30",
+      )}
+    >
+      <div className="flex items-center gap-2">
+        <Badge variant="outline" className="shrink-0">
+          {index + 1}
+        </Badge>
+        <FormField
+          control={control}
+          name={`reminders.${index}.threshold`}
+          render={({ field }) => (
+            <FormItem className="flex-none">
+              <FormControl>
+                <div className="flex items-center gap-1">
+                  <Input
+                    type="number"
+                    min={0}
+                    max={100}
+                    step="any"
+                    placeholder="%"
+                    className="w-16 text-center"
+                    value={Math.round((field.value || 0) * 100)}
+                    onChange={(e) =>
+                      field.onChange(parseFloat(e.target.value) / 100)
+                    }
+                  />
+                  <span className="text-muted-foreground text-sm">%</span>
+                </div>
+              </FormControl>
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={control}
+          name={`reminders.${index}.message`}
+          render={({ field }) => (
+            <FormItem className="flex-1">
+              <FormControl>
+                <Input placeholder="Reminder message..." {...field} />
+              </FormControl>
+            </FormItem>
+          )}
+        />
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="shrink-0 text-muted-foreground hover:text-destructive"
+          onClick={() => remove(index)}
+        >
+          <XIcon className="size-4" />
+        </Button>
+      </div>
+
+      {/* Validation messages */}
+      <div className="flex flex-col gap-1 empty:hidden">
+        <FormField
+          control={control}
+          name={`reminders.${index}.threshold`}
+          render={() => <FormMessage />}
+        />
+        <FormField
+          control={control}
+          name={`reminders.${index}.message`}
+          render={() => <FormMessage />}
+        />
+      </div>
+    </div>
+  );
+}
+
+function SubmitSection({ submitButtonText }: { submitButtonText: string }) {
+  const { control } = useFormContext<FormValues>();
+  const target = useWatch<FormValues, "target">({ name: "target" });
+  const usageLimit = useWatch<FormValues, "usageLimit">({ name: "usageLimit" });
+  const timeFrame = useWatch<FormValues, "timeFrame">({ name: "timeFrame" });
+  const reminders = useWatch<FormValues, "reminders">({ name: "reminders" });
+
+  const triggerInfo = useTriggerInfo(target, usageLimit, timeFrame, reminders);
+
   const timeFrameText = useMemo(() => {
     switch (timeFrame) {
       case "daily":
@@ -65,394 +504,685 @@ export function AlertForm({
         return "this month";
     }
   }, [timeFrame]);
-  const items = [
-    {
-      id: 1,
-      title: "Target",
-      content: <TargetStepContent form={form} />,
-    },
-    {
-      id: 2,
-      title: "Limit",
-      content: <LimitStepContent form={form} />,
-    },
-    {
-      id: 3,
-      title: "Action",
-      content: <ActionStepContent form={form} />,
-    },
-    {
-      id: 4,
-      title: (
-        <div className="flex">
-          <div>Reminders</div>
-          <Button
-            variant="outline"
-            size="sm"
-            type="button"
-            className="ml-auto"
-            onClick={() => {
-              append({ threshold: 0.5, message: "" });
-            }}
-          >
-            Add
+
+  const hasWarning =
+    triggerInfo.alert || triggerInfo.reminders.some((r) => r.trigger);
+
+  return (
+    <Card>
+      <CardContent>
+        <div className="flex flex-col gap-4">
+          {hasWarning && (
+            <Alert>
+              <TriangleAlertIcon className="h-4 w-4" />
+              <AlertTitle>Warning</AlertTitle>
+              <AlertDescription>
+                {triggerInfo.alert &&
+                triggerInfo.reminders.some((r) => r.trigger) ? (
+                  <div>
+                    This alert and{" "}
+                    {triggerInfo.reminders.filter((r) => r.trigger).length}{" "}
+                    {triggerInfo.reminders.filter((r) => r.trigger).length === 1
+                      ? "reminder"
+                      : "reminders"}{" "}
+                    will immediately trigger once submitted.
+                  </div>
+                ) : triggerInfo.alert &&
+                  triggerInfo.reminders.every((r) => !r.trigger) ? (
+                  <div>This alert will immediately trigger once submitted.</div>
+                ) : triggerInfo.reminders.some((r) => r.trigger) ? (
+                  <div>
+                    {triggerInfo.reminders.filter((r) => r.trigger).length}{" "}
+                    {triggerInfo.reminders.filter((r) => r.trigger).length === 1
+                      ? "reminder"
+                      : "reminders"}{" "}
+                    will immediately trigger once submitted.
+                  </div>
+                ) : null}
+
+                <FormField
+                  control={control}
+                  name="ignoreTrigger"
+                  render={({ field: { value, onChange, ...field } }) => (
+                    <FormItem className="mt-3 flex gap-2 items-center">
+                      <FormControl>
+                        <Checkbox
+                          checked={value}
+                          onCheckedChange={onChange}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormLabel>Ignore for {timeFrameText}</FormLabel>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </AlertDescription>
+            </Alert>
+          )}
+
+          <Button type="submit" className="w-full" size="lg">
+            {submitButtonText}
           </Button>
         </div>
-      ),
-      content: (
-        <RemindersStepContent form={form} fields={fields} remove={remove} />
-      ),
-    },
-    {
-      id: 5,
-      title: (
-        <Button type="submit" className="-mt-1">
-          Submit
-        </Button>
-      ),
-      content:
-        ((triggerInfo.alert ||
-          triggerInfo.reminders.some((r) => r.trigger)) && (
-          <Alert className="mt-2">
-            <TriangleAlertIcon className="h-4 w-4" />
-            <AlertTitle>Warning</AlertTitle>
-            <AlertDescription>
-              {triggerInfo.alert &&
-              triggerInfo.reminders.some((r) => r.trigger) ? (
-                <div>
-                  This alert and{" "}
-                  {triggerInfo.reminders.filter((r) => r.trigger).length}{" "}
-                  {triggerInfo.reminders.filter((r) => r.trigger).length === 1
-                    ? "reminder"
-                    : "reminders"}{" "}
-                  will immediately trigger once submitted.
-                </div>
-              ) : triggerInfo.alert &&
-                triggerInfo.reminders.every((r) => !r.trigger) ? (
-                <div>This alert will immediately trigger once submitted.</div>
-              ) : triggerInfo.reminders.some((r) => r.trigger) ? (
-                <div>
-                  {triggerInfo.reminders.filter((r) => r.trigger).length}{" "}
-                  {triggerInfo.reminders.filter((r) => r.trigger).length === 1
-                    ? "reminder"
-                    : "reminders"}{" "}
-                  will immediately trigger once submitted.
-                </div>
-              ) : null}
-
-              <FormField
-                control={form.control}
-                name="ignoreTrigger"
-                render={({ field: { value, onChange, ...field } }) => (
-                  <FormItem className="mt-4 flex gap-2 items-center">
-                    <FormControl>
-                      <Checkbox
-                        checked={value}
-                        onCheckedChange={onChange}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormLabel>Ignore for {timeFrameText}</FormLabel>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </AlertDescription>
-          </Alert>
-        )) ||
-        null,
-    },
-  ];
-
-  return (
-    <>
-      <Form {...form}>
-        <form
-          onSubmit={form.handleSubmit(onSubmit)}
-          className="space-y-4 p-8 m-auto"
-        >
-          <Timeline value={0}>
-            {items.map((item) => (
-              <TimelineItem key={item.id} step={item.id}>
-                <TimelineHeader>
-                  <TimelineSeparator className="bg-primary/60 mt-2.5 group-data-[orientation=vertical]/timeline:h-[calc(100%-2rem-0.25rem)]" />
-                  <TimelineTitle className="-mt-1/2 text-base">
-                    {item.title}
-                  </TimelineTitle>
-                  <TimelineIndicator className="border-primary/80 group-data-completed/timeline-item:bg-primary group-data-completed/timeline-item:text-primary-foreground flex size-6 items-center justify-center group-data-completed/timeline-item:border-none group-data-[orientation=vertical]/timeline:-left-6" />
-                </TimelineHeader>
-                {item.content && (
-                  <TimelineContent className="mt-2 space-y-4">
-                    {item.content}
-                  </TimelineContent>
-                )}
-              </TimelineItem>
-            ))}
-          </Timeline>
-
-          <div className="flex justify-end mt-4"></div>
-        </form>
-      </Form>
-    </>
+      </CardContent>
+    </Card>
   );
 }
 
-function TargetStepContent({ form }: { form: UseFormReturn<FormValues> }) {
+const hoursInPeriod = (period: Period) => {
+  switch (period) {
+    case "hour":
+      return 1;
+    case "day":
+      return 24;
+    case "week":
+      return 24 * 7;
+    case "month":
+      return 24 * 30;
+    case "year":
+      return 24 * 365;
+  }
+};
+
+function UsagePreview() {
+  const target = useWatch<FormValues, "target">({ name: "target" });
+  const usageLimit = useWatch<FormValues, "usageLimit">({ name: "usageLimit" });
+  const timeFrame = useWatch<FormValues, "timeFrame">({ name: "timeFrame" });
+
+  const [period, setPeriod] = useState<Period>("day");
+
+  const { interval, setInterval, canGoNext, goNext, canGoPrev, goPrev } =
+    useIntervalControlsWithDefault("week");
+
+  const scaledUsageLimit = useMemo(() => {
+    if (!usageLimit || !timeFrame) return undefined;
+
+    const perHourUsageLimit =
+      usageLimit / hoursInPeriod(timeFrameToPeriod(timeFrame));
+    return perHourUsageLimit * hoursInPeriod(period);
+  }, [period, usageLimit, timeFrame]);
+
+  const { ret: appDurationsPerPeriod } = useAppDurationsPerPeriod({
+    ...interval,
+    period,
+  });
+
+  const [yAxisInterval, maxYIsPeriod] = useMemo(() => {
+    switch (period) {
+      case "hour":
+        return [Duration.fromObject({ minutes: 15 }), true];
+      case "day":
+        return [Duration.fromObject({ hours: 2 }), false];
+      case "week":
+        return [Duration.fromObject({ hours: 6 }), false];
+      case "month":
+        return [Duration.fromObject({ days: 1 }), false];
+      default:
+        throw new Error(`Unknown period: ${period}`);
+    }
+  }, [period]);
+
+  const targetApps = useTargetApps(target);
+  const highlightedApps = useMemo(() => {
+    return Object.fromEntries(targetApps?.map((app) => [app.id, true]) ?? []);
+  }, [targetApps]);
+
   return (
-    <FormField
-      control={form.control}
-      name="target"
-      render={({ field: { value, onChange, ...field } }) => (
-        <FormItem>
-          <FormControl>
-            <ChooseTarget
-              {...field}
-              value={value}
-              onValueChanged={onChange}
-              className="w-full justify-start"
-            />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-  );
-}
-
-function LimitStepContent({ form }: { form: UseFormReturn<FormValues> }) {
-  return (
-    <>
-      <FormField
-        control={form.control}
-        name="timeFrame"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Period</FormLabel>
-            <FormControl>
-              <Select
-                {...field}
-                value={field.value}
-                onValueChange={field.onChange}
-              >
-                <SelectTrigger className="hover:bg-muted w-full">
-                  <SelectValue placeholder="Period" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="daily">Daily</SelectItem>
-                  <SelectItem value="weekly">Weekly</SelectItem>
-                  <SelectItem value="monthly">Monthly</SelectItem>
-                </SelectContent>
-              </Select>
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-      <FormField
-        control={form.control}
-        name="usageLimit"
-        render={({ field: { value, onChange, ...field } }) => (
-          <FormItem>
-            <FormLabel>Limit</FormLabel>
-            <FormControl>
-              <DurationPicker
-                showIcon={false}
-                className="w-full text-muted-foreground"
-                {...field}
-                value={
-                  value === undefined || value === null
-                    ? null
-                    : ticksToDuration(value)
-                }
-                onValueChange={(dur) =>
-                  onChange(!dur ? null : durationToTicks(dur))
-                }
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-    </>
-  );
-}
-
-function ActionStepContent({ form }: { form: UseFormReturn<FormValues> }) {
-  return (
-    <>
-      <FormField
-        control={form.control}
-        name="triggerAction"
-        render={({ field }) => (
-          <FormItem>
-            <FormControl>
-              <Select
-                {...field}
-                value={field.value?.tag}
-                onValueChange={(v) => {
-                  // Reset the form when changing action type
-                  if (v === "kill") {
-                    field.onChange({ tag: v });
-                  } else if (v === "dim") {
-                    field.onChange({ tag: v, duration: undefined });
-                  } else if (v === "message") {
-                    field.onChange({ tag: v, content: "" });
-                  }
-                }}
-              >
-                <SelectTrigger className="hover:bg-muted w-full">
-                  <SelectValue placeholder="Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="dim">Dim</SelectItem>
-                  <SelectItem value="message">Message</SelectItem>
-                  <SelectItem value="kill">Kill</SelectItem>
-                </SelectContent>
-              </Select>
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      <FormField
-        control={form.control}
-        name="triggerAction"
-        render={({ field: { value, onChange, ...field } }) => (
-          <>
-            {value?.tag === "dim" && (
-              <FormItem>
-                <FormLabel>Dim Duration</FormLabel>
-                <FormControl>
-                  <DurationPicker
-                    showIcon={false}
-                    className="w-full text-muted-foreground"
-                    {...field}
-                    value={
-                      value?.duration === undefined || value?.duration === null
-                        ? null
-                        : ticksToDuration(value.duration)
-                    }
-                    onValueChange={(dur) =>
-                      onChange({
-                        tag: "dim",
-                        duration:
-                          dur === null ? undefined : durationToTicks(dur),
-                      })
-                    }
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          </>
-        )}
-      />
-
-      <FormField
-        control={form.control}
-        name="triggerAction"
-        render={({ field }) => (
-          <>
-            {field.value?.tag === "message" && (
-              <FormItem>
-                <FormLabel>Message Content</FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    value={field.value.content ?? ""}
-                    onChange={(e) =>
-                      field.onChange({
-                        tag: "message",
-                        content: e.target.value,
-                      })
-                    }
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          </>
-        )}
-      />
-    </>
-  );
-}
-
-function RemindersStepContent({
-  form,
-  fields,
-  remove,
-}: {
-  form: UseFormReturn<FormValues>;
-  fields: FieldArrayWithId<FormValues, "reminders", "id">[];
-  remove: (index: number) => void;
-}) {
-  return (
-    <div className="flex flex-col gap-2">
-      {fields.map((field, index) => (
-        <div key={field.id} className="flex flex-col gap-2">
-          <div className="flex gap-2 items-center">
-            <Badge variant="outline" className="">
-              {index + 1}
-            </Badge>
-            <FormField
-              control={form.control}
-              name={`reminders.${index}.threshold`}
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      min={0}
-                      max={1}
-                      step="any"
-                      placeholder="Threshold (0-1)"
-                      className="w-16"
-                      {...field}
-                      onChange={(e) =>
-                        field.onChange(parseFloat(e.target.value))
-                      }
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name={`reminders.${index}.message`}
-              render={({ field }) => (
-                <FormItem className="flex-1">
-                  <FormControl>
-                    <Input placeholder="Reminder message" {...field} />
-                  </FormControl>
-                </FormItem>
-              )}
+    <div className="rounded-lg border border-border bg-muted/20 p-4 space-y-4">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <span className="text-sm font-medium text-muted-foreground">
+          Usage Preview
+        </span>
+        <div className="flex items-center gap-2">
+          <PeriodPicker period={period} setPeriod={setPeriod} />
+          <div className="flex items-center">
+            <Button
+              variant="ghost"
+              size="icon"
+              type="button"
+              disabled={!canGoPrev}
+              onClick={goPrev}
+              className="h-8 w-8"
+            >
+              <ChevronLeftIcon className="size-4" />
+            </Button>
+            <DateRangePicker
+              value={interval}
+              onChange={setInterval}
+              dayGranularity={true}
+              className="w-auto min-w-28"
             />
             <Button
-              type="button"
-              variant="destructive"
+              variant="ghost"
               size="icon"
-              onClick={() => remove(index)}
+              type="button"
+              disabled={!canGoNext}
+              onClick={goNext}
+              className="h-8 w-8"
             >
-              <span className="sr-only">Delete reminder</span>×
+              <ChevronRightIcon className="size-4" />
             </Button>
           </div>
+        </div>
+      </div>
+      <div className="aspect-[2/1] min-h-[200px]">
+        <UsageChart
+          appDurationsPerPeriod={appDurationsPerPeriod}
+          highlightedApps={highlightedApps}
+          markerLines={
+            scaledUsageLimit
+              ? [
+                  {
+                    yAxis: scaledUsageLimit,
+                    type: "dashed",
+                  },
+                ]
+              : undefined
+          }
+          period={period}
+          start={interval.start}
+          end={interval.end}
+          className="w-full h-full"
+          maxYIsPeriod={maxYIsPeriod}
+          yAxisInterval={yAxisInterval}
+          animationsEnabled={false}
+          barRadius={3}
+        />
+      </div>
+    </div>
+  );
+}
 
-          <div className="flex flex-col">
-            <FormField
-              control={form.control}
-              name={`reminders.${index}.threshold`}
-              render={() => <FormMessage />}
+function ReminderPreview({
+  onReminderAdd,
+  onReminderUpdate,
+}: {
+  onReminderAdd?: (params: { threshold: number; message: string }) => void;
+  onReminderUpdate?: (index: number, threshold: number) => void;
+}) {
+  const target = useWatch<FormValues, "target">({ name: "target" });
+  const usageLimit = useWatch<FormValues, "usageLimit">({ name: "usageLimit" });
+  const timeFrame = useWatch<FormValues, "timeFrame">({ name: "timeFrame" });
+  const reminders = useWatch<FormValues, "reminders">({ name: "reminders" });
+
+  const triggerInfo = useTriggerInfo(target, usageLimit, timeFrame, reminders);
+
+  if (!usageLimit || !timeFrame || !target) {
+    return (
+      <div className="rounded-lg border border-dashed border-border p-6 text-center">
+        <InfoIcon className="size-8 mx-auto mb-2 text-muted-foreground/50" />
+        <p className="text-sm text-muted-foreground">
+          Select target, period and usage limit to show reminder preview
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-lg border border-border bg-muted/20 p-4 space-y-4">
+      {/* Current Usage Stats */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="flex flex-col">
+          <span className="text-xs font-medium text-muted-foreground">
+            Current Usage
+          </span>
+          <div className="flex items-baseline gap-2">
+            <DurationText
+              className="text-lg font-semibold"
+              ticks={triggerInfo.currentUsage}
             />
-            <FormField
-              control={form.control}
-              name={`reminders.${index}.message`}
-              render={() => <FormMessage />}
-            />
+            {triggerInfo.currentUsage !== 0 && (
+              <span
+                className={cn(
+                  "text-sm tabular-nums",
+                  triggerInfo.currentUsage / usageLimit >= 1
+                    ? "text-destructive"
+                    : "text-muted-foreground",
+                )}
+              >
+                {Math.min(
+                  100,
+                  (triggerInfo.currentUsage / usageLimit) * 100,
+                ).toFixed(0)}
+                %
+              </span>
+            )}
           </div>
         </div>
-      ))}
+        <div className="flex flex-col items-end">
+          <span className="text-xs font-medium text-muted-foreground">
+            Usage Limit
+          </span>
+          <DurationText className="text-lg font-semibold" ticks={usageLimit} />
+        </div>
+      </div>
+
+      {/* Interactive Progress Bar */}
+      <TimeProgressBar
+        usageLimit={usageLimit}
+        currentUsage={triggerInfo.currentUsage}
+        reminders={reminders}
+        circleRadius={10}
+        onReminderAdd={onReminderAdd}
+        onReminderUpdate={onReminderUpdate}
+      />
+    </div>
+  );
+}
+
+export function TimeProgressBar({
+  usageLimit,
+  currentUsage,
+  reminders,
+  circleRadius,
+  onReminderAdd,
+  onReminderUpdate,
+}: {
+  usageLimit: number;
+  currentUsage: number;
+  reminders: { id?: number; threshold: number; message: string }[];
+  circleRadius: number;
+  onReminderAdd?: (params: { threshold: number; message: string }) => void;
+  onReminderUpdate?: (index: number, threshold: number) => void;
+}) {
+  const percentage = (currentUsage / usageLimit) * 100;
+  const progressBarRef = useRef<HTMLDivElement>(null);
+
+  const [hoverState, setHoverState] = useState<{ x: number; visible: boolean }>(
+    { x: 0, visible: false },
+  );
+  const [dragState, setDragState] = useState<{ index: number | null }>({
+    index: null,
+  });
+  const preventNextClick = useRef(false);
+
+  const getThresholdFromEvent = useCallback((e: React.MouseEvent) => {
+    if (!progressBarRef.current) return 0;
+    const rect = progressBarRef.current.getBoundingClientRect();
+    return Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+  }, []);
+
+  const getPercentageFromEvent = useCallback((e: React.MouseEvent) => {
+    if (!progressBarRef.current) return 0;
+    const rect = progressBarRef.current.getBoundingClientRect();
+    return Math.max(
+      0,
+      Math.min(100, ((e.clientX - rect.left) / rect.width) * 100),
+    );
+  }, []);
+
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent) => {
+      if (dragState.index !== null) {
+        if (onReminderUpdate) {
+          onReminderUpdate(dragState.index, getThresholdFromEvent(e));
+        }
+      } else {
+        setHoverState({ x: getPercentageFromEvent(e), visible: true });
+      }
+    },
+    [
+      dragState.index,
+      onReminderUpdate,
+      getThresholdFromEvent,
+      getPercentageFromEvent,
+    ],
+  );
+
+  const handleMouseLeave = useCallback(() => {
+    if (dragState.index === null) {
+      setHoverState((prev) => ({ ...prev, visible: false }));
+    }
+  }, [dragState.index]);
+
+  const handleMouseDown = useCallback((e: React.MouseEvent, index: number) => {
+    e.stopPropagation();
+    setDragState({ index });
+  }, []);
+
+  const handleMouseUp = useCallback(() => {
+    if (dragState.index !== null) {
+      preventNextClick.current = true;
+      setTimeout(() => {
+        preventNextClick.current = false;
+      }, 0);
+    }
+    setDragState({ index: null });
+  }, [dragState.index]);
+
+  const handleClick = useCallback(
+    (e: React.MouseEvent) => {
+      if (
+        !onReminderAdd ||
+        dragState.index !== null ||
+        preventNextClick.current
+      )
+        return;
+      onReminderAdd({ threshold: getThresholdFromEvent(e), message: "" });
+    },
+    [onReminderAdd, dragState.index, getThresholdFromEvent],
+  );
+
+  useEffect(() => {
+    if (dragState.index !== null) {
+      const handleGlobalMouseUp = () => handleMouseUp();
+      document.addEventListener("mouseup", handleGlobalMouseUp);
+      return () => document.removeEventListener("mouseup", handleGlobalMouseUp);
+    }
+  }, [dragState.index, handleMouseUp]);
+
+  const renderReminder = useCallback(
+    (reminder: { threshold: number; message: string }, index: number) => {
+      const isDragging = dragState.index === index;
+      return (
+        <Fragment key={index}>
+          <div
+            className={cn(
+              "absolute top-1/2 bg-primary border-2 border-background rounded-full cursor-move transition-shadow z-10",
+              isDragging
+                ? "ring-2 ring-primary shadow-lg scale-110"
+                : "hover:ring-1 hover:ring-primary/50 hover:scale-105",
+            )}
+            style={{
+              left: `${reminder.threshold * 100}%`,
+              width: circleRadius * 2,
+              height: circleRadius * 2,
+              transform: `translate(-${circleRadius}px, -50%)`,
+            }}
+            onMouseDown={(e) => handleMouseDown(e, index)}
+          />
+          <div
+            className="absolute text-popover-foreground bg-popover border border-border rounded-md shadow-lg max-w-[180px] z-20"
+            style={{
+              left: `${reminder.threshold * 100}%`,
+              transform: `translate(-50%, 8px)`,
+            }}
+          >
+            <div className="absolute border-border bg-popover size-2 -translate-y-1/2 -translate-x-1/2 left-1/2 rotate-45 rounded-[2px] border-l border-t" />
+            <div className="p-2 space-y-0.5">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold">
+                  {`${((reminder.threshold || 0) * 100).toFixed(0)}%`}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  <DurationText
+                    ticks={(reminder.threshold || 0) * usageLimit}
+                  />
+                </span>
+              </div>
+              {reminder.message && (
+                <p className="text-xs line-clamp-2 break-words text-muted-foreground">
+                  {reminder.message}
+                </p>
+              )}
+            </div>
+          </div>
+        </Fragment>
+      );
+    },
+    [circleRadius, dragState.index, usageLimit, handleMouseDown],
+  );
+
+  const isInteractive = onReminderAdd ?? onReminderUpdate;
+
+  return (
+    <div
+      ref={progressBarRef}
+      className={cn(
+        "relative w-full bg-secondary h-6 rounded-md my-2",
+        isInteractive && "cursor-crosshair",
+      )}
+      onMouseMove={isInteractive ? handleMouseMove : undefined}
+      onMouseLeave={isInteractive ? handleMouseLeave : undefined}
+      onClick={isInteractive ? handleClick : undefined}
+      onMouseUp={isInteractive ? handleMouseUp : undefined}
+    >
+      {/* Progress bar */}
+      <div
+        className={cn(
+          "h-full rounded-md transition-all",
+          percentage >= 100 ? "bg-destructive/80" : "bg-primary/80",
+        )}
+        style={{ width: `${Math.min(100, percentage)}%` }}
+      />
+
+      {/* Hover indicator */}
+      {hoverState.visible &&
+        dragState.index === null &&
+        !preventNextClick.current &&
+        isInteractive && (
+          <div
+            className="absolute top-1/2 bg-primary/30 border border-primary/50 rounded-full flex items-center justify-center 
+            cursor-pointer hover:bg-primary/40 transition-all hover:scale-110"
+            style={{
+              left: `${hoverState.x}%`,
+              width: circleRadius * 2,
+              height: circleRadius * 2,
+              transform: `translate(-${circleRadius}px, -50%)`,
+            }}
+          >
+            <PlusIcon className="size-3 text-primary" />
+          </div>
+        )}
+
+      {/* Reminder markers */}
+      {reminders.map((reminder, index) => renderReminder(reminder, index))}
+    </div>
+  );
+}
+
+const videos = [
+  {
+    src: dimVideo,
+    title: "Dim",
+    action: {
+      tag: "dim",
+      duration: durationToTicks(Duration.fromObject({ minutes: 30 })),
+    },
+    description: "Screen gradually dims to discourage usage",
+    messages: [
+      { start: 0.5, end: 15, message: "Websites and apps dim gradually" },
+      {
+        start: 16,
+        end: 20,
+        message: "Switching to other websites changes dim",
+      },
+      { start: 22, end: 26, message: "Works on newly opened websites" },
+    ],
+  },
+  {
+    src: killVideo,
+    title: "Kill",
+    action: { tag: "kill" },
+    description: "Apps and websites are forcefully closed",
+    messages: [
+      {
+        start: 2,
+        end: 6,
+        message: "Apps are closed immediately",
+      },
+      { start: 6, end: 8, message: "Websites are closed when opened" },
+      { start: 11, end: 14, message: "Works on newly opened websites" },
+    ],
+  },
+  {
+    src: messageVideo,
+    title: "Message",
+    action: { tag: "message", content: "" },
+    description: "Shows a notification with custom message",
+    messages: [
+      { start: 1, end: 6, message: "Notification appears with sound" },
+    ],
+  },
+] satisfies {
+  src: string;
+  title: string;
+  action: TriggerAction;
+  description: string;
+  messages: { start: number; end: number; message: ReactNode }[];
+}[];
+
+export function ActionsVideos({
+  setTriggerAction,
+}: {
+  setTriggerAction: (action: TriggerAction) => void;
+}) {
+  const [api, setApi] = useState<CarouselApi>();
+  const [current, setCurrent] = useState(0);
+  const [showControls, setShowControls] = useState(false);
+  const [currentMessages, setCurrentMessages] = useState<React.ReactNode[]>([]);
+  const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
+
+  useEffect(() => {
+    if (!api) return;
+
+    api.on("select", () => {
+      setCurrent(api.selectedScrollSnap());
+    });
+  }, [api]);
+
+  const handleVideoEnd = useCallback(() => {
+    if (api) {
+      const nextIndex = (current + 1) % videos.length;
+      api.scrollTo(nextIndex);
+    }
+  }, [api, current]);
+
+  const handleTimeUpdate = useCallback(
+    (event: React.SyntheticEvent<HTMLVideoElement>) => {
+      const video = event.currentTarget;
+      const currentTime = video.currentTime;
+      const videoIndex = parseInt(video.dataset.videoIndex ?? "0");
+
+      if (videoIndex === current) {
+        const videoData = videos[videoIndex];
+        const activeMessages = videoData.messages
+          .filter((msg) => currentTime >= msg.start && currentTime < msg.end)
+          .map((msg) => msg.message);
+
+        setCurrentMessages(activeMessages);
+      }
+    },
+    [current],
+  );
+
+  useEffect(() => {
+    videoRefs.current.forEach((videoRef, index) => {
+      if (videoRef) {
+        if (index === current) {
+          videoRef.play().catch(console.error);
+        } else {
+          videoRef.pause();
+          videoRef.currentTime = 0;
+        }
+      }
+    });
+
+    setCurrentMessages([]);
+  }, [current]);
+
+  return (
+    <div className="rounded-lg border border-border bg-muted/20 p-4 space-y-4">
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-medium text-muted-foreground">
+          Action Preview
+        </span>
+        <Button
+          variant="outline"
+          size="sm"
+          type="button"
+          className="text-xs gap-1.5"
+          onClick={() => setTriggerAction(videos[current].action)}
+        >
+          <PointerIcon className="size-3" />
+          Use {videos[current].title}
+        </Button>
+      </div>
+
+      <Carousel
+        setApi={setApi}
+        className="w-full"
+        opts={{
+          align: "start",
+          loop: true,
+        }}
+      >
+        <CarouselContent>
+          {videos.map((video, index) => (
+            <CarouselItem key={index}>
+              <div
+                className="aspect-video rounded-lg overflow-hidden relative bg-black"
+                onMouseEnter={() => setShowControls(true)}
+                onMouseLeave={() => setShowControls(false)}
+              >
+                <video
+                  ref={(el) => {
+                    videoRefs.current[index] = el;
+                  }}
+                  data-video-index={index}
+                  className="w-full object-fill aspect-video"
+                  autoPlay={index === current}
+                  muted
+                  loop={false}
+                  onEnded={handleVideoEnd}
+                  onTimeUpdate={handleTimeUpdate}
+                  playsInline
+                  controls={showControls}
+                  controlsList="nodownload nofullscreen noplaybackrate noremoteplayback"
+                  disablePictureInPicture
+                  disableRemotePlayback
+                >
+                  <source src={video.src} type="video/mp4" />
+                  Your browser does not support the video tag.
+                </video>
+
+                {/* Messages overlay */}
+                {index === current && currentMessages.length > 0 && (
+                  <div className="absolute top-3 right-3 z-10 space-y-2">
+                    {currentMessages.map((message, msgIndex) => (
+                      <div
+                        key={msgIndex}
+                        className="bg-background/80 backdrop-blur-sm border rounded-md px-2 py-1.5 text-xs text-foreground inline-flex items-center gap-1.5"
+                      >
+                        <InfoIcon className="size-3.5 shrink-0 text-blue-400" />
+                        {message}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </CarouselItem>
+          ))}
+        </CarouselContent>
+        <CarouselPrevious type="button" className="-left-3" />
+        <CarouselNext type="button" className="-right-3" />
+      </Carousel>
+
+      {/* Navigation dots and info */}
+      <div className="flex items-center justify-between">
+        <div className="flex gap-1.5">
+          {videos.map((video, index) => (
+            <button
+              key={index}
+              type="button"
+              onClick={() => api?.scrollTo(index)}
+              className={cn(
+                "w-2 h-2 rounded-full transition-colors",
+                index === current
+                  ? "bg-primary"
+                  : "bg-primary/25 hover:bg-primary/50",
+              )}
+              aria-label={`Go to ${video.title}`}
+            />
+          ))}
+        </div>
+        <div className="text-xs text-muted-foreground">
+          <span className="font-medium">{videos[current].title}</span>
+          <span className="mx-1">—</span>
+          <span>{videos[current].description}</span>
+        </div>
+      </div>
     </div>
   );
 }
