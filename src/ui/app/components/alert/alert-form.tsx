@@ -65,7 +65,6 @@ import {
 import { Duration } from "luxon";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  FormProvider,
   useFieldArray,
   useFormContext,
   useWatch,
@@ -85,23 +84,21 @@ export function AlertFormContainer({
   submitButtonText?: string;
 }) {
   return (
-    <FormProvider {...form}>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          {/* Card 1: Target, Usage Limit, Time Period with Usage Preview */}
-          <TargetAndUsageCard />
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        {/* Card 1: Target, Usage Limit, Time Period with Usage Preview */}
+        <TargetAndUsageCard />
 
-          {/* Card 2: Action with Preview */}
-          <ActionCard />
+        {/* Card 2: Action with Preview */}
+        <ActionCard />
 
-          {/* Card 3: Reminders with Preview */}
-          <RemindersCard />
+        {/* Card 3: Reminders with Preview */}
+        <RemindersCard />
 
-          {/* Submit Section */}
-          <SubmitSection submitButtonText={submitButtonText} />
-        </form>
-      </Form>
-    </FormProvider>
+        {/* Submit Section */}
+        <SubmitSection submitButtonText={submitButtonText} />
+      </form>
+    </Form>
   );
 }
 
