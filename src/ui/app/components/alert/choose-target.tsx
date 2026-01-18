@@ -189,7 +189,9 @@ function ChooseTargetTrigger({
           <ScoreCircle score={tag.score} />
         </>
       ) : (
-        (placeholder ?? <Text>Choose Target</Text>)
+        (placeholder ?? (
+          <Text className="text-muted-foreground">Choose Target</Text>
+        ))
       )}
     </Button>
   );

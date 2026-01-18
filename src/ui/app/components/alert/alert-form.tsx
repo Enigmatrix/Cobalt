@@ -180,7 +180,7 @@ function TargetAndUsageCard() {
                 <FormControl>
                   <DurationPicker
                     showIcon={false}
-                    className="w-full text-muted-foreground"
+                    className="w-full"
                     {...field}
                     value={
                       value === undefined || value === null
