@@ -64,7 +64,6 @@ import {
 } from "lucide-react";
 import { Duration } from "luxon";
 import {
-  Fragment,
   useCallback,
   useEffect,
   useMemo,
@@ -831,7 +830,6 @@ function ReminderPreview({
         usageLimit={usageLimit}
         currentUsage={triggerInfo.currentUsage}
         reminders={reminders}
-        circleRadius={10}
         onReminderAdd={onReminderAdd}
         onReminderUpdate={onReminderUpdate}
       />
@@ -843,14 +841,12 @@ export function TimeProgressBar({
   usageLimit,
   currentUsage,
   reminders,
-  circleRadius,
   onReminderAdd,
   onReminderUpdate,
 }: {
   usageLimit: number;
   currentUsage: number;
   reminders: { id?: number; threshold: number; message: string }[];
-  circleRadius: number;
   onReminderAdd?: (params: { threshold: number; message: string }) => void;
   onReminderUpdate?: (index: number, threshold: number) => void;
 }) {
@@ -863,6 +859,7 @@ export function TimeProgressBar({
   const [dragState, setDragState] = useState<{ index: number | null }>({
     index: null,
   });
+  const [hoveredTooltip, setHoveredTooltip] = useState<number | null>(null);
   const preventNextClick = useRef(false);
 
   const getThresholdFromEvent = useCallback((e: React.MouseEvent) => {
@@ -940,67 +937,25 @@ export function TimeProgressBar({
     }
   }, [dragState.index, handleMouseUp]);
 
-  const renderReminder = useCallback(
-    (reminder: { threshold: number; message: string }, index: number) => {
-      const isDragging = dragState.index === index;
-      return (
-        <Fragment key={index}>
-          <div
-            className={cn(
-              "absolute top-1/2 bg-primary border-2 border-background rounded-full cursor-move transition-shadow z-10",
-              isDragging
-                ? "ring-2 ring-primary shadow-lg scale-110"
-                : "hover:ring-1 hover:ring-primary/50 hover:scale-105",
-            )}
-            style={{
-              left: `${reminder.threshold * 100}%`,
-              width: circleRadius * 2,
-              height: circleRadius * 2,
-              transform: `translate(-${circleRadius}px, -50%)`,
-            }}
-            onMouseDown={(e) => handleMouseDown(e, index)}
-          />
-          <div
-            className="absolute text-popover-foreground bg-popover border border-border rounded-md shadow-lg max-w-[180px] z-20"
-            style={{
-              left: `${reminder.threshold * 100}%`,
-              transform: `translate(-50%, 8px)`,
-            }}
-          >
-            <div className="absolute border-border bg-popover size-2 -translate-y-1/2 -translate-x-1/2 left-1/2 rotate-45 rounded-[2px] border-l border-t" />
-            <div className="p-2 space-y-0.5">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold">
-                  {`${((reminder.threshold || 0) * 100).toFixed(0)}%`}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  <DurationText
-                    ticks={(reminder.threshold || 0) * usageLimit}
-                  />
-                </span>
-              </div>
-              {reminder.message && (
-                <p className="text-xs line-clamp-2 break-words text-muted-foreground">
-                  {reminder.message}
-                </p>
-              )}
-            </div>
-          </div>
-        </Fragment>
-      );
-    },
-    [circleRadius, dragState.index, usageLimit, handleMouseDown],
-  );
-
   const isInteractive = onReminderAdd ?? onReminderUpdate;
+
+  // Calculate z-index based on threshold (higher threshold = higher z-index)
+  const getZIndex = useCallback(
+    (threshold: number, index: number) => {
+      const baseZ = Math.round(threshold * 100) + 10;
+      // Hovered or dragged tooltip gets max z-index
+      if (hoveredTooltip === index || dragState.index === index) {
+        return 200;
+      }
+      return baseZ;
+    },
+    [hoveredTooltip, dragState.index],
+  );
 
   return (
     <div
       ref={progressBarRef}
-      className={cn(
-        "relative w-full bg-secondary h-6 rounded-md my-2",
-        isInteractive && "cursor-crosshair",
-      )}
+      className={cn("relative w-full bg-secondary h-3 rounded-full my-6")}
       onMouseMove={isInteractive ? handleMouseMove : undefined}
       onMouseLeave={isInteractive ? handleMouseLeave : undefined}
       onClick={isInteractive ? handleClick : undefined}
@@ -1009,7 +964,7 @@ export function TimeProgressBar({
       {/* Progress bar */}
       <div
         className={cn(
-          "h-full rounded-md transition-all",
+          "h-full transition-all",
           percentage >= 100 ? "bg-destructive/80" : "bg-primary/80",
         )}
         style={{ width: `${Math.min(100, percentage)}%` }}
@@ -1021,21 +976,78 @@ export function TimeProgressBar({
         !preventNextClick.current &&
         isInteractive && (
           <div
-            className="absolute top-1/2 bg-primary/30 border border-primary/50 rounded-full flex items-center justify-center 
-            cursor-pointer hover:bg-primary/40 transition-all hover:scale-110"
-            style={{
-              left: `${hoverState.x}%`,
-              width: circleRadius * 2,
-              height: circleRadius * 2,
-              transform: `translate(-${circleRadius}px, -50%)`,
-            }}
+            className="absolute top-1/2 -translate-y-1/2 w-0.5 h-5 bg-primary/50 rounded-full"
+            style={{ left: `${hoverState.x}%` }}
           >
-            <PlusIcon className="size-3 text-primary" />
+            <div className="absolute -top-1 left-1/2 -translate-x-1/2">
+              <PlusIcon className="size-3 text-primary" />
+            </div>
           </div>
         )}
 
       {/* Reminder markers */}
-      {reminders.map((reminder, index) => renderReminder(reminder, index))}
+      {reminders.map((reminder, index) => {
+        const isDragging = dragState.index === index;
+        const isHovered = hoveredTooltip === index;
+        const zIndex = getZIndex(reminder.threshold, index);
+
+        return (
+          <div
+            key={index}
+            className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2"
+            style={{
+              left: `${reminder.threshold * 100}%`,
+              zIndex,
+            }}
+            onMouseEnter={() => setHoveredTooltip(index)}
+            onMouseLeave={() => setHoveredTooltip(null)}
+          >
+            {/* Thin vertical marker */}
+            <div
+              className={cn(
+                "w-1 h-5 rounded-full transition-all",
+                isDragging
+                  ? "bg-primary scale-x-150 shadow-lg"
+                  : isHovered
+                    ? "bg-primary scale-x-125"
+                    : "bg-primary/80 hover:bg-primary",
+              )}
+              onMouseDown={(e) => handleMouseDown(e, index)}
+            />
+
+            {/* Tooltip */}
+            <div
+              className={cn(
+                "absolute left-1/2 -translate-x-1/2 top-full mt-1.5 transition-opacity",
+                isDragging || isHovered ? "opacity-100" : "opacity-80",
+              )}
+            >
+              <div className="relative bg-popover text-popover-foreground border border-border rounded-md shadow-lg min-w-[100px] max-w-[160px]">
+                {/* Arrow */}
+                <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-popover border-l border-t border-border rotate-45 rounded-tl-sm" />
+                {/* Content */}
+                <div className="relative p-2 space-y-0.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-semibold tabular-nums">
+                      {((reminder.threshold || 0) * 100).toFixed(0)}%
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      <DurationText
+                        ticks={(reminder.threshold || 0) * usageLimit}
+                      />
+                    </span>
+                  </div>
+                  {reminder.message && (
+                    <p className="text-xs line-clamp-2 break-words text-muted-foreground">
+                      {reminder.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
