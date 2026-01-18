@@ -63,7 +63,7 @@ import {
   ZapIcon,
 } from "lucide-react";
 import { Duration } from "luxon";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   FormProvider,
   useFieldArray,
@@ -660,7 +660,7 @@ const hoursInPeriod = (period: Period) => {
   }
 };
 
-function UsagePreview() {
+const UsagePreview = memo(() => {
   const target = useWatch<FormValues, "target">({ name: "target" });
   const usageLimit = useWatch<FormValues, "usageLimit">({ name: "usageLimit" });
   const timeFrame = useWatch<FormValues, "timeFrame">({ name: "timeFrame" });
@@ -703,6 +703,42 @@ function UsagePreview() {
     return Object.fromEntries(targetApps?.map((app) => [app.id, true]) ?? []);
   }, [targetApps]);
 
+  const usageChart = useMemo(() => {
+    return (
+      <UsageChart
+        appDurationsPerPeriod={appDurationsPerPeriod}
+        highlightedApps={highlightedApps}
+        markerLines={
+          scaledUsageLimit
+            ? [
+                {
+                  yAxis: scaledUsageLimit,
+                  type: "dashed",
+                },
+              ]
+            : undefined
+        }
+        period={period}
+        start={interval.start}
+        end={interval.end}
+        className="w-full h-full"
+        maxYIsPeriod={maxYIsPeriod}
+        yAxisInterval={yAxisInterval}
+        animationsEnabled={false}
+        barRadius={3}
+      />
+    );
+  }, [
+    appDurationsPerPeriod,
+    highlightedApps,
+    scaledUsageLimit,
+    period,
+    interval.start,
+    interval.end,
+    maxYIsPeriod,
+    yAxisInterval,
+  ]);
+
   return (
     <div className="rounded-lg border border-border bg-muted/20 p-4 space-y-4">
       <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -741,33 +777,10 @@ function UsagePreview() {
           </div>
         </div>
       </div>
-      <div className="aspect-[2/1] min-h-[200px]">
-        <UsageChart
-          appDurationsPerPeriod={appDurationsPerPeriod}
-          highlightedApps={highlightedApps}
-          markerLines={
-            scaledUsageLimit
-              ? [
-                  {
-                    yAxis: scaledUsageLimit,
-                    type: "dashed",
-                  },
-                ]
-              : undefined
-          }
-          period={period}
-          start={interval.start}
-          end={interval.end}
-          className="w-full h-full"
-          maxYIsPeriod={maxYIsPeriod}
-          yAxisInterval={yAxisInterval}
-          animationsEnabled={false}
-          barRadius={3}
-        />
-      </div>
+      <div className="aspect-[2/1] min-h-[200px]">{usageChart}</div>
     </div>
   );
-}
+});
 
 function ReminderPreview({
   onReminderAdd,
@@ -1060,166 +1073,168 @@ export function TimeProgressBar({
   );
 }
 
-export function ActionsVideos({
-  setTriggerAction,
-}: {
-  setTriggerAction: (action: TriggerAction) => void;
-}) {
-  const [api, setApi] = useState<CarouselApi>();
-  const [current, setCurrent] = useState(0);
-  const [showControls, setShowControls] = useState(false);
-  const [currentMessages, setCurrentMessages] = useState<string[]>([]);
-  const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
+const ActionsVideos = memo(
+  ({
+    setTriggerAction,
+  }: {
+    setTriggerAction: (action: TriggerAction) => void;
+  }) => {
+    const [api, setApi] = useState<CarouselApi>();
+    const [current, setCurrent] = useState(0);
+    const [showControls, setShowControls] = useState(false);
+    const [currentMessages, setCurrentMessages] = useState<string[]>([]);
+    const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
 
-  useEffect(() => {
-    if (!api) return;
+    useEffect(() => {
+      if (!api) return;
 
-    api.on("select", () => {
-      setCurrent(api.selectedScrollSnap());
-    });
-  }, [api]);
+      api.on("select", () => {
+        setCurrent(api.selectedScrollSnap());
+      });
+    }, [api]);
 
-  const handleVideoEnd = useCallback(() => {
-    if (api) {
-      const nextIndex = (current + 1) % actionTypes.length;
-      api.scrollTo(nextIndex);
-    }
-  }, [api, current]);
-
-  const handleTimeUpdate = useCallback(
-    (event: React.SyntheticEvent<HTMLVideoElement>) => {
-      const video = event.currentTarget;
-      const currentTime = video.currentTime;
-      const videoIndex = parseInt(video.dataset.videoIndex ?? "0");
-
-      if (videoIndex === current) {
-        const actionData = actionTypes[videoIndex];
-        const activeMessages = actionData.videoMessages
-          .filter((msg) => currentTime >= msg.start && currentTime < msg.end)
-          .map((msg) => msg.message);
-
-        setCurrentMessages(activeMessages);
+    const handleVideoEnd = useCallback(() => {
+      if (api) {
+        const nextIndex = (current + 1) % actionTypes.length;
+        api.scrollTo(nextIndex);
       }
-    },
-    [current],
-  );
+    }, [api, current]);
 
-  useEffect(() => {
-    videoRefs.current.forEach((videoRef, index) => {
-      if (videoRef) {
-        if (index === current) {
-          videoRef.play().catch(console.error);
-        } else {
-          videoRef.pause();
-          videoRef.currentTime = 0;
+    const handleTimeUpdate = useCallback(
+      (event: React.SyntheticEvent<HTMLVideoElement>) => {
+        const video = event.currentTarget;
+        const currentTime = video.currentTime;
+        const videoIndex = parseInt(video.dataset.videoIndex ?? "0");
+
+        if (videoIndex === current) {
+          const actionData = actionTypes[videoIndex];
+          const activeMessages = actionData.videoMessages
+            .filter((msg) => currentTime >= msg.start && currentTime < msg.end)
+            .map((msg) => msg.message);
+
+          setCurrentMessages(activeMessages);
         }
-      }
-    });
+      },
+      [current],
+    );
 
-    setCurrentMessages([]);
-  }, [current]);
+    useEffect(() => {
+      videoRefs.current.forEach((videoRef, index) => {
+        if (videoRef) {
+          if (index === current) {
+            videoRef.play().catch(console.error);
+          } else {
+            videoRef.pause();
+            videoRef.currentTime = 0;
+          }
+        }
+      });
 
-  return (
-    <div className="rounded-lg border border-border bg-muted/20 p-4 space-y-4">
-      <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-muted-foreground">
-          Action Preview
-        </span>
-        <Button
-          variant="outline"
-          size="sm"
-          type="button"
-          className="text-xs gap-1.5"
-          onClick={() => setTriggerAction(actionTypes[current].defaultAction)}
+      setCurrentMessages([]);
+    }, [current]);
+
+    return (
+      <div className="rounded-lg border border-border bg-muted/20 p-4 space-y-4">
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-medium text-muted-foreground">
+            Action Preview
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            type="button"
+            className="text-xs gap-1.5"
+            onClick={() => setTriggerAction(actionTypes[current].defaultAction)}
+          >
+            <PointerIcon className="size-3" />
+            Use {actionTypes[current].title}
+          </Button>
+        </div>
+
+        <Carousel
+          setApi={setApi}
+          className="w-full"
+          opts={{
+            align: "start",
+            loop: true,
+          }}
         >
-          <PointerIcon className="size-3" />
-          Use {actionTypes[current].title}
-        </Button>
-      </div>
-
-      <Carousel
-        setApi={setApi}
-        className="w-full"
-        opts={{
-          align: "start",
-          loop: true,
-        }}
-      >
-        <CarouselContent>
-          {actionTypes.map((action, index) => (
-            <CarouselItem key={index}>
-              <div
-                className="aspect-video rounded-lg overflow-hidden relative bg-black"
-                onMouseEnter={() => setShowControls(true)}
-                onMouseLeave={() => setShowControls(false)}
-              >
-                <video
-                  ref={(el) => {
-                    videoRefs.current[index] = el;
-                  }}
-                  data-video-index={index}
-                  className="w-full object-fill aspect-video"
-                  autoPlay={index === current}
-                  muted
-                  loop={false}
-                  onEnded={handleVideoEnd}
-                  onTimeUpdate={handleTimeUpdate}
-                  playsInline
-                  controls={showControls}
-                  controlsList="nodownload nofullscreen noplaybackrate noremoteplayback"
-                  disablePictureInPicture
-                  disableRemotePlayback
+          <CarouselContent>
+            {actionTypes.map((action, index) => (
+              <CarouselItem key={index}>
+                <div
+                  className="aspect-video rounded-lg overflow-hidden relative bg-black"
+                  onMouseEnter={() => setShowControls(true)}
+                  onMouseLeave={() => setShowControls(false)}
                 >
-                  <source src={action.videoSrc} type="video/mp4" />
-                  Your browser does not support the video tag.
-                </video>
+                  <video
+                    ref={(el) => {
+                      videoRefs.current[index] = el;
+                    }}
+                    data-video-index={index}
+                    className="w-full object-fill aspect-video"
+                    autoPlay={index === current}
+                    muted
+                    loop={false}
+                    onEnded={handleVideoEnd}
+                    onTimeUpdate={handleTimeUpdate}
+                    playsInline
+                    controls={showControls}
+                    controlsList="nodownload nofullscreen noplaybackrate noremoteplayback"
+                    disablePictureInPicture
+                    disableRemotePlayback
+                  >
+                    <source src={action.videoSrc} type="video/mp4" />
+                    Your browser does not support the video tag.
+                  </video>
 
-                {/* Messages overlay */}
-                {index === current && currentMessages.length > 0 && (
-                  <div className="absolute top-3 right-3 z-10 space-y-2">
-                    {currentMessages.map((message, msgIndex) => (
-                      <div
-                        key={msgIndex}
-                        className="bg-background/80 backdrop-blur-sm border rounded-md px-2 py-1.5 text-xs text-foreground inline-flex items-center gap-1.5"
-                      >
-                        <InfoIcon className="size-3.5 shrink-0 text-blue-400" />
-                        {message}
-                      </div>
-                    ))}
-                  </div>
+                  {/* Messages overlay */}
+                  {index === current && currentMessages.length > 0 && (
+                    <div className="absolute top-3 right-3 z-10 space-y-2">
+                      {currentMessages.map((message, msgIndex) => (
+                        <div
+                          key={msgIndex}
+                          className="bg-background/80 backdrop-blur-sm border rounded-md px-2 py-1.5 text-xs text-foreground inline-flex items-center gap-1.5"
+                        >
+                          <InfoIcon className="size-3.5 shrink-0 text-blue-400" />
+                          {message}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+          <CarouselPrevious type="button" className="-left-3" />
+          <CarouselNext type="button" className="-right-3" />
+        </Carousel>
+
+        {/* Navigation dots and info */}
+        <div className="flex items-center justify-between">
+          <div className="flex gap-1.5">
+            {actionTypes.map((action, index) => (
+              <button
+                key={index}
+                type="button"
+                onClick={() => api?.scrollTo(index)}
+                className={cn(
+                  "w-2 h-2 rounded-full transition-colors",
+                  index === current
+                    ? "bg-primary"
+                    : "bg-primary/25 hover:bg-primary/50",
                 )}
-              </div>
-            </CarouselItem>
-          ))}
-        </CarouselContent>
-        <CarouselPrevious type="button" className="-left-3" />
-        <CarouselNext type="button" className="-right-3" />
-      </Carousel>
-
-      {/* Navigation dots and info */}
-      <div className="flex items-center justify-between">
-        <div className="flex gap-1.5">
-          {actionTypes.map((action, index) => (
-            <button
-              key={index}
-              type="button"
-              onClick={() => api?.scrollTo(index)}
-              className={cn(
-                "w-2 h-2 rounded-full transition-colors",
-                index === current
-                  ? "bg-primary"
-                  : "bg-primary/25 hover:bg-primary/50",
-              )}
-              aria-label={`Go to ${action.title}`}
-            />
-          ))}
-        </div>
-        <div className="text-xs text-muted-foreground">
-          <span className="font-medium">{actionTypes[current].title}</span>
-          <span className="mx-1">—</span>
-          <span>{actionTypes[current].description}</span>
+                aria-label={`Go to ${action.title}`}
+              />
+            ))}
+          </div>
+          <div className="text-xs text-muted-foreground">
+            <span className="font-medium">{actionTypes[current].title}</span>
+            <span className="mx-1">—</span>
+            <span>{actionTypes[current].description}</span>
+          </div>
         </div>
       </div>
-    </div>
-  );
-}
+    );
+  },
+);
