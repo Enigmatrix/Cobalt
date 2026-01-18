@@ -391,6 +391,17 @@ function RemindersCard() {
     [update, reminders],
   );
 
+  // Sort fields by threshold for display, but preserve original indices
+  const sortedFields = useMemo(() => {
+    return fields
+      .map((field, index) => ({
+        field,
+        index,
+        threshold: reminders[index]?.threshold ?? 0,
+      }))
+      .sort((a, b) => a.threshold - b.threshold);
+  }, [fields, reminders]);
+
   return (
     <Card>
       <CardHeader>
@@ -414,11 +425,16 @@ function RemindersCard() {
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Reminders List */}
-        {fields.length > 0 && (
+        {/* Reminders List - sorted by threshold */}
+        {sortedFields.length > 0 && (
           <div className="space-y-3">
-            {fields.map((field, index) => (
-              <ReminderItem key={field.id} index={index} remove={remove} />
+            {sortedFields.map(({ field, index }, displayIndex) => (
+              <ReminderItem
+                key={field.id}
+                index={index}
+                displayIndex={displayIndex}
+                remove={remove}
+              />
             ))}
           </div>
         )}
@@ -435,9 +451,11 @@ function RemindersCard() {
 
 function ReminderItem({
   index,
+  displayIndex,
   remove,
 }: {
   index: number;
+  displayIndex: number;
   remove: (index: number) => void;
 }) {
   const { control } = useFormContext<FormValues>();
@@ -460,7 +478,7 @@ function ReminderItem({
     >
       <div className="flex items-center gap-2">
         <Badge variant="outline" className="shrink-0">
-          {index + 1}
+          {displayIndex + 1}
         </Badge>
         <FormField
           control={control}
