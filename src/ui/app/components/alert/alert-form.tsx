@@ -54,10 +54,13 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   InfoIcon,
+  MessageSquareIcon,
   PlusIcon,
   PointerIcon,
+  SunIcon,
   TriangleAlertIcon,
   XIcon,
+  ZapIcon,
 } from "lucide-react";
 import { Duration } from "luxon";
 import {
@@ -205,6 +208,38 @@ function TargetAndUsageCard() {
   );
 }
 
+const actionTypes = [
+  {
+    tag: "dim" as const,
+    title: "Dim",
+    description: "Screen gradually dims to discourage usage",
+    icon: SunIcon,
+    defaultAction: {
+      tag: "dim",
+      duration: undefined,
+    },
+  },
+  {
+    tag: "message" as const,
+    title: "Message",
+    description: "Shows a notification with custom message",
+    icon: MessageSquareIcon,
+    defaultAction: {
+      tag: "message",
+      content: "",
+    },
+  },
+  {
+    tag: "kill" as const,
+    title: "Kill",
+    description: "Apps and websites are forcefully closed",
+    icon: ZapIcon,
+    defaultAction: {
+      tag: "kill",
+    },
+  },
+];
+
 function ActionCard() {
   const { control, setValue } = useFormContext<FormValues>();
 
@@ -224,99 +259,105 @@ function ActionCard() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Action Selection */}
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={control}
-            name="triggerAction"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Type</FormLabel>
-                <FormControl>
-                  <Select
-                    {...field}
-                    value={field.value?.tag}
-                    onValueChange={(v) => {
-                      if (v === "kill") {
-                        field.onChange({ tag: v });
-                      } else if (v === "dim") {
-                        field.onChange({ tag: v, duration: undefined });
-                      } else if (v === "message") {
-                        field.onChange({ tag: v, content: "" });
-                      }
-                    }}
-                  >
-                    <SelectTrigger className="hover:bg-muted w-full">
-                      <SelectValue placeholder="Type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="dim">Dim</SelectItem>
-                      <SelectItem value="message">Message</SelectItem>
-                      <SelectItem value="kill">Kill</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {/* Dim Duration Field */}
-          <FormField
-            control={control}
-            name="triggerAction"
-            render={({ field: { value, onChange, ...field } }) => (
-              <>
-                {value?.tag === "dim" && (
-                  <FormItem>
-                    <FormLabel>Dim Duration</FormLabel>
-                    <FormControl>
-                      <DurationPicker
-                        showIcon={false}
-                        className="w-full text-muted-foreground"
-                        {...field}
-                        value={
-                          value?.duration === undefined ||
-                          value?.duration === null
-                            ? null
-                            : ticksToDuration(value.duration)
-                        }
-                        onValueChange={(dur) =>
-                          onChange({
-                            tag: "dim",
-                            duration:
-                              dur === null ? undefined : durationToTicks(dur),
-                          })
-                        }
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              </>
-            )}
-          />
-        </div>
-
-        {/* Message Content Field */}
+        {/* Action Type Selection - Button Grid */}
         <FormField
           control={control}
           name="triggerAction"
           render={({ field }) => (
+            <FormItem>
+              <FormControl>
+                <div className="grid grid-cols-3 gap-3">
+                  {actionTypes.map((action) => {
+                    const isSelected = field.value?.tag === action.tag;
+                    const Icon = action.icon;
+                    return (
+                      <button
+                        key={action.tag}
+                        type="button"
+                        onClick={() => field.onChange(action.defaultAction)}
+                        className={cn(
+                          "flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all text-left",
+                          isSelected
+                            ? "border-primary bg-primary/5"
+                            : "border-border hover:border-primary/50 hover:bg-muted/50",
+                        )}
+                      >
+                        <Icon
+                          className={cn(
+                            "size-6",
+                            isSelected
+                              ? "text-primary"
+                              : "text-muted-foreground",
+                          )}
+                        />
+                        <div className="text-center">
+                          <div
+                            className={cn(
+                              "font-medium text-sm",
+                              isSelected ? "text-primary" : "text-foreground",
+                            )}
+                          >
+                            {action.title}
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                            {action.description}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Conditional Fields based on action type */}
+        <FormField
+          control={control}
+          name="triggerAction"
+          render={({ field: { value, onChange, ...field } }) => (
             <>
-              {field.value?.tag === "message" && (
+              {value?.tag === "dim" && (
+                <FormItem>
+                  <FormLabel>Dim Duration</FormLabel>
+                  <FormControl>
+                    <DurationPicker
+                      showIcon={false}
+                      className="w-full text-muted-foreground"
+                      {...field}
+                      value={
+                        value?.duration === undefined ||
+                        value?.duration === null
+                          ? null
+                          : ticksToDuration(value.duration)
+                      }
+                      onValueChange={(dur) =>
+                        onChange({
+                          tag: "dim",
+                          duration:
+                            dur === null ? undefined : durationToTicks(dur),
+                        })
+                      }
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+              {value?.tag === "message" && (
                 <FormItem>
                   <FormLabel>Message Content</FormLabel>
                   <FormControl>
                     <Input
-                      {...field}
-                      value={field.value.content ?? ""}
+                      value={value.content ?? ""}
                       onChange={(e) =>
-                        field.onChange({
+                        onChange({
                           tag: "message",
                           content: e.target.value,
                         })
                       }
+                      placeholder="Enter the message to display..."
                     />
                   </FormControl>
                   <FormMessage />
