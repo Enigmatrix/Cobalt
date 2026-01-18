@@ -145,13 +145,13 @@ function TargetAndUsageCard() {
           )}
         />
 
-        {/* Time Period and Usage Limit in a row */}
-        <div className="grid grid-cols-2 gap-4">
+        {/* Time Period and Usage Limit using subgrid */}
+        <div className="grid grid-cols-2 grid-rows-[auto_auto_auto] gap-x-4 gap-y-2">
           <FormField
             control={control}
             name="timeFrame"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="row-span-3 grid grid-rows-subgrid gap-y-2">
                 <FormLabel>Period</FormLabel>
                 <FormControl>
                   <Select
@@ -173,12 +173,11 @@ function TargetAndUsageCard() {
               </FormItem>
             )}
           />
-
           <FormField
             control={control}
             name="usageLimit"
             render={({ field: { value, onChange, ...field } }) => (
-              <FormItem>
+              <FormItem className="row-span-3 grid grid-rows-subgrid gap-y-2">
                 <FormLabel>Limit</FormLabel>
                 <FormControl>
                   <DurationPicker
@@ -342,7 +341,12 @@ function ActionCard() {
                       }
                     />
                   </FormControl>
-                  <FormMessage />
+                  {/* Validation message used in a hacky way */}
+                  <FormField
+                    control={control}
+                    name="triggerAction.duration"
+                    render={() => <FormMessage />}
+                  />
                 </FormItem>
               )}
               {value?.tag === "message" && (
@@ -360,7 +364,12 @@ function ActionCard() {
                       placeholder="Enter the message to display..."
                     />
                   </FormControl>
-                  <FormMessage />
+                  {/* Validation message used in a hacky way */}
+                  <FormField
+                    control={control}
+                    name="triggerAction.content"
+                    render={() => <FormMessage />}
+                  />
                 </FormItem>
               )}
             </>
