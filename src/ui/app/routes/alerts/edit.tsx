@@ -112,25 +112,25 @@ function EditAlertPage({ alert }: { alert: AlertEntity }) {
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator className="hidden md:block" />
-            <BreadcrumbItem className="hidden md:block">
+            <BreadcrumbItem className="overflow-hidden">
               <BreadcrumbLink asChild>
                 <NavLink
                   to={`/alerts/${alert.id}`}
-                  className="inline-flex items-center"
+                  className="inline-flex items-center overflow-hidden"
                 >
                   {app && (
                     <AppIcon
                       appIcon={app.icon}
-                      className="w-4 h-4 mr-1.5 shrink-0"
+                      className="w-5 h-5 mr-2 shrink-0"
                     />
                   )}
                   {tag && (
                     <TagIcon
-                      className="w-4 h-4 mr-1.5 shrink-0"
+                      className="w-5 h-5 mr-2 shrink-0"
                       style={{ color: tag.color }}
                     />
                   )}
-                  <Text className="truncate max-w-32">{targetName}</Text>
+                  <Text>{targetName}</Text>
                 </NavLink>
               </BreadcrumbLink>
             </BreadcrumbItem>
