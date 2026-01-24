@@ -134,41 +134,38 @@ export function ChooseMultiApps({
 
   return (
     <Popover open={open} onOpenChange={setOpen} modal>
-      <PopoverAnchor>
-        <div className="flex flex-wrap items-center gap-2">
-          {valueApps.map((app, index) => {
-            return (
-              <div
-                className="flex items-center flex-nowrap min-w-0"
-                key={app.id}
-              >
-                <AppBadge app={app} remove={() => toggleOption(app.id)} />
-                {valueApps.length === index + 1 && (
-                  <>
-                    <div className="ml-2 border-l h-6" />
+      <div className="flex flex-wrap items-center gap-2">
+        {valueApps.map((app, index) => {
+          return (
+            <div className="flex items-center flex-nowrap min-w-0" key={app.id}>
+              <AppBadge app={app} remove={() => toggleOption(app.id)} />
+              {valueApps.length === index + 1 && (
+                <>
+                  <div className="ml-2 border-l h-6" />
+                  <PopoverAnchor>
                     <PopoverTrigger asChild>
                       <Button variant="ghost" size="icon" className="w-8 h-8">
                         <PlusIcon className="text-muted-foreground" />
                       </Button>
                     </PopoverTrigger>
-                  </>
-                )}
-              </div>
-            );
-          })}
-          {valueApps.length === 0 && (
-            <div className="flex flex-wrap items-center text-muted-foreground h-8">
-              {placeholder ?? <Text>No apps in tag. Add some!</Text>}
-              <div className="ml-2 border-l h-6" />
-              <PopoverTrigger asChild>
-                <Button variant="ghost" size="icon" className="w-8 h-8">
-                  <PlusIcon />
-                </Button>
-              </PopoverTrigger>
+                  </PopoverAnchor>
+                </>
+              )}
             </div>
-          )}
-        </div>
-      </PopoverAnchor>
+          );
+        })}
+        {valueApps.length === 0 && (
+          <div className="flex flex-wrap items-center text-muted-foreground h-8">
+            {placeholder ?? <Text>No apps in tag. Add some!</Text>}
+            <div className="ml-2 border-l h-6" />
+            <PopoverTrigger asChild>
+              <Button variant="ghost" size="icon" className="w-8 h-8">
+                <PlusIcon />
+              </Button>
+            </PopoverTrigger>
+          </div>
+        )}
+      </div>
       <PopoverContent className="p-0 bg-card h-80 flex flex-col">
         <SearchBar
           placeholder="Search..."
