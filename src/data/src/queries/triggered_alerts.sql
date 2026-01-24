@@ -31,19 +31,32 @@ dur(alert_id, range_start, dur) AS (
         ON t.alert_id = al.id
 ),
 
-latest_alert_event(alert_id, timestamp, reason) AS (
+latest_alert_hit_event(alert_id, timestamp, reason) AS (
     SELECT ae.alert_id, ae.timestamp, ae.reason
-    FROM alert_events ae
-    WHERE ae.timestamp = (
-        SELECT MAX(ae2.timestamp) 
-        FROM alert_events ae2
-        INNER JOIN range_start rs2 ON rs2.alert_id = ae2.alert_id
-        WHERE ae2.alert_id = ae.alert_id
-        AND ae2.timestamp >= rs2.range_start
-    )
+        FROM (
+            SELECT ae.alert_id, ae.timestamp, ae.reason,
+                ROW_NUMBER() OVER (PARTITION BY ae.alert_id ORDER BY ae.timestamp DESC) as rn
+            FROM alert_events ae
+            INNER JOIN range_start rs ON rs.alert_id = ae.alert_id
+            AND ae.timestamp >= rs.range_start
+            AND ae.reason = 0 -- hit
+        ) ae
+        WHERE ae.rn = 1
+),
+
+latest_alert_event(alert_id, reason) AS (
+    SELECT ae.alert_id, ae.reason
+        FROM (
+            SELECT ae.alert_id, ae.reason,
+                ROW_NUMBER() OVER (PARTITION BY ae.alert_id ORDER BY ae.timestamp DESC) as rn
+            FROM alert_events ae
+            INNER JOIN range_start rs ON rs.alert_id = ae.alert_id
+            AND ae.timestamp >= rs.range_start
+        ) ae
+        WHERE ae.rn = 1
 )
 
-SELECT al.*, ae.timestamp, (CASE WHEN al.app_id IS NOT NULL THEN (
+SELECT al.*, aeh.timestamp, (CASE WHEN al.app_id IS NOT NULL THEN (
     SELECT a.name FROM apps a WHERE a.id = al.app_id
 ) ELSE (
     SELECT t.name FROM tags t WHERE t.id = al.tag_id
@@ -51,6 +64,8 @@ SELECT al.*, ae.timestamp, (CASE WHEN al.app_id IS NOT NULL THEN (
     FROM alerts al
     INNER JOIN dur d
         ON al.id = d.alert_id
+    LEFT JOIN latest_alert_hit_event aeh
+        ON al.id = aeh.alert_id
     LEFT JOIN latest_alert_event ae
         ON al.id = ae.alert_id
     WHERE d.dur >= al.usage_limit AND al.active <> 0 AND

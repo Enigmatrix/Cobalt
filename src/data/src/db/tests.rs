@@ -905,11 +905,80 @@ pub mod arrange {
         event.id = Ref::new(res.last_insert_rowid());
         Ok(event)
     }
+
+    // Helper to set up a basic app with session and usage for testing
+    pub async fn app_with_usage(
+        db: &mut Database,
+        usage_start: i64,
+        usage_end: i64,
+    ) -> Result<App> {
+        let app = app(
+            db,
+            App {
+                id: Ref::default(),
+                name: "name".to_string(),
+                description: "desc".to_string(),
+                company: "comp".to_string(),
+                color: "red".to_string(),
+                identity: AppIdentity::Win32 {
+                    path: "path".to_string(),
+                },
+                tag_id: None,
+                icon: None,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        let session = session(
+            db,
+            Session {
+                id: Ref::default(),
+                app_id: app.id.clone(),
+                title: "title".to_string(),
+                url: None,
+            },
+        )
+        .await?;
+
+        usage(
+            db,
+            Usage {
+                id: Ref::default(),
+                session_id: session.id.clone(),
+                start: usage_start,
+                end: usage_end,
+            },
+        )
+        .await?;
+
+        Ok(app)
+    }
 }
 
 mod triggered_alerts {
     use super::*;
     use crate::entities::{TimeFrame, TriggerAction};
+
+    // Helper to add an alert event
+    async fn add_alert_event(
+        db: &mut Database,
+        alert_id: Ref<Alert>,
+        timestamp: i64,
+        reason: Reason,
+    ) -> Result<AlertEvent> {
+        arrange::alert_event(
+            db,
+            AlertEvent {
+                id: Ref::default(),
+                alert_id,
+                timestamp,
+                reason,
+            },
+        )
+        .await
+    }
 
     #[tokio::test]
     async fn no_alerts() -> Result<()> {
@@ -2290,16 +2359,145 @@ mod triggered_alerts {
         );
         Ok(())
     }
-}
 
-mod triggered_reminders {
-    use super::*;
-    use crate::entities::{TimeFrame, TriggerAction};
+    // Tests for unignore functionality
+    #[tokio::test]
+    async fn alert_hit_then_unignore() -> Result<()> {
+        let mut db = test_db().await?;
+        let app = arrange::app_with_usage(&mut db, 0, 100).await?;
+        let alert = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(1),
+                target: Target::App { id: app.id.clone() },
+                usage_limit: 50,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
 
-    // generate an alert which will not fire but the reminder will.
-    async fn gen_alert(db: &mut Database) -> Result<Ref<Alert>> {
+        add_alert_event(&mut db, alert.id.clone(), 75, Reason::Hit).await?;
+        add_alert_event(&mut db, alert.id.clone(), 100, Reason::Unignored).await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let alerts = mgr
+            .triggered_alerts(&Times {
+                now: 150,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+
+        assert_eq!(
+            alerts,
+            vec![TriggeredAlert {
+                alert,
+                timestamp: Some(75),
+                name: "name".to_string()
+            }]
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn alert_hit_ignore_unignore() -> Result<()> {
+        let mut db = test_db().await?;
+        let app = arrange::app_with_usage(&mut db, 0, 100).await?;
+        let alert = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(1),
+                target: Target::App { id: app.id.clone() },
+                usage_limit: 50,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        add_alert_event(&mut db, alert.id.clone(), 75, Reason::Hit).await?;
+        add_alert_event(&mut db, alert.id.clone(), 100, Reason::Ignored).await?;
+        add_alert_event(&mut db, alert.id.clone(), 125, Reason::Unignored).await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let alerts = mgr
+            .triggered_alerts(&Times {
+                now: 150,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+
+        assert_eq!(
+            alerts,
+            vec![TriggeredAlert {
+                alert,
+                timestamp: Some(75),
+                name: "name".to_string()
+            }]
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn alert_ignore_unignore_when_hit() -> Result<()> {
+        let mut db = test_db().await?;
+        let app = arrange::app_with_usage(&mut db, 0, 100).await?;
+        let alert = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(1),
+                target: Target::App { id: app.id.clone() },
+                usage_limit: 50,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        add_alert_event(&mut db, alert.id.clone(), 60, Reason::Ignored).await?;
+        add_alert_event(&mut db, alert.id.clone(), 80, Reason::Unignored).await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let alerts = mgr
+            .triggered_alerts(&Times {
+                now: 150,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+
+        assert_eq!(
+            alerts,
+            vec![TriggeredAlert {
+                alert,
+                timestamp: None,
+                name: "name".to_string()
+            }]
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn alert_ignore_unignore_when_not_hit() -> Result<()> {
+        let mut db = test_db().await?;
+
+        // Create alert with usage below threshold (40 < 100)
         let app = arrange::app(
-            db,
+            &mut db,
             App {
                 id: Ref::default(),
                 name: "name".to_string(),
@@ -2318,7 +2516,7 @@ mod triggered_reminders {
         .await?;
 
         let session = arrange::session(
-            db,
+            &mut db,
             Session {
                 id: Ref::default(),
                 app_id: app.id.clone(),
@@ -2328,8 +2526,298 @@ mod triggered_reminders {
         )
         .await?;
 
-        let _usage = arrange::usage(
-            db,
+        arrange::usage(
+            &mut db,
+            Usage {
+                id: Ref::default(),
+                session_id: session.id.clone(),
+                start: 0,
+                end: 40,
+            },
+        )
+        .await?;
+
+        let alert = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(1),
+                target: Target::App {
+                    id: (app.id.clone()),
+                },
+                usage_limit: 100,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        add_alert_event(&mut db, alert.id.clone(), 60, Reason::Ignored).await?;
+        add_alert_event(&mut db, alert.id.clone(), 80, Reason::Unignored).await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let alerts = mgr
+            .triggered_alerts(&Times {
+                now: 150,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+
+        assert_eq!(alerts, vec![]);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn alert_ignore_unignore_ignore() -> Result<()> {
+        let mut db = test_db().await?;
+        let app = arrange::app_with_usage(&mut db, 0, 100).await?;
+        let alert = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(1),
+                target: Target::App { id: app.id.clone() },
+                usage_limit: 50,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        add_alert_event(&mut db, alert.id.clone(), 60, Reason::Ignored).await?;
+        add_alert_event(&mut db, alert.id.clone(), 80, Reason::Unignored).await?;
+        add_alert_event(&mut db, alert.id.clone(), 100, Reason::Ignored).await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let alerts = mgr
+            .triggered_alerts(&Times {
+                now: 150,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+
+        assert_eq!(alerts, vec![]);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn alert_ignore_unignore_hit_ignore_unignore() -> Result<()> {
+        let mut db = test_db().await?;
+        let app = arrange::app_with_usage(&mut db, 0, 100).await?;
+        let alert = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(1),
+                target: Target::App { id: app.id.clone() },
+                usage_limit: 50,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        add_alert_event(&mut db, alert.id.clone(), 60, Reason::Ignored).await?;
+        add_alert_event(&mut db, alert.id.clone(), 70, Reason::Unignored).await?;
+        add_alert_event(&mut db, alert.id.clone(), 80, Reason::Hit).await?;
+        add_alert_event(&mut db, alert.id.clone(), 90, Reason::Ignored).await?;
+        add_alert_event(&mut db, alert.id.clone(), 100, Reason::Unignored).await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let alerts = mgr
+            .triggered_alerts(&Times {
+                now: 150,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+
+        assert_eq!(
+            alerts,
+            vec![TriggeredAlert {
+                alert,
+                timestamp: Some(80),
+                name: "name".to_string()
+            }]
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn alert_hit_ignore_unignore_ignore() -> Result<()> {
+        let mut db = test_db().await?;
+        let app = arrange::app_with_usage(&mut db, 0, 100).await?;
+        let alert = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(1),
+                target: Target::App { id: app.id.clone() },
+                usage_limit: 50,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        add_alert_event(&mut db, alert.id.clone(), 60, Reason::Hit).await?;
+        add_alert_event(&mut db, alert.id.clone(), 70, Reason::Ignored).await?;
+        add_alert_event(&mut db, alert.id.clone(), 80, Reason::Unignored).await?;
+        add_alert_event(&mut db, alert.id.clone(), 90, Reason::Ignored).await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let alerts = mgr
+            .triggered_alerts(&Times {
+                now: 150,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+
+        assert_eq!(alerts, vec![]);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn alert_hit_ignore_unignore_ignore_unignore() -> Result<()> {
+        let mut db = test_db().await?;
+        let app = arrange::app_with_usage(&mut db, 0, 100).await?;
+        let alert = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(1),
+                target: Target::App { id: app.id.clone() },
+                usage_limit: 50,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        add_alert_event(&mut db, alert.id.clone(), 60, Reason::Hit).await?;
+        add_alert_event(&mut db, alert.id.clone(), 70, Reason::Ignored).await?;
+        add_alert_event(&mut db, alert.id.clone(), 80, Reason::Unignored).await?;
+        add_alert_event(&mut db, alert.id.clone(), 90, Reason::Ignored).await?;
+        add_alert_event(&mut db, alert.id.clone(), 100, Reason::Unignored).await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let alerts = mgr
+            .triggered_alerts(&Times {
+                now: 150,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+
+        assert_eq!(
+            alerts,
+            vec![TriggeredAlert {
+                alert,
+                timestamp: Some(60),
+                name: "name".to_string()
+            }]
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn alert_multiple_unignores_in_sequence() -> Result<()> {
+        let mut db = test_db().await?;
+        let app = arrange::app_with_usage(&mut db, 0, 100).await?;
+        let alert = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(1),
+                target: Target::App { id: app.id.clone() },
+                usage_limit: 50,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        add_alert_event(&mut db, alert.id.clone(), 60, Reason::Unignored).await?;
+        add_alert_event(&mut db, alert.id.clone(), 70, Reason::Unignored).await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let alerts = mgr
+            .triggered_alerts(&Times {
+                now: 150,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+
+        assert_eq!(
+            alerts,
+            vec![TriggeredAlert {
+                alert,
+                timestamp: None,
+                name: "name".to_string()
+            }]
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn alert_unignore_before_time_range() -> Result<()> {
+        let mut db = test_db().await?;
+
+        // Create alert with usage in a specific time range
+        let app = arrange::app(
+            &mut db,
+            App {
+                id: Ref::default(),
+                name: "name".to_string(),
+                description: "desc".to_string(),
+                company: "comp".to_string(),
+                color: "red".to_string(),
+                identity: AppIdentity::Win32 {
+                    path: "path".to_string(),
+                },
+                tag_id: None,
+                icon: None,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        let session = arrange::session(
+            &mut db,
+            Session {
+                id: Ref::default(),
+                app_id: app.id.clone(),
+                title: "title".to_string(),
+                url: None,
+            },
+        )
+        .await?;
+
+        arrange::usage(
+            &mut db,
             Usage {
                 id: Ref::default(),
                 session_id: session.id.clone(),
@@ -2340,12 +2828,435 @@ mod triggered_reminders {
         .await?;
 
         let alert = arrange::alert(
-            db,
+            &mut db,
             Alert {
                 id: Ref::new(1),
                 target: Target::App {
                     id: (app.id.clone()),
                 },
+                usage_limit: 50,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        add_alert_event(&mut db, alert.id.clone(), 25, Reason::Unignored).await?;
+        add_alert_event(&mut db, alert.id.clone(), 75, Reason::Ignored).await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let alerts = mgr
+            .triggered_alerts(&Times {
+                now: 200,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+
+        assert_eq!(alerts, vec![]);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn alert_only_unignore_no_hit() -> Result<()> {
+        let mut db = test_db().await?;
+        let app = arrange::app_with_usage(&mut db, 0, 100).await?;
+        let alert = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(1),
+                target: Target::App { id: app.id.clone() },
+                usage_limit: 50,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        add_alert_event(&mut db, alert.id.clone(), 80, Reason::Unignored).await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let alerts = mgr
+            .triggered_alerts(&Times {
+                now: 150,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+
+        assert_eq!(
+            alerts,
+            vec![TriggeredAlert {
+                alert,
+                timestamp: None,
+                name: "name".to_string()
+            }]
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn alert_ignore_unignore_ignore_unignore() -> Result<()> {
+        let mut db = test_db().await?;
+        let app = arrange::app_with_usage(&mut db, 0, 100).await?;
+        let alert = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(1),
+                target: Target::App { id: app.id.clone() },
+                usage_limit: 50,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        add_alert_event(&mut db, alert.id.clone(), 60, Reason::Ignored).await?;
+        add_alert_event(&mut db, alert.id.clone(), 70, Reason::Unignored).await?;
+        add_alert_event(&mut db, alert.id.clone(), 80, Reason::Ignored).await?;
+        add_alert_event(&mut db, alert.id.clone(), 90, Reason::Unignored).await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let alerts = mgr
+            .triggered_alerts(&Times {
+                now: 150,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+
+        assert_eq!(
+            alerts,
+            vec![TriggeredAlert {
+                alert,
+                timestamp: None,
+                name: "name".to_string()
+            }]
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn alert_two_alerts_one_ignored_one_unignored() -> Result<()> {
+        let mut db = test_db().await?;
+        let app = arrange::app_with_usage(&mut db, 0, 100).await?;
+
+        let alert1 = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(1),
+                target: Target::App { id: app.id.clone() },
+                usage_limit: 50,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        let alert2 = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(2),
+                target: Target::App { id: app.id.clone() },
+                usage_limit: 50,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        add_alert_event(&mut db, alert1.id.clone(), 75, Reason::Hit).await?;
+        add_alert_event(&mut db, alert1.id.clone(), 85, Reason::Ignored).await?;
+        add_alert_event(&mut db, alert2.id.clone(), 80, Reason::Hit).await?;
+        add_alert_event(&mut db, alert2.id.clone(), 90, Reason::Unignored).await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let alerts = mgr
+            .triggered_alerts(&Times {
+                now: 150,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+
+        assert_eq!(alerts.len(), 1);
+        assert_eq!(alerts[0].alert.id, alert2.id);
+        assert_eq!(alerts[0].timestamp, Some(80));
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn alert_unignore_then_ignore_no_hit() -> Result<()> {
+        let mut db = test_db().await?;
+        let app = arrange::app_with_usage(&mut db, 0, 100).await?;
+        let alert = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(1),
+                target: Target::App { id: app.id.clone() },
+                usage_limit: 50,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        add_alert_event(&mut db, alert.id.clone(), 60, Reason::Unignored).await?;
+        add_alert_event(&mut db, alert.id.clone(), 80, Reason::Ignored).await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let alerts = mgr
+            .triggered_alerts(&Times {
+                now: 150,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+
+        assert_eq!(alerts, vec![]);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn alert_weekly_timeframe_unignore() -> Result<()> {
+        let mut db = test_db().await?;
+        let app = arrange::app_with_usage(&mut db, 50, 150).await?;
+        let alert = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(1),
+                target: Target::App { id: app.id.clone() },
+                usage_limit: 50,
+                time_frame: TimeFrame::Weekly,
+                trigger_action: TriggerAction::Kill,
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        add_alert_event(&mut db, alert.id.clone(), 100, Reason::Hit).await?;
+        add_alert_event(&mut db, alert.id.clone(), 120, Reason::Ignored).await?;
+        add_alert_event(&mut db, alert.id.clone(), 140, Reason::Unignored).await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let alerts = mgr
+            .triggered_alerts(&Times {
+                now: 5000,
+                day_start: 200,
+                week_start: 50,
+                month_start: 0,
+            })
+            .await?;
+
+        assert_eq!(
+            alerts,
+            vec![TriggeredAlert {
+                alert,
+                timestamp: Some(100),
+                name: "name".to_string()
+            }]
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn alert_events_exactly_at_range_start() -> Result<()> {
+        let mut db = test_db().await?;
+        let app = arrange::app_with_usage(&mut db, 0, 100).await?;
+        let alert = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(1),
+                target: Target::App { id: app.id.clone() },
+                usage_limit: 50,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        add_alert_event(&mut db, alert.id.clone(), 50, Reason::Ignored).await?;
+        add_alert_event(&mut db, alert.id.clone(), 60, Reason::Unignored).await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let alerts = mgr
+            .triggered_alerts(&Times {
+                now: 150,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+
+        assert_eq!(
+            alerts,
+            vec![TriggeredAlert {
+                alert,
+                timestamp: None,
+                name: "name".to_string()
+            }]
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn alert_ignore_five_times_ending_ignore() -> Result<()> {
+        let mut db = test_db().await?;
+        let app = arrange::app_with_usage(&mut db, 0, 100).await?;
+        let alert = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(1),
+                target: Target::App { id: app.id.clone() },
+                usage_limit: 50,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        add_alert_event(&mut db, alert.id.clone(), 60, Reason::Ignored).await?;
+        add_alert_event(&mut db, alert.id.clone(), 65, Reason::Unignored).await?;
+        add_alert_event(&mut db, alert.id.clone(), 70, Reason::Ignored).await?;
+        add_alert_event(&mut db, alert.id.clone(), 75, Reason::Unignored).await?;
+        add_alert_event(&mut db, alert.id.clone(), 80, Reason::Ignored).await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let alerts = mgr
+            .triggered_alerts(&Times {
+                now: 150,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+
+        assert_eq!(alerts, vec![]);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn alert_no_events_usage_exceeds() -> Result<()> {
+        let mut db = test_db().await?;
+        let app = arrange::app_with_usage(&mut db, 0, 100).await?;
+        let alert = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(1),
+                target: Target::App { id: app.id.clone() },
+                usage_limit: 50,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let alerts = mgr
+            .triggered_alerts(&Times {
+                now: 150,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+
+        assert_eq!(
+            alerts,
+            vec![TriggeredAlert {
+                alert,
+                timestamp: None,
+                name: "name".to_string()
+            }]
+        );
+        Ok(())
+    }
+}
+
+mod triggered_reminders {
+    use super::*;
+    use crate::entities::{TimeFrame, TriggerAction};
+
+    // Helper to add a reminder event
+    async fn add_reminder_event(
+        db: &mut Database,
+        reminder_id: Ref<Reminder>,
+        timestamp: i64,
+        reason: Reason,
+    ) -> Result<ReminderEvent> {
+        arrange::reminder_event(
+            db,
+            ReminderEvent {
+                id: Ref::default(),
+                reminder_id,
+                timestamp,
+                reason,
+            },
+        )
+        .await
+    }
+
+    // Helper to add an alert event
+    async fn add_alert_event(
+        db: &mut Database,
+        alert_id: Ref<Alert>,
+        timestamp: i64,
+        reason: Reason,
+    ) -> Result<AlertEvent> {
+        arrange::alert_event(
+            db,
+            AlertEvent {
+                id: Ref::default(),
+                alert_id,
+                timestamp,
+                reason,
+            },
+        )
+        .await
+    }
+
+    // generate an alert which will not fire but the reminder will.
+    async fn gen_alert(db: &mut Database) -> Result<Ref<Alert>> {
+        let app = arrange::app_with_usage(db, 50, 150).await?;
+        let alert = arrange::alert(
+            db,
+            Alert {
+                id: Ref::new(1),
+                target: Target::App { id: app.id.clone() },
                 usage_limit: 200,
                 time_frame: TimeFrame::Daily,
                 trigger_action: TriggerAction::Kill,
@@ -2624,6 +3535,1045 @@ mod triggered_reminders {
                 month_start: 0,
             })
             .await?;
+        assert_eq!(
+            reminders
+                .into_iter()
+                .map(|r| (r.reminder.id, r.name))
+                .collect::<Vec<_>>(),
+            vec![]
+        );
+        Ok(())
+    }
+
+    // Tests for reminder unignore functionality
+    #[tokio::test]
+    pub async fn reminder_hit_then_unignore() -> Result<()> {
+        let mut db = test_db().await?;
+        let alert = gen_alert(&mut db).await?;
+        let reminder = arrange::reminder(
+            &mut db,
+            Reminder {
+                id: Ref::new(1),
+                alert_id: alert.clone(),
+                threshold: 0.50.into(),
+                message: "hello".to_string(),
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        add_reminder_event(&mut db, reminder.id.clone(), 100, Reason::Hit).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 120, Reason::Unignored).await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let reminders = mgr
+            .triggered_reminders(&Times {
+                now: 5000,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+
+        // Should not trigger because there's already a Hit event in this range
+        assert_eq!(
+            reminders
+                .into_iter()
+                .map(|r| (r.reminder.id, r.name))
+                .collect::<Vec<_>>(),
+            vec![]
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    pub async fn reminder_ignore_then_unignore() -> Result<()> {
+        let mut db = test_db().await?;
+        let alert = gen_alert(&mut db).await?;
+        let reminder = arrange::reminder(
+            &mut db,
+            Reminder {
+                id: Ref::new(1),
+                alert_id: alert.clone(),
+                threshold: 0.50.into(),
+                message: "hello".to_string(),
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        add_reminder_event(&mut db, reminder.id.clone(), 100, Reason::Ignored).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 120, Reason::Unignored).await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let reminders = mgr
+            .triggered_reminders(&Times {
+                now: 5000,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+
+        // Should trigger because last event is Unignored and no Hit in range
+        assert_eq!(
+            reminders
+                .into_iter()
+                .map(|r| (r.reminder.id, r.name))
+                .collect::<Vec<_>>(),
+            vec![(reminder.id, "name".to_string())]
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    pub async fn reminder_ignore_unignore_ignore() -> Result<()> {
+        let mut db = test_db().await?;
+        let alert = gen_alert(&mut db).await?;
+        let reminder = arrange::reminder(
+            &mut db,
+            Reminder {
+                id: Ref::new(1),
+                alert_id: alert.clone(),
+                threshold: 0.50.into(),
+                message: "hello".to_string(),
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        add_reminder_event(&mut db, reminder.id.clone(), 100, Reason::Ignored).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 120, Reason::Unignored).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 140, Reason::Ignored).await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let reminders = mgr
+            .triggered_reminders(&Times {
+                now: 5000,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+
+        // Should not trigger because last event is Ignored
+        assert_eq!(
+            reminders
+                .into_iter()
+                .map(|r| (r.reminder.id, r.name))
+                .collect::<Vec<_>>(),
+            vec![]
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    pub async fn reminder_ignore_unignore_hit() -> Result<()> {
+        let mut db = test_db().await?;
+        let alert = gen_alert(&mut db).await?;
+        let reminder = arrange::reminder(
+            &mut db,
+            Reminder {
+                id: Ref::new(1),
+                alert_id: alert.clone(),
+                threshold: 0.50.into(),
+                message: "hello".to_string(),
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        add_reminder_event(&mut db, reminder.id.clone(), 100, Reason::Ignored).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 120, Reason::Unignored).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 140, Reason::Hit).await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let reminders = mgr
+            .triggered_reminders(&Times {
+                now: 5000,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+
+        // Should not trigger because there's a Hit in this range
+        assert_eq!(
+            reminders
+                .into_iter()
+                .map(|r| (r.reminder.id, r.name))
+                .collect::<Vec<_>>(),
+            vec![]
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    pub async fn reminder_ignore_unignore_hit_ignore_unignore() -> Result<()> {
+        let mut db = test_db().await?;
+        let alert = gen_alert(&mut db).await?;
+        let reminder = arrange::reminder(
+            &mut db,
+            Reminder {
+                id: Ref::new(1),
+                alert_id: alert.clone(),
+                threshold: 0.50.into(),
+                message: "hello".to_string(),
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        add_reminder_event(&mut db, reminder.id.clone(), 100, Reason::Ignored).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 120, Reason::Unignored).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 140, Reason::Hit).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 160, Reason::Ignored).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 180, Reason::Unignored).await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let reminders = mgr
+            .triggered_reminders(&Times {
+                now: 5000,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+
+        // Should not trigger because there's a Hit in this range (even though last event is Unignored)
+        assert_eq!(
+            reminders
+                .into_iter()
+                .map(|r| (r.reminder.id, r.name))
+                .collect::<Vec<_>>(),
+            vec![]
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    pub async fn reminder_alert_ignored_then_unignored() -> Result<()> {
+        let mut db = test_db().await?;
+        let alert = gen_alert(&mut db).await?;
+        let reminder = arrange::reminder(
+            &mut db,
+            Reminder {
+                id: Ref::new(1),
+                alert_id: alert.clone(),
+                threshold: 0.50.into(),
+                message: "hello".to_string(),
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        add_alert_event(&mut db, alert.clone(), 100, Reason::Ignored).await?;
+        add_alert_event(&mut db, alert.clone(), 120, Reason::Unignored).await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let reminders = mgr
+            .triggered_reminders(&Times {
+                now: 5000,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+
+        // Should trigger because alert is unignored and reminder has no events
+        assert_eq!(
+            reminders
+                .into_iter()
+                .map(|r| (r.reminder.id, r.name))
+                .collect::<Vec<_>>(),
+            vec![(reminder.id, "name".to_string())]
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    pub async fn reminder_alert_ignored_unignored_ignored() -> Result<()> {
+        let mut db = test_db().await?;
+        let alert = gen_alert(&mut db).await?;
+        let _reminder = arrange::reminder(
+            &mut db,
+            Reminder {
+                id: Ref::new(1),
+                alert_id: alert.clone(),
+                threshold: 0.50.into(),
+                message: "hello".to_string(),
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        add_alert_event(&mut db, alert.clone(), 100, Reason::Ignored).await?;
+        add_alert_event(&mut db, alert.clone(), 120, Reason::Unignored).await?;
+        add_alert_event(&mut db, alert.clone(), 140, Reason::Ignored).await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let reminders = mgr
+            .triggered_reminders(&Times {
+                now: 5000,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+
+        // Should not trigger because alert is ignored
+        assert_eq!(
+            reminders
+                .into_iter()
+                .map(|r| (r.reminder.id, r.name))
+                .collect::<Vec<_>>(),
+            vec![]
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    pub async fn reminder_both_ignored_then_unignored() -> Result<()> {
+        let mut db = test_db().await?;
+        let alert = gen_alert(&mut db).await?;
+        let reminder = arrange::reminder(
+            &mut db,
+            Reminder {
+                id: Ref::new(1),
+                alert_id: alert.clone(),
+                threshold: 0.50.into(),
+                message: "hello".to_string(),
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        add_alert_event(&mut db, alert.clone(), 100, Reason::Ignored).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 110, Reason::Ignored).await?;
+        add_alert_event(&mut db, alert.clone(), 120, Reason::Unignored).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 130, Reason::Unignored).await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let reminders = mgr
+            .triggered_reminders(&Times {
+                now: 5000,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+
+        // Should trigger because both are unignored
+        assert_eq!(
+            reminders
+                .into_iter()
+                .map(|r| (r.reminder.id, r.name))
+                .collect::<Vec<_>>(),
+            vec![(reminder.id, "name".to_string())]
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    pub async fn reminder_alert_unignored_reminder_ignored() -> Result<()> {
+        let mut db = test_db().await?;
+        let alert = gen_alert(&mut db).await?;
+        let reminder = arrange::reminder(
+            &mut db,
+            Reminder {
+                id: Ref::new(1),
+                alert_id: alert.clone(),
+                threshold: 0.50.into(),
+                message: "hello".to_string(),
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        add_alert_event(&mut db, alert.clone(), 100, Reason::Ignored).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 110, Reason::Ignored).await?;
+        add_alert_event(&mut db, alert.clone(), 120, Reason::Unignored).await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let reminders = mgr
+            .triggered_reminders(&Times {
+                now: 5000,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+
+        // Should not trigger because reminder is still ignored
+        assert_eq!(
+            reminders
+                .into_iter()
+                .map(|r| (r.reminder.id, r.name))
+                .collect::<Vec<_>>(),
+            vec![]
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    pub async fn reminder_alert_ignored_reminder_unignored() -> Result<()> {
+        let mut db = test_db().await?;
+        let alert = gen_alert(&mut db).await?;
+        let reminder = arrange::reminder(
+            &mut db,
+            Reminder {
+                id: Ref::new(1),
+                alert_id: alert.clone(),
+                threshold: 0.50.into(),
+                message: "hello".to_string(),
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        add_alert_event(&mut db, alert.clone(), 100, Reason::Ignored).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 110, Reason::Ignored).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 130, Reason::Unignored).await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let reminders = mgr
+            .triggered_reminders(&Times {
+                now: 5000,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+
+        // Should not trigger because alert is still ignored
+        assert_eq!(
+            reminders
+                .into_iter()
+                .map(|r| (r.reminder.id, r.name))
+                .collect::<Vec<_>>(),
+            vec![]
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    pub async fn reminder_unignore_before_time_range() -> Result<()> {
+        let mut db = test_db().await?;
+        let alert = gen_alert(&mut db).await?;
+        let reminder = arrange::reminder(
+            &mut db,
+            Reminder {
+                id: Ref::new(1),
+                alert_id: alert.clone(),
+                threshold: 0.50.into(),
+                message: "hello".to_string(),
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        add_reminder_event(&mut db, reminder.id.clone(), 25, Reason::Unignored).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 100, Reason::Ignored).await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let reminders = mgr
+            .triggered_reminders(&Times {
+                now: 5000,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+
+        // Should not trigger because ignored in range
+        assert_eq!(
+            reminders
+                .into_iter()
+                .map(|r| (r.reminder.id, r.name))
+                .collect::<Vec<_>>(),
+            vec![]
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    pub async fn reminder_complex_scenario_across_time_ranges_with_hit() -> Result<()> {
+        let mut db = test_db().await?;
+        let alert = gen_alert(&mut db).await?;
+        let reminder = arrange::reminder(
+            &mut db,
+            Reminder {
+                id: Ref::new(1),
+                alert_id: alert.clone(),
+                threshold: 0.50.into(),
+                message: "hello".to_string(),
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        add_reminder_event(&mut db, reminder.id.clone(), 75, Reason::Hit).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 100, Reason::Ignored).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 120, Reason::Unignored).await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let reminders = mgr
+            .triggered_reminders(&Times {
+                now: 5000,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+
+        // Should trigger because last event in range is Unignored and no Hit in range
+        assert_eq!(
+            reminders
+                .into_iter()
+                .map(|r| (r.reminder.id, r.name))
+                .collect::<Vec<_>>(),
+            vec![]
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    pub async fn reminder_complex_scenario_across_time_ranges() -> Result<()> {
+        let mut db = test_db().await?;
+        let alert = gen_alert(&mut db).await?;
+        let reminder = arrange::reminder(
+            &mut db,
+            Reminder {
+                id: Ref::new(1),
+                alert_id: alert.clone(),
+                threshold: 0.50.into(),
+                message: "hello".to_string(),
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        add_reminder_event(&mut db, reminder.id.clone(), 25, Reason::Hit).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 100, Reason::Ignored).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 120, Reason::Unignored).await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let reminders = mgr
+            .triggered_reminders(&Times {
+                now: 5000,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+
+        // Should trigger because last event in range is Unignored and no Hit in range
+        assert_eq!(
+            reminders
+                .into_iter()
+                .map(|r| (r.reminder.id, r.name))
+                .collect::<Vec<_>>(),
+            vec![(reminder.id, "name".to_string())]
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    pub async fn reminder_multiple_unignores() -> Result<()> {
+        let mut db = test_db().await?;
+        let alert = gen_alert(&mut db).await?;
+        let reminder = arrange::reminder(
+            &mut db,
+            Reminder {
+                id: Ref::new(1),
+                alert_id: alert.clone(),
+                threshold: 0.50.into(),
+                message: "hello".to_string(),
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        add_reminder_event(&mut db, reminder.id.clone(), 100, Reason::Unignored).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 120, Reason::Unignored).await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let reminders = mgr
+            .triggered_reminders(&Times {
+                now: 5000,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+
+        // Should trigger because last event is Unignored
+        assert_eq!(
+            reminders
+                .into_iter()
+                .map(|r| (r.reminder.id, r.name))
+                .collect::<Vec<_>>(),
+            vec![(reminder.id, "name".to_string())]
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    pub async fn reminder_hit_in_previous_range_with_unignore_in_current() -> Result<()> {
+        let mut db = test_db().await?;
+        let alert = gen_alert(&mut db).await?;
+        let reminder = arrange::reminder(
+            &mut db,
+            Reminder {
+                id: Ref::new(1),
+                alert_id: alert.clone(),
+                threshold: 0.50.into(),
+                message: "hello".to_string(),
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        add_reminder_event(&mut db, reminder.id.clone(), 25, Reason::Hit).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 100, Reason::Unignored).await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let reminders = mgr
+            .triggered_reminders(&Times {
+                now: 5000,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+
+        // Should trigger because no Hit in current range
+        assert_eq!(
+            reminders
+                .into_iter()
+                .map(|r| (r.reminder.id, r.name))
+                .collect::<Vec<_>>(),
+            vec![(reminder.id, "name".to_string())]
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    pub async fn reminder_ignore_unignore_ignore_unignore() -> Result<()> {
+        let mut db = test_db().await?;
+        let alert = gen_alert(&mut db).await?;
+        let reminder = arrange::reminder(
+            &mut db,
+            Reminder {
+                id: Ref::new(1),
+                alert_id: alert.clone(),
+                threshold: 0.50.into(),
+                message: "hello".to_string(),
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        add_reminder_event(&mut db, reminder.id.clone(), 100, Reason::Ignored).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 110, Reason::Unignored).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 120, Reason::Ignored).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 130, Reason::Unignored).await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let reminders = mgr
+            .triggered_reminders(&Times {
+                now: 5000,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+
+        assert_eq!(
+            reminders
+                .into_iter()
+                .map(|r| (r.reminder.id, r.name))
+                .collect::<Vec<_>>(),
+            vec![(reminder.id, "name".to_string())]
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    pub async fn reminder_two_reminders_different_states() -> Result<()> {
+        let mut db = test_db().await?;
+        let alert = gen_alert(&mut db).await?;
+
+        let r1 = arrange::reminder(
+            &mut db,
+            Reminder {
+                id: Ref::new(1),
+                alert_id: alert.clone(),
+                threshold: 0.50.into(),
+                message: "r1".to_string(),
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        let r2 = arrange::reminder(
+            &mut db,
+            Reminder {
+                id: Ref::new(2),
+                alert_id: alert.clone(),
+                threshold: 0.50.into(),
+                message: "r2".to_string(),
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        add_reminder_event(&mut db, r1.id.clone(), 100, Reason::Ignored).await?;
+        add_reminder_event(&mut db, r2.id.clone(), 100, Reason::Unignored).await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let reminders = mgr
+            .triggered_reminders(&Times {
+                now: 5000,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+
+        let ids: Vec<_> = reminders
+            .into_iter()
+            .map(|r| (r.reminder.id, r.name))
+            .collect();
+        assert_eq!(ids.len(), 1);
+        assert_eq!(ids[0].0, r2.id);
+        Ok(())
+    }
+
+    #[tokio::test]
+    pub async fn reminder_unignore_only_no_prior_events() -> Result<()> {
+        let mut db = test_db().await?;
+        let alert = gen_alert(&mut db).await?;
+        let reminder = arrange::reminder(
+            &mut db,
+            Reminder {
+                id: Ref::new(1),
+                alert_id: alert.clone(),
+                threshold: 0.50.into(),
+                message: "hello".to_string(),
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        add_reminder_event(&mut db, reminder.id.clone(), 100, Reason::Unignored).await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let reminders = mgr
+            .triggered_reminders(&Times {
+                now: 5000,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+
+        assert_eq!(
+            reminders
+                .into_iter()
+                .map(|r| (r.reminder.id, r.name))
+                .collect::<Vec<_>>(),
+            vec![(reminder.id, "name".to_string())]
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    pub async fn reminder_alert_unignore_before_range_ignore_in_range() -> Result<()> {
+        let mut db = test_db().await?;
+        let alert = gen_alert(&mut db).await?;
+        let reminder = arrange::reminder(
+            &mut db,
+            Reminder {
+                id: Ref::new(1),
+                alert_id: alert.clone(),
+                threshold: 0.50.into(),
+                message: "hello".to_string(),
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        add_alert_event(&mut db, alert.clone(), 25, Reason::Unignored).await?;
+        add_alert_event(&mut db, alert.clone(), 100, Reason::Ignored).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 110, Reason::Ignored).await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let reminders = mgr
+            .triggered_reminders(&Times {
+                now: 5000,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+
+        assert_eq!(
+            reminders
+                .into_iter()
+                .map(|r| (r.reminder.id, r.name))
+                .collect::<Vec<_>>(),
+            vec![]
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    pub async fn reminder_hit_unignore_no_further_events() -> Result<()> {
+        let mut db = test_db().await?;
+        let alert = gen_alert(&mut db).await?;
+        let reminder = arrange::reminder(
+            &mut db,
+            Reminder {
+                id: Ref::new(1),
+                alert_id: alert.clone(),
+                threshold: 0.50.into(),
+                message: "hello".to_string(),
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        add_reminder_event(&mut db, reminder.id.clone(), 100, Reason::Hit).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 120, Reason::Unignored).await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let reminders = mgr
+            .triggered_reminders(&Times {
+                now: 5000,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+
+        assert_eq!(
+            reminders
+                .into_iter()
+                .map(|r| (r.reminder.id, r.name))
+                .collect::<Vec<_>>(),
+            vec![]
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    pub async fn reminder_events_exactly_at_range_start() -> Result<()> {
+        let mut db = test_db().await?;
+        let alert = gen_alert(&mut db).await?;
+        let reminder = arrange::reminder(
+            &mut db,
+            Reminder {
+                id: Ref::new(1),
+                alert_id: alert.clone(),
+                threshold: 0.50.into(),
+                message: "hello".to_string(),
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        add_reminder_event(&mut db, reminder.id.clone(), 50, Reason::Ignored).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 60, Reason::Unignored).await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let reminders = mgr
+            .triggered_reminders(&Times {
+                now: 5000,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+
+        assert_eq!(
+            reminders
+                .into_iter()
+                .map(|r| (r.reminder.id, r.name))
+                .collect::<Vec<_>>(),
+            vec![(reminder.id, "name".to_string())]
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    pub async fn reminder_alert_ignored_reminder_ignore_unignore_ignore_unignore() -> Result<()> {
+        let mut db = test_db().await?;
+        let alert = gen_alert(&mut db).await?;
+        let reminder = arrange::reminder(
+            &mut db,
+            Reminder {
+                id: Ref::new(1),
+                alert_id: alert.clone(),
+                threshold: 0.50.into(),
+                message: "hello".to_string(),
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        add_alert_event(&mut db, alert.clone(), 90, Reason::Ignored).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 100, Reason::Ignored).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 110, Reason::Unignored).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 120, Reason::Ignored).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 130, Reason::Unignored).await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let reminders = mgr
+            .triggered_reminders(&Times {
+                now: 5000,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+
+        assert_eq!(
+            reminders
+                .into_iter()
+                .map(|r| (r.reminder.id, r.name))
+                .collect::<Vec<_>>(),
+            vec![]
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    pub async fn reminder_alert_ignored_reminder_ignore_unignore_ignore_unignore_with_alert_unignore()
+    -> Result<()> {
+        let mut db = test_db().await?;
+        let alert = gen_alert(&mut db).await?;
+        let reminder = arrange::reminder(
+            &mut db,
+            Reminder {
+                id: Ref::new(1),
+                alert_id: alert.clone(),
+                threshold: 0.50.into(),
+                message: "hello".to_string(),
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        add_alert_event(&mut db, alert.clone(), 90, Reason::Ignored).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 100, Reason::Ignored).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 110, Reason::Unignored).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 120, Reason::Ignored).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 130, Reason::Unignored).await?;
+        add_alert_event(&mut db, alert.clone(), 140, Reason::Unignored).await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let reminders = mgr
+            .triggered_reminders(&Times {
+                now: 5000,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+
+        assert_eq!(
+            reminders
+                .into_iter()
+                .map(|r| (r.reminder.id, r.name))
+                .collect::<Vec<_>>(),
+            vec![(reminder.id, "name".to_string())]
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    pub async fn reminder_both_unignored_then_alert_ignored() -> Result<()> {
+        let mut db = test_db().await?;
+        let alert = gen_alert(&mut db).await?;
+        let reminder = arrange::reminder(
+            &mut db,
+            Reminder {
+                id: Ref::new(1),
+                alert_id: alert.clone(),
+                threshold: 0.50.into(),
+                message: "hello".to_string(),
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        add_alert_event(&mut db, alert.clone(), 100, Reason::Ignored).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 110, Reason::Ignored).await?;
+        add_alert_event(&mut db, alert.clone(), 120, Reason::Unignored).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 130, Reason::Unignored).await?;
+        add_alert_event(&mut db, alert.clone(), 140, Reason::Ignored).await?;
+
+        let mut mgr = AlertManager::new(db)?;
+        let reminders = mgr
+            .triggered_reminders(&Times {
+                now: 5000,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+
         assert_eq!(
             reminders
                 .into_iter()
