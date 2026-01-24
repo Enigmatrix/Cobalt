@@ -124,7 +124,6 @@ def test_alert_dim_between_tabs(
             description=f"Test app for {info['base_url']}",
             company="TestCo",
             color="#123456",
-            icon=None,
             identity_tag=2,  # Website
             identity_text0=info["base_url"],
             identity_text1="",
