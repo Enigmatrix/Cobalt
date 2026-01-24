@@ -96,10 +96,10 @@ export function ChooseTarget({
     return filteredTags.map((tag) => ({
       height: 32,
       item: (
-        <div
+        <button
           key={tag.id}
           className={cn(
-            "flex gap-2 items-center h-8 hover:bg-muted/90 px-2 mx-2 rounded-md text-sm",
+            "flex flex-1 gap-2 items-center h-8 hover:bg-muted/90 px-2 mx-2 rounded-md text-sm",
             {
               "bg-muted/60":
                 props.value?.tag === "tag" && props.value?.id === tag.id,
@@ -110,7 +110,7 @@ export function ChooseTarget({
           <TagIcon className="w-4 h-4 shrink-0" style={{ color: tag.color }} />
           <Text>{tag.name}</Text>
           <ScoreCircle score={tag.score} />
-        </div>
+        </button>
       ),
     }));
   }, [filteredTags, allTags, onValueChanged, props.value]);
@@ -181,10 +181,10 @@ export function ChooseTarget({
     return filteredApps.map((app) => ({
       height: 32,
       item: (
-        <div
+        <button
           key={app.id}
           className={cn(
-            "flex gap-2 items-center h-8 hover:bg-muted/90 px-2 mx-2 rounded-md text-sm",
+            "flex flex-1 gap-2 items-center h-8 hover:bg-muted/90 px-2 mx-2 rounded-md text-sm",
             {
               "bg-muted/60":
                 props.value?.tag === "app" && props.value?.id === app.id,
@@ -195,7 +195,7 @@ export function ChooseTarget({
           <AppIcon appIcon={app.icon} className="w-4 h-4 shrink-0" />
           <Text>{app.name}</Text>
           <MiniTagItem tagId={app.tagId} />
-        </div>
+        </button>
       ),
     }));
   }, [filteredApps, allApps, onValueChanged, props.value]);
@@ -240,7 +240,11 @@ export function ChooseTarget({
               >
                 {({ index, style }) => {
                   const item = items[index];
-                  return <div style={style}>{item.item}</div>;
+                  return (
+                    <div className="flex" style={style}>
+                      {item.item}
+                    </div>
+                  );
                 }}
               </List>
             )}
