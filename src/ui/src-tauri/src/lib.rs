@@ -2,6 +2,7 @@
 
 use util::Target;
 
+mod app_icon;
 mod config;
 mod error;
 mod repo;
@@ -36,6 +37,7 @@ pub fn run() {
         })
         .plugin(tauri_plugin_opener::init())
         .manage(state::AppState::default())
+        .register_asynchronous_uri_scheme_protocol("appicon", app_icon::protocol_handler)
         .invoke_handler(tauri::generate_handler![
             state::init_state,
             repo::get_apps,

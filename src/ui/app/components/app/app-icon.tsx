@@ -1,5 +1,6 @@
 import type { App, Ref } from "@/lib/entities";
 import { cn } from "@/lib/utils";
+import { convertFileSrc } from "@tauri-apps/api/core";
 import type { ClassValue } from "clsx";
 import { CircleHelp } from "lucide-react";
 import {
@@ -13,7 +14,7 @@ export const TAG_ICON_URL = "data:image/svg+xml," + TagStatic;
 
 export function appIconUrl(appId?: Ref<App>) {
   if (!appId) return DEFAULT_ICON_SVG_URL;
-  return "TODO fix";
+  return convertFileSrc(appId.toString(), "appicon");
 }
 
 export function appIconHtmlImgElement(appId?: Ref<App>): HTMLImageElement {
