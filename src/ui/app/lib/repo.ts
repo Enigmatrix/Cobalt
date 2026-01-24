@@ -4,6 +4,7 @@ import type {
   App,
   Duration as DataDuration,
   InteractionPeriod,
+  Reason,
   Ref,
   Reminder,
   ReminderEvent,
@@ -210,11 +211,16 @@ export async function removeAlert(alertId: Ref<Alert>): Promise<void> {
   return await invoke("remove_alert", { alertId });
 }
 
-export async function createAlertEventIgnore(
+export async function createAlertEvent(
   alertId: Ref<Alert>,
   timestamp: Timestamp,
+  reason: Reason,
 ): Promise<void> {
-  return await invoke("create_alert_event_ignore", { alertId, timestamp });
+  return await invoke("create_alert_event", {
+    alertId,
+    timestamp,
+    reason,
+  });
 }
 
 export async function getAppSessionUsages({

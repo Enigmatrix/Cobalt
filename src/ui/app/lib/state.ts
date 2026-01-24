@@ -4,7 +4,7 @@ import type { Alert, App, Ref, Tag } from "@/lib/entities";
 import { info } from "@/lib/log";
 import {
   createAlert,
-  createAlertEventIgnore,
+  createAlertEvent,
   createTag,
   getAlerts,
   getApps,
@@ -143,7 +143,7 @@ interface AppState {
   createAlert: (tag: CreateAlert) => Promise<Ref<Alert>>;
   updateAlert: (prev: Alert, next: UpdatedAlert) => Promise<Ref<Alert>>;
   removeAlert: (tagId: Ref<Alert>) => Promise<void>;
-  ignoreAlert: (alertId: Ref<Alert>) => Promise<void>;
+  toggleAlert: (alert: Alert) => Promise<void>;
 }
 
 export const useAppState = create<AppState>((set) => {
@@ -232,9 +232,13 @@ export const useAppState = create<AppState>((set) => {
         })(state),
       );
     },
-    ignoreAlert: async (alertId) => {
+    toggleAlert: async (alert) => {
       const now = DateTime.now();
-      await createAlertEventIgnore(alertId, dateTimeToTicks(now));
+      await createAlertEvent(
+        alert.id,
+        dateTimeToTicks(now),
+        alert.status.tag === "ignored" ? "unignored" : "ignored",
+      );
       await refreshParts(now, set, { refreshAlerts: true });
     },
   };
