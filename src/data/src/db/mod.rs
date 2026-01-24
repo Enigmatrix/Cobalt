@@ -7,7 +7,6 @@ use sqlx::sqlite::{SqliteConnectOptions, SqliteJournalMode, SqliteRow};
 use sqlx::{
     ConnectOptions, Connection, Executor, Row, Sqlite, SqlitePool, Transaction, query, query_as,
 };
-use util::config::Config;
 use util::error::{Context, Result};
 use util::time::{TimeSystem, ToTicks};
 
@@ -143,15 +142,14 @@ impl UsageWriter {
         // No existing app found, insert new one
         let (new_id,): (Ref<App>,) = query_as(
             "INSERT INTO apps (
-                name, description, company, color, icon, tag_id,
+                name, description, company, color, tag_id,
                 identity_tag, identity_text0, identity_text1, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
         )
         .bind(&app.name)
         .bind(&app.description)
         .bind(&app.company)
         .bind(&app.color)
-        .bind(&app.icon)
         .bind(&app.tag_id)
         .bind(tag)
         .bind(text0)
@@ -264,14 +262,18 @@ impl AppUpdater {
     }
 
     /// Update the [App] with additional information, including its icon
-    pub async fn update_app(&mut self, app: &App, ts: impl TimeSystem) -> Result<()> {
+    pub async fn update_app(
+        &mut self,
+        app: &App,
+        icon: Option<Vec<u8>>,
+        ts: impl TimeSystem,
+    ) -> Result<()> {
         query(
             "UPDATE apps SET
                     name = ?,
                     description = ?,
                     company = ?,
                     color = ?,
-                    icon = ?,
                     updated_at = ?,
                     initialized_at = ?
                 WHERE id = ?",
@@ -280,12 +282,24 @@ impl AppUpdater {
         .bind(&app.description)
         .bind(&app.company)
         .bind(&app.color)
-        .bind(&app.icon)
         .bind(ts.now().to_ticks())
         .bind(ts.now().to_ticks())
         .bind(&app.id)
         .execute(self.db.executor())
         .await?;
+        if let Some(icon_data) = icon {
+            query("INSERT OR REPLACE INTO app_icons VALUES (?, ?)")
+                .bind(&app.id)
+                .bind(icon_data)
+                .execute(self.db.executor())
+                .await?;
+        } else {
+            query("DELETE FROM app_icons WHERE id = ?")
+                .bind(&app.id)
+                .execute(self.db.executor())
+                .await?;
+        }
+
         Ok(())
     }
 }

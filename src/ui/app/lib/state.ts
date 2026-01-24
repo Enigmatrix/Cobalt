@@ -1,5 +1,5 @@
 import { getTheme } from "@/components/theme-provider";
-import { getIconsDir, refresh as refreshConfig } from "@/lib/config";
+import { refresh as refreshConfig } from "@/lib/config";
 import type { Alert, App, Ref, Tag } from "@/lib/entities";
 import { info } from "@/lib/log";
 import {
@@ -39,8 +39,7 @@ export async function initState() {
     invoke("init_state"), // init rust-side state
   ]);
 
-  const [iconsDirOut] = await Promise.all([getIconsDir(), refresh()]);
-  iconsDir = iconsDirOut;
+  await refresh();
 
   if (import.meta.env.PROD) {
     checkForUpdatesBackground();
@@ -48,8 +47,6 @@ export async function initState() {
 
   createRefreshTimer(REFRESH_GAP_MS);
 }
-
-export let iconsDir: string;
 
 export let refreshTimer: ReturnType<typeof setInterval> | null = null;
 

@@ -51,9 +51,7 @@ async fn main() -> Result<()> {
         return Ok(());
     }
 
-    util::fs::remove_icon_files(&target_path)?;
     util::fs::remove_db_files(&target_path)?;
-    util::fs::copy_icon_files(&source_path, &target_path)?;
     util::fs::copy_db_files(&source_path, &target_path)?;
 
     Ok(())

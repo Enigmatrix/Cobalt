@@ -119,10 +119,7 @@ function EditAlertPage({ alert }: { alert: AlertEntity }) {
                   className="inline-flex items-center overflow-hidden"
                 >
                   {app && (
-                    <AppIcon
-                      appIcon={app.icon}
-                      className="w-5 h-5 mr-2 shrink-0"
-                    />
+                    <AppIcon appId={app.id} className="w-5 h-5 mr-2 shrink-0" />
                   )}
                   {tag && (
                     <TagIcon

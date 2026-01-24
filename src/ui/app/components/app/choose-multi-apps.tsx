@@ -113,7 +113,7 @@ export function ChooseMultiApps({
               className="border-foreground/20"
             />
             <AppIcon
-              appIcon={app.icon}
+              appId={app.id}
               className="mr-2 h-4 w-4 text-muted-foreground"
             />
             <Text>{app.name}</Text>

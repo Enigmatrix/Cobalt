@@ -193,7 +193,7 @@ impl<T1: Display, T2> Display for DisplayFirst<T1, T2> {
 
 async fn merge_apps(
     db: &mut Database,
-    db_path: PathBuf,
+    _db_path: PathBuf,
     apps: Vec<infused::App>,
     target: Ref<App>,
 ) -> Result<()> {
@@ -239,13 +239,6 @@ async fn merge_apps(
     let delete_apps_query = sqlx::query(&delete_apps_sql);
     let delete_apps_query = app_ids.iter().fold(delete_apps_query, |q, id| q.bind(id));
     delete_apps_query.execute(&mut *tx).await?;
-
-    // Delete icons of the merged {apps} except {target}
-    for app in apps {
-        let Some(icon) = app.inner.icon else { continue };
-        let path = db_path.join("..").join("icons").join(icon);
-        std::fs::remove_file(&path).with_context(|| format!("remove icon {}", path.display()))?;
-    }
 
     // Commit the transaction
     tx.commit().await?;

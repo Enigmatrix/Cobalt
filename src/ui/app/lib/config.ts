@@ -204,7 +204,3 @@ async function resetDefaultFocusStreakSettings() {
 async function resetDefaultDistractiveStreakSettings() {
   return await invoke("config_reset_default_distractive_streak_settings");
 }
-
-export async function getIconsDir(): Promise<string> {
-  return await invoke("get_icons_dir");
-}

@@ -14,7 +14,7 @@ Cobalt is an application usage tracking tool that monitors window focus and appl
 The Threat Model is somewhat smaller since it's a desktop application (both UI and engine run as Medium IL, unprivileged programs) that doesn't store any data on a server (all data is local).
 
 The main threats that we consider are other unprivileged applications, through interaction of our app or modifications to the filesystem that Cobalt uses, cause system instability (e.g. system crashes), or privilege escalation.
-The other main threat is unsafe handling of icons, since we download them from visited websites and save them to disk / get them from running applications, as well as display it to the user in the UI (which is a webview). If there is a possible XSS by rendering website favicons in the webview, that is a reportable vulnerability (though we heavily mitigate this possibility).
+The other main threat is unsafe handling of icons, since we download them from visited websites and save them to db / get them from running applications, as well as display it to the user in the UI (which is a webview). If there is a possible XSS/SSRF/RCE by rendering icons in the webview, that is a reportable vulnerability (though we heavily mitigate this possibility).
 
 Leakage of usage data (main.db) by another unprivileged application is not considered a vulnerability - similar to Chrome's History SQLite files, other unprivileged applications can read it.
 

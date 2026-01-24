@@ -44,7 +44,7 @@ async fn get_score_apps_no_tags() -> Result<()> {
                 path: "app1.exe".to_string(),
             },
             tag_id: None,
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -63,7 +63,7 @@ async fn get_score_apps_no_tags() -> Result<()> {
                 path: "app2.exe".to_string(),
             },
             tag_id: None,
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -168,7 +168,7 @@ async fn get_score_apps_with_tags() -> Result<()> {
                 path: "productivity.exe".to_string(),
             },
             tag_id: Some(tag1.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -187,7 +187,7 @@ async fn get_score_apps_with_tags() -> Result<()> {
                 path: "gaming.exe".to_string(),
             },
             tag_id: Some(tag2.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -286,7 +286,7 @@ async fn get_score_mixed_apps() -> Result<()> {
                 path: "work.exe".to_string(),
             },
             tag_id: Some(tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -305,7 +305,7 @@ async fn get_score_mixed_apps() -> Result<()> {
                 path: "untagged.exe".to_string(),
             },
             tag_id: None,
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -404,7 +404,7 @@ async fn get_score_usage_outside_range() -> Result<()> {
                 path: "test.exe".to_string(),
             },
             tag_id: Some(tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -486,7 +486,7 @@ async fn get_score_partial_usage_overlap() -> Result<()> {
                 path: "overlap.exe".to_string(),
             },
             tag_id: Some(tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -568,7 +568,7 @@ async fn get_score_multiple_sessions_same_app() -> Result<()> {
                 path: "multisession.exe".to_string(),
             },
             tag_id: Some(tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -682,7 +682,7 @@ async fn get_score_zero_tag_score() -> Result<()> {
                 path: "zeroscore.exe".to_string(),
             },
             tag_id: Some(tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -752,7 +752,7 @@ async fn get_score_usage_extends_beyond_end() -> Result<()> {
                 path: "beyondend.exe".to_string(),
             },
             tag_id: Some(tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -825,7 +825,7 @@ async fn get_score_usage_starts_before_and_extends_beyond() -> Result<()> {
                 path: "beforeandafter.exe".to_string(),
             },
             tag_id: Some(tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -911,7 +911,7 @@ async fn get_score_per_period_single_hour() -> Result<()> {
                 path: "test.exe".to_string(),
             },
             tag_id: Some(tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -985,7 +985,7 @@ async fn get_score_per_period_multiple_hours() -> Result<()> {
                 path: "test.exe".to_string(),
             },
             tag_id: Some(tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -1076,7 +1076,7 @@ async fn get_score_per_period_different_scores() -> Result<()> {
                 path: "high.exe".to_string(),
             },
             tag_id: Some(tag1.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -1095,7 +1095,7 @@ async fn get_score_per_period_different_scores() -> Result<()> {
                 path: "low.exe".to_string(),
             },
             tag_id: Some(tag2.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -1210,7 +1210,7 @@ async fn get_score_per_period_mixed_hour() -> Result<()> {
                 path: "high.exe".to_string(),
             },
             tag_id: Some(tag1.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -1229,7 +1229,7 @@ async fn get_score_per_period_mixed_hour() -> Result<()> {
                 path: "low.exe".to_string(),
             },
             tag_id: Some(tag2.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -1328,7 +1328,7 @@ async fn get_score_per_period_day_period() -> Result<()> {
                 path: "test.exe".to_string(),
             },
             tag_id: Some(tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -1402,7 +1402,7 @@ async fn get_score_per_period_week_period() -> Result<()> {
                 path: "test.exe".to_string(),
             },
             tag_id: Some(tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -1462,7 +1462,7 @@ async fn get_score_per_period_apps_without_tags() -> Result<()> {
                 path: "untagged.exe".to_string(),
             },
             tag_id: None,
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -1548,7 +1548,7 @@ async fn get_score_per_period_complex_multi_period() -> Result<()> {
                 path: "productivity.exe".to_string(),
             },
             tag_id: Some(tag1.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -1567,7 +1567,7 @@ async fn get_score_per_period_complex_multi_period() -> Result<()> {
                 path: "gaming.exe".to_string(),
             },
             tag_id: Some(tag2.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -1694,7 +1694,7 @@ async fn get_score_per_period_usage_split_across_periods() -> Result<()> {
                 path: "test.exe".to_string(),
             },
             tag_id: Some(tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -1774,7 +1774,7 @@ async fn get_score_per_period_empty_periods() -> Result<()> {
                 path: "test.exe".to_string(),
             },
             tag_id: Some(tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -1848,7 +1848,7 @@ async fn get_score_per_period_usage_extends_beyond_end() -> Result<()> {
                 path: "beyondendperiod.exe".to_string(),
             },
             tag_id: Some(tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -1925,7 +1925,7 @@ async fn get_score_per_period_usage_starts_before_and_extends_beyond() -> Result
                 path: "beforeandafterperiod.exe".to_string(),
             },
             tag_id: Some(tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -2022,7 +2022,7 @@ async fn get_score_per_period_mixed_usage_beyond_end() -> Result<()> {
                 path: "withinrange.exe".to_string(),
             },
             tag_id: Some(tag1.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -2041,7 +2041,7 @@ async fn get_score_per_period_mixed_usage_beyond_end() -> Result<()> {
                 path: "beyondend.exe".to_string(),
             },
             tag_id: Some(tag2.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -2180,7 +2180,7 @@ async fn get_streaks_single_focus_streak() -> Result<()> {
                 path: "productivity.exe".to_string(),
             },
             tag_id: Some(focus_tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -2274,7 +2274,7 @@ async fn get_streaks_single_distractive_streak() -> Result<()> {
                 path: "gaming.exe".to_string(),
             },
             tag_id: Some(distractive_tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -2368,7 +2368,7 @@ async fn get_streaks_usage_too_short_for_focus() -> Result<()> {
                 path: "productivity.exe".to_string(),
             },
             tag_id: Some(focus_tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -2460,7 +2460,7 @@ async fn get_streaks_usage_too_short_for_distractive() -> Result<()> {
                 path: "gaming.exe".to_string(),
             },
             tag_id: Some(distractive_tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -2552,7 +2552,7 @@ async fn get_streaks_score_below_focus_threshold() -> Result<()> {
                 path: "lowscore.exe".to_string(),
             },
             tag_id: Some(low_score_tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -2644,7 +2644,7 @@ async fn get_streaks_score_above_distractive_threshold() -> Result<()> {
                 path: "highscore.exe".to_string(),
             },
             tag_id: Some(high_score_tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -2722,7 +2722,7 @@ async fn get_streaks_app_without_tag() -> Result<()> {
                 path: "untagged.exe".to_string(),
             },
             tag_id: None, // No tag
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -2817,7 +2817,7 @@ async fn get_streaks_multiple_focus_streaks() -> Result<()> {
                 path: "productivity.exe".to_string(),
             },
             tag_id: Some(focus_tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -2940,7 +2940,7 @@ async fn get_streaks_multiple_distractive_streaks() -> Result<()> {
                 path: "gaming.exe".to_string(),
             },
             tag_id: Some(distractive_tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -3077,7 +3077,7 @@ async fn get_streaks_focus_and_distractive_streaks() -> Result<()> {
                 path: "productivity.exe".to_string(),
             },
             tag_id: Some(focus_tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -3097,7 +3097,7 @@ async fn get_streaks_focus_and_distractive_streaks() -> Result<()> {
                 path: "gaming.exe".to_string(),
             },
             tag_id: Some(distractive_tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -3220,7 +3220,7 @@ async fn get_streaks_overlapping_usages_same_app() -> Result<()> {
                 path: "productivity.exe".to_string(),
             },
             tag_id: Some(focus_tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -3341,7 +3341,7 @@ async fn get_streaks_gap_between_usages_within_threshold() -> Result<()> {
                 path: "productivity.exe".to_string(),
             },
             tag_id: Some(focus_tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -3462,7 +3462,7 @@ async fn get_streaks_gap_between_usages_exceeds_threshold() -> Result<()> {
                 path: "productivity.exe".to_string(),
             },
             tag_id: Some(focus_tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -3600,7 +3600,7 @@ async fn get_streaks_focus_streak_overlaps_distractive_streak() -> Result<()> {
                 path: "productivity.exe".to_string(),
             },
             tag_id: Some(focus_tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -3620,7 +3620,7 @@ async fn get_streaks_focus_streak_overlaps_distractive_streak() -> Result<()> {
                 path: "gaming.exe".to_string(),
             },
             tag_id: Some(distractive_tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -3741,7 +3741,7 @@ async fn get_streaks_multiple_apps_same_tag() -> Result<()> {
                 path: "productivity1.exe".to_string(),
             },
             tag_id: Some(focus_tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -3760,7 +3760,7 @@ async fn get_streaks_multiple_apps_same_tag() -> Result<()> {
                 path: "productivity2.exe".to_string(),
             },
             tag_id: Some(focus_tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -3883,7 +3883,7 @@ async fn get_streaks_usage_outside_time_range() -> Result<()> {
                 path: "productivity.exe".to_string(),
             },
             tag_id: Some(focus_tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -3976,7 +3976,7 @@ async fn get_streaks_usage_partially_overlaps_time_range() -> Result<()> {
                 path: "productivity.exe".to_string(),
             },
             tag_id: Some(focus_tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -4074,7 +4074,7 @@ async fn get_streaks_complex_merging_scenario() -> Result<()> {
                 path: "productivity.exe".to_string(),
             },
             tag_id: Some(focus_tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -4222,7 +4222,7 @@ async fn get_streaks_focus_gap_exact_threshold_merges() -> Result<()> {
                 path: "focus.exe".into(),
             },
             tag_id: Some(focus_tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -4321,7 +4321,7 @@ async fn get_streaks_focus_gap_just_over_threshold_no_merge() -> Result<()> {
                 path: "focus.exe".into(),
             },
             tag_id: Some(focus_tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -4416,7 +4416,7 @@ async fn get_streaks_distractive_gap_exact_threshold_merges() -> Result<()> {
                 path: "chat.exe".into(),
             },
             tag_id: Some(dist_tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -4513,7 +4513,7 @@ async fn get_streaks_distractive_gap_over_threshold_no_merge() -> Result<()> {
                 path: "chat.exe".into(),
             },
             tag_id: Some(dist_tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -4622,7 +4622,7 @@ async fn get_streaks_focus_pruned_by_exact_overlap() -> Result<()> {
                 path: "ide.exe".into(),
             },
             tag_id: Some(focus_tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -4640,7 +4640,7 @@ async fn get_streaks_focus_pruned_by_exact_overlap() -> Result<()> {
                 path: "browser.exe".into(),
             },
             tag_id: Some(dist_tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -4753,7 +4753,7 @@ macro_rules! basic_get_streaks_case {
                         path: "a.exe".into(),
                     },
                     tag_id: Some(tag.id.clone()),
-                    icon: None,
+
                     created_at: 0,
                     updated_at: 0,
                 },
@@ -4837,7 +4837,7 @@ async fn get_streaks_focus_below_min_duration_skipped() -> Result<()> {
                 path: "a.exe".into(),
             },
             tag_id: Some(tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -4907,7 +4907,7 @@ async fn get_streaks_tagless_app_counts_distractive() -> Result<()> {
                 path: "tagless.exe".into(),
             },
             tag_id: None,
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -4982,7 +4982,7 @@ async fn get_streaks_focus_usage_starts_before_range_clipped() -> Result<()> {
                 path: "a.exe".into(),
             },
             tag_id: Some(tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -5057,7 +5057,7 @@ async fn get_streaks_distractive_usage_extends_after_range_clipped() -> Result<(
                 path: "a.exe".into(),
             },
             tag_id: Some(tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -5132,7 +5132,7 @@ async fn get_streaks_usage_covers_entire_range() -> Result<()> {
                 path: "a.exe".into(),
             },
             tag_id: Some(tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -5231,7 +5231,7 @@ async fn get_streaks_focus_transitive_three_usages() -> Result<()> {
                 path: "a.exe".into(),
             },
             tag_id: Some(tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -5328,7 +5328,7 @@ async fn get_streaks_focus_gap_crosses_distractive_not_merge() -> Result<()> {
                 path: "f.exe".into(),
             },
             tag_id: Some(focus_tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -5346,7 +5346,7 @@ async fn get_streaks_focus_gap_crosses_distractive_not_merge() -> Result<()> {
                 path: "d.exe".into(),
             },
             tag_id: Some(dist_tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -5473,7 +5473,7 @@ async fn get_streaks_focus_overlap_zero_gap_merges() -> Result<()> {
                 path: "a.exe".into(),
             },
             tag_id: Some(tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -5561,7 +5561,7 @@ async fn get_streaks_focus_score_equal_threshold_not_focus() -> Result<()> {
                 path: "a.exe".into(),
             },
             tag_id: Some(tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -5640,7 +5640,7 @@ async fn get_streaks_distractive_switch_apps_contiguous_usages_merges() -> Resul
                 path: "vid.exe".into(),
             },
             tag_id: Some(dist_tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -5659,7 +5659,7 @@ async fn get_streaks_distractive_switch_apps_contiguous_usages_merges() -> Resul
                 path: "music.exe".into(),
             },
             tag_id: Some(dist_tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -5772,7 +5772,7 @@ async fn get_streaks_distractive_multi_session_same_app_merges() -> Result<()> {
                 path: "chat.exe".into(),
             },
             tag_id: Some(dist_tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -5880,7 +5880,7 @@ async fn get_streaks_focus_switch_apps_contiguous_usages_merges() -> Result<()> 
                 path: "ide.exe".into(),
             },
             tag_id: Some(focus_tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -5899,7 +5899,7 @@ async fn get_streaks_focus_switch_apps_contiguous_usages_merges() -> Result<()> 
                 path: "edit.exe".into(),
             },
             tag_id: Some(focus_tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -6006,7 +6006,7 @@ async fn get_streaks_focus_multi_session_same_app_merges() -> Result<()> {
                 path: "term.exe".into(),
             },
             tag_id: Some(focus_tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -6127,7 +6127,7 @@ async fn get_streaks_dp_blocks_focus_usage_extension() -> Result<()> {
                 path: "f.exe".into(),
             },
             tag_id: Some(focus_tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -6145,7 +6145,7 @@ async fn get_streaks_dp_blocks_focus_usage_extension() -> Result<()> {
                 path: "d.exe".into(),
             },
             tag_id: Some(dist_tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -6301,7 +6301,7 @@ async fn get_streaks_dp_prevents_focus_streaks_merging() -> Result<()> {
                 path: "f.exe".into(),
             },
             tag_id: Some(focus_tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -6319,7 +6319,7 @@ async fn get_streaks_dp_prevents_focus_streaks_merging() -> Result<()> {
                 path: "d.exe".into(),
             },
             tag_id: Some(dist_tag.id.clone()),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },

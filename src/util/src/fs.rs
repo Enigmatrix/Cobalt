@@ -88,23 +88,11 @@ pub fn remove_db_files(source_dir: &Path) -> Result<()> {
     Ok(())
 }
 
-/// Remove icon files
-pub fn remove_icon_files(source_dir: &Path) -> Result<()> {
-    check_and_remove_dir(source_dir, "icons")?;
-    Ok(())
-}
-
 /// Copy db files
 pub fn copy_db_files(source_dir: &Path, target_dir: &Path) -> Result<()> {
     check_and_copy_file(source_dir, target_dir, "main.db")?;
     check_and_copy_file(source_dir, target_dir, "main.db-journal")?;
     check_and_copy_file(source_dir, target_dir, "main.db-shm")?;
     check_and_copy_file(source_dir, target_dir, "main.db-wal")?;
-    Ok(())
-}
-
-/// Copy icon files
-pub fn copy_icon_files(source_dir: &Path, target_dir: &Path) -> Result<()> {
-    check_and_copy_dir(source_dir, target_dir, "icons")?;
     Ok(())
 }

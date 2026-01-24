@@ -26,7 +26,6 @@ class Database:
         description: str,
         company: str,
         color: str,
-        icon: Optional[str],
         identity_tag: int,
         identity_text0: str,
         identity_text1: str,
@@ -38,7 +37,7 @@ class Database:
         cursor = self.conn.cursor()
         cursor.execute(
             """
-            INSERT OR REPLACE INTO apps (name, description, company, color, icon, tag_id, 
+            INSERT OR REPLACE INTO apps (name, description, company, color, tag_id, 
                              identity_tag, identity_text0, identity_text1, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
@@ -47,7 +46,6 @@ class Database:
                 description,
                 company,
                 color,
-                icon,
                 tag_id,
                 identity_tag,
                 identity_text0,
