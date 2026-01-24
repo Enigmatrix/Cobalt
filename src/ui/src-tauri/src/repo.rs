@@ -122,7 +122,6 @@ pub async fn copy_from_seed_db(state: State<'_, AppState>) -> AppResult<()> {
     }
 
     let base_dir = util::config::Config::config_base_dir().context("config base dir")?;
-    util::fs::remove_icon_files(&base_dir)?;
     util::fs::remove_db_files(&base_dir)?;
 
     let to_file = util::config::Config::config_path("main.db").context("config path")?;
@@ -130,12 +129,6 @@ pub async fn copy_from_seed_db(state: State<'_, AppState>) -> AppResult<()> {
 
     // reinit state for the sake of repo
     init_state(state.clone()).await?;
-
-    {
-        let state = state.write().await;
-        let mut repo = state.assume_init().get_repo().await?;
-        repo.extract_seed_db_icons().await?;
-    }
 
     // shutdown state again, lose the cached type info for sqlx
     {
@@ -162,14 +155,12 @@ pub async fn copy_from_install_db(state: State<'_, AppState>) -> AppResult<()> {
     }
 
     let base_dir = util::config::Config::config_base_dir().context("config base dir")?;
-    util::fs::remove_icon_files(&base_dir)?;
     util::fs::remove_db_files(&base_dir)?;
 
     let install_dir = util::config::data_local_dir()
         .context("data local dir")?
         .join("me.enigmatrix.cobalt");
 
-    util::fs::copy_icon_files(&install_dir, &base_dir)?;
     util::fs::copy_db_files(&install_dir, &base_dir)?;
 
     // reinit state (repo)

@@ -82,13 +82,3 @@ pub async fn config_reset_default_distractive_streak_settings(
         .context("reset default distractive streak settings")?;
     Ok(())
 }
-
-#[tauri::command]
-#[tracing::instrument(err)]
-pub async fn get_icons_dir() -> AppResult<String> {
-    let path = Config::icons_dir().context("get icons dir")?;
-    Ok(std::path::absolute(path)
-        .context("get absolute path")?
-        .to_string_lossy()
-        .to_string())
-}

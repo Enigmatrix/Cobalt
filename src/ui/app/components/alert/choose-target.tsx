@@ -192,7 +192,7 @@ export function ChooseTarget({
           )}
           onClick={() => onValueChanged({ tag: "app", id: app.id })}
         >
-          <AppIcon appIcon={app.icon} className="w-4 h-4 shrink-0" />
+          <AppIcon appId={app.id} className="w-4 h-4 shrink-0" />
           <Text>{app.name}</Text>
           <MiniTagItem tagId={app.tagId} />
         </button>
@@ -274,7 +274,7 @@ function ChooseTargetTrigger({
     >
       {value?.tag === "app" && app ? (
         <>
-          <AppIcon appIcon={app.icon} className="w-5 h-5 shrink-0" />
+          <AppIcon appId={app.id} className="w-5 h-5 shrink-0" />
           <Text>{app.name}</Text>
         </>
       ) : value?.tag === "tag" && tag ? (

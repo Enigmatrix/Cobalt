@@ -34,7 +34,7 @@ async fn insert_new_app() -> Result<()> {
         description: "notepad.exe".to_string(),
         company: "".to_string(),
         color: "red".to_string(),
-        icon: None,
+
         identity: AppIdentity::Win32 {
             path: "notepad.exe".to_string(),
         },
@@ -64,7 +64,7 @@ async fn found_old_app() -> Result<()> {
         description: "notepad.exe".to_string(),
         company: "".to_string(),
         color: "red".to_string(),
-        icon: None,
+
         identity: AppIdentity::Win32 {
             path: "notepad.exe".to_string(),
         },
@@ -81,7 +81,7 @@ async fn found_old_app() -> Result<()> {
         description: "notepad.exe".to_string(),
         company: "".to_string(),
         color: "red".to_string(),
-        icon: None,
+
         identity: AppIdentity::Win32 {
             path: "notepad.exe".to_string(),
         },
@@ -111,7 +111,7 @@ async fn insert_session() -> Result<()> {
         description: "notepad.exe".to_string(),
         company: "".to_string(),
         color: "red".to_string(),
-        icon: None,
+
         identity: AppIdentity::Win32 {
             path: "notepad.exe".to_string(),
         },
@@ -147,7 +147,7 @@ async fn insert_usage() -> Result<()> {
         description: "notepad.exe".to_string(),
         company: "".to_string(),
         color: "red".to_string(),
-        icon: None,
+
         identity: AppIdentity::Win32 {
             path: "notepad.exe".to_string(),
         },
@@ -189,7 +189,7 @@ async fn update_usage_after_insert_usage() -> Result<()> {
         description: "notepad.exe".to_string(),
         company: "".to_string(),
         color: "red".to_string(),
-        icon: None,
+
         identity: AppIdentity::Win32 {
             path: "notepad.exe".to_string(),
         },
@@ -234,7 +234,7 @@ async fn insert_interaction_period() -> Result<()> {
         description: "notepad.exe".to_string(),
         company: "".to_string(),
         color: "red".to_string(),
-        icon: None,
+
         identity: AppIdentity::Win32 {
             path: "notepad.exe".to_string(),
         },
@@ -262,6 +262,13 @@ async fn insert_interaction_period() -> Result<()> {
 
 #[tokio::test]
 async fn update_app() -> Result<()> {
+    #[derive(FromRow, PartialEq, Eq, Debug)]
+    struct Res {
+        #[sqlx(flatten)]
+        app: App,
+        icon: Option<Vec<u8>>,
+    }
+
     let db = test_db().await?;
     let mut writer = UsageWriter::new(db)?;
     let app = App {
@@ -270,7 +277,7 @@ async fn update_app() -> Result<()> {
         description: "notepad.exe".to_string(),
         company: "".to_string(),
         color: "red".to_string(),
-        icon: None,
+
         identity: AppIdentity::Win32 {
             path: "notepad.exe".to_string(),
         },
@@ -279,9 +286,25 @@ async fn update_app() -> Result<()> {
         updated_at: 400,
     };
     writer.find_or_insert_app(&app).await?;
-
     let mut updater = AppUpdater::new(writer.db)?;
-    let icon = "icon1".to_string();
+
+    let res: Vec<Res> =
+        query_as("SELECT apps.*, icon FROM apps LEFT JOIN app_icons ON apps.id = app_icons.id")
+            .fetch_all(updater.db.executor())
+            .await?;
+
+    assert_eq!(
+        vec![Res {
+            app: App {
+                id: Ref::new(1),
+                ..app.clone()
+            },
+            icon: None
+        }],
+        res
+    );
+
+    let icon = b"icon1".to_vec();
     let mut app = App {
         id: Ref::new(1),
         name: "name".to_string(),
@@ -289,7 +312,6 @@ async fn update_app() -> Result<()> {
         company: "comp".to_string(),
         color: "red".to_string(),
         identity: app.identity.clone(), // ignored by query
-        icon: Some(icon.clone()),
         tag_id: None,
         created_at: 400,
         updated_at: 400,
@@ -297,6 +319,7 @@ async fn update_app() -> Result<()> {
     updater
         .update_app(
             &app,
+            Some(icon.clone()),
             Times {
                 now: 500,
                 ..Default::default()
@@ -304,18 +327,89 @@ async fn update_app() -> Result<()> {
         )
         .await?;
 
-    #[derive(FromRow, PartialEq, Eq, Debug)]
-    struct Res {
-        #[sqlx(flatten)]
-        app: App,
-    }
-
-    let res: Vec<Res> = query_as("SELECT * FROM apps")
-        .fetch_all(updater.db.executor())
-        .await?;
+    let res: Vec<Res> =
+        query_as("SELECT apps.*, icon FROM apps LEFT JOIN app_icons ON apps.id = app_icons.id")
+            .fetch_all(updater.db.executor())
+            .await?;
 
     app.updated_at = 500;
-    assert_eq!(vec![Res { app }], res);
+    assert_eq!(
+        vec![Res {
+            app: app.clone(),
+            icon: Some(icon)
+        }],
+        res
+    );
+
+    let icon = b"icon2asdfjlkasdjflsakfdjs".to_vec();
+    updater
+        .update_app(
+            &app,
+            Some(icon.clone()),
+            Times {
+                now: 1000,
+                ..Default::default()
+            },
+        )
+        .await?;
+
+    let res: Vec<Res> =
+        query_as("SELECT apps.*, icon FROM apps LEFT JOIN app_icons ON apps.id = app_icons.id")
+            .fetch_all(updater.db.executor())
+            .await?;
+
+    app.updated_at = 1000;
+    assert_eq!(
+        vec![Res {
+            app: app.clone(),
+            icon: Some(icon)
+        }],
+        res
+    );
+
+    updater
+        .update_app(
+            &app,
+            None,
+            Times {
+                now: 1500,
+                ..Default::default()
+            },
+        )
+        .await?;
+
+    let res: Vec<Res> =
+        query_as("SELECT apps.*, icon FROM apps LEFT JOIN app_icons ON apps.id = app_icons.id")
+            .fetch_all(updater.db.executor())
+            .await?;
+
+    app.updated_at = 1500;
+    assert_eq!(
+        vec![Res {
+            app: app.clone(),
+            icon: None
+        }],
+        res
+    );
+
+    updater
+        .update_app(
+            &app,
+            None,
+            Times {
+                now: 2000,
+                ..Default::default()
+            },
+        )
+        .await?;
+
+    let res: Vec<Res> =
+        query_as("SELECT apps.*, icon FROM apps LEFT JOIN app_icons ON apps.id = app_icons.id")
+            .fetch_all(updater.db.executor())
+            .await?;
+
+    app.updated_at = 2000;
+    assert_eq!(vec![Res { app, icon: None }], res);
     Ok(())
 }
 
@@ -329,17 +423,15 @@ async fn insert_app_raw(
     identity_tag: u32,
     identity_text0: &str,
     identity_text1: &str,
-    icon: Option<String>,
     created_at: i64,
     initialized_at: Option<i64>,
     updated_at: i64,
 ) -> Result<Ref<App>> {
-    let res = query("INSERT INTO apps VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+    let res = query("INSERT INTO apps VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
         .bind(name)
         .bind(description)
         .bind(company)
         .bind(color)
-        .bind(icon)
         .bind(tag_id)
         .bind(identity_tag)
         .bind(identity_text0)
@@ -444,7 +536,6 @@ async fn target_apps() -> Result<()> {
             1,
             "path1",
             "",
-            None,
             0,
             Some(0),
             0,
@@ -460,7 +551,6 @@ async fn target_apps() -> Result<()> {
             0,
             "aumid2",
             "",
-            None,
             0,
             Some(0),
             0,
@@ -476,7 +566,6 @@ async fn target_apps() -> Result<()> {
             1,
             "path3",
             "",
-            None,
             0,
             Some(0),
             0,
@@ -492,7 +581,6 @@ async fn target_apps() -> Result<()> {
             1,
             "path4",
             "",
-            None,
             0,
             Some(0),
             0,
@@ -512,7 +600,7 @@ async fn target_apps() -> Result<()> {
             path: "path1".to_string(),
         },
         tag_id: None,
-        icon: None,
+
         created_at: 0,
         updated_at: 0,
     };
@@ -526,7 +614,7 @@ async fn target_apps() -> Result<()> {
             aumid: "aumid2".to_string(),
         },
         tag_id: Some(Ref::new(2)),
-        icon: None,
+
         created_at: 0,
         updated_at: 0,
     };
@@ -540,7 +628,7 @@ async fn target_apps() -> Result<()> {
             path: "path3".to_string(),
         },
         tag_id: Some(Ref::new(3)),
-        icon: None,
+
         created_at: 0,
         updated_at: 0,
     };
@@ -554,7 +642,7 @@ async fn target_apps() -> Result<()> {
             path: "path4".to_string(),
         },
         tag_id: Some(Ref::new(2)),
-        icon: None,
+
         created_at: 0,
         updated_at: 0,
     };
@@ -613,7 +701,6 @@ async fn insert_alert_event() -> Result<()> {
             1,
             "path1",
             "",
-            None,
             0,
             Some(0),
             0,
@@ -663,7 +750,6 @@ async fn insert_reminder_event() -> Result<()> {
             1,
             "path1",
             "",
-            None,
             0,
             Some(0),
             0,
@@ -774,7 +860,6 @@ pub mod arrange {
                 AppIdentity::Squirrel { file, .. } => file,
                 _ => "",
             },
-            app.icon.clone(),
             0,
             Some(0),
             0,
@@ -924,7 +1009,6 @@ pub mod arrange {
                     path: "path".to_string(),
                 },
                 tag_id: None,
-                icon: None,
                 created_at: 0,
                 updated_at: 0,
             },
@@ -1013,7 +1097,7 @@ mod triggered_alerts {
                     path: "path".to_string(),
                 },
                 tag_id: None,
-                icon: None,
+
                 created_at: 0,
                 updated_at: 0,
             },
@@ -1066,7 +1150,7 @@ mod triggered_alerts {
                     path: "path".to_string(),
                 },
                 tag_id: None,
-                icon: None,
+
                 created_at: 0,
                 updated_at: 0,
             },
@@ -1130,7 +1214,7 @@ mod triggered_alerts {
                     path: "path".to_string(),
                 },
                 tag_id: None,
-                icon: None,
+
                 created_at: 0,
                 updated_at: 0,
             },
@@ -1212,7 +1296,7 @@ mod triggered_alerts {
                     path: "path".to_string(),
                 },
                 tag_id: None,
-                icon: None,
+
                 created_at: 0,
                 updated_at: 0,
             },
@@ -1311,7 +1395,7 @@ mod triggered_alerts {
                     path: "path".to_string(),
                 },
                 tag_id: None,
-                icon: None,
+
                 created_at: 0,
                 updated_at: 0,
             },
@@ -1411,7 +1495,7 @@ mod triggered_alerts {
                     path: "path".to_string(),
                 },
                 tag_id: None,
-                icon: None,
+
                 created_at: 0,
                 updated_at: 0,
             },
@@ -1504,7 +1588,7 @@ mod triggered_alerts {
                     path: "path".to_string(),
                 },
                 tag_id: None,
-                icon: None,
+
                 created_at: 0,
                 updated_at: 0,
             },
@@ -1601,7 +1685,7 @@ mod triggered_alerts {
                     path: "path".to_string(),
                 },
                 tag_id: None,
-                icon: None,
+
                 created_at: 0,
                 updated_at: 0,
             },
@@ -1694,7 +1778,7 @@ mod triggered_alerts {
                     path: "path".to_string(),
                 },
                 tag_id: None,
-                icon: None,
+
                 created_at: 0,
                 updated_at: 0,
             },
@@ -1776,7 +1860,7 @@ mod triggered_alerts {
                     path: "path".to_string(),
                 },
                 tag_id: None,
-                icon: None,
+
                 created_at: 0,
                 updated_at: 0,
             },
@@ -1858,7 +1942,7 @@ mod triggered_alerts {
                     path: "path".to_string(),
                 },
                 tag_id: None,
-                icon: None,
+
                 created_at: 0,
                 updated_at: 0,
             },
@@ -1966,7 +2050,7 @@ mod triggered_alerts {
                     path: "path".to_string(),
                 },
                 tag_id: None,
-                icon: None,
+
                 created_at: 0,
                 updated_at: 0,
             },
@@ -2104,7 +2188,7 @@ mod triggered_alerts {
                     path: "path".to_string(),
                 },
                 tag_id: None,
-                icon: None,
+
                 created_at: 0,
                 updated_at: 0,
             },
@@ -2123,7 +2207,7 @@ mod triggered_alerts {
                     aumid: "aumid2".to_string(),
                 },
                 tag_id: Some(Ref::new(1)),
-                icon: None,
+
                 created_at: 0,
                 updated_at: 0,
             },
@@ -2142,7 +2226,7 @@ mod triggered_alerts {
                     aumid: "aumid3".to_string(),
                 },
                 tag_id: Some(Ref::new(2)),
-                icon: None,
+
                 created_at: 0,
                 updated_at: 0,
             },
@@ -2161,7 +2245,7 @@ mod triggered_alerts {
                     aumid: "aumid4".to_string(),
                 },
                 tag_id: Some(Ref::new(1)),
-                icon: None,
+
                 created_at: 0,
                 updated_at: 0,
             },
@@ -2508,7 +2592,7 @@ mod triggered_alerts {
                     path: "path".to_string(),
                 },
                 tag_id: None,
-                icon: None,
+
                 created_at: 0,
                 updated_at: 0,
             },
@@ -2798,7 +2882,6 @@ mod triggered_alerts {
                     path: "path".to_string(),
                 },
                 tag_id: None,
-                icon: None,
                 created_at: 0,
                 updated_at: 0,
             },

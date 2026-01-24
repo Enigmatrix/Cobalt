@@ -37,7 +37,6 @@ impl Migration for Migration1 {
                 description                     TEXT NOT NULL,
                 company                         TEXT NOT NULL,
                 color                           TEXT NOT NULL,
-                icon                            TEXT,
                 tag_id                          INTEGER REFERENCES tags(id) ON DELETE SET NULL,
                 identity_tag                    INTEGER NOT NULL,
                 identity_text0                  TEXT NOT NULL,
@@ -49,6 +48,17 @@ impl Migration for Migration1 {
         )
         .await
         .context("create table apps")?;
+
+        // Store icons in a separate table to avoid bloating the apps table
+        // with large blobs. This speeds up queries that don't need the icon.
+        tx.execute(
+            "CREATE TABLE app_icons (
+                id                              INTEGER PRIMARY KEY NOT NULL REFERENCES apps(id) ON DELETE CASCADE,
+                icon                            BLOB
+            )",
+        )
+        .await
+        .context("create table app_icons")?;
 
         // cmd_line can be NULL
         tx.execute(

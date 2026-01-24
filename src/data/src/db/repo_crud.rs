@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use sqlx::SqliteExecutor;
+use sqlx::{SqliteExecutor, query_scalar};
 
 use super::repo::Repository;
 use super::*;
@@ -31,6 +31,15 @@ const REMINDER_EVENT_COUNT: &str = "SELECT e.reminder_id, COUNT(e.id) FROM remin
             GROUP BY e.reminder_id";
 
 impl Repository {
+    /// Gets the [App] icon from the database
+    pub async fn get_app_icon(&mut self, app_id: Ref<App>) -> Result<Option<Vec<u8>>> {
+        let icon = query_scalar("SELECT icon FROM app_icons WHERE id = ?")
+            .bind(app_id)
+            .fetch_optional(self.db.executor())
+            .await?;
+        Ok(icon.flatten())
+    }
+
     /// Gets all [App]s from the database
     pub async fn get_apps(
         &mut self,

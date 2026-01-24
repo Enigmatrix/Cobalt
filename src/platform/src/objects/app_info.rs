@@ -54,55 +54,6 @@ pub struct AppInfo {
 pub struct Icon {
     /// Icon as bytes
     pub data: Vec<u8>,
-    /// File extension
-    pub ext: Option<String>,
-    /// Content type (mime type)
-    pub mime: Option<String>,
-}
-
-// https://developer.mozilla.org/en-US/docs/Web/Media/Guides/Formats/Image_types#common_image_file_types
-const IMAGE_EXTS: &[&str] = &[
-    "png", "apng", // PNG variants
-    "avif", // AVIF
-    "gif",  // GIF variants
-    "jpg", "jpeg", "jfif", "pjpeg", "pjp",  // JPEG variants
-    "svg",  // SVG
-    "webp", // WebP
-    "bmp",  // BMP
-    "ico", "cur", // ICO variants
-    "tiff", "tif", // TIFF variants
-];
-
-impl Icon {
-    /// Deduce the extension of the icon from the mime type or file magic bytes
-    pub fn deduce_ext(&self) -> Option<String> {
-        // First try explicit extension if available
-        if let Some(ext) = &self.ext {
-            return Some(ext.clone());
-        }
-
-        // Then try MIME type if available
-        if let Some(mime) = &self.mime
-            && let Some(ext) = mime2ext::mime2ext(mime)
-        {
-            return Self::to_valid_image_ext(ext);
-        }
-
-        // Finally try magic bytes detection
-        if let Some(kind) = infer::get(&self.data) {
-            return Self::to_valid_image_ext(kind.extension());
-        }
-
-        None
-    }
-
-    fn to_valid_image_ext(ext: &str) -> Option<String> {
-        if IMAGE_EXTS.contains(&ext) {
-            Some(ext.to_string())
-        } else {
-            None
-        }
-    }
 }
 
 /// Image size for Win32 apps
@@ -221,21 +172,16 @@ impl AppInfo {
         let icon = file
             .resolve()?
             .GetThumbnailAsyncOverloadDefaultOptions(ThumbnailMode::SingleItem, WIN32_IMAGE_SIZE)?;
-        let (content_type, size, reader) = {
+        let (size, reader) = {
             let icon = icon.await?;
-            let content_type = icon.ContentType()?.to_string_lossy();
             let size = icon.Size()? as usize;
             let reader = DataReader::CreateDataReader(&icon)?;
-            (content_type, size, reader)
+            (size, reader)
         };
         reader.LoadAsync(size as u32)?.await?;
         let mut data = vec![0u8; size];
         reader.ReadBytes(&mut data)?;
-        Ok(Icon {
-            data,
-            ext: None,
-            mime: Some(content_type.to_string()),
-        })
+        Ok(Icon { data })
     }
 
     async fn uwp_icon(aumid: &str, display_info: &AppDisplayInfo) -> Result<Icon> {
@@ -249,7 +195,7 @@ impl AppInfo {
         }
 
         // Fall back to GetLogo method if shell method fails
-        let (content_type, size, reader) = {
+        let (size, reader) = {
             let icon = display_info
                 .GetLogo(Size {
                     Width: UWP_IMAGE_SIZE as f32,
@@ -257,19 +203,14 @@ impl AppInfo {
                 })?
                 .OpenReadAsync()?
                 .await?;
-            let content_type = icon.ContentType()?.to_string_lossy();
             let size = icon.Size()? as usize;
             let reader = DataReader::CreateDataReader(&icon)?;
-            (content_type, size, reader)
+            (size, reader)
         };
         reader.LoadAsync(size as u32)?.await?;
         let mut data = vec![0u8; size];
         reader.ReadBytes(&mut data)?;
-        Ok(Icon {
-            data,
-            ext: None,
-            mime: Some(content_type.to_string()),
-        })
+        Ok(Icon { data })
     }
 
     fn uwp_icon_from_shell(aumid: &str) -> Result<Icon> {
@@ -407,11 +348,7 @@ impl AppInfo {
             let _ = GlobalUnlock(stream_hglobal);
         }
 
-        Ok(Icon {
-            data: png_data,
-            ext: Some("png".to_string()),
-            mime: Some("image/png".to_string()),
-        })
+        Ok(Icon { data: png_data })
     }
 }
 

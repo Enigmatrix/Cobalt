@@ -1,27 +1,24 @@
-import { iconsDir } from "@/lib/state";
+import type { App, Ref } from "@/lib/entities";
 import { cn } from "@/lib/utils";
-import { convertFileSrc } from "@tauri-apps/api/core";
 import type { ClassValue } from "clsx";
 import { CircleHelp } from "lucide-react";
 import {
   CircleHelp as CircleHelpStatic,
   Tag as TagStatic,
 } from "lucide-static";
-import normalize from "path-normalize";
 import { useEffect, useState } from "react";
 
 export const DEFAULT_ICON_SVG_URL = "data:image/svg+xml," + CircleHelpStatic;
 export const TAG_ICON_URL = "data:image/svg+xml," + TagStatic;
 
-export function appIconUrl(appIcon?: string) {
-  if (!appIcon) return DEFAULT_ICON_SVG_URL;
-  const fileName = normalize(appIcon);
-  return convertFileSrc(`${iconsDir}/${fileName}`);
+export function appIconUrl(appId?: Ref<App>) {
+  if (!appId) return DEFAULT_ICON_SVG_URL;
+  return "TODO fix";
 }
 
-export function appIconHtmlImgElement(appIcon?: string): HTMLImageElement {
+export function appIconHtmlImgElement(appId?: Ref<App>): HTMLImageElement {
   const img = new Image();
-  img.src = appIconUrl(appIcon);
+  img.src = appIconUrl(appId);
   img.onerror = () => {
     img.src = DEFAULT_ICON_SVG_URL;
     img.onerror = null;
@@ -38,14 +35,14 @@ export function tagIconUrl(color?: string) {
 }
 
 export default function AppIcon({
-  appIcon,
+  appId,
   className,
 }: {
-  appIcon: string;
+  appId?: Ref<App>;
   className?: ClassValue;
 }) {
   const [hasError, setHasError] = useState(false);
-  const [icon, setIcon] = useState<string | null>(() => appIconUrl(appIcon));
+  const [icon, setIcon] = useState<string | null>(() => appIconUrl(appId));
   // We assume that this useEffect runs before the setHasError(true) call
   // i.e. this is not possible:
   // 1. initial mount <--- img is shown
@@ -55,8 +52,8 @@ export default function AppIcon({
   // 4. img load fails (again), and setHasError(true) is called <--- CircleHelp is shown
   useEffect(() => {
     setHasError(false);
-    setIcon(appIconUrl(appIcon));
-  }, [appIcon]);
+    setIcon(appIconUrl(appId));
+  }, [appId]);
 
   if (!icon || hasError) {
     return <CircleHelp className={cn(className)} />;

@@ -67,7 +67,7 @@ async fn get_apps() -> Result<()> {
                 path: "path1".to_string(),
             },
             tag_id: None,
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -86,7 +86,7 @@ async fn get_apps() -> Result<()> {
                 path: "path2".to_string(),
             },
             tag_id: None,
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -105,7 +105,7 @@ async fn get_apps() -> Result<()> {
                 path: "path3".to_string(),
             },
             tag_id: None,
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -124,7 +124,7 @@ async fn get_apps() -> Result<()> {
                 path: "path4".to_string(),
             },
             tag_id: None,
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -258,7 +258,7 @@ async fn get_tags() -> Result<()> {
                 path: "path1".to_string(),
             },
             tag_id: None,
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -277,7 +277,7 @@ async fn get_tags() -> Result<()> {
                 path: "path2".to_string(),
             },
             tag_id: Some(Ref::new(1)),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -296,7 +296,7 @@ async fn get_tags() -> Result<()> {
                 path: "path3".to_string(),
             },
             tag_id: Some(Ref::new(2)),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -315,7 +315,7 @@ async fn get_tags() -> Result<()> {
                 path: "path4".to_string(),
             },
             tag_id: Some(Ref::new(1)),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -334,7 +334,7 @@ async fn get_tags() -> Result<()> {
                 path: "path5".to_string(),
             },
             tag_id: Some(Ref::new(3)),
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -360,7 +360,7 @@ async fn get_alerts() -> Result<()> {
                 path: "path1".to_string(),
             },
             tag_id: None,
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -607,7 +607,7 @@ async fn get_app_durations() -> Result<()> {
                 path: "path1".to_string(),
             },
             tag_id: None,
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -627,7 +627,7 @@ async fn get_app_durations() -> Result<()> {
                 path: "path2".to_string(),
             },
             tag_id: None,
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -712,7 +712,7 @@ async fn get_app_durations_per_period_singular_ts_test() -> Result<()> {
                 path: "path1".to_string(),
             },
             tag_id: None,
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -732,7 +732,7 @@ async fn get_app_durations_per_period_singular_ts_test() -> Result<()> {
                 path: "path2".to_string(),
             },
             tag_id: None,
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },
@@ -960,7 +960,7 @@ async fn create_alert() -> Result<()> {
                 path: "path1".to_string(),
             },
             tag_id: None,
-            icon: None,
+
             created_at: 0,
             updated_at: 0,
         },

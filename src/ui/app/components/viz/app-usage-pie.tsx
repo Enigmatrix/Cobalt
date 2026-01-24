@@ -191,7 +191,7 @@ export function AppUsagePieChart({
                 rotate: 0,
                 position: "middle",
                 backgroundColor: {
-                  image: appIconUrl(data.app.icon),
+                  image: appIconUrl(data.app.id),
                 },
                 formatter: () => {
                   return `{empty|}`;

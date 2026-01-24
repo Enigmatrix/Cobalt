@@ -71,7 +71,6 @@ pub fn run() {
             config::config_set_default_distractive_streak_settings,
             config::config_reset_default_focus_streak_settings,
             config::config_reset_default_distractive_streak_settings,
-            config::get_icons_dir,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

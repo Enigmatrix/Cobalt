@@ -239,8 +239,6 @@ impl WebsiteInfo {
 
     /// Get the icon of the website
     pub async fn get_icon(client: &Client, icon_url: Url) -> Result<Icon> {
-        let ext = Self::get_icon_ext(&icon_url);
-
         let response = Self::modify_request(client.get(icon_url.clone()))
             .send()
             .await?;
@@ -252,13 +250,10 @@ impl WebsiteInfo {
             );
         }
 
-        let mime = response.headers().get("Content-Type").cloned();
         let bytes = response.bytes().await?;
 
         let icon = Icon {
             data: bytes.to_vec(),
-            ext,
-            mime: mime.and_then(|s| s.to_str().ok().map(|s| s.to_string())),
         };
         Ok(icon)
     }
