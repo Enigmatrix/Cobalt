@@ -68,7 +68,7 @@ export default function Page({ params }: Route.ComponentProps) {
 
 function AlertPage({ alert }: { alert: Alert }) {
   const removeAlert = useAppState((state) => state.removeAlert);
-  const ignoreAlert = useAppState((state) => state.ignoreAlert);
+  const toggleAlert = useAppState((state) => state.toggleAlert);
   const navigate = useNavigate();
   const remove = useCallback(async () => {
     await navigate("/alerts");
@@ -123,7 +123,7 @@ function AlertPage({ alert }: { alert: Alert }) {
             app={app}
             tag={tag}
             onRemove={remove}
-            onIgnore={() => ignoreAlert(alert.id)}
+            onToggleAlert={() => toggleAlert(alert)}
           />
 
           {/* Reminders */}
@@ -160,13 +160,13 @@ function AlertInfoCard({
   app,
   tag,
   onRemove,
-  onIgnore,
+  onToggleAlert,
 }: {
   alert: Alert;
   app: App | null;
   tag: Tag | null;
   onRemove: () => void;
-  onIgnore: () => void;
+  onToggleAlert: () => void;
 }) {
   const targetEntity = app ?? tag;
   const currentUsage = useMemo(
@@ -207,7 +207,11 @@ function AlertInfoCard({
             <StatusBadge status={alert.status} />
           </div>
           <div className="flex-1" />
-          <AlertActions alert={alert} onRemove={onRemove} onIgnore={onIgnore} />
+          <AlertActions
+            alert={alert}
+            onRemove={onRemove}
+            onToggleAlert={onToggleAlert}
+          />
         </div>
 
         {/* Progress bar with usage */}
@@ -226,22 +230,17 @@ function AlertInfoCard({
 function AlertActions({
   alert,
   onRemove,
-  onIgnore,
+  onToggleAlert,
 }: {
   alert: Alert;
   onRemove: () => void;
-  onIgnore: () => void;
+  onToggleAlert: () => void;
 }) {
   return (
     <div className="flex items-center gap-2">
-      <Button
-        variant="outline"
-        size="sm"
-        disabled={alert.status.tag === "ignored"}
-        onClick={onIgnore}
-      >
+      <Button variant="outline" size="sm" onClick={onToggleAlert}>
         <Ban className="w-4 h-4 mr-1" />
-        Ignore
+        {alert.status.tag === "ignored" ? "Unignore" : "Ignore"}
       </Button>
       <Button variant="outline" size="icon" asChild>
         <NavLink to={`/alerts/edit/${alert.id}`}>
@@ -452,7 +451,6 @@ function AlertTimelineCard({ alert }: { alert: Alert }) {
             <div className="absolute left-3.5 top-0 bottom-0 w-px bg-border" />
 
             {timelineEvents.map((event, index) => {
-              const isIgnored = event.reason !== "hit";
               const isAlert = event.type === "alert";
 
               // Check if this event is on a different day than the previous one
@@ -478,16 +476,20 @@ function AlertTimelineCard({ alert }: { alert: Alert }) {
                   <div
                     className={cn(
                       "relative z-10 flex h-9 w-9 items-center justify-center rounded-full outline-1 bg-card",
-                      isIgnored
+                      event.reason === "ignored"
                         ? "outline-zinc-500 dark:outline-zinc-400 text-zinc-500 dark:text-zinc-400"
-                        : isAlert
-                          ? "outline-red-600 dark:outline-red-400 text-red-600 dark:text-red-400"
-                          : "outline-amber-600 dark:outline-amber-400 text-amber-600 dark:text-amber-400",
+                        : event.reason === "unignored"
+                          ? "outline-blue-500 dark:outline-blue-400 text-blue-500 dark:text-blue-400"
+                          : isAlert
+                            ? "outline-red-600 dark:outline-red-400 text-red-600 dark:text-red-400"
+                            : "outline-amber-600 dark:outline-amber-400 text-amber-600 dark:text-amber-400",
                     )}
                   >
                     {isAlert ? (
-                      isIgnored ? (
+                      event.reason === "ignored" ? (
                         <BellOffIcon className="size-5" />
+                      ) : event.reason === "unignored" ? (
+                        <BellIcon className="size-5" />
                       ) : (
                         <BellIcon className="size-5" />
                       )
@@ -506,21 +508,29 @@ function AlertTimelineCard({ alert }: { alert: Alert }) {
                         <span
                           className={cn(
                             "text-sm font-medium",
-                            isIgnored
+                            event.reason === "ignored"
                               ? "text-zinc-600 dark:text-zinc-300"
-                              : "text-red-600 dark:text-red-400",
+                              : event.reason === "unignored"
+                                ? "text-blue-600 dark:text-blue-400"
+                                : "text-red-600 dark:text-red-400",
                           )}
                         >
-                          {isIgnored ? "Ignored" : "Triggered"}
+                          {event.reason === "ignored"
+                            ? "Ignored"
+                            : event.reason === "unignored"
+                              ? "Unignored"
+                              : "Triggered"}
                         </span>
                       ) : (
                         <>
                           <span
                             className={cn(
                               "text-sm font-medium shrink-0",
-                              isIgnored
+                              event.reason === "ignored"
                                 ? "text-zinc-500 dark:text-zinc-400"
-                                : "text-amber-600 dark:text-amber-400",
+                                : event.reason === "unignored"
+                                  ? "text-blue-500 dark:text-blue-400"
+                                  : "text-amber-600 dark:text-amber-400",
                             )}
                           >
                             {Math.round(event.threshold * 100)}%
@@ -528,9 +538,11 @@ function AlertTimelineCard({ alert }: { alert: Alert }) {
                           <Text
                             className={cn(
                               "text-sm min-w-0",
-                              isIgnored
+                              event.reason === "ignored"
                                 ? "text-zinc-500 dark:text-zinc-400"
-                                : "text-foreground",
+                                : event.reason === "unignored"
+                                  ? "text-blue-500 dark:text-blue-400"
+                                  : "text-amber-600 dark:text-amber-400",
                             )}
                           >
                             {event.message}

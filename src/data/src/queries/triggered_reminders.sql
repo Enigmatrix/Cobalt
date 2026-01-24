@@ -43,12 +43,27 @@ SELECT r.*, (CASE WHEN al.app_id IS NOT NULL THEN (
         ON al.id = r.alert_id
         AND d.dur >= al.usage_limit * r.threshold
     WHERE al.active <> 0 AND r.active <> 0 AND
-        -- works regardless of alert_event/reminder_event's reason
-        d.range_start >
-            (SELECT COALESCE(MAX(re.timestamp), 0) FROM reminder_events re
-                WHERE r.id = re.reminder_id) AND
-        d.range_start >
-            (SELECT COALESCE(MAX(ae.timestamp), 0) FROM alert_events ae
-                WHERE al.id = ae.alert_id)
+        -- last reminder event is not ignored
+        COALESCE((SELECT re.reason <> 1
+            FROM reminder_events re
+            WHERE r.id = re.reminder_id
+            AND re.timestamp >= d.range_start
+            ORDER BY re.timestamp DESC
+            LIMIT 1), TRUE)
+        AND
+        -- this time range has no hits
+        NOT EXISTS (SELECT 1
+            FROM reminder_events re
+            WHERE r.id = re.reminder_id
+                AND re.reason = 0 -- hit
+            AND re.timestamp >= d.range_start)
+        AND
+        -- no alert event or not ignored
+        COALESCE((SELECT ae.reason <> 1
+            FROM alert_events ae
+            WHERE al.id = ae.alert_id
+            AND ae.timestamp >= d.range_start
+            ORDER BY ae.timestamp DESC
+            LIMIT 1), TRUE)
     GROUP BY r.id
     ORDER BY r.threshold ASC

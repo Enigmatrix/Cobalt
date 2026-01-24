@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use data::db::infused;
 use data::entities::{
-    Alert, AlertEvent, App, InteractionPeriod, Period, Ref, SystemEvent, Tag, Timestamp,
+    Alert, AlertEvent, App, InteractionPeriod, Period, Reason, Ref, SystemEvent, Tag, Timestamp,
 };
 use tauri::State;
 use util::error::Context;
@@ -298,16 +298,17 @@ pub async fn remove_alert(state: State<'_, AppState>, alert_id: Ref<Alert>) -> A
 
 #[tauri::command]
 #[tracing::instrument(err, skip(state))]
-pub async fn create_alert_event_ignore(
+pub async fn create_alert_event(
     state: State<'_, AppState>,
     alert_id: Ref<Alert>,
     timestamp: Timestamp,
+    reason: Reason,
 ) -> AppResult<()> {
     let mut repo = {
         let state = state.read().await;
         state.assume_init().get_repo().await?
     };
-    Ok(repo.create_alert_event_ignore(alert_id, timestamp).await?)
+    Ok(repo.create_alert_event(alert_id, timestamp, reason).await?)
 }
 
 #[tauri::command]

@@ -914,11 +914,12 @@ impl Repository {
         Ok(())
     }
 
-    /// Create Alert event ignore
-    pub async fn create_alert_event_ignore(
+    /// Create Alert event
+    pub async fn create_alert_event(
         &mut self,
         alert_id: Ref<Alert>,
         timestamp: Timestamp,
+        reason: Reason,
     ) -> Result<()> {
         Self::insert_alert_event(
             &mut self.db.conn,
@@ -926,7 +927,7 @@ impl Repository {
                 id: Ref::new(0),
                 alert_id,
                 timestamp,
-                reason: Reason::Ignored,
+                reason,
             },
         )
         .await?;

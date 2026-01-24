@@ -197,7 +197,7 @@ export interface SystemEvent {
   event: SystemEventEnum;
 }
 
-export type Reason = "hit" | "ignored";
+export type Reason = "hit" | "ignored" | "unignored";
 
 export interface AlertEvent {
   id: Ref<AlertEvent>;
