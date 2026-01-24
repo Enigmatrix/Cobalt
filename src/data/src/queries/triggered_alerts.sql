@@ -54,5 +54,5 @@ SELECT al.*, ae.timestamp, (CASE WHEN al.app_id IS NOT NULL THEN (
     LEFT JOIN latest_alert_event ae
         ON al.id = ae.alert_id
     WHERE d.dur >= al.usage_limit AND al.active <> 0 AND
-        (ae.reason IS NULL OR ae.reason = 0)
+        (ae.reason IS NULL OR ae.reason <> 1) -- either no event or not ignored
     GROUP BY al.id

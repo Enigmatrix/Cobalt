@@ -318,6 +318,8 @@ pub enum Reason {
     Hit,
     /// The [Alert]/[Reminder] was ignored
     Ignored,
+    /// The [Alert]/[Reminder] was unignored
+    Unignored,
 }
 
 /// An instance of [Alert] triggering.
