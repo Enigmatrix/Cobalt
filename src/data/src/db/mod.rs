@@ -287,12 +287,18 @@ impl AppUpdater {
         .bind(&app.id)
         .execute(self.db.executor())
         .await?;
-
-        query("INSERT OR REPLACE INTO app_icons VALUES (?, ?)")
-            .bind(&app.id)
-            .bind(icon)
-            .execute(self.db.executor())
-            .await?;
+        if let Some(icon_data) = icon {
+            query("INSERT OR REPLACE INTO app_icons VALUES (?, ?)")
+                .bind(&app.id)
+                .bind(icon_data)
+                .execute(self.db.executor())
+                .await?;
+        } else {
+            query("DELETE FROM app_icons WHERE id = ?")
+                .bind(&app.id)
+                .execute(self.db.executor())
+                .await?;
+        }
 
         Ok(())
     }

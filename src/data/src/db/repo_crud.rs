@@ -37,7 +37,7 @@ impl Repository {
             .bind(app_id)
             .fetch_optional(self.db.executor())
             .await?;
-        Ok(icon.flatten())
+        Ok(icon)
     }
 
     /// Gets all [App]s from the database

@@ -54,7 +54,7 @@ impl Migration for Migration1 {
         tx.execute(
             "CREATE TABLE app_icons (
                 id                              INTEGER PRIMARY KEY NOT NULL REFERENCES apps(id) ON DELETE CASCADE,
-                icon                            BLOB
+                icon                            BLOB NOT NULL
             )",
         )
         .await
