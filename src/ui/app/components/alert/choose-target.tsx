@@ -6,16 +6,10 @@ import {
   NoTags,
   NoTagsFound,
 } from "@/components/empty-states";
+import { SearchBar } from "@/components/search-bar";
 import { CreateTagDialog } from "@/components/tag/create-tag-dialog";
 import { ScoreCircle } from "@/components/tag/score";
 import { Button } from "@/components/ui/button";
-import {
-  Command,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
 import {
   Popover,
   PopoverContent,
@@ -28,13 +22,21 @@ import type { Target } from "@/lib/entities";
 import type { tagSchema } from "@/lib/schema";
 import { useAppState } from "@/lib/state";
 import { cn } from "@/lib/utils";
+import { useConcatVirtualItems, useVirtualSection } from "@/lib/virtualization";
 import { ChevronDown, ChevronRight, Plus, TagIcon } from "lucide-react";
 import {
   useCallback,
+  useEffect,
+  useMemo,
+  useRef,
   useState,
   type ComponentProps,
+  type Dispatch,
   type ReactNode,
+  type SetStateAction,
 } from "react";
+import AutoSizer from "react-virtualized-auto-sizer";
+import { VariableSizeList as List } from "react-window";
 import type { z } from "zod";
 
 export function ChooseTarget({
@@ -48,7 +50,7 @@ export function ChooseTarget({
   const allTags = useTags();
   const allApps = useApps();
 
-  const [, setQuery, filteredApps, filteredTags] = useTargetsSearch(
+  const [query, setQuery, filteredApps, filteredTags] = useTargetsSearch(
     allApps,
     allTags,
     undefined,
@@ -77,84 +79,173 @@ export function ChooseTarget({
     [createTag, onValueChanged],
   );
 
+  const tagInnerItems = useMemo(() => {
+    if (allTags.length === 0) {
+      return [
+        { height: 104, item: <NoTags variant="small" className="m-auto" /> },
+      ];
+    }
+    if (allTags.length !== 0 && filteredTags.length === 0) {
+      return [
+        {
+          height: 104,
+          item: <NoTagsFound variant="small" className="m-auto" />,
+        },
+      ];
+    }
+    return filteredTags.map((tag) => ({
+      height: 32,
+      item: (
+        <div
+          key={tag.id}
+          className={cn(
+            "flex gap-2 items-center h-8 hover:bg-muted/90 px-2 mx-2 rounded-md text-sm",
+            {
+              "bg-muted/60":
+                props.value?.tag === "tag" && props.value?.id === tag.id,
+            },
+          )}
+          onClick={() => onValueChanged({ tag: "tag", id: tag.id })}
+        >
+          <TagIcon className="w-4 h-4 shrink-0" style={{ color: tag.color }} />
+          <Text>{tag.name}</Text>
+          <ScoreCircle score={tag.score} />
+        </div>
+      ),
+    }));
+  }, [filteredTags, allTags, onValueChanged, props.value]);
+
+  const tagItems = useMemo(() => {
+    return [
+      ...tagInnerItems,
+      {
+        height: 32,
+        item: (
+          <div className="w-full px-2">
+            <CreateTagDialog
+              trigger={
+                <Button variant="outline" size="sm" className="w-full p-2">
+                  <Plus className="w-4 h-4" />
+                  Create Tag
+                </Button>
+              }
+              onSubmit={onTagCreate}
+            />
+          </div>
+        ),
+      },
+    ];
+  }, [tagInnerItems, onTagCreate]);
+
+  const createTagHeading = useMemo(
+    () => (open: boolean, setOpen: Dispatch<SetStateAction<boolean>>) => {
+      return {
+        height: 40,
+        item: <SectionHeader open={open} setOpen={setOpen} heading="Tags" />,
+      };
+    },
+    [],
+  );
+
+  const { output: tagSection } = useVirtualSection({
+    heading: createTagHeading,
+    items: tagItems,
+    initialOpen: true,
+  });
+
+  const createAppHeading = useMemo(
+    () => (open: boolean, setOpen: Dispatch<SetStateAction<boolean>>) => {
+      return {
+        height: 40,
+        item: <SectionHeader open={open} setOpen={setOpen} heading="Apps" />,
+      };
+    },
+    [],
+  );
+
+  const appInnerItems = useMemo(() => {
+    if (allApps.length === 0) {
+      return [
+        { height: 104, item: <NoApps variant="small" className="m-auto" /> },
+      ];
+    }
+    if (allApps.length !== 0 && filteredApps.length === 0) {
+      return [
+        {
+          height: 104,
+          item: <NoAppsFound variant="small" className="m-auto" />,
+        },
+      ];
+    }
+
+    return filteredApps.map((app) => ({
+      height: 32,
+      item: (
+        <div
+          key={app.id}
+          className={cn(
+            "flex gap-2 items-center h-8 hover:bg-muted/90 px-2 mx-2 rounded-md text-sm",
+            {
+              "bg-muted/60":
+                props.value?.tag === "app" && props.value?.id === app.id,
+            },
+          )}
+          onClick={() => onValueChanged({ tag: "app", id: app.id })}
+        >
+          <AppIcon appIcon={app.icon} className="w-4 h-4 shrink-0" />
+          <Text>{app.name}</Text>
+          <MiniTagItem tagId={app.tagId} />
+        </div>
+      ),
+    }));
+  }, [filteredApps, allApps, onValueChanged, props.value]);
+
+  const { output: appSection } = useVirtualSection({
+    heading: createAppHeading,
+    items: appInnerItems,
+    initialOpen: true,
+  });
+
+  const items = useConcatVirtualItems(tagSection, appSection);
+
+  const listRef = useRef<List>(null);
+
+  // Recalculate item sizes when list data changes
+  useEffect(() => {
+    listRef.current?.resetAfterIndex(0);
+  }, [items]);
+
   return (
     <Popover open={open} onOpenChange={setOpen} modal>
       <PopoverTrigger asChild>
         <ChooseTargetTrigger {...props} />
       </PopoverTrigger>
-      <PopoverContent className="p-0">
-        <Command shouldFilter={false}>
-          <CommandInput
-            placeholder="Search..."
-            onValueChange={(val) => setQuery(val.toLowerCase())}
-          />
-          <CommandList>
-            <CommandItem value="-" className="hidden" />
-            <ToggleableCommandGroup heading="Tags">
-              {filteredTags.map((tag) => (
-                <CommandItem
-                  key={tag.id}
-                  value={`tag-${tag.id}`}
-                  className={cn({
-                    "bg-muted/60":
-                      props.value?.tag === "tag" && props.value?.id === tag.id,
-                  })}
-                  onSelect={() => onValueChanged({ tag: "tag", id: tag.id })}
-                >
-                  <TagIcon
-                    className="w-4 h-4 shrink-0"
-                    style={{ color: tag.color }}
-                  />
-                  <Text>{tag.name}</Text>
-                  <ScoreCircle score={tag.score} />
-                </CommandItem>
-              ))}
-              {allTags.length === 0 && (
-                <NoTags variant="small" className="m-auto" />
-              )}
-              {allTags.length !== 0 && filteredTags.length === 0 && (
-                <NoTagsFound variant="small" className="m-auto" />
-              )}
-              <CreateTagDialog
-                trigger={
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full p-0 mt-2"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Create Tag
-                  </Button>
-                }
-                onSubmit={onTagCreate}
-              />
-            </ToggleableCommandGroup>
+      <PopoverContent className="p-0 bg-card h-80 flex flex-col">
+        <SearchBar
+          placeholder="Search..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
 
-            <ToggleableCommandGroup heading="Apps">
-              {filteredApps.map((app) => (
-                <CommandItem
-                  key={app.id}
-                  value={`app-${app.id}`}
-                  className={cn({
-                    "bg-muted/60":
-                      props.value?.tag === "app" && props.value?.id === app.id,
-                  })}
-                  onSelect={() => onValueChanged({ tag: "app", id: app.id })}
-                >
-                  <AppIcon appIcon={app.icon} className="w-4 h-4 shrink-0" />
-                  <Text>{app.name}</Text>
-                  <MiniTagItem tagId={app.tagId} />
-                </CommandItem>
-              ))}
-              {allApps.length === 0 && (
-                <NoApps variant="small" className="m-auto" />
-              )}
-              {allApps.length !== 0 && filteredApps.length === 0 && (
-                <NoAppsFound variant="small" className="m-auto" />
-              )}
-            </ToggleableCommandGroup>
-          </CommandList>
-        </Command>
+        <div style={{ flex: "1 1 auto" }}>
+          <AutoSizer>
+            {({ height, width }) => (
+              <List
+                ref={listRef}
+                itemSize={(index) => items[index].height}
+                itemCount={items.length}
+                itemData={items}
+                height={height}
+                width={width}
+              >
+                {({ index, style }) => {
+                  const item = items[index];
+                  return <div style={style}>{item.item}</div>;
+                }}
+              </List>
+            )}
+          </AutoSizer>
+        </div>
       </PopoverContent>
     </Popover>
   );
@@ -197,28 +288,24 @@ function ChooseTargetTrigger({
   );
 }
 
-function ToggleableCommandGroup({
-  children,
+function SectionHeader({
+  open,
+  setOpen,
   heading,
-  ...props
-}: ComponentProps<typeof CommandGroup> & { heading: string }) {
-  const [open, setOpen] = useState(true);
+}: {
+  open: boolean;
+  setOpen: Dispatch<SetStateAction<boolean>>;
+  heading: string;
+}) {
   return (
-    <CommandGroup
-      {...props}
-      heading={
-        <div className="bg-secondary -my-1 -mx-2 flex rounded-t-sm">
-          <button
-            className="flex flex-1 gap-2 p-2"
-            onClick={() => setOpen((open) => !open)}
-          >
-            {open ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-            <Text>{heading}</Text>
-          </button>
-        </div>
-      }
-    >
-      {open && children}
-    </CommandGroup>
+    <div className="w-full px-2 pt-1.5">
+      <button
+        className="flex w-full gap-2 h-8 text-sm text-muted-foreground p-2 bg-secondary items-center rounded-t-sm"
+        onClick={() => setOpen((o) => !o)}
+      >
+        {open ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+        <Text>{heading}</Text>
+      </button>
+    </div>
   );
 }
