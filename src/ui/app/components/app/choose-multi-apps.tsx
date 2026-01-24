@@ -1,15 +1,10 @@
 import AppIcon from "@/components/app/app-icon";
 import { AppBadge } from "@/components/app/app-list-item";
 import { NoApps, NoAppsFound } from "@/components/empty-states";
+import { SearchBar } from "@/components/search-bar";
 import { ScoreCircle } from "@/components/tag/score";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Command,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
 import {
   Popover,
   PopoverContent,
@@ -21,8 +16,18 @@ import { useAppsSearch } from "@/hooks/use-search";
 import type { App, Ref, Tag } from "@/lib/entities";
 import { cn } from "@/lib/utils";
 import { PopoverAnchor } from "@radix-ui/react-popover";
-import { CheckIcon, PlusIcon } from "lucide-react";
-import { useCallback, useState, type ReactNode } from "react";
+import { PlusIcon } from "lucide-react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
+import AutoSizer from "react-virtualized-auto-sizer";
+import { VariableSizeList as List } from "react-window";
+import { Checkbox } from "../ui/checkbox";
 
 export function MiniTagItem({ tagId }: { tagId: Ref<Tag> | null }) {
   const tag = useTag(tagId);
@@ -57,7 +62,7 @@ export function ChooseMultiApps({
   const allApps = useApps();
   const valueApps = useApps(value);
 
-  const [, setQuery, filteredApps] = useAppsSearch(allApps, undefined);
+  const [query, setQuery, filteredApps] = useAppsSearch(allApps, undefined);
   const setOpen = useCallback(
     (open: boolean) => {
       setOpenInner(open);
@@ -66,12 +71,66 @@ export function ChooseMultiApps({
     [setOpenInner, setQuery],
   );
 
-  const toggleOption = (option: Ref<App>) => {
-    const newSelectedValues = value.includes(option)
-      ? value.filter((value) => value !== option)
-      : [...value, option];
-    onValueChanged(newSelectedValues);
-  };
+  const toggleOption = useCallback(
+    (option: Ref<App>) => {
+      const newSelectedValues = value.includes(option)
+        ? value.filter((value) => value !== option)
+        : [...value, option];
+      onValueChanged(newSelectedValues);
+    },
+    [value, onValueChanged],
+  );
+
+  const items = useMemo(() => {
+    if (allApps.length === 0) {
+      return [
+        { height: 104, item: <NoApps variant="small" className="m-auto" /> },
+      ];
+    }
+    if (allApps.length !== 0 && filteredApps.length === 0) {
+      return [
+        {
+          height: 104,
+          item: <NoAppsFound variant="small" className="m-auto" />,
+        },
+      ];
+    }
+
+    return filteredApps.map((app) => {
+      const isSelected = value.includes(app.id);
+      return {
+        height: 32,
+        item: (
+          <div
+            key={app.id}
+            className={cn("flex items-center gap-2 h-8 px-2 text-sm", {
+              "bg-muted/80": isSelected,
+            })}
+          >
+            <Checkbox
+              checked={isSelected}
+              onCheckedChange={() => toggleOption(app.id)}
+              className="border-foreground/20"
+            />
+            <AppIcon
+              appIcon={app.icon}
+              className="mr-2 h-4 w-4 text-muted-foreground"
+            />
+            <Text>{app.name}</Text>
+            {/* Don't show tag if for *this* tag, since a creating tag will not even be valid */}
+            {!isSelected && <MiniTagItem tagId={app.tagId} />}
+          </div>
+        ),
+      };
+    });
+  }, [filteredApps, allApps, value, toggleOption]);
+
+  const listRef = useRef<List>(null);
+
+  // Recalculate item sizes when list data changes
+  useEffect(() => {
+    listRef.current?.resetAfterIndex(0);
+  }, [items]);
 
   return (
     <Popover open={open} onOpenChange={setOpen} modal>
@@ -110,52 +169,32 @@ export function ChooseMultiApps({
           )}
         </div>
       </PopoverAnchor>
-      <PopoverContent className="p-0">
-        <Command shouldFilter={false}>
-          <CommandInput
-            placeholder="Search..."
-            onValueChange={(val) => setQuery(val.toLowerCase())}
-          />
-          <CommandList>
-            <CommandItem value="-" className="hidden" />
-            {filteredApps.map((app) => {
-              const isSelected = value.includes(app.id);
-              return (
-                <CommandItem
-                  key={app.id}
-                  value={`app-${app.id}`}
-                  onSelect={() => toggleOption(app.id)}
-                  className={cn({ "bg-muted/60": isSelected })}
-                >
-                  <div
-                    className={cn(
-                      "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
-                      isSelected
-                        ? "bg-primary text-primary-foreground"
-                        : "opacity-50 [&_svg]:invisible",
-                    )}
-                  >
-                    <CheckIcon className="h-4 w-4" />
-                  </div>
-                  <AppIcon
-                    appIcon={app.icon}
-                    className="mr-2 h-4 w-4 text-muted-foreground"
-                  />
-                  <Text>{app.name}</Text>
-                  {/* Don't show tag if for *this* tag, since a creating tag will not even be valid */}
-                  {!isSelected && <MiniTagItem tagId={app.tagId} />}
-                </CommandItem>
-              );
-            })}
+      <PopoverContent className="p-0 bg-card h-80 flex flex-col">
+        <SearchBar
+          placeholder="Search..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
 
-            {allApps.length === 0 && (
-              <NoApps variant="small" className="m-auto" />
+        <div style={{ flex: "1 1 auto" }}>
+          <AutoSizer>
+            {({ height, width }) => (
+              <List
+                ref={listRef}
+                itemSize={(index) => items[index].height}
+                itemCount={items.length}
+                itemData={items}
+                height={height}
+                width={width}
+              >
+                {({ index, style }) => {
+                  const item = items[index];
+                  return <div style={style}>{item.item}</div>;
+                }}
+              </List>
             )}
-            {allApps.length !== 0 && filteredApps.length === 0 && (
-              <NoAppsFound variant="small" className="m-auto" />
-            )}
-          </CommandList>
-        </Command>
+          </AutoSizer>
+        </div>
       </PopoverContent>
     </Popover>
   );
