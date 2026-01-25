@@ -43,7 +43,9 @@ export default function AppIcon({
   className?: ClassValue;
 }) {
   const [hasError, setHasError] = useState(false);
-  const [icon, setIcon] = useState<string | null>(() => appIconUrl(app));
+  const [icon, setIcon] = useState<string | null>(() =>
+    app?.hasIcon ? appIconUrl(app) : null,
+  );
   // We assume that this useEffect runs before the setHasError(true) call
   // i.e. this is not possible:
   // 1. initial mount <--- img is shown
@@ -53,14 +55,14 @@ export default function AppIcon({
   // 4. img load fails (again), and setHasError(true) is called <--- CircleHelp is shown
   useEffect(() => {
     setHasError(false);
-    setIcon(appIconUrl(app));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    setIcon(app?.hasIcon ? appIconUrl(app) : null);
     // We only want to re-run this effect if the app or its hasIcon property changes
     // since app itself changes every refresh
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [app?.id, app?.hasIcon]);
 
   if (!icon || hasError) {
-    return <CircleHelp className={cn(className)} />;
+    return <CircleHelp className={cn("text-foreground", className)} />;
   }
 
   return (
