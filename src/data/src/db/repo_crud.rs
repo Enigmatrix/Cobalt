@@ -293,9 +293,9 @@ impl Repository {
                 events_week(id, count) AS ({REMINDER_EVENT_COUNT}),
                 events_month(id, count) AS ({REMINDER_EVENT_COUNT})
             SELECT r.*,
-                COALESCE(rts.status, ats.status, 2) AS reminder_status,
-                COALESCE(rts.timestamp, ats.timestamp) AS reminder_status_timestamp,
-                COALESCE(rts.alert_ignored, ats.alert_ignored) AS reminder_status_alert_ignored,
+                COALESCE(rts.status, IIF(ats.status = 0, 2, ats.status), 2) AS reminder_status,
+                COALESCE(rts.timestamp, IIF(ats.status = 0, NULL, ats.timestamp)) AS reminder_status_timestamp,
+                CASE WHEN rts.status IS NOT NULL THEN rts.alert_ignored ELSE ats.alert_ignored END AS reminder_status_alert_ignored,
                 COALESCE(t.count, 0) AS today,
                 COALESCE(w.count, 0) AS week,
                 COALESCE(m.count, 0) AS month
