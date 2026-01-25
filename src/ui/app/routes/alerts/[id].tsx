@@ -46,12 +46,12 @@ import { ticksToDateTime } from "@/lib/time";
 import { cn } from "@/lib/utils";
 import _ from "lodash";
 import {
-  Ban,
+  BanIcon,
   BellIcon,
-  BellOffIcon,
-  ClockAlert,
+  ClockAlertIcon,
   ClockIcon,
   Edit2Icon,
+  PlayIcon,
   TagIcon,
   TrashIcon,
 } from "lucide-react";
@@ -234,8 +234,13 @@ function AlertActions({
   return (
     <div className="flex items-center gap-2">
       <Button variant="outline" size="sm" onClick={onToggleAlert}>
-        <Ban className="w-4 h-4 mr-1" />
-        {alert.status.tag === "ignored" ? "Unignore" : "Ignore"}
+        {alert.status.tag === "ignored" ? (
+          <PlayIcon className="w-4 h-4 mr-1" />
+        ) : (
+          <BanIcon className="w-4 h-4 mr-1" />
+        )}
+        {/* we use 'Resume' instead of 'Unignore' */}
+        {alert.status.tag === "ignored" ? "Resume" : "Ignore"}
       </Button>
       <Button variant="outline" size="icon" asChild>
         <NavLink to={`/alerts/edit/${alert.id}`}>
@@ -318,7 +323,7 @@ function RemindersCard({ alert }: { alert: Alert }) {
       <VizCardContent className="px-4 pb-4">
         {alert.reminders.length === 0 ? (
           <div className="text-center py-6 text-muted-foreground">
-            <ClockAlert className="w-8 h-8 mx-auto mb-2 opacity-50" />
+            <ClockAlertIcon className="w-8 h-8 mx-auto mb-2 opacity-50" />
             <Text className="text-sm">No reminders configured</Text>
             <Text className="text-xs mt-1">
               Edit this alert to add reminders
@@ -336,7 +341,7 @@ function RemindersCard({ alert }: { alert: Alert }) {
                     key={reminder.id}
                     className="flex items-start gap-3 p-3 rounded-lg border border-border bg-muted/20"
                   >
-                    <ClockAlert className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
+                    <ClockAlertIcon className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
                     <div className="flex-1 min-w-0 space-y-1">
                       <Text className="font-medium leading-snug">
                         {reminder.message}
@@ -482,14 +487,18 @@ function AlertTimelineCard({ alert }: { alert: Alert }) {
                   >
                     {isAlert ? (
                       event.reason === "ignored" ? (
-                        <BellOffIcon className="size-5" />
+                        <BanIcon className="size-5" />
                       ) : event.reason === "unignored" ? (
-                        <BellIcon className="size-5" />
+                        <PlayIcon className="size-5" />
                       ) : (
                         <BellIcon className="size-5" />
                       )
+                    ) : event.reason === "ignored" ? (
+                      <BanIcon className="size-5" />
+                    ) : event.reason === "unignored" ? (
+                      <PlayIcon className="size-5" />
                     ) : (
-                      <ClockAlert className="size-5" />
+                      <ClockAlertIcon className="size-5" />
                     )}
                   </div>
 
@@ -513,7 +522,7 @@ function AlertTimelineCard({ alert }: { alert: Alert }) {
                           {event.reason === "ignored"
                             ? "Ignored"
                             : event.reason === "unignored"
-                              ? "Unignored"
+                              ? "Resumed" // we use 'Resumed' instead of 'Unignored'
                               : "Triggered"}
                         </span>
                       ) : (
@@ -540,7 +549,11 @@ function AlertTimelineCard({ alert }: { alert: Alert }) {
                                   : "text-amber-600 dark:text-amber-400",
                             )}
                           >
-                            {event.message}
+                            {event.reason === "ignored"
+                              ? `Ignored '${event.message}'`
+                              : event.reason === "unignored"
+                                ? `Resumed '${event.message}'` // we use 'Resumed' instead of 'Unignored'
+                                : event.message}
                           </Text>
                         </>
                       )}
