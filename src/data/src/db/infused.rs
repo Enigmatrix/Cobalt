@@ -118,10 +118,11 @@ pub struct App {
     #[serde(flatten)]
     /// [super::App] itself
     pub inner: super::App,
-    /// List of linked [super::App]s
     #[sqlx(flatten)]
     /// Usage Info
     pub usages: ValuePerPeriod<Duration>,
+    /// Whether an icon is stored in app_icons for this app
+    pub has_icon: bool,
 }
 
 /// [super::Tag] with additional information

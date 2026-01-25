@@ -76,6 +76,7 @@ async fn handle_request<R: tauri::Runtime>(
             let response = http::Response::builder()
                 .status(http::StatusCode::NOT_FOUND)
                 .header(http::header::CONTENT_TYPE, "text/plain")
+                .header(http::header::CACHE_CONTROL, "public, max-age=31536000")
                 .body(b"App icon not found".to_vec())
                 .unwrap();
             Ok(response)

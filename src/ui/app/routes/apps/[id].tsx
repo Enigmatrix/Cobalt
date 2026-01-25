@@ -82,7 +82,7 @@ function AppPage({ app }: { app: App }) {
             <BreadcrumbSeparator className="hidden md:block" />
             <BreadcrumbItem className="overflow-hidden">
               <BreadcrumbPage className="inline-flex items-center overflow-hidden">
-                <AppIcon appId={app.id} className="w-5 h-5 mr-2 shrink-0" />
+                <AppIcon app={app} className="w-5 h-5 mr-2 shrink-0" />
                 <Text>{app.name}</Text>
               </BreadcrumbPage>
             </BreadcrumbItem>
@@ -97,7 +97,7 @@ function AppPage({ app }: { app: App }) {
             <div className="flex flex-col gap-4">
               {/* Header with name and icon */}
               <div className="flex items-center gap-4">
-                <AppIcon appId={app.id} className="w-12 h-12 shrink-0" />
+                <AppIcon app={app} className="w-12 h-12 shrink-0" />
                 <div className="min-w-0 shrink flex flex-col">
                   <div className="min-w-0 flex gap-4">
                     <EditableText

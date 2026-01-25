@@ -66,7 +66,7 @@ export function MiniAppItem({
         backgroundColor: "rgba(255, 255, 255, 0.1)",
       }}
     >
-      <AppIcon appId={app?.id} className="w-4 h-4" />
+      <AppIcon app={app} className="w-4 h-4" />
       <Text className="max-w-52 text-xs">{app?.name ?? ""}</Text>
     </div>
   );

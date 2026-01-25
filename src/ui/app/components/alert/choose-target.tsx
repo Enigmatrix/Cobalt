@@ -96,21 +96,25 @@ export function ChooseTarget({
     return filteredTags.map((tag) => ({
       height: 32,
       item: (
-        <button
-          key={tag.id}
-          className={cn(
-            "flex flex-1 gap-2 items-center h-8 hover:bg-muted/90 px-2 mx-2 rounded-md text-sm",
-            {
-              "bg-muted/60":
-                props.value?.tag === "tag" && props.value?.id === tag.id,
-            },
-          )}
-          onClick={() => onValueChanged({ tag: "tag", id: tag.id })}
-        >
-          <TagIcon className="w-4 h-4 shrink-0" style={{ color: tag.color }} />
-          <Text>{tag.name}</Text>
-          <ScoreCircle score={tag.score} />
-        </button>
+        <div className="px-2 max-w-full flex-1 flex" key={tag.id}>
+          <button
+            className={cn(
+              "flex flex-1 gap-2 items-center h-8 hover:bg-muted/90 px-2 rounded-md text-sm max-w-full",
+              {
+                "bg-muted/60":
+                  props.value?.tag === "tag" && props.value?.id === tag.id,
+              },
+            )}
+            onClick={() => onValueChanged({ tag: "tag", id: tag.id })}
+          >
+            <TagIcon
+              className="w-4 h-4 shrink-0"
+              style={{ color: tag.color }}
+            />
+            <Text>{tag.name}</Text>
+            <ScoreCircle score={tag.score} />
+          </button>
+        </div>
       ),
     }));
   }, [filteredTags, allTags, onValueChanged, props.value]);
@@ -181,21 +185,22 @@ export function ChooseTarget({
     return filteredApps.map((app) => ({
       height: 32,
       item: (
-        <button
-          key={app.id}
-          className={cn(
-            "flex flex-1 gap-2 items-center h-8 hover:bg-muted/90 px-2 mx-2 rounded-md text-sm",
-            {
-              "bg-muted/60":
-                props.value?.tag === "app" && props.value?.id === app.id,
-            },
-          )}
-          onClick={() => onValueChanged({ tag: "app", id: app.id })}
-        >
-          <AppIcon appId={app.id} className="w-4 h-4 shrink-0" />
-          <Text>{app.name}</Text>
-          <MiniTagItem tagId={app.tagId} />
-        </button>
+        <div className="px-2 max-w-full flex-1 flex" key={app.id}>
+          <button
+            className={cn(
+              "flex flex-1 gap-2 items-center h-8 hover:bg-muted/90 px-2 rounded-md text-sm max-w-full",
+              {
+                "bg-muted/60":
+                  props.value?.tag === "app" && props.value?.id === app.id,
+              },
+            )}
+            onClick={() => onValueChanged({ tag: "app", id: app.id })}
+          >
+            <AppIcon app={app} className="w-4 h-4 shrink-0" />
+            <Text>{app.name}</Text>
+            <MiniTagItem tagId={app.tagId} />
+          </button>
+        </div>
       ),
     }));
   }, [filteredApps, allApps, onValueChanged, props.value]);
@@ -274,7 +279,7 @@ function ChooseTargetTrigger({
     >
       {value?.tag === "app" && app ? (
         <>
-          <AppIcon appId={app.id} className="w-5 h-5 shrink-0" />
+          <AppIcon app={app} className="w-5 h-5 shrink-0" />
           <Text>{app.name}</Text>
         </>
       ) : value?.tag === "tag" && tag ? (

@@ -45,6 +45,7 @@ export interface App {
   identity: AppIdentity;
   tagId: Ref<Tag> | null;
   usages: ValuePerPeriod<Duration>;
+  hasIcon: boolean;
 }
 
 export interface Session {

@@ -125,7 +125,7 @@ export function UsageTooltipContent({
 function AppRow({ app, isHighlighted }: { app: App; isHighlighted: boolean }) {
   return (
     <div className="flex items-center gap-2 min-w-0">
-      <AppIcon appId={app.id} className="w-4 h-4 shrink-0" />
+      <AppIcon app={app} className="w-4 h-4 shrink-0" />
       <Text
         className={cn("min-w-0", {
           "text-muted-foreground": !isHighlighted,
@@ -198,7 +198,7 @@ function AppDisplay({
 }) {
   return (
     <div className={cn("flex items-center gap-2 ml-2", className)}>
-      <AppIcon appId={app.id} className="w-6 h-6 shrink-0 mr-1" />
+      <AppIcon app={app} className="w-6 h-6 shrink-0 mr-1" />
       <div className="flex flex-col mr-4">
         <Text className="text-base max-w-52">{app.name}</Text>
         {at && (

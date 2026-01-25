@@ -101,24 +101,28 @@ export function ChooseMultiApps({
       return {
         height: 32,
         item: (
-          <div
-            key={app.id}
-            className={cn("flex items-center gap-2 h-8 px-2 text-sm", {
-              "bg-muted/80": isSelected,
-            })}
-          >
-            <Checkbox
-              checked={isSelected}
-              onCheckedChange={() => toggleOption(app.id)}
-              className="border-foreground/20"
-            />
-            <AppIcon
-              appId={app.id}
-              className="mr-2 h-4 w-4 text-muted-foreground"
-            />
-            <Text>{app.name}</Text>
-            {/* Don't show tag if for *this* tag, since a creating tag will not even be valid */}
-            {!isSelected && <MiniTagItem tagId={app.tagId} />}
+          <div className="max-w-full flex-1 flex" key={app.id}>
+            <div
+              className={cn(
+                "flex flex-1 items-center gap-2 h-8 px-2 text-sm max-w-full",
+                {
+                  "bg-muted/80": isSelected,
+                },
+              )}
+            >
+              <Checkbox
+                checked={isSelected}
+                onCheckedChange={() => toggleOption(app.id)}
+                className="border-foreground/20"
+              />
+              <AppIcon
+                app={app}
+                className="mr-2 h-4 w-4 text-muted-foreground"
+              />
+              <Text>{app.name}</Text>
+              {/* Don't show tag if for *this* tag, since a creating tag will not even be valid */}
+              {!isSelected && <MiniTagItem tagId={app.tagId} />}
+            </div>
           </div>
         ),
       };
@@ -186,7 +190,11 @@ export function ChooseMultiApps({
               >
                 {({ index, style }) => {
                   const item = items[index];
-                  return <div style={style}>{item.item}</div>;
+                  return (
+                    <div className="flex" style={style}>
+                      {item.item}
+                    </div>
+                  );
                 }}
               </List>
             )}

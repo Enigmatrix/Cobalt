@@ -537,6 +537,1443 @@ async fn get_alerts() -> Result<()> {
     Ok(())
 }
 
+mod get_alerts_unignored {
+    use super::*;
+    use crate::db::infused::AlertTriggerStatus;
+    use crate::entities::{TimeFrame, TriggerAction};
+
+    // Helper to add an alert event
+    async fn add_alert_event(
+        db: &mut Database,
+        alert_id: Ref<Alert>,
+        timestamp: i64,
+        reason: Reason,
+    ) -> Result<AlertEvent> {
+        arrange::alert_event(
+            db,
+            AlertEvent {
+                id: Ref::new(0),
+                alert_id,
+                timestamp,
+                reason,
+            },
+        )
+        .await
+    }
+
+    // Helper to add a reminder event
+    async fn add_reminder_event(
+        db: &mut Database,
+        reminder_id: Ref<Reminder>,
+        timestamp: i64,
+        reason: Reason,
+    ) -> Result<ReminderEvent> {
+        arrange::reminder_event(
+            db,
+            ReminderEvent {
+                id: Ref::new(0),
+                reminder_id,
+                timestamp,
+                reason,
+            },
+        )
+        .await
+    }
+
+    #[tokio::test]
+    async fn alert_hit_then_unignore() -> Result<()> {
+        let mut db = test_db().await?;
+        let app = arrange::app_with_usage(&mut db, 0, 100).await?;
+        let alert = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(1),
+                target: Target::App { id: app.id.clone() },
+                usage_limit: 50,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        add_alert_event(&mut db, alert.id.clone(), 75, Reason::Hit).await?;
+        add_alert_event(&mut db, alert.id.clone(), 100, Reason::Unignored).await?;
+
+        let mut repo = Repository::new(db)?;
+        let alerts = repo
+            .get_alerts(Times {
+                now: 150,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+
+        let alert_result = alerts.get(&alert.id).unwrap();
+        assert_eq!(
+            alert_result.status,
+            AlertTriggerStatus::Hit { timestamp: 75 }
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn alert_ignore_then_unignore_with_hit() -> Result<()> {
+        let mut db = test_db().await?;
+        let app = arrange::app_with_usage(&mut db, 0, 100).await?;
+        let alert = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(1),
+                target: Target::App { id: app.id.clone() },
+                usage_limit: 50,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        add_alert_event(&mut db, alert.id.clone(), 60, Reason::Hit).await?;
+        add_alert_event(&mut db, alert.id.clone(), 70, Reason::Ignored).await?;
+        add_alert_event(&mut db, alert.id.clone(), 80, Reason::Unignored).await?;
+
+        let mut repo = Repository::new(db)?;
+        let alerts = repo
+            .get_alerts(Times {
+                now: 150,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+
+        let alert_result = alerts.get(&alert.id).unwrap();
+        assert_eq!(
+            alert_result.status,
+            AlertTriggerStatus::Hit { timestamp: 60 }
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn alert_ignore_then_unignore_without_hit() -> Result<()> {
+        let mut db = test_db().await?;
+        let app = arrange::app_with_usage(&mut db, 0, 100).await?;
+        let alert = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(1),
+                target: Target::App { id: app.id.clone() },
+                usage_limit: 50,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        add_alert_event(&mut db, alert.id.clone(), 60, Reason::Ignored).await?;
+        add_alert_event(&mut db, alert.id.clone(), 80, Reason::Unignored).await?;
+
+        let mut repo = Repository::new(db)?;
+        let alerts = repo
+            .get_alerts(Times {
+                now: 150,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+
+        let alert_result = alerts.get(&alert.id).unwrap();
+        assert_eq!(alert_result.status, AlertTriggerStatus::Untriggered);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn alert_unignore_only_no_prior_events() -> Result<()> {
+        let mut db = test_db().await?;
+        let app = arrange::app_with_usage(&mut db, 0, 100).await?;
+        let alert = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(1),
+                target: Target::App { id: app.id.clone() },
+                usage_limit: 50,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        add_alert_event(&mut db, alert.id.clone(), 80, Reason::Unignored).await?;
+
+        let mut repo = Repository::new(db)?;
+        let alerts = repo
+            .get_alerts(Times {
+                now: 150,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+
+        let alert_result = alerts.get(&alert.id).unwrap();
+        assert_eq!(alert_result.status, AlertTriggerStatus::Untriggered);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn alert_multiple_unignores_with_hit() -> Result<()> {
+        let mut db = test_db().await?;
+        let app = arrange::app_with_usage(&mut db, 0, 100).await?;
+        let alert = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(1),
+                target: Target::App { id: app.id.clone() },
+                usage_limit: 50,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        add_alert_event(&mut db, alert.id.clone(), 60, Reason::Hit).await?;
+        add_alert_event(&mut db, alert.id.clone(), 70, Reason::Unignored).await?;
+        add_alert_event(&mut db, alert.id.clone(), 80, Reason::Unignored).await?;
+
+        let mut repo = Repository::new(db)?;
+        let alerts = repo
+            .get_alerts(Times {
+                now: 150,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+
+        let alert_result = alerts.get(&alert.id).unwrap();
+        assert_eq!(
+            alert_result.status,
+            AlertTriggerStatus::Hit { timestamp: 60 }
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn alert_unignore_before_time_range() -> Result<()> {
+        let mut db = test_db().await?;
+        let app = arrange::app_with_usage(&mut db, 0, 100).await?;
+        let alert = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(1),
+                target: Target::App { id: app.id.clone() },
+                usage_limit: 50,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        // Hit before range, unignore before range
+        add_alert_event(&mut db, alert.id.clone(), 30, Reason::Hit).await?;
+        add_alert_event(&mut db, alert.id.clone(), 40, Reason::Unignored).await?;
+        // Hit in range
+        add_alert_event(&mut db, alert.id.clone(), 60, Reason::Hit).await?;
+
+        let mut repo = Repository::new(db)?;
+        let alerts = repo
+            .get_alerts(Times {
+                now: 150,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+
+        let alert_result = alerts.get(&alert.id).unwrap();
+        assert_eq!(
+            alert_result.status,
+            AlertTriggerStatus::Hit { timestamp: 60 }
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn alert_unignore_after_hit_outside_range() -> Result<()> {
+        let mut db = test_db().await?;
+        let app = arrange::app_with_usage(&mut db, 0, 100).await?;
+        let alert = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(1),
+                target: Target::App { id: app.id.clone() },
+                usage_limit: 50,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        // Hit before range
+        add_alert_event(&mut db, alert.id.clone(), 30, Reason::Hit).await?;
+        // Unignore in range, but no hit in range
+        add_alert_event(&mut db, alert.id.clone(), 60, Reason::Unignored).await?;
+
+        let mut repo = Repository::new(db)?;
+        let alerts = repo
+            .get_alerts(Times {
+                now: 150,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+
+        let alert_result = alerts.get(&alert.id).unwrap();
+        assert_eq!(alert_result.status, AlertTriggerStatus::Untriggered);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn alert_ignore_unignore_ignore() -> Result<()> {
+        let mut db = test_db().await?;
+        let app = arrange::app_with_usage(&mut db, 0, 100).await?;
+        let alert = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(1),
+                target: Target::App { id: app.id.clone() },
+                usage_limit: 50,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        add_alert_event(&mut db, alert.id.clone(), 60, Reason::Ignored).await?;
+        add_alert_event(&mut db, alert.id.clone(), 80, Reason::Unignored).await?;
+        add_alert_event(&mut db, alert.id.clone(), 100, Reason::Ignored).await?;
+
+        let mut repo = Repository::new(db)?;
+        let alerts = repo
+            .get_alerts(Times {
+                now: 150,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+
+        let alert_result = alerts.get(&alert.id).unwrap();
+        assert_eq!(
+            alert_result.status,
+            AlertTriggerStatus::Ignored { timestamp: 100 }
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn reminder_hit_then_unignore() -> Result<()> {
+        let mut db = test_db().await?;
+        let app = arrange::app_with_usage(&mut db, 0, 100).await?;
+        let alert = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(1),
+                target: Target::App { id: app.id.clone() },
+                usage_limit: 200,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        let reminder = arrange::reminder(
+            &mut db,
+            Reminder {
+                id: Ref::new(1),
+                alert_id: alert.id.clone(),
+                threshold: 0.5.into(),
+                message: "Halfway".to_string(),
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        add_reminder_event(&mut db, reminder.id.clone(), 75, Reason::Hit).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 100, Reason::Unignored).await?;
+
+        let mut repo = Repository::new(db)?;
+        let alerts = repo
+            .get_alerts(Times {
+                now: 150,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+
+        let alert_result = alerts.get(&alert.id).unwrap();
+        let reminder_result = alert_result
+            .reminders
+            .iter()
+            .find(|r| r.id == reminder.id)
+            .unwrap();
+        assert_eq!(
+            reminder_result.status,
+            crate::db::infused::ReminderTriggerStatus::Hit { timestamp: 75 }
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn reminder_ignore_then_unignore_without_hit() -> Result<()> {
+        let mut db = test_db().await?;
+        let app = arrange::app_with_usage(&mut db, 0, 100).await?;
+        let alert = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(1),
+                target: Target::App { id: app.id.clone() },
+                usage_limit: 200,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        let reminder = arrange::reminder(
+            &mut db,
+            Reminder {
+                id: Ref::new(1),
+                alert_id: alert.id.clone(),
+                threshold: 0.5.into(),
+                message: "Halfway".to_string(),
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        add_reminder_event(&mut db, reminder.id.clone(), 60, Reason::Ignored).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 80, Reason::Unignored).await?;
+
+        let mut repo = Repository::new(db)?;
+        let alerts = repo
+            .get_alerts(Times {
+                now: 150,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+
+        let alert_result = alerts.get(&alert.id).unwrap();
+        let reminder_result = alert_result
+            .reminders
+            .iter()
+            .find(|r| r.id == reminder.id)
+            .unwrap();
+        assert_eq!(
+            reminder_result.status,
+            crate::db::infused::ReminderTriggerStatus::Untriggered
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn alert_unignore_affects_reminder_status() -> Result<()> {
+        let mut db = test_db().await?;
+        let app = arrange::app_with_usage(&mut db, 0, 100).await?;
+        let alert = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(1),
+                target: Target::App { id: app.id.clone() },
+                usage_limit: 200,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        let reminder = arrange::reminder(
+            &mut db,
+            Reminder {
+                id: Ref::new(1),
+                alert_id: alert.id.clone(),
+                threshold: 0.5.into(),
+                message: "Halfway".to_string(),
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        // Alert hit, then ignored, then unignored
+        add_alert_event(&mut db, alert.id.clone(), 60, Reason::Hit).await?;
+        add_alert_event(&mut db, alert.id.clone(), 70, Reason::Ignored).await?;
+        add_alert_event(&mut db, alert.id.clone(), 80, Reason::Unignored).await?;
+
+        let mut repo = Repository::new(db)?;
+        let alerts = repo
+            .get_alerts(Times {
+                now: 150,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+
+        let alert_result = alerts.get(&alert.id).unwrap();
+        // Alert should show Hit
+        assert_eq!(
+            alert_result.status,
+            AlertTriggerStatus::Hit { timestamp: 60 }
+        );
+
+        // Reminder has no events; we never inherit Hit from alert → Untriggered
+        let reminder_result = alert_result
+            .reminders
+            .iter()
+            .find(|r| r.id == reminder.id)
+            .unwrap();
+        assert_eq!(
+            reminder_result.status,
+            crate::db::infused::ReminderTriggerStatus::Untriggered
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn alert_unignore_without_hit_affects_reminder() -> Result<()> {
+        let mut db = test_db().await?;
+        let app = arrange::app_with_usage(&mut db, 0, 100).await?;
+        let alert = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(1),
+                target: Target::App { id: app.id.clone() },
+                usage_limit: 200,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        let reminder = arrange::reminder(
+            &mut db,
+            Reminder {
+                id: Ref::new(1),
+                alert_id: alert.id.clone(),
+                threshold: 0.5.into(),
+                message: "Halfway".to_string(),
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        // Alert ignored, then unignored (no hit in range)
+        add_alert_event(&mut db, alert.id.clone(), 60, Reason::Ignored).await?;
+        add_alert_event(&mut db, alert.id.clone(), 80, Reason::Unignored).await?;
+
+        let mut repo = Repository::new(db)?;
+        let alerts = repo
+            .get_alerts(Times {
+                now: 150,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+
+        let alert_result = alerts.get(&alert.id).unwrap();
+        // Alert should show Untriggered
+        assert_eq!(alert_result.status, AlertTriggerStatus::Untriggered);
+
+        let reminder_result = alert_result
+            .reminders
+            .iter()
+            .find(|r| r.id == reminder.id)
+            .unwrap();
+        assert_eq!(
+            reminder_result.status,
+            crate::db::infused::ReminderTriggerStatus::Untriggered
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn reminder_unignore_with_alert_ignored() -> Result<()> {
+        let mut db = test_db().await?;
+        let app = arrange::app_with_usage(&mut db, 0, 100).await?;
+        let alert = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(1),
+                target: Target::App { id: app.id.clone() },
+                usage_limit: 200,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        let reminder = arrange::reminder(
+            &mut db,
+            Reminder {
+                id: Ref::new(1),
+                alert_id: alert.id.clone(),
+                threshold: 0.5.into(),
+                message: "Halfway".to_string(),
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        // Alert ignored
+        add_alert_event(&mut db, alert.id.clone(), 60, Reason::Ignored).await?;
+        // Reminder hit, then unignored
+        add_reminder_event(&mut db, reminder.id.clone(), 70, Reason::Hit).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 80, Reason::Unignored).await?;
+
+        let mut repo = Repository::new(db)?;
+        let alerts = repo
+            .get_alerts(Times {
+                now: 150,
+                day_start: 50,
+                week_start: 0,
+                month_start: 0,
+            })
+            .await?;
+
+        let alert_result = alerts.get(&alert.id).unwrap();
+        // Alert should show Ignored
+        assert_eq!(
+            alert_result.status,
+            AlertTriggerStatus::Ignored { timestamp: 60 }
+        );
+
+        // Reminder should show Hit (from reminder event, not alert)
+        let reminder_result = alert_result
+            .reminders
+            .iter()
+            .find(|r| r.id == reminder.id)
+            .unwrap();
+        assert_eq!(
+            reminder_result.status,
+            crate::db::infused::ReminderTriggerStatus::Hit { timestamp: 70 }
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn weekly_timeframe_unignore() -> Result<()> {
+        let mut db = test_db().await?;
+        let app = arrange::app_with_usage(&mut db, 0, 100).await?;
+        let alert = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(1),
+                target: Target::App { id: app.id.clone() },
+                usage_limit: 50,
+                time_frame: TimeFrame::Weekly,
+                trigger_action: TriggerAction::Kill,
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        add_alert_event(&mut db, alert.id.clone(), 75, Reason::Hit).await?;
+        add_alert_event(&mut db, alert.id.clone(), 100, Reason::Unignored).await?;
+
+        let mut repo = Repository::new(db)?;
+        let alerts = repo
+            .get_alerts(Times {
+                now: 150,
+                day_start: 0,
+                week_start: 50,
+                month_start: 0,
+            })
+            .await?;
+
+        let alert_result = alerts.get(&alert.id).unwrap();
+        assert_eq!(
+            alert_result.status,
+            AlertTriggerStatus::Hit { timestamp: 75 }
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn monthly_timeframe_unignore() -> Result<()> {
+        let mut db = test_db().await?;
+        let app = arrange::app_with_usage(&mut db, 0, 100).await?;
+        let alert = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(1),
+                target: Target::App { id: app.id.clone() },
+                usage_limit: 50,
+                time_frame: TimeFrame::Monthly,
+                trigger_action: TriggerAction::Kill,
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+
+        add_alert_event(&mut db, alert.id.clone(), 75, Reason::Hit).await?;
+        add_alert_event(&mut db, alert.id.clone(), 100, Reason::Unignored).await?;
+
+        let mut repo = Repository::new(db)?;
+        let alerts = repo
+            .get_alerts(Times {
+                now: 150,
+                day_start: 0,
+                week_start: 0,
+                month_start: 50,
+            })
+            .await?;
+
+        let alert_result = alerts.get(&alert.id).unwrap();
+        assert_eq!(
+            alert_result.status,
+            AlertTriggerStatus::Hit { timestamp: 75 }
+        );
+        Ok(())
+    }
+}
+
+mod get_alerts_reminder_ignored_by_alert {
+    use super::*;
+    use crate::db::infused::{AlertTriggerStatus, ReminderTriggerStatus};
+    use crate::entities::{TimeFrame, TriggerAction};
+
+    const TS: Times = Times {
+        now: 150,
+        day_start: 50,
+        week_start: 0,
+        month_start: 0,
+    };
+
+    async fn add_alert_event(
+        db: &mut Database,
+        alert_id: Ref<Alert>,
+        timestamp: i64,
+        reason: Reason,
+    ) -> Result<AlertEvent> {
+        arrange::alert_event(
+            db,
+            AlertEvent {
+                id: Ref::new(0),
+                alert_id,
+                timestamp,
+                reason,
+            },
+        )
+        .await
+    }
+
+    async fn add_reminder_event(
+        db: &mut Database,
+        reminder_id: Ref<Reminder>,
+        timestamp: i64,
+        reason: Reason,
+    ) -> Result<ReminderEvent> {
+        arrange::reminder_event(
+            db,
+            ReminderEvent {
+                id: Ref::new(0),
+                reminder_id,
+                timestamp,
+                reason,
+            },
+        )
+        .await
+    }
+
+    async fn setup_alert_with_reminder(db: &mut Database) -> Result<(Alert, Reminder)> {
+        let app = arrange::app_with_usage(db, 0, 100).await?;
+        let alert = arrange::alert(
+            db,
+            Alert {
+                id: Ref::new(1),
+                target: Target::App { id: app.id.clone() },
+                usage_limit: 200,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+        let reminder = arrange::reminder(
+            db,
+            Reminder {
+                id: Ref::new(1),
+                alert_id: alert.id.clone(),
+                threshold: 0.5.into(),
+                message: "Halfway".to_string(),
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+        Ok((alert, reminder))
+    }
+
+    fn reminder_by_id<'a>(
+        alerts: &'a HashMap<Ref<Alert>, infused::Alert>,
+        alert_id: &Ref<Alert>,
+        reminder_id: Ref<Reminder>,
+    ) -> &'a infused::Reminder {
+        alerts
+            .get(alert_id)
+            .unwrap()
+            .reminders
+            .iter()
+            .find(|r| r.id == reminder_id)
+            .unwrap()
+    }
+
+    #[tokio::test]
+    async fn reminder_no_events_alert_ignored() -> Result<()> {
+        let mut db = test_db().await?;
+        let (alert, reminder) = setup_alert_with_reminder(&mut db).await?;
+        add_alert_event(&mut db, alert.id.clone(), 60, Reason::Ignored).await?;
+
+        let mut repo = Repository::new(db)?;
+        let alerts = repo.get_alerts(TS).await?;
+        let r = reminder_by_id(&alerts, &alert.id, reminder.id.clone());
+        assert_eq!(
+            r.status,
+            ReminderTriggerStatus::Ignored {
+                timestamp: 60,
+                ignored_by_alert: true
+            }
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn reminder_no_events_alert_hit() -> Result<()> {
+        let mut db = test_db().await?;
+        let (alert, reminder) = setup_alert_with_reminder(&mut db).await?;
+        add_alert_event(&mut db, alert.id.clone(), 60, Reason::Hit).await?;
+
+        let mut repo = Repository::new(db)?;
+        let alerts = repo.get_alerts(TS).await?;
+        let r = reminder_by_id(&alerts, &alert.id, reminder.id.clone());
+        assert_eq!(r.status, ReminderTriggerStatus::Untriggered);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn reminder_no_events_alert_untriggered() -> Result<()> {
+        let mut db = test_db().await?;
+        let (alert, reminder) = setup_alert_with_reminder(&mut db).await?;
+
+        let mut repo = Repository::new(db)?;
+        let alerts = repo.get_alerts(TS).await?;
+        let r = reminder_by_id(&alerts, &alert.id, reminder.id.clone());
+        assert_eq!(r.status, ReminderTriggerStatus::Untriggered);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn reminder_ignored_only_no_alert_events() -> Result<()> {
+        let mut db = test_db().await?;
+        let (alert, reminder) = setup_alert_with_reminder(&mut db).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 60, Reason::Ignored).await?;
+
+        let mut repo = Repository::new(db)?;
+        let alerts = repo.get_alerts(TS).await?;
+        let r = reminder_by_id(&alerts, &alert.id, reminder.id.clone());
+        assert_eq!(
+            r.status,
+            ReminderTriggerStatus::Ignored {
+                timestamp: 60,
+                ignored_by_alert: false
+            }
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn reminder_ignored_alert_ignored() -> Result<()> {
+        let mut db = test_db().await?;
+        let (alert, reminder) = setup_alert_with_reminder(&mut db).await?;
+        add_alert_event(&mut db, alert.id.clone(), 50, Reason::Ignored).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 60, Reason::Ignored).await?;
+
+        let mut repo = Repository::new(db)?;
+        let alerts = repo.get_alerts(TS).await?;
+        let r = reminder_by_id(&alerts, &alert.id, reminder.id.clone());
+        // This can be either way, we don't care which
+        assert_eq!(
+            r.status,
+            ReminderTriggerStatus::Ignored {
+                timestamp: 60,
+                ignored_by_alert: false
+            }
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn reminder_ignored_alert_unignored_no_hit() -> Result<()> {
+        let mut db = test_db().await?;
+        let (alert, reminder) = setup_alert_with_reminder(&mut db).await?;
+        add_alert_event(&mut db, alert.id.clone(), 55, Reason::Ignored).await?;
+        add_alert_event(&mut db, alert.id.clone(), 65, Reason::Unignored).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 60, Reason::Ignored).await?;
+
+        let mut repo = Repository::new(db)?;
+        let alerts = repo.get_alerts(TS).await?;
+        let r = reminder_by_id(&alerts, &alert.id, reminder.id.clone());
+        assert_eq!(
+            r.status,
+            ReminderTriggerStatus::Ignored {
+                timestamp: 60,
+                ignored_by_alert: false
+            }
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn reminder_ignored_alert_unignored_with_hit() -> Result<()> {
+        let mut db = test_db().await?;
+        let (alert, reminder) = setup_alert_with_reminder(&mut db).await?;
+        add_alert_event(&mut db, alert.id.clone(), 52, Reason::Hit).await?;
+        add_alert_event(&mut db, alert.id.clone(), 55, Reason::Ignored).await?;
+        add_alert_event(&mut db, alert.id.clone(), 65, Reason::Unignored).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 60, Reason::Ignored).await?;
+
+        let mut repo = Repository::new(db)?;
+        let alerts = repo.get_alerts(TS).await?;
+        let r = reminder_by_id(&alerts, &alert.id, reminder.id.clone());
+        assert_eq!(
+            r.status,
+            ReminderTriggerStatus::Ignored {
+                timestamp: 60,
+                ignored_by_alert: false
+            }
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn reminder_hit_alert_ignored() -> Result<()> {
+        let mut db = test_db().await?;
+        let (alert, reminder) = setup_alert_with_reminder(&mut db).await?;
+        add_alert_event(&mut db, alert.id.clone(), 50, Reason::Ignored).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 70, Reason::Hit).await?;
+
+        let mut repo = Repository::new(db)?;
+        let alerts = repo.get_alerts(TS).await?;
+        let r = reminder_by_id(&alerts, &alert.id, reminder.id.clone());
+        assert_eq!(r.status, ReminderTriggerStatus::Hit { timestamp: 70 });
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn reminder_hit_alert_unignored_with_hit() -> Result<()> {
+        let mut db = test_db().await?;
+        let (alert, reminder) = setup_alert_with_reminder(&mut db).await?;
+        add_alert_event(&mut db, alert.id.clone(), 60, Reason::Hit).await?;
+        add_alert_event(&mut db, alert.id.clone(), 70, Reason::Unignored).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 75, Reason::Hit).await?;
+
+        let mut repo = Repository::new(db)?;
+        let alerts = repo.get_alerts(TS).await?;
+        let r = reminder_by_id(&alerts, &alert.id, reminder.id.clone());
+        assert_eq!(r.status, ReminderTriggerStatus::Hit { timestamp: 75 });
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn alert_ignored_then_unignore_no_hit_reminder_no_events() -> Result<()> {
+        let mut db = test_db().await?;
+        let (alert, reminder) = setup_alert_with_reminder(&mut db).await?;
+        add_alert_event(&mut db, alert.id.clone(), 55, Reason::Ignored).await?;
+        add_alert_event(&mut db, alert.id.clone(), 65, Reason::Unignored).await?;
+
+        let mut repo = Repository::new(db)?;
+        let alerts = repo.get_alerts(TS).await?;
+        let r = reminder_by_id(&alerts, &alert.id, reminder.id.clone());
+        assert_eq!(r.status, ReminderTriggerStatus::Untriggered);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn alert_ignored_then_unignore_with_hit_reminder_no_events() -> Result<()> {
+        let mut db = test_db().await?;
+        let (alert, reminder) = setup_alert_with_reminder(&mut db).await?;
+        add_alert_event(&mut db, alert.id.clone(), 60, Reason::Hit).await?;
+        add_alert_event(&mut db, alert.id.clone(), 70, Reason::Ignored).await?;
+        add_alert_event(&mut db, alert.id.clone(), 80, Reason::Unignored).await?;
+
+        let mut repo = Repository::new(db)?;
+        let alerts = repo.get_alerts(TS).await?;
+        let r = reminder_by_id(&alerts, &alert.id, reminder.id.clone());
+        assert_eq!(r.status, ReminderTriggerStatus::Untriggered);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn alert_ignored_reminder_ignore_then_unignore_no_hit() -> Result<()> {
+        let mut db = test_db().await?;
+        let (alert, reminder) = setup_alert_with_reminder(&mut db).await?;
+        add_alert_event(&mut db, alert.id.clone(), 50, Reason::Ignored).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 60, Reason::Ignored).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 70, Reason::Unignored).await?;
+
+        let mut repo = Repository::new(db)?;
+        let alerts = repo.get_alerts(TS).await?;
+        let r = reminder_by_id(&alerts, &alert.id, reminder.id.clone());
+        assert_eq!(r.status, ReminderTriggerStatus::Untriggered);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn alert_ignored_reminder_ignore_then_unignore_with_hit() -> Result<()> {
+        let mut db = test_db().await?;
+        let (alert, reminder) = setup_alert_with_reminder(&mut db).await?;
+        add_alert_event(&mut db, alert.id.clone(), 50, Reason::Ignored).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 58, Reason::Hit).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 60, Reason::Ignored).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 70, Reason::Unignored).await?;
+
+        let mut repo = Repository::new(db)?;
+        let alerts = repo.get_alerts(TS).await?;
+        let r = reminder_by_id(&alerts, &alert.id, reminder.id.clone());
+        assert_eq!(r.status, ReminderTriggerStatus::Hit { timestamp: 58 });
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn alert_ignored_reminder_ignore_unignore_ignore() -> Result<()> {
+        let mut db = test_db().await?;
+        let (alert, reminder) = setup_alert_with_reminder(&mut db).await?;
+        add_alert_event(&mut db, alert.id.clone(), 50, Reason::Ignored).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 60, Reason::Ignored).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 70, Reason::Unignored).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 80, Reason::Ignored).await?;
+
+        let mut repo = Repository::new(db)?;
+        let alerts = repo.get_alerts(TS).await?;
+        let r = reminder_by_id(&alerts, &alert.id, reminder.id.clone());
+        // This can be either way, we don't care which
+        assert_eq!(
+            r.status,
+            ReminderTriggerStatus::Ignored {
+                timestamp: 80,
+                ignored_by_alert: false
+            }
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn alert_ignore_unignore_ignore_reminder_no_events() -> Result<()> {
+        let mut db = test_db().await?;
+        let (alert, reminder) = setup_alert_with_reminder(&mut db).await?;
+        add_alert_event(&mut db, alert.id.clone(), 55, Reason::Ignored).await?;
+        add_alert_event(&mut db, alert.id.clone(), 65, Reason::Unignored).await?;
+        add_alert_event(&mut db, alert.id.clone(), 75, Reason::Ignored).await?;
+
+        let mut repo = Repository::new(db)?;
+        let alerts = repo.get_alerts(TS).await?;
+        let r = reminder_by_id(&alerts, &alert.id, reminder.id.clone());
+        assert_eq!(
+            r.status,
+            ReminderTriggerStatus::Ignored {
+                timestamp: 75,
+                ignored_by_alert: true
+            }
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn reminder_ignore_unignore_ignore_only() -> Result<()> {
+        let mut db = test_db().await?;
+        let (alert, reminder) = setup_alert_with_reminder(&mut db).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 60, Reason::Ignored).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 70, Reason::Unignored).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 80, Reason::Ignored).await?;
+
+        let mut repo = Repository::new(db)?;
+        let alerts = repo.get_alerts(TS).await?;
+        let r = reminder_by_id(&alerts, &alert.id, reminder.id.clone());
+        assert_eq!(
+            r.status,
+            ReminderTriggerStatus::Ignored {
+                timestamp: 80,
+                ignored_by_alert: false
+            }
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn two_reminders_one_ignored_by_alert_one_ignored_by_self() -> Result<()> {
+        let mut db = test_db().await?;
+        let app = arrange::app_with_usage(&mut db, 0, 100).await?;
+        let alert = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(1),
+                target: Target::App { id: app.id.clone() },
+                usage_limit: 200,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+        let r1 = arrange::reminder(
+            &mut db,
+            Reminder {
+                id: Ref::new(1),
+                alert_id: alert.id.clone(),
+                threshold: 0.25.into(),
+                message: "Q1".to_string(),
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+        let r2 = arrange::reminder(
+            &mut db,
+            Reminder {
+                id: Ref::new(2),
+                alert_id: alert.id.clone(),
+                threshold: 0.5.into(),
+                message: "Half".to_string(),
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+        add_alert_event(&mut db, alert.id.clone(), 60, Reason::Ignored).await?;
+        add_reminder_event(&mut db, r2.id.clone(), 65, Reason::Ignored).await?;
+
+        let mut repo = Repository::new(db)?;
+        let alerts = repo.get_alerts(TS).await?;
+        let rem1 = reminder_by_id(&alerts, &alert.id, r1.id.clone());
+        let rem2 = reminder_by_id(&alerts, &alert.id, r2.id.clone());
+        assert_eq!(
+            rem1.status,
+            ReminderTriggerStatus::Ignored {
+                timestamp: 60,
+                ignored_by_alert: true
+            }
+        );
+        assert_eq!(
+            rem2.status,
+            ReminderTriggerStatus::Ignored {
+                timestamp: 65,
+                ignored_by_alert: false
+            }
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn two_reminders_both_no_events_alert_ignored() -> Result<()> {
+        let mut db = test_db().await?;
+        let app = arrange::app_with_usage(&mut db, 0, 100).await?;
+        let alert = arrange::alert(
+            &mut db,
+            Alert {
+                id: Ref::new(1),
+                target: Target::App { id: app.id.clone() },
+                usage_limit: 200,
+                time_frame: TimeFrame::Daily,
+                trigger_action: TriggerAction::Kill,
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+        let r1 = arrange::reminder(
+            &mut db,
+            Reminder {
+                id: Ref::new(1),
+                alert_id: alert.id.clone(),
+                threshold: 0.25.into(),
+                message: "Q1".to_string(),
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+        let r2 = arrange::reminder(
+            &mut db,
+            Reminder {
+                id: Ref::new(2),
+                alert_id: alert.id.clone(),
+                threshold: 0.5.into(),
+                message: "Half".to_string(),
+                active: true,
+                created_at: 0,
+                updated_at: 0,
+            },
+        )
+        .await?;
+        add_alert_event(&mut db, alert.id.clone(), 60, Reason::Ignored).await?;
+
+        let mut repo = Repository::new(db)?;
+        let alerts = repo.get_alerts(TS).await?;
+        let rem1 = reminder_by_id(&alerts, &alert.id, r1.id.clone());
+        let rem2 = reminder_by_id(&alerts, &alert.id, r2.id.clone());
+        assert_eq!(
+            rem1.status,
+            ReminderTriggerStatus::Ignored {
+                timestamp: 60,
+                ignored_by_alert: true
+            }
+        );
+        assert_eq!(
+            rem2.status,
+            ReminderTriggerStatus::Ignored {
+                timestamp: 60,
+                ignored_by_alert: true
+            }
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn reminder_hit_then_ignore_alert_ignored() -> Result<()> {
+        let mut db = test_db().await?;
+        let (alert, reminder) = setup_alert_with_reminder(&mut db).await?;
+        add_alert_event(&mut db, alert.id.clone(), 50, Reason::Ignored).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 60, Reason::Hit).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 70, Reason::Ignored).await?;
+
+        let mut repo = Repository::new(db)?;
+        let alerts = repo.get_alerts(TS).await?;
+        let r = reminder_by_id(&alerts, &alert.id, reminder.id.clone());
+        assert_eq!(
+            r.status,
+            ReminderTriggerStatus::Ignored {
+                timestamp: 70,
+                ignored_by_alert: false
+            }
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn reminder_ignore_then_hit() -> Result<()> {
+        let mut db = test_db().await?;
+        let (alert, reminder) = setup_alert_with_reminder(&mut db).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 60, Reason::Ignored).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 70, Reason::Hit).await?;
+
+        let mut repo = Repository::new(db)?;
+        let alerts = repo.get_alerts(TS).await?;
+        let r = reminder_by_id(&alerts, &alert.id, reminder.id.clone());
+        assert_eq!(r.status, ReminderTriggerStatus::Hit { timestamp: 70 });
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn alert_ignored_reminder_unignore_only_no_prior_events() -> Result<()> {
+        let mut db = test_db().await?;
+        let (alert, reminder) = setup_alert_with_reminder(&mut db).await?;
+        add_alert_event(&mut db, alert.id.clone(), 55, Reason::Ignored).await?;
+        add_alert_event(&mut db, alert.id.clone(), 65, Reason::Unignored).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 70, Reason::Unignored).await?;
+
+        let mut repo = Repository::new(db)?;
+        let alerts = repo.get_alerts(TS).await?;
+        let r = reminder_by_id(&alerts, &alert.id, reminder.id.clone());
+        assert_eq!(r.status, ReminderTriggerStatus::Untriggered);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn reminder_no_events_alert_ignore_unignore_ignore() -> Result<()> {
+        let mut db = test_db().await?;
+        let (alert, reminder) = setup_alert_with_reminder(&mut db).await?;
+        add_alert_event(&mut db, alert.id.clone(), 55, Reason::Ignored).await?;
+        add_alert_event(&mut db, alert.id.clone(), 65, Reason::Unignored).await?;
+        add_alert_event(&mut db, alert.id.clone(), 75, Reason::Ignored).await?;
+
+        let mut repo = Repository::new(db)?;
+        let alerts = repo.get_alerts(TS).await?;
+        let r = reminder_by_id(&alerts, &alert.id, reminder.id.clone());
+        assert_eq!(
+            r.status,
+            ReminderTriggerStatus::Ignored {
+                timestamp: 75,
+                ignored_by_alert: true
+            }
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn alert_ignored_reminder_multiple_unignores_no_hit() -> Result<()> {
+        let mut db = test_db().await?;
+        let (alert, reminder) = setup_alert_with_reminder(&mut db).await?;
+        add_alert_event(&mut db, alert.id.clone(), 50, Reason::Ignored).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 60, Reason::Unignored).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 70, Reason::Unignored).await?;
+
+        let mut repo = Repository::new(db)?;
+        let alerts = repo.get_alerts(TS).await?;
+        let r = reminder_by_id(&alerts, &alert.id, reminder.id.clone());
+        assert_eq!(r.status, ReminderTriggerStatus::Untriggered);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn alert_ignored_reminder_multiple_unignores_with_hit() -> Result<()> {
+        let mut db = test_db().await?;
+        let (alert, reminder) = setup_alert_with_reminder(&mut db).await?;
+        add_alert_event(&mut db, alert.id.clone(), 50, Reason::Ignored).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 58, Reason::Hit).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 60, Reason::Unignored).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 70, Reason::Unignored).await?;
+
+        let mut repo = Repository::new(db)?;
+        let alerts = repo.get_alerts(TS).await?;
+        let r = reminder_by_id(&alerts, &alert.id, reminder.id.clone());
+        assert_eq!(r.status, ReminderTriggerStatus::Hit { timestamp: 58 });
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn alert_hit_ignored_reminder_no_events() -> Result<()> {
+        let mut db = test_db().await?;
+        let (alert, reminder) = setup_alert_with_reminder(&mut db).await?;
+        add_alert_event(&mut db, alert.id.clone(), 60, Reason::Hit).await?;
+        add_alert_event(&mut db, alert.id.clone(), 70, Reason::Ignored).await?;
+
+        let mut repo = Repository::new(db)?;
+        let alerts = repo.get_alerts(TS).await?;
+        assert_eq!(
+            alerts.get(&alert.id).unwrap().status,
+            AlertTriggerStatus::Ignored { timestamp: 70 }
+        );
+        let r = reminder_by_id(&alerts, &alert.id, reminder.id.clone());
+        assert_eq!(
+            r.status,
+            ReminderTriggerStatus::Ignored {
+                timestamp: 70,
+                ignored_by_alert: true
+            }
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn alert_ignored_reminder_ignore_before_alert_ignore() -> Result<()> {
+        let mut db = test_db().await?;
+        let (alert, reminder) = setup_alert_with_reminder(&mut db).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 52, Reason::Ignored).await?;
+        add_alert_event(&mut db, alert.id.clone(), 60, Reason::Ignored).await?;
+
+        let mut repo = Repository::new(db)?;
+        let alerts = repo.get_alerts(TS).await?;
+        let r = reminder_by_id(&alerts, &alert.id, reminder.id.clone());
+        assert_eq!(
+            r.status,
+            ReminderTriggerStatus::Ignored {
+                timestamp: 52,
+                ignored_by_alert: false
+            }
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn alert_ignored_reminder_ignore_after_alert_ignore() -> Result<()> {
+        let mut db = test_db().await?;
+        let (alert, reminder) = setup_alert_with_reminder(&mut db).await?;
+        add_alert_event(&mut db, alert.id.clone(), 52, Reason::Ignored).await?;
+        add_reminder_event(&mut db, reminder.id.clone(), 60, Reason::Ignored).await?;
+
+        let mut repo = Repository::new(db)?;
+        let alerts = repo.get_alerts(TS).await?;
+        let r = reminder_by_id(&alerts, &alert.id, reminder.id.clone());
+        assert_eq!(
+            r.status,
+            ReminderTriggerStatus::Ignored {
+                timestamp: 60,
+                ignored_by_alert: false
+            }
+        );
+        Ok(())
+    }
+}
+
 // Inserts start-end usages into the database as single sessions
 async fn usages(db: &mut Database, app_id: Ref<App>, usages: Vec<(i64, i64)>) -> Result<()> {
     for (start, end) in usages {

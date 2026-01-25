@@ -58,11 +58,13 @@ impl Repository {
             SELECT a.*,
                 COALESCE(d.dur, 0) AS today,
                 COALESCE(w.dur, 0) AS week,
-                COALESCE(m.dur, 0) AS month
+                COALESCE(m.dur, 0) AS month,
+                (ai.id IS NOT NULL) AS has_icon
             FROM apps a
                 LEFT JOIN usage_today d ON a.id = d.id
                 LEFT JOIN usage_week  w ON a.id = w.id
                 LEFT JOIN usage_month m ON a.id = m.id
+                LEFT JOIN app_icons ai ON a.id = ai.id
             GROUP BY a.id"
         ))
         .bind(ts.day_start(true).to_ticks())
@@ -146,16 +148,36 @@ impl Repository {
                         END range_start
                     FROM alerts al
                 ),
+                latest_event(id, reason, timestamp) AS (
+                    SELECT ae.id, ae.reason, ae.timestamp
+                    FROM (
+                        SELECT rs.id, ae.reason, ae.timestamp,
+                            ROW_NUMBER() OVER (PARTITION BY rs.id ORDER BY ae.timestamp DESC) AS rn
+                        FROM range_start rs
+                        INNER JOIN alert_events ae
+                            ON ae.alert_id = rs.id AND ae.timestamp >= rs.range_start
+                    ) ae
+                    WHERE ae.rn = 1
+                ),
+                latest_hit(id, timestamp) AS (
+                    SELECT ae.id, ae.timestamp
+                    FROM (
+                        SELECT rs.id, ae.timestamp,
+                            ROW_NUMBER() OVER (PARTITION BY rs.id ORDER BY ae.timestamp DESC) AS rn
+                        FROM range_start rs
+                        INNER JOIN alert_events ae
+                            ON ae.alert_id = rs.id AND ae.timestamp >= rs.range_start
+                            AND ae.reason = 0
+                    ) ae
+                    WHERE ae.rn = 1
+                ),
                 trigger_status(id, status, timestamp) AS (
                     SELECT t.id,
-                        e.reason,
-                        e.timestamp
+                        IIF(e.reason = 2, IIF(h.timestamp IS NOT NULL, 0, 2), e.reason),
+                        IIF(e.reason = 2, IIF(h.timestamp IS NOT NULL, h.timestamp, NULL), e.timestamp)
                     FROM range_start t
-                    LEFT JOIN alert_events e
-                        ON t.id = e.alert_id AND e.timestamp = (
-                            SELECT MAX(e.timestamp)
-                            FROM alert_events e
-                            WHERE e.alert_id = t.id AND e.timestamp >= t.range_start)
+                    LEFT JOIN latest_event e ON t.id = e.id
+                    LEFT JOIN latest_hit h ON t.id = h.id
                 ),
                 events_today(id, count) AS ({ALERT_EVENT_COUNT}),
                 events_week(id, count) AS ({ALERT_EVENT_COUNT}),
@@ -198,38 +220,82 @@ impl Repository {
                     FROM reminders r
                         INNER JOIN alerts al ON r.alert_id = al.id
                 ),
+                latest_reminder_event(id, reason, timestamp) AS (
+                    SELECT re.id, re.reason, re.timestamp
+                    FROM (
+                        SELECT rs.id, re.reason, re.timestamp,
+                            ROW_NUMBER() OVER (PARTITION BY rs.id ORDER BY re.timestamp DESC) AS rn
+                        FROM range_start rs
+                        INNER JOIN reminder_events re
+                            ON re.reminder_id = rs.id AND re.timestamp >= rs.range_start
+                    ) re
+                    WHERE re.rn = 1
+                ),
+                latest_reminder_hit(id, timestamp) AS (
+                    SELECT re.id, re.timestamp
+                    FROM (
+                        SELECT rs.id, re.timestamp,
+                            ROW_NUMBER() OVER (PARTITION BY rs.id ORDER BY re.timestamp DESC) AS rn
+                        FROM range_start rs
+                        INNER JOIN reminder_events re
+                            ON re.reminder_id = rs.id AND re.timestamp >= rs.range_start
+                            AND re.reason = 0
+                    ) re
+                    WHERE re.rn = 1
+                ),
                 reminder_trigger_status(id, status, timestamp, alert_ignored) AS (
                     SELECT t.id,
-                        e.reason,
-                        e.timestamp,
+                        IIF(e.reason = 2, IIF(h.timestamp IS NOT NULL, 0, 2), e.reason),
+                        IIF(e.reason = 2, IIF(h.timestamp IS NOT NULL, h.timestamp, NULL), e.timestamp),
                         0 AS alert_ignored
                     FROM range_start t
-                    LEFT JOIN reminder_events e
-                        ON t.id = e.reminder_id AND e.timestamp = (
-                            SELECT MAX(e.timestamp)
-                            FROM reminder_events e
-                            WHERE e.reminder_id = t.id AND e.timestamp >= t.range_start)
+                    LEFT JOIN latest_reminder_event e ON t.id = e.id
+                    LEFT JOIN latest_reminder_hit h ON t.id = h.id
                 ),
-                -- alert trigger status for matching alert_events that are ignored
+                latest_alert_event_for_reminder(reminder_id, reason, timestamp) AS (
+                    SELECT x.id, x.reason, x.timestamp
+                    FROM (
+                        SELECT rs.id, ae.reason, ae.timestamp,
+                            ROW_NUMBER() OVER (PARTITION BY rs.id ORDER BY ae.timestamp DESC) AS rn
+                        FROM range_start rs
+                        INNER JOIN reminders r ON rs.id = r.id
+                        INNER JOIN alert_events ae
+                            ON ae.alert_id = r.alert_id
+                            AND ae.timestamp >= rs.range_start
+                    ) x
+                    WHERE x.rn = 1
+                ),
+                latest_alert_hit_for_reminder(reminder_id, timestamp) AS (
+                    SELECT x.reminder_id, x.timestamp
+                    FROM (
+                        SELECT rs.id AS reminder_id, ae.timestamp,
+                            ROW_NUMBER() OVER (PARTITION BY rs.id ORDER BY ae.timestamp DESC) AS rn
+                        FROM range_start rs
+                        INNER JOIN reminders r ON rs.id = r.id
+                        INNER JOIN alert_events ae
+                            ON ae.alert_id = r.alert_id
+                            AND ae.timestamp >= rs.range_start
+                            AND ae.reason = 0
+                    ) x
+                    WHERE x.rn = 1
+                ),
+                -- alert trigger status for matching alert_events
                 alert_trigger_status(id, status, timestamp, alert_ignored) AS (
                     SELECT t.id,
-                        e.reason,
-                        e.timestamp,
-                        1 AS alert_ignored
+                        IIF(e.reason = 2, IIF(h.timestamp IS NOT NULL, 0, 2), e.reason),
+                        IIF(e.reason = 2, IIF(h.timestamp IS NOT NULL, h.timestamp, NULL), e.timestamp),
+                        IIF(e.reason = 1, 1, 0) AS alert_ignored
                     FROM range_start t
-                    INNER JOIN reminders r ON t.id = r.id
-                    LEFT JOIN alert_events e
-                        ON e.alert_id = r.alert_id
-                        AND e.timestamp >= t.range_start
-                        AND e.reason = 1
+                    LEFT JOIN latest_alert_event_for_reminder e ON t.id = e.reminder_id
+                    LEFT JOIN latest_alert_hit_for_reminder h ON t.id = h.reminder_id
                 ),
                 events_today(id, count) AS ({REMINDER_EVENT_COUNT}),
                 events_week(id, count) AS ({REMINDER_EVENT_COUNT}),
                 events_month(id, count) AS ({REMINDER_EVENT_COUNT})
             SELECT r.*,
-                COALESCE(rts.status, ats.status, 2) AS reminder_status,
-                COALESCE(rts.timestamp, ats.timestamp) AS reminder_status_timestamp,
-                COALESCE(rts.alert_ignored, ats.alert_ignored) AS reminder_status_alert_ignored,
+                COALESCE(rts.status, IIF(ats.status = 0, 2, ats.status), 2) AS reminder_status,
+                COALESCE(rts.timestamp, IIF(ats.status = 0, NULL, ats.timestamp)) AS reminder_status_timestamp,
+                CASE WHEN rts.status IS NOT NULL THEN rts.alert_ignored ELSE ats.alert_ignored END AS reminder_status_alert_ignored,
                 COALESCE(t.count, 0) AS today,
                 COALESCE(w.count, 0) AS week,
                 COALESCE(m.count, 0) AS month

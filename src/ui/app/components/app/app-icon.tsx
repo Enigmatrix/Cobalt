@@ -1,4 +1,4 @@
-import type { App, Ref } from "@/lib/entities";
+import type { App } from "@/lib/entities";
 import { cn } from "@/lib/utils";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import type { ClassValue } from "clsx";
@@ -12,14 +12,14 @@ import { useEffect, useState } from "react";
 export const DEFAULT_ICON_SVG_URL = "data:image/svg+xml," + CircleHelpStatic;
 export const TAG_ICON_URL = "data:image/svg+xml," + TagStatic;
 
-export function appIconUrl(appId?: Ref<App>) {
-  if (!appId) return DEFAULT_ICON_SVG_URL;
-  return convertFileSrc(appId.toString(), "appicon");
+export function appIconUrl(app?: App) {
+  if (!app?.hasIcon) return DEFAULT_ICON_SVG_URL;
+  return convertFileSrc(app.id.toString(), "appicon");
 }
 
-export function appIconHtmlImgElement(appId?: Ref<App>): HTMLImageElement {
+export function appIconHtmlImgElement(app?: App): HTMLImageElement {
   const img = new Image();
-  img.src = appIconUrl(appId);
+  img.src = appIconUrl(app);
   img.onerror = () => {
     img.src = DEFAULT_ICON_SVG_URL;
     img.onerror = null;
@@ -36,14 +36,14 @@ export function tagIconUrl(color?: string) {
 }
 
 export default function AppIcon({
-  appId,
+  app,
   className,
 }: {
-  appId?: Ref<App>;
+  app?: App;
   className?: ClassValue;
 }) {
   const [hasError, setHasError] = useState(false);
-  const [icon, setIcon] = useState<string | null>(() => appIconUrl(appId));
+  const [icon, setIcon] = useState<string | null>(() => appIconUrl(app));
   // We assume that this useEffect runs before the setHasError(true) call
   // i.e. this is not possible:
   // 1. initial mount <--- img is shown
@@ -53,8 +53,11 @@ export default function AppIcon({
   // 4. img load fails (again), and setHasError(true) is called <--- CircleHelp is shown
   useEffect(() => {
     setHasError(false);
-    setIcon(appIconUrl(appId));
-  }, [appId]);
+    setIcon(appIconUrl(app));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // We only want to re-run this effect if the app or its hasIcon property changes
+    // since app itself changes every refresh
+  }, [app?.id, app?.hasIcon]);
 
   if (!icon || hasError) {
     return <CircleHelp className={cn(className)} />;
