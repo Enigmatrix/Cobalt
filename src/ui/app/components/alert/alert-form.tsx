@@ -126,7 +126,7 @@ function TargetAndUsageCard() {
                   {...field}
                   value={value}
                   onValueChanged={onChange}
-                  className="w-full justify-start"
+                  className="w-full min-w-0 justify-start"
                 />
               </FormControl>
               <FormMessage />
