@@ -54,7 +54,10 @@ export default function AppIcon({
   useEffect(() => {
     setHasError(false);
     setIcon(appIconUrl(app));
-  }, [app]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // We only want to re-run this effect if the app or its hasIcon property changes
+    // since app itself changes every refresh
+  }, [app?.id, app?.hasIcon]);
 
   if (!icon || hasError) {
     return <CircleHelp className={cn(className)} />;

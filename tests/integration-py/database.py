@@ -39,7 +39,7 @@ class Database:
             """
             INSERT OR REPLACE INTO apps (name, description, company, color, tag_id, 
                              identity_tag, identity_text0, identity_text1, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
             (
                 name,
