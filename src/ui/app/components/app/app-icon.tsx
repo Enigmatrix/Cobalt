@@ -13,7 +13,7 @@ export const DEFAULT_ICON_SVG_URL = "data:image/svg+xml," + CircleHelpStatic;
 export const TAG_ICON_URL = "data:image/svg+xml," + TagStatic;
 
 export function appIconUrl(app?: App) {
-  if (!app?.id) return DEFAULT_ICON_SVG_URL;
+  if (!app?.hasIcon) return DEFAULT_ICON_SVG_URL;
   return convertFileSrc(app.id.toString(), "appicon");
 }
 

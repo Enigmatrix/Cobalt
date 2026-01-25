@@ -58,11 +58,13 @@ impl Repository {
             SELECT a.*,
                 COALESCE(d.dur, 0) AS today,
                 COALESCE(w.dur, 0) AS week,
-                COALESCE(m.dur, 0) AS month
+                COALESCE(m.dur, 0) AS month,
+                (ai.id IS NOT NULL) AS has_icon
             FROM apps a
                 LEFT JOIN usage_today d ON a.id = d.id
                 LEFT JOIN usage_week  w ON a.id = w.id
                 LEFT JOIN usage_month m ON a.id = m.id
+                LEFT JOIN app_icons ai ON a.id = ai.id
             GROUP BY a.id"
         ))
         .bind(ts.day_start(true).to_ticks())
