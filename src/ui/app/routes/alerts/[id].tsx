@@ -96,9 +96,7 @@ function AlertPage({ alert }: { alert: Alert }) {
             <BreadcrumbSeparator className="hidden md:block" />
             <BreadcrumbItem className="overflow-hidden">
               <BreadcrumbPage className="inline-flex items-center overflow-hidden">
-                {app && (
-                  <AppIcon appId={app.id} className="w-5 h-5 mr-2 shrink-0" />
-                )}
+                {app && <AppIcon app={app} className="w-5 h-5 mr-2 shrink-0" />}
                 {tag && (
                   <TagIcon
                     className="w-5 h-5 mr-2 shrink-0"
@@ -182,7 +180,7 @@ function AlertInfoCard({
           <NavLink to={targetLink}>
             {app ? (
               <AppIcon
-                appId={app.id}
+                app={app}
                 className="w-12 h-12 shrink-0 hover:opacity-80 transition-opacity"
               />
             ) : tag ? (

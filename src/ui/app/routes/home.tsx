@@ -401,7 +401,7 @@ function MiniTargetItem({ alert }: { alert: Alert }) {
 
   return alert.target.tag === "app" && app ? (
     <div className="flex gap-1 items-center">
-      <AppIcon className="h-4 w-4 shrink-0" appId={app.id} />
+      <AppIcon className="h-4 w-4 shrink-0" app={app} />
       <div>{app.name}</div>
     </div>
   ) : alert.target.tag === "tag" && tag ? (

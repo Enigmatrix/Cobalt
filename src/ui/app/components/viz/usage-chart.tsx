@@ -261,7 +261,7 @@ export function UsageChart({
           backgroundColor: {
             image:
               kv.key === "app"
-                ? appIconUrl(kv.app.id)
+                ? appIconUrl(kv.app)
                 : tagIconUrl(`color-mix(in srgb, ${kv.tag.color} 65%, black)`),
           },
           formatter: () => {

@@ -12,7 +12,7 @@ export function AppBadge({ app, remove }: { app: App; remove?: () => void }) {
         backgroundColor: "rgba(255, 255, 255, 0.1)",
       }}
     >
-      <AppIcon appId={app.id} className="h-5 w-5 mr-2" />
+      <AppIcon app={app} className="h-5 w-5 mr-2" />
       <Text className="text-base">{app.name}</Text>
       {remove && (
         <button
