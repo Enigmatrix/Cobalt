@@ -19,12 +19,38 @@ pub struct WebsiteInfo {
     pub icon: Option<Icon>,
 }
 
-/// Website URL down to origin
+/// Web-supported schemes, e.g. file://, chrome://, about:blank, etc.
+pub const WEB_SUPPORTED_SCHEMES: [&str; 10] = [
+    // Generic URLs, can be seen by user
+    "file",
+    "data",
+    "blob",
+    "ftp",
+    "wss",
+    "ws",
+    // Browser-specific
+    "chrome",
+    "edge",
+    "about",
+    "view-source",
+];
+
+/// URL Base, accounting for http(s), chrome-extension, web-supported, and non-http URLs.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum BaseWebsiteUrl {
     /// HTTP(S) URL
     Http(String),
-    /// file://, chrome://, about:blank, etc.
+    /// Chrome extension URL
+    ChromeExtension {
+        /// Extension ID, e.g. "abcdefghijklmnopqrstuvwxyz1234567890"
+        extension_id: String,
+    },
+    /// Web-supported URL (see [WEB_SUPPORTED_SCHEMES])
+    WebSupported {
+        /// Scheme of the URL (see [WEB_SUPPORTED_SCHEMES])
+        scheme: String,
+    },
+    /// any other non-http URL, including invalid URLs
     NonHttp(String),
 }
 
@@ -32,6 +58,10 @@ impl fmt::Display for BaseWebsiteUrl {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             BaseWebsiteUrl::Http(url) => write!(f, "{url}"),
+            BaseWebsiteUrl::ChromeExtension { extension_id } => {
+                write!(f, "chrome-extension://{extension_id}")
+            }
+            BaseWebsiteUrl::WebSupported { scheme } => write!(f, "{scheme}:"),
             BaseWebsiteUrl::NonHttp(url) => write!(f, "{url}"),
         }
     }
@@ -59,6 +89,16 @@ impl WebsiteInfo {
                 }
                 let origin = url.origin().unicode_serialization();
                 BaseWebsiteUrl::Http(origin)
+            } else if url.scheme() == "chrome-extension"
+                && let Some(extension_id) = url.host_str()
+            {
+                BaseWebsiteUrl::ChromeExtension {
+                    extension_id: extension_id.to_string(),
+                }
+            } else if WEB_SUPPORTED_SCHEMES.contains(&url.scheme()) {
+                BaseWebsiteUrl::WebSupported {
+                    scheme: url.scheme().to_string(),
+                }
             } else {
                 url.set_fragment(None);
                 url.set_query(None);
@@ -97,9 +137,26 @@ impl WebsiteInfo {
     pub fn default_from_url(base_url: BaseWebsiteUrl) -> Self {
         let url = match base_url {
             BaseWebsiteUrl::Http(url) => url,
+
+            BaseWebsiteUrl::ChromeExtension { extension_id } => {
+                return Self {
+                    name: format!("Chrome Extension {extension_id}"),
+                    description: "Chrome Extension".to_string(),
+                    color: random_color(),
+                    // maybe in the future we can get the icon of the extension
+                    icon: None,
+                };
+            }
+            BaseWebsiteUrl::WebSupported { scheme } => {
+                return Self {
+                    name: format!("'{scheme}' scheme URL"),
+                    description: format!("'{scheme}' scheme URL"),
+                    color: random_color(),
+                    icon: None,
+                };
+            }
             BaseWebsiteUrl::NonHttp(url) => url,
         };
-
         Self {
             name: Self::pretty_url_host(&url),
             description: url,
@@ -112,9 +169,7 @@ impl WebsiteInfo {
     pub async fn from_base_url(base_url: BaseWebsiteUrl) -> Result<Self> {
         let url = match base_url {
             BaseWebsiteUrl::Http(url) => url,
-            BaseWebsiteUrl::NonHttp(_) => {
-                return Ok(Self::default_from_url(base_url));
-            }
+            _ => return Ok(Self::default_from_url(base_url)),
         };
 
         let client = Client::new();
@@ -277,5 +332,386 @@ impl From<WebsiteInfo> for AppInfo {
             color: website.color,
             icon: website.icon,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_chrome_extension_url_arb_to_base_url() {
+        let url = "chrome-extension://abcdefghijklmnopqrstuvwxyz1234567890/src/css/wee.styles.css";
+        assert_eq!(
+            WebsiteInfo::url_to_base_url(url),
+            BaseWebsiteUrl::ChromeExtension {
+                extension_id: "abcdefghijklmnopqrstuvwxyz1234567890".to_string()
+            }
+        );
+    }
+
+    #[test]
+    fn test_chrome_extension_url_base_to_base_url() {
+        let url = "chrome-extension://abcdefghijklmnopqrstuvwxyz1234567890";
+        assert_eq!(
+            WebsiteInfo::url_to_base_url(url),
+            BaseWebsiteUrl::ChromeExtension {
+                extension_id: "abcdefghijklmnopqrstuvwxyz1234567890".to_string()
+            }
+        );
+    }
+
+    #[test]
+    fn test_chrome_extension_url_base_with_slash_to_base_url() {
+        let url = "chrome-extension://abcdefghijklmnopqrstuvwxyz1234567890/";
+        assert_eq!(
+            WebsiteInfo::url_to_base_url(url),
+            BaseWebsiteUrl::ChromeExtension {
+                extension_id: "abcdefghijklmnopqrstuvwxyz1234567890".to_string()
+            }
+        );
+    }
+
+    #[test]
+    fn test_data_to_base_url() {
+        let url = "data:text/html,<html><body><h1>Hello, World!</h1></body></html>";
+        assert_eq!(
+            WebsiteInfo::url_to_base_url(url),
+            BaseWebsiteUrl::WebSupported {
+                scheme: "data".to_string()
+            }
+        );
+    }
+
+    // HTTP/HTTPS URL tests
+    #[test]
+    fn test_https_url_simple() {
+        let url = "https://example.com";
+        assert_eq!(
+            WebsiteInfo::url_to_base_url(url),
+            BaseWebsiteUrl::Http("https://example.com".to_string())
+        );
+    }
+
+    #[test]
+    fn test_http_url_simple() {
+        let url = "http://example.com";
+        assert_eq!(
+            WebsiteInfo::url_to_base_url(url),
+            BaseWebsiteUrl::Http("http://example.com".to_string())
+        );
+    }
+
+    #[test]
+    fn test_https_url_with_www() {
+        let url = "https://www.example.com";
+        assert_eq!(
+            WebsiteInfo::url_to_base_url(url),
+            BaseWebsiteUrl::Http("https://example.com".to_string())
+        );
+    }
+
+    #[test]
+    fn test_http_url_with_www() {
+        let url = "http://www.example.com";
+        assert_eq!(
+            WebsiteInfo::url_to_base_url(url),
+            BaseWebsiteUrl::Http("http://example.com".to_string())
+        );
+    }
+
+    #[test]
+    fn test_https_url_with_path() {
+        let url = "https://example.com/path/to/page";
+        assert_eq!(
+            WebsiteInfo::url_to_base_url(url),
+            BaseWebsiteUrl::Http("https://example.com".to_string())
+        );
+    }
+
+    #[test]
+    fn test_https_url_with_query() {
+        let url = "https://example.com?key=value&other=param";
+        assert_eq!(
+            WebsiteInfo::url_to_base_url(url),
+            BaseWebsiteUrl::Http("https://example.com".to_string())
+        );
+    }
+
+    #[test]
+    fn test_https_url_with_fragment() {
+        let url = "https://example.com#section";
+        assert_eq!(
+            WebsiteInfo::url_to_base_url(url),
+            BaseWebsiteUrl::Http("https://example.com".to_string())
+        );
+    }
+
+    #[test]
+    fn test_https_url_with_path_query_fragment() {
+        let url = "https://www.example.com/path/to/page?key=value#section";
+        assert_eq!(
+            WebsiteInfo::url_to_base_url(url),
+            BaseWebsiteUrl::Http("https://example.com".to_string())
+        );
+    }
+
+    #[test]
+    fn test_http_url_with_default_port() {
+        let url = "http://example.com:80";
+        assert_eq!(
+            WebsiteInfo::url_to_base_url(url),
+            BaseWebsiteUrl::Http("http://example.com".to_string())
+        );
+    }
+
+    #[test]
+    fn test_https_url_with_default_port2() {
+        let url = "https://example.com:443";
+        assert_eq!(
+            WebsiteInfo::url_to_base_url(url),
+            BaseWebsiteUrl::Http("https://example.com".to_string())
+        );
+    }
+
+    #[test]
+    fn test_http_url_with_default_port_and_path() {
+        let url = "http://example.com:80/path";
+        assert_eq!(
+            WebsiteInfo::url_to_base_url(url),
+            BaseWebsiteUrl::Http("http://example.com".to_string())
+        );
+    }
+
+    #[test]
+    fn test_https_url_with_port() {
+        let url = "https://example.com:8080";
+        assert_eq!(
+            WebsiteInfo::url_to_base_url(url),
+            BaseWebsiteUrl::Http("https://example.com:8080".to_string())
+        );
+    }
+
+    #[test]
+    fn test_https_url_with_port_and_path() {
+        let url = "https://www.example.com:8080/path";
+        assert_eq!(
+            WebsiteInfo::url_to_base_url(url),
+            BaseWebsiteUrl::Http("https://example.com:8080".to_string())
+        );
+    }
+
+    #[test]
+    fn test_https_url_with_username() {
+        let url = "https://user@example.com";
+        // Origin serialization doesn't include username
+        assert_eq!(
+            WebsiteInfo::url_to_base_url(url),
+            BaseWebsiteUrl::Http("https://example.com".to_string())
+        );
+    }
+
+    #[test]
+    fn test_https_url_with_username_and_password() {
+        let url = "https://user:password@example.com";
+        // Password is masked in URL object, but origin() doesn't include credentials
+        assert_eq!(
+            WebsiteInfo::url_to_base_url(url),
+            BaseWebsiteUrl::Http("https://example.com".to_string())
+        );
+    }
+
+    #[test]
+    fn test_https_url_with_subdomain() {
+        let url = "https://subdomain.example.com";
+        assert_eq!(
+            WebsiteInfo::url_to_base_url(url),
+            BaseWebsiteUrl::Http("https://subdomain.example.com".to_string())
+        );
+    }
+
+    #[test]
+    fn test_https_url_www_subdomain() {
+        let url = "https://www.subdomain.example.com";
+        // www. prefix is stripped from the beginning of the host
+        assert_eq!(
+            WebsiteInfo::url_to_base_url(url),
+            BaseWebsiteUrl::Http("https://subdomain.example.com".to_string())
+        );
+    }
+
+    // Web-supported scheme tests
+    #[test]
+    fn test_file_url() {
+        let url = "file:///path/to/file.html";
+        assert_eq!(
+            WebsiteInfo::url_to_base_url(url),
+            BaseWebsiteUrl::WebSupported {
+                scheme: "file".to_string()
+            }
+        );
+    }
+
+    #[test]
+    fn test_blob_url() {
+        let url = "blob:https://example.com/uuid-here";
+        assert_eq!(
+            WebsiteInfo::url_to_base_url(url),
+            BaseWebsiteUrl::WebSupported {
+                scheme: "blob".to_string()
+            }
+        );
+    }
+
+    #[test]
+    fn test_ftp_url() {
+        let url = "ftp://ftp.example.com/file.txt";
+        assert_eq!(
+            WebsiteInfo::url_to_base_url(url),
+            BaseWebsiteUrl::WebSupported {
+                scheme: "ftp".to_string()
+            }
+        );
+    }
+
+    #[test]
+    fn test_ws_url() {
+        let url = "ws://example.com/socket";
+        assert_eq!(
+            WebsiteInfo::url_to_base_url(url),
+            BaseWebsiteUrl::WebSupported {
+                scheme: "ws".to_string()
+            }
+        );
+    }
+
+    #[test]
+    fn test_wss_url() {
+        let url = "wss://example.com/socket";
+        assert_eq!(
+            WebsiteInfo::url_to_base_url(url),
+            BaseWebsiteUrl::WebSupported {
+                scheme: "wss".to_string()
+            }
+        );
+    }
+
+    #[test]
+    fn test_chrome_url() {
+        let url = "chrome://settings/";
+        assert_eq!(
+            WebsiteInfo::url_to_base_url(url),
+            BaseWebsiteUrl::WebSupported {
+                scheme: "chrome".to_string()
+            }
+        );
+    }
+
+    #[test]
+    fn test_edge_url() {
+        let url = "edge://settings/";
+        assert_eq!(
+            WebsiteInfo::url_to_base_url(url),
+            BaseWebsiteUrl::WebSupported {
+                scheme: "edge".to_string()
+            }
+        );
+    }
+
+    #[test]
+    fn test_about_url() {
+        let url = "about:blank";
+        assert_eq!(
+            WebsiteInfo::url_to_base_url(url),
+            BaseWebsiteUrl::WebSupported {
+                scheme: "about".to_string()
+            }
+        );
+    }
+
+    #[test]
+    fn test_view_source_url() {
+        let url = "view-source:https://example.com";
+        assert_eq!(
+            WebsiteInfo::url_to_base_url(url),
+            BaseWebsiteUrl::WebSupported {
+                scheme: "view-source".to_string()
+            }
+        );
+    }
+
+    // Non-HTTP URL tests
+    #[test]
+    fn test_mailto_url() {
+        let url = "mailto:user@example.com?subject=Hello";
+        let result = WebsiteInfo::url_to_base_url(url);
+        assert_eq!(
+            result,
+            BaseWebsiteUrl::NonHttp("mailto:user@example.com".to_string())
+        );
+    }
+
+    #[test]
+    fn test_tel_url() {
+        let url = "tel:+1234567890";
+        assert_eq!(
+            WebsiteInfo::url_to_base_url(url),
+            BaseWebsiteUrl::NonHttp("tel:+1234567890".to_string())
+        );
+    }
+
+    #[test]
+    fn test_mailto_url_with_fragment() {
+        let url = "mailto:user@example.com#fragment";
+        let result = WebsiteInfo::url_to_base_url(url);
+        assert_eq!(
+            result,
+            BaseWebsiteUrl::NonHttp("mailto:user@example.com".to_string())
+        );
+    }
+
+    #[test]
+    fn test_mailto_url_with_query_and_fragment() {
+        let url = "mailto:user@example.com?subject=Hello&body=World#fragment";
+        let result = WebsiteInfo::url_to_base_url(url);
+        assert_eq!(
+            result,
+            BaseWebsiteUrl::NonHttp("mailto:user@example.com".to_string())
+        );
+    }
+
+    // Invalid URL tests
+    #[test]
+    fn test_invalid_url() {
+        let url = "not a valid url";
+        assert_eq!(
+            WebsiteInfo::url_to_base_url(url),
+            BaseWebsiteUrl::NonHttp("not a valid url".to_string())
+        );
+    }
+
+    #[test]
+    fn test_empty_string() {
+        let url = "";
+        assert_eq!(
+            WebsiteInfo::url_to_base_url(url),
+            BaseWebsiteUrl::NonHttp("".to_string())
+        );
+    }
+
+    #[test]
+    fn test_invalid_scheme() {
+        let url = "invalid-scheme://example.com";
+        assert_eq!(
+            WebsiteInfo::url_to_base_url(url),
+            BaseWebsiteUrl::NonHttp("invalid-scheme://example.com".to_string())
+        );
+    }
+
+    #[test]
+    fn test_just_scheme() {
+        let url = "https://";
+        let result = WebsiteInfo::url_to_base_url(url);
+        assert!(matches!(result, BaseWebsiteUrl::NonHttp(_)));
     }
 }
