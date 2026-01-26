@@ -41,7 +41,7 @@ import {
   useTotalUsageFromPerPeriod,
 } from "@/hooks/use-repo";
 import { useIntervalControlsWithDefault } from "@/hooks/use-time";
-import type { App, Ref, Tag } from "@/lib/entities";
+import type { Ref, Tag } from "@/lib/entities";
 import { useAppState } from "@/lib/state";
 import {
   hour24Formatter,
@@ -96,11 +96,10 @@ function TagPage({ tag }: { tag: Tag }) {
     [alerts, tag],
   );
 
-  const setTagApps = useCallback(
-    async (apps: Ref<App>[]) => {
-      await updateTagApps(tag, apps);
-    },
-    [tag, updateTagApps],
+  const [tagApps, setTagApps] = useDebouncedState(
+    tag.apps,
+    async (apps) => await updateTagApps(tag, apps),
+    500,
   );
 
   return (
@@ -198,7 +197,7 @@ function TagPage({ tag }: { tag: Tag }) {
                 </AlertDialog>
               </div>
 
-              <ChooseMultiApps value={tag.apps} onValueChanged={setTagApps} />
+              <ChooseMultiApps value={tagApps} onValueChanged={setTagApps} />
             </div>
           </div>
 
