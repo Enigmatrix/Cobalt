@@ -15,6 +15,11 @@ export function useSearch<T>(
     if (query) {
       return matchSorter(items, query, {
         keys: paths,
+        /*
+         * This theshold is higher than ACRONYM and MATCHES (default)
+         * which are really bad for our purposes.
+         */
+        threshold: matchSorter.rankings.CONTAINS,
       });
     } else {
       return items;
