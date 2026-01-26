@@ -5,8 +5,10 @@ import { SearchBar } from "@/components/search-bar";
 import { ScoreCircle } from "@/components/tag/score";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Popover,
+  PopoverAnchor,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
@@ -15,7 +17,6 @@ import { useApps, useTag } from "@/hooks/use-refresh";
 import { useAppsSearch } from "@/hooks/use-search";
 import type { App, Ref, Tag } from "@/lib/entities";
 import { cn } from "@/lib/utils";
-import { PopoverAnchor } from "@radix-ui/react-popover";
 import { PlusIcon } from "lucide-react";
 import {
   useCallback,
@@ -27,7 +28,6 @@ import {
 } from "react";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { VariableSizeList as List } from "react-window";
-import { Checkbox } from "../ui/checkbox";
 
 export function MiniTagItem({ tagId }: { tagId: Ref<Tag> | null }) {
   const tag = useTag(tagId);
@@ -150,13 +150,11 @@ export function ChooseMultiApps({
               {valueApps.length === index + 1 && (
                 <>
                   <div className="ml-2 border-l h-6" />
-                  <PopoverAnchor>
-                    <PopoverTrigger asChild>
-                      <Button variant="ghost" size="icon" className="w-8 h-8">
-                        <PlusIcon className="text-muted-foreground" />
-                      </Button>
-                    </PopoverTrigger>
-                  </PopoverAnchor>
+                  <PopoverTrigger asChild>
+                    <Button variant="ghost" size="icon" className="w-8 h-8">
+                      <PlusIcon className="text-muted-foreground" />
+                    </Button>
+                  </PopoverTrigger>
                 </>
               )}
             </div>
@@ -173,6 +171,14 @@ export function ChooseMultiApps({
             </PopoverTrigger>
           </div>
         )}
+        {/**
+         * This is a hack to make the popover stick at the same position while open.
+         * It moves around by default since Shadcn/Radix UI Popover auto updates position
+         * and we can't control it: https://github.com/radix-ui/primitives/blob/907513701a75b11a115563f9554ac6e8147bf2db/packages/react/popper/src/popper.tsx#L184
+         */}
+        <PopoverAnchor>
+          <div />
+        </PopoverAnchor>
       </div>
       <PopoverContent className="p-0 bg-card h-80 flex flex-col">
         <SearchBar
