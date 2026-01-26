@@ -96,7 +96,7 @@ export function ChooseTarget({
     return filteredTags.map((tag) => ({
       height: 32,
       item: (
-        <div className="px-2 max-w-full flex-1 flex" key={tag.id}>
+        <div className="px-2 max-w-full flex-1 flex" key={`tag-${tag.id}`}>
           <button
             className={cn(
               "flex flex-1 gap-2 items-center h-8 hover:bg-muted/90 px-2 rounded-md text-sm max-w-full",
@@ -185,7 +185,7 @@ export function ChooseTarget({
     return filteredApps.map((app) => ({
       height: 32,
       item: (
-        <div className="px-2 max-w-full flex-1 flex" key={app.id}>
+        <div className="px-2 max-w-full flex-1 flex" key={`app-${app.id}`}>
           <button
             className={cn(
               "flex flex-1 gap-2 items-center h-8 hover:bg-muted/90 px-2 rounded-md text-sm max-w-full",
