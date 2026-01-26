@@ -101,12 +101,16 @@ export function ChooseMultiApps({
       return {
         height: 32,
         item: (
-          <div className="max-w-full flex-1 flex" key={app.id}>
+          <div
+            className="max-w-full flex-1 flex"
+            key={app.id}
+            onClick={() => toggleOption(app.id)}
+          >
             <div
               className={cn(
-                "flex flex-1 items-center gap-2 h-8 px-2 text-sm max-w-full",
+                "flex flex-1 items-center gap-2 h-8 px-2 text-sm max-w-full hover:bg-muted/60 cursor-default",
                 {
-                  "bg-muted/80": isSelected,
+                  "bg-muted/90": isSelected,
                 },
               )}
             >
@@ -117,7 +121,7 @@ export function ChooseMultiApps({
               />
               <AppIcon
                 app={app}
-                className="mr-2 h-4 w-4 text-muted-foreground"
+                className="size-4 text-muted-foreground shrink-0"
               />
               <Text>{app.name}</Text>
               {/* Don't show tag if for *this* tag, since a creating tag will not even be valid */}
