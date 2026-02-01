@@ -1,3 +1,4 @@
+import { StatusBadge } from "@/components/alert/status-badge";
 import { TriggerActionIndicator } from "@/components/alert/trigger-action";
 import AppIcon from "@/components/app/app-icon";
 import { NoAlerts, NoAlertsFound } from "@/components/empty-states";
@@ -241,12 +242,18 @@ function AlertListItem({ alert }: { alert: Alert }) {
         ) : null}
         <div className="flex-1" />
 
-        <div className="flex flex-col items-end ml-auto py-2 ">
-          <TriggerActionIndicator
-            action={alert.triggerAction}
-            className="text-sm"
-          />
-
+        <div className="flex flex-col items-end gap-1 ml-auto py-2 ">
+          <div className="flex items-center gap-2">
+            <TriggerActionIndicator
+              action={alert.triggerAction}
+              className="text-sm shrink-0"
+            />
+            <StatusBadge
+              status={alert.status}
+              showLabel={false}
+              className="shrink-0"
+            />
+          </div>
           <div className="flex items-baseline text-card-foreground/50">
             <DurationText
               className="text-lg text-center text-card-foreground whitespace-nowrap"

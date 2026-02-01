@@ -34,7 +34,7 @@ export function TriggerActionIndicator({
       return (
         <div
           className={cn(
-            "flex items-center gap-1 text-muted-foreground",
+            "flex items-center gap-1 text-muted-foreground whitespace-nowrap",
             className,
           )}
         >
