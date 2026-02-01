@@ -114,41 +114,31 @@ pub fn run(
             ev.run();
         })?;
 
-    // Main event loop thread to poll for foreground/system etc. events
-    let ev_thread = {
-        let config = config.clone();
-        let session = session.clone();
-        let web_state = web_state.clone();
-        thread::Builder::new()
-            .name("event_loop_thread".to_string())
-            .spawn(move || {
-                event_loop(EventLoopArgs {
-                    config,
-                    web_state,
-                    event_tx,
-                    alert_tx,
-                    web_change_tx,
-                    session,
-                    start,
-                })
-                .context("event loop")
-                .expect("event loop failed");
-            })?
-    };
-
     rt.clone().block_on(processor(ProcessorArgs {
         desktop_state,
-        web_state,
+        web_state: web_state.clone(),
         config: config.clone(),
         rt,
-        session,
+        session: session.clone(),
         start,
         event_rx,
         alert_rx,
         web_change_rx,
     }))?;
-    // can't turn these to [util::error::Result]s :/
-    ev_thread.join().expect("event loop thread");
+
+    // Main event loop thread to poll for foreground/system etc. events
+    event_loop(EventLoopArgs {
+        config: config.clone(),
+        web_state,
+        event_tx,
+        alert_tx,
+        web_change_tx,
+        session,
+        start,
+    })
+    .context("event loop")
+    .expect("event loop failed");
+
     it_ev_thread.join().expect("interaction event loop thread");
     Ok(())
 }
