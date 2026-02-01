@@ -114,17 +114,17 @@ pub fn run(
             ev.run();
         })?;
 
-    rt.clone().block_on(processor(ProcessorArgs {
+    let processor_handle = rt.clone().spawn(processor(ProcessorArgs {
         desktop_state,
         web_state: web_state.clone(),
         config: config.clone(),
-        rt,
+        rt: rt.clone(),
         session: session.clone(),
         start,
         event_rx,
         alert_rx,
         web_change_rx,
-    }))?;
+    }));
 
     // Main event loop thread to poll for foreground/system etc. events
     event_loop(EventLoopArgs {
@@ -139,6 +139,10 @@ pub fn run(
     .context("event loop")
     .expect("event loop failed");
 
+    rt.block_on(processor_handle)
+        .expect("processor loop join")
+        .context("processor loop")
+        .expect("processor loop");
     it_ev_thread.join().expect("interaction event loop thread");
     Ok(())
 }
