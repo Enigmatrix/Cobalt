@@ -1,3 +1,4 @@
+import { StatusBadge } from "@/components/alert/status-badge";
 import { TriggerActionIndicator } from "@/components/alert/trigger-action";
 import AppIcon from "@/components/app/app-icon";
 import { ScoreCircle } from "@/components/tag/score";
@@ -385,10 +386,15 @@ function MiniAlertItem({ alert }: { alert: Alert }) {
         <span>/</span>
         <span>{timeFrameToLabel(alert.timeFrame)}</span>
       </div>
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-1">
         <TriggerActionIndicator
           action={alert.triggerAction}
           className="text-xs whitespace-nowrap"
+        />
+        <StatusBadge
+          status={alert.status}
+          className="shrink-0"
+          showLabel={false}
         />
       </div>
     </div>

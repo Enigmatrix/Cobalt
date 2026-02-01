@@ -2,7 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import type { AlertTriggerStatus, ReminderTriggerStatus } from "@/lib/entities";
 import { cn } from "@/lib/utils";
 import type { ClassValue } from "clsx";
-import { AlertCircleIcon, CheckCircleIcon, EyeOffIcon } from "lucide-react";
+import { BanIcon, BellIcon, CheckCircleIcon } from "lucide-react";
 
 type StatusTag = "untriggered" | "hit" | "ignored";
 
@@ -15,13 +15,13 @@ const statusConfig = {
   },
   hit: {
     label: "Triggered",
-    icon: AlertCircleIcon,
+    icon: BellIcon,
     className:
       "text-red-600 dark:text-red-400 border-red-600/50 dark:border-red-400/50 bg-red-500/10",
   },
   ignored: {
     label: "Ignored",
-    icon: EyeOffIcon,
+    icon: BanIcon,
     className:
       "text-muted-foreground border-muted-foreground/50 bg-muted-foreground/10",
   },
@@ -32,7 +32,7 @@ const reminderStatusConfig = {
   ...statusConfig,
   hit: {
     label: "Triggered",
-    icon: AlertCircleIcon,
+    icon: BellIcon,
     className:
       "text-amber-600 dark:text-amber-400 border-amber-600/50 dark:border-amber-400/50 bg-amber-500/10",
   },
@@ -46,6 +46,8 @@ export interface StatusBadgeProps {
   className?: ClassValue;
   /** Show icon */
   showIcon?: boolean;
+  /** Show label */
+  showLabel?: boolean;
 }
 
 export function StatusBadge({
@@ -53,14 +55,18 @@ export function StatusBadge({
   variant = "alert",
   className,
   showIcon = true,
+  showLabel = true,
 }: StatusBadgeProps) {
   const config = variant === "reminder" ? reminderStatusConfig : statusConfig;
   const { label, icon: Icon, className: statusClassName } = config[status.tag];
 
   return (
-    <Badge variant="outline" className={cn(statusClassName, className)}>
-      {showIcon && <Icon className="size-3 mr-1 shrink-0" />}
-      {label}
+    <Badge
+      variant="outline"
+      className={cn(statusClassName, "gap-1", !showLabel && "p-1", className)}
+    >
+      {showIcon && <Icon className="size-3 shrink-0" />}
+      {showLabel && label}
     </Badge>
   );
 }

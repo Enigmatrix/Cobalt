@@ -15,6 +15,11 @@ export function useSearch<T>(
     if (query) {
       return matchSorter(items, query, {
         keys: paths,
+        /*
+         * This theshold is higher than ACRONYM and MATCHES (default)
+         * which are really bad for our purposes.
+         */
+        threshold: matchSorter.rankings.CONTAINS,
       });
     } else {
       return items;
@@ -27,7 +32,20 @@ export function useSearch<T>(
 }
 
 export function useAppsSearch(apps: App[], key: string | undefined) {
-  return useSearch(apps, ["name", "company", "description"], key);
+  return useSearch(
+    apps,
+    [
+      "name",
+      "company",
+      "description",
+      "identity.aumid",
+      "identity.path",
+      "identity.baseUrl",
+      "identity.identifier",
+      "identity.file",
+    ],
+    key,
+  );
 }
 
 export function useTagsSearch(tags: Tag[], key: string | undefined) {
@@ -63,7 +81,18 @@ export function useAlertsSearch(alerts: Alert[], key: string | undefined) {
   }, [alerts, allApps, allTags]);
   const [query, setQuery, filteredAlerts] = useSearch(
     infusedAlerts,
-    ["app.name", "app.company", "app.description", "tag.name"],
+    [
+      "app.name",
+      "app.company",
+      "app.description",
+      "app.identity.aumid",
+      "app.identity.path",
+      "app.identity.baseUrl",
+      "app.identity.identifier",
+      "app.identity.file",
+
+      "tag.name",
+    ],
     key,
   );
   const filteredAlertsInner = useMemo(
