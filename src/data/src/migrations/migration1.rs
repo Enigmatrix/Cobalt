@@ -167,6 +167,14 @@ impl Migration for Migration1 {
             .await
             .context("create index usage_start_end")?;
 
+        tx.execute("CREATE INDEX session_app_id ON sessions(id, app_id)")
+            .await
+            .context("create index session_app_id")?;
+
+        tx.execute("CREATE INDEX session_id_app ON sessions(app_id, id)")
+            .await
+            .context("create index session_id_app")?;
+
         tx.execute("CREATE INDEX interaction_period_start_end ON interaction_periods(start, end)")
             .await
             .context("create index interaction_period")?;

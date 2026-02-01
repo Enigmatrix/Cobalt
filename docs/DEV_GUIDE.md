@@ -52,7 +52,7 @@ The Engine and UI are run with a shared database in `./main.db` in dev mode.
 
 When running the UI in dev mode, there is a page called `Experiments`:
 
-![Experiments Page](./assets/experiments.png)
+![Experiments Page](/assets/screenshots/09.experiments.png)
 
 This page allows you to copy the seed database from `dev/seed.db` to the database in the Engine.
 The data inside is old, you will need to use `Update Last Usage to Now` and then press `Refresh`.

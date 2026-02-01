@@ -31,7 +31,7 @@ Imagine you want to know when you were truly "in the zone" versus when you were 
 1.  **App Scores** Each app can be assigned a score. A higher score means more productive, a lower score means more distractive. Apps without an explicit score are considered neutral (score of 0).
 2.  **Mutually Exclusive Categories** The threshold for a "focus" app is greater than or equal to the threshold for a "distractive" app. This means an app cannot be both a focus app and a distractive app simultaneously.
     ```math
-    \theta_{F,min\_score} \ge \theta_{D,max\_score}
+    \theta_{F,min\_{score}} \ge \theta_{D,max\_{score}}
     ```
 3.  **Continuous Usage** The `usages` table contains records of continuous, non-overlapping blocks of time spent in an application (except for system events like screen off, screen on, etc.).
 
@@ -50,20 +50,20 @@ where each $DS_k$ represents continuous distraction and each $FS_j$ represents c
 
 | Symbol | Meaning |
 |---|---|
-| $\theta_{F,min\_score}$ | Minimum score for an app to be considered *focus* |
-| $\theta_{D,max\_score}$ | Maximum score for an app to be considered *distractive* |
-| $\theta_{F,min\_dur}$ | Minimum duration of a focus usage |
-| $\theta_{D,min\_dur}$ | Minimum duration of a distractive usage |
-| $\theta_{F,max\_gap}$ | Maximum gap allowed when merging focus streaks |
-| $\theta_{D,max\_gap}$ | Maximum gap allowed when merging distractive streaks |
+| $\theta_{F,min\_{score}}$ | Minimum score for an app to be considered *focus* |
+| $\theta_{D,max\_{score}}$ | Maximum score for an app to be considered *distractive* |
+| $\theta_{F,min\_{dur}}$ | Minimum duration of a focus usage |
+| $\theta_{D,min\_{dur}}$ | Minimum duration of a distractive usage |
+| $\theta_{F,max\_{gap}}$ | Maximum gap allowed when merging focus streaks |
+| $\theta_{D,max\_{gap}}$ | Maximum gap allowed when merging distractive streaks |
 
 ### 1. Categorising Applications
 
 Let $A$ be the set of all applications and $score: A \to \mathbb{R}$ the productivity-score function.
 
 ```math
-A_F = \lbrace a\in A \mid score(a) > \theta_{F,min\_score} \rbrace, \qquad
-A_D = \lbrace a\in A \mid score(a) < \theta_{D,max\_score} \rbrace.
+A_F = \lbrace a\in A \mid score(a) > \theta_{F,min\_{score}} \rbrace, \qquad
+A_D = \lbrace a\in A \mid score(a) < \theta_{D,max\_{score}} \rbrace.
 ```
 
 ### 2. Raw Usages
@@ -88,7 +88,7 @@ Apply zero–gap merging within $U_D$ and keep only intervals whose duration mee
 
 ```math
 \widetilde{U}_D = \text{MergeGap}_{\text{dur}(g) = 0}(U_D),\qquad
-\text{InitDS} = \lbrace u\in\widetilde{U}_D \mid \text{dur}(u) \ge \theta_{D,min\_dur} \rbrace.
+\text{InitDS} = \lbrace u\in\widetilde{U}_D \mid \text{dur}(u) \ge \theta_{D,min\_{dur}} \rbrace.
 ```
 
 where $\text{dur}(u) = t_{end} - t_{start}$ and
@@ -115,10 +115,10 @@ G_k = \lbrace u_i\mid \pi(i)=k \rbrace,\qquad k=1,\dots,\pi(n).
 
 ### 4. Distractive Streaks
 
-Combine neighbouring distractive intervals when their separating gap is at most $\theta_{D,max\_gap}$ (transitively):
+Combine neighbouring distractive intervals when their separating gap is at most $\theta_{D,max\_{gap}}$ (transitively):
 
 ```math
-\mathcal{DS} = \text{MergeGap}_{\text{dur}(g) \le \theta_{D,max\_gap} }(\text{InitDS}).
+\mathcal{DS} = \text{MergeGap}_{\text{dur}(g) \le \theta_{D,max\_{gap}} }(\text{InitDS}).
 ```
 
 ### 5. Initial Focus Streaks
@@ -134,17 +134,17 @@ Produce contiguous focus runs and filter by duration:
 
 ```math
 \widetilde{U}_F = \text{MergeGap}_{\text{dur}(g) = 0}(U_F^{\text{clean}}),\qquad
-\text{InitFS} = \lbrace u\in\widetilde{U}_F \mid \text{dur}(u) \ge \theta_{F,min\_dur} \rbrace.
+\text{InitFS} = \lbrace u\in\widetilde{U}_F \mid \text{dur}(u) \ge \theta_{F,min\_{dur}} \rbrace.
 ```
 
 ### 6. Focus Streaks
 
-Merge adjacent focus intervals when (i) the gap $g = (\text{end}(u_i),\text{start}(u_{i+1}))$ is at most $\theta_{F,max\_gap}$ **and** (ii) the open gap is distraction-free (i.e. $\forall DS \in \mathcal{DS}: g \cap DS = \varnothing$):
+Merge adjacent focus intervals when (i) the gap $g = (\text{end}(u_i),\text{start}(u_{i+1}))$ is at most $\theta_{F,max\_{gap}}$ **and** (ii) the open gap is distraction-free (i.e. $\forall DS \in \mathcal{DS}: g \cap DS = \varnothing$):
 
 ```math
-\mathcal{FS} = \text{MergeGap}_{\left( \text{dur}(g) \le \theta_{F,max\_gap} \right) \land \left( \forall DS \in \mathcal{DS}: g \cap DS = \varnothing \right)}(\text{InitFS}).
+\mathcal{FS} = \text{MergeGap}_{\left( \text{dur}(g) \le \theta_{F,max\_{gap}} \right) \land \left( \forall DS \in \mathcal{DS}: g \cap DS = \varnothing \right)}(\text{InitFS}).
 ```
 
 ### 7. Clipping and Union
 
-Each streak is clipped to the query window and labelled $is\_focused\in\{0,1\}$ (0 = distraction, 1 = focus).  The final timeline is the start-time-ordered union $\mathcal{DS}\cup\mathcal{FS}$.
+Each streak is clipped to the query window and labelled $is\\_focused\in\{0,1\}$ (0 = distraction, 1 = focus).  The final timeline is the start-time-ordered union $\mathcal{DS}\cup\mathcal{FS}$.

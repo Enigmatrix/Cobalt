@@ -1,6 +1,6 @@
 use util::error::{Context, Result};
 use util::tracing::{ResultTraceExt, info};
-use windows::Win32::Foundation::HANDLE;
+use windows::Win32::Foundation::{HANDLE, LRESULT};
 use windows::Win32::System::Power::{
     HPOWERNOTIFY, POWERBROADCAST_SETTING, RegisterPowerSettingNotification,
     UnregisterPowerSettingNotification,
@@ -10,9 +10,9 @@ use windows::Win32::System::RemoteDesktop::{
 };
 use windows::Win32::System::SystemServices::GUID_MONITOR_POWER_ON;
 use windows::Win32::UI::WindowsAndMessaging::{
-    DEVICE_NOTIFY_WINDOW_HANDLE, ENDSESSION_LOGOFF, PBT_APMRESUMESUSPEND, PBT_APMSUSPEND,
-    PBT_POWERSETTINGCHANGE, WM_ENDSESSION, WM_POWERBROADCAST, WM_WTSSESSION_CHANGE,
-    WTS_SESSION_LOCK, WTS_SESSION_UNLOCK,
+    DEVICE_NOTIFY_WINDOW_HANDLE, ENDSESSION_CLOSEAPP, ENDSESSION_LOGOFF, PBT_APMRESUMESUSPEND,
+    PBT_APMSUSPEND, PBT_POWERSETTINGCHANGE, WM_ENDSESSION, WM_POWERBROADCAST, WM_QUERYENDSESSION,
+    WM_WTSSESSION_CHANGE, WTS_SESSION_LOCK, WTS_SESSION_UNLOCK,
 };
 
 use crate::objects::{Duration, MessageWindow, Timestamp};
@@ -144,7 +144,23 @@ impl<'a> SystemEventWatcher<'a> {
 
         message_window.add_callback(Box::new(move |_, msg, wparam, lparam| {
             let timestamp = Timestamp::now();
-            if msg == WM_ENDSESSION {
+            if msg == WM_QUERYENDSESSION {
+                // This is for MSI updates (Restart Manager). We need to
+                // indicate that we can handle the end session request.
+                // https://learn.microsoft.com/en-us/windows/win32/rstmgr/guidelines-for-applications
+                if lparam.0 as u32 == ENDSESSION_CLOSEAPP {
+                    return Some(LRESULT(1));
+                }
+            } else if msg == WM_ENDSESSION {
+                // End session request received by Restart Manager (MSI Update).
+                // We test the whole lparam to see if it is ENDSESSION_CLOSEAPP instead of bitmask
+                // so that we don't catch logoff / shutdown / restart instead.
+                // https://learn.microsoft.com/en-us/windows/win32/rstmgr/guidelines-for-applications
+                if lparam.0 as u32 == ENDSESSION_CLOSEAPP && wparam.0 as u32 == 1 {
+                    info!("end session request received, exiting");
+                    std::process::exit(0);
+                }
+
                 if lparam.0 as u32 & ENDSESSION_LOGOFF != 0 {
                     state.is_logoff = true;
                     callback(SystemStateEvent {
