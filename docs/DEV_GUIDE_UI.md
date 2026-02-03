@@ -73,7 +73,7 @@ src/ui/
 ### Local Development
 
 1. Run `bun i`
-1. Start the development server: `bun dev`
+1. Start the development server: `bun dev` or `bun dev:agent` (for Agents / Git Worktrees)
 
 The development server includes:
 - Hot-reloading for React components
@@ -88,7 +88,7 @@ In dev mode, we can setup the Tauri MCP server (https://github.com/hypothesi/mcp
 npx -y install-mcp @hypothesi/tauri-mcp-server --client cursor
 ```
 
-Running `bun dev` will start the MCP server and make it available to Cursor. See their docs to see what's possible via MCP.
+Running `bun dev` or `bun dev:agent` (for Agents / Git Worktrees) will start the MCP server and make it available to Cursor. See their docs to see what's possible via MCP.
 
 ### Recommended VS Code Extensions
 

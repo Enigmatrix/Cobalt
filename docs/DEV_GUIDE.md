@@ -41,6 +41,8 @@ cargo build
 
 # Run the UI
 bun dev
+# Run the UI (for Agents / Git Worktrees)
+bun dev:agent
 # Run the Engine
 cargo run --bin engine
 

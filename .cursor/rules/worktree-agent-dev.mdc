@@ -1,0 +1,22 @@
+---
+alwaysApply: true
+---
+## Worktree / Agent Dev Workflow (Windows)
+
+**CRITICAL**: When working in a Cursor worktree or agent context on this project, you MUST follow these steps:
+
+### Required Steps:
+
+1. **ALWAYS use `bun dev:agent`** - NEVER use `bun dev` directly. The `dev:agent` script assigns random ports to avoid conflicts when multiple worktrees run in parallel.
+
+2. **Do NOT launch a browser manually** - The Tauri app will launch its own window automatically. Do not open a browser to the dev server URL.
+
+3. **Wait for MCP port** - After running `bun dev:agent`, wait for the output line `MCP Port: <port>`. The Tauri MCP bridge uses a random port (not the default). Extract this port number from the output.
+
+4. **Use Tauri MCP, not browser MCP** - Once the MCP port is available, use the Tauri MCP server (not browser-based MCP tools) to interact with the application.
+
+### Summary:
+- ✅ Run: `bun dev:agent`
+- ✅ Wait for: `MCP Port: <port>` in output
+- ❌ Do NOT run: `bun dev`
+- ❌ Do NOT manually open browser to dev server URL
