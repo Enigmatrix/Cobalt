@@ -4,6 +4,7 @@
   "workspaces": ["src/ui"],
   "scripts": {
     "dev": "bun --cwd src/ui tauri:dev",
+    "dev:agent": "powershell ./dev/dev-agent.ps1",
     "build": "bun --cwd src/ui tauri:build",
     "typecheck": "bun --cwd src/ui typecheck",
     "format": "bun --cwd src/ui format",

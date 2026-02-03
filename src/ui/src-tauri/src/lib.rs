@@ -16,7 +16,19 @@ pub fn run() {
     util::set_target(Target::Ui);
 
     #[cfg(debug_assertions)]
-    let builder = tauri::Builder::default().plugin(tauri_plugin_mcp_bridge::init());
+    let builder = tauri::Builder::default().plugin(tauri_plugin_mcp_bridge::init_with_config({
+        use util::error::Context;
+
+        let port = std::env::var("TAURI_DEV_MCP_PORT");
+        if let Ok(port) = port {
+            tauri_plugin_mcp_bridge::Config {
+                base_port: port.parse().context("invalid MCP port").unwrap(),
+                ..Default::default()
+            }
+        } else {
+            tauri_plugin_mcp_bridge::Config::default()
+        }
+    }));
     #[cfg(not(debug_assertions))]
     let builder =
         tauri::Builder::default().plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
