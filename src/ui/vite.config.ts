@@ -38,6 +38,13 @@ export default defineConfig({
     },
   },
   plugins: [reactRouter(), tsconfigPaths(), devToolsJson()],
+  optimizeDeps: {
+    // Routes in app and the corresponding type definitions are not
+    // automatically included in the dependency graph, so we need to
+    // explicitly include them here for vite prebunding optimization
+    // during development
+    entries: ["app/**/*.ts{x,}", ".react-router/**/*.ts{x,}"],
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./app"),
