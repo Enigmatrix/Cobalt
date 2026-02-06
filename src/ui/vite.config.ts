@@ -6,6 +6,7 @@ import devToolsJson from "vite-plugin-devtools-json";
 import tsconfigPaths from "vite-tsconfig-paths";
 
 const host = process.env.TAURI_DEV_HOST;
+const port = process.env.TAURI_DEV_PORT ?? "5173";
 
 export default defineConfig({
   // prevent vite from obscuring rust errors
@@ -15,7 +16,7 @@ export default defineConfig({
     strictPort: true,
     // if the host Tauri is expecting is set, use it
     host: host ?? false,
-    port: 5173,
+    port: parseInt(port),
   },
   // Env variables starting with the item of `envPrefix` will be exposed in tauri's source code through `import.meta.env`.
   envPrefix: ["VITE_", "TAURI_ENV_*"],
@@ -37,6 +38,13 @@ export default defineConfig({
     },
   },
   plugins: [reactRouter(), tsconfigPaths(), devToolsJson()],
+  optimizeDeps: {
+    // Routes in app and the corresponding type definitions are not
+    // automatically included in the dependency graph, so we need to
+    // explicitly include them here for vite prebunding optimization
+    // during development
+    entries: ["app/**/*.ts{x,}", ".react-router/**/*.ts{x,}"],
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./app"),
