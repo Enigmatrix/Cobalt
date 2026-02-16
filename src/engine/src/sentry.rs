@@ -4,8 +4,8 @@ use data::db::{AlertManager, Database, TriggeredAlert};
 use data::entities::{
     AlertEvent, App, Duration, Reason, Ref, ReminderEvent, Target, TriggerAction,
 };
+use platform::browser;
 use platform::objects::{Process, Progress, Timestamp as PlatformTimestamp, ToastManager, Window};
-use platform::web;
 use util::config::Config;
 use util::error::Result;
 use util::time::ToTicks;
@@ -17,7 +17,7 @@ use crate::desktop::{DesktopState, DimRequest, DimStatus, KillableProcessId};
 pub struct Sentry {
     config: Config,
     desktop_state: DesktopState,
-    web_state: web::State,
+    web_state: browser::State,
     mgr: AlertManager,
     // Invariant: the website_actions map is *wholly* updated. That is, run() executes
     // and updates this after clearing it with *all* alerts' websites. This is easily
@@ -48,7 +48,7 @@ impl Sentry {
     pub fn new(
         config: Config,
         desktop_state: DesktopState,
-        web_state: web::State,
+        web_state: browser::State,
         db: Database,
     ) -> Result<Self> {
         let mgr = AlertManager::new(db)?;
@@ -61,11 +61,11 @@ impl Sentry {
         })
     }
 
-    /// Run Alert Actions for the browser window matching the given [web::Changed].
-    pub async fn handle_web_change(&mut self, web_change: web::Changed) -> Result<()> {
+    /// Run Alert Actions for the browser window matching the given [browser::Changed].
+    pub async fn handle_web_change(&mut self, web_change: browser::Changed) -> Result<()> {
         let now = PlatformTimestamp::now();
-        let detect = web::Detect::new()?;
-        let web::Changed {
+        let detect = browser::Detect::new()?;
+        let browser::Changed {
             window,
             new_url,
             prev_url,
@@ -82,8 +82,8 @@ impl Sentry {
             return Ok(());
         }
 
-        let base_url = web::WebsiteInfo::url_to_base_url(&new_url).to_string();
-        let prev_base_url = web::WebsiteInfo::url_to_base_url(&prev_url).to_string();
+        let base_url = browser::WebsiteInfo::url_to_base_url(&new_url).to_string();
+        let prev_base_url = browser::WebsiteInfo::url_to_base_url(&prev_url).to_string();
 
         if let Some(action) = self.website_actions.get(&base_url) {
             match action {
@@ -178,7 +178,7 @@ impl Sentry {
                             return None;
                         }
 
-                        let base_url = web::WebsiteInfo::url_to_base_url(&state.last_url);
+                        let base_url = browser::WebsiteInfo::url_to_base_url(&state.last_url);
                         let Some(WebsiteAction::Dim(dim_status)) =
                             self.website_actions.get(&base_url.to_string())
                         else {
@@ -378,7 +378,10 @@ impl Sentry {
     async fn processes_and_websites_for_target(
         &mut self,
         target: &Target,
-    ) -> Result<(Vec<(Ref<App>, KillableProcessId)>, Vec<web::BaseWebsiteUrl>)> {
+    ) -> Result<(
+        Vec<(Ref<App>, KillableProcessId)>,
+        Vec<browser::BaseWebsiteUrl>,
+    )> {
         let target_apps = self.mgr.target_apps(target).await?;
 
         let desktop_state = self.desktop_state.read().await;
@@ -410,7 +413,7 @@ impl Sentry {
     async fn windows_and_websites_for_target(
         &mut self,
         target: &Target,
-    ) -> Result<(Vec<Window>, Vec<web::BaseWebsiteUrl>)> {
+    ) -> Result<(Vec<Window>, Vec<browser::BaseWebsiteUrl>)> {
         let target_apps = self.mgr.target_apps(target).await?;
 
         let desktop_state = self.desktop_state.read().await;
