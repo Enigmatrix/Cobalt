@@ -4,15 +4,15 @@ use util::tracing::ResultTraceExt;
 use windows::Win32::UI::Accessibility::UIA_WindowControlTypeId;
 use windows::core::AgileReference;
 
+use crate::browser;
 use crate::objects::{Process, Timestamp, Window};
-use crate::web;
 
 /// Watches for foreground window changes, including session (title) changes
 pub struct ForegroundEventWatcher {
     session: WindowSession,
-    detect: web::Detect,
+    detect: browser::Detect,
     track_incognito: bool,
-    web_state: web::State,
+    web_state: browser::State,
 }
 
 /// Foreground window session change event.
@@ -45,8 +45,8 @@ pub struct WindowSession {
 
 impl ForegroundEventWatcher {
     /// Create a new [WindowSession] with the starting [WindowSession].
-    pub fn new(session: WindowSession, config: &Config, web_state: web::State) -> Result<Self> {
-        let detect = web::Detect::new()?;
+    pub fn new(session: WindowSession, config: &Config, web_state: browser::State) -> Result<Self> {
+        let detect = browser::Detect::new()?;
         Ok(Self {
             session,
             detect,
@@ -72,8 +72,8 @@ impl ForegroundEventWatcher {
 
     /// Get the foreground window session.
     pub fn foreground_window_session(
-        detect: &web::Detect,
-        web_state: web::WriteLockedState<'_>,
+        detect: &browser::Detect,
+        web_state: browser::WriteLockedState<'_>,
         track_incognito: bool,
     ) -> Result<Option<ForegroundWindowSessionInfo>> {
         if let Some(window) = Window::foreground() {
@@ -101,9 +101,9 @@ impl ForegroundEventWatcher {
 
     fn browser_window_session(
         window: &Window,
-        detect: &web::Detect,
-        mut web_state: web::WriteLockedState<'_>,
-    ) -> Result<(Option<web::BrowserWindowState>, Option<String>)> {
+        detect: &browser::Detect,
+        mut web_state: browser::WriteLockedState<'_>,
+    ) -> Result<(Option<browser::BrowserWindowState>, Option<String>)> {
         let state = web_state.browser_windows.get(window);
         if let Some(state) = state {
             // We know already if it's a browser or not
@@ -157,12 +157,12 @@ impl ForegroundEventWatcher {
                 .context("no element")?;
             let last_title = window.title()?;
 
-            let extracted_elements = web::ExtractedUIElements {
+            let extracted_elements = browser::ExtractedUIElements {
                 window_element: AgileReference::new(&window_element)?,
                 omnibox: AgileReference::new(&omnibox)?,
                 omnibox_icon: AgileReference::new(&omnibox_icon)?,
             };
-            Some(web::BrowserWindowState {
+            Some(browser::BrowserWindowState {
                 extracted_elements,
                 is_incognito,
                 last_url,
