@@ -2,11 +2,11 @@ use data::db::{DatabasePool, FoundOrInserted, UsageWriter};
 use data::entities::{
     AppIdentity, InteractionPeriod, Ref, Session, SystemEvent as DataSystemEvent, Usage,
 };
+use platform::browser::{self, BaseWebsiteUrl, WebsiteInfo};
 use platform::events::{
     ForegroundChangedEvent, ForegroundWindowSessionInfo, InteractionChangedEvent, SystemStateEvent,
 };
 use platform::objects::{Process, ProcessThreadId, SquirrelExe, Timestamp, Window};
-use platform::web::{self, BaseWebsiteUrl, WebsiteInfo};
 use scoped_futures::ScopedFutureExt;
 use util::config::Config;
 use util::error::{Context, Result};
@@ -22,7 +22,7 @@ use crate::resolver::AppInfoResolver;
 pub struct Engine {
     desktop_state: DesktopState,
     config: Config,
-    web_state: web::State,
+    web_state: browser::State,
     current_usage: Usage,
     db_pool: DatabasePool,
     inserter: UsageWriter,
@@ -55,7 +55,7 @@ pub struct EngineArgs {
     /// Desktop State
     pub desktop_state: DesktopState,
     /// Web State
-    pub web_state: web::State,
+    pub web_state: browser::State,
 
     /// Config
     pub config: Config,

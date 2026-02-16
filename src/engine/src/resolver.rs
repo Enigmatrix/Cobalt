@@ -1,7 +1,7 @@
 use data::db::{AppUpdater, DatabasePool};
 use data::entities::{App, AppIdentity, Ref};
+use platform::browser::WebsiteInfo;
 use platform::objects::AppInfo;
-use platform::web::WebsiteInfo;
 use util::error::Result;
 use util::time::{TimeSystem, ToTicks};
 use util::tracing::{info, warn};

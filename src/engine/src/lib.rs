@@ -10,6 +10,7 @@ use std::thread;
 
 use data::db::{AppUpdater, DatabasePool};
 use engine::{Engine, Event};
+use platform::browser;
 use platform::events::{
     ForegroundEventWatcher, ForegroundWindowSessionInfo, InteractionWatcher,
     InteractionWatcherHooks, SystemEventWatcher,
@@ -17,7 +18,6 @@ use platform::events::{
 use platform::objects::{
     Duration, EventLoop, MessageWindow, SingleInstance, Timer, Timestamp, User,
 };
-use platform::web;
 use resolver::AppInfoResolver;
 use sentry::Sentry;
 use util::channels::{self, Receiver, Sender};
@@ -53,7 +53,7 @@ pub fn main() {
 
     let _instance = single_instance().expect("setup single instance");
 
-    let web_state = web::default_state();
+    let web_state = browser::default_state();
     let desktop_state = desktop::new_desktop_state(web_state.clone());
 
     if let Err(report) = run(&config, rt.handle().clone(), web_state, desktop_state) {
@@ -95,7 +95,7 @@ fn setup() -> Result<(Config, Runtime)> {
 pub fn run(
     config: &Config,
     rt: Handle,
-    web_state: web::State,
+    web_state: browser::State,
     desktop_state: desktop::DesktopState,
 ) -> Result<()> {
     let (event_tx, event_rx) = channels::unbounded();
@@ -148,13 +148,13 @@ pub fn run(
 }
 
 struct EventLoopArgs {
-    web_state: web::State,
+    web_state: browser::State,
 
     config: Config,
 
     event_tx: Sender<Event>,
     alert_tx: Sender<Timestamp>,
-    web_change_tx: Sender<web::Changed>,
+    web_change_tx: Sender<browser::Changed>,
 
     session: ForegroundWindowSessionInfo,
     start: Timestamp,
@@ -224,7 +224,7 @@ fn event_loop(args: EventLoopArgs) -> Result<()> {
         }),
     )?;
 
-    let mut web_watcher = web::Watcher::new(args.web_change_tx, args.web_state)?;
+    let mut web_watcher = browser::Watcher::new(args.web_change_tx, args.web_state)?;
 
     let dim_tick = Duration::from_millis(1000);
     let _web_tick_timer = Timer::new(
@@ -255,10 +255,10 @@ async fn sentry_loop(
     config: Config,
     db_pool: DatabasePool,
     desktop_state: desktop::DesktopState,
-    web_state: web::State,
+    web_state: browser::State,
     spawner: Handle,
     alert_rx: Receiver<Timestamp>,
-    web_change_rx: Receiver<web::Changed>,
+    web_change_rx: Receiver<browser::Changed>,
 ) -> Result<()> {
     let db = db_pool.get_db().await?;
     let sentry = Arc::new(Mutex::new(Sentry::new(
@@ -304,14 +304,14 @@ async fn sentry_loop(
 
 struct ProcessorArgs {
     desktop_state: desktop::DesktopState,
-    web_state: web::State,
+    web_state: browser::State,
 
     config: Config,
     rt: Handle,
 
     event_rx: Receiver<Event>,
     alert_rx: Receiver<Timestamp>,
-    web_change_rx: Receiver<web::Changed>,
+    web_change_rx: Receiver<browser::Changed>,
 
     session: ForegroundWindowSessionInfo,
     start: Timestamp,
@@ -445,9 +445,9 @@ async fn update_app_infos(db_pool: DatabasePool, handle: Handle) -> Result<()> {
 /// Get the foreground [Window], and makes it into a [WindowSession] blocking until one is present.
 fn foreground_window_session(
     config: &Config,
-    web_state: web::State,
+    web_state: browser::State,
 ) -> Result<ForegroundWindowSessionInfo> {
-    let detect = web::Detect::new()?;
+    let detect = browser::Detect::new()?;
     loop {
         let session = ForegroundEventWatcher::foreground_window_session(
             &detect,
@@ -467,9 +467,9 @@ fn foreground_window_session(
 /// Get the foreground [Window], and makes it into a [WindowSession] blocking until one is present.
 async fn foreground_window_session_async(
     config: &Config,
-    web_state: web::State,
+    web_state: browser::State,
 ) -> Result<ForegroundWindowSessionInfo> {
-    let detect = web::Detect::new()?;
+    let detect = browser::Detect::new()?;
     loop {
         let session = ForegroundEventWatcher::foreground_window_session(
             &detect,

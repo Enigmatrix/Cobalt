@@ -1,4 +1,4 @@
-//! Driver to poll the [web::State] as the engine is runningand save it to a file
+//! Driver to poll the [browser::State] as the engine is runningand save it to a file
 
 use std::fs::File;
 use std::io::Write;
@@ -7,8 +7,8 @@ use std::time::{Duration, UNIX_EPOCH};
 
 use clap::Parser;
 use engine::desktop;
+use platform::browser;
 use platform::objects::Window;
-use platform::web;
 use serde::Serialize;
 use util::ds::SmallHashMap;
 use util::error::Result;
@@ -42,7 +42,7 @@ fn main() -> Result<()> {
 
     let args = Args::parse();
 
-    let web_state = web::default_state();
+    let web_state = browser::default_state();
     let desktop_state = desktop::new_desktop_state(web_state.clone());
 
     let _web_state = web_state.clone();
@@ -62,11 +62,11 @@ fn main() -> Result<()> {
 
 struct Driver {
     current_state: WebStateSnapshot,
-    state: web::State,
+    state: browser::State,
 }
 
 impl Driver {
-    fn new(state: web::State) -> Self {
+    fn new(state: browser::State) -> Self {
         let current_state = WebStateSnapshot::from(&*state.blocking_read());
         Self {
             state,
@@ -105,8 +105,8 @@ struct WebStateSnapshot {
     // pub browser_processes: SmallHashSet<ProcessId>,
 }
 
-impl From<&web::StateInner> for WebStateSnapshot {
-    fn from(state: &web::StateInner) -> Self {
+impl From<&browser::StateInner> for WebStateSnapshot {
+    fn from(state: &browser::StateInner) -> Self {
         Self {
             browser_windows: state
                 .browser_windows
