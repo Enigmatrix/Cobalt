@@ -1,9 +1,9 @@
-mod detect;
-mod state;
-mod watcher;
+mod actions;
+mod backend;
+/// UIA browser backend implementation.
+pub mod uia;
 mod website_info;
 
-pub use detect::*;
-pub use state::*;
-pub use watcher::*;
+pub use actions::*;
+pub use backend::*;
 pub use website_info::*;

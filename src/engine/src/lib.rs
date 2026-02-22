@@ -10,7 +10,7 @@ use std::thread;
 
 use data::db::{AppUpdater, DatabasePool};
 use engine::{Engine, Event};
-use platform::browser;
+use platform::browser::{self, ArcBrowser, Browser};
 use platform::events::{
     ForegroundEventWatcher, ForegroundWindowSessionInfo, InteractionWatcher,
     InteractionWatcherHooks, SystemEventWatcher,
@@ -53,10 +53,10 @@ pub fn main() {
 
     let _instance = single_instance().expect("setup single instance");
 
-    let web_state = browser::default_state();
-    let desktop_state = desktop::new_desktop_state(web_state.clone());
+    let browser: ArcBrowser = browser::uia::new_uia_backend().expect("create browser backend");
+    let desktop_state = desktop::new_desktop_state();
 
-    if let Err(report) = run(&config, rt.handle().clone(), web_state, desktop_state) {
+    if let Err(report) = run(&config, rt.handle().clone(), browser, desktop_state) {
         error!("fatal error caught in main: {:?}", report);
         std::process::exit(1);
     }
@@ -98,15 +98,14 @@ fn setup() -> Result<(Config, Runtime)> {
 pub fn run(
     config: &Config,
     rt: Handle,
-    web_state: browser::State,
+    browser: ArcBrowser,
     desktop_state: desktop::DesktopState,
 ) -> Result<()> {
     let (event_tx, event_rx) = channels::unbounded();
     let (alert_tx, alert_rx) = channels::unbounded();
-    let (web_change_tx, web_change_rx) = channels::unbounded();
 
     let start = Timestamp::now();
-    let session = foreground_window_session(config, web_state.clone())?;
+    let session = foreground_window_session(&*browser, config.track_incognito())?;
 
     // Interaction event loop thread to poll for mouse/kb events
     let it_ev_thread = thread::Builder::new()
@@ -119,23 +118,21 @@ pub fn run(
 
     let processor_handle = rt.clone().spawn(processor(ProcessorArgs {
         desktop_state,
-        web_state: web_state.clone(),
+        browser: browser.clone(),
         config: config.clone(),
         rt: rt.clone(),
         session: session.clone(),
         start,
         event_rx,
         alert_rx,
-        web_change_rx,
     }));
 
     // Main event loop thread to poll for foreground/system etc. events
     event_loop(EventLoopArgs {
         config: config.clone(),
-        web_state,
+        browser,
         event_tx,
         alert_tx,
-        web_change_tx,
         session,
         start,
     })
@@ -151,20 +148,19 @@ pub fn run(
 }
 
 struct EventLoopArgs {
-    web_state: browser::State,
+    browser: ArcBrowser,
 
     config: Config,
 
     event_tx: Sender<Event>,
     alert_tx: Sender<Timestamp>,
-    web_change_tx: Sender<browser::Changed>,
 
     session: ForegroundWindowSessionInfo,
     start: Timestamp,
 }
 
 /// Win32 [EventLoop] thread to poll for events.
-/// All the callback and functioons used in this
+/// All the callback and functions used in this
 /// function run on the _same_ thread - so thread-safety
 /// is not an issue.
 fn event_loop(args: EventLoopArgs) -> Result<()> {
@@ -177,9 +173,9 @@ fn event_loop(args: EventLoopArgs) -> Result<()> {
 
     let mut fg_watcher = ForegroundEventWatcher::new(
         args.session.window_session,
-        &args.config,
-        args.web_state.clone(),
-    )?;
+        args.config.track_incognito(),
+        args.browser.clone(),
+    );
     let it_watcher = InteractionWatcher::init(&args.config, args.start)?;
     let system_event_tx = args.event_tx.clone();
 
@@ -227,20 +223,17 @@ fn event_loop(args: EventLoopArgs) -> Result<()> {
         }),
     )?;
 
-    let mut web_watcher = browser::Watcher::new(args.web_change_tx, args.web_state)?;
-
+    let browser = args.browser.clone();
     let dim_tick = Duration::from_millis(1000);
     let _web_tick_timer = Timer::new(
         dim_tick,
         Box::new(move || {
-            web_watcher.tick().context("web watcher tick")?;
-
+            browser.tick().context("browser tick")?;
             Ok(())
         }),
     )?;
 
     ev.run();
-    // this is never reached normally because WM_QUIT is never sent.
     Ok(())
 }
 
@@ -255,66 +248,35 @@ async fn engine_loop(options: EngineArgs, rx: Receiver<Event>) -> Result<()> {
 
 /// Processing loop for the [Sentry].
 async fn sentry_loop(
-    config: Config,
     db_pool: DatabasePool,
     desktop_state: desktop::DesktopState,
-    web_state: browser::State,
-    spawner: Handle,
+    browser: ArcBrowser,
     alert_rx: Receiver<Timestamp>,
-    web_change_rx: Receiver<browser::Changed>,
 ) -> Result<()> {
     let db = db_pool.get_db().await?;
-    let sentry = Arc::new(Mutex::new(Sentry::new(
-        config,
-        desktop_state,
-        web_state,
-        db,
-    )?));
+    let sentry = Arc::new(Mutex::new(Sentry::new(desktop_state, browser, db)?));
 
-    let _sentry = sentry.clone();
-    let join1: JoinHandle<Result<()>> = spawner.spawn(async move {
-        loop {
-            let web_change = web_change_rx.recv_async().await?;
-            let mut sentry = _sentry.lock().await;
-            sentry.handle_web_change(web_change).await?;
-        }
-    });
-
-    let join2: JoinHandle<Result<()>> = spawner.spawn(async move {
+    let join: JoinHandle<Result<()>> = util::future::runtime::Handle::current().spawn(async move {
         loop {
             let at = alert_rx.recv_async().await?;
             let mut sentry = sentry.lock().await;
             sentry.run(at).await?;
         }
     });
-    let join1_handle = join1.abort_handle();
-    let join2_handle = join2.abort_handle();
 
-    // Wait for either join handle to finish, then cancel the other
-    let res = future::select! {
-        result1 = join1 => {
-            join2_handle.abort();
-            result1?
-        }
-        result2 = join2 => {
-            join1_handle.abort();
-            result2?
-        }
-    };
-
-    res
+    join.await??;
+    Ok(())
 }
 
 struct ProcessorArgs {
     desktop_state: desktop::DesktopState,
-    web_state: browser::State,
+    browser: ArcBrowser,
 
     config: Config,
     rt: Handle,
 
     event_rx: Receiver<Event>,
     alert_rx: Receiver<Timestamp>,
-    web_change_rx: Receiver<browser::Changed>,
 
     session: ForegroundWindowSessionInfo,
     start: Timestamp,
@@ -336,28 +298,24 @@ async fn processor(args: ProcessorArgs) -> Result<()> {
 
     let sentry_handle = {
         let desktop_state = args.desktop_state.clone();
-        let web_state = args.web_state.clone();
+        let browser = args.browser.clone();
         let db_pool = db_pool.clone();
-        let config = args.config.clone();
-        let spawner = args.rt.clone();
+        let alert_duration = args.config.alert_duration();
 
         args.rt.clone().spawn(async move {
             (|| async {
                 sentry_loop(
-                    config.clone(),
                     db_pool.clone(),
                     desktop_state.clone(),
-                    web_state.clone(),
-                    spawner.clone(),
+                    browser.clone(),
                     args.alert_rx.clone(),
-                    args.web_change_rx.clone(),
                 )
                 .await
                 .context("sentry loop")
             })
             .retry(
                 ExponentialBuilder::new()
-                    .with_min_delay(config.alert_duration())
+                    .with_min_delay(alert_duration)
                     .without_max_times(),
             )
             .notify(|err, _| {
@@ -370,7 +328,9 @@ async fn processor(args: ProcessorArgs) -> Result<()> {
     (|(first_time, mut args, event_rx): (bool, EngineArgs, Receiver<Event>)| async move {
         // if this is not the first time, we need to get a new window session
         if !first_time {
-            match foreground_window_session_async(&args.config, args.web_state.clone()).await {
+            match foreground_window_session_async(&*args.browser, args.config.track_incognito())
+                .await
+            {
                 Ok(window_session) => {
                     args.start = Timestamp::now();
                     args.session = window_session;
@@ -398,7 +358,7 @@ async fn processor(args: ProcessorArgs) -> Result<()> {
         EngineArgs {
             desktop_state: args.desktop_state.clone(),
             config: args.config.clone(),
-            web_state: args.web_state.clone(),
+            browser: args.browser.clone(),
             db_pool: db_pool.clone(),
             session: args.session.clone(),
             start: args.start,
@@ -447,43 +407,28 @@ async fn update_app_infos(db_pool: DatabasePool, handle: Handle) -> Result<()> {
 
 /// Get the foreground [Window], and makes it into a [WindowSession] blocking until one is present.
 fn foreground_window_session(
-    config: &Config,
-    web_state: browser::State,
+    browser: &dyn Browser,
+    track_incognito: bool,
 ) -> Result<ForegroundWindowSessionInfo> {
-    let detect = browser::Detect::new()?;
     loop {
-        let session = ForegroundEventWatcher::foreground_window_session(
-            &detect,
-            web_state.blocking_write(),
-            config.track_incognito(),
-        )?;
+        let session = ForegroundEventWatcher::foreground_window_session(browser, track_incognito)?;
         if let Some(session) = session {
             return Ok(session);
         }
-        // This method *MUST* be synchronous, so we use the synchronous version of sleep.
-        // There is no blocking or potential for a race condition here because the
-        // foreground window is a global resource, seperate from the async runtime.
         std::thread::sleep(std::time::Duration::from_millis(100));
     }
 }
 
 /// Get the foreground [Window], and makes it into a [WindowSession] blocking until one is present.
 async fn foreground_window_session_async(
-    config: &Config,
-    web_state: browser::State,
+    browser: &dyn Browser,
+    track_incognito: bool,
 ) -> Result<ForegroundWindowSessionInfo> {
-    let detect = browser::Detect::new()?;
     loop {
-        let session = ForegroundEventWatcher::foreground_window_session(
-            &detect,
-            web_state.write().await,
-            config.track_incognito(),
-        )?;
+        let session = ForegroundEventWatcher::foreground_window_session(browser, track_incognito)?;
         if let Some(session) = session {
             return Ok(session);
         }
-        // There is no blocking or potential for a race condition here because the
-        // foreground window is a global resource, seperate from the async runtime.
         future::time::sleep(std::time::Duration::from_millis(100)).await;
     }
 }

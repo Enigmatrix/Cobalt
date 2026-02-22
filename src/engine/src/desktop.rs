@@ -31,8 +31,8 @@ pub struct DesktopStateInner {
 pub type DesktopState = Arc<RwLock<DesktopStateInner>>;
 
 /// Create a new [DesktopState]
-pub fn new_desktop_state(web_state: browser::State) -> DesktopState {
-    Arc::new(RwLock::new(DesktopStateInner::new(web_state)))
+pub fn new_desktop_state() -> DesktopState {
+    Arc::new(RwLock::new(DesktopStateInner::new()))
 }
 
 /// Cache for storing information about apps and sessions
@@ -49,12 +49,8 @@ pub struct Store {
 /// Cache for storing information about websites and browsers
 #[derive(Debug)]
 pub struct WebsiteCache {
-    // This never gets cleared, but it's ok since it's a small set of urls?
     websites: HashMap<browser::BaseWebsiteUrl, AppDetails>,
-    // This never gets cleared, but it's ok since it's a small set of apps?
     apps: HashMap<Ref<App>, browser::BaseWebsiteUrl>,
-    // Web state
-    state: browser::State,
 }
 
 /// Cache for storing information about windows and processes
@@ -185,9 +181,15 @@ pub enum KillableProcessId {
     Aumid(String),
 }
 
+impl Default for DesktopStateInner {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl DesktopStateInner {
     /// Create a new [Cache].
-    pub fn new(web_state: browser::State) -> Self {
+    pub fn new() -> Self {
         Self {
             store: Store {
                 sessions: HashMap::new(),
@@ -196,7 +198,6 @@ impl DesktopStateInner {
             web: WebsiteCache {
                 websites: HashMap::new(),
                 apps: HashMap::new(),
-                state: web_state,
             },
             platform: PlatformCache {
                 windows: HashMap::new(),
@@ -375,14 +376,6 @@ impl DesktopStateInner {
         self.actions
             .dim
             .retain(|window, _| !removed_windows.contains(window));
-
-        {
-            let mut state = self.web.state.write().await;
-            state.browser_processes.remove(&process);
-            state
-                .browser_windows
-                .retain(|window, _| !removed_windows.contains(window));
-        }
     }
 
     /// Remove an app and associated processes, windows from the [Cache].
@@ -406,21 +399,6 @@ impl DesktopStateInner {
             self.actions
                 .dim
                 .retain(|window, _| !removed_windows.contains(window));
-
-            let removed_pids = app_entry
-                .process_threads
-                .iter()
-                .map(|ptid| ptid.pid)
-                .collect::<SmallHashSet<_>>();
-            {
-                let mut state = self.web.state.write().await;
-                state
-                    .browser_processes
-                    .retain(|pid| !removed_pids.contains(pid));
-                state
-                    .browser_windows
-                    .retain(|window, _| !removed_windows.contains(window));
-            }
         }
     }
 
@@ -461,15 +439,6 @@ impl DesktopStateInner {
             .dim
             .retain(|window, _| !removed_windows.contains(window));
 
-        {
-            let mut state = self.web.state.write().await;
-            state
-                .browser_processes
-                .retain(|process| !removed_pids.contains(process));
-            state
-                .browser_windows
-                .retain(|window, _| !removed_windows.contains(window));
-        }
         Ok(())
     }
 }
@@ -480,8 +449,7 @@ async fn inner_mut_compiles() {
 
     let window: Window = Window::foreground().unwrap();
     let process = ProcessThreadId { pid: 1, tid: 1 };
-    let web_state = browser::default_state();
-    let mut desktop = DesktopStateInner::new(web_state);
+    let mut desktop = DesktopStateInner::new();
 
     desktop
         .get_or_insert_session_for_window(

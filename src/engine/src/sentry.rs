@@ -4,9 +4,8 @@ use data::db::{AlertManager, Database, TriggeredAlert};
 use data::entities::{
     AlertEvent, App, Duration, Reason, Ref, ReminderEvent, Target, TriggerAction,
 };
-use platform::browser;
+use platform::browser::{self, ArcBrowser, BrowserAction, WebsiteInfo};
 use platform::objects::{Process, Progress, Timestamp as PlatformTimestamp, ToastManager, Window};
-use util::config::Config;
 use util::error::Result;
 use util::time::ToTicks;
 use util::tracing::{ResultTraceExt, debug, info, trace};
@@ -15,13 +14,9 @@ use crate::desktop::{DesktopState, DimRequest, DimStatus, KillableProcessId};
 
 /// Watcher to track [TriggeredAlert]s and [TriggeredReminder]s and take action on them.
 pub struct Sentry {
-    config: Config,
     desktop_state: DesktopState,
-    web_state: browser::State,
+    browser: ArcBrowser,
     mgr: AlertManager,
-    // Invariant: the website_actions map is *wholly* updated. That is, run() executes
-    // and updates this after clearing it with *all* alerts' websites. This is easily
-    // maintained since the two places its used - run() and handle_web_change() are both &mut self.
     website_actions: HashMap<String, WebsiteAction>,
 }
 
@@ -45,114 +40,26 @@ impl WebsiteAction {
 
 impl Sentry {
     /// Create a new [Sentry] with the given [Cache] and [Database].
-    pub fn new(
-        config: Config,
-        desktop_state: DesktopState,
-        web_state: browser::State,
-        db: Database,
-    ) -> Result<Self> {
+    pub fn new(desktop_state: DesktopState, browser: ArcBrowser, db: Database) -> Result<Self> {
         let mgr = AlertManager::new(db)?;
         Ok(Self {
-            config,
             desktop_state,
-            web_state,
+            browser,
             mgr,
             website_actions: HashMap::new(),
         })
     }
 
-    /// Run Alert Actions for the browser window matching the given [browser::Changed].
-    pub async fn handle_web_change(&mut self, web_change: browser::Changed) -> Result<()> {
-        let now = PlatformTimestamp::now();
-        let detect = browser::Detect::new()?;
-        let browser::Changed {
-            window,
-            new_url,
-            prev_url,
-            is_incognito,
-        } = web_change;
-
-        // skip if window is dead or minimized
-        if window.ptid().is_err() || window.is_minimized() {
-            return Ok(());
-        }
-
-        // skip if incognito and not tracking incognito
-        if is_incognito && !self.config.track_incognito() {
-            return Ok(());
-        }
-
-        let base_url = browser::WebsiteInfo::url_to_base_url(&new_url).to_string();
-        let prev_base_url = browser::WebsiteInfo::url_to_base_url(&prev_url).to_string();
-
-        if let Some(action) = self.website_actions.get(&base_url) {
-            match action {
-                WebsiteAction::Dim(dim_status) => {
-                    let mut desktop_state = self.desktop_state.write().await;
-                    let current_dim_status = desktop_state.dim_status_mut(&window);
-
-                    // remove previous dim requests for the previous url if there are any
-                    if let Some(WebsiteAction::Dim(prev_website_dim_status)) =
-                        self.website_actions.get(&prev_base_url)
-                    {
-                        current_dim_status.subtract(prev_website_dim_status);
-                    }
-                    // add new dim requests for the new url
-                    current_dim_status.merge(dim_status);
-
-                    debug!(?current_dim_status, "tab switch: dimming {window:?}",);
-
-                    self.handle_dim_action(&window, current_dim_status, now)?;
-                }
-                WebsiteAction::Kill => {
-                    let element = {
-                        let web_state = self.web_state.read().await;
-
-                        let Some(state) = web_state.get_browser_window(&window)? else {
-                            return Ok(());
-                        };
-                        state.extracted_elements.window_element.resolve()?
-                    };
-
-                    debug!("killing current tab in {window:?}");
-
-                    detect.close_current_tab(&element).warn();
-                }
-            }
-        } else {
-            // if we took a dim action for the previous url, we need to remove it
-            if let Some(WebsiteAction::Dim(dim_status)) = self.website_actions.get(&prev_base_url) {
-                let mut desktop_state = self.desktop_state.write().await;
-                let current_dim_status = desktop_state.dim_status_mut(&window);
-                current_dim_status.subtract(dim_status);
-
-                debug!(
-                    ?current_dim_status,
-                    "tab switch: removing dim status for {window:?}"
-                );
-                self.handle_dim_action(&window, current_dim_status, now)?;
-            }
-        }
-
-        Ok(())
-    }
-
     /// Run the [Sentry] to check for triggered alerts and reminders and take action on them.
     pub async fn run(&mut self, now: PlatformTimestamp) -> Result<()> {
-        // Retain alive entries in desktop_state before we start processing
-        // - avoids dimming dead windows / killing dead processes
         {
             let mut desktop_state = self.desktop_state.write().await;
-
-            // reset dim statuses - we will repopulate them with the alerts
             desktop_state.reset_dim_statuses();
             self.website_actions.clear();
-
             desktop_state.retain_cache().await?;
         }
 
         let alerts_hits = self.mgr.triggered_alerts(&now).await?;
-        // Dim actions are stored here so we can dim windows later - they do not care about website yet!
         let mut dim_actions = HashMap::new();
         for triggered_alert in alerts_hits {
             self.handle_alert(&triggered_alert, &mut dim_actions, now)
@@ -161,44 +68,36 @@ impl Sentry {
 
         {
             let mut desktop_state = self.desktop_state.write().await;
-            let web_state = self.web_state.read().await;
 
             // Merge dim actions from process/windows for alerts
             Self::merge_dim_actions(desktop_state.dim_statuses(), dim_actions);
-            // Merge dim actions from browser windows' last urls
-            Self::merge_dim_actions(
-                desktop_state.dim_statuses(),
-                web_state
-                    .browser_windows
-                    .iter()
-                    .flat_map(|(window, state)| state.iter().map(move |state| (window, state)))
-                    .flat_map(|(window, state)| {
-                        // skip if incognito and not tracking incognito
-                        if !self.config.track_incognito() && state.is_incognito {
-                            return None;
-                        }
-
-                        let base_url = browser::WebsiteInfo::url_to_base_url(&state.last_url);
-                        let Some(WebsiteAction::Dim(dim_status)) =
-                            self.website_actions.get(&base_url.to_string())
-                        else {
-                            return None;
-                        };
-                        Some((window.clone(), dim_status.clone()))
-                    }),
-            );
 
             for (window, dim_status) in desktop_state.dim_statuses() {
                 debug!(?dim_status, "alerts: dimming {window:?}");
-
                 self.handle_dim_action(window, dim_status, now)?;
             }
 
-            // remove empty dim statuses
             desktop_state
                 .dim_statuses()
                 .retain(|_, dim_status| !dim_status.is_empty());
         }
+
+        // Push website actions to the browser backend for enforcement on tab changes.
+        let browser_actions: HashMap<browser::BaseWebsiteUrl, BrowserAction> = self
+            .website_actions
+            .iter()
+            .map(|(url_str, action)| {
+                let base_url = WebsiteInfo::url_to_base_url(url_str);
+                let browser_action = match action {
+                    WebsiteAction::Kill => BrowserAction::CloseTab,
+                    WebsiteAction::Dim(status) => BrowserAction::Dim {
+                        opacity: status.opacity(now.to_ticks()),
+                    },
+                };
+                (base_url, browser_action)
+            })
+            .collect();
+        self.browser.set_actions(browser_actions)?;
 
         let reminder_hits = self.mgr.triggered_reminders(&now).await?;
         for triggered_reminder in reminder_hits {
@@ -242,7 +141,6 @@ impl Sentry {
                     .processes_and_websites_for_target(&alert.target)
                     .await?;
 
-                // set websites to kill. kill takes precedence
                 self.merge_website_actions(
                     websites
                         .into_iter()
@@ -279,7 +177,6 @@ impl Sentry {
                     duration: *duration,
                 };
 
-                // set websites to dim. kill takes precedence
                 self.merge_website_actions(websites.into_iter().map(|url| {
                     (
                         url.to_string(),
@@ -334,10 +231,7 @@ impl Sentry {
         now: PlatformTimestamp,
     ) -> Result<()> {
         let dim_level = dim_status.opacity(now.to_ticks());
-
         trace!(?dim_status, "dimming window {window:?} to {dim_level}");
-
-        // ignore errors here since the window could be closed by the user
         window.dim(dim_level).warn();
         Ok(())
     }
@@ -374,7 +268,6 @@ impl Sentry {
         Ok(())
     }
 
-    /// Get the apps + processes and website for the given [Target],
     async fn processes_and_websites_for_target(
         &mut self,
         target: &Target,
@@ -395,7 +288,6 @@ impl Sentry {
             })
             .collect();
 
-        // yes, we lock twice here ...
         let desktop_state = self.desktop_state.read().await;
         let websites = target_apps
             .iter()
@@ -409,7 +301,6 @@ impl Sentry {
         Ok((processes, websites))
     }
 
-    /// Get the [Window]s and websites for the given [Target],
     async fn windows_and_websites_for_target(
         &mut self,
         target: &Target,
@@ -423,11 +314,10 @@ impl Sentry {
                 desktop_state
                     .platform_windows_for_app(app)
                     .cloned()
-                    .collect::<Vec<_>>() // ew
+                    .collect::<Vec<_>>()
             })
             .collect();
 
-        // yes, we lock twice here ...
         let desktop_state = self.desktop_state.read().await;
         let websites = target_apps
             .iter()

@@ -2,7 +2,7 @@
 
 use std::io::stdin;
 
-use platform::browser;
+use platform::browser::uia::Detect;
 use platform::objects::Window;
 use tools::filters::{ProcessFilter, WindowFilter, match_running_windows};
 use util::error::Result;
@@ -41,7 +41,7 @@ mod tab_track_handler {
             _sender: windows_core::Ref<'_, IUIAutomationElement>,
             _eventid: UIA_EVENT_ID,
         ) -> windows::core::Result<()> {
-            let detect = browser::Detect::new().expect("Failed to create browser detector");
+            let detect = Detect::new().expect("Failed to create browser detector");
             let element = detect
                 .get_chromium_element(&self.window)
                 .expect("Failed to get Chromium element");
