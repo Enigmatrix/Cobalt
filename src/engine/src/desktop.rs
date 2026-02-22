@@ -181,6 +181,12 @@ pub enum KillableProcessId {
     Aumid(String),
 }
 
+impl Default for DesktopStateInner {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl DesktopStateInner {
     /// Create a new [Cache].
     pub fn new() -> Self {

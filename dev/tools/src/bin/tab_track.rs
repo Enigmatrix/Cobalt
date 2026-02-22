@@ -2,7 +2,7 @@
 
 use std::sync::Mutex;
 
-use platform::browser;
+use platform::browser::uia::Detect;
 use platform::events::WindowTitleWatcher;
 use platform::objects::{EventLoop, Target, Window};
 use tools::filters::{ProcessFilter, WindowFilter, match_running_windows};
@@ -18,12 +18,12 @@ use util::{Target as UtilTarget, config, future as tokio};
 // }
 
 struct UnsafeSyncSendBrowserDetect {
-    detect: browser::Detect,
+    detect: Detect,
 }
 
 impl UnsafeSyncSendBrowserDetect {
     fn new() -> Result<Self> {
-        let detect = browser::Detect::new()?;
+        let detect = Detect::new()?;
         Ok(Self { detect })
     }
 

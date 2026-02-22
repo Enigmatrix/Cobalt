@@ -1,4 +1,4 @@
-//! Driver to poll the [browser::State] as the engine is runningand save it to a file
+//! Driver to poll browser window state as the engine is running and save it to a file
 
 use std::fs::File;
 use std::io::Write;
@@ -7,10 +7,9 @@ use std::time::{Duration, UNIX_EPOCH};
 
 use clap::Parser;
 use engine::desktop;
-use platform::browser;
+use platform::browser::{self, ArcBrowser};
 use platform::objects::Window;
 use serde::Serialize;
-use util::ds::SmallHashMap;
 use util::error::Result;
 use util::tracing::error;
 use util::{Target, config, future as tokio};
@@ -42,18 +41,18 @@ fn main() -> Result<()> {
 
     let args = Args::parse();
 
-    let web_state = browser::default_state();
-    let desktop_state = desktop::new_desktop_state(web_state.clone());
+    let browser: ArcBrowser = browser::uia::new_uia_backend()?;
+    let desktop_state = desktop::new_desktop_state();
 
-    let _web_state = web_state.clone();
+    let _browser = browser.clone();
     thread::spawn(move || {
-        let mut driver = Driver::new(_web_state);
+        let mut driver = Driver::new(_browser);
         driver
             .run(&args.path, Duration::from_millis(args.delay))
             .expect("failed to run driver");
     });
 
-    if let Err(report) = engine::run(&config, rt.handle().clone(), web_state, desktop_state) {
+    if let Err(report) = engine::run(&config, rt.handle().clone(), browser, desktop_state) {
         error!("fatal error caught in main: {:?}", report);
         std::process::exit(1);
     }
@@ -61,23 +60,48 @@ fn main() -> Result<()> {
 }
 
 struct Driver {
-    current_state: WebStateSnapshot,
-    state: browser::State,
+    browser: ArcBrowser,
+    last_snapshot: Option<BrowserWindowSnapshot>,
 }
 
 impl Driver {
-    fn new(state: browser::State) -> Self {
-        let current_state = WebStateSnapshot::from(&*state.blocking_read());
+    fn new(browser: ArcBrowser) -> Self {
         Self {
-            state,
-            current_state,
+            browser,
+            last_snapshot: None,
         }
     }
 
     fn step(&mut self, ts: u64) -> Vec<Event> {
-        let new_state = WebStateSnapshot::from(&*self.state.blocking_read());
-        let events = self.current_state.diff(&new_state, ts);
-        self.current_state = new_state;
+        let mut events = Vec::new();
+
+        let Some(window) = Window::foreground() else {
+            return events;
+        };
+
+        let Ok(Some(result)) = self.browser.identify(&window) else {
+            return events;
+        };
+
+        let snapshot = BrowserWindowSnapshot {
+            is_incognito: result.info.is_incognito,
+            url: result.info.url,
+            title: window.title().unwrap_or_default(),
+        };
+
+        let changed = self
+            .last_snapshot
+            .as_ref()
+            .is_none_or(|last| *last != snapshot);
+
+        if changed {
+            events.push(Event::BrowserWindowSnapshotChange {
+                snapshot: snapshot.clone(),
+                timestamp: ts,
+            });
+            self.last_snapshot = Some(snapshot);
+        }
+
         events
     }
 
@@ -95,63 +119,6 @@ impl Driver {
 
             thread::sleep(delay);
         }
-    }
-}
-
-/// Shared inner state of browsers and websites seen in the desktop
-#[derive(Debug, Default)]
-struct WebStateSnapshot {
-    pub browser_windows: SmallHashMap<Window, Option<BrowserWindowSnapshot>>,
-    // pub browser_processes: SmallHashSet<ProcessId>,
-}
-
-impl From<&browser::StateInner> for WebStateSnapshot {
-    fn from(state: &browser::StateInner) -> Self {
-        Self {
-            browser_windows: state
-                .browser_windows
-                .iter()
-                .map(|(window, state)| {
-                    (
-                        window.clone(),
-                        state.clone().map(|state| BrowserWindowSnapshot {
-                            is_incognito: state.is_incognito,
-                            url: state.last_url.clone(),
-                            title: state.last_title.clone(),
-                        }),
-                    )
-                })
-                .collect(),
-            // browser_processes: state.browser_processes.clone(),
-        }
-    }
-}
-
-impl WebStateSnapshot {
-    fn diff(&self, new_state: &WebStateSnapshot, ts: u64) -> Vec<Event> {
-        let mut events = Vec::new();
-
-        for (window, snapshot) in &new_state.browser_windows {
-            let Some(snapshot) = snapshot else { continue };
-            let old_snapshot = self.browser_windows.get(window);
-            let change = if let Some(old_snapshot) = old_snapshot {
-                let old_snapshot = old_snapshot
-                    .as_ref()
-                    .expect("browser window should remain browser window from start");
-                old_snapshot != snapshot
-            } else {
-                true
-            };
-
-            if change {
-                events.push(Event::BrowserWindowSnapshotChange {
-                    snapshot: snapshot.clone(),
-                    timestamp: ts,
-                });
-            }
-        }
-
-        events
     }
 }
 
@@ -174,10 +141,6 @@ enum Event {
         snapshot: BrowserWindowSnapshot,
         timestamp: u64,
     },
-    // WindowFocused {
-    //     window: Window,
-    //     timestamp: u64,
-    // },
 }
 
 fn time_now() -> u64 {

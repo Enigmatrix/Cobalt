@@ -18,8 +18,7 @@ pub(crate) mod detect;
 pub(crate) mod state;
 mod watcher;
 
-// Backward-compat re-export for detect (removed in step 6).
-pub use detect::*;
+pub use detect::Detect;
 
 /// UIA-based [`Browser`] implementation for Chromium browsers (Chrome, Edge).
 pub struct UiaBackend {
