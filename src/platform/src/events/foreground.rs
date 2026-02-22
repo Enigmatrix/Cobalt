@@ -1,18 +1,13 @@
-use util::config::Config;
-use util::error::{Context, ContextCompat, Result};
-use util::tracing::ResultTraceExt;
-use windows::Win32::UI::Accessibility::UIA_WindowControlTypeId;
-use windows::core::AgileReference;
+use util::error::{Context, Result};
 
-use crate::browser;
-use crate::objects::{Process, Timestamp, Window};
+use crate::browser::{ArcBrowser, Browser};
+use crate::objects::{Timestamp, Window};
 
 /// Watches for foreground window changes, including session (title) changes
 pub struct ForegroundEventWatcher {
     session: WindowSession,
-    detect: browser::Detect,
+    browser: ArcBrowser,
     track_incognito: bool,
-    web_state: browser::State,
 }
 
 /// Foreground window session change event.
@@ -44,22 +39,19 @@ pub struct WindowSession {
 }
 
 impl ForegroundEventWatcher {
-    /// Create a new [WindowSession] with the starting [WindowSession].
-    pub fn new(session: WindowSession, config: &Config, web_state: browser::State) -> Result<Self> {
-        let detect = browser::Detect::new()?;
-        Ok(Self {
+    /// Create a new [ForegroundEventWatcher] with the starting [WindowSession].
+    pub fn new(session: WindowSession, track_incognito: bool, browser: ArcBrowser) -> Self {
+        Self {
             session,
-            detect,
-            track_incognito: config.track_incognito(),
-            web_state,
-        })
+            browser,
+            track_incognito,
+        }
     }
 
     /// Poll for a new [`ForegroundChangedEvent`].
     pub fn poll(&mut self, at: Timestamp) -> Result<Option<ForegroundChangedEvent>> {
-        let state = self.web_state.blocking_write();
         if let Some(session) =
-            Self::foreground_window_session(&self.detect, state, self.track_incognito)?
+            Self::foreground_window_session(&*self.browser, self.track_incognito)?
         {
             if session.window_session == self.session {
                 return Ok(None);
@@ -72,110 +64,32 @@ impl ForegroundEventWatcher {
 
     /// Get the foreground window session.
     pub fn foreground_window_session(
-        detect: &browser::Detect,
-        web_state: browser::WriteLockedState<'_>,
+        browser: &dyn Browser,
         track_incognito: bool,
     ) -> Result<Option<ForegroundWindowSessionInfo>> {
-        if let Some(window) = Window::foreground() {
-            let (state, fetched_path) = Self::browser_window_session(&window, detect, web_state)?;
-
-            let (title, url) = if let Some(state) = state {
-                if state.is_incognito && !track_incognito {
-                    ("<Incognito>".to_string(), None)
-                } else {
-                    (state.last_title, Some(state.last_url))
-                }
-            } else {
-                (window.title()?, None)
-            };
-
-            let window_session = WindowSession { title, url, window };
-            let session = ForegroundWindowSessionInfo {
-                window_session,
-                fetched_path,
-            };
-            return Ok(Some(session));
-        }
-        Ok(None)
-    }
-
-    fn browser_window_session(
-        window: &Window,
-        detect: &browser::Detect,
-        mut web_state: browser::WriteLockedState<'_>,
-    ) -> Result<(Option<browser::BrowserWindowState>, Option<String>)> {
-        let state = web_state.browser_windows.get(window);
-        if let Some(state) = state {
-            // We know already if it's a browser or not
-            return Ok((state.clone(), None));
-        }
-
-        // Educated guess. Note that VSCode will pass this check since it's a chromium app.
-        let maybe_browser = detect.is_maybe_chromium_window(window).warn();
-        // So we further check if it's a chromium process
-        let (is_browser, fetched_path) = if maybe_browser {
-            let ptid = window.ptid().context("get ptid")?;
-            if web_state.browser_processes.contains(&ptid.pid) {
-                (true, None)
-            } else {
-                let process = Process::new(ptid.pid).context("get process")?;
-                let path = process.path().context("get process path")?;
-                let is_browser = detect.is_chromium_exe(&path);
-                if is_browser {
-                    web_state.browser_processes.insert(ptid.pid);
-                }
-                (is_browser, Some(path))
-            }
-        } else {
-            (false, None)
+        let Some(window) = Window::foreground() else {
+            return Ok(None);
         };
 
-        // TODO: instead of Option's context("no element") we should use backon retries
-        let state = if is_browser {
-            let window_element = detect.get_chromium_element(window)?;
-            // If this is not a Chromium window, then it's a dialog e.g. Ctrl-F box, 'Extensions' popup dialog, etc.
-            // TODO what about alert(), user-password basic auth dialog?, window.open() dialogs by
-            // https://developer.mozilla.org/en-US/docs/Web/API/Window/open#popup and other options?
-            if unsafe { window_element.CurrentControlType()? } != UIA_WindowControlTypeId {
-                return Ok((None, None));
+        let result = browser
+            .identify(&window)
+            .context("browser identify window")?;
+
+        let (title, url, fetched_path) = if let Some(r) = result {
+            if r.info.is_incognito && !track_incognito {
+                ("<Incognito>".to_string(), None, r.resolved_info.exe_path)
+            } else {
+                (window.title()?, Some(r.info.url), r.resolved_info.exe_path)
             }
-
-            let omnibox = detect
-                .get_chromium_omnibox_element(&window_element, true)?
-                .context("no omnibox")?;
-            let omnibox_icon = detect
-                .get_chromium_omnibox_icon_element(&window_element, true)?
-                .context("no omnibox icon")?;
-
-            let is_incognito = detect
-                .chromium_incognito(&window_element)
-                .context("get chromium incognito")?
-                .context("no element")?;
-            let last_url = detect
-                .chromium_url(&window_element)
-                .context("get chromium url")?
-                .context("no element")?;
-            let last_title = window.title()?;
-
-            let extracted_elements = browser::ExtractedUIElements {
-                window_element: AgileReference::new(&window_element)?,
-                omnibox: AgileReference::new(&omnibox)?,
-                omnibox_icon: AgileReference::new(&omnibox_icon)?,
-            };
-            Some(browser::BrowserWindowState {
-                extracted_elements,
-                is_incognito,
-                last_url,
-                last_title,
-            })
         } else {
-            None
+            (window.title()?, None, None)
         };
 
-        web_state
-            .browser_windows
-            .insert(window.clone(), state.clone());
-
-        Ok((state, fetched_path))
+        let window_session = WindowSession { title, url, window };
+        let session = ForegroundWindowSessionInfo {
+            window_session,
+            fetched_path,
+        };
+        Ok(Some(session))
     }
 }

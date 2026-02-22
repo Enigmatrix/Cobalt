@@ -2,7 +2,7 @@ use data::db::{DatabasePool, FoundOrInserted, UsageWriter};
 use data::entities::{
     AppIdentity, InteractionPeriod, Ref, Session, SystemEvent as DataSystemEvent, Usage,
 };
-use platform::browser::{self, BaseWebsiteUrl, WebsiteInfo};
+use platform::browser::{self, ArcBrowser, BaseWebsiteUrl, WebsiteInfo};
 use platform::events::{
     ForegroundChangedEvent, ForegroundWindowSessionInfo, InteractionChangedEvent, SystemStateEvent,
 };
@@ -22,7 +22,9 @@ use crate::resolver::AppInfoResolver;
 pub struct Engine {
     desktop_state: DesktopState,
     config: Config,
+    #[allow(dead_code)] // still threaded through EngineArgs for sentry/desktop; removed in step 5
     web_state: browser::State,
+    browser: ArcBrowser,
     current_usage: Usage,
     db_pool: DatabasePool,
     inserter: UsageWriter,
@@ -56,6 +58,8 @@ pub struct EngineArgs {
     pub desktop_state: DesktopState,
     /// Web State
     pub web_state: browser::State,
+    /// Browser backend
+    pub browser: ArcBrowser,
 
     /// Config
     pub config: Config,
@@ -80,6 +84,7 @@ impl Engine {
             desktop_state: options.desktop_state,
             config: options.config,
             web_state: options.web_state,
+            browser: options.browser,
             db_pool: options.db_pool,
             inserter,
             // set a default value, then update it right after
@@ -130,7 +135,8 @@ impl Engine {
                 }
             } else if !prev && self.active {
                 let window_session =
-                    foreground_window_session_async(&self.config, self.web_state.clone()).await?;
+                    foreground_window_session_async(&*self.browser, self.config.track_incognito())
+                        .await?;
                 self.current_usage = Usage {
                     id: Default::default(),
                     session_id: self.get_session_details(window_session, *now).await?,
