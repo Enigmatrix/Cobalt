@@ -14,7 +14,7 @@ from wasabi import color
 
 logger = logging.getLogger(__name__)
 
-TOLERANCE_MS = 200
+TOLERANCE_MS = 400
 
 
 class DriverData:

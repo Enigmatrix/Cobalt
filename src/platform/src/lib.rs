@@ -10,15 +10,33 @@ pub mod objects;
 pub mod web;
 
 use util::error::{Context, Result};
-use windows::Win32::System::Com::{COINIT_MULTITHREADED, CoInitializeEx};
+use windows::Win32::System::Com::{COINIT_APARTMENTTHREADED, COINIT_MULTITHREADED, CoInitializeEx};
 
 use crate::objects::Timestamp;
 
-/// Setup platform for Windows
+/// Setup platform for Windows.
+///
+/// Initializes COM as STA on the calling thread. The caller must run a message
+/// pump (`GetMessageW`/`DispatchMessageW`) for UIA event callbacks to be
+/// delivered on this thread, which serializes them with handler
+/// registration/removal and eliminates the race inside
+/// `uiautomationcore!SavedEvent::OnMessage`.
 pub fn setup() -> Result<()> {
     Timestamp::setup()?;
+    unsafe { CoInitializeEx(None, COINIT_APARTMENTTHREADED) }
+        .ok()
+        .context("com init (STA)")?;
+    Ok(())
+}
+
+/// Initialize COM as MTA on the calling thread.
+///
+/// Safe to call multiple times on the same thread (returns `S_FALSE`).
+/// Use this on worker threads that need to make one-off COM/UIA calls
+/// but do not register event handlers.
+pub fn setup_thread_com() -> Result<()> {
     unsafe { CoInitializeEx(None, COINIT_MULTITHREADED) }
         .ok()
-        .context("com init")?;
+        .context("com init (MTA)")?;
     Ok(())
 }

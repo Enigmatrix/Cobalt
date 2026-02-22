@@ -86,6 +86,9 @@ fn setup() -> Result<(Config, Runtime)> {
     let rt = Builder::new_multi_thread()
         .enable_time()
         .enable_io()
+        .on_thread_start(|| {
+            platform::setup_thread_com().expect("com init on tokio worker");
+        })
         .build()?;
 
     Ok((config, rt))

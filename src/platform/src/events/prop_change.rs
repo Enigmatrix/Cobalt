@@ -55,14 +55,21 @@ impl PropertyChange {
 
 impl Drop for PropertyChange {
     fn drop(&mut self) {
+        // During process shutdown (LdrShutdownProcess), COM TLS is already torn
+        // down and AgileReference::resolve() will fail. Bail silently instead of
+        // panicking — the OS reclaims everything on exit anyway.
+        let Ok(automation) = self.automation.resolve() else {
+            return;
+        };
+        let Ok(element) = self.element.resolve() else {
+            return;
+        };
+        let Ok(handler) = self.handler_ref.resolve() else {
+            return;
+        };
         unsafe {
-            self.automation
-                .resolve()
-                .expect("automation")
-                .RemovePropertyChangedEventHandler(
-                    &self.element.resolve().expect("element"),
-                    &self.handler_ref.resolve().expect("handler"),
-                )
+            automation
+                .RemovePropertyChangedEventHandler(&element, &handler)
                 .context("drop property change handler")
                 .error();
         }
