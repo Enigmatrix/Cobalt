@@ -11,35 +11,35 @@ use crate::browser::actions::BrowserAction;
 use crate::browser::backend::{
     ArcBrowser, Browser, BrowserWindowInfo, IdentifyResult, ResolvedWindowInfo,
 };
-use crate::browser::website_info::BaseWebsiteUrl;
+use crate::browser::website_info::{BaseWebsiteUrl, WebsiteInfo};
 use crate::objects::{Process, Window};
 
 pub(crate) mod detect;
 pub(crate) mod state;
-pub(crate) mod watcher;
+mod watcher;
 
-// Backward-compat re-exports (temporary, removed in step 6)
+// Backward-compat re-export for detect (removed in step 6).
 pub use detect::*;
-pub use state::*;
-pub use watcher::*;
 
 /// UIA-based [`Browser`] implementation for Chromium browsers (Chrome, Edge).
-///
-/// During the transition period (steps 3-4) this wraps a shared [`state::State`]
-/// so the existing [`watcher::Watcher`] and this backend see the same data.
 pub struct UiaBackend {
     detect: detect::Detect,
     state: state::State,
     actions: Arc<RwLock<HashMap<BaseWebsiteUrl, BrowserAction>>>,
+    watcher: std::sync::Mutex<watcher::Watcher>,
 }
 
 impl UiaBackend {
-    /// Create a new [`UiaBackend`] wrapping the given shared state.
-    pub fn new(state: state::State) -> Result<Self> {
+    fn new() -> Result<Self> {
+        let detect = detect::Detect::new()?;
+        let state = state::default_state();
+        let actions = Arc::new(RwLock::new(HashMap::new()));
+        let watcher = watcher::Watcher::new(state.clone(), detect.clone(), actions.clone())?;
         Ok(Self {
-            detect: detect::Detect::new()?,
+            detect,
             state,
-            actions: Arc::new(RwLock::new(HashMap::new())),
+            actions,
+            watcher: std::sync::Mutex::new(watcher),
         })
     }
 }
@@ -143,18 +143,48 @@ impl Browser for UiaBackend {
 
     fn set_actions(&self, actions: HashMap<BaseWebsiteUrl, BrowserAction>) -> Result<()> {
         *self.actions.blocking_write() = actions;
+
+        // Enforce on existing browser windows whose current URL matches.
+        let state = self.state.blocking_read();
+        for (window, bws) in &state.browser_windows {
+            let Some(bws) = bws else { continue };
+            let base_url = WebsiteInfo::url_to_base_url(&bws.last_url);
+            let actions = self.actions.blocking_read();
+            if let Some(action) = actions.get(&base_url) {
+                match action {
+                    BrowserAction::CloseTab => {
+                        if let Ok(element) = bws.extracted_elements.window_element.resolve() {
+                            self.detect.close_current_tab(&element).warn();
+                        }
+                    }
+                    BrowserAction::Dim { opacity } => {
+                        window.dim(*opacity).warn();
+                    }
+                }
+            }
+        }
         Ok(())
     }
 
     fn tick(&self) -> Result<()> {
-        // No-op during transition; watcher is still driven externally.
+        {
+            let mut watcher = self.watcher.lock().expect("watcher lock poisoned");
+            watcher.tick().context("watcher tick")?;
+        }
+
+        // Stale entry cleanup
+        let mut state = self.state.blocking_write();
+        state
+            .browser_windows
+            .retain(|window, _| window.ptid().is_ok());
+
         Ok(())
     }
 }
 
-/// Create a new UIA-based [`Browser`] backend wrapping the given shared state.
+/// Create a new UIA-based [`Browser`] backend.
 ///
 /// Returns [`ArcBrowser`] so callers never depend on the concrete type.
-pub fn new_uia_backend(state: state::State) -> Result<ArcBrowser> {
-    Ok(Arc::new(UiaBackend::new(state)?))
+pub fn new_uia_backend() -> Result<ArcBrowser> {
+    Ok(Arc::new(UiaBackend::new()?))
 }
