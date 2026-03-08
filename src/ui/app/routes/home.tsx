@@ -5,6 +5,7 @@ import { AppHoverCard } from "@/components/app/app-hover-card";
 import AppIcon from "@/components/app/app-icon";
 import { ScoreCircle } from "@/components/tag/score";
 import { TagHoverCard } from "@/components/tag/tag-hover-card";
+import TagIcon from "@/components/tag/tag-icon";
 import { DateRangePicker } from "@/components/time/date-range-picker";
 import { DurationText } from "@/components/time/duration-text";
 import {
@@ -48,7 +49,7 @@ import {
 } from "@/lib/time";
 import { cn } from "@/lib/utils";
 import _ from "lodash";
-import { Loader2, TagIcon } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { DateTime } from "luxon";
 import { useMemo } from "react";
 
@@ -419,7 +420,7 @@ function MiniTargetItem({ alert }: { alert: Alert }) {
   ) : alert.target.tag === "tag" && tag ? (
     <TagHoverCard tag={tag}>
       <div className="flex gap-1 items-center">
-        <TagIcon className="h-4 w-4 shrink-0" style={{ color: tag.color }} />
+        <TagIcon tag={tag} className="h-4 w-4 shrink-0" />
         <div>{tag.name}</div>
         <ScoreCircle score={tag.score} />
       </div>

@@ -3,6 +3,7 @@ import { TriggerActionIndicator } from "@/components/alert/trigger-action";
 import { AppHoverCard } from "@/components/app/app-hover-card";
 import AppIcon from "@/components/app/app-icon";
 import { TagHoverCard } from "@/components/tag/tag-hover-card";
+import TagIcon from "@/components/tag/tag-icon";
 import { DateRangePicker } from "@/components/time/date-range-picker";
 import { DurationText } from "@/components/time/duration-text";
 import { DateTimeText } from "@/components/time/time-text";
@@ -54,7 +55,6 @@ import {
   ClockIcon,
   Edit2Icon,
   PlayIcon,
-  TagIcon,
   TrashIcon,
 } from "lucide-react";
 import { useCallback, useMemo } from "react";
@@ -108,10 +108,7 @@ function AlertPage({ alert }: { alert: Alert }) {
                 ) : tag ? (
                   <TagHoverCard tag={tag}>
                     <span className="inline-flex items-center">
-                      <TagIcon
-                        className="w-5 h-5 mr-2 shrink-0"
-                        style={{ color: tag.color }}
-                      />
+                      <TagIcon tag={tag} className="w-5 h-5 mr-2 shrink-0" />
                       <Text className="truncate">{targetName}</Text>
                     </span>
                   </TagHoverCard>
@@ -204,8 +201,8 @@ function AlertInfoCard({
             <TagHoverCard tag={tag}>
               <NavLink to={targetLink}>
                 <TagIcon
+                  tag={tag}
                   className="w-12 h-12 shrink-0 hover:opacity-80 transition-opacity"
-                  style={{ color: tag.color }}
                 />
               </NavLink>
             </TagHoverCard>

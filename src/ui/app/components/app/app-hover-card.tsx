@@ -1,5 +1,6 @@
 import AppIcon from "@/components/app/app-icon";
 import { ScoreCircle } from "@/components/tag/score";
+import TagIcon from "@/components/tag/tag-icon";
 import { DurationText } from "@/components/time/duration-text";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -11,7 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { Text } from "@/components/ui/text";
 import { useTag } from "@/hooks/use-refresh";
 import type { App } from "@/lib/entities";
-import { ArrowRightIcon, TagIcon } from "lucide-react";
+import { ArrowRightIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { NavLink } from "react-router";
 
@@ -62,7 +63,7 @@ function AppHoverCardContent({ app }: { app: App }) {
             }}
             className="whitespace-nowrap hover:opacity-80 transition-opacity"
           >
-            <TagIcon className="size-3 mr-1" />
+            <TagIcon tag={tag} className="size-3 mr-1" />
             <Text className="max-w-32">{tag.name}</Text>
             <ScoreCircle score={tag.score} className="ml-1.5" />
           </Badge>
