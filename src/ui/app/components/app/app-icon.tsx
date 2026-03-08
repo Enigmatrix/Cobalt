@@ -7,7 +7,7 @@ import {
   CircleHelp as CircleHelpStatic,
   Tag as TagStatic,
 } from "lucide-static";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ComponentPropsWithoutRef } from "react";
 
 export const DEFAULT_ICON_SVG_URL = "data:image/svg+xml," + CircleHelpStatic;
 export const TAG_ICON_URL = "data:image/svg+xml," + TagStatic;
@@ -38,10 +38,11 @@ export function tagIconUrl(color?: string) {
 export default function AppIcon({
   app,
   className,
+  ...rest
 }: {
   app?: App;
   className?: ClassValue;
-}) {
+} & Omit<ComponentPropsWithoutRef<"div">, "children" | "className">) {
   const [hasError, setHasError] = useState(false);
   const [icon, setIcon] = useState<string | null>(() =>
     app?.hasIcon ? appIconUrl(app) : null,
@@ -62,7 +63,11 @@ export default function AppIcon({
   }, [app?.id, app?.hasIcon]);
 
   if (!icon || hasError) {
-    return <CircleHelp className={cn("text-foreground", className)} />;
+    return (
+      <div className={cn("text-foreground", className)} {...rest}>
+        <CircleHelp className="w-full h-full" />
+      </div>
+    );
   }
 
   return (
@@ -70,6 +75,7 @@ export default function AppIcon({
       className={cn(className)}
       src={icon}
       onError={() => setHasError(true)}
+      {...rest}
     />
   );
 }
