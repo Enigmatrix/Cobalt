@@ -148,7 +148,7 @@ export function ChooseMultiApps({
   }, [items]);
 
   return (
-    <Popover open={open} onOpenChange={setOpen} modal>
+    <Popover open={open} onOpenChange={setOpen}>
       <div className="flex flex-wrap items-center gap-2">
         {valueApps.map((app, index) => {
           return (
