@@ -26,7 +26,7 @@ urls = {
     },
     "https2": {
         "url": "https://github.com/chromium/chromium",
-        "title": "GitHub - chromium/chromium: The official GitHub mirror of the Chromium source",
+        "title": "GitHub - chromium/chromium: The official GitHub mirror of the Chromium source · GitHub",
     },
     "http1": {
         "url": "http://textfiles.com/",
