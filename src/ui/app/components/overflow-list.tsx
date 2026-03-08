@@ -1,9 +1,3 @@
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { useWidth } from "@/hooks/use-width";
 import { cn } from "@/lib/utils";
 import type { ClassValue } from "clsx";
@@ -22,15 +16,13 @@ export function HorizontalOverflowList<T>({
   className,
   items,
   renderItem,
-  renderOverflowItem,
-  renderOverflowSign,
+  renderOverflow,
   maxItemCount,
 }: {
   className: ClassValue;
   items: T[];
   renderItem: (item: T) => ReactNode;
-  renderOverflowItem: (item: T) => ReactNode;
-  renderOverflowSign: (overflowItems: T[]) => ReactNode;
+  renderOverflow: (overflowItems: T[]) => ReactNode;
   maxItemCount?: number;
 }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -80,23 +72,7 @@ export function HorizontalOverflowList<T>({
         <div className="flex items-center" key={index}>
           {renderItem(item)}
 
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger
-                asChild
-                className={cn({
-                  hidden: index !== overflowIndex - 1,
-                })}
-              >
-                {renderOverflowSign(overflowItems)}
-              </TooltipTrigger>
-              <TooltipContent>
-                <div className="flex flex-col gap-2 py-2">
-                  {overflowItems.map(renderOverflowItem)}
-                </div>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          {index === overflowIndex - 1 && renderOverflow(overflowItems)}
         </div>
       ))}
     </div>

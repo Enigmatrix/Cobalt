@@ -1,5 +1,6 @@
 import { AppHoverCard } from "@/components/app/app-hover-card";
 import AppIcon from "@/components/app/app-icon";
+import { AppOverflowTooltip } from "@/components/app/app-overflow-tooltip";
 import { NoTags, NoTagsFound } from "@/components/empty-states";
 import { HorizontalOverflowList } from "@/components/overflow-list";
 import { SearchBar } from "@/components/search-bar";
@@ -7,7 +8,6 @@ import { CreateTagDialog } from "@/components/tag/create-tag-dialog";
 import { ScoreBadge } from "@/components/tag/score";
 import TagIcon from "@/components/tag/tag-icon";
 import { DurationText } from "@/components/time/duration-text";
-import { Badge } from "@/components/ui/badge";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -290,16 +290,7 @@ function TagListItem({
             // the screen size will likely never be large enough
             maxItemCount={25}
             renderItem={(app) => <MiniAppItem key={app.id} app={app} />}
-            renderOverflowItem={(app) => <MiniAppItem key={app.id} app={app} />}
-            renderOverflowSign={(items) => (
-              <Badge
-                variant="outline"
-                style={{
-                  backgroundColor: "rgba(255, 255, 255, 0.2)",
-                }}
-                className="whitespace-nowrap ml-1 text-card-foreground/60 rounded-md h-6"
-              >{`+${items.length}`}</Badge>
-            )}
+            renderOverflow={(apps) => <AppOverflowTooltip apps={apps} />}
           />
         )}
       </div>

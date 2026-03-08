@@ -1,4 +1,5 @@
 import AppIcon from "@/components/app/app-icon";
+import { AppOverflowTooltip } from "@/components/app/app-overflow-tooltip";
 import { ScoreBadge } from "@/components/tag/score";
 import TagIcon from "@/components/tag/tag-icon";
 import { DurationText } from "@/components/time/duration-text";
@@ -69,9 +70,7 @@ function TagHoverCardContent({ tag }: { tag: Tag }) {
               </NavLink>
             ))}
             {remainingCount > 0 && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-md border border-border text-xs text-muted-foreground">
-                +{remainingCount} more
-              </span>
+              <AppOverflowTooltip apps={hiddenApps}></AppOverflowTooltip>
             )}
           </div>
         </div>
