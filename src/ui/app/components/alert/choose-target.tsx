@@ -1,3 +1,4 @@
+import { AppHoverCard } from "@/components/app/app-hover-card";
 import AppIcon from "@/components/app/app-icon";
 import { MiniTagItem } from "@/components/app/choose-multi-apps";
 import {
@@ -9,6 +10,7 @@ import {
 import { SearchBar } from "@/components/search-bar";
 import { CreateTagDialog } from "@/components/tag/create-tag-dialog";
 import { ScoreCircle } from "@/components/tag/score";
+import { TagHoverCard } from "@/components/tag/tag-hover-card";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -107,12 +109,16 @@ export function ChooseTarget({
             )}
             onClick={() => onValueChanged({ tag: "tag", id: tag.id })}
           >
-            <TagIcon
-              className="w-4 h-4 shrink-0"
-              style={{ color: tag.color }}
-            />
-            <Text>{tag.name}</Text>
-            <ScoreCircle score={tag.score} />
+            <TagHoverCard tag={tag}>
+              <div className="inline-flex items-center gap-2 min-w-0">
+                <TagIcon
+                  className="w-4 h-4 shrink-0"
+                  style={{ color: tag.color }}
+                />
+                <Text>{tag.name}</Text>
+                <ScoreCircle score={tag.score} />
+              </div>
+            </TagHoverCard>
           </button>
         </div>
       ),
@@ -196,8 +202,12 @@ export function ChooseTarget({
             )}
             onClick={() => onValueChanged({ tag: "app", id: app.id })}
           >
-            <AppIcon app={app} className="w-4 h-4 shrink-0" />
-            <Text>{app.name}</Text>
+            <AppHoverCard app={app}>
+              <div className="inline-flex items-center gap-2 min-w-0">
+                <AppIcon app={app} className="w-4 h-4 shrink-0" />
+                <Text>{app.name}</Text>
+              </div>
+            </AppHoverCard>
             <MiniTagItem tagId={app.tagId} />
           </button>
         </div>
@@ -278,16 +288,23 @@ function ChooseTargetTrigger({
       className={cn("flex gap-2 items-center", className)}
     >
       {value?.tag === "app" && app ? (
-        <>
-          <AppIcon app={app} className="w-5 h-5 shrink-0" />
-          <Text>{app.name}</Text>
-        </>
+        <AppHoverCard app={app}>
+          <span className="inline-flex items-center gap-2">
+            <AppIcon app={app} className="w-5 h-5 shrink-0" />
+            <Text>{app.name}</Text>
+          </span>
+        </AppHoverCard>
       ) : value?.tag === "tag" && tag ? (
-        <>
-          <TagIcon className="w-5 h-5 shrink-0" style={{ color: tag.color }} />
-          <Text>{tag.name}</Text>
-          <ScoreCircle score={tag.score} />
-        </>
+        <TagHoverCard tag={tag}>
+          <span className="inline-flex items-center gap-2">
+            <TagIcon
+              className="w-5 h-5 shrink-0"
+              style={{ color: tag.color }}
+            />
+            <Text>{tag.name}</Text>
+            <ScoreCircle score={tag.score} />
+          </span>
+        </TagHoverCard>
       ) : (
         (placeholder ?? (
           <Text className="text-muted-foreground">Choose Target</Text>

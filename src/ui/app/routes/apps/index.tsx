@@ -2,6 +2,7 @@ import AppIcon from "@/components/app/app-icon";
 import { NoApps, NoAppsFound } from "@/components/empty-states";
 import { SearchBar } from "@/components/search-bar";
 import { ScoreCircle } from "@/components/tag/score";
+import { TagHoverCard } from "@/components/tag/tag-hover-card";
 import { DurationText } from "@/components/time/duration-text";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -55,18 +56,20 @@ export function MiniTagItem({
   className?: ClassValue;
 }) {
   return (
-    <Badge
-      variant="outline"
-      style={{
-        borderColor: tag.color,
-        color: tag.color,
-        backgroundColor: "rgba(255, 255, 255, 0.2)",
-      }}
-      className={cn("whitespace-nowrap min-w-0", className)}
-    >
-      <Text className="max-w-32">{tag.name}</Text>
-      <ScoreCircle score={tag.score} className="ml-2 -mr-1" />
-    </Badge>
+    <TagHoverCard tag={tag}>
+      <Badge
+        variant="outline"
+        style={{
+          borderColor: tag.color,
+          color: tag.color,
+          backgroundColor: "rgba(255, 255, 255, 0.2)",
+        }}
+        className={cn("whitespace-nowrap min-w-0", className)}
+      >
+        <Text className="max-w-32">{tag.name}</Text>
+        <ScoreCircle score={tag.score} className="ml-2 -mr-1" />
+      </Badge>
+    </TagHoverCard>
   );
 }
 

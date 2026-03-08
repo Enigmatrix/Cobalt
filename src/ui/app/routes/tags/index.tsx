@@ -1,3 +1,4 @@
+import { AppHoverCard } from "@/components/app/app-hover-card";
 import AppIcon from "@/components/app/app-icon";
 import { NoTags, NoTagsFound } from "@/components/empty-states";
 import { HorizontalOverflowList } from "@/components/overflow-list";
@@ -57,18 +58,20 @@ export function MiniAppItem({
   className?: ClassValue;
 }) {
   return (
-    <div
-      className={cn(
-        "whitespace-nowrap min-w-0 flex gap-2 py-1 px-2 rounded-md border border-border h-6 items-center bg-secondary",
-        className,
-      )}
-      style={{
-        backgroundColor: "rgba(255, 255, 255, 0.1)",
-      }}
-    >
-      <AppIcon app={app} className="w-4 h-4" />
-      <Text className="max-w-52 text-xs">{app?.name ?? ""}</Text>
-    </div>
+    <AppHoverCard app={app}>
+      <div
+        className={cn(
+          "whitespace-nowrap min-w-0 flex gap-2 py-1 px-2 rounded-md border border-border h-6 items-center bg-secondary",
+          className,
+        )}
+        style={{
+          backgroundColor: "rgba(255, 255, 255, 0.1)",
+        }}
+      >
+        <AppIcon app={app} className="w-4 h-4" />
+        <Text className="max-w-52 text-xs">{app?.name ?? ""}</Text>
+      </div>
+    </AppHoverCard>
   );
 }
 

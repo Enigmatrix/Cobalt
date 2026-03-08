@@ -2,7 +2,9 @@ import {
   AlertFormContainer,
   type FormValues,
 } from "@/components/alert/alert-form";
+import { AppHoverCard } from "@/components/app/app-hover-card";
 import AppIcon from "@/components/app/app-icon";
+import { TagHoverCard } from "@/components/tag/tag-hover-card";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -118,16 +120,26 @@ function EditAlertPage({ alert }: { alert: AlertEntity }) {
                   to={`/alerts/${alert.id}`}
                   className="inline-flex items-center overflow-hidden"
                 >
-                  {app && (
-                    <AppIcon app={app} className="w-5 h-5 mr-2 shrink-0" />
+                  {app ? (
+                    <AppHoverCard app={app}>
+                      <span className="inline-flex items-center">
+                        <AppIcon app={app} className="w-5 h-5 mr-2 shrink-0" />
+                        <Text>{targetName}</Text>
+                      </span>
+                    </AppHoverCard>
+                  ) : tag ? (
+                    <TagHoverCard tag={tag}>
+                      <span className="inline-flex items-center">
+                        <TagIcon
+                          className="w-5 h-5 mr-2 shrink-0"
+                          style={{ color: tag.color }}
+                        />
+                        <Text>{targetName}</Text>
+                      </span>
+                    </TagHoverCard>
+                  ) : (
+                    <Text>{targetName}</Text>
                   )}
-                  {tag && (
-                    <TagIcon
-                      className="w-5 h-5 mr-2 shrink-0"
-                      style={{ color: tag.color }}
-                    />
-                  )}
-                  <Text>{targetName}</Text>
                 </NavLink>
               </BreadcrumbLink>
             </BreadcrumbItem>

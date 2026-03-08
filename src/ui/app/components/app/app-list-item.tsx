@@ -1,3 +1,4 @@
+import { AppHoverCard } from "@/components/app/app-hover-card";
 import AppIcon from "@/components/app/app-icon";
 import { Badge } from "@/components/ui/badge";
 import { Text } from "@/components/ui/text";
@@ -12,8 +13,12 @@ export function AppBadge({ app, remove }: { app: App; remove?: () => void }) {
         backgroundColor: "rgba(255, 255, 255, 0.1)",
       }}
     >
-      <AppIcon app={app} className="h-5 w-5 mr-2" />
-      <Text className="text-base">{app.name}</Text>
+      <AppHoverCard app={app}>
+        <AppIcon app={app} className="h-5 w-5 mr-2" />
+      </AppHoverCard>
+      <AppHoverCard app={app}>
+        <Text className="text-base">{app.name}</Text>
+      </AppHoverCard>
       {remove && (
         <button
           type="button"
