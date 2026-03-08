@@ -1,6 +1,7 @@
 import { NoTags, NoTagsFound } from "@/components/empty-states";
 import { CreateTagDialog } from "@/components/tag/create-tag-dialog";
 import { ScoreCircle } from "@/components/tag/score";
+import { TagHoverCard } from "@/components/tag/tag-hover-card";
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -80,12 +81,16 @@ export function ChooseTag({
                 onSelect={() => onValueChanged(tag.id)}
                 className={cn({ "bg-muted/60": value === tag.id })}
               >
-                <TagIcon
-                  className="w-4 h-4 shrink-0"
-                  style={{ color: tag.color }}
-                />
-                <Text>{tag.name}</Text>
-                <ScoreCircle score={tag.score} />
+                <TagHoverCard tag={tag}>
+                  <div className="inline-flex items-center gap-2 min-w-0">
+                    <TagIcon
+                      className="w-4 h-4 shrink-0"
+                      style={{ color: tag.color }}
+                    />
+                    <Text>{tag.name}</Text>
+                    <ScoreCircle score={tag.score} />
+                  </div>
+                </TagHoverCard>
               </CommandItem>
             ))}
 
