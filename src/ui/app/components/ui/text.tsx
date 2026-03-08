@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 import type { ClassValue } from "clsx";
-import type { ComponentPropsWithoutRef } from "react";
+import type { ComponentProps } from "react";
 
 export function Text({
   children,
@@ -9,7 +9,7 @@ export function Text({
 }: {
   children: string;
   className?: ClassValue;
-} & Omit<ComponentPropsWithoutRef<"div">, "children" | "className" | "title">) {
+} & Omit<ComponentProps<"div">, "children" | "className" | "title">) {
   return (
     <div className={cn("truncate", className)} title={children} {...rest}>
       {children || <span className="opacity-50 font-mono">Empty</span>}

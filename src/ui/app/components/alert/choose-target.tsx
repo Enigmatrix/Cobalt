@@ -11,6 +11,7 @@ import { SearchBar } from "@/components/search-bar";
 import { CreateTagDialog } from "@/components/tag/create-tag-dialog";
 import { ScoreCircle } from "@/components/tag/score";
 import { TagHoverCard } from "@/components/tag/tag-hover-card";
+import TagIcon from "@/components/tag/tag-icon";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -25,7 +26,7 @@ import type { tagSchema } from "@/lib/schema";
 import { useAppState } from "@/lib/state";
 import { cn } from "@/lib/utils";
 import { useConcatVirtualItems, useVirtualSection } from "@/lib/virtualization";
-import { ChevronDown, ChevronRight, Plus, TagIcon } from "lucide-react";
+import { ChevronDown, ChevronRight, Plus } from "lucide-react";
 import {
   useCallback,
   useEffect,
@@ -111,10 +112,7 @@ export function ChooseTarget({
           >
             <TagHoverCard tag={tag}>
               <div className="inline-flex items-center gap-2 min-w-0">
-                <TagIcon
-                  className="w-4 h-4 shrink-0"
-                  style={{ color: tag.color }}
-                />
+                <TagIcon tag={tag} className="w-4 h-4 shrink-0" />
                 <Text>{tag.name}</Text>
                 <ScoreCircle score={tag.score} />
               </div>
@@ -297,10 +295,7 @@ function ChooseTargetTrigger({
       ) : value?.tag === "tag" && tag ? (
         <TagHoverCard tag={tag}>
           <span className="inline-flex items-center gap-2">
-            <TagIcon
-              className="w-5 h-5 shrink-0"
-              style={{ color: tag.color }}
-            />
+            <TagIcon tag={tag} className="w-5 h-5 shrink-0" />
             <Text>{tag.name}</Text>
             <ScoreCircle score={tag.score} />
           </span>

@@ -5,6 +5,7 @@ import { HorizontalOverflowList } from "@/components/overflow-list";
 import { SearchBar } from "@/components/search-bar";
 import { CreateTagDialog } from "@/components/tag/create-tag-dialog";
 import { ScoreBadge } from "@/components/tag/score";
+import TagIcon from "@/components/tag/tag-icon";
 import { DurationText } from "@/components/time/duration-text";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -37,7 +38,7 @@ import { useAppState, type EntityMap } from "@/lib/state";
 import { cn } from "@/lib/utils";
 import type { ClassValue } from "clsx";
 import _ from "lodash";
-import { ArrowDownUp, Plus, SortAsc, SortDesc, TagIcon } from "lucide-react";
+import { ArrowDownUp, Plus, SortAsc, SortDesc } from "lucide-react";
 import { DateTime } from "luxon";
 import {
   memo,
@@ -274,10 +275,7 @@ function TagListItem({
         "bg-card text-card-foreground hover:bg-muted/75 border-border border",
       )}
     >
-      <TagIcon
-        className="mx-2 h-10 w-10 shrink-0"
-        style={{ color: tag.color }}
-      />
+      <TagIcon tag={tag} className="mx-2 h-10 w-10 shrink-0" />
 
       <div className="flex flex-col min-w-0 gap-1">
         <div className="flex items-center gap-2">

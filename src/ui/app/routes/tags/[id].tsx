@@ -2,6 +2,7 @@ import { ChooseMultiApps } from "@/components/app/choose-multi-apps";
 import { ColorPicker } from "@/components/color-picker";
 import { EditableText } from "@/components/editable-text";
 import { ScoreBadge, ScoreEdit } from "@/components/tag/score";
+import TagIcon from "@/components/tag/tag-icon";
 import { DateRangePicker } from "@/components/time/date-range-picker";
 import {
   AlertDialog,
@@ -52,7 +53,7 @@ import {
   type Period,
 } from "@/lib/time";
 import _ from "lodash";
-import { Loader2, TagIcon, TrashIcon } from "lucide-react";
+import { Loader2, TrashIcon } from "lucide-react";
 import { DateTime } from "luxon";
 import { useCallback, useMemo } from "react";
 import { NavLink, useNavigate } from "react-router";
@@ -117,10 +118,7 @@ function TagPage({ tag }: { tag: Tag }) {
             <BreadcrumbSeparator className="hidden md:block" />
             <BreadcrumbItem className="overflow-hidden">
               <BreadcrumbPage className="inline-flex items-center overflow-hidden">
-                <TagIcon
-                  className="w-5 h-5 mr-2 shrink-0"
-                  style={{ color: tag.color }}
-                />
+                <TagIcon tag={tag} className="w-5 h-5 mr-2 shrink-0" />
                 <Text>{tag.name}</Text>
               </BreadcrumbPage>
             </BreadcrumbItem>
@@ -135,10 +133,7 @@ function TagPage({ tag }: { tag: Tag }) {
             <div className="flex flex-col gap-6">
               {/* Header with name and icon */}
               <div className="flex items-center gap-4">
-                <TagIcon
-                  className="w-12 h-12 shrink-0"
-                  style={{ color: tag.color }}
-                />
+                <TagIcon tag={tag} className="w-12 h-12 shrink-0" />
                 <div className="min-w-0 shrink flex flex-col gap-2">
                   <div className="min-w-0 flex gap-4">
                     <EditableText

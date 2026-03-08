@@ -7,6 +7,7 @@ import { HorizontalOverflowList } from "@/components/overflow-list";
 import { SearchBar } from "@/components/search-bar";
 import { ScoreBadge } from "@/components/tag/score";
 import { TagHoverCard } from "@/components/tag/tag-hover-card";
+import TagIcon from "@/components/tag/tag-icon";
 import { DurationText } from "@/components/time/duration-text";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -33,7 +34,7 @@ import { cn } from "@/lib/utils";
 import { MiniTagItem } from "@/routes/apps";
 import { MiniAppItem } from "@/routes/tags";
 import type { ClassValue } from "clsx";
-import { Plus, TagIcon } from "lucide-react";
+import { Plus } from "lucide-react";
 import {
   memo,
   useCallback,
@@ -211,10 +212,7 @@ function AlertListItem({ alert }: { alert: Alert }) {
         ) : alert.target.tag === "tag" && tag ? (
           <>
             <TagHoverCard tag={tag}>
-              <TagIcon
-                className="mx-2 h-10 w-10 shrink-0"
-                style={{ color: tag.color }}
-              />
+              <TagIcon tag={tag} className="mx-2 h-10 w-10 shrink-0" />
             </TagHoverCard>
             <div className="flex flex-col min-w-0 gap-1">
               <div className="flex items-center gap-2">

@@ -1,5 +1,6 @@
 import AppIcon from "@/components/app/app-icon";
 import { ScoreBadge } from "@/components/tag/score";
+import TagIcon from "@/components/tag/tag-icon";
 import { DurationText } from "@/components/time/duration-text";
 import {
   HoverCard,
@@ -10,7 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { Text } from "@/components/ui/text";
 import { useApps } from "@/hooks/use-refresh";
 import type { Tag } from "@/lib/entities";
-import { ArrowRightIcon, TagIcon } from "lucide-react";
+import { ArrowRightIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { NavLink } from "react-router";
 
@@ -42,7 +43,7 @@ function TagHoverCardContent({ tag }: { tag: Tag }) {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center gap-3">
-        <TagIcon className="w-10 h-10 shrink-0" style={{ color: tag.color }} />
+        <TagIcon tag={tag} className="w-10 h-10 shrink-0" />
         <div className="flex flex-col min-w-0 gap-1">
           <Text className="font-semibold">{tag.name}</Text>
           <ScoreBadge score={tag.score} className="self-start text-xs" />

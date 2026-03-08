@@ -1,6 +1,7 @@
 import { StatusBadge } from "@/components/alert/status-badge";
 import { TriggerActionIndicator } from "@/components/alert/trigger-action";
 import AppIcon from "@/components/app/app-icon";
+import TagIcon from "@/components/tag/tag-icon";
 import { DurationText } from "@/components/time/duration-text";
 import {
   HoverCard,
@@ -13,7 +14,7 @@ import { Text } from "@/components/ui/text";
 import { useApp, useTag } from "@/hooks/use-refresh";
 import type { Alert } from "@/lib/entities";
 import { timeFrameToLabel } from "@/lib/entities";
-import { ArrowRightIcon, ClockAlertIcon, TagIcon } from "lucide-react";
+import { ArrowRightIcon, ClockAlertIcon } from "lucide-react";
 import { useMemo, type ReactNode } from "react";
 import { NavLink } from "react-router";
 
@@ -65,10 +66,7 @@ function AlertHoverCardContent({ alert }: { alert: Alert }) {
         {app ? (
           <AppIcon app={app} className="w-10 h-10 shrink-0" />
         ) : tag ? (
-          <TagIcon
-            className="w-10 h-10 shrink-0"
-            style={{ color: tag.color }}
-          />
+          <TagIcon tag={tag} className="w-10 h-10 shrink-0" />
         ) : null}
         <div className="flex flex-col min-w-0 gap-1">
           <NavLink

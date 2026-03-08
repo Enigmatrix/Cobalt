@@ -2,6 +2,7 @@ import { AppHoverCard } from "@/components/app/app-hover-card";
 import AppIcon from "@/components/app/app-icon";
 import { ScoreCircle } from "@/components/tag/score";
 import { TagHoverCard } from "@/components/tag/tag-hover-card";
+import TagIcon from "@/components/tag/tag-icon";
 import {
   fullKeyToString,
   type FullKey,
@@ -14,7 +15,6 @@ import type { App, Ref, Tag } from "@/lib/entities";
 import { cn } from "@/lib/utils";
 import type { ClassValue } from "clsx";
 import _ from "lodash";
-import { TagIcon } from "lucide-react";
 import type { DateTime } from "luxon";
 import React, { useMemo } from "react";
 
@@ -145,7 +145,7 @@ function TagRow({ tag, isHighlighted }: { tag: Tag; isHighlighted: boolean }) {
   return (
     <TagHoverCard tag={tag}>
       <div className="flex items-center gap-2 min-w-0">
-        <TagIcon className="w-4 h-4 shrink-0" style={{ color: tag.color }} />
+        <TagIcon tag={tag} className="w-4 h-4 shrink-0" />
         <Text
           className={cn("min-w-0", {
             "text-muted-foreground": !isHighlighted,
@@ -232,10 +232,7 @@ function TagDisplay({
   return (
     <TagHoverCard tag={tag}>
       <div className={cn("flex items-center gap-2 ml-2", className)}>
-        <TagIcon
-          className="w-6 h-6 shrink-0 mr-1"
-          style={{ color: tag.color }}
-        />
+        <TagIcon tag={tag} className="w-6 h-6 shrink-0 mr-1" />
         <div className="flex flex-col mr-4">
           <div className="flex items-center gap-2">
             <Text className="text-base max-w-52">{tag.name}</Text>

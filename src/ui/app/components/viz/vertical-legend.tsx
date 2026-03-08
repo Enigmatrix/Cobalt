@@ -3,6 +3,7 @@ import AppIcon from "@/components/app/app-icon";
 import { SearchBar } from "@/components/search-bar";
 import { ScoreCircle } from "@/components/tag/score";
 import { TagHoverCard } from "@/components/tag/tag-hover-card";
+import TagIcon from "@/components/tag/tag-icon";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -20,12 +21,7 @@ import { cn } from "@/lib/utils";
 import type { CheckedState } from "@radix-ui/react-checkbox";
 import type { ClassValue } from "clsx";
 import _ from "lodash";
-import {
-  ChevronDown,
-  ChevronRight,
-  EllipsisVertical,
-  TagIcon,
-} from "lucide-react";
+import { ChevronDown, ChevronRight, EllipsisVertical } from "lucide-react";
 import {
   useCallback,
   useEffect,
@@ -240,10 +236,7 @@ export function VerticalLegend({
             />
             <TagHoverCard tag={tag}>
               <div className="inline-flex items-center gap-2 min-w-0">
-                <TagIcon
-                  className="h-4 w-4 shrink-0"
-                  style={{ color: tag.color }}
-                />
+                <TagIcon tag={tag} className="h-4 w-4 shrink-0" />
                 <Text className="text-sm">{tag.name}</Text>
                 <ScoreCircle score={tag.score} />
               </div>
