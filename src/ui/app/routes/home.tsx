@@ -1,7 +1,11 @@
+import { AlertHoverCard } from "@/components/alert/alert-hover-card";
 import { StatusBadge } from "@/components/alert/status-badge";
 import { TriggerActionIndicator } from "@/components/alert/trigger-action";
+import { AppHoverCard } from "@/components/app/app-hover-card";
 import AppIcon from "@/components/app/app-icon";
 import { ScoreCircle } from "@/components/tag/score";
+import { TagHoverCard } from "@/components/tag/tag-hover-card";
+import TagIcon from "@/components/tag/tag-icon";
 import { DateRangePicker } from "@/components/time/date-range-picker";
 import { DurationText } from "@/components/time/duration-text";
 import {
@@ -10,14 +14,13 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
 } from "@/components/ui/breadcrumb";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { NextButton, PrevButton, UsageCard } from "@/components/usage-card";
 import { Gantt } from "@/components/viz/gantt2";
 import { UsageChart } from "@/components/viz/usage-chart";
@@ -46,7 +49,7 @@ import {
 } from "@/lib/time";
 import { cn } from "@/lib/utils";
 import _ from "lodash";
-import { Loader2, TagIcon } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { DateTime } from "luxon";
 import { useMemo } from "react";
 
@@ -355,20 +358,20 @@ function AlertEventItem() {
         <div className="text-sm font-medium">Triggered Alerts</div>
 
         {triggeredAlerts.length > 0 ? (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger className="self-end">
+          <HoverCard>
+            <HoverCardTrigger asChild>
+              <button type="button" className="self-end">
                 <div className="text-xl font-bold">
                   {triggeredAlerts.length}
                 </div>
-              </TooltipTrigger>
-              <TooltipContent className="grid grid-cols-[1fr_auto_auto] gap-x-2 gap-y-1.5">
-                {triggeredAlerts.map((alert) => (
-                  <MiniAlertItem key={alert.id} alert={alert} />
-                ))}
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+              </button>
+            </HoverCardTrigger>
+            <HoverCardContent className="w-auto max-w-md grid grid-cols-[1fr_auto_auto] gap-x-2 gap-y-1.5 p-3">
+              {triggeredAlerts.map((alert) => (
+                <MiniAlertItem key={alert.id} alert={alert} />
+              ))}
+            </HoverCardContent>
+          </HoverCard>
         ) : (
           <div className="text-xl font-bold">None</div>
         )}
@@ -379,25 +382,27 @@ function AlertEventItem() {
 
 function MiniAlertItem({ alert }: { alert: Alert }) {
   return (
-    <div className="shadow-lg p-1 rounded-md bg-card border border-border grid grid-cols-subgrid col-span-full gap-3 items-center">
-      <MiniTargetItem alert={alert} />
-      <div className="flex gap-1 items-center text-xs text-muted-foreground whitespace-nowrap">
-        <DurationText ticks={alert.usageLimit} />
-        <span>/</span>
-        <span>{timeFrameToLabel(alert.timeFrame)}</span>
+    <AlertHoverCard alert={alert}>
+      <div className="shadow-lg p-1 rounded-md bg-card border border-border grid grid-cols-subgrid col-span-full gap-3 items-center">
+        <MiniTargetItem alert={alert} />
+        <div className="flex gap-1 items-center text-xs text-muted-foreground whitespace-nowrap">
+          <DurationText ticks={alert.usageLimit} />
+          <span>/</span>
+          <span>{timeFrameToLabel(alert.timeFrame)}</span>
+        </div>
+        <div className="flex justify-end gap-1">
+          <TriggerActionIndicator
+            action={alert.triggerAction}
+            className="text-xs whitespace-nowrap"
+          />
+          <StatusBadge
+            status={alert.status}
+            className="shrink-0"
+            showLabel={false}
+          />
+        </div>
       </div>
-      <div className="flex justify-end gap-1">
-        <TriggerActionIndicator
-          action={alert.triggerAction}
-          className="text-xs whitespace-nowrap"
-        />
-        <StatusBadge
-          status={alert.status}
-          className="shrink-0"
-          showLabel={false}
-        />
-      </div>
-    </div>
+    </AlertHoverCard>
   );
 }
 
@@ -406,15 +411,19 @@ function MiniTargetItem({ alert }: { alert: Alert }) {
   const tag = useTag(alert.target.tag === "tag" ? alert.target.id : null);
 
   return alert.target.tag === "app" && app ? (
-    <div className="flex gap-1 items-center">
-      <AppIcon className="h-4 w-4 shrink-0" app={app} />
-      <div>{app.name}</div>
-    </div>
+    <AppHoverCard app={app}>
+      <div className="flex gap-1 items-center">
+        <AppIcon className="h-4 w-4 shrink-0" app={app} />
+        <div>{app.name}</div>
+      </div>
+    </AppHoverCard>
   ) : alert.target.tag === "tag" && tag ? (
-    <div className="flex gap-1 items-center">
-      <TagIcon className="h-4 w-4 shrink-0" style={{ color: tag.color }} />
-      <div>{tag.name}</div>
-      <ScoreCircle score={tag.score} />
-    </div>
+    <TagHoverCard tag={tag}>
+      <div className="flex gap-1 items-center">
+        <TagIcon tag={tag} className="h-4 w-4 shrink-0" />
+        <div>{tag.name}</div>
+        <ScoreCircle score={tag.score} />
+      </div>
+    </TagHoverCard>
   ) : null;
 }

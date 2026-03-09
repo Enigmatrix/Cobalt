@@ -1,12 +1,15 @@
 import { StatusBadge } from "@/components/alert/status-badge";
 import { TriggerActionIndicator } from "@/components/alert/trigger-action";
+import { AppHoverCard } from "@/components/app/app-hover-card";
 import AppIcon from "@/components/app/app-icon";
+import { AppOverflowTooltip } from "@/components/app/app-overflow-tooltip";
 import { NoAlerts, NoAlertsFound } from "@/components/empty-states";
 import { HorizontalOverflowList } from "@/components/overflow-list";
 import { SearchBar } from "@/components/search-bar";
 import { ScoreBadge } from "@/components/tag/score";
+import { TagHoverCard } from "@/components/tag/tag-hover-card";
+import TagIcon from "@/components/tag/tag-icon";
 import { DurationText } from "@/components/time/duration-text";
-import { Badge } from "@/components/ui/badge";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -31,7 +34,7 @@ import { cn } from "@/lib/utils";
 import { MiniTagItem } from "@/routes/apps";
 import { MiniAppItem } from "@/routes/tags";
 import type { ClassValue } from "clsx";
-import { Plus, TagIcon } from "lucide-react";
+import { Plus } from "lucide-react";
 import {
   memo,
   useCallback,
@@ -180,13 +183,17 @@ function AlertListItem({ alert }: { alert: Alert }) {
       <div className="h-20 flex items-center gap-2 p-4 @container">
         {alert.target.tag === "app" && app ? (
           <>
-            <AppIcon app={app} className="mx-2 h-10 w-10 shrink-0" />
+            <AppHoverCard app={app}>
+              <AppIcon app={app} className="mx-2 h-10 w-10 shrink-0" />
+            </AppHoverCard>
 
             <div className="flex flex-col min-w-0">
               <div className="inline-flex items-center gap-2">
-                <Text className="text-lg font-semibold max-w-72">
-                  {app.name}
-                </Text>
+                <AppHoverCard app={app}>
+                  <Text className="text-lg font-semibold max-w-72">
+                    {app.name}
+                  </Text>
+                </AppHoverCard>
                 {appTag && <MiniTagItem tag={appTag} />}
               </div>
               <span className="inline-flex gap-1 items-center text-xs text-card-foreground/50">
@@ -204,15 +211,16 @@ function AlertListItem({ alert }: { alert: Alert }) {
           </>
         ) : alert.target.tag === "tag" && tag ? (
           <>
-            <TagIcon
-              className="mx-2 h-10 w-10 shrink-0"
-              style={{ color: tag.color }}
-            />
+            <TagHoverCard tag={tag}>
+              <TagIcon tag={tag} className="mx-2 h-10 w-10 shrink-0" />
+            </TagHoverCard>
             <div className="flex flex-col min-w-0 gap-1">
               <div className="flex items-center gap-2">
-                <Text className="text-lg font-semibold max-w-72">
-                  {tag.name}
-                </Text>
+                <TagHoverCard tag={tag}>
+                  <Text className="text-lg font-semibold max-w-72">
+                    {tag.name}
+                  </Text>
+                </TagHoverCard>
                 <ScoreBadge score={tag.score} />
               </div>
               {tagApps.length !== 0 && (
@@ -223,18 +231,7 @@ function AlertListItem({ alert }: { alert: Alert }) {
                   // the screen size will likely never be large enough
                   maxItemCount={25}
                   renderItem={(app) => <MiniAppItem key={app.id} app={app} />}
-                  renderOverflowItem={(app) => (
-                    <MiniAppItem key={app.id} app={app} />
-                  )}
-                  renderOverflowSign={(items) => (
-                    <Badge
-                      variant="outline"
-                      style={{
-                        backgroundColor: "rgba(255, 255, 255, 0.2)",
-                      }}
-                      className="whitespace-nowrap ml-1 text-card-foreground/60 rounded-md h-6"
-                    >{`+${items.length}`}</Badge>
-                  )}
+                  renderOverflow={(apps) => <AppOverflowTooltip apps={apps} />}
                 />
               )}
             </div>

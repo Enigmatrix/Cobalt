@@ -3,6 +3,7 @@ import { ColorPicker } from "@/components/color-picker";
 import { EditableText } from "@/components/editable-text";
 import { ChooseTag } from "@/components/tag/choose-tag";
 import { ScoreCircle } from "@/components/tag/score";
+import { TagHoverCard } from "@/components/tag/tag-hover-card";
 import { DateRangePicker } from "@/components/time/date-range-picker";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -237,33 +238,35 @@ function TagSelect({
   const tag = useTag(tagId);
 
   return tag ? (
-    <Badge
-      variant="outline"
-      style={{
-        borderColor: tag.color,
-        color: tag.color,
-        backgroundColor: "rgba(255, 255, 255, 0.2)",
-      }}
-      className={cn("whitespace-nowrap", className)}
-    >
-      <NavLink to={`/tags/${tagId}`} className="min-w-0 flex items-center">
-        <Text className="max-w-32 ml-1">{tag.name}</Text>
-        <ScoreCircle score={tag.score} className="ml-2" />
-      </NavLink>
-      <ChooseTag
-        value={tagId}
-        onValueChanged={setTagId}
-        render={() => (
-          <Button
-            size="icon"
-            variant="ghost"
-            className="p-1 ml-1 w-auto h-auto"
-          >
-            <ChevronsUpDown />
-          </Button>
-        )}
-      />
-    </Badge>
+    <TagHoverCard tag={tag}>
+      <Badge
+        variant="outline"
+        style={{
+          borderColor: tag.color,
+          color: tag.color,
+          backgroundColor: "rgba(255, 255, 255, 0.2)",
+        }}
+        className={cn("whitespace-nowrap", className)}
+      >
+        <NavLink to={`/tags/${tagId}`} className="min-w-0 flex items-center">
+          <Text className="max-w-32 ml-1">{tag.name}</Text>
+          <ScoreCircle score={tag.score} className="ml-2" />
+        </NavLink>
+        <ChooseTag
+          value={tagId}
+          onValueChanged={setTagId}
+          render={() => (
+            <Button
+              size="icon"
+              variant="ghost"
+              className="p-1 ml-1 w-auto h-auto"
+            >
+              <ChevronsUpDown />
+            </Button>
+          )}
+        />
+      </Badge>
+    </TagHoverCard>
   ) : (
     <Badge
       variant="outline"
