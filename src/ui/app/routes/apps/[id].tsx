@@ -238,35 +238,35 @@ function TagSelect({
   const tag = useTag(tagId);
 
   return tag ? (
-    <TagHoverCard tag={tag}>
-      <Badge
-        variant="outline"
-        style={{
-          borderColor: tag.color,
-          color: tag.color,
-          backgroundColor: "rgba(255, 255, 255, 0.2)",
-        }}
-        className={cn("whitespace-nowrap", className)}
-      >
+    <Badge
+      variant="outline"
+      style={{
+        borderColor: tag.color,
+        color: tag.color,
+        backgroundColor: "rgba(255, 255, 255, 0.2)",
+      }}
+      className={cn("whitespace-nowrap", className)}
+    >
+      <TagHoverCard tag={tag}>
         <NavLink to={`/tags/${tagId}`} className="min-w-0 flex items-center">
           <Text className="max-w-32 ml-1">{tag.name}</Text>
           <ScoreCircle score={tag.score} className="ml-2" />
         </NavLink>
-        <ChooseTag
-          value={tagId}
-          onValueChanged={setTagId}
-          render={() => (
-            <Button
-              size="icon"
-              variant="ghost"
-              className="p-1 ml-1 w-auto h-auto"
-            >
-              <ChevronsUpDown />
-            </Button>
-          )}
-        />
-      </Badge>
-    </TagHoverCard>
+      </TagHoverCard>
+      <ChooseTag
+        value={tagId}
+        onValueChanged={setTagId}
+        render={() => (
+          <Button
+            size="icon"
+            variant="ghost"
+            className="p-1 ml-1 w-auto h-auto"
+          >
+            <ChevronsUpDown />
+          </Button>
+        )}
+      />
+    </Badge>
   ) : (
     <Badge
       variant="outline"

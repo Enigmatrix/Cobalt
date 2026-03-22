@@ -1,10 +1,8 @@
 import { AlertHoverCard } from "@/components/alert/alert-hover-card";
 import { StatusBadge } from "@/components/alert/status-badge";
 import { TriggerActionIndicator } from "@/components/alert/trigger-action";
-import { AppHoverCard } from "@/components/app/app-hover-card";
 import AppIcon from "@/components/app/app-icon";
 import { ScoreCircle } from "@/components/tag/score";
-import { TagHoverCard } from "@/components/tag/tag-hover-card";
 import TagIcon from "@/components/tag/tag-icon";
 import { DateRangePicker } from "@/components/time/date-range-picker";
 import { DurationText } from "@/components/time/duration-text";
@@ -411,19 +409,15 @@ function MiniTargetItem({ alert }: { alert: Alert }) {
   const tag = useTag(alert.target.tag === "tag" ? alert.target.id : null);
 
   return alert.target.tag === "app" && app ? (
-    <AppHoverCard app={app}>
-      <div className="flex gap-1 items-center">
-        <AppIcon className="h-4 w-4 shrink-0" app={app} />
-        <div>{app.name}</div>
-      </div>
-    </AppHoverCard>
+    <div className="flex gap-1 items-center">
+      <AppIcon className="h-4 w-4 shrink-0" app={app} />
+      <div>{app.name}</div>
+    </div>
   ) : alert.target.tag === "tag" && tag ? (
-    <TagHoverCard tag={tag}>
-      <div className="flex gap-1 items-center">
-        <TagIcon tag={tag} className="h-4 w-4 shrink-0" />
-        <div>{tag.name}</div>
-        <ScoreCircle score={tag.score} />
-      </div>
-    </TagHoverCard>
+    <div className="flex gap-1 items-center">
+      <TagIcon tag={tag} className="h-4 w-4 shrink-0" />
+      <div>{tag.name}</div>
+      <ScoreCircle score={tag.score} />
+    </div>
   ) : null;
 }
