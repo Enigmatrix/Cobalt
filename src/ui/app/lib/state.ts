@@ -31,6 +31,10 @@ import { create } from "zustand";
 
 const REFRESH_GAP_MS = 60_000;
 
+async function revalidateAllSwrCaches() {
+  await mutate(() => true, undefined);
+}
+
 export async function initState() {
   const theme = getTheme();
 
@@ -63,8 +67,7 @@ export function createRefreshTimer(gapMs: number) {
 export async function refresh() {
   const now = DateTime.now();
 
-  // Refresh every SWR cache
-  await mutate(() => true);
+  await revalidateAllSwrCaches();
 
   const options = { now: dateTimeToTicks(now) };
   const [apps, tags, alerts] = await Promise.all([
@@ -102,8 +105,7 @@ async function refreshParts(
   if (refreshAlerts) obj.alerts = alerts;
   set(obj);
 
-  // Refresh every SWR cache
-  await mutate(() => true);
+  await revalidateAllSwrCaches();
 }
 
 export const untagged: Tag = {
