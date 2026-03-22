@@ -1,5 +1,8 @@
+import { AppHoverCard } from "@/components/app/app-hover-card";
 import AppIcon from "@/components/app/app-icon";
 import { ScoreCircle } from "@/components/tag/score";
+import { TagHoverCard } from "@/components/tag/tag-hover-card";
+import TagIcon from "@/components/tag/tag-icon";
 import {
   fullKeyToString,
   type FullKey,
@@ -12,7 +15,6 @@ import type { App, Ref, Tag } from "@/lib/entities";
 import { cn } from "@/lib/utils";
 import type { ClassValue } from "clsx";
 import _ from "lodash";
-import { TagIcon } from "lucide-react";
 import type { DateTime } from "luxon";
 import React, { useMemo } from "react";
 
@@ -124,31 +126,35 @@ export function UsageTooltipContent({
 
 function AppRow({ app, isHighlighted }: { app: App; isHighlighted: boolean }) {
   return (
-    <div className="flex items-center gap-2 min-w-0">
-      <AppIcon app={app} className="w-4 h-4 shrink-0" />
-      <Text
-        className={cn("min-w-0", {
-          "text-muted-foreground": !isHighlighted,
-        })}
-      >
-        {app.name}
-      </Text>
-    </div>
+    <AppHoverCard app={app}>
+      <div className="flex items-center gap-2 min-w-0">
+        <AppIcon app={app} className="w-4 h-4 shrink-0" />
+        <Text
+          className={cn("min-w-0", {
+            "text-muted-foreground": !isHighlighted,
+          })}
+        >
+          {app.name}
+        </Text>
+      </div>
+    </AppHoverCard>
   );
 }
 
 function TagRow({ tag, isHighlighted }: { tag: Tag; isHighlighted: boolean }) {
   return (
-    <div className="flex items-center gap-2 min-w-0">
-      <TagIcon className="w-4 h-4 shrink-0" style={{ color: tag.color }} />
-      <Text
-        className={cn("min-w-0", {
-          "text-muted-foreground": !isHighlighted,
-        })}
-      >
-        {tag.name}
-      </Text>
-    </div>
+    <TagHoverCard tag={tag}>
+      <div className="flex items-center gap-2 min-w-0">
+        <TagIcon tag={tag} className="w-4 h-4 shrink-0" />
+        <Text
+          className={cn("min-w-0", {
+            "text-muted-foreground": !isHighlighted,
+          })}
+        >
+          {tag.name}
+        </Text>
+      </div>
+    </TagHoverCard>
   );
 }
 
@@ -197,18 +203,20 @@ function AppDisplay({
   at?: DateTime;
 }) {
   return (
-    <div className={cn("flex items-center gap-2 ml-2", className)}>
-      <AppIcon app={app} className="w-6 h-6 shrink-0 mr-1" />
-      <div className="flex flex-col mr-4">
-        <Text className="text-base max-w-52">{app.name}</Text>
-        {at && (
-          <DateTimeText
-            className="text-xs text-muted-foreground"
-            datetime={at}
-          />
-        )}
+    <AppHoverCard app={app}>
+      <div className={cn("flex items-center gap-2 ml-2", className)}>
+        <AppIcon app={app} className="w-6 h-6 shrink-0 mr-1" />
+        <div className="flex flex-col mr-4">
+          <Text className="text-base max-w-52">{app.name}</Text>
+          {at && (
+            <DateTimeText
+              className="text-xs text-muted-foreground"
+              datetime={at}
+            />
+          )}
+        </div>
       </div>
-    </div>
+    </AppHoverCard>
   );
 }
 
@@ -222,20 +230,22 @@ function TagDisplay({
   at?: DateTime;
 }) {
   return (
-    <div className={cn("flex items-center gap-2 ml-2", className)}>
-      <TagIcon className="w-6 h-6 shrink-0 mr-1" style={{ color: tag.color }} />
-      <div className="flex flex-col mr-4">
-        <div className="flex items-center gap-2">
-          <Text className="text-base max-w-52">{tag.name}</Text>
-          <ScoreCircle score={tag.score} />
+    <TagHoverCard tag={tag}>
+      <div className={cn("flex items-center gap-2 ml-2", className)}>
+        <TagIcon tag={tag} className="w-6 h-6 shrink-0 mr-1" />
+        <div className="flex flex-col mr-4">
+          <div className="flex items-center gap-2">
+            <Text className="text-base max-w-52">{tag.name}</Text>
+            <ScoreCircle score={tag.score} />
+          </div>
+          {at && (
+            <DateTimeText
+              className="text-xs text-muted-foreground"
+              datetime={at}
+            />
+          )}
         </div>
-        {at && (
-          <DateTimeText
-            className="text-xs text-muted-foreground"
-            datetime={at}
-          />
-        )}
       </div>
-    </div>
+    </TagHoverCard>
   );
 }

@@ -3,6 +3,7 @@ import { ColorPicker } from "@/components/color-picker";
 import { EditableText } from "@/components/editable-text";
 import { ChooseTag } from "@/components/tag/choose-tag";
 import { ScoreCircle } from "@/components/tag/score";
+import { TagHoverCard } from "@/components/tag/tag-hover-card";
 import { DateRangePicker } from "@/components/time/date-range-picker";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -246,10 +247,12 @@ function TagSelect({
       }}
       className={cn("whitespace-nowrap", className)}
     >
-      <NavLink to={`/tags/${tagId}`} className="min-w-0 flex items-center">
-        <Text className="max-w-32 ml-1">{tag.name}</Text>
-        <ScoreCircle score={tag.score} className="ml-2" />
-      </NavLink>
+      <TagHoverCard tag={tag}>
+        <NavLink to={`/tags/${tagId}`} className="min-w-0 flex items-center">
+          <Text className="max-w-32 ml-1">{tag.name}</Text>
+          <ScoreCircle score={tag.score} className="ml-2" />
+        </NavLink>
+      </TagHoverCard>
       <ChooseTag
         value={tagId}
         onValueChanged={setTagId}

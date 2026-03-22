@@ -1,6 +1,8 @@
 import { NoTags, NoTagsFound } from "@/components/empty-states";
 import { CreateTagDialog } from "@/components/tag/create-tag-dialog";
 import { ScoreCircle } from "@/components/tag/score";
+import { TagHoverCard } from "@/components/tag/tag-hover-card";
+import TagIcon from "@/components/tag/tag-icon";
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -20,7 +22,7 @@ import type { Ref, Tag } from "@/lib/entities";
 import type { tagSchema } from "@/lib/schema";
 import { useAppState } from "@/lib/state";
 import { cn } from "@/lib/utils";
-import { Plus, TagIcon } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useCallback, useState, type ReactNode } from "react";
 import type { z } from "zod";
 
@@ -80,12 +82,13 @@ export function ChooseTag({
                 onSelect={() => onValueChanged(tag.id)}
                 className={cn({ "bg-muted/60": value === tag.id })}
               >
-                <TagIcon
-                  className="w-4 h-4 shrink-0"
-                  style={{ color: tag.color }}
-                />
-                <Text>{tag.name}</Text>
-                <ScoreCircle score={tag.score} />
+                <TagHoverCard tag={tag}>
+                  <div className="inline-flex items-center gap-2 min-w-0">
+                    <TagIcon tag={tag} className="w-4 h-4 shrink-0" />
+                    <Text>{tag.name}</Text>
+                    <ScoreCircle score={tag.score} />
+                  </div>
+                </TagHoverCard>
               </CommandItem>
             ))}
 

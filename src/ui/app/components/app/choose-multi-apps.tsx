@@ -1,8 +1,10 @@
+import { AppHoverCard } from "@/components/app/app-hover-card";
 import AppIcon from "@/components/app/app-icon";
 import { AppBadge } from "@/components/app/app-list-item";
 import { NoApps, NoAppsFound } from "@/components/empty-states";
 import { SearchBar } from "@/components/search-bar";
 import { ScoreCircle } from "@/components/tag/score";
+import { TagHoverCard } from "@/components/tag/tag-hover-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -33,18 +35,20 @@ export function MiniTagItem({ tagId }: { tagId: Ref<Tag> | null }) {
   const tag = useTag(tagId);
   return (
     tag && (
-      <Badge
-        variant="outline"
-        style={{
-          borderColor: tag.color,
-          color: tag.color,
-          backgroundColor: "rgba(255, 255, 255, 0.2)",
-        }}
-        className="whitespace-nowrap min-w-0 -my-0.5 px-2 py-0.5 rounded-full border"
-      >
-        <Text className="max-w-32">{tag.name}</Text>
-        <ScoreCircle score={tag.score} className="ml-2 -mr-1" />
-      </Badge>
+      <TagHoverCard tag={tag}>
+        <Badge
+          variant="outline"
+          style={{
+            borderColor: tag.color,
+            color: tag.color,
+            backgroundColor: "rgba(255, 255, 255, 0.2)",
+          }}
+          className="whitespace-nowrap min-w-0 -my-0.5 px-2 py-0.5 rounded-full border"
+        >
+          <Text className="max-w-32">{tag.name}</Text>
+          <ScoreCircle score={tag.score} className="ml-2 -mr-1" />
+        </Badge>
+      </TagHoverCard>
     )
   );
 }
@@ -119,12 +123,15 @@ export function ChooseMultiApps({
                 onCheckedChange={() => toggleOption(app.id)}
                 className="border-foreground/20"
               />
-              <AppIcon
-                app={app}
-                className="size-4 text-muted-foreground shrink-0"
-              />
-              <Text>{app.name}</Text>
-              {/* Don't show tag if for *this* tag, since a creating tag will not even be valid */}
+              <AppHoverCard app={app}>
+                <div className="inline-flex items-center gap-2 min-w-0">
+                  <AppIcon
+                    app={app}
+                    className="size-4 text-muted-foreground shrink-0"
+                  />
+                  <Text>{app.name}</Text>
+                </div>
+              </AppHoverCard>
               {!isSelected && <MiniTagItem tagId={app.tagId} />}
             </div>
           </div>
@@ -141,7 +148,7 @@ export function ChooseMultiApps({
   }, [items]);
 
   return (
-    <Popover open={open} onOpenChange={setOpen} modal>
+    <Popover open={open} onOpenChange={setOpen}>
       <div className="flex flex-wrap items-center gap-2">
         {valueApps.map((app, index) => {
           return (

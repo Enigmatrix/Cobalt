@@ -1,6 +1,9 @@
 import { StatusBadge } from "@/components/alert/status-badge";
 import { TriggerActionIndicator } from "@/components/alert/trigger-action";
+import { AppHoverCard } from "@/components/app/app-hover-card";
 import AppIcon from "@/components/app/app-icon";
+import { TagHoverCard } from "@/components/tag/tag-hover-card";
+import TagIcon from "@/components/tag/tag-icon";
 import { DateRangePicker } from "@/components/time/date-range-picker";
 import { DurationText } from "@/components/time/duration-text";
 import { DateTimeText } from "@/components/time/time-text";
@@ -52,7 +55,6 @@ import {
   ClockIcon,
   Edit2Icon,
   PlayIcon,
-  TagIcon,
   TrashIcon,
 } from "lucide-react";
 import { useCallback, useMemo } from "react";
@@ -96,14 +98,23 @@ function AlertPage({ alert }: { alert: Alert }) {
             <BreadcrumbSeparator className="hidden md:block" />
             <BreadcrumbItem className="overflow-hidden">
               <BreadcrumbPage className="inline-flex items-center overflow-hidden">
-                {app && <AppIcon app={app} className="w-5 h-5 mr-2 shrink-0" />}
-                {tag && (
-                  <TagIcon
-                    className="w-5 h-5 mr-2 shrink-0"
-                    style={{ color: tag.color }}
-                  />
+                {app ? (
+                  <AppHoverCard app={app}>
+                    <span className="inline-flex items-center">
+                      <AppIcon app={app} className="w-5 h-5 mr-2 shrink-0" />
+                      <Text className="truncate">{targetName}</Text>
+                    </span>
+                  </AppHoverCard>
+                ) : tag ? (
+                  <TagHoverCard tag={tag}>
+                    <span className="inline-flex items-center">
+                      <TagIcon tag={tag} className="w-5 h-5 mr-2 shrink-0" />
+                      <Text className="truncate">{targetName}</Text>
+                    </span>
+                  </TagHoverCard>
+                ) : (
+                  <Text className="truncate">{targetName}</Text>
                 )}
-                <Text className="truncate">{targetName}</Text>
               </BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
@@ -177,28 +188,51 @@ function AlertInfoCard({
       <div className="flex flex-col gap-4">
         {/* Header with name and icon */}
         <div className="flex items-center gap-4">
-          <NavLink to={targetLink}>
-            {app ? (
-              <AppIcon
-                app={app}
-                className="w-12 h-12 shrink-0 hover:opacity-80 transition-opacity"
-              />
-            ) : tag ? (
-              <TagIcon
-                className="w-12 h-12 shrink-0 hover:opacity-80 transition-opacity"
-                style={{ color: tag.color }}
-              />
-            ) : null}
-          </NavLink>
+          {app ? (
+            <AppHoverCard app={app}>
+              <NavLink to={targetLink}>
+                <AppIcon
+                  app={app}
+                  className="w-12 h-12 shrink-0 hover:opacity-80 transition-opacity"
+                />
+              </NavLink>
+            </AppHoverCard>
+          ) : tag ? (
+            <TagHoverCard tag={tag}>
+              <NavLink to={targetLink}>
+                <TagIcon
+                  tag={tag}
+                  className="w-12 h-12 shrink-0 hover:opacity-80 transition-opacity"
+                />
+              </NavLink>
+            </TagHoverCard>
+          ) : null}
           <div className="min-w-0 shrink flex flex-col gap-1">
-            <NavLink
-              to={targetLink}
-              className="hover:opacity-80 transition-opacity"
-            >
-              <Text className="text-2xl font-semibold">
-                {targetEntity?.name ?? "Unknown"}
-              </Text>
-            </NavLink>
+            {app ? (
+              <AppHoverCard app={app}>
+                <NavLink
+                  to={targetLink}
+                  className="hover:opacity-80 transition-opacity"
+                >
+                  <Text className="text-2xl font-semibold">
+                    {targetEntity?.name ?? "Unknown"}
+                  </Text>
+                </NavLink>
+              </AppHoverCard>
+            ) : tag ? (
+              <TagHoverCard tag={tag}>
+                <NavLink
+                  to={targetLink}
+                  className="hover:opacity-80 transition-opacity"
+                >
+                  <Text className="text-2xl font-semibold">
+                    {targetEntity?.name ?? "Unknown"}
+                  </Text>
+                </NavLink>
+              </TagHoverCard>
+            ) : (
+              <Text className="text-2xl font-semibold">Unknown</Text>
+            )}
             <StatusBadge status={alert.status} />
           </div>
           <div className="flex-1" />

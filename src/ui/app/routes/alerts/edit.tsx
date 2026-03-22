@@ -2,7 +2,10 @@ import {
   AlertFormContainer,
   type FormValues,
 } from "@/components/alert/alert-form";
+import { AppHoverCard } from "@/components/app/app-hover-card";
 import AppIcon from "@/components/app/app-icon";
+import { TagHoverCard } from "@/components/tag/tag-hover-card";
+import TagIcon from "@/components/tag/tag-icon";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -22,7 +25,6 @@ import type { Alert as AlertEntity, Ref } from "@/lib/entities";
 import type { UpdatedAlert } from "@/lib/repo";
 import { alertSchema } from "@/lib/schema";
 import { useAppState } from "@/lib/state";
-import { TagIcon } from "lucide-react";
 import { useCallback, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router";
 import type { Route } from "../alerts/+types/edit";
@@ -118,16 +120,23 @@ function EditAlertPage({ alert }: { alert: AlertEntity }) {
                   to={`/alerts/${alert.id}`}
                   className="inline-flex items-center overflow-hidden"
                 >
-                  {app && (
-                    <AppIcon app={app} className="w-5 h-5 mr-2 shrink-0" />
+                  {app ? (
+                    <AppHoverCard app={app}>
+                      <span className="inline-flex items-center">
+                        <AppIcon app={app} className="w-5 h-5 mr-2 shrink-0" />
+                        <Text>{targetName}</Text>
+                      </span>
+                    </AppHoverCard>
+                  ) : tag ? (
+                    <TagHoverCard tag={tag}>
+                      <span className="inline-flex items-center">
+                        <TagIcon tag={tag} className="w-5 h-5 mr-2 shrink-0" />
+                        <Text>{targetName}</Text>
+                      </span>
+                    </TagHoverCard>
+                  ) : (
+                    <Text>{targetName}</Text>
                   )}
-                  {tag && (
-                    <TagIcon
-                      className="w-5 h-5 mr-2 shrink-0"
-                      style={{ color: tag.color }}
-                    />
-                  )}
-                  <Text>{targetName}</Text>
                 </NavLink>
               </BreadcrumbLink>
             </BreadcrumbItem>
