@@ -3,9 +3,9 @@ use std::future::Future;
 use std::sync::Arc;
 
 use data::entities::{Alert, App, AppIdentity, Duration, Ref, Session, Timestamp};
+use platform::browser;
 use platform::events::{ForegroundWindowSessionInfo, WindowSession};
 use platform::objects::{ProcessId, ProcessThreadId, Window};
-use platform::web;
 use scoped_futures::ScopedBoxFuture;
 use util::ds::{SmallHashMap, SmallHashSet};
 use util::error::Result;
@@ -31,7 +31,7 @@ pub struct DesktopStateInner {
 pub type DesktopState = Arc<RwLock<DesktopStateInner>>;
 
 /// Create a new [DesktopState]
-pub fn new_desktop_state(web_state: web::State) -> DesktopState {
+pub fn new_desktop_state(web_state: browser::State) -> DesktopState {
     Arc::new(RwLock::new(DesktopStateInner::new(web_state)))
 }
 
@@ -50,11 +50,11 @@ pub struct Store {
 #[derive(Debug)]
 pub struct WebsiteCache {
     // This never gets cleared, but it's ok since it's a small set of urls?
-    websites: HashMap<web::BaseWebsiteUrl, AppDetails>,
+    websites: HashMap<browser::BaseWebsiteUrl, AppDetails>,
     // This never gets cleared, but it's ok since it's a small set of apps?
-    apps: HashMap<Ref<App>, web::BaseWebsiteUrl>,
+    apps: HashMap<Ref<App>, browser::BaseWebsiteUrl>,
     // Web state
-    state: web::State,
+    state: browser::State,
 }
 
 /// Cache for storing information about windows and processes
@@ -187,7 +187,7 @@ pub enum KillableProcessId {
 
 impl DesktopStateInner {
     /// Create a new [Cache].
-    pub fn new(web_state: web::State) -> Self {
+    pub fn new(web_state: browser::State) -> Self {
         Self {
             store: Store {
                 sessions: HashMap::new(),
@@ -250,7 +250,10 @@ impl DesktopStateInner {
     }
 
     /// Get the websites for an [App]. If the app is not a website, will return nothing.
-    pub fn websites_for_app(&self, app: &Ref<App>) -> impl Iterator<Item = &web::BaseWebsiteUrl> {
+    pub fn websites_for_app(
+        &self,
+        app: &Ref<App>,
+    ) -> impl Iterator<Item = &browser::BaseWebsiteUrl> {
         self.web.apps.get(app).into_iter()
     }
 
@@ -333,11 +336,11 @@ impl DesktopStateInner {
         Ok(self.store.apps.entry(ptid).or_insert(created))
     }
 
-    /// Get or insert a [AppDetails] for a [web::BaseWebsiteUrl], using the create callback
+    /// Get or insert a [AppDetails] for a [browser::BaseWebsiteUrl], using the create callback
     /// to make a new [AppDetails] if not found.
     pub async fn get_or_insert_website_for_base_url<F: Future<Output = Result<AppDetails>>>(
         &mut self,
-        base_url: web::BaseWebsiteUrl,
+        base_url: browser::BaseWebsiteUrl,
         create: impl FnOnce(&mut Self) -> F,
     ) -> Result<&mut AppDetails> {
         if self.web.websites.contains_key(&base_url) {
@@ -477,7 +480,7 @@ async fn inner_mut_compiles() {
 
     let window: Window = Window::foreground().unwrap();
     let process = ProcessThreadId { pid: 1, tid: 1 };
-    let web_state = web::default_state();
+    let web_state = browser::default_state();
     let mut desktop = DesktopStateInner::new(web_state);
 
     desktop

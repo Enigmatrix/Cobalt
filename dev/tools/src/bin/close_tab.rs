@@ -3,7 +3,7 @@
 use clap::Parser;
 use dialoguer::Select;
 use dialoguer::theme::ColorfulTheme;
-use platform::web;
+use platform::browser;
 use tools::filters::{
     ProcessFilter, ProcessWindowGroup, WindowDetails, WindowFilter, match_running_windows,
 };
@@ -38,7 +38,7 @@ fn main() -> Result<()> {
         },
     )?;
 
-    let detect = web::Detect::new()?;
+    let detect = browser::Detect::new()?;
     if let Some(details) = select_window(&matches)? {
         let element = detect.get_chromium_element(&details.window)?;
         detect.close_current_tab(&element)?;

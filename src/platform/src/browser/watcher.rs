@@ -9,9 +9,9 @@ use windows::Win32::UI::Accessibility::{
     UIA_ValueValuePropertyId,
 };
 
+use crate::browser::{self, perf};
 use crate::events::{PropertyChange, WindowTitleWatcher};
 use crate::objects::{ProcessId, Target, Window};
-use crate::web::{self, perf};
 
 /// Watches a browser (by PID) for tab changes. Changes should be reported as fast as possible.
 pub struct Watcher {
@@ -36,14 +36,14 @@ pub struct Changed {
 
 impl Watcher {
     /// Create a new [Watcher]. tick() needs to be called at least once to start watching.
-    pub fn new(web_change_tx: Sender<Changed>, web_state: web::State) -> Result<Self> {
+    pub fn new(web_change_tx: Sender<Changed>, web_state: browser::State) -> Result<Self> {
         Ok(Self {
             processes: SmallHashMap::new(),
             windows: SmallHashMap::new(),
 
             args: Args {
                 web_state,
-                detect: web::Detect::new()?,
+                detect: browser::Detect::new()?,
                 reentrancy: Arc::new(Mutex::new(())),
                 web_change_tx,
             },
@@ -94,7 +94,7 @@ impl Watcher {
 
     fn update_browser_windows(
         &mut self,
-        windows: SmallHashMap<Window, web::ExtractedUIElements>,
+        windows: SmallHashMap<Window, browser::ExtractedUIElements>,
     ) -> Result<()> {
         // Remove any browsers that are no longer in the list
         self.windows
@@ -156,7 +156,7 @@ impl Watcher {
     fn omnibox_text_change_callback(
         window: Window,
         value: String,
-        extracted_elements: web::ExtractedUIElements,
+        extracted_elements: browser::ExtractedUIElements,
         args: Args,
     ) -> Result<()> {
         Self::central_callback(window, Some(value), extracted_elements, args)
@@ -166,7 +166,7 @@ impl Watcher {
     fn central_callback(
         window: Window,
         url: Option<String>,
-        extracted_elements: web::ExtractedUIElements,
+        extracted_elements: browser::ExtractedUIElements,
         args: Args,
     ) -> Result<()> {
         let _guard = args.reentrancy.lock().expect("reentrancy lock poisoned");
@@ -208,9 +208,9 @@ impl Watcher {
             )?
             .to_string();
 
-            let is_http_hint = web::Detect::is_http_hint_from_icon_text(&icon_text);
+            let is_http_hint = browser::Detect::is_http_hint_from_icon_text(&icon_text);
             debug!(?url, ?icon_text, "tab changed");
-            web::Detect::unelide_omnibox_text(url, is_http_hint)
+            browser::Detect::unelide_omnibox_text(url, is_http_hint)
         } else {
             // Or fetch the url from the document element.
             // TODO: backon retries + timeout to restack + use rt spawn_blocking + throttle
@@ -251,8 +251,8 @@ impl Watcher {
 
 #[derive(Clone)]
 struct Args {
-    web_state: web::State,
-    detect: web::Detect,
+    web_state: browser::State,
+    detect: browser::Detect,
     reentrancy: Arc<Mutex<()>>,
 
     web_change_tx: Sender<Changed>,
