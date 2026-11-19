@@ -21,8 +21,8 @@ logger = logging.getLogger(__name__)
 
 urls = {
     "https1": {
-        "url": "https://chromium.googlesource.com/chromium/src/+/refs/heads/lkgr/docs/design/README.md",
-        "title": "Chromium Docs - Chromium Design Docs",
+        "url": "https://example.com/",
+        "title": "Example Domain",
     },
     "https2": {
         "url": "https://github.com/chromium/chromium",
