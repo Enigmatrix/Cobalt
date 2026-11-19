@@ -17,10 +17,8 @@ use crate::objects::Timestamp;
 /// Setup platform for Windows.
 ///
 /// Initializes COM as STA on the calling thread. The caller must run a message
-/// pump (`GetMessageW`/`DispatchMessageW`) for UIA event callbacks to be
-/// delivered on this thread, which serializes them with handler
-/// registration/removal and eliminates the race inside
-/// `uiautomationcore!SavedEvent::OnMessage`.
+/// pump (`GetMessageW`/`DispatchMessageW`). UIA event handlers are agile, so
+/// UIA invokes them on its own worker threads rather than on this thread.
 pub fn setup() -> Result<()> {
     Timestamp::setup()?;
     unsafe { CoInitializeEx(None, COINIT_APARTMENTTHREADED) }
